@@ -9,23 +9,23 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
 
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 @JsonDeserialize(builder = ParameterInfo.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class ParameterInfo implements CwmsDTOBase {
+public final class ParameterInfo implements CwmsDTOBase {
     private final String parameter;
     private final String unit;
-    private final int index;
+    private final Integer index;
+    private final Integer startColumn;
+    private final Integer endColumn;
 
-    protected ParameterInfo(ParameterInfo.Builder builder) {
+    ParameterInfo(ParameterInfo.Builder builder) {
         parameter = builder.parameter;
         unit = builder.unit;
         index = builder.index;
+        startColumn = builder.startColumn;
+        endColumn = builder.endColumn;
     }
 
     public String getParameter() {
@@ -36,14 +36,26 @@ public class ParameterInfo implements CwmsDTOBase {
         return unit;
     }
 
-    public int getIndex() {
+    public Integer getIndex() {
         return index;
     }
 
-
+    public Integer getStartColumn(){
+        return startColumn;
+    }
+    public Integer getEndColumn(){
+        return endColumn;
+    }
     @Override
     public void validate() throws FieldException {
-
+        if(index==null && !(startColumn!=null && endColumn!=null))
+        {
+            throw new FieldException("if index is null, startColumn and endColumn must be defined!");
+        }
+        if(index!=null && (startColumn!=null || endColumn!=null))
+        {
+            throw new FieldException("if index is defined, startColumn and endColumn must not be defined!");
+        }
     }
 
     @Override
@@ -74,8 +86,9 @@ public class ParameterInfo implements CwmsDTOBase {
     public static final class Builder {
         private String parameter;
         private String unit;
-        private int index;
-
+        private Integer index;
+        private Integer startColumn;
+        private Integer endColumn;
 
         public ParameterInfo.Builder withParameter(String parameter) {
             this.parameter = parameter;
@@ -92,6 +105,14 @@ public class ParameterInfo implements CwmsDTOBase {
             return this;
         }
 
+        public ParameterInfo.Builder withStartColumn(int startColumn){
+            this.startColumn = startColumn;
+            return this;
+        }
+        public ParameterInfo.Builder withEndColumn(int endColumn){
+            this.endColumn = endColumn;
+            return this;
+        }
         public ParameterInfo build() {
             return new ParameterInfo(this);
         }

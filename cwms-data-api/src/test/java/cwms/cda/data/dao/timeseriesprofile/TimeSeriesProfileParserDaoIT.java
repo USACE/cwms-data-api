@@ -26,20 +26,24 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
 
     @Test
     void testStoreAndRetrieve() throws Exception {
+        String officeId = "LRL";
+        String locationName = "Glensboro";
+        String locationName1 = "Greensburg";
+        String[] parameter = {"Depth", "Temp-Water"};
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
 
             TimeSeriesProfileDao timeSeriesProfileDao = new TimeSeriesProfileDao(context);
 
-            TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile("AAA", "Depth");
+            TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile(officeId, locationName, parameter[0], parameter);
             timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
 
-            timeSeriesProfile = buildTestTimeSeriesProfile("BBB", "Depth");
+            timeSeriesProfile = buildTestTimeSeriesProfile(officeId, locationName1, parameter[0], parameter);
             timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
 
             TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
-            TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser("AAA", "Depth");
+            TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser(officeId, locationName, parameter[0]);
             timeSeriesProfileParserDao.storeTimeSeriesProfileParser(timeSeriesProfileParser, false);
 
             TimeSeriesProfileParser retrieved = timeSeriesProfileParserDao.retrieveTimeSeriesProfileParser(timeSeriesProfileParser.getLocationId().getName(),
@@ -54,22 +58,25 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
 
             timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfile.getLocationId().getName(), timeSeriesProfile.getKeyParameter(),
                     timeSeriesProfile.getLocationId().getOfficeId());
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
     void testStoreAndDelete() throws SQLException {
+        String officeId = "LRL";
+        String locationName = "Glensboro";
+        String[] parameter = { "Depth", "Temp-Water"};
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
 
             TimeSeriesProfileDao timeSeriesProfileDao = new TimeSeriesProfileDao(context);
 
-            TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile("AAA", "Depth");
+            TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile(officeId, locationName, parameter[0], parameter);
             timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
 
             TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
-            TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser("AAA", "Depth");
+            TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser(officeId, locationName, parameter[0]);
             timeSeriesProfileParserDao.storeTimeSeriesProfileParser(timeSeriesProfileParser, false);
 
             timeSeriesProfileParserDao.deleteTimeSeriesProfileParser(timeSeriesProfileParser.getLocationId().getName(),
@@ -81,87 +88,96 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
 
             timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfile.getLocationId().getName(), timeSeriesProfile.getKeyParameter(),
                     timeSeriesProfile.getLocationId().getOfficeId());
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
     void testStoreAndRetrieveMultiple() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        String officeId = "LRL";
+        String locationName = "Glensboro";
+        String[] parameters =  {"Depth", "Temp-Water"};
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
 
             TimeSeriesProfileDao timeSeriesProfileDao = new TimeSeriesProfileDao(context);
 
-            TimeSeriesProfile timeSeriesProfileDepth = buildTestTimeSeriesProfile("AAA", "Depth");
-            timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfileDepth, false);
-            TimeSeriesProfile timeSeriesProfileTemp = buildTestTimeSeriesProfile("BBB", "Temp-Water");
-            timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfileTemp, false);
-
+            List<TimeSeriesProfile> timeSeriesProfileList = new ArrayList<>();
+            for(String parameter : parameters) {
+                TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile(officeId, locationName, parameter, parameters);
+                timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
+                timeSeriesProfileList.add(timeSeriesProfile);
+            }
             TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
-            TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser("AAA", "Depth");
-            timeSeriesProfileParserDao.storeTimeSeriesProfileParser(timeSeriesProfileParser, false);
 
-            timeSeriesProfileParser = buildTestTimeSeriesProfileParser("BBB", "Temp-Water");
-            timeSeriesProfileParserDao.storeTimeSeriesProfileParser(timeSeriesProfileParser, false);
+
+            for(String parameter : parameters) {
+                TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser(officeId, locationName, parameter);
+                timeSeriesProfileParserDao.storeTimeSeriesProfileParser(timeSeriesProfileParser, false);
+            }
 
             List<TimeSeriesProfileParser> profileParserList = timeSeriesProfileParserDao.retrieveTimeSeriesProfileParsers("*", "*", "*");
             for (TimeSeriesProfileParser profileParser : profileParserList) {
                 timeSeriesProfileParserDao.deleteTimeSeriesProfileParser(profileParser.getLocationId().getName(), profileParser.getKeyParameter(), profileParser.getLocationId().getOfficeId());
             }
 
-            timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfileDepth.getLocationId().getName(), timeSeriesProfileDepth.getKeyParameter(),
-                    timeSeriesProfileDepth.getLocationId().getOfficeId());
-            timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfileTemp.getLocationId().getName(), timeSeriesProfileTemp.getKeyParameter(),
-                    timeSeriesProfileTemp.getLocationId().getOfficeId());
+            for(TimeSeriesProfile timeSeriesProfile : timeSeriesProfileList) {
+                timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfile.getLocationId().getName(), timeSeriesProfile.getKeyParameter(),
+                        timeSeriesProfile.getLocationId().getOfficeId());
+            }
+
             assertEquals(2, profileParserList.size());
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
     void testStoreAndCopy() throws SQLException {
+        String officeId = "LRL";
+        String locationName = "Glensboro";
+        String locationName1 = "Greensburg";
+        String[] parameter = {"Depth", "Temp-Water"};
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
 
             TimeSeriesProfileDao timeSeriesProfileDao = new TimeSeriesProfileDao(context);
 
-            TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile("AAA", "Depth");
+            TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile(officeId, locationName, parameter[0], parameter);
             timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
 
-            timeSeriesProfile = buildTestTimeSeriesProfile("BBB", "Depth");
+            timeSeriesProfile = buildTestTimeSeriesProfile(officeId, locationName1, parameter[0], parameter);
             timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
 
             TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
-            TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser("AAA", "Depth");
+            TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser(officeId, locationName, parameter[0]);
             timeSeriesProfileParserDao.storeTimeSeriesProfileParser(timeSeriesProfileParser, false);
 
             TimeSeriesProfileParser retrieved = timeSeriesProfileParserDao.retrieveTimeSeriesProfileParser(timeSeriesProfileParser.getLocationId().getName(),
                     timeSeriesProfileParser.getKeyParameter(), timeSeriesProfileParser.getLocationId().getOfficeId());
 
             timeSeriesProfileParserDao.copyTimeSeriesProfileParser(timeSeriesProfileParser.getLocationId().getName(),
-                    timeSeriesProfileParser.getKeyParameter(), timeSeriesProfileParser.getLocationId().getOfficeId(), "BBB");
+                    timeSeriesProfileParser.getKeyParameter(), timeSeriesProfileParser.getLocationId().getOfficeId(), locationName1);
 
-            TimeSeriesProfileParser retrieved1 = timeSeriesProfileParserDao.retrieveTimeSeriesProfileParser("BBB",
+            TimeSeriesProfileParser retrieved1 = timeSeriesProfileParserDao.retrieveTimeSeriesProfileParser(locationName1,
                     timeSeriesProfileParser.getKeyParameter(), timeSeriesProfileParser.getLocationId().getOfficeId());
             assertEquals(timeSeriesProfileParser.getKeyParameter(), retrieved.getKeyParameter());
-            assertEquals("BBB", retrieved1.getLocationId().getName());
+            assertEquals(locationName1, retrieved1.getLocationId().getName());
             assertEquals(timeSeriesProfileParser.getTimeFormat(), retrieved1.getTimeFormat());
 
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    private static TimeSeriesProfile buildTestTimeSeriesProfile(String location, String parameter) {
-        String officeId = "HEC";
+    private static TimeSeriesProfile buildTestTimeSeriesProfile(String officeId, String location, String keyParameter, String[] parameters) {
         CwmsId locationId = new CwmsId.Builder().withOfficeId(officeId).withName(location).build();
         return new TimeSeriesProfile.Builder()
                 .withLocationId(locationId)
-                .withKeyParameter(parameter)
-                .withParameterList(Arrays.asList("Temp-Water", "Depth"))
+                .withKeyParameter(keyParameter)
+                .withParameterList(Arrays.asList(parameters))
                 .build();
 
     }
 
-    static private TimeSeriesProfileParser buildTestTimeSeriesProfileParser(String location, String keyParameter) {
+    static private TimeSeriesProfileParser buildTestTimeSeriesProfileParser(String officeId, String location, String keyParameter) {
         List<ParameterInfo> parameterInfoList = new ArrayList<>();
         parameterInfoList.add(new ParameterInfo.Builder()
                 .withParameter("Depth")
@@ -173,8 +189,7 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
                 .withIndex(5)
                 .withUnit("bar")
                 .build());
-        String officeId = "HEC";
-        CwmsId locationId = new CwmsId.Builder().withOfficeId(officeId).withName(location).build();
+         CwmsId locationId = new CwmsId.Builder().withOfficeId(officeId).withName(location).build();
         return
 
                 new TimeSeriesProfileParser.Builder()

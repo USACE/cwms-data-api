@@ -15,7 +15,7 @@ import java.util.List;
 @JsonDeserialize(builder = ProfileTimeSeries.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class ProfileTimeSeries {
+public final class ProfileTimeSeries {
     private final String parameter;
     private final String unit;
     private final String timeZone;
