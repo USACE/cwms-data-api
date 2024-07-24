@@ -58,6 +58,7 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
+import java.util.Collections;
 
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.DELETE_MODE;
@@ -120,12 +121,12 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
         Project project1 = new Project.Builder().withLocation(parentLocation2).withFederalCost(BigDecimal.valueOf(123456789))
                 .withAuthorizingLaw("NEW LAW").withCostUnit("$").withProjectOwner(CONTRACT_NO_PUMP.getWaterUser().getEntityName())
                 .build();
-        WaterUser waterUser = new WaterUser(CONTRACT.getWaterUser().getEntityName(),
-                CONTRACT.getWaterUser().getProjectId(),
-                CONTRACT.getWaterUser().getWaterRight());
-        WaterUser waterUserNoPump = new WaterUser(CONTRACT_NO_PUMP.getWaterUser().getEntityName(),
-                CONTRACT_NO_PUMP.getWaterUser().getProjectId(),
-                CONTRACT_NO_PUMP.getWaterUser().getWaterRight());
+        WaterUser waterUser = new WaterUser.Builder().withEntityName(CONTRACT.getWaterUser().getEntityName())
+                .withProjectId(CONTRACT.getWaterUser().getProjectId())
+                .withWaterRight(CONTRACT.getWaterUser().getWaterRight()).build();
+        WaterUser waterUserNoPump = new WaterUser.Builder().withEntityName(CONTRACT_NO_PUMP.getWaterUser().getEntityName())
+                .withProjectId(CONTRACT_NO_PUMP.getWaterUser().getProjectId())
+                .withWaterRight(CONTRACT_NO_PUMP.getWaterUser().getWaterRight()).build();
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -140,6 +141,7 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
                 projectDao.store(project, true);
                 projectDao.store(project1, true);
                 waterContractDao.storeWaterUser(waterUser, true);
+                waterContractDao.storeWaterContractTypes(Collections.singletonList(CONTRACT.getContractType()), false);
                 waterContractDao.storeWaterUser(waterUserNoPump, true);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -160,12 +162,12 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
                 CONTRACT_NO_PUMP.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
                 .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
                 .withLongitude(38.0).withLatitude(56.5).build();
-        WaterUser waterUser = new WaterUser(CONTRACT.getWaterUser().getEntityName(),
-                CONTRACT.getWaterUser().getProjectId(),
-                CONTRACT.getWaterUser().getWaterRight());
-        WaterUser waterUserNoPump = new WaterUser(CONTRACT_NO_PUMP.getWaterUser().getEntityName(),
-                CONTRACT_NO_PUMP.getWaterUser().getProjectId(),
-                CONTRACT_NO_PUMP.getWaterUser().getWaterRight());
+        WaterUser waterUser = new WaterUser.Builder().withEntityName(CONTRACT.getWaterUser().getEntityName())
+                .withProjectId(CONTRACT.getWaterUser().getProjectId())
+                .withWaterRight(CONTRACT.getWaterUser().getWaterRight()).build();
+        WaterUser waterUserNoPump = new WaterUser.Builder().withEntityName(CONTRACT_NO_PUMP.getWaterUser().getEntityName())
+                .withProjectId(CONTRACT_NO_PUMP.getWaterUser().getProjectId())
+                .withWaterRight(CONTRACT_NO_PUMP.getWaterUser().getWaterRight()).build();
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
