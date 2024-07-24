@@ -38,7 +38,7 @@ import java.util.Date;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = WaterUserContract.Builder.class)
-public class WaterUserContract extends CwmsDTO {
+public final class WaterUserContract extends CwmsDTO {
 
     @JsonProperty(required = true)
     private final WaterUser waterUser;

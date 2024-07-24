@@ -28,19 +28,21 @@ package cwms.cda.data.dto.watersupply;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Location;
 
 @JsonRootName("water_supply_pump")
-public class WaterSupplyPump extends CwmsDTOBase {
+@JsonDeserialize(builder = WaterSupplyPump.Builder.class)
+public final class WaterSupplyPump extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final Location pumpLocation;
     @JsonProperty(required = true)
     private final PumpType pumpType;
 
-    public WaterSupplyPump(@JsonProperty("pump-location") Location pumpLocation,  @JsonProperty("pump-type") PumpType pumpType) {
-        this.pumpLocation = pumpLocation;
-        this.pumpType = pumpType;
+    private WaterSupplyPump(Builder builder) {
+        this.pumpLocation = builder.pumpLocation;
+        this.pumpType = builder.pumpType;
     }
 
     public Location getPumpLocation() {
@@ -49,5 +51,24 @@ public class WaterSupplyPump extends CwmsDTOBase {
 
     public PumpType getPumpType() {
         return this.pumpType;
+    }
+
+    public static class Builder {
+        private Location pumpLocation;
+        private PumpType pumpType;
+
+        public Builder withPumpLocation(@JsonProperty("pump-location") Location pumpLocation) {
+            this.pumpLocation = pumpLocation;
+            return this;
+        }
+
+        public Builder withPumpType(@JsonProperty("pump-type") PumpType pumpType) {
+            this.pumpType = pumpType;
+            return this;
+        }
+
+        public WaterSupplyPump build() {
+            return new WaterSupplyPump(this);
+        }
     }
 }

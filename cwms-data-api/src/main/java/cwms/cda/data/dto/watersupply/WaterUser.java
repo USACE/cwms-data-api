@@ -29,6 +29,7 @@ package cwms.cda.data.dto.watersupply;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
@@ -41,7 +42,8 @@ import cwms.cda.formatters.json.JsonV1;
         aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class WaterUser extends CwmsDTOBase {
+@JsonDeserialize(builder = WaterUser.Builder.class)
+public final class WaterUser extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final String entityName;
     @JsonProperty(required = true)
@@ -49,10 +51,10 @@ public class WaterUser extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final String waterRight;
 
-    public WaterUser(@JsonProperty("entity-name") String entityName, @JsonProperty("project-id") CwmsId projectId, @JsonProperty("water-right") String waterRight) {
-        this.entityName = entityName;
-        this.projectId = projectId;
-        this.waterRight = waterRight;
+    private WaterUser(Builder builder) {
+        this.entityName = builder.entityName;
+        this.projectId = builder.projectId;
+        this.waterRight = builder.waterRight;
     }
 
     public CwmsId getProjectId() {
@@ -65,5 +67,30 @@ public class WaterUser extends CwmsDTOBase {
 
     public String getWaterRight() {
         return this.waterRight;
+    }
+
+    public static class Builder {
+        private String entityName;
+        private CwmsId projectId;
+        private String waterRight;
+
+        public Builder withEntityName(@JsonProperty("entity-name") String entityName) {
+            this.entityName = entityName;
+            return this;
+        }
+
+        public Builder withProjectId(@JsonProperty("project-id") CwmsId projectId) {
+            this.projectId = projectId;
+            return this;
+        }
+
+        public Builder withWaterRight(@JsonProperty("water-right") String waterRight) {
+            this.waterRight = waterRight;
+            return this;
+        }
+
+        public WaterUser build() {
+            return new WaterUser(this);
+        }
     }
 }

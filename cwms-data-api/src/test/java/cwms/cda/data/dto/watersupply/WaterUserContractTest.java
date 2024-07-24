@@ -85,9 +85,9 @@ final class WaterUserContractTest {
                                     .withDisplayValue("Test Display Value")
                                     .build())
                             .withContractId(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("TEST_CONTRACT").build())
-                            .withWaterUser(new WaterUser("Test User",
-                                    new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
-                                    "Test Water Right"))
+                            .withWaterUser(new WaterUser.Builder().withEntityName("Test User").withProjectId(
+                                    new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build())
+                                    .withWaterRight("Test Water Right").build())
                             .withContractEffectiveDate(new Date(158000))
                             .withContractExpirationDate(new Date(167000))
                             .withFutureUseAllocation(27800.5)
@@ -102,9 +102,10 @@ final class WaterUserContractTest {
                 () -> {
                     WaterUserContract waterUserContract = new WaterUserContract.Builder()
                             .withContractId(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("TEST_CONTRACT").build())
-                            .withWaterUser(new WaterUser("Test User",
-                                    new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
-                                    "Test Water Right"))
+                            .withWaterUser(new WaterUser.Builder().withEntityName("Test User")
+                                    .withProjectId(new CwmsId.Builder().withName("TEST_LOCATION1")
+                                            .withOfficeId(OFFICE_ID).build())
+                                    .withWaterRight("Test Water Right").build())
                             .withContractType(new LookupType.Builder()
                                     .withOfficeId(OFFICE_ID)
                                     .withActive(true)
@@ -125,9 +126,10 @@ final class WaterUserContractTest {
                 () -> {
                     WaterUserContract waterUserContract = new WaterUserContract.Builder()
                             .withContractId(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("TEST_CONTRACT").build())
-                            .withWaterUser(new WaterUser("Test User",
-                                    new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
-                                    "Test Water Right"))
+                            .withWaterUser(new WaterUser.Builder().withEntityName("Test User")
+                                        .withProjectId(new CwmsId.Builder().withName("TEST_LOCATION1")
+                                                .withOfficeId(OFFICE_ID).build())
+                                    .withWaterRight("Test Water Right").build())
                             .withContractType(new LookupType.Builder()
                                     .withOfficeId(OFFICE_ID)
                                     .withActive(true)
@@ -148,9 +150,10 @@ final class WaterUserContractTest {
                 () -> {
                     WaterUserContract waterUserContract = new WaterUserContract.Builder()
                             .withContractId(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("TEST_CONTRACT").build())
-                            .withWaterUser(new WaterUser("Test User",
-                                    new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
-                                    "Test Water Right"))
+                            .withWaterUser(new WaterUser.Builder().withEntityName("Test User")
+                                    .withProjectId(new CwmsId.Builder().withName("TEST_LOCATION1")
+                                            .withOfficeId(OFFICE_ID).build())
+                                    .withWaterRight("Test Water Right").build())
                             .withContractType(new LookupType.Builder()
                                     .withOfficeId(OFFICE_ID)
                                     .withActive(true)
@@ -195,9 +198,10 @@ final class WaterUserContractTest {
     private static WaterUserContract buildTestWaterUserContract() {
         return new WaterUserContract.Builder()
                 .withContractId(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("TEST_CONTRACT").build())
-                .withWaterUser(new WaterUser("Test User",
-                        new CwmsId.Builder().withName("TEST_LOCATION1").withOfficeId(OFFICE_ID).build(),
-                        "Test Water Right"))
+                .withWaterUser(new WaterUser.Builder().withEntityName("Test User")
+                        .withProjectId(new CwmsId.Builder().withName("TEST_LOCATION1")
+                                .withOfficeId(OFFICE_ID).build())
+                        .withWaterRight("Test Water Right").build())
                 .withContractType(new LookupType.Builder()
                         .withActive(true)
                         .withDisplayValue("Test Display Value")
@@ -213,63 +217,39 @@ final class WaterUserContractTest {
                 .withContractedStorage(200000.5)
                 .withFutureUsePercentActivated(15.6)
                 .withTotalAllocPercentActivated(65.2)
-                .withPumpOutLocation(new WaterSupplyPump(buildTestLocation(true, 1), PumpType.OUT))
-                .withPumpOutBelowLocation(new WaterSupplyPump(buildTestLocation(true, 2), PumpType.BELOW))
-                .withPumpInLocation(new WaterSupplyPump(buildTestLocation(true, 3), PumpType.IN))
+                .withPumpOutLocation(new WaterSupplyPump.Builder()
+                        .withPumpLocation(buildTestLocation( 1)).withPumpType(PumpType.OUT).build())
+                .withPumpOutBelowLocation(new WaterSupplyPump.Builder()
+                        .withPumpLocation(buildTestLocation(2)).withPumpType(PumpType.BELOW).build())
+                .withPumpInLocation(new WaterSupplyPump.Builder()
+                        .withPumpLocation(buildTestLocation(3)).withPumpType(PumpType.IN).build())
                 .build();
     }
 
-    private static Location buildTestLocation(boolean pump, int num) {
-        if(pump){
-            return new Location.Builder(OFFICE_ID, "PUMP" + num)
-                    .withDescription("Test Description")
-                    .withLocationType("Test Location Type")
-                    .withLatitude(0.0)
-                    .withLongName("Test Long Name")
-                    .withLongitude(0.0)
-                    .withHorizontalDatum("WGS84")
-                    .withLocationKind("PUMP")
-                    .withLocationType("Test Location Type")
-                    .withVerticalDatum("WGS84")
-                    .withTimeZoneName(ZoneId.of("UTC"))
-                    .withActive(true)
-                    .withPublicName("Test Public Pump Name")
-                    .withNation(Nation.US)
-                    .withStateInitial("NV")
-                    .withCountyName("Clark")
-                    .withNearestCity("Sparks")
-                    .withPublishedLongitude(0.0)
-                    .withPublishedLatitude(0.0)
-                    .withElevation(150.0)
-                    .withElevationUnits("m")
-                    .withMapLabel("Test Map Label")
-                    .withBoundingOfficeId(OFFICE_ID)
-                    .build();
-        } else {
-            return new Location.Builder(OFFICE_ID, "Test Location")
-                    .withDescription("Test Description")
-                    .withLocationType("Test Location Type")
-                    .withLatitude(0.0)
-                    .withLongName("Test Long Name")
-                    .withLongitude(0.0)
-                    .withHorizontalDatum("WGS84")
-                    .withLocationKind("PUMP")
-                    .withLocationType("Test Location Type")
-                    .withVerticalDatum("WGS84")
-                    .withTimeZoneName(ZoneId.of("UTC"))
-                    .withActive(true)
-                    .withPublicName("Test Public Pump Name")
-                    .withNation(Nation.US)
-                    .withStateInitial("NV")
-                    .withCountyName("Clark")
-                    .withNearestCity("Sparks")
-                    .withPublishedLongitude(0.0)
-                    .withPublishedLatitude(0.0)
-                    .withElevation(150.0)
-                    .withElevationUnits("m")
-                    .withMapLabel("Test Map Label")
-                    .withBoundingOfficeId(OFFICE_ID)
-                    .build();
-        }
+    private static Location buildTestLocation(int num) {
+        return new Location.Builder(OFFICE_ID, "PUMP" + num)
+            .withDescription("Test Description")
+            .withLocationType("Test Location Type")
+            .withLatitude(0.0)
+            .withLongName("Test Long Name")
+            .withLongitude(0.0)
+            .withHorizontalDatum("WGS84")
+            .withLocationKind("PUMP")
+            .withLocationType("Test Location Type")
+            .withVerticalDatum("WGS84")
+            .withTimeZoneName(ZoneId.of("UTC"))
+            .withActive(true)
+            .withPublicName("Test Public Pump Name")
+            .withNation(Nation.US)
+            .withStateInitial("NV")
+            .withCountyName("Clark")
+            .withNearestCity("Sparks")
+            .withPublishedLongitude(0.0)
+            .withPublishedLatitude(0.0)
+            .withElevation(150.0)
+            .withElevationUnits("m")
+            .withMapLabel("Test Map Label")
+            .withBoundingOfficeId(OFFICE_ID)
+            .build();
     }
 }
