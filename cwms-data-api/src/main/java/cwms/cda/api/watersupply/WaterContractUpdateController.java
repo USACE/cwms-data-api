@@ -111,8 +111,9 @@ public class WaterContractUpdateController implements Handler {
             String newName = ctx.queryParam(NAME);
             WaterUserContract waterContract = Formats.parseContent(contentType, ctx.body(), WaterUserContract.class);
             WaterContractDao contractDao = getContractDao(dsl);
-            WaterUser ref = new WaterUser(waterContract.getWaterUser().getEntityName(),
-                    waterContract.getWaterUser().getProjectId(), waterContract.getWaterUser().getWaterRight());
+            WaterUser ref = new WaterUser.Builder().withEntityName(waterContract.getWaterUser().getEntityName())
+                    .withProjectId(waterContract.getWaterUser().getProjectId())
+                    .withWaterRight(waterContract.getWaterUser().getWaterRight()).build();
             contractDao.renameWaterContract(ref, contractName, newName);
             ctx.status(HttpServletResponse.SC_OK).json("Contract renamed successfully");
         }

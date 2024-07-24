@@ -58,6 +58,7 @@ public class WaterContractController implements Handler {
     private final Logger LOGGER = Logger.getLogger(WaterContractController.class.getName());
     public static final String TAG = "Water Contracts";
     private static final String WATER_USER = "water-user";
+    private static final String CONTRACT_ID = "contract-id";
     private final MetricRegistry metrics;
 
     private Timer.Context markAndTime(String subject) {
@@ -75,7 +76,7 @@ public class WaterContractController implements Handler {
 
     @OpenApi(
         pathParams = {
-            @OpenApiParam(name = NAME, description = "The name of the contract to retrieve.", required = true),
+            @OpenApiParam(name = CONTRACT_ID, description = "The name of the contract to retrieve.", required = true),
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
                     required = true),
             @OpenApiParam(name = PROJECT_ID, description = "The project Id the contract is associated with.",
@@ -94,7 +95,7 @@ public class WaterContractController implements Handler {
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
         },
         description = "Return a specified water contract",
-        path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{name}",
+        path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{contract-id}",
         method = HttpMethod.GET,
         tags = {TAG}
     )
@@ -105,7 +106,7 @@ public class WaterContractController implements Handler {
             final String office = ctx.pathParam(OFFICE);
             final String locationId = ctx.pathParam(PROJECT_ID);
             DSLContext dsl = getDslContext(ctx);
-            final String contractName = ctx.pathParam(NAME);
+            final String contractName = ctx.pathParam(CONTRACT_ID);
             final String waterUser = ctx.pathParam(WATER_USER);
             String result;
             CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();

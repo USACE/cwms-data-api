@@ -67,7 +67,8 @@ class WaterUserControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SWT";
     private static final WaterUserContract CONTRACT;
     static {
-        try (InputStream userStream = WaterUserContract.class.getResourceAsStream("/cwms/cda/api/waterusercontract.json")) {
+        try (InputStream userStream
+                     = WaterUserContract.class.getResourceAsStream("/cwms/cda/api/waterusercontract.json")) {
             assert userStream != null;
             String contractJson = IOUtils.toString(userStream, StandardCharsets.UTF_8);
             CONTRACT = Formats.parseContent(new ContentType(Formats.JSONV1), contractJson, WaterUserContract.class);
@@ -81,7 +82,8 @@ class WaterUserControllerTestIT extends DataApiTestIT {
 
         // Create test locations and project
         Location contractLocation = new Location.Builder(CONTRACT.getContractId().getOfficeId(),
-                CONTRACT.getContractId().getName()).withLocationKind("PROJECT").withTimeZoneName(ZoneId.of("UTC"))
+                CONTRACT.getContractId().getName()).withLocationKind("PROJECT")
+                .withTimeZoneName(ZoneId.of("UTC"))
                 .withHorizontalDatum("WGS84").withLongitude(78.0).withLatitude(67.9).withVerticalDatum("WGS84")
                 .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
                 .withElevation(456.7).withElevationUnits("m").withPublishedLongitude(78.9).withPublishedLatitude(45.3)
@@ -94,8 +96,10 @@ class WaterUserControllerTestIT extends DataApiTestIT {
                 .withElevation(456.7).withElevationUnits("m").withPublishedLongitude(78.9).withPublishedLatitude(45.3)
                 .withLocationType("PROJECT").withDescription("TEST PROJECT").build();
 
-        Project project = new Project.Builder().withLocation(parentLocation).withFederalCost(BigDecimal.valueOf(123456789))
-                .withAuthorizingLaw("NEW LAW").withCostUnit("$").withProjectOwner(CONTRACT.getWaterUser().getEntityName())
+        Project project = new Project.Builder().withLocation(parentLocation)
+                .withFederalCost(BigDecimal.valueOf(123456789))
+                .withAuthorizingLaw("NEW LAW").withCostUnit("$")
+                .withProjectOwner(CONTRACT.getWaterUser().getEntityName())
                 .build();
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -117,7 +121,8 @@ class WaterUserControllerTestIT extends DataApiTestIT {
     static void cleanup() throws Exception {
 
         Location contractLocation = new Location.Builder(CONTRACT.getContractId().getOfficeId(),
-                CONTRACT.getContractId().getName()).withLocationKind("PROJECT").withTimeZoneName(ZoneId.of("UTC"))
+                CONTRACT.getContractId().getName()).withLocationKind("PROJECT")
+                .withTimeZoneName(ZoneId.of("UTC"))
                 .withHorizontalDatum("WGS84").withLongitude(78.0).withLatitude(67.9).build();
         Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectId().getOfficeId(),
                 CONTRACT.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
@@ -316,7 +321,8 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
         String json = JsonV1.buildObjectMapper().writeValueAsString(CONTRACT.getWaterUser());
 
-        WaterUser waterUser = new WaterUser("ENTITY_NAME", CONTRACT.getWaterUser().getProjectId(), "WATER_RIGHT");
+        WaterUser waterUser = new WaterUser.Builder().withEntityName("ENTITY_NAME")
+                .withProjectId(CONTRACT.getWaterUser().getProjectId()).withWaterRight("WATER_RIGHT").build();
         String json2 = JsonV1.buildObjectMapper().writeValueAsString(waterUser);
 
         // Create WaterUser

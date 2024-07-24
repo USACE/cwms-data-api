@@ -105,7 +105,7 @@ public class WaterUserUpdateController implements Handler {
             String newName = ctx.queryParam(NAME);
             String office = ctx.pathParam(OFFICE);
             String oldName = ctx.pathParam(WATER_USER);
-            String locationId = ctx.queryParam(PROJECT_ID);
+            String locationId = ctx.pathParam(PROJECT_ID);
             CwmsId location = new CwmsId.Builder().withName(locationId).withOfficeId(office).build();
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.renameWaterUser(oldName, newName, location);

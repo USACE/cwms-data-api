@@ -49,7 +49,7 @@ import java.nio.charset.StandardCharsets;
 
 @Tag("integration")
 class WaterContractTypeCreateControllerTestIT extends DataApiTestIT {
-    private static final String OFFICE_ID = "SWT";
+    private static final String OFFICE_ID = "HQ";
     private static final WaterUserContract CONTRACT;
     static {
         try (InputStream contractStream = WaterContractController.class.getResourceAsStream("/cwms/cda/api/waterusercontract.json")){
