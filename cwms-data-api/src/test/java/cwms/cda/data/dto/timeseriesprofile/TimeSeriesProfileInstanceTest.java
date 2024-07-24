@@ -22,7 +22,7 @@ public class TimeSeriesProfileInstanceTest {
     @BeforeAll
     public static void setup() throws Exception {
         PARAMETER_UNIT_MAP.put("Depth", "ft");
-        PARAMETER_UNIT_MAP.put("Temperature", "F");
+        PARAMETER_UNIT_MAP.put("Temp-Water", "F");
     }
     @Test
     void testTimeSeriesProfileInstanceSerializationRoundTrip() {

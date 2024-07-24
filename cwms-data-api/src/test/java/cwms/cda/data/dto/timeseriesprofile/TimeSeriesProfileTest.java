@@ -35,19 +35,19 @@ final public class TimeSeriesProfileTest {
 
      static TimeSeriesProfile buildTestTimeSeriesProfile() {
         CwmsId locationId = new CwmsId.Builder()
-                .withName("location")
-                .withOfficeId("office")
+                .withName("SWAN")
+                .withOfficeId("SWT")
                 .build();
         CwmsId referenceTsId = new CwmsId.Builder()
-                .withName("location.Elev.Inst.0.0.REV")
-                .withOfficeId("office")
+                .withName("SWAN.Elev.Inst.1Hour.0.DSS-Obs")
+                .withOfficeId("SWT")
                 .build();
         return new TimeSeriesProfile.Builder()
                 .withKeyParameter("Depth")
                 .withReferenceTsId(referenceTsId)
                 .withLocationId(locationId)
                 .withDescription("Description")
-                .withParameterList(Arrays.asList("Temperature", "Depth"))
+                .withParameterList(Arrays.asList("Temp-Water", "Depth"))
                 .build();
     }
 
