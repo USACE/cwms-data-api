@@ -105,7 +105,7 @@ class OutletControllerTestIT extends ProjectStructureIT {
         tearDownProject();
     }
 
-//    @Disabled("Disabled due to a DB issue.  See https://jira.hecdev.net/browse/CWDB-296")
+    @Disabled("Disabled due to a DB issue.  See https://jira.hecdev.net/browse/CWDB-296")
     @Test
     void test_outlet_rename() {
         String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Outlet.class), NEW_CONDUIT_GATE_2_OUTLET);
