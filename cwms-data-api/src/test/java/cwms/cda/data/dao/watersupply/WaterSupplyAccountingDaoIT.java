@@ -30,6 +30,7 @@ import cwms.cda.api.DataApiTestIT;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
+import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
@@ -60,7 +61,7 @@ import java.util.TimeZone;
 import java.util.TreeMap;
 
 import static cwms.cda.data.dao.JooqDao.getDslContext;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
@@ -68,6 +69,12 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     private static final Location testLocation = buildTestLocation("Test Project Name", "Test Location");
     private static final Project testProject = buildTestProject();
     private static final WaterUser testUser = buildTestWaterUser("Test User");
+    private static final LookupType testTransferType = new LookupType.Builder()
+            .withDisplayValue("Test Transfer")
+            .withTooltip("Test Location Tooltip")
+            .withActive(true)
+            .withOfficeId(OFFICE_ID)
+            .build();
 
     @BeforeAll
     static void setup() throws Exception {
@@ -76,8 +83,10 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             LocationsDaoImpl dao = new LocationsDaoImpl(ctx);
             ProjectDao projectDao = new ProjectDao(ctx);
+            LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
             try {
                 dao.storeLocation(testLocation);
+                lookupTypeDao.storeLookupType("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE", testTransferType);
                 projectDao.store(testProject, true);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to store location or project", e);
@@ -92,6 +101,9 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             LocationsDaoImpl dao = new LocationsDaoImpl(ctx);
             ProjectDao projectDao = new ProjectDao(ctx);
+            LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
+            lookupTypeDao.deleteLookupType("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE",
+                    OFFICE_ID, testTransferType.getDisplayValue());
             projectDao.delete(testProject.getLocation().getOfficeId(), testProject.getLocation().getName(),
                     DeleteRule.DELETE_ALL);
             dao.deleteLocation(testLocation.getName(), OFFICE_ID);
@@ -99,7 +111,7 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     }
 
     @Test
-    void testStoreWaterSupplyPumpAccounting() throws Exception {
+    void testStoreAndRetrieveWaterSupplyPumpAccounting() throws Exception {
 
         // Test Structure
         // 1) Create and store a Water Supply Contract
@@ -120,8 +132,9 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         boolean preserveModifiedData = true;
         instance.set(2025, 10, 1, 0, 0);
         Instant pumpChangeDate = instance.getTime().toInstant();
-        NavigableMap<Instant, WaterSupplyPumpAccounting> pumpChangesMap = createPumpChangesMap(new CwmsId.Builder()
-                .withOfficeId(OFFICE_ID).withName(pumpIn.getPumpLocation().getName()).build(),
+        CwmsId pumpId = new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
+                .withOfficeId(OFFICE_ID).build();
+        NavigableMap<Instant, WaterSupplyPumpAccounting> pumpChangesMap = createPumpChangesMap(pumpId,
                 contract.getWaterUser(), contract, pumpChangeDate);
         accounting.mergeAccounting(new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
                         .withOfficeId(OFFICE_ID).build(),
@@ -138,9 +151,9 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
 
         instance.clear();
-        instance.set(2000, 2, 1);
+        instance.set(2000, 2, 1, 0, 0);
         Instant startTime = instance.getTime().toInstant();
-        instance.set(2026, 2, 1);
+        instance.set(2026, 2, 1, 0, 0);
         Instant endTime = instance.getTime().toInstant();
         int rowLimit = 20;
         boolean headFlag = false;
@@ -148,7 +161,7 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         boolean endInclusive = true;
 
         // retrieve and assert in db
-        assertPumpAccountingInDB(contract, pumpChangesMap, pumpChangeDate, pumpIn, startTime, endTime, startInclusive,
+        assertPumpAccountingInDB(contract, pumpChangesMap, pumpChangeDate, startTime, endTime, startInclusive,
                 endInclusive, headFlag, rowLimit);
 
         // cleanup
@@ -157,30 +170,296 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     }
 
     @Test
-    void testRetrieveWaterSupplyPumpAccounting() {
-        // test
+    void testRetrieveWaterSupplyPumpAccounting_startInclusiveFalse() throws Exception {
+        // Test Structure
+        // 1) Create and store a Water Supply Contract
+        // 2) Create and store Water Supply Pump Accounting
+        // 3) Retrieve Water Supply Pump Accounting and assert it is the same
+
+        WaterUserContract contract = buildTestWaterContract("Test entity");
+
+        WaterSupplyAccounting accounting = new WaterSupplyAccounting(contract.getContractId().getName(), testUser,
+                new HashMap<>(), new HashMap<>());
+
+        WaterSupplyPump pumpIn = buildTestWaterSupplyPump(contract.getPumpInLocation().getPumpLocation().getName(), PumpType.IN);
+
+        Calendar instance = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        instance.clear();
+
+        boolean generateModifiedTimeWindow = true;
+        boolean preserveModifiedData = true;
+        instance.set(2000, 2, 1, 0, 0);
+        Instant pumpChangeDate = instance.getTime().toInstant();
+        CwmsId pumpId = new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
+                .withOfficeId(OFFICE_ID).build();
+        NavigableMap<Instant, WaterSupplyPumpAccounting> pumpChangesMap = createPumpChangesMap(pumpId,
+                contract.getWaterUser(), contract, pumpChangeDate);
+        accounting.mergeAccounting(new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
+                        .withOfficeId(OFFICE_ID).build(),
+                pumpChangesMap, generateModifiedTimeWindow, preserveModifiedData);
+
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection(c -> {
+            DSLContext ctx = getDslContext(c, OFFICE_ID);
+            WaterContractDao contractDao = new WaterContractDao(ctx);
+            WaterSupplyAccountingDao accountingDao = new WaterSupplyAccountingDao(ctx);
+            contractDao.storeWaterUser(testUser, false);
+            contractDao.storeWaterContract(contract, true, false);
+            accountingDao.storeAccounting(accounting);
+        }, CwmsDataApiSetupCallback.getWebUser());
+
+        instance.clear();
+        instance.set(2000, 2, 1, 0, 0);
+        Instant startTime = instance.getTime().toInstant();
+        instance.set(2026, 2, 1, 0, 0);
+        Instant endTime = instance.getTime().toInstant();
+        int rowLimit = 20;
+        boolean headFlag = false;
+        boolean startInclusive = false;
+        boolean endInclusive = true;
+
+        // retrieve and assert in db
+        assertPumpAccountingInDBEmpty(contract, pumpChangeDate, startTime, endTime, startInclusive,
+                endInclusive, headFlag, rowLimit);
+
+        // cleanup
+        cleanupPump(pumpIn, contract);
+        cleanupContractRoutine(contract);
     }
 
     @Test
-    void testRetrieveWaterSupplyPumpAccounting_startInclusiveTrue() {
-        // test
+    void testRetrieveWaterSupplyPumpAccounting_endInclusiveFalse() throws Exception {
+        // Test Structure
+        // 1) Create and store a Water Supply Contract
+        // 2) Create and store Water Supply Pump Accounting
+        // 3) Retrieve Water Supply Pump Accounting and assert it is the same
+
+        WaterUserContract contract = buildTestWaterContract("Test entity");
+
+        WaterSupplyAccounting accounting = new WaterSupplyAccounting(contract.getContractId().getName(), testUser,
+                new HashMap<>(), new HashMap<>());
+
+        WaterSupplyPump pumpIn = buildTestWaterSupplyPump(contract.getPumpInLocation().getPumpLocation().getName(), PumpType.IN);
+
+        Calendar instance = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        instance.clear();
+
+        boolean generateModifiedTimeWindow = true;
+        boolean preserveModifiedData = true;
+        instance.set(2026, 2, 1, 0, 0);
+        Instant pumpChangeDate = instance.getTime().toInstant();
+        CwmsId pumpId = new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
+                .withOfficeId(OFFICE_ID).build();
+        NavigableMap<Instant, WaterSupplyPumpAccounting> pumpChangesMap = createPumpChangesMap(pumpId,
+                contract.getWaterUser(), contract, pumpChangeDate);
+        accounting.mergeAccounting(new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
+                        .withOfficeId(OFFICE_ID).build(),
+                pumpChangesMap, generateModifiedTimeWindow, preserveModifiedData);
+
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection(c -> {
+            DSLContext ctx = getDslContext(c, OFFICE_ID);
+            WaterContractDao contractDao = new WaterContractDao(ctx);
+            WaterSupplyAccountingDao accountingDao = new WaterSupplyAccountingDao(ctx);
+            contractDao.storeWaterUser(testUser, false);
+            contractDao.storeWaterContract(contract, true, false);
+            accountingDao.storeAccounting(accounting);
+        }, CwmsDataApiSetupCallback.getWebUser());
+
+        instance.clear();
+        instance.set(2000, 2, 1, 0, 0);
+        Instant startTime = instance.getTime().toInstant();
+        instance.set(2026, 2, 1, 0, 0);
+        Instant endTime = instance.getTime().toInstant();
+        int rowLimit = 20;
+        boolean headFlag = false;
+        boolean startInclusive = true;
+        boolean endInclusive = false;
+
+        // retrieve and assert in db
+        assertPumpAccountingInDBEmpty(contract, pumpChangeDate, startTime, endTime, startInclusive,
+                endInclusive, headFlag, rowLimit);
+
+        // cleanup
+        cleanupPump(pumpIn, contract);
+        cleanupContractRoutine(contract);
+
     }
 
     @Test
-    void testRetrieveWaterSupplyPumpAccounting_startInclusiveFalse() {
-        // test
+    void testRetrieveWaterSupplyPumpAccounting_startEndInclusiveFalse() throws Exception {
+        // Test Structure
+        // 1) Create and store a Water Supply Contract
+        // 2) Create and store Water Supply Pump Accounting
+        // 3) Retrieve Water Supply Pump Accounting and assert it is the same
+
+        WaterUserContract contract = buildTestWaterContract("Test entity");
+
+        WaterSupplyAccounting accounting = new WaterSupplyAccounting(contract.getContractId().getName(), testUser,
+                new HashMap<>(), new HashMap<>());
+
+        WaterSupplyPump pumpIn = buildTestWaterSupplyPump(contract.getPumpInLocation().getPumpLocation().getName(), PumpType.IN);
+
+        Calendar instance = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        instance.clear();
+
+        boolean generateModifiedTimeWindow = true;
+        boolean preserveModifiedData = true;
+        instance.set(2025, 10, 1, 0, 0);
+        Instant pumpChangeDate = instance.getTime().toInstant();
+        CwmsId pumpId = new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
+                .withOfficeId(OFFICE_ID).build();
+        NavigableMap<Instant, WaterSupplyPumpAccounting> pumpChangesMap = createPumpChangesMap(pumpId,
+                contract.getWaterUser(), contract, pumpChangeDate);
+        accounting.mergeAccounting(new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
+                        .withOfficeId(OFFICE_ID).build(),
+                pumpChangesMap, generateModifiedTimeWindow, preserveModifiedData);
+
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection(c -> {
+            DSLContext ctx = getDslContext(c, OFFICE_ID);
+            WaterContractDao contractDao = new WaterContractDao(ctx);
+            WaterSupplyAccountingDao accountingDao = new WaterSupplyAccountingDao(ctx);
+            contractDao.storeWaterUser(testUser, false);
+            contractDao.storeWaterContract(contract, true, false);
+            accountingDao.storeAccounting(accounting);
+        }, CwmsDataApiSetupCallback.getWebUser());
+
+        instance.clear();
+        instance.set(2000, 2, 1, 0, 0);
+        Instant startTime = instance.getTime().toInstant();
+        instance.set(2026, 2, 1, 0, 0);
+        Instant endTime = instance.getTime().toInstant();
+        int rowLimit = 20;
+        boolean headFlag = false;
+        boolean startInclusive = false;
+        boolean endInclusive = false;
+
+        // retrieve and assert in db
+        assertPumpAccountingInDB(contract, pumpChangesMap, pumpChangeDate, startTime, endTime, startInclusive,
+                endInclusive, headFlag, rowLimit);
+
+        // cleanup
+        cleanupPump(pumpIn, contract);
+        cleanupContractRoutine(contract);
     }
 
     @Test
-    void testRetrieveWaterSupplyPumpAccounting_endInclusiveTrue() {
-        // test
+    void testRetrieveWaterSupplyPumpAccounting_startInclusiveTrue() throws Exception {
+        // Test Structure
+        // 1) Create and store a Water Supply Contract
+        // 2) Create and store Water Supply Pump Accounting
+        // 3) Retrieve Water Supply Pump Accounting and assert it is the same
+
+        WaterUserContract contract = buildTestWaterContract("Test entity");
+
+        WaterSupplyAccounting accounting = new WaterSupplyAccounting(contract.getContractId().getName(), testUser,
+                new HashMap<>(), new HashMap<>());
+
+        WaterSupplyPump pumpIn = buildTestWaterSupplyPump(contract.getPumpInLocation().getPumpLocation().getName(), PumpType.IN);
+
+        Calendar instance = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        instance.clear();
+
+        boolean generateModifiedTimeWindow = true;
+        boolean preserveModifiedData = true;
+        instance.set(2000, 2, 1, 0, 0);
+        Instant pumpChangeDate = instance.getTime().toInstant();
+        CwmsId pumpId = new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
+                .withOfficeId(OFFICE_ID).build();
+        NavigableMap<Instant, WaterSupplyPumpAccounting> pumpChangesMap = createPumpChangesMap(pumpId,
+                contract.getWaterUser(), contract, pumpChangeDate);
+        accounting.mergeAccounting(new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
+                        .withOfficeId(OFFICE_ID).build(),
+                pumpChangesMap, generateModifiedTimeWindow, preserveModifiedData);
+
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection(c -> {
+            DSLContext ctx = getDslContext(c, OFFICE_ID);
+            WaterContractDao contractDao = new WaterContractDao(ctx);
+            WaterSupplyAccountingDao accountingDao = new WaterSupplyAccountingDao(ctx);
+            contractDao.storeWaterUser(testUser, false);
+            contractDao.storeWaterContract(contract, true, false);
+            accountingDao.storeAccounting(accounting);
+        }, CwmsDataApiSetupCallback.getWebUser());
+
+        instance.clear();
+        instance.set(2000, 2, 1, 0, 0);
+        Instant startTime = instance.getTime().toInstant();
+        instance.set(2026, 2, 1, 0, 0);
+        Instant endTime = instance.getTime().toInstant();
+        int rowLimit = 20;
+        boolean headFlag = false;
+        boolean startInclusive = true;
+        boolean endInclusive = true;
+
+        // retrieve and assert in db
+        assertPumpAccountingInDB(contract, pumpChangesMap, pumpChangeDate, startTime, endTime, startInclusive,
+                endInclusive, headFlag, rowLimit);
+
+        // cleanup
+        cleanupPump(pumpIn, contract);
+        cleanupContractRoutine(contract);
     }
 
     @Test
-    void testRetrieveWaterSupplyPumpAccounting_endInclusiveFalse() {
-        // test
+    void testRetrieveWaterSupplyPumpAccounting_endInclusiveTrue() throws Exception {
+        // Test Structure
+        // 1) Create and store a Water Supply Contract
+        // 2) Create and store Water Supply Pump Accounting
+        // 3) Retrieve Water Supply Pump Accounting and assert it is the same
 
+        WaterUserContract contract = buildTestWaterContract("Test entity");
+
+        WaterSupplyAccounting accounting = new WaterSupplyAccounting(contract.getContractId().getName(), testUser,
+                new HashMap<>(), new HashMap<>());
+
+        WaterSupplyPump pumpIn = buildTestWaterSupplyPump(contract.getPumpInLocation().getPumpLocation().getName(), PumpType.IN);
+
+        Calendar instance = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        instance.clear();
+
+        boolean generateModifiedTimeWindow = true;
+        boolean preserveModifiedData = true;
+        instance.set(2026, 2, 1, 0, 0);
+        Instant pumpChangeDate = instance.getTime().toInstant();
+        CwmsId pumpId = new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
+                .withOfficeId(OFFICE_ID).build();
+        NavigableMap<Instant, WaterSupplyPumpAccounting> pumpChangesMap = createPumpChangesMap(pumpId,
+                contract.getWaterUser(), contract, pumpChangeDate);
+        accounting.mergeAccounting(new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
+                        .withOfficeId(OFFICE_ID).build(),
+                pumpChangesMap, generateModifiedTimeWindow, preserveModifiedData);
+
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection(c -> {
+            DSLContext ctx = getDslContext(c, OFFICE_ID);
+            WaterContractDao contractDao = new WaterContractDao(ctx);
+            WaterSupplyAccountingDao accountingDao = new WaterSupplyAccountingDao(ctx);
+            contractDao.storeWaterUser(testUser, false);
+            contractDao.storeWaterContract(contract, true, false);
+            accountingDao.storeAccounting(accounting);
+        }, CwmsDataApiSetupCallback.getWebUser());
+
+        instance.clear();
+        instance.set(2000, 2, 1, 0, 0);
+        Instant startTime = instance.getTime().toInstant();
+        instance.set(2026, 2, 1, 0, 0);
+        Instant endTime = instance.getTime().toInstant();
+        int rowLimit = 20;
+        boolean headFlag = false;
+        boolean startInclusive = true;
+        boolean endInclusive = true;
+
+        // retrieve and assert in db
+        assertPumpAccountingInDB(contract, pumpChangesMap, pumpChangeDate, startTime, endTime, startInclusive,
+                endInclusive, headFlag, rowLimit);
+
+        // cleanup
+        cleanupPump(pumpIn, contract);
+        cleanupContractRoutine(contract);
     }
+
 
     private WaterSupplyPump buildTestWaterSupplyPump(String locationName, PumpType pumpType) {
         return new WaterSupplyPump(buildTestLocation(locationName, "PUMP"), pumpType);
@@ -191,16 +470,14 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         NavigableMap<Instant, WaterSupplyPumpAccounting> changeMap = new TreeMap<>();
         double randomAccountingFlow = 100 + (int) (Math.random() * ((1000 - 100) + 1));
         String comment = "Test Comment";
-        LookupType transferType = new LookupType.Builder().withDisplayValue("Conduit").withOfficeId(OFFICE_ID)
-                .withTooltip("Transfer by Conduit").withActive(true).build();
         WaterSupplyPumpAccounting pumpAccounting = new WaterSupplyPumpAccounting(user, contract.getContractId().getName(),
-                pumpLocation, transferType, randomAccountingFlow, date, comment);
+                pumpLocation, testTransferType, randomAccountingFlow, date, comment);
         changeMap.put(date, pumpAccounting);
         return changeMap;
     }
 
     private void assertPumpAccountingInDB(WaterUserContract contract,
-            NavigableMap<Instant, WaterSupplyPumpAccounting> pumpChangesMap, Instant pumpChangeDate, WaterSupplyPump pumpIn, Instant startTime,
+            NavigableMap<Instant, WaterSupplyPumpAccounting> pumpChangesMap, Instant pumpChangeDate, Instant startTime,
             Instant endTime, boolean startInclusive, boolean endInclusive, boolean headFlag, int rowLimit) throws Exception {
 
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -210,11 +487,30 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
             WaterSupplyAccounting pumpAccounting = accountingDao.retrieveAccounting(contract.getContractId()
                             .getName(), contract.getWaterUser(), startTime, endTime, startInclusive, endInclusive,
                     headFlag, rowLimit);
-            NavigableMap<Instant, WaterSupplyPumpAccounting> returnedPumpAccounting
-                    = pumpAccounting.getPumpAccounting(new CwmsId.Builder().withName(pumpIn.getPumpLocation().getName())
-                    .withOfficeId(OFFICE_ID).build());
-            assertNotNull(returnedPumpAccounting.get(pumpChangeDate));
-            DTOMatch.assertMatch(pumpChangesMap.get(pumpChangeDate), returnedPumpAccounting.get(pumpChangeDate));
+            for (CwmsId key : pumpAccounting.getPumpLocationMap().keySet()) {
+                NavigableMap<Instant, WaterSupplyPumpAccounting> returnedPumpAccounting
+                        = pumpAccounting.getPumpAccounting(key);
+                assertNotNull(returnedPumpAccounting.get(pumpChangeDate));
+                DTOMatch.assertMatch(pumpChangesMap.get(pumpChangeDate), returnedPumpAccounting.get(pumpChangeDate));
+            }
+        }, CwmsDataApiSetupCallback.getWebUser());
+    }
+
+    private void assertPumpAccountingInDBEmpty(WaterUserContract contract,
+            Instant pumpChangeDate, Instant startTime, Instant endTime, boolean startInclusive, boolean endInclusive,
+            boolean headFlag, int rowLimit) throws Exception {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection(c -> {
+            DSLContext ctx = getDslContext(c, OFFICE_ID);
+            WaterSupplyAccountingDao accountingDao = new WaterSupplyAccountingDao(ctx);
+            WaterSupplyAccounting pumpAccounting = accountingDao.retrieveAccounting(contract.getContractId()
+                            .getName(), contract.getWaterUser(), startTime, endTime, startInclusive, endInclusive,
+                    headFlag, rowLimit);
+            for (CwmsId key : pumpAccounting.getPumpLocationMap().keySet()) {
+                NavigableMap<Instant, WaterSupplyPumpAccounting> returnedPumpAccounting
+                        = pumpAccounting.getPumpAccounting(key);
+                assertTrue(returnedPumpAccounting.isEmpty() || returnedPumpAccounting.get(pumpChangeDate) == null);
+            }
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
