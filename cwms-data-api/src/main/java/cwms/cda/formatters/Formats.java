@@ -27,6 +27,7 @@ package cwms.cda.formatters;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.annotations.FormattableWith;
 
+import javax.validation.constraints.NotNull;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,12 +60,21 @@ public class Formats {
     public static final String NAMED_PGJSON = "application/vnd.named+pg+json";
     public static final String DEFAULT = "*/*";
 
+    public static final String JSON_LEGACY = "json";
+    public static final String XML_LEGACY = "xml";
+    public static final String WML2_LEGACY = "wml2";
+    public static final String TAB_LEGACY = "tab";
+    public static final String CSV_LEGACY = "csv";
+    public static final String GEOJSON_LEGACY = "geojson";
+    public static final String PGJSON_LEGACY = "pgjson";
+    public static final String NAMED_PGJSON_LEGACY = "named-pgjson";
+
 
     private static final List<ContentType> contentTypeList = new ArrayList<>();
 
     static {
         contentTypeList.addAll(
-                Stream.of(JSON, XML, XMLV2, WML2, JSONV2, TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON)
+                Stream.of(JSON, JSONV1, XML, XMLV1, XMLV2, WML2, JSONV2, TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON)
                         .map(ContentType::new)
                         .collect(Collectors.toList()));
     }
@@ -72,14 +82,14 @@ public class Formats {
     private static final Map<String, String> typeMap = new LinkedHashMap<>();
 
     static {
-        typeMap.put("json", Formats.JSON);
-        typeMap.put("xml", Formats.XML);
-        typeMap.put("wml2", Formats.WML2);
-        typeMap.put("tab", Formats.TAB);
-        typeMap.put("csv", Formats.CSV);
-        typeMap.put("geojson", Formats.GEOJSON);
-        typeMap.put("pgjson", Formats.PGJSON);
-        typeMap.put("named-pgjson", Formats.NAMED_PGJSON);
+        typeMap.put(JSON_LEGACY, Formats.JSON);
+        typeMap.put(XML_LEGACY, Formats.XML);
+        typeMap.put(WML2_LEGACY, Formats.WML2);
+        typeMap.put(TAB_LEGACY, Formats.TAB);
+        typeMap.put(CSV_LEGACY, Formats.CSV);
+        typeMap.put(GEOJSON_LEGACY, Formats.GEOJSON);
+        typeMap.put(PGJSON_LEGACY, Formats.PGJSON);
+        typeMap.put(NAMED_PGJSON_LEGACY, Formats.NAMED_PGJSON);
     }
 
 
@@ -90,6 +100,15 @@ public class Formats {
     private Formats() {
     }
 
+    public static String getLegacyTypeFromContentType(ContentType contentType)
+    {
+        return typeMap.entrySet()
+                      .stream()
+                      .filter(e -> e.getValue().equals(contentType.getType()))
+                      .map(Map.Entry::getKey)
+                      .findFirst()
+                      .orElse(JSON_LEGACY);
+    }
 
     private String getFormatted(ContentType type, CwmsDTOBase toFormat) throws FormattingException {
         Objects.requireNonNull(toFormat, "Object to be formatted should not be null");
@@ -101,7 +120,7 @@ public class Formats {
         } else {
             String message = String.format("No Format for this content-type and data-type : (%s, %s)",
                     type.toString(), toFormat.getClass().getName());
-            throw new FormattingException(message);
+            throw new UnsupportedFormatException(message);
         }
 
     }
@@ -118,8 +137,8 @@ public class Formats {
             return outputFormatter.format(dtos);
         } else {
             String message = String.format("No Format for this content-type and data type : (%s, %s)",
-                    type.toString(), dtos.get(0).getClass().getName());
-            throw new FormattingException(message);
+                    type.toString(), rootType.getName());
+            throw new UnsupportedFormatException(message);
         }
     }
 
@@ -133,7 +152,7 @@ public class Formats {
         } else {
             String message = String.format("No Format for this content-type and data type : (%s, %s)",
                     type.toString(), rootType.getName());
-            throw new FormattingException(message);
+            throw new UnsupportedFormatException(message);
         }
     }
 
@@ -147,7 +166,26 @@ public class Formats {
         } else {
             String message = String.format("No Format for this content-type and data type : (%s, %s)",
                     type.toString(), rootType.getName());
-            throw new FormattingException(message);
+            throw new UnsupportedFormatException(message);
+        }
+    }
+
+    private <T extends CwmsDTOBase> List<T> parseContentListFromType(ContentType type, String content, Class<T> rootType)
+        throws FormattingException {
+        OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
+        if (outputFormatter != null) {
+            List<T> retval = outputFormatter.parseContentList(content, rootType);
+            if (retval == null) {
+                throw new UnsupportedFormatException("Cannot deserialize empty content array");
+            }
+            for (T obj : retval) {
+                obj.validate();
+            }
+            return retval;
+        } else {
+            String message = String.format("No Format for this content-type and data type : (%s, %s)",
+                type.toString(), rootType.getName());
+            throw new UnsupportedFormatException(message);
         }
     }
 
@@ -197,6 +235,11 @@ public class Formats {
         return formats.parseContentFromType(type, inputStream, rootType);
     }
 
+    public static <T extends CwmsDTOBase> List<T> parseContentList(ContentType type, String content, Class<T> rootType)
+        throws FormattingException {
+        return formats.parseContentListFromType(type, content, rootType);
+    }
+
     /**
      * Parses the supplied header param or queryParam to determine the content type.
      * If both are supplied an exception is thrown.  If neither are supplied an exception is thrown.
@@ -205,7 +248,9 @@ public class Formats {
      * @param queryParam format query parameter value
      * @return an appropriate standard mimetype for lookup
      * @throws FormattingException if the header and queryParam are both supplied or neither are
+     * @deprecated Use overloaded parseHeaderAndQueryParm that takes in a class to utilize the format aliasing.
      */
+    @Deprecated
     public static ContentType parseHeaderAndQueryParm(String header, String queryParam) {
         return parseHeaderAndQueryParm(header, queryParam, null);
     }
@@ -229,7 +274,7 @@ public class Formats {
                 // The older format= query parameters don't give us the option to supply a
                 // version the
                 // way that the accept header does.
-                throw new FormattingException("Accept header and query parameter are both "
+                throw new UnsupportedFormatException("Accept header and query parameter are both "
                         + "present, this is not supported.");
             }
 
@@ -237,17 +282,17 @@ public class Formats {
             if (ct != null) {
                 return ct;
             } else {
-                throw new FormattingException("content-type " + queryParam + " is not implemented");
+                throw new UnsupportedFormatException("content-type " + queryParam + " is not implemented");
             }
         } else if (header == null) {
-            throw new FormattingException("no content type or format specified");
+            throw new UnsupportedFormatException("no content type or format specified");
         } else {
             ContentType ct = parseHeader(header, klass);
             if (ct != null) {
                 return ct;
             }
         }
-        throw new FormattingException("Content-Type " + header + " is not available");
+        throw new UnsupportedFormatException("Content-Type " + header + " is not available");
     }
 
     public static ContentType parseQueryParam(String queryParam, Class<? extends CwmsDTOBase> klass)
@@ -274,17 +319,33 @@ public class Formats {
         return retVal;
     }
 
-    public static ContentType parseHeader(String header) {
+    /**
+     * Parses the supplied header param to determine the content type.
+     *
+     * @param header Accept header value
+     * @return an appropriate standard mimetype for lookup
+     * @throws FormattingException if the header can't be identified as a mimetype
+     * @deprecated Use overloaded parseHeader that takes in a class to utilize the format aliasing.
+     */
+    @Deprecated
+    public static @NotNull ContentType parseHeader(String header) {
         return parseHeader(header, null);
     }
 
-    public static ContentType parseHeader(String header, Class<? extends CwmsDTOBase> klass) {
-        ArrayList<ContentType> contentTypes = new ArrayList<>();
+    /**
+     * Parses the supplied header param to determine the content type.
+     *
+     * @param header Accept header value
+     * @param klass  DTO object class, used for identifying content type aliases from the DTO's <code>FormattableWith</code> annotations.
+     * @return an appropriate standard mimetype for lookup
+     * @throws FormattingException if the header can't be identified as a mimetype
+     */
+    public static @NotNull ContentType parseHeader(String header, Class<? extends CwmsDTOBase> klass) {
         ContentTypeAliasMap aliasMap = ContentTypeAliasMap.empty();
         if (klass != null) {
             aliasMap = ContentTypeAliasMap.forDtoClass(klass);
         }
-
+        ArrayList<ContentType> contentTypes = new ArrayList<>();
         if (header != null && !header.isEmpty()) {
             String[] all = header.split(",");
             logger.log(Level.FINEST, "Finding handlers {0}", all.length);
@@ -313,6 +374,6 @@ public class Formats {
                 return new ContentType(Formats.JSON);
             }
         }
-        throw new FormattingException("Format header " + header + " could not be parsed");
+        throw new UnsupportedFormatException("Format header " + header + " could not be parsed");
     }
 }

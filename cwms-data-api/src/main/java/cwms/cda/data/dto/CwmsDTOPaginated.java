@@ -28,7 +28,7 @@ import kotlin.jvm.functions.Function1;
  */
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonPropertyOrder(alphabetic = true)
-public abstract class CwmsDTOPaginated implements CwmsDTOBase {
+public abstract class CwmsDTOPaginated extends CwmsDTOBase {
     private static final Logger logger = Logger.getLogger(CwmsDTOPaginated.class.getName());
 
     @Schema(

@@ -10,7 +10,6 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.enums.VersionType;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -19,7 +18,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 
-import javax.xml.bind.annotation.XmlType;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -30,8 +28,8 @@ import java.util.List;
 @JsonRootName("timeseries")
 @JsonPropertyOrder(alphabetic = true)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
-@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 public class TimeSeries extends CwmsDTOPaginated {
     public static final String ZONED_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'";
 
@@ -193,7 +191,7 @@ public class TimeSeries extends CwmsDTOPaginated {
     @JsonProperty(value = "value-columns")
     @Schema(name = "value-columns", accessMode = AccessMode.READ_ONLY)
     public List<Column> getValueColumnsJSON() {
-        return getColumnDescriptor("json");
+        return getColumnDescriptor();
     }
 
     public boolean addValue(Timestamp dateTime, Double value, int qualityCode) {
@@ -209,35 +207,16 @@ public class TimeSeries extends CwmsDTOPaginated {
         }
     }
 
-    private List<Column> getColumnDescriptor(String format) {
+    private List<Column> getColumnDescriptor() {
         List<Column> columns = new ArrayList<>();
 
         for (Field f: Record.class.getDeclaredFields()) {
-            String fieldName = f.getName();
-            int fieldIndex = -1;
-            if(format.equals("json")) {
-                JsonProperty field = f.getAnnotation(JsonProperty.class);
-                if(field != null)
-                    fieldName = !field.value().isEmpty() ? field.value() : f.getName();
-                fieldIndex = field.index();
+            JsonProperty field = f.getAnnotation(JsonProperty.class);
+            if(field != null) {
+                String fieldName = !field.value().isEmpty() ? field.value() : f.getName();
+                int fieldIndex = field.index();
+                columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
             }
-            else if(format.equals("xml")) {
-                XmlType xmltype = Record.class.getAnnotation(XmlType.class);
-                if(xmltype != null) {
-                    String[] props = xmltype.propOrder();
-                    for(int idx = 0; idx < props.length; idx++) {
-                        if( props[idx].equals(fieldName)) {
-                            fieldIndex = idx;
-                            break;
-                        }
-                    }
-                }
-            }
-            else {
-                fieldIndex++;
-            }
-
-            columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
         }
 
         return columns;
@@ -353,11 +332,5 @@ public class TimeSeries extends CwmsDTOPaginated {
         public String getDatatype() {
             return datatype.getTypeName();
         }
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        // TODO Auto-generated method stub
-
     }
 }

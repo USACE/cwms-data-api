@@ -70,7 +70,19 @@ public abstract class JooqDao<T> extends Dao<T> {
     static ExecuteListener listener = new ExceptionWrappingListener();
 
     public enum DeleteMethod {
-        DELETE_ALL, DELETE_KEY, DELETE_DATA
+        DELETE_ALL(DeleteRule.DELETE_ALL),
+        DELETE_KEY(DeleteRule.DELETE_KEY),
+        DELETE_DATA(DeleteRule.DELETE_DATA);
+
+        private final DeleteRule rule;
+
+        DeleteMethod(DeleteRule rule) {
+            this.rule = rule;
+        }
+
+        public DeleteRule getRule() {
+            return rule;
+        }
     }
 
     protected JooqDao(DSLContext dsl) {
@@ -150,7 +162,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    static Double toDouble(BigDecimal bigDecimal) {
+    protected static Double toDouble(BigDecimal bigDecimal) {
         Double retVal = null;
         if (bigDecimal != null) {
             retVal = bigDecimal.doubleValue();
@@ -277,6 +289,12 @@ public abstract class JooqDao<T> extends Dao<T> {
                     " does not exist.");
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
+
+            if(!retVal)
+            {
+                segments = Collections.singletonList("does not exist as a stream location");
+                retVal = hasCodeAndMessage(sqlException, Collections.singletonList(20998), segments);
+            }
         }
         return retVal;
     }    

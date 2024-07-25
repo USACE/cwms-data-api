@@ -35,6 +35,7 @@ import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
 import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.queryParamAsZdt;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -372,7 +373,7 @@ public class TimeSeriesController implements CrudHandler {
                         + "whether to trim missing values from the beginning and end of the "
                         + "retrieved values. "
                         + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2 + ". "
-                        + "Default is false."),
+                        + "Default is true."),
                 @OpenApiParam(name = FORMAT,  description = "Specifies the"
                         + " encoding format of the response. Valid values for the format "
                         + "field for this URI are:"
@@ -440,7 +441,7 @@ public class TimeSeriesController implements CrudHandler {
                     name(TimeSeriesController.class.getName(), GET_ALL));
 
             String acceptHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format, TimeSeries.class);
 
             String results;
             String version = contentType.getParameters().get(VERSION);
@@ -462,7 +463,7 @@ public class TimeSeriesController implements CrudHandler {
 
                 String office = requiredParam(ctx, OFFICE);
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit,
-                        beginZdt, endZdt, versionDate, trim.getOrDefault(false));
+                        beginZdt, endZdt, versionDate, trim.getOrDefault(true));
 
                 results = Formats.format(contentType, ts);
 
@@ -502,6 +503,7 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
             }
+            addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
@@ -580,7 +582,7 @@ public class TimeSeriesController implements CrudHandler {
 
     private TimeSeries deserializeTimeSeries(Context ctx) throws IOException {
         String contentTypeHeader = ctx.req.getContentType();
-        ContentType contentType = Formats.parseHeader(contentTypeHeader);
+        ContentType contentType = Formats.parseHeader(contentTypeHeader, TimeSeries.class);
         return Formats.parseContent(contentType, ctx.bodyAsInputStream(), TimeSeries.class);
     }
 

@@ -24,16 +24,20 @@
 
 package cwms.cda.data.dto;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-
+import cwms.cda.helpers.DTOMatch;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Test;
 
 final class LookupTypeTest {
 
@@ -86,7 +90,7 @@ final class LookupTypeTest {
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, lookupType);
         LookupType deserialized = Formats.parseContent(contentType, json, LookupType.class);
-        assertEquals(lookupType, deserialized, "LookupType deserialized from JSON doesn't equal original");
+        DTOMatch.assertMatch(lookupType, deserialized);
     }
 
     @Test
@@ -102,6 +106,6 @@ final class LookupTypeTest {
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = new ContentType(Formats.JSON);
         LookupType deserialized = Formats.parseContent(contentType, json, LookupType.class);
-        assertEquals(lookupType, deserialized, "LookupType deserialized from JSON doesn't equal original");
+        DTOMatch.assertMatch(lookupType, deserialized);
     }
 }

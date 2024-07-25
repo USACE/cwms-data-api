@@ -1,6 +1,9 @@
 {
-  "office-id": "SPK",
-  "name" : "Project Id",
+  "location" : {
+    "office-id" : "SPK",
+    "name" : "Project Id",
+    "timezone-name": "UTC"
+  },
   "federal-cost" : 100.0,
   "non-federal-cost" : 50.0,
   "cost-year" : 1717199914902,
@@ -15,11 +18,13 @@
   "bank-full-capacity-desc" : "Bank Full Capacity Description",
   "pump-back-location" : {
     "office-id" : "SPK",
-    "name" : "Pumpback Location Id"
+    "name" : "Pumpback Location Id",
+    "timezone-name": "UTC"
   },
   "near-gage-location" : {
     "office-id" : "SPK",
-    "name" : "Near Gage Location Id"
+    "name" : "Near Gage Location Id",
+    "timezone-name": "UTC"
   },
   "yield-time-frame-start" : 1717199914902,
   "yield-time-frame-end" : 1717199914902,

@@ -1,0 +1,28 @@
+{
+  "project-id": {
+    "office-id": "SWT",
+    "name": "PROJ_TURB"
+  },
+  "location": {
+    "office-id": "SWT",
+    "name": "PROJ_TURB-TURBINE_LOC",
+    "latitude": 36.153980,
+    "longitude": -95.992775,
+    "active": true,
+    "public-name": "TURBINE_LOC",
+    "long-name": "TURBINE_LOC",
+    "description": "for testing",
+    "timezone-name": "UTC",
+    "location-type": "SITE",
+    "location-kind": "TURBINE",
+    "nation": "US",
+    "state-initial": "CA",
+    "county-name": "Sacramento",
+    "horizontal-datum": "NVGD29",
+    "published-longitude": -95.992775,
+    "published-latitude": 36.153980,
+    "elevation": 10.0,
+    "bounding-office-id": "SWT",
+    "elevation-units": "m"
+  }
+}

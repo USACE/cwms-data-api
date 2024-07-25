@@ -10,14 +10,11 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.ExclusiveFieldsException;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.formatters.xml.XMLv1;
-import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
+import cwms.cda.formatters.xml.XMLv2;
 import hec.data.level.ILocationLevelRef;
 import hec.data.level.IParameterTypedValue;
 import hec.data.level.ISeasonalInterval;
@@ -32,7 +29,6 @@ import java.math.BigInteger;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -43,8 +39,9 @@ import java.util.function.Consumer;
 @JsonDeserialize(builder = LocationLevel.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
-@FormattableWith(contentType = Formats.XML, formatter = XMLv1.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 public final class LocationLevel extends CwmsDTO {
     @JsonProperty(required = true)
     @Schema(description = "Name of the location level")
@@ -575,25 +572,18 @@ public final class LocationLevel extends CwmsDTO {
     }
 
     @Override
-    public void validate() throws FieldException {
-        ArrayList<String> fields = new ArrayList<>();
-        if (seasonalValues != null) {
-            fields.add("seasonal-values");
+    protected void validateInternal(CwmsDTOValidator validator) {
+        super.validateInternal(validator);
+        validator.required(getOfficeId(), "office-id");
+        validator.required(getLocationLevelId(), "location-level-id");
+        if(getConstantValue() == null && getSeasonalTimeSeriesId() == null) {
+            validator.required(getSeasonalValues(), "seasonal-values");
+        } else if(getSeasonalValues() == null && getSeasonalTimeSeriesId() == null) {
+            validator.required(getConstantValue(), "constant-value");
+        } else if(getConstantValue() == null && getSeasonalValues() == null) {
+            validator.required(getSeasonalTimeSeriesId(), "seasonable-time-series-id");
         }
-
-        if (constantValue != null) {
-            fields.add("constant-value");
-        }
-
-        if (seasonalTimeSeriesId != null) {
-            fields.add("seasonable-time-series-id");
-        }
-        if (fields.isEmpty()) {
-            throw new RequiredFieldException(Arrays.asList("seasonal-values", "constant-value",
-                    "season-time-series-id"));
-        }
-        if (fields.size() != 1) {
-            throw new ExclusiveFieldsException(fields);
-        }
+        validator.mutuallyExclusive("Only one of the following can be defined for location levels: constant-value, seasonal-values, seasonable-time-series-id",
+            getConstantValue(), getSeasonalValues(), getSeasonalTimeSeriesId());
     }
 }

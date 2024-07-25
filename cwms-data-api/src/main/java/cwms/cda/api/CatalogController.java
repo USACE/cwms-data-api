@@ -11,6 +11,8 @@ import static cwms.cda.api.Controllers.LIKE;
 import static cwms.cda.api.Controllers.LOCATIONS;
 import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
 import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE;
+import static cwms.cda.api.Controllers.LOCATION_KIND_LIKE;
+import static cwms.cda.api.Controllers.LOCATION_TYPE_LIKE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
@@ -45,6 +47,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -97,74 +100,88 @@ public class CatalogController implements CrudHandler {
     }
 
     @OpenApi(
-            queryParams = {
-                @OpenApiParam(name = PAGE,
-                        description = "This end point can return a lot of data, this "
-                                + "identifies where in the request you are."
-                ),
+        queryParams = {
+            @OpenApiParam(name = PAGE,
+                    description = "This end point can return a lot of data, this "
+                            + "identifies where in the request you are."
+            ),
 
-                @OpenApiParam(name = PAGE_SIZE,
-                        type = Integer.class,
-                        description = "How many entries per page returned. Default 500."
+            @OpenApiParam(name = PAGE_SIZE,
+                    type = Integer.class,
+                    description = "How many entries per page returned. Default 500."
+            ),
+            @OpenApiParam(name = UNIT_SYSTEM,
+                    type = UnitSystem.class,
+                    description = UnitSystem.DESCRIPTION
+            ),
+            @OpenApiParam(name = OFFICE,
+                    description = "3-4 letter office name representing the district you "
+                            + "want to isolate data to."
+            ),
+            @OpenApiParam(name = LIKE,
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + "matching against the id"
+            ),
+            @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE,
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + "matching against the timeseries category id"
+            ),
+            @OpenApiParam(name = TIMESERIES_GROUP_LIKE,
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + "matching against the timeseries group id"
+            ),
+            @OpenApiParam(name = LOCATION_CATEGORY_LIKE,
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + "matching against the location category id"
+            ),
+            @OpenApiParam(name = LOCATION_GROUP_LIKE,
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + "matching against the location group id"
+            ),
+            @OpenApiParam(name = BOUNDING_OFFICE_LIKE,
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                    + "matching against the location bounding office. When this field is used "
+                            + "items with no bounding office set will not be present in results."),
+            @OpenApiParam(name = INCLUDE_EXTENTS, type = Boolean.class,
+                    description = "Whether the returned catalog entries should include timeseries "
+                        + "extents. Only valid for TIMESERIES. "
+                        + "Default is " + INCLUDE_EXTENTS_DEFAULT + "."),
+            @OpenApiParam(name = EXCLUDE_EMPTY, type = Boolean.class,
+                    description = "Specifies "
+                        + "whether Timeseries that have empty extents "
+                        + "should be excluded from the results.  For purposes of this parameter "
+                        + "'empty' is defined as VERSION_TIME, EARLIEST_TIME, LATEST_TIME "
+                        + "and LAST_UPDATE all being null. This parameter does not control "
+                        + "whether the extents are returned to the user, only whether matching "
+                        + "timeseries are excluded. Only valid for TIMESERIES. "
+                        + "Default is " + EXCLUDE_EMPTY_DEFAULT + "."),
+            @OpenApiParam(name = LOCATION_KIND_LIKE,
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> matching "
+                        + "against the location kind.  The location-kind is typically unset "
+                        + "or one of the following: {\"SITE\", \"EMBANKMENT\", \"OVERFLOW\", "
+                        + "\"TURBINE\", \"STREAM\", \"PROJECT\", \"STREAMGAGE\", \"BASIN\", "
+                        + "\"OUTLET\", \"LOCK\", \"GATE\"}.  Multiple kinds can be matched "
+                        + "by using Regular Expression OR clauses. For example: "
+                        + "\"(SITE|STREAM)\""
                 ),
-                @OpenApiParam(name = UNIT_SYSTEM,
-                        type = UnitSystem.class,
-                        description = UnitSystem.DESCRIPTION
+            @OpenApiParam(name = LOCATION_TYPE_LIKE,
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> matching "
+                        + "against the location type."
                 ),
-                @OpenApiParam(name = OFFICE,
-                        description = "3-4 letter office name representing the district you "
-                                + "want to isolate data to."
-                ),
-                @OpenApiParam(name = LIKE,
-                        description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the id"
-                ),
-                @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE,
-                        description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
-                                + "timeseries category id"
-                ),
-                @OpenApiParam(name = TIMESERIES_GROUP_LIKE,
-                        description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the "
-                                + "timeseries group id"
-                ),
-                @OpenApiParam(name = LOCATION_CATEGORY_LIKE,
-                        description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
-                                + " category id"
-                ),
-                @OpenApiParam(name = LOCATION_GROUP_LIKE,
-                        description = "Posix <a href=\"regexp.html\">regular expression</a> matching against the location"
-                                + " group id"
-                ),
-                @OpenApiParam(name = BOUNDING_OFFICE_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                        + "matching against the location bounding office. "
-                        + "When this field is used items with no bounding office set will not be present in results."),
-                @OpenApiParam(name = Controllers.INCLUDE_EXTENTS, type = Boolean.class,
-                        description = "Whether the returned catalog entries should include timeseries "
-                                + "extents. Only valid for TIMESERIES. "
-                                + "Default is " + INCLUDE_EXTENTS_DEFAULT + "."),
-                @OpenApiParam(name = Controllers.EXCLUDE_EMPTY, type = Boolean.class,
-                        description = "Specifies "
-                            + "whether Timeseries that have empty extents "
-                            + "should be excluded from the results.  For purposes of this parameter "
-                            + "'empty' is defined as VERSION_TIME, EARLIEST_TIME, LATEST_TIME "
-                            + "and LAST_UPDATE all being null. This parameter does not control "
-                            + "whether the extents are returned to the user, only whether matching "
-                            + "timeseries are excluded. Only valid for TIMESERIES. "
-                            + "Default is " + EXCLUDE_EMPTY_DEFAULT + "."),
-            },
-            pathParams = {
-                @OpenApiParam(name = "dataset",
-                        type = CatalogableEndpoint.class,
-                        description = "A list of what data? E.g. Timeseries, Locations, Ratings, etc")
-            },
-            responses = {@OpenApiResponse(status = STATUS_200,
-                    description = "A list of elements the data set you've selected.",
-                    content = {
-                        @OpenApiContent(from = Catalog.class, type = Formats.JSONV2),
-                        @OpenApiContent(from = Catalog.class, type = Formats.XML)
-                    }
-            )
-            },
-            tags = {TAG}
+        },
+        pathParams = {
+            @OpenApiParam(name = "dataset",
+                    type = CatalogableEndpoint.class,
+                    description = "A list of what data? E.g. Timeseries, Locations, Ratings, etc")
+        },
+        responses = {@OpenApiResponse(status = STATUS_200,
+                description = "A list of elements the data set you've selected.",
+                content = {
+                    @OpenApiContent(from = Catalog.class, type = Formats.JSONV2),
+                    @OpenApiContent(from = Catalog.class, type = Formats.XML)
+                })
+        },
+        tags = {TAG}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String dataSet) {
@@ -208,6 +225,12 @@ public class CatalogController implements CrudHandler {
             String boundingOfficeLike = queryParamAsClass(ctx, new String[]{BOUNDING_OFFICE_LIKE},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
+            String locationKind = queryParamAsClass(ctx, new String[]{LOCATION_KIND_LIKE},
+                    String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
+
+            String locationType = queryParamAsClass(ctx, new String[]{LOCATION_TYPE_LIKE},
+                    String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
+
             String acceptHeader = ctx.header(ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
             Catalog cat = null;
@@ -229,25 +252,16 @@ public class CatalogController implements CrudHandler {
                         .withBoundingOfficeLike(boundingOfficeLike)
                         .withIncludeExtents(includeExtents)
                         .withExcludeEmpty(excludeExtents)
+                        .withLocationKind(locationKind)
+                        .withLocationType(locationType)
                         .build();
 
                 cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, parameters);
 
             } else if (LOCATIONS.equalsIgnoreCase(valDataSet)) {
 
-                Set<String> notSupported = new LinkedHashSet<>();
-                notSupported.add(TIMESERIES_CATEGORY_LIKE);
-                notSupported.add(TIMESERIES_GROUP_LIKE);
-                notSupported.add(EXCLUDE_EMPTY);
-                notSupported.add(INCLUDE_EXTENTS);
-
-                Map<String, List<String>> queryParamMap = ctx.queryParamMap();
-                notSupported.retainAll(queryParamMap.keySet());
-
-                if (!notSupported.isEmpty()) {
-                    throw new IllegalArgumentException("The following parameters are not yet "
-                            + "supported for location: " + notSupported);
-                }
+                warnAboutNotSupported(ctx, new String[]{TIMESERIES_CATEGORY_LIKE,
+                        TIMESERIES_GROUP_LIKE, EXCLUDE_EMPTY, INCLUDE_EXTENTS});
 
                 CatalogRequestParameters parameters = new CatalogRequestParameters.Builder()
                         .withUnitSystem(unitSystem)
@@ -256,6 +270,8 @@ public class CatalogController implements CrudHandler {
                         .withLocCatLike(locCategoryLike)
                         .withLocGroupLike(locGroupLike)
                         .withBoundingOfficeLike(boundingOfficeLike)
+                        .withLocationKind(locationKind)
+                        .withLocationType(locationType)
                         .build();
 
                 LocationsDao dao = new LocationsDaoImpl(dsl);
@@ -269,9 +285,22 @@ public class CatalogController implements CrudHandler {
                 final CdaError re = new CdaError("Cannot create catalog of requested "
                         + "information");
 
-                logger.info(() -> re + "with url:" + ctx.fullUrl());
+                logger.info(() -> re + " with url:" + ctx.fullUrl());
                 ctx.json(re).status(HttpCode.NOT_FOUND);
             }
+        }
+    }
+
+    private static void warnAboutNotSupported(@NotNull Context ctx, String[] warnAbout) {
+        Set<String> notSupported = new LinkedHashSet<>();
+        Collections.addAll(notSupported, warnAbout);
+
+        Map<String, List<String>> queryParamMap = ctx.queryParamMap();
+        notSupported.retainAll(queryParamMap.keySet());
+
+        if (!notSupported.isEmpty()) {
+            throw new IllegalArgumentException("The following parameters are not yet "
+                    + "supported for this method: " + notSupported);
         }
     }
 

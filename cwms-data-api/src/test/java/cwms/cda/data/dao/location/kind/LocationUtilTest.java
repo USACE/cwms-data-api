@@ -27,6 +27,7 @@ package cwms.cda.data.dao.location.kind;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
+import cwms.cda.helpers.DTOMatch;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
@@ -69,7 +70,7 @@ final class LocationUtilTest {
         LookupType expected = buildTestLookupType();
         LOOKUP_TYPE_OBJ_T lookupTypeObjT = LocationUtil.getLookupType(expected);
         LookupType lookupType = LocationUtil.getLookupType(lookupTypeObjT);
-        assertEquals(expected, lookupType, "Conversion of LookupType to jOOQ type and back failed.");
+        DTOMatch.assertMatch(expected, lookupType);
     }
 
     private LookupType buildTestLookupType() {
@@ -85,6 +86,7 @@ final class LocationUtilTest {
         return new Location.Builder("TEST_LOCATION2", "EMBANKMENT", ZoneId.of("UTC"),
                 50.0, 50.0, "NVGD29", "LRL")
                 .withElevation(10.0)
+                .withElevationUnits("m")
                 .withLocationType("SITE")
                 .withCountyName("Sacramento")
                 .withNation(Nation.US)

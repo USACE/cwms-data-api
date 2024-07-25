@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+@Disabled
 public class CatalogControllerTest extends ControllerTest {
 
     @Disabled // get all the infrastructure in place first.

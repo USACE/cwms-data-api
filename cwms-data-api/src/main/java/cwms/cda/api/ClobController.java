@@ -99,7 +99,7 @@ public class ClobController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+            ContentType contentType = Formats.parseHeader(formatHeader, Clobs.class);
 
             String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
                     String.class, "", metrics, name(ClobController.class.getName(), GET_ALL));
@@ -185,7 +185,7 @@ public class ClobController implements CrudHandler {
                 Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
 
                 if (optAc.isPresent()) {
-                    ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+                    ContentType contentType = Formats.parseHeader(formatHeader, Clob.class);
 
                     Clob clob = optAc.get();
                     String result = Formats.format(contentType, clob);
@@ -227,22 +227,8 @@ public class ClobController implements CrudHandler {
 
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
 
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, Clob.class);
             Clob clob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Clob.class);
-
-            if (clob.getOfficeId() == null) {
-                throw new FormattingException("An officeId is required when creating a clob");
-            }
-
-            if (clob.getId() == null) {
-                throw new FormattingException("An Id is required when creating a clob");
-            }
-
-            if (clob.getValue() == null || clob.getValue().isEmpty()) {
-                throw new FormattingException("A non-empty value field is required when "
-                        + "creating a clob");
-            }
-
             ClobDao dao = new ClobDao(dsl);
             dao.create(clob, failIfExists);
             ctx.status(HttpCode.CREATED);
@@ -281,7 +267,7 @@ public class ClobController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ClobDao dao = new ClobDao(dsl);
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, Clob.class);
             Clob clob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Clob.class);
 
             if (clob.getOfficeId() == null) {

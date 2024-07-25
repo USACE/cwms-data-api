@@ -26,7 +26,9 @@ package cwms.cda.data.dao;
 
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.LookupType;
+
 import fixtures.CwmsDataApiSetupCallback;
+import cwms.cda.helpers.DTOMatch;
 import java.util.Optional;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
@@ -64,10 +66,10 @@ final class LookupTypeDaoTestIT extends DataApiTestIT {
                     .findFirst()
                     .orElse(null);
             assertNotNull(fromDb, "LookupType retrieved from database does not match original lookupType");
-            assertEquals(lookupType, fromDb, "LookupType retrieved from database does not match original lookupType");
+            DTOMatch.assertMatch(lookupType, fromDb);
 
             // Delete lookup type
-            lookupTypeDao.deleteLookupType(category, prefix, lookupType);
+            lookupTypeDao.deleteLookupType(category, prefix, lookupType.getOfficeId(), lookupType.getDisplayValue());
 
             //Retrieve Deleted lookup type to confirm it no longer exists
             Optional<LookupType> empty = lookupTypeDao.retrieveLookupTypes(category, prefix, databaseLink.getOfficeId())
@@ -77,4 +79,6 @@ final class LookupTypeDaoTestIT extends DataApiTestIT {
             assertFalse(empty.isPresent(), "LookupType has been deleted, it should not show up in retrieve query");
         });
     }
+
+
 }

@@ -1,4 +1,28 @@
-package cwms.cda.data.dto;
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package cwms.cda.data.dto.project;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -6,25 +30,27 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @JsonDeserialize(builder = Project.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
-public class Project extends CwmsDTO {
+@FormattableWith(contentType = Formats.JSONV1, aliases = {Formats.DEFAULT, Formats.JSON}, formatter = JsonV2.class)
+public class Project extends CwmsDTOBase {
 
-    private final String name;
-    private final Double federalCost;
-    private final Double nonFederalCost;
+    private final Location location;
+    private final BigDecimal federalCost;
+    private final BigDecimal nonFederalCost;
     private final Instant costYear;
     private final String costUnit;
-    private final Double federalOAndMCost;
-    private final Double nonFederalOAndMCost;
+    private final BigDecimal federalOAndMCost;
+    private final BigDecimal nonFederalOAndMCost;
     private final String authorizingLaw;
     private final String projectOwner;
     private final String hydropowerDesc;
@@ -39,8 +65,8 @@ public class Project extends CwmsDTO {
 
 
     private Project(Project.Builder builder) {
-        super(builder.officeId);
-        this.name = builder.name;
+
+        this.location = builder.location;
         this.federalCost = builder.federalCost;
         this.nonFederalCost = builder.nonFederalCost;
         this.costYear = builder.costYear;
@@ -60,9 +86,8 @@ public class Project extends CwmsDTO {
         this.projectRemarks = builder.projectRemarks;
     }
 
-    @Override
-    public void validate() throws FieldException {
-
+    public Location getLocation() {
+        return location;
     }
 
     public String getAuthorizingLaw() {
@@ -77,7 +102,7 @@ public class Project extends CwmsDTO {
         return downstreamUrbanDesc;
     }
 
-    public Double getFederalCost() {
+    public BigDecimal getFederalCost() {
         return federalCost;
     }
 
@@ -89,15 +114,15 @@ public class Project extends CwmsDTO {
         return nearGageLocation;
     }
 
-    public Double getNonFederalCost() {
+    public BigDecimal getNonFederalCost() {
         return nonFederalCost;
     }
 
-    public Double getFederalOAndMCost() {
+    public BigDecimal getFederalOAndMCost() {
         return federalOAndMCost;
     }
 
-    public Double getNonFederalOAndMCost() {
+    public BigDecimal getNonFederalOAndMCost() {
         return nonFederalOAndMCost;
     }
 
@@ -107,10 +132,6 @@ public class Project extends CwmsDTO {
 
     public String getCostUnit() {
         return costUnit;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public String getProjectOwner() {
@@ -140,14 +161,14 @@ public class Project extends CwmsDTO {
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
-        private String officeId;
-        private String name;
-        private Double federalCost;
-        private Double nonFederalCost;
+        private Location location;
+
+        private BigDecimal federalCost;
+        private BigDecimal nonFederalCost;
         private Instant costYear;
         private String costUnit;
-        private Double federalOAndMCost;
-        private Double nonFederalOandMCost;
+        private BigDecimal federalOAndMCost;
+        private BigDecimal nonFederalOandMCost;
         private String authorizingLaw;
         private String projectOwner;
         private String hydropowerDesc;
@@ -172,8 +193,7 @@ public class Project extends CwmsDTO {
          * @return this builder
          */
         public Builder from(Project project) {
-            return this.withOfficeId(project.getOfficeId())
-                    .withName(project.getName())
+            return this.withLocation(project.getLocation())
                     .withFederalCost(project.getFederalCost())
                     .withNonFederalCost(project.getNonFederalCost())
                     .withCostYear(project.getCostYear())
@@ -193,22 +213,19 @@ public class Project extends CwmsDTO {
                     .withProjectRemarks(project.getProjectRemarks());
         }
 
-        public Builder withOfficeId(String officeId) {
-            this.officeId = officeId;
+
+
+        public Builder withLocation(Location location) {
+            this.location = location;
             return this;
         }
 
-        public Builder withName(String projectId) {
-            this.name = projectId;
-            return this;
-        }
-
-        public Builder withFederalCost(Double federalCost) {
+        public Builder withFederalCost(BigDecimal federalCost) {
             this.federalCost = federalCost;
             return this;
         }
 
-        public Builder withNonFederalCost(Double nonFederalCost) {
+        public Builder withNonFederalCost(BigDecimal nonFederalCost) {
             this.nonFederalCost = nonFederalCost;
             return this;
         }
@@ -223,12 +240,12 @@ public class Project extends CwmsDTO {
             return this;
         }
 
-        public Builder withFederalOAndMCost(Double federalOandMCost) {
+        public Builder withFederalOAndMCost(BigDecimal federalOandMCost) {
             this.federalOAndMCost = federalOandMCost;
             return this;
         }
 
-        public Builder withNonFederalOAndMCost(Double nonFederalOandMCost) {
+        public Builder withNonFederalOAndMCost(BigDecimal nonFederalOandMCost) {
             this.nonFederalOandMCost = nonFederalOandMCost;
             return this;
         }

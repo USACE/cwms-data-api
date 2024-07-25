@@ -1,6 +1,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
@@ -8,6 +9,8 @@ import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -15,12 +18,16 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.UnitsDao;
+import cwms.cda.data.dto.Unit;
+import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -78,37 +85,42 @@ public class UnitsController implements CrudHandler {
         try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             UnitsDao dao = new UnitsDao(dsl);
-            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("json");
+            String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
+            String header = ctx.header(ACCEPT);
 
-            switch (format) {
-                case "json": {
-                    ctx.contentType(Formats.JSON);
-                    break;
+            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, Unit.class);
+            String version = contentType.getParameters()
+                                        .getOrDefault(VERSION, "");
+
+            boolean isLegacyVersion = version.equals("1");
+
+            String results;
+            if (format.isEmpty() && !isLegacyVersion)
+            {
+                List<Unit> units = dao.getUnits();
+                results = Formats.format(contentType, units, Unit.class);
+                ctx.contentType(contentType.toString());
+            }
+            else
+            {
+                if (isLegacyVersion)
+                {
+                    format = Formats.getLegacyTypeFromContentType(contentType);
                 }
-                case "tab": {
-                    ctx.contentType(Formats.TAB);
-                    break;
+                results = dao.getUnits(format);
+                if (isLegacyVersion)
+                {
+                    ctx.contentType(contentType.toString());
                 }
-                case "csv": {
-                    ctx.contentType(Formats.CSV);
-                    break;
+                else
+                {
+                    ctx.contentType(contentType.getType());
                 }
-                case "xml": {
-                    ctx.contentType(Formats.XML);
-                    break;
-                }
-                case "wml2": {
-                    ctx.contentType(Formats.WML2);
-                    break;
-                }
-                default:
-                    throw new UnsupportedOperationException("Format " + format + " is not "
-                            + "implemented for this end point");
             }
 
-            String results = dao.getUnits(format);
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(results);
+            addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
         } catch (Exception ex) {
             logger.log(Level.SEVERE, null, ex);

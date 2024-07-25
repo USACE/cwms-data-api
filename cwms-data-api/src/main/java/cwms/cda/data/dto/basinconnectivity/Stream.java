@@ -223,10 +223,4 @@ public final class Stream extends CwmsDTO
         }
     }
 
-    @Override
-    public void validate() throws FieldException {
-        // TODO Auto-generated method stub
-
-    }
-
 }

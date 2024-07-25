@@ -1,22 +1,23 @@
 package cwms.cda.formatters;
 
 
-import java.util.Arrays;
-import java.util.Map;
+import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.data.dto.Blob;
+import cwms.cda.data.dto.Blobs;
+import cwms.cda.data.dto.Clob;
+import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.County;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
 import cwms.cda.data.dto.State;
-import cwms.cda.formatters.annotations.FormattableWith;
-import org.junit.jupiter.api.Assertions;
+import cwms.cda.data.dto.basinconnectivity.Basin;
+import cwms.cda.data.dto.project.Project;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.jupiter.api.Assertions.*;
 
 class FormatsTest
 {
@@ -198,6 +199,23 @@ class FormatsTest
 		BLOB_DEFAULT(Blob.class, Formats.DEFAULT, Formats.JSONV2),
 		BLOB_JSON(Blob.class, Formats.JSON, Formats.JSONV2),
 		BLOB_JSONV2(Blob.class, Formats.JSONV2, Formats.JSONV2),
+		BLOBS_DEFAULT(Blobs.class, Formats.DEFAULT, Formats.JSONV2),
+		BLOBS_JSON(Blobs.class, Formats.JSON, Formats.JSONV2),
+		BLOBS_JSONV2(Blobs.class, Formats.JSONV2, Formats.JSONV2),
+		CLOB_DEFAULT(Clob.class, Formats.DEFAULT, Formats.JSONV2),
+		CLOB_JSON(Clob.class, Formats.JSON, Formats.JSONV2),
+		CLOB_JSONV1(Clob.class, Formats.JSONV1, Formats.JSONV1),
+		CLOB_JSONV2(Clob.class, Formats.JSONV2, Formats.JSONV2),
+		CLOB_XML(Clob.class, Formats.XML, Formats.XMLV2),
+		CLOB_XMLV2(Clob.class, Formats.XMLV2, Formats.XMLV2),
+		CLOBS_DEFAULT(Clobs.class, Formats.DEFAULT, Formats.JSONV2),
+		CLOBS_JSON(Clobs.class, Formats.JSON, Formats.JSONV2),
+		CLOBS_JSONV2(Clobs.class, Formats.JSONV2, Formats.JSONV2),
+		BASIN_DEFAULT(Basin.class, Formats.DEFAULT, Formats.NAMED_PGJSON),
+		BASIN_PGJSON(Basin.class, Formats.PGJSON, Formats.PGJSON),
+		BASIN_NAMED_PGJSON(Basin.class, Formats.NAMED_PGJSON, Formats.NAMED_PGJSON),
+		PROJECT_JSONV1(Project.class, Formats.JSONV1, Formats.JSONV1),
+		PROJECT_JSON(Project.class, Formats.JSON, Formats.JSONV1),
 		;
 
 		final Class<? extends CwmsDTOBase> _class;

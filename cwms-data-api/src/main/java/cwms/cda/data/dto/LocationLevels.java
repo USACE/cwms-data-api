@@ -3,7 +3,6 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -15,7 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 @JsonRootName("location-levels")
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class LocationLevels extends CwmsDTOPaginated {
     @JacksonXmlElementWrapper
     @JacksonXmlProperty(localName = "location-level")
@@ -70,12 +69,4 @@ public class LocationLevels extends CwmsDTOPaginated {
             return this;
         }
     }
-
-
-    @Override
-    public void validate() throws FieldException {
-
-
-    }
-
 }

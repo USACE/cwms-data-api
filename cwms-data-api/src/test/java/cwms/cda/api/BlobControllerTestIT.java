@@ -77,10 +77,10 @@ public class BlobControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_getOne() throws JsonProcessingException
     {
-//        /* There is an issue with how javalin handles / in the path that are actually part
-//        of the object name (NOTE: good candidate for actually having a GUID or other "code"
-//        as part of the path and the actual name as a query parameter.
-//        */
+        /* There is an issue with how javalin handles / in the path that are actually part
+        of the object name (NOTE: good candidate for actually having a GUID or other "code"
+        as part of the path and the actual name as a query parameter.
+        */
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)

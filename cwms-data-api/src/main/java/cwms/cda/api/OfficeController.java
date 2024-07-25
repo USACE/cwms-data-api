@@ -105,11 +105,13 @@ public class OfficeController implements CrudHandler {
                 .queryParamAsClass(HAS_DATA, Boolean.class)
                 .getOrDefault(false);
             List<Office> offices = dao.getOffices(hasDataParm);
-
+            
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm, Office.class);
 
             String result = Formats.format(contentType, offices, Office.class);
+
+            Controllers.addDeprecatedContentTypeWarning(ctx, contentType);
 
             ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());
@@ -154,6 +156,7 @@ public class OfficeController implements CrudHandler {
                 String formatHeader = ctx.header(Header.ACCEPT);
                 ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm, Office.class);
                 String result = Formats.format(contentType, office.get());
+                Controllers.addDeprecatedContentTypeWarning(ctx, contentType);
                 ctx.result(result).contentType(contentType.toString());
 
                 requestResultSize.update(result.length());

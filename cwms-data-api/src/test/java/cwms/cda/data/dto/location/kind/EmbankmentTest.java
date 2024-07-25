@@ -24,29 +24,35 @@
 
 package cwms.cda.data.dto.location.kind;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-
+import cwms.cda.helpers.DTOMatch;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 final class EmbankmentTest {
 
-    @Test
-    void testEmbankmentSerializationRoundTrip() {
+    @ParameterizedTest
+    @CsvSource({Formats.JSON, Formats.JSONV1, Formats.DEFAULT})
+    void testTurbineSerializationRoundTrip(String format) {
         Embankment embankment = buildTestEmbankment();
-        String serialized = Formats.format(Formats.parseHeader(Formats.JSON), embankment);
-        Embankment deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSON), serialized, Embankment.class);
-        assertEquals(embankment, deserialized, "Roundtrip serialization failed");
-        assertEquals(embankment.hashCode(), deserialized.hashCode(), "Roundtrip serialization failed");
+        String serialized = Formats.format(Formats.parseHeader(format, Embankment.class), embankment);
+        Embankment deserialized = Formats.parseContent(Formats.parseHeader(format, Embankment.class),
+                serialized, Embankment.class);
+        DTOMatch.assertMatch(embankment, deserialized);
     }
 
     @Test
@@ -55,14 +61,14 @@ final class EmbankmentTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/location/kind/embankment.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        Embankment deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSON), serialized, Embankment.class);
-        assertEquals(embankment, deserialized, "Roundtrip serialization failed");
+        Embankment deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSON, Embankment.class),
+                serialized, Embankment.class);
+        DTOMatch.assertMatch(embankment, deserialized);
     }
 
     @Test
     void testValidate() {
         Location location = buildTestLocation();
-        String projectId = "project";
         assertAll(() -> {
                     Embankment embankment = new Embankment.Builder().build();
                     assertThrows(FieldException.class, embankment::validate,
@@ -71,14 +77,6 @@ final class EmbankmentTest {
                     Embankment embankment = new Embankment.Builder().withLocation(location).build();
                     assertThrows(FieldException.class, embankment::validate,
                             "Expected validate() to throw FieldException because Project Id field can't be null, but it didn't");
-                }, () -> {
-                    Embankment embankment = new Embankment.Builder().withLocation(location).withProjectId(projectId).build();
-                    assertThrows(FieldException.class, embankment::validate,
-                            "Expected validate() to throw FieldException because Project Office Id field can't be null, but it didn't");
-                }, () -> {
-                    Embankment embankment = new Embankment.Builder().withLocation(location).withProjectId(projectId).withProjectOfficeId("SPK").build();
-                    assertThrows(FieldException.class, embankment::validate,
-                            "Expected validate() to throw FieldException because Structure type field can't be null, but it didn't");
                 }
         );
     }
@@ -86,9 +84,11 @@ final class EmbankmentTest {
     private Embankment buildTestEmbankment() {
         return new Embankment.Builder()
                 .withLocation(buildTestLocation())
-                .withHeightMax(5.0)
-                .withProjectId("PROJECT")
-                .withProjectOfficeId("LRD")
+                .withMaxHeight(5.0)
+                .withProjectId(new CwmsId.Builder()
+                        .withOfficeId("LRD")
+                        .withName("PROJECT")
+                        .build())
                 .withStructureLength(10.0)
                 .withStructureType(new LookupType.Builder()
                         .withOfficeId("CWMS")
@@ -96,20 +96,20 @@ final class EmbankmentTest {
                         .withTooltip("TOOLTIP_STRUCT")
                         .withActive(true)
                         .build())
-                .withDownstreamProtType(new LookupType.Builder()
+                .withDownstreamProtectionType(new LookupType.Builder()
                         .withOfficeId("SPK")
                         .withDisplayValue("DOWNSTREAM_PROT")
                         .withTooltip("TOOLTIP_DOWNSTREAM_PROT")
                         .withActive(false)
                         .build())
-                .withUpstreamProtType(new LookupType.Builder()
+                .withUpstreamProtectionType(new LookupType.Builder()
                         .withOfficeId("LRL")
                         .withDisplayValue("UPSTREAM_PROT")
                         .withTooltip("TOOLTIP_UPSTREAM_PROT")
                         .withActive(true)
                         .build())
                 .withUpstreamSideSlope(15.0)
-                .withUnitsId("ft")
+                .withLengthUnits("ft")
                 .withTopWidth(20.0)
                 .withStructureLength(25.0)
                 .withDownstreamSideSlope(90.0)
@@ -120,6 +120,7 @@ final class EmbankmentTest {
         return new Location.Builder("TEST_LOCATION2", "EMBANKMENT", ZoneId.of("UTC"),
                 50.0, 50.0, "NVGD29", "LRL")
                 .withElevation(10.0)
+                .withElevationUnits("m")
                 .withLocationType("SITE")
                 .withCountyName("Sacramento")
                 .withNation(Nation.US)

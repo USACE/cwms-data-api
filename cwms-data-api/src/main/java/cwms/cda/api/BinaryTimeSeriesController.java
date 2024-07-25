@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2023-2024 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,42 +24,51 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.queryParamAsInstant;
+import static cwms.cda.api.Controllers.requiredInstant;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.binarytimeseries.TimeSeriesBinaryDao;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.helpers.ReplaceUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
-import io.javalin.http.HttpResponseException;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.apache.http.client.utils.URIBuilder;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.http.client.utils.URIBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
 
 
 public class BinaryTimeSeriesController implements CrudHandler {
@@ -67,7 +76,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
     static final String TAG = "Binary-TimeSeries";
 
     public static final String REPLACE_ALL = "replace-all";
-    private static final String DEFAULT_BIN_TYPE_MASK = "*" ;
+    private static final String DEFAULT_BIN_TYPE_MASK = "*";
     public static final String BINARY_TYPE_MASK = "binary-type-mask";
     private final MetricRegistry metrics;
 
@@ -88,33 +97,33 @@ public class BinaryTimeSeriesController implements CrudHandler {
 
 
     @OpenApi(
-            summary = "Retrieve binary time series values for a provided time window and date version." +
-                    "If individual values exceed 64 kilobytes, a URL to a separate download is provided " +
-                    "instead of being included in the returned payload from this request.",
+            summary = "Retrieve binary time series values for a provided time window and date version."
+                    + "If individual values exceed 64 kilobytes, a URL to a separate download is "
+                    + "provided instead of being included in the returned payload from this request.",
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                            + "the Binary TimeSeries whose data is to be included in the response."),
-                    @OpenApiParam(name = NAME, required = true, description = "Specifies the id of the "
-                            + "binary timeseries"),
-                    @OpenApiParam(name = BINARY_TYPE_MASK, description = "The "
-                            + "data type pattern expressed as either an internet media type "
-                            + "(e.g. 'image/*') or a file extension (e.g. '.*'). Use glob-style "
-                            + "wildcard characters as shown above instead of sql-style wildcard "
-                        + "characters for pattern matching. Default is:" + DEFAULT_BIN_TYPE_MASK),
-                    @OpenApiParam(name = TIMEZONE,  description = "Specifies "
-                            + "the time zone of the values of the begin and end fields (unless "
-                            + "otherwise specified). If this field is not specified, "
-                            + "the default time zone of UTC shall be used."),
-                    @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
-                    @OpenApiParam(name = END, required = true, description = "The end of the time window"),
-                    @OpenApiParam(name = VERSION_DATE, description = "The version date for the time series.")
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                        + "the Binary TimeSeries whose data is to be included in the response."),
+                @OpenApiParam(name = NAME, required = true, description = "Specifies the id of the "
+                        + "binary timeseries"),
+                @OpenApiParam(name = BINARY_TYPE_MASK, description = "The "
+                        + "data type pattern expressed as either an internet media type "
+                        + "(e.g. 'image/*') or a file extension (e.g. '.*'). Use glob-style "
+                        + "wildcard characters as shown above instead of sql-style wildcard "
+                    + "characters for pattern matching. Default is:" + DEFAULT_BIN_TYPE_MASK),
+                @OpenApiParam(name = TIMEZONE,  description = "Specifies "
+                        + "the time zone of the values of the begin and end fields (unless "
+                        + "otherwise specified). If this field is not specified, "
+                        + "the default time zone of UTC shall be used."),
+                @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
+                @OpenApiParam(name = END, required = true, description = "The end of the time window"),
+                @OpenApiParam(name = VERSION_DATE, description = "The version date for the time series.")
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            content = {
-                                    @OpenApiContent(type = Formats.JSONV2, from = BinaryTimeSeries.class)
-                            }
-                    )},
+                @OpenApiResponse(status = STATUS_200,
+                    content = {
+                        @OpenApiContent(type = Formats.JSONV2, from = BinaryTimeSeries.class)
+                    }
+                )},
             tags = {TAG}
     )
     @Override
@@ -132,7 +141,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String dateToken = "{date_token}";
             String path = ctx.path();
-            if(!path.endsWith("/"))  {
+            if (!path.endsWith("/"))  {
                 path += "/";
             }
             path += tsId + "/value";
@@ -176,13 +185,12 @@ public class BinaryTimeSeriesController implements CrudHandler {
     @OpenApi(
             description = "Create new BinaryTimeSeries",
             requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = BinaryTimeSeries.class, type = Formats.JSONV2)
-                    },
-                    required = true),
+                content = {
+                    @OpenApiContent(from = BinaryTimeSeries.class, type = Formats.JSONV2)
+                },
+                required = true),
             queryParams = {
-
-                    @OpenApiParam(name = REPLACE_ALL, type = Boolean.class)
+                @OpenApiParam(name = REPLACE_ALL, type = Boolean.class)
             },
             method = HttpMethod.POST,
             tags = {TAG}
@@ -209,17 +217,16 @@ public class BinaryTimeSeriesController implements CrudHandler {
     @OpenApi(
             description = "Updates a binary timeseries",
             pathParams = {
-                    @OpenApiParam(name = TIMESERIES, description = "The id of the binary timeseries to be updated"),
+                @OpenApiParam(name = NAME, description = "The id of the binary timeseries to be updated"),
             },
             queryParams = {
-
-                    @OpenApiParam(name = REPLACE_ALL, type = Boolean.class)
+                @OpenApiParam(name = REPLACE_ALL, type = Boolean.class)
             },
             requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = BinaryTimeSeries.class, type = Formats.JSONV2),
-                    },
-                    required = true
+                content = {
+                    @OpenApiContent(from = BinaryTimeSeries.class, type = Formats.JSONV2),
+                },
+                required = true
             ),
             method = HttpMethod.PATCH,
             path = "/timeseries/binary/{timeseries}",
@@ -247,25 +254,25 @@ public class BinaryTimeSeriesController implements CrudHandler {
     @OpenApi(
             description = "Deletes requested binary timeseries id",
             pathParams = {
-                    @OpenApiParam(name = TIMESERIES, description = "The time series identifier to be deleted"),
+                @OpenApiParam(name = NAME, description = "The time series identifier to be deleted"),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "owning office of the timeseries identifier to be deleted"),
-                    @OpenApiParam(name = BINARY_TYPE_MASK, description= "The data "
-                            + "type pattern expressed as either an internet media type "
-                            + "(e.g. 'image/*') or a file extension (e.g. '.*'). Use glob-style "
-                            + "wildcard characters as shown above instead of sql-style wildcard "
-                            + "characters for pattern matching. Default:" + DEFAULT_BIN_TYPE_MASK),
-                    @OpenApiParam(name = TIMEZONE, description = "Specifies "
-                            + "the time zone of the values of the begin and end fields (unless "
-                            + "otherwise specified). If this field is not specified, "
-                            + "the default time zone of UTC shall be used."),
-                    @OpenApiParam(name = BEGIN, required = true, description = "The start of the time"
-                            + " window"),
-                    @OpenApiParam(name = END, required = true, description = "The end of the time window. "),
-                    @OpenApiParam(name = VERSION_DATE, description = "The version date for the time "
-                            + "series.  If not specified, the maximum version date is used.")
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                        + "owning office of the timeseries identifier to be deleted"),
+                @OpenApiParam(name = BINARY_TYPE_MASK, description = "The data "
+                        + "type pattern expressed as either an internet media type "
+                        + "(e.g. 'image/*') or a file extension (e.g. '.*'). Use glob-style "
+                        + "wildcard characters as shown above instead of sql-style wildcard "
+                        + "characters for pattern matching. Default:" + DEFAULT_BIN_TYPE_MASK),
+                @OpenApiParam(name = TIMEZONE, description = "Specifies "
+                        + "the time zone of the values of the begin and end fields (unless "
+                        + "otherwise specified). If this field is not specified, "
+                        + "the default time zone of UTC shall be used."),
+                @OpenApiParam(name = BEGIN, required = true, description = "The start of the time"
+                        + " window"),
+                @OpenApiParam(name = END, required = true, description = "The end of the time window. "),
+                @OpenApiParam(name = VERSION_DATE, description = "The version date for the time "
+                        + "series.  If not specified, the maximum version date is used.")
             },
             method = HttpMethod.DELETE,
             tags = {TAG}
@@ -294,7 +301,8 @@ public class BinaryTimeSeriesController implements CrudHandler {
         /*
         If the body is more than 1Mb then this:
         bts = om.readValue(ctx.body(), BinaryTimeSeries.class) generates a warning that
-        looks like:  WARNING [http-nio-auto-1-exec-3] io.javalin.core.util.JavalinLogger.warn Body greater than max size (1000000 bytes)
+        looks like:  WARNING [http-nio-auto-1-exec-3] io.javalin.core.util.JavalinLogger.warn
+        Body greater than max size (1000000 bytes)
         Javalin will then automatically return 413 and close the connection.
          HTTP/1.1 413
          Strict-Transport-Security: max-age=31536000;includeSubDomains

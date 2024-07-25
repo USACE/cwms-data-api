@@ -1,13 +1,13 @@
 package cwms.cda.data.dto.basinconnectivity;
 
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.NamedPgJsonFormatter;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.PgJsonFormatter;
 
-@FormattableWith(contentType = Formats.NAMED_PGJSON, formatter = NamedPgJsonFormatter.class)
-@FormattableWith(contentType = Formats.PGJSON, formatter = NamedPgJsonFormatter.class)
+@FormattableWith(contentType = Formats.NAMED_PGJSON, formatter = NamedPgJsonFormatter.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.PGJSON, formatter = PgJsonFormatter.class)
 public final class Basin extends CwmsDTO
 {
     private final String basinName;
@@ -115,10 +115,5 @@ public final class Basin extends CwmsDTO
         {
             return new Basin(this);
         }
-    }
-
-    @Override
-    public void validate() throws FieldException {
-
     }
 }

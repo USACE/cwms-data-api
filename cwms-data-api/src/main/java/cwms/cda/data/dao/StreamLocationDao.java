@@ -1,71 +1,263 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package cwms.cda.data.dao;
 
-import cwms.cda.api.enums.Unit;
-import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.data.dto.basinconnectivity.StreamLocation;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
+import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.stream.Bank;
+import cwms.cda.data.dto.stream.StreamLocation;
+import cwms.cda.data.dto.stream.StreamLocationNode;
+import cwms.cda.data.dto.stream.StreamNode;
+import java.sql.Connection;
 import org.jooq.DSLContext;
-import usace.cwms.db.jooq.dao.CwmsDbStreamJooq;
+import org.jooq.Record;
+import org.jooq.Result;
+import org.jooq.impl.DSL;
+import usace.cwms.db.dao.util.OracleTypeMap;
+import usace.cwms.db.jooq.codegen.packages.CWMS_STREAM_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.cwms_stream.RETRIEVE_STREAM_LOCATION;
 
-public class StreamLocationDao extends JooqDao<StreamLocation> {
+import java.util.List;
+
+import static java.util.stream.Collectors.toList;
+import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_T;
+
+public final class StreamLocationDao extends JooqDao<StreamLocation> {
+
+    static final String STREAM_LOCATION_OFFICE_ID_COLUMN = "OFFICE_ID";
+    static final String STREAM_LOCATION_STREAM_ID_COLUMN = "STREAM_ID";
+    static final String STREAM_LOCATION_LOCATION_ID_COLUMN = "LOCATION_ID";
+    static final String STREAM_LOCATION_STATION_COLUMN = "STATION";
+    static final String STREAM_LOCATION_PUBLISHED_STATION_COLUMN = "PUBLISHED_STATION";
+    static final String STREAM_LOCATION_NAVIGATION_STATION_COLUMN = "NAVIGATION_STATION";
+    static final String STREAM_LOCATION_BANK_COLUMN = "BANK";
+    static final String STREAM_LOCATION_LOWEST_MEASURABLE_STAGE_COLUMN = "LOWEST_MEASURABLE_STAGE";
+    static final String STREAM_LOCATION_DRAINAGE_AREA_COLUMN = "DRAINAGE_AREA";
+    static final String STREAM_LOCATION_UNGAGED_DRAINAGE_AREA_COLUMN = "UNGAGED_DRAINAGE_AREA";
+    static final String STREAM_LOCATION_AREA_UNITS_COLUMN = "AREA_UNIT";
+    static final String STREAM_LOCATION_STAGE_UNITS_COLUMN = "STAGE_UNIT";
+    static final String STREAM_LOCATION_STATION_UNITS_COLUMN = "STATION_UNIT";
+
     public StreamLocationDao(DSLContext dsl) {
         super(dsl);
     }
 
     /**
-     * @param streamId - stream containing stream locations that are being retrieved
-     * @return list of stream locations on stream
+     * Retrieve a list of stream locations
+     * @param streamIdMask - the stream id mask
+     * @param locationIdMask - the location id mask
+     * @param stationUnit - the station units used for stations
+     * @param stageUnit - the stage units
+     * @param areaUnit - the area units
+     * @param officeIdMask - the office id mask
+     * @return a list of stream locations
      */
-    public Set<StreamLocation> getStreamLocations(String streamId, String unitSystem,
-                                                  String officeId) throws SQLException {
-        String pStreamIdMaskIn = streamId == null ? "*" : streamId;
-        String pLocationIdMaskIn = "*";
-        String pStationUnitIn = UnitSystem.EN.value().equalsIgnoreCase(unitSystem)
-                ? Unit.MILE.getValue() : Unit.KILOMETER.getValue();
-        String pStageUnitIn = UnitSystem.EN.value().equalsIgnoreCase(unitSystem)
-                ? Unit.FEET.getValue() : Unit.METER.getValue();
-        String pAreaUnitIn = UnitSystem.EN.value().equalsIgnoreCase(unitSystem)
-                ? Unit.SQUARE_MILES.getValue() : Unit.SQUARE_KILOMETERS.getValue();
-        CwmsDbStreamJooq streamJooq = new CwmsDbStreamJooq();
-        AtomicReference<ResultSet> resultSetRef = new AtomicReference<>();
-        connection(dsl, c -> resultSetRef.set(streamJooq.catStreamLocations(c, pStreamIdMaskIn,
-                pLocationIdMaskIn, pStationUnitIn, pStageUnitIn, pAreaUnitIn, officeId)));
-        return buildStreamLocations(resultSetRef.get());
+    public List<StreamLocation> retrieveStreamLocations(String officeIdMask, String streamIdMask, String locationIdMask, String stationUnit, String stageUnit, String areaUnit) {
+        return connectionResult(dsl, conn -> retrieveStreamLocations(officeIdMask, streamIdMask, locationIdMask, stationUnit, stageUnit, areaUnit, conn));
     }
 
-    private Set<StreamLocation> buildStreamLocations(ResultSet rs) throws SQLException {
-        Set<StreamLocation> retVal = new HashSet<>();
-        while (rs.next()) {
-            String locationId = rs.getString("LOCATION_ID");
-            String officeId = rs.getString("OFFICE_ID");
-            String streamId = rs.getString("STREAM_ID");
-            Double station = toDouble(rs.getBigDecimal("STATION"));
-            Double publishedStation = toDouble(rs.getBigDecimal("PUBLISHED_STATION"));
-            Double navigationStation = toDouble(rs.getBigDecimal("NAVIGATION_STATION"));
-            Double lowestMeasurableStage = toDouble(rs.getBigDecimal("LOWEST_MEASURABLE_STAGE"));
-            Double totalDrainageArea = toDouble(rs.getBigDecimal("DRAINAGE_AREA"));
-            Double ungagedDrainageArea = toDouble(rs.getBigDecimal("UNGAGED_DRAINAGE_AREA"));
-            String bank = rs.getString("BANK");
-            StreamLocation loc = new StreamLocation.Builder(locationId, streamId, station, bank,
-                    officeId)
-                    .withPublishedStation(publishedStation)
-                    .withNavigationStation(navigationStation)
-                    .withLowestMeasurableStage(lowestMeasurableStage)
-                    .withTotalDrainageArea(totalDrainageArea)
-                    .withUngagedDrainageArea(ungagedDrainageArea)
-                    .build();
-            retVal.add(loc);
+    /**
+     * Retrieve a list of stream locations
+     * @param officeId - the office id
+     * @param locationId - the location id
+     * @param allDownstream - if true, retrieve all downstream locations
+     * @param sameStreamOnly - if true, retrieve only locations on the same stream
+     * @param stationUnits - the station units
+     * @param stageUnits - the stage units
+     * @param areaUnits - the area units
+     * @return a list of downstream locations
+     */
+    public List<StreamLocation> retrieveDownstreamLocations(String officeId, String locationId, Boolean allDownstream, Boolean sameStreamOnly,
+                                                            String stationUnits, String stageUnits, String areaUnits) {
+        return connectionResult(dsl, conn -> {
+            String allDsLocationsStr = OracleTypeMap.formatBool(allDownstream);
+            String sameStreamOnlyStr = OracleTypeMap.formatBool(sameStreamOnly);
+            STR_TAB_T downstreamLocIds = CWMS_STREAM_PACKAGE.call_GET_DS_LOCATIONS__2(DSL.using(conn).configuration(),
+                    locationId, allDsLocationsStr, sameStreamOnlyStr, officeId);
+            return downstreamLocIds.stream()
+                    .map(dl -> retrieveStreamLocations(officeId, null, dl, stationUnits, stageUnits, areaUnits, conn).stream()
+                            .findFirst()
+                            .orElseThrow(() -> new NotFoundException("Downstream location " + dl + "not found.")))
+                    .collect(toList());
+        });
+    }
+
+    /**
+     *
+     * @param officeId - the office id
+     * @param locationId - the location id
+     * @param allUpstream - if true, retrieve all upstream locations
+     * @param sameStreamOnly - if true, retrieve only locations on the same stream
+     * @param stationUnits - the station units
+     * @param stageUnits - the stage units
+     * @param areaUnits - the area units
+     * @return a list of upstream locations
+     */
+    public List<StreamLocation> retrieveUpstreamLocations(String officeId, String locationId, Boolean allUpstream, Boolean sameStreamOnly,
+                                                            String stationUnits, String stageUnits, String areaUnits) {
+        return connectionResult(dsl, conn -> {
+            String allUsLocationsStr = OracleTypeMap.formatBool(allUpstream);
+            String sameStreamOnlyStr = OracleTypeMap.formatBool(sameStreamOnly);
+            STR_TAB_T upstreamLocIds = CWMS_STREAM_PACKAGE.call_GET_US_LOCATIONS__2(DSL.using(conn).configuration(),
+                    locationId, allUsLocationsStr, sameStreamOnlyStr, officeId);
+            return upstreamLocIds.stream()
+                    .map(ul -> retrieveStreamLocations(officeId, null, ul, stationUnits, stageUnits, areaUnits, conn).stream()
+                            .findFirst()
+                            .orElseThrow(() -> new NotFoundException("Upstream location " + ul + "not found.")))
+                    .collect(toList());
+        });
+    }
+
+    /**
+     * Retrieve a specific stream location
+     * @param locationId - the id of the stream location
+     * @param streamId - the id of the stream
+     * @param officeId - the office id
+     * @return the stream location
+     */
+    public StreamLocation retrieveStreamLocation(String officeId, String streamId, String locationId, String stationUnit, String stageUnit, String areaUnit) {
+        return connectionResult(dsl, conn -> {
+            setOffice(conn, officeId);
+            return retrieveStreamLocation(officeId, streamId, locationId, stationUnit, stageUnit, areaUnit, conn);
+        });
+    }
+
+    static StreamLocation retrieveStreamLocation(String officeId, String streamId, String locationId, String stationUnit, String stageUnit, String areaUnit, Connection conn) {
+        RETRIEVE_STREAM_LOCATION retrieveStreamLocation = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAM_LOCATION(DSL.using(conn).configuration(),
+                locationId, streamId, stationUnit, stageUnit, areaUnit, officeId);
+        return fromJooqStreamLocation(retrieveStreamLocation, locationId, streamId, officeId, stationUnit, stageUnit, areaUnit);
+    }
+
+    private static List<StreamLocation> retrieveStreamLocations(String officeIdMask, String streamIdMask, String locationIdMask, String stationUnit, String stageUnit, String areaUnit, Connection conn) {
+        Result<Record> records = CWMS_STREAM_PACKAGE.call_CAT_STREAM_LOCATIONS(DSL.using(conn).configuration(),
+                streamIdMask, locationIdMask, stationUnit, stageUnit, areaUnit, officeIdMask);
+        return records.stream().map(StreamLocationDao::fromJooqStreamLocationRecord)
+                .collect(toList());
+    }
+
+    /**
+     * Store a stream location
+     * @param streamLocation - the stream location to store
+     * @param failIfExists - if true, fail if the stream location already exists
+     */
+    public void storeStreamLocation(StreamLocation streamLocation, boolean failIfExists) {
+        connectionResult(dsl, conn -> {
+            setOffice(conn, streamLocation.getId().getOfficeId());
+            String failsIfExistsStr = OracleTypeMap.formatBool(failIfExists);
+            String ignoreNullsStr = OracleTypeMap.formatBool(true);
+            StreamLocationNode streamLocationNode = streamLocation.getStreamLocationNode();
+            StreamNode streamNode = streamLocationNode.getStreamNode();
+            String bank = streamNode.getBank() == null ? null : streamNode.getBank().getCode();
+            CWMS_STREAM_PACKAGE.call_STORE_STREAM_LOCATION(DSL.using(conn).configuration(),
+                    streamLocationNode.getId().getName(),
+                    streamNode.getStreamId().getName(),
+                    failsIfExistsStr, ignoreNullsStr, streamLocation.getStation(), streamLocation.getStationUnits(),
+                    streamLocation.getPublishedStation(), streamLocation.getNavigationStation(), bank,
+                    streamLocation.getLowestMeasurableStage(), streamLocation.getStageUnits(), streamLocation.getTotalDrainageArea(),
+                    streamLocation.getUngagedDrainageArea(), streamLocation.getAreaUnits(),streamLocationNode.getId().getOfficeId());
+            return null;
+        });
+    }
+
+    /**
+     * Update a stream location
+     * @param streamLocation - the stream location to update
+     */
+    public void updateStreamLocation(StreamLocation streamLocation) {
+        StreamLocation existingStreamLocation = retrieveStreamLocation(streamLocation.getId().getOfficeId(), streamLocation.getStreamLocationNode().getStreamNode().getStreamId().getName(), streamLocation.getId().getName(),
+                streamLocation.getStreamLocationNode().getStreamNode().getStationUnits(), streamLocation.getStageUnits(), streamLocation.getAreaUnits());
+        if (existingStreamLocation == null) {
+            throw new NotFoundException("Could not find stream location to update.");
         }
-
-        return retVal;
+        storeStreamLocation(streamLocation, false);
     }
 
-    public Set<StreamLocation> getAllStreamLocations(String unitSystem, String officeId) throws SQLException {
-        return getStreamLocations(null, unitSystem, officeId);
+    /**
+     * Delete a stream location
+     * @param locationId - the id of the stream location
+     * @param streamId - the id of the stream
+     * @param officeId - the office id
+     */
+    public void deleteStreamLocation(String officeId, String streamId, String locationId) {
+        connection(dsl, conn -> {
+            setOffice(conn, officeId);
+            CWMS_STREAM_PACKAGE.call_DELETE_STREAM_LOCATION(DSL.using(conn).configuration(), locationId, streamId, officeId);
+        });
     }
 
+    static StreamLocation fromJooqStreamLocation(RETRIEVE_STREAM_LOCATION streamLocation, String locationId, String streamId, String officeId, String stationUnit, String stageUnit, String areaUnit) {
+        return new StreamLocation.Builder()
+                .withStreamLocationNode(buildStreamLocationNode(officeId,
+                        streamId,
+                        locationId,
+                        streamLocation.getP_STATION(),
+                        Bank.fromCode(streamLocation.getP_BANK()),
+                        stationUnit))
+                .withPublishedStation(streamLocation.getP_PUBLISHED_STATION())
+                .withNavigationStation(streamLocation.getP_NAVIGATION_STATION())
+                .withLowestMeasurableStage(streamLocation.getP_LOWEST_MEASURABLE_STAGE())
+                .withTotalDrainageArea(streamLocation.getP_DRAINAGE_AREA())
+                .withUngagedDrainageArea(streamLocation.getP_UNGAGED_DRAINAGE_AREA())
+                .withAreaUnits(areaUnit)
+                .withStageUnits(stageUnit)
+                .build();
+    }
+
+    static StreamLocationNode buildStreamLocationNode(String officeId, String streamId, String locationId, Double station, Bank bank, String stationUnits) {
+        return new StreamLocationNode.Builder()
+                .withId(new CwmsId.Builder()
+                        .withName(locationId)
+                        .withOfficeId(officeId)
+                        .build())
+                .withStreamNode(new StreamNode.Builder()
+                        .withStreamId(new CwmsId.Builder()
+                                .withName(streamId)
+                                .withOfficeId(officeId)
+                                .build())
+                        .withStation(station)
+                        .withBank(bank)
+                        .withStationUnits(stationUnits)
+                        .build())
+                .build();
+    }
+
+    static StreamLocation fromJooqStreamLocationRecord(Record record) {
+        return new StreamLocation.Builder()
+                .withStreamLocationNode(buildStreamLocationNode(
+                        record.get(STREAM_LOCATION_OFFICE_ID_COLUMN, String.class),
+                        record.get(STREAM_LOCATION_STREAM_ID_COLUMN, String.class),
+                        record.get(STREAM_LOCATION_LOCATION_ID_COLUMN, String.class),
+                        record.get(STREAM_LOCATION_STATION_COLUMN, Double.class),
+                        Bank.fromCode(record.get(STREAM_LOCATION_BANK_COLUMN, String.class)),
+                        record.get(STREAM_LOCATION_STATION_UNITS_COLUMN, String.class)))
+                .withPublishedStation(record.get(STREAM_LOCATION_PUBLISHED_STATION_COLUMN, Double.class))
+                .withNavigationStation(record.get(STREAM_LOCATION_NAVIGATION_STATION_COLUMN, Double.class))
+                .withLowestMeasurableStage(record.get(STREAM_LOCATION_LOWEST_MEASURABLE_STAGE_COLUMN, Double.class))
+                .withTotalDrainageArea(record.get(STREAM_LOCATION_DRAINAGE_AREA_COLUMN, Double.class))
+                .withUngagedDrainageArea(record.get(STREAM_LOCATION_UNGAGED_DRAINAGE_AREA_COLUMN, Double.class))
+                .withAreaUnits(record.get(STREAM_LOCATION_AREA_UNITS_COLUMN, String.class))
+                .withStageUnits(record.get(STREAM_LOCATION_STAGE_UNITS_COLUMN, String.class))
+                .build();
+    }
 }

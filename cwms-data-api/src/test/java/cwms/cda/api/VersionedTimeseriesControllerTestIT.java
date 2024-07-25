@@ -4,6 +4,7 @@ import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.TRIM;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.VERSION_DATE;
 import static io.restassured.RestAssured.given;
@@ -99,7 +100,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[0][1]", equalTo(1.0F))
                 .body("values[1][1]", equalTo(1.0F))
                 .body("values[2][1]", equalTo(1.0F))
-                .body("version-date", equalTo("2021-06-21T08:00:00+0000[Z]"))
+                .body("version-date", equalTo("2021-06-21T08:00:00Z"))
                 .body("date-version-type", equalTo(VersionType.SINGLE_VERSION.toString()));
 
         // Delete all values from timeseries
@@ -135,6 +136,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR) // put old end date back in map
+                .queryParam(TRIM, false)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -147,7 +149,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[0][1]", equalTo(null))
                 .body("values[1][1]", equalTo(null))
                 .body("values[2][1]", equalTo(null))
-                .body("version-date", equalTo("2021-06-21T08:00:00+0000[Z]"))
+                .body("version-date", equalTo("2021-06-21T08:00:00Z"))
                 .body("date-version-type", equalTo(VersionType.SINGLE_VERSION.toString()));
     }
 
@@ -203,7 +205,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[0][1]", equalTo(1.0F))
                 .body("values[1][1]", equalTo(1.0F))
                 .body("values[2][1]", equalTo(1.0F))
-                .body("version-date", equalTo("2021-06-21T08:00:00+0000[Z]"))
+                .body("version-date", equalTo("2021-06-21T08:00:00Z"))
                 .body("date-version-type", equalTo(VersionType.SINGLE_VERSION.toString()));
 
         // Update versioned time series
@@ -252,7 +254,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[0][1]", equalTo(2.0F))
                 .body("values[1][1]", equalTo(2.0F))
                 .body("values[2][1]", equalTo(2.0F))
-                .body("version-date", equalTo("2021-06-21T08:00:00+0000[Z]"))
+                .body("version-date", equalTo("2021-06-21T08:00:00Z"))
                 .body("date-version-type", equalTo(VersionType.SINGLE_VERSION.toString()));
 
         // Delete all values from timeseries
@@ -288,6 +290,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(VERSION_DATE, ts.getVersionDate().toString())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
+                .queryParam(TRIM, false)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -300,7 +303,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[0][1]", equalTo(null))
                 .body("values[1][1]", equalTo(null))
                 .body("values[2][1]", equalTo(null))
-                .body("version-date", equalTo("2021-06-21T08:00:00+0000[Z]"))
+                .body("version-date", equalTo("2021-06-21T08:00:00Z"))
                 .body("date-version-type", equalTo(VersionType.SINGLE_VERSION.toString()));
     }
 
@@ -437,6 +440,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, ts.getUnits())
                 .queryParam(BEGIN, BEGIN_STR)
                 .queryParam(END, END_STR)
+                .queryParam(TRIM, false)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)

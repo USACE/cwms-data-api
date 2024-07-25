@@ -67,12 +67,6 @@ public class StandardTextCatalog extends CwmsDTO {
         return values.values();
     }
 
-
-    @Override
-    public void validate() throws FieldException {
-        // nothing to validate
-    }
-
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {

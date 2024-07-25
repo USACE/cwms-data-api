@@ -10,8 +10,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.enums.Nation;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -19,7 +17,6 @@ import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv1;
 import cwms.cda.formatters.xml.XMLv2;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -29,10 +26,10 @@ import java.util.function.Consumer;
 @JsonDeserialize(builder = Location.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.XML, formatter = XMLv1.class)
-@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.XMLV1, formatter = XMLv1.class)
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 public final class Location extends CwmsDTO {
     @JsonProperty(required = true)
     private final String name;
@@ -57,6 +54,10 @@ public final class Location extends CwmsDTO {
     private final String mapLabel;
     private final String boundingOfficeId;
     private final String elevationUnits;
+
+    private Location() {
+        this(new Builder(null, null, null, null, null,null, null));
+    }
 
     private Location(Builder builder) {
         super(builder.officeId);
@@ -273,8 +274,8 @@ public final class Location extends CwmsDTO {
         private final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
         @JsonCreator
-        public Builder(@JsonProperty(value = "name") String name, @JsonProperty(value = "location"
-                + "-kind") String locationKind,
+        public Builder(@JsonProperty(value = "name") String name,
+                       @JsonProperty(value = "location-kind") String locationKind,
                        @JsonProperty(value = "timezone-name") ZoneId timezoneName,
                        @JsonProperty(value = "latitude") Double latitude,
                        @JsonProperty(value = "longitude") Double longitude,
@@ -515,31 +516,14 @@ public final class Location extends CwmsDTO {
     }
 
     @Override
-    public void validate() throws FieldException {
-        ArrayList<String> missingFields = new ArrayList<>();
-        if (this.getName() == null) {
-            missingFields.add("Name");
-        }
-        if (this.getLocationKind() == null) {
-            missingFields.add("Location Kind");
-        }
-        if (this.getTimezoneName() == null) {
-            missingFields.add("Timezone ID");
-        }
-        if (this.getOfficeId() == null) {
-            missingFields.add("Office ID");
-        }
-        if (this.getHorizontalDatum() == null) {
-            missingFields.add("Horizontal Datum");
-        }
-        if (this.getLongitude() == null) {
-            missingFields.add("Longitude");
-        }
-        if (this.getLatitude() == null) {
-            missingFields.add("Latitude");
-        }
-        if (!missingFields.isEmpty()) {
-            throw new RequiredFieldException(missingFields);
-        }
+    protected void validateInternal(CwmsDTOValidator validator) {
+        super.validateInternal(validator);
+        validator.required(getName(), "name");
+        validator.required(getLocationKind(), "location-kind");
+        validator.required(getTimezoneName(), "timezone-name");
+        validator.required(getOfficeId(), "office-id");
+        validator.required(getHorizontalDatum(), "horizontal-datum");
+        validator.required(getLongitude(), "longitude");
+        validator.required(getLatitude(), "latitude");
     }
 }

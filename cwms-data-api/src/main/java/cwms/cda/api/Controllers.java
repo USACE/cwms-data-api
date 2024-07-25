@@ -24,6 +24,8 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -31,14 +33,18 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.jetbrains.annotations.Nullable;
-import static com.codahale.metrics.MetricRegistry.name;
 
 public final class Controllers {
 
@@ -127,6 +133,8 @@ public final class Controllers {
     public static final String SOURCE_ENTITY = "source-entity";
     public static final String FORECAST_DATE = "forecast-date";
     public static final String ISSUE_DATE = "issue-date";
+    public static final String LOCATION_KIND_LIKE = "location-kind-like";
+    public static final String LOCATION_TYPE_LIKE = "location-type-like";
 
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
@@ -161,12 +169,30 @@ public final class Controllers {
     public static final String MAX_ATTRIBUTE = "max-attribute";
     public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
     public static final String STANDARD_TEXT_ID = "standard-text-id";
+    public static final String STREAM_ID_MASK = "stream-id-mask";
+    public static final String STREAM_ID = "stream-id";
+    public static final String DIVERTS_FROM_STREAM_ID_MASK = "diverts-from-stream-id-mask";
+    public static final String FLOWS_INTO_STREAM_ID_MASK = "flows-into-stream-id-mask";
+    public static final String REACH_ID_MASK = "reach-id-mask";
+    public static final String CONFIGURATION_ID_MASK = "configuration-id-mask";
+    public static final String ALL_DOWNSTREAM = "all-downstream";
+    public static final String ALL_UPSTREAM = "all-upstream";
+    public static final String SAME_STREAM_ONLY = "same-stream-only";
+    public static final String AREA_UNIT = "area-unit";
+    public static final String STATION_UNIT = "station-unit";
+    public static final String STAGE_UNIT = "stage-unit";
     public static final String TRIM = "trim";
     public static final String DESIGNATOR = "designator";
     public static final String DESIGNATOR_MASK = "designator-mask";
     public static final String INCLUDE_EXTENTS = "include-extents";
     public static final String EXCLUDE_EMPTY = "exclude-empty";
     public static final String DEFAULT_VALUE = "default-value";
+    public static final String CATEGORY = "category";
+    public static final String PREFIX = "prefix";
+
+    private static final String DEPRECATED_HEADER = "CWMS-DATA-Format-Deprecated";
+    private static final String DEPRECATED_TAB = "2024-11-01 TAB is not used often.";
+    private static final String DEPRECATED_CSV = "2024-11-01 CSV is not used often.";
 
 
     static {
@@ -193,6 +219,27 @@ public final class Controllers {
         meter.mark();
         Timer timer = registry.timer(name(className, subject, TIME));
         return timer.time();
+    }
+
+    /**
+     * Returns the first matching query param or the provided default value if no match is found.
+     *
+     * @param ctx          Request Context
+     * @param name         Name of the query param
+     * @param aliases      Alternative names for the query parameter that could be coming in
+     * @param clazz        Return value type.
+     * @param defaultValue Value to return if no matching queryParam is found.
+     * @return value
+     */
+    public static <T> T queryParamAsClass(io.javalin.http.Context ctx,
+                                          Class<T> clazz, T defaultValue, String name, String ... aliases) {
+        List<String> items = new ArrayList<>();
+        items.add(name);
+        if (aliases != null) {
+            items.addAll(Arrays.asList(aliases));
+        }
+
+        return queryParamAsClass(ctx, items.toArray(new String[]{}), clazz, defaultValue);
     }
 
     /**
@@ -355,5 +402,11 @@ public final class Controllers {
         return retval;
     }
 
-
+    static void addDeprecatedContentTypeWarning(Context ctx, ContentType type) {
+        if (type.getType().equalsIgnoreCase(Formats.TAB)) {
+            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_TAB);
+        } else if (type.getType().equalsIgnoreCase(Formats.CSV)) {
+            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_CSV);
+        }
+    }
 }

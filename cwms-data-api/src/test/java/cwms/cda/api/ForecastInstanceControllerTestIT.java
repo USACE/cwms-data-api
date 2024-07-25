@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
+@Disabled("Full implementation not in available database schemas.")
 public class ForecastInstanceControllerTestIT extends DataApiTestIT {
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE = "SPK";

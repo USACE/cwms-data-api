@@ -3,7 +3,7 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
+
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.csv.CsvV1;
@@ -11,7 +11,7 @@ import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.tab.TabV1;
 import cwms.cda.formatters.xml.XMLv1;
-import cwms.cda.formatters.xml.XMLv2;
+import cwms.cda.formatters.xml.XMLv2Office;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.HashMap;
@@ -20,12 +20,12 @@ import java.util.HashMap;
 @JsonRootName("office")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.XMLV1, formatter = XMLv1.class)
-@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2Office.class, aliases = {Formats.XML})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.CSV, formatter = CsvV1.class)
 @FormattableWith(contentType = Formats.TAB, formatter = TabV1.class)
-public class Office implements CwmsDTOBase {
+public class Office extends CwmsDTOBase {
     private static final HashMap<String,String> office_types = new HashMap<String,String>(){
         /**
          *
@@ -69,11 +69,5 @@ public class Office implements CwmsDTOBase {
 
     public static boolean validOfficeCanNull(String office){
         return office == null || validOfficeNotNull(office);
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        // TODO Auto-generated method stub
-
     }
 }
