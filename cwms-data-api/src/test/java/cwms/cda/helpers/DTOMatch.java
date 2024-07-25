@@ -47,11 +47,13 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
-import cwms.cda.data.dto.watersupply.WaterSupplyPumpAccounting;
+import cwms.cda.data.dto.watersupply.PumpAccounting;
+import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.data.dto.watersupply.WaterSupplyPump;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -356,15 +358,28 @@ public final class DTOMatch {
         assertMatch(first, second, DEFAULT_DELTA, message);
     }
 
-    public static void assertMatch(WaterSupplyPumpAccounting first, WaterSupplyPumpAccounting second) {
+    public static void assertMatch(List<PumpAccounting> first, List<PumpAccounting> second) {
+
+        Iterator<PumpAccounting> it1 = first.iterator();
+        Iterator<PumpAccounting> it2 = second.iterator();
+        while (it1.hasNext() && it2.hasNext()) {
+            PumpAccounting pumpAccounting1 = it1.next();
+            PumpAccounting pumpAccounting2 = it2.next();
+            assertAll(
+                    () -> assertMatch(pumpAccounting1.getPumpLocation(), pumpAccounting2.getPumpLocation()),
+                    () -> assertMatch(pumpAccounting1.getTransferType(), pumpAccounting2.getTransferType()),
+                    () -> assertEquals(pumpAccounting1.getFlow(), pumpAccounting2.getFlow()),
+                    () -> assertEquals(pumpAccounting1.getTransferDate(), pumpAccounting2.getTransferDate()),
+                    () -> assertEquals(pumpAccounting1.getComment(), pumpAccounting2.getComment())
+            );
+        }
+    }
+
+    public static void assertMatch(WaterSupplyAccounting first, WaterSupplyAccounting second) {
         assertAll(
-                () -> assertMatch(first.getWaterUser(), second.getWaterUser()),
                 () -> assertEquals(first.getContractName(), second.getContractName()),
-                () -> assertMatch(first.getPumpLocation(), second.getPumpLocation()),
-                () -> assertMatch(first.getTransferType(), second.getTransferType()),
-                () -> assertEquals(first.getFlow(), second.getFlow()),
-                () -> assertEquals(first.getTransferDate(), second.getTransferDate()),
-                () -> assertEquals(first.getComment(), second.getComment())
+                () -> assertMatch(first.getWaterUser(), second.getWaterUser()),
+                () -> assertMatch(first.getPumpAccounting(), second.getPumpAccounting())
         );
     }
 
