@@ -1,4 +1,5 @@
 {
+  "contract-name": "Test Contract",
   "water-user": {
     "entity-name": "Test Entity",
     "project-id": {
@@ -7,18 +8,36 @@
     },
     "water-right": "Test Water Right"
   },
-  "contract-name": "Test Contract",
-  "pump-location": {
-    "office-id": "SPK",
-    "name": "Test Pump"
-  },
-  "transfer-type": {
-    "office-id": "SPK",
-    "display-value": "Test Transfer Type",
-    "tooltip": "Test Tool Tip",
-    "active": true
-  },
-  "flow": 1.0,
-  "transfer-date": 10000012648000,
-  "comment": "Test Comment"
+  "pump-accounting": [
+    {
+      "pump-location": {
+        "office-id": "SPK",
+        "name": "Test Pump"
+      },
+      "transfer-type": {
+        "office-id": "SPK",
+        "display-value": "Test Transfer Type",
+        "tooltip": "Test Tool Tip",
+        "active": true
+      },
+      "flow": 1,
+      "transfer-date": 10000012648000,
+      "comment": "Test Comment"
+    },
+    {
+      "pump-location": {
+        "office-id": "SPK",
+        "name": "Test Pump 2"
+      },
+      "transfer-type": {
+        "office-id": "SPK",
+        "display-value": "Test Transfer Type 2",
+        "tooltip": "Test Tool Tip 2",
+        "active": true
+      },
+      "flow": 2.0,
+      "transfer-date": 10000012648000,
+      "comment": "Test Comment 2"
+    }
+  ]
 }
