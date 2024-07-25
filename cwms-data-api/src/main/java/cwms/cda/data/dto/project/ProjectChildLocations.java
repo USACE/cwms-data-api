@@ -28,7 +28,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
@@ -45,7 +44,7 @@ import org.jetbrains.annotations.Nullable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV2, aliases = {Formats.JSON}, formatter = JsonV2.class)
-public class ProjectChildLocations implements CwmsDTOBase {
+public class ProjectChildLocations extends CwmsDTOBase {
 
     private final CwmsId project;
 
@@ -62,11 +61,6 @@ public class ProjectChildLocations implements CwmsDTOBase {
         this.outlets = builder.outlets;
         this.turbines = builder.turbines;
         this.gates = builder.gates;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-
     }
 
     public CwmsId getProject() {
