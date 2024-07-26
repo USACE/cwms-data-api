@@ -53,10 +53,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+import java.util.Iterator;
+import java.util.List;
+
 
 public class AccountingCreateController implements Handler {
     private static final String TAG = "Pump Accounting";
@@ -94,7 +96,6 @@ public class AccountingCreateController implements Handler {
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
         description = "Create a new pump accounting entry associated with a water supply contract.",
-        path = "/projects/{office}/water-user/{water-user}/contracts/{contract-name}/accounting",
         method = HttpMethod.POST,
         tags = {TAG}
     )

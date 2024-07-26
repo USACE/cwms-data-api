@@ -50,6 +50,10 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+
+import javax.servlet.http.HttpServletResponse;
 import java.time.Instant;
 import java.util.List;
 import java.util.logging.Level;
@@ -60,7 +64,7 @@ import org.jooq.DSLContext;
 
 
 public class AccountingCatalogController implements Handler {
-    private static final Logger LOGGER = Logger.getLogger(AccountingCatalogController.class.getName());
+    private final Logger LOGGER = Logger.getLogger(AccountingCatalogController.class.getName());
     private static final String TAG = "Pump Accounting";
     private static final String ROW_LIMIT = "row-limit";
     private static final String ASCENDING = "ascending";
