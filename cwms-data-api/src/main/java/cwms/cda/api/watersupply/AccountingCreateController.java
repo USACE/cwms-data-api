@@ -53,9 +53,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-
-
-
 public class AccountingCreateController implements Handler {
     private static final String TAG = "Pump Accounting";
     private static final String CONTRACT_ID = "contract-id";
@@ -77,7 +74,7 @@ public class AccountingCreateController implements Handler {
     @OpenApi(
         requestBody = @OpenApiRequestBody(
             content = {
-                @OpenApiContent(from = WaterSupplyAccountingDao.class, type = Formats.JSONV1)
+                @OpenApiContent(from = WaterSupplyAccounting.class, type = Formats.JSONV1)
             },
             required = true),
         pathParams = {
