@@ -48,9 +48,11 @@ import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.data.dto.watersupply.WaterSupplyPump;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Assertions;
@@ -296,20 +298,31 @@ public final class DTOMatch {
     }
 
     public static void assertMatch(List<PumpAccounting> first, List<PumpAccounting> second) {
+        assertEquals(first.size(), second.size());
 
-        Iterator<PumpAccounting> it1 = first.iterator();
-        Iterator<PumpAccounting> it2 = second.iterator();
-        while (it1.hasNext() && it2.hasNext()) {
-            PumpAccounting pumpAccounting1 = it1.next();
-            PumpAccounting pumpAccounting2 = it2.next();
-            assertAll(
-                    () -> assertMatch(pumpAccounting1.getPumpLocation(), pumpAccounting2.getPumpLocation()),
-                    () -> assertMatch(pumpAccounting1.getTransferType(), pumpAccounting2.getTransferType()),
-                    () -> assertEquals(pumpAccounting1.getFlow(), pumpAccounting2.getFlow()),
-                    () -> assertEquals(pumpAccounting1.getTransferDate(), pumpAccounting2.getTransferDate()),
-                    () -> assertEquals(pumpAccounting1.getComment(), pumpAccounting2.getComment())
-            );
+        Map<Instant, PumpAccounting> accountingMap1 = new HashMap<>();
+        Map<Instant, PumpAccounting> accountingMap2 = new HashMap<>();
+
+        for (PumpAccounting pumpAccounting : first) {
+            accountingMap1.put(pumpAccounting.getTransferDate(), pumpAccounting);
         }
+        for (PumpAccounting pumpAccounting : second) {
+            accountingMap2.put(pumpAccounting.getTransferDate(), pumpAccounting);
+        }
+
+        for (Instant instant : accountingMap1.keySet()) {
+            assertMatch(accountingMap1.get(instant), accountingMap2.get(instant));
+        }
+    }
+
+    public static void assertMatch(PumpAccounting first, PumpAccounting second){
+        assertAll(
+                () -> assertMatch(first.getPumpLocation(), second.getPumpLocation()),
+                () -> assertMatch(first.getTransferType(), second.getTransferType()),
+                () -> assertEquals(first.getFlow(), second.getFlow()),
+                () -> assertEquals(first.getTransferDate(), second.getTransferDate()),
+                () -> assertEquals(first.getComment(), second.getComment())
+        );
     }
 
     public static void assertMatch(WaterSupplyAccounting first, WaterSupplyAccounting second) {
