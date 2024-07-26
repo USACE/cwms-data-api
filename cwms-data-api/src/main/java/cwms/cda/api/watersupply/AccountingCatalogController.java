@@ -112,8 +112,10 @@ public class AccountingCatalogController implements Handler {
             responses = {
                     @OpenApiResponse(status = STATUS_200,
                             content = {
-                                    @OpenApiContent(from = WaterSupplyAccountingDao.class, type = Formats.JSONV1),
-                                    @OpenApiContent(from = WaterSupplyAccountingDao.class, type = Formats.JSON)
+                                    @OpenApiContent(from = WaterSupplyAccounting.class, isArray = true,
+                                            type = Formats.JSONV1),
+                                    @OpenApiContent(from = WaterSupplyAccounting.class, isArray = true,
+                                            type = Formats.JSON)
                             }),
                     @OpenApiResponse(status = STATUS_404, description = "Pump Accounting not found for "
                             + "provided input parameters."),
