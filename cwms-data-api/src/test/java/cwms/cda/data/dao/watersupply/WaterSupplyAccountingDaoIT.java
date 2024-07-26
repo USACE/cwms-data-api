@@ -132,38 +132,47 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
 
         Calendar instance = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
         instance.clear();
-
+        instance.set(2000, 2, 1, 0, 0);
+        Instant startTime = instance.getTime().toInstant();
+        instance.set(2326, 2, 1, 0, 0);
+        Instant endTime = instance.getTime().toInstant();
+        instance.clear();
         boolean startInclusive = true;
         boolean endInclusive = true;
         boolean inDB = true;
         switch (method) {
             case "default":
                 instance.set(2025, 10, 1, 0, 0);
+                startTime = instance.getTime().toInstant();
                 break;
             case "startInclusiveTrue":
                 instance.set(2000, 2, 1, 0, 0);
+                startTime = instance.getTime().toInstant();
                 break;
             case "endInclusiveTrue":
-                instance.set(2026, 2, 1, 0, 0);
+                instance.set(2326, 2, 1, 0, 0);
+                endTime = instance.getTime().toInstant();
                 break;
             case "startInclusiveFalse":
-                instance.set(2000, 2, 1, 0, 0);
+                instance.set(2286, 10, 21, 8, 53, 19);
+                startTime = instance.getTime().toInstant();
                 startInclusive = false;
                 inDB = false;
                 break;
             case "endInclusiveFalse":
-                instance.set(2026, 2, 1, 0, 0);
+                instance.set(2286, 10, 20, 21, 17, 28);
+                endTime = instance.getTime().toInstant();
                 endInclusive = false;
                 inDB = false;
                 break;
             case "startEndInclusiveFalse":
-                instance.set(2025, 10, 1, 0, 0);
+                instance.set(2325, 10, 1, 0, 0);
+                startTime = instance.getTime().toInstant();
                 startInclusive = false;
                 endInclusive = false;
                 inDB = false;
                 break;
         }
-
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
@@ -171,11 +180,6 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
             accountingDao.storeAccounting(accounting);
         }, CwmsDataApiSetupCallback.getWebUser());
 
-        instance.clear();
-        instance.set(2000, 2, 1, 0, 0);
-        Instant startTime = instance.getTime().toInstant();
-        instance.set(2026, 2, 1, 0, 0);
-        Instant endTime = instance.getTime().toInstant();
         int rowLimit = 20;
         boolean headFlag = false;
 
@@ -202,6 +206,7 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
                             .getName(), contract.getWaterUser(), new CwmsId.Builder().withOfficeId(OFFICE_ID)
                             .withName(contract.getWaterUser().getProjectId().getName()).build(),
                     null, startTime, endTime, startInclusive, endInclusive, headFlag, rowLimit);
+            assertFalse(pumpAccounting.isEmpty());
             for (WaterSupplyAccounting returnedAccounting : pumpAccounting) {
                 assertNotNull(returnedAccounting.getPumpAccounting());
                 DTOMatch.assertMatch(returnedAccounting, buildTestAccounting());
