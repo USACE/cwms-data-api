@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.ifc.loc.LocationRefType;
@@ -101,10 +100,8 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
                     = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_ACCOUNTING_SET(DSL.using(c).configuration(),
                     contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
                     endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
-            if (watUsrContractAcctObjTs != null) {
-                return watUsrContractAcctObjTs.stream()
-                        .map(WaterSupplyUtils::map)
-                        .collect(Collectors.toList());
+            if (!watUsrContractAcctObjTs.isEmpty()) {
+                return WaterSupplyUtils.map(watUsrContractAcctObjTs);
             } else {
                 return new ArrayList<>();
             }
