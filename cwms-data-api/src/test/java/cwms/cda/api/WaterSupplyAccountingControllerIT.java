@@ -234,8 +234,8 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .body("[0].water-user.project-id.office-id", equalTo(WATER_SUPPLY_ACCOUNTING.getWaterUser().getProjectId().getOfficeId()))
             .body("[0].water-user.water-right", equalTo(WATER_SUPPLY_ACCOUNTING.getWaterUser().getWaterRight()))
             .body("[0].pump-accounting[0].transfer-type.display-value", equalTo(testTransferType.getDisplayValue()))
-            .body("[0].pump-accounting[0].pump-location.name", equalTo(WATER_SUPPLY_ACCOUNTING.getPumpAccounting().get(0).getPumpLocation().getName()))
-            .body("[0].pump-accounting[1].pump-location.name", equalTo(WATER_SUPPLY_ACCOUNTING.getPumpAccounting().get(1).getPumpLocation().getName()))
+            .body("[0].pump-accounting[1].pump-location.name", equalTo(WATER_SUPPLY_ACCOUNTING.getPumpAccounting().get(0).getPumpLocation().getName()))
+            .body("[0].pump-accounting[0].pump-location.name", equalTo(WATER_SUPPLY_ACCOUNTING.getPumpAccounting().get(1).getPumpLocation().getName()))
         ;
     }
 

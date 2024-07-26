@@ -48,11 +48,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import javax.servlet.http.HttpServletResponse;
-import java.util.Iterator;
-import java.util.List;
+
+
 
 
 public class AccountingCreateController implements Handler {
@@ -110,31 +111,28 @@ public class AccountingCreateController implements Handler {
                     WaterSupplyAccounting.class);
             WaterSupplyAccountingDao waterSupplyAccountingDao = getWaterSupplyAccountingDao(dsl);
             LookupTypeDao lookupTypeDao = new LookupTypeDao(dsl);
-            List<LookupType> lookupList = lookupTypeDao.retrieveLookupTypes("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE", office);
+            List<LookupType> lookupList = lookupTypeDao
+                    .retrieveLookupTypes("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE", office);
 
-            if (!searchForTransferType(accounting, lookupList)) {
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json("No such transfer type found.");
-                return;
+            for (PumpAccounting pumpAccounting : accounting.getPumpAccounting()) {
+                if (!searchForTransferType(pumpAccounting, lookupList)) {
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json("No matching transfer type found "
+                            + "for an accounting entry.");
+                    return;
+                }
             }
-
             waterSupplyAccountingDao.storeAccounting(accounting);
             ctx.status(HttpServletResponse.SC_CREATED).json(contractId + " created successfully");
         }
     }
 
-    private boolean searchForTransferType(WaterSupplyAccounting accounting, List<LookupType> lookupTypes) {
-        Iterator<PumpAccounting> pumpAccountingIterator = accounting.getPumpAccounting().iterator();
-        Iterator<LookupType> lookupTypeIterator = lookupTypes.iterator();
-        while (pumpAccountingIterator.hasNext()) {
-            PumpAccounting pumpAccounting = pumpAccountingIterator.next();
-            while (lookupTypeIterator.hasNext()) {
-                LookupType lookupType = lookupTypeIterator.next();
-                if (pumpAccounting.getTransferType().getActive() == lookupType.getActive()
-                && pumpAccounting.getTransferType().getOfficeId().equals(lookupType.getOfficeId())
-                && pumpAccounting.getTransferType().getTooltip().equals(lookupType.getTooltip())
-                && pumpAccounting.getTransferType().getDisplayValue().equals(lookupType.getDisplayValue())) {
-                    return true;
-                }
+    private boolean searchForTransferType(PumpAccounting accounting, List<LookupType> lookupTypes) {
+        for (LookupType lookupType : lookupTypes) {
+            if (accounting.getTransferType().getActive() == lookupType.getActive()
+                    && accounting.getTransferType().getOfficeId().equals(lookupType.getOfficeId())
+                    && accounting.getTransferType().getTooltip().equals(lookupType.getTooltip())
+                    && accounting.getTransferType().getDisplayValue().equals(lookupType.getDisplayValue())) {
+                return true;
             }
         }
         return false;

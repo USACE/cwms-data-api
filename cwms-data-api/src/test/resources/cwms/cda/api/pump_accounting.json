@@ -31,8 +31,8 @@
       },
       "transfer-type": {
         "office-id": "SWT",
-        "display-value": "Test Transfer Type 2",
-        "tooltip": "Test Tool Tip 2",
+        "display-value": "Test Transfer Type",
+        "tooltip": "Test Tool Tip",
         "active": true
       },
       "flow": 2.0,
