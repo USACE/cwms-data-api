@@ -420,11 +420,29 @@ class WaterContractControllerTestIT extends DataApiTestIT {
 
 
     @Test
-    void test_rename_WaterUserContract() {
-
+    void test_rename_WaterUserContract() throws IOException {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
         final String NEW_CONTRACT_NAME = "NEW CONTRACT NAME";
+        String json = JsonV1.buildObjectMapper().writeValueAsString(CONTRACT.getWaterUser());
+
+        // create WaterUser
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .accept(Formats.JSONV1)
+                .body(json)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName() + "/water-user")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
 
         // create contract
         given()
