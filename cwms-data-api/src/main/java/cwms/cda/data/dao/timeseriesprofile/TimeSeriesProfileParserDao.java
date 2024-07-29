@@ -107,12 +107,12 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
 				Result<Record> parameterInfoResult = profileParser.get("PARAMETER_INFO", Result.class);
 
 				List<ParameterInfo> parameterInfoList = new ArrayList<>();
-					for(Record record : parameterInfoResult)
+					for(Record recordParam : parameterInfoResult)
 					{
 						parameterInfoList.add(new ParameterInfo.Builder()
-								.withParameter((String) record.get("PARAMETER_ID"))
-								.withUnit((String) record.get("UNIT"))
-								.withIndex( record.get("FIELD_NUMBER", Short.class))
+								.withParameter((String) recordParam.get("PARAMETER_ID"))
+								.withUnit((String) recordParam.get("UNIT"))
+								.withIndex( recordParam.get("FIELD_NUMBER", Short.class))
 								.build());
 					}
 
