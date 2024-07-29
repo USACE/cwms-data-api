@@ -24,6 +24,11 @@
 
 package cwms.cda.helpers;
 
+import cwms.cda.data.dto.stream.StreamLocationNode;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
@@ -35,21 +40,18 @@ import cwms.cda.data.dto.location.kind.TurbineChange;
 import cwms.cda.data.dto.location.kind.TurbineSetting;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
-import cwms.cda.data.dto.stream.StreamLocationNode;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
 import cwms.cda.data.dto.watersupply.WaterSupplyPump;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.function.Executable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.function.Executable;
 
-import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings({"LongLine", "checkstyle:LineLength"})
 public final class DTOMatch {
