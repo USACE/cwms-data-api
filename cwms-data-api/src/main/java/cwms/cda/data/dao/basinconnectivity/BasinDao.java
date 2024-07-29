@@ -1,7 +1,8 @@
-package cwms.cda.data.dao;
+package cwms.cda.data.dao.basinconnectivity;
 
 import cwms.cda.api.enums.Unit;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.basinconnectivity.Basin;
 import cwms.cda.data.dto.basinconnectivity.Stream;
 import java.sql.ResultSet;

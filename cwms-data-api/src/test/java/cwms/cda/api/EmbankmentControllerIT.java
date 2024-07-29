@@ -24,6 +24,7 @@
 
 package cwms.cda.api;
 
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.location.kind.LocationUtil;
@@ -39,6 +40,7 @@ import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
@@ -52,6 +54,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
@@ -80,7 +83,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             try {
-                DSLContext context = getDslContext(c, databaseLink.getOfficeId());
+                DSLContext context = getDslContext(c, EMBANKMENT_LOC.getOfficeId());
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
                 PROJECT_OBJ_T projectObjT = buildProject();
                 CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
@@ -88,7 +91,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
@@ -96,13 +99,27 @@ final class EmbankmentControllerIT extends DataApiTestIT {
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, databaseLink.getOfficeId());
+            DSLContext context = getDslContext(c, EMBANKMENT_LOC.getOfficeId());
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-            locationsDao.deleteLocation(EMBANKMENT_LOC.getName(), databaseLink.getOfficeId(), true);
-            CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
-                    DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
-            locationsDao.deleteLocation(PROJECT_LOC.getName(), databaseLink.getOfficeId(), true);
-        });
+            try {
+                locationsDao.deleteLocation(EMBANKMENT_LOC.getName(), EMBANKMENT_LOC.getOfficeId(), true);
+
+            } catch (NotFoundException ex) {
+                /* only an error within the tests below. */
+            }
+            try {
+                CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
+                    DeleteRule.DELETE_ALL.getRule(), PROJECT_LOC.getOfficeId());
+
+            } catch (NotFoundException ex) {
+                /* only an error within the tests below. */
+            }
+            try {
+                locationsDao.deleteLocation(PROJECT_LOC.getName(), PROJECT_LOC.getOfficeId(), true);
+            } catch (NotFoundException ex) {
+                /* only an error within the tests below. */
+            }
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
@@ -125,7 +142,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/embankments/")
+            .post("/projects/embankments/")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -140,7 +157,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("embankments/" + EMBANKMENT.getLocation().getName())
+            .get("/projects/embankments/" + EMBANKMENT.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -167,7 +184,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("embankments/" + EMBANKMENT.getLocation().getName())
+            .delete("/projects/embankments/" + EMBANKMENT.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -182,7 +199,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("embankments/" + EMBANKMENT.getLocation().getName())
+            .get("/projects/embankments/" + EMBANKMENT.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -201,7 +218,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .patch("/embankments/bogus")
+            .patch("/projects/embankments/bogus")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -220,7 +237,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("embankments/" + Instant.now().toEpochMilli())
+            .delete("/projects/embankments/" + Instant.now().toEpochMilli())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -247,7 +264,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/embankments/")
+            .post("/projects/embankments/")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -263,7 +280,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("embankments/")
+            .get("/projects/embankments/")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -290,7 +307,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("embankments/" + EMBANKMENT.getLocation().getName())
+            .delete("/projects/embankments/" + EMBANKMENT.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()

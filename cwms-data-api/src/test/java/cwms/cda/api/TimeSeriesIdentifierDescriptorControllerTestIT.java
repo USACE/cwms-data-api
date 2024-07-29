@@ -134,9 +134,10 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .queryParam("page-size", pageSize)
-                .queryParam("office", officeId)
-                .queryParam("like", likePattern)
+                .queryParam(Controllers.PAGE_SIZE, pageSize)
+                .queryParam(Controllers.OFFICE, officeId)
+                .queryParam(Controllers.LIKE, likePattern)
+                .queryParam(Controllers.EXCLUDE_EMPTY, false)
             .when()
                 .get("/catalog/TIMESERIES")
             .then()
@@ -144,7 +145,6 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(200))
                 .extract().response();
-
         JsonPath jsonPath = response.jsonPath();
 
         List<String> names = jsonPath.getList("entries.name", String.class);

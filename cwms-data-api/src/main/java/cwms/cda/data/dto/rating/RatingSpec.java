@@ -129,11 +129,6 @@ public class RatingSpec extends CwmsDTO {
     }
 
     @Override
-    public void validate() throws FieldException {
-
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

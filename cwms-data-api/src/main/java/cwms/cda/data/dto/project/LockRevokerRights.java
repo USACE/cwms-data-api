@@ -65,11 +65,6 @@ public class LockRevokerRights extends CwmsDTO {
         return userId;
     }
 
-    @Override
-    public void validate() throws FieldException {
-
-    }
-
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {

@@ -25,11 +25,11 @@
 package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -41,38 +41,21 @@ import java.util.Objects;
 @JsonDeserialize(builder = Property.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class Property implements CwmsDTOBase {
+public final class Property extends CwmsDTO {
 
+    @JsonProperty(required = true)
     private final String category;
+    @JsonProperty(required = true)
     private final String name;
-    private final String officeId;
     private final String value;
     private final String comment; // added comment field
 
     private Property(Builder builder) {
+        super(builder.officeId);
         this.category = builder.category;
         this.name = builder.name;
-        this.officeId = builder.officeId;
         this.value = builder.value;
         this.comment = builder.comment; // included comment in constructor
-    }
-    
-    @Override
-    public void validate() throws FieldException {
-
-        if (this.category == null || this.category.trim().isEmpty()) {
-            throw new FieldException("The 'category' field of a Property cannot be null or empty.");
-        }
-        if (this.name == null || this.name.trim().isEmpty()) {
-            throw new FieldException("The 'name' field of a Property cannot be null or empty.");
-        }
-        if (this.officeId == null || this.officeId.trim().isEmpty()) {
-            throw new FieldException("The 'office' field of a Property cannot be null or empty.");
-        }
-    }
-
-    public String getOfficeId() {
-        return officeId;
     }
 
     public String getName() {

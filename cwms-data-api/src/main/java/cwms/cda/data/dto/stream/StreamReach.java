@@ -25,10 +25,10 @@
 package cwms.cda.data.dto.stream;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
@@ -39,13 +39,17 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = StreamReach.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class StreamReach implements CwmsDTOBase {
+public final class StreamReach extends CwmsDTOBase {
 
     private final String comment;
-    private final StreamNode downstreamNode;
-    private final StreamNode upstreamNode;
+    @JsonProperty(required = true)
+    private final StreamLocationNode downstreamNode;
+    @JsonProperty(required = true)
+    private final StreamLocationNode upstreamNode;
     private final CwmsId configurationId;
+    @JsonProperty(required = true)
     private final CwmsId streamId;
+    @JsonProperty(required = true)
     private final CwmsId id;
 
     private StreamReach(Builder builder) {
@@ -57,38 +61,15 @@ public final class StreamReach implements CwmsDTOBase {
         this.id = builder.id;
     }
 
-    @Override
-    public void validate() throws FieldException {
-        if (this.id == null) {
-            throw new FieldException("The 'id' field of a StreamReach cannot be null.");
-        }
-        id.validate();
-        if (this.streamId == null) {
-            throw new FieldException("The 'streamId' field of a StreamReach cannot be null or empty.");
-        }
-        streamId.validate();
-        if (this.upstreamNode == null) {
-            throw new FieldException("The 'upstreamNode' field of a StreamReach cannot be null or empty.");
-        }
-        upstreamNode.validate();
-        if (this.downstreamNode == null) {
-            throw new FieldException("The 'downstreamNode' field of a StreamReach cannot be null or empty.");
-        }
-        downstreamNode.validate();
-        if (this.configurationId == null) {
-            throw new FieldException("The 'configurationId' field of a StreamReach cannot be null or empty.");
-        }
-    }
-
     public String getComment() {
         return comment;
     }
 
-    public StreamNode getDownstreamNode() {
+    public StreamLocationNode getDownstreamNode() {
         return downstreamNode;
     }
 
-    public StreamNode getUpstreamNode() {
+    public StreamLocationNode getUpstreamNode() {
         return upstreamNode;
     }
 
@@ -106,8 +87,8 @@ public final class StreamReach implements CwmsDTOBase {
 
     public static class Builder {
         private String comment;
-        private StreamNode downstreamNode;
-        private StreamNode upstreamNode;
+        private StreamLocationNode downstreamNode;
+        private StreamLocationNode upstreamNode;
         private CwmsId configurationId;
         private CwmsId streamId;
         private CwmsId id;
@@ -117,12 +98,12 @@ public final class StreamReach implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withDownstreamNode(StreamNode downstreamNode) {
+        public Builder withDownstreamNode(StreamLocationNode downstreamNode) {
             this.downstreamNode = downstreamNode;
             return this;
         }
 
-        public Builder withUpstreamNode(StreamNode upstreamNode) {
+        public Builder withUpstreamNode(StreamLocationNode upstreamNode) {
             this.upstreamNode = upstreamNode;
             return this;
         }

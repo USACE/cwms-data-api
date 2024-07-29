@@ -89,11 +89,6 @@ public class TextTimeSeries extends CwmsDTO {
         return versionDate;
     }
 
-    @Override
-    public void validate() throws FieldException {
-
-    }
-
     @Nullable
     public Collection<RegularTextTimeSeriesRow> getRegularTextValues() {
         if (regularMap == null) {

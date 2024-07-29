@@ -26,10 +26,10 @@ package cwms.cda.data.dto.stream;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
@@ -40,10 +40,10 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = StreamLocation.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class StreamLocation implements CwmsDTOBase {
+public final class StreamLocation extends CwmsDTOBase {
 
-    private final CwmsId id;
-    private final StreamNode streamNode; //the node representation of this location containing the stream id, bank, and station
+    @JsonProperty(required = true)
+    private final StreamLocationNode streamLocationNode; //the node representation of this location containing the loc id, stream id, bank, and station
     private final Double publishedStation;
     private final Double navigationStation;
     private final Double lowestMeasurableStage;
@@ -53,8 +53,7 @@ public final class StreamLocation implements CwmsDTOBase {
     private final String stageUnits;
 
     private StreamLocation(Builder builder) {
-        this.streamNode = builder.streamNode;
-        this.id = builder.id;
+        this.streamLocationNode = builder.streamLocationNode;
         this.publishedStation = builder.publishedStation;
         this.navigationStation = builder.navigationStation;
         this.lowestMeasurableStage = builder.lowestMeasurableStage;
@@ -64,24 +63,8 @@ public final class StreamLocation implements CwmsDTOBase {
         this.stageUnits = builder.stageUnits;
     }
 
-    @Override
-    public void validate() throws FieldException {
-        if (this.id == null) {
-            throw new FieldException("The 'id' field of a StreamLocation cannot be null.");
-        }
-        id.validate();
-        if(this.streamNode == null){
-            throw new FieldException("The 'streamNode' field of a StreamLocation cannot be null.");
-        }
-        streamNode.validate();
-    }
-
-    public StreamNode getStreamNode() {
-        return streamNode;
-    }
-
-    public CwmsId getId() {
-        return id;
+    public StreamLocationNode getStreamLocationNode() {
+        return streamLocationNode;
     }
 
     public Double getPublishedStation() {
@@ -113,23 +96,27 @@ public final class StreamLocation implements CwmsDTOBase {
     }
 
     @JsonIgnore
+    public CwmsId getId() {
+        return getStreamLocationNode().getId();
+    }
+
+    @JsonIgnore
     public String getStationUnits() {
-        return streamNode.getStationUnits();
+        return streamLocationNode.getStreamNode().getStationUnits();
     }
 
     @JsonIgnore
     public Double getStation() {
-        return streamNode.getStation();
+        return streamLocationNode.getStreamNode().getStation();
     }
 
     @JsonIgnore
     public CwmsId getStreamId() {
-        return streamNode.getStreamId();
+        return streamLocationNode.getStreamNode().getStreamId();
     }
 
     public static class Builder {
-        private CwmsId id;
-        private StreamNode streamNode;
+        private StreamLocationNode streamLocationNode;
         private Double publishedStation;
         private Double navigationStation;
         private Double lowestMeasurableStage;
@@ -138,13 +125,8 @@ public final class StreamLocation implements CwmsDTOBase {
         private String areaUnits;
         private String stageUnits;
 
-        public Builder withId(CwmsId id) {
-            this.id = id;
-            return this;
-        }
-
-        public Builder withStreamNode(StreamNode streamNode) {
-            this.streamNode = streamNode;
+        public Builder withStreamLocationNode(StreamLocationNode streamLocationNode) {
+            this.streamLocationNode = streamLocationNode;
             return this;
         }
 

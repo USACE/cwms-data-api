@@ -2,10 +2,10 @@ package cwms.cda.data.dto.stream;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
@@ -16,7 +16,7 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = Stream.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class Stream implements CwmsDTOBase {
+public final class Stream extends CwmsDTOBase {
 
     private final Boolean startsDownstream;
     private final StreamNode flowsIntoStreamNode;
@@ -26,6 +26,7 @@ public final class Stream implements CwmsDTOBase {
     private final String lengthUnits;
     private final String slopeUnits;
     private final String comment;
+    @JsonProperty(required = true)
     private final CwmsId id;
 
     private Stream(Builder builder) {
@@ -38,14 +39,6 @@ public final class Stream implements CwmsDTOBase {
         this.slopeUnits = builder.slopeUnits;
         this.comment = builder.comment;
         this.id = builder.id;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        if (this.id == null) {
-            throw new FieldException("The 'id' field of a Stream cannot be null.");
-        }
-        id.validate();
     }
 
     public Boolean getStartsDownstream() {

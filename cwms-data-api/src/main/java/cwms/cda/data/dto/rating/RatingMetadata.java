@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -20,7 +19,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
-public class RatingMetadata implements CwmsDTOBase {
+public class RatingMetadata extends CwmsDTOBase {
 
     private final RatingSpec ratingSpec;
 
@@ -29,11 +28,6 @@ public class RatingMetadata implements CwmsDTOBase {
     private RatingMetadata(Builder builder) {
         this.ratingSpec = builder.ratingSpec;
         this.ratings = builder.ratings;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-
     }
 
     public RatingSpec getRatingSpec() {

@@ -24,10 +24,9 @@
 
 package cwms.cda.data.dto;
 
-import cwms.cda.api.errors.FieldException;
 import java.math.BigDecimal;
 
-public class AssignedTimeSeries implements CwmsDTOBase {
+public class AssignedTimeSeries extends CwmsDTOBase {
     private String officeId;
     private String timeseriesId;
     private BigDecimal tsCode;
@@ -72,10 +71,5 @@ public class AssignedTimeSeries implements CwmsDTOBase {
 
     public Integer getAttribute() {
         return attribute;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-
     }
 }

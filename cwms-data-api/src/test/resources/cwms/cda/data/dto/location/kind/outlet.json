@@ -1,22 +1,26 @@
 {
   "project-id": {
     "office-id": "SPK",
-    "name": "location"
+    "name": "BIGH"
   },
   "location": {
     "office-id": "SPK",
-    "name": "location-outlet",
+    "name": "BIGH-TG1",
     "latitude": 0.0,
     "longitude": 0.0,
     "active": true,
-    "public-name": "location-outlet",
+    "public-name": "BIGH-TG1",
     "timezone-name": "UTC",
     "location-kind": "Outlet",
     "horizontal-datum": "NAD84",
     "vertical-datum": "NAVD88"
   },
-  "characteristic-ref": {
+  "rating-category-id": {
     "office-id": "SPK",
-    "characteristic-id": "Ogee Weir Depth"
+    "name": "Rating"
+  },
+  "rating-group-id": {
+    "office-id": "SPK",
+    "name": "Rating-BIGH-TG1"
   }
 }

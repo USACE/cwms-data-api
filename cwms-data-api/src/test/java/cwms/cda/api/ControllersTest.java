@@ -349,7 +349,54 @@ class ControllersTest {
         assertThrows(RequiredQueryParameterException.class, () -> Controllers.requiredZdt(ctx, Controllers.BEGIN));
     }
 
+    @Test
+    void testQueryParamAsType(){
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
 
+        Map<String, String> urlParams = new LinkedHashMap<>();
+        urlParams.put(Controllers.METHOD, "DELETE_KEY");
+        String paramStr = ControllerTest.buildParamStr(urlParams);
+        when(request.getQueryString()).thenReturn(paramStr);
 
+        // build real context that uses the mock request/response
+        Context ctx = new Context(request, response, new LinkedHashMap<String, String>());
 
+        // if its present it should work
+        assertEquals(JooqDao.DeleteMethod.DELETE_KEY, Controllers.queryParamAsClass(ctx, JooqDao.DeleteMethod.class, null, Controllers.METHOD));
+    }
+
+    @Test
+    void testMissingQueryParamAsType(){
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        Map<String, String> urlParams = new LinkedHashMap<>();
+        urlParams.put(Controllers.METHOD, "DELETE_KEY");
+        String paramStr = ControllerTest.buildParamStr(urlParams);
+        when(request.getQueryString()).thenReturn(paramStr);
+
+        // build real context that uses the mock request/response
+        Context ctx = new Context(request, response, new LinkedHashMap<String, String>());
+
+        // if its present it should work
+        assertNull(Controllers.queryParamAsClass(ctx, JooqDao.DeleteMethod.class, null, "Not a key"));
+    }
+
+    @Test
+    void testAliasedQueryParamAsType(){
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        Map<String, String> urlParams = new LinkedHashMap<>();
+        urlParams.put(Controllers.METHOD, "DELETE_KEY");
+        String paramStr = ControllerTest.buildParamStr(urlParams);
+        when(request.getQueryString()).thenReturn(paramStr);
+
+        // build real context that uses the mock request/response
+        Context ctx = new Context(request, response, new LinkedHashMap<String, String>());
+
+        // if its present it should work
+        assertEquals(JooqDao.DeleteMethod.DELETE_KEY, Controllers.queryParamAsClass(ctx, JooqDao.DeleteMethod.class, null, "Not a key", Controllers.METHOD));
+    }
 }

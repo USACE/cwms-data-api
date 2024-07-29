@@ -1,0 +1,24 @@
+{
+  "stream-location-node":{
+    "id": {
+      "office-id": "SWT",
+      "name": "StreamLoc2"
+    },
+    "stream-node": {
+      "stream-id": {
+        "office-id": "SWT",
+        "name": "ImOnThisStream"
+      },
+      "bank": "R",
+      "station": 680,
+      "station-units": "km"
+    }
+  },
+  "published-station": 680,
+  "navigation-station": 12,
+  "lowest-measurable-stage": 1.5,
+  "total-drainage-area": 10.5,
+  "ungaged-drainage-area": 0.01,
+  "area-units": "km2",
+  "stage-units": "m"
+}

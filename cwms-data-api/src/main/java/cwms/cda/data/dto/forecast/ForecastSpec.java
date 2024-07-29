@@ -80,10 +80,6 @@ public class ForecastSpec extends CwmsDTO {
         return timeSeriesIds;
     }
 
-    public void validate() throws FieldException {
-        //TODO
-    }
-
     @Override
     public String toString() {
         return "ForecastSpec{" +

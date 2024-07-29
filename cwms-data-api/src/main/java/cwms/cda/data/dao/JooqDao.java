@@ -162,7 +162,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    static Double toDouble(BigDecimal bigDecimal) {
+    protected static Double toDouble(BigDecimal bigDecimal) {
         Double retVal = null;
         if (bigDecimal != null) {
             retVal = bigDecimal.doubleValue();
@@ -289,6 +289,12 @@ public abstract class JooqDao<T> extends Dao<T> {
                     " does not exist.");
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
+
+            if(!retVal)
+            {
+                segments = Collections.singletonList("does not exist as a stream location");
+                retVal = hasCodeAndMessage(sqlException, Collections.singletonList(20998), segments);
+            }
         }
         return retVal;
     }    

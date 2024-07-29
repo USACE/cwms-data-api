@@ -1,0 +1,206 @@
+[
+  {
+    "project-id": {
+      "office-id": "SPK",
+      "name": "PROJECT"
+    },
+    "change-date": 1709539200000,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SPK",
+      "display-value": "R",
+      "tooltip": "Reported by powerhouse",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SPK",
+      "display-value": "S",
+      "tooltip": "Scheduled release to meet loads",
+      "active": true
+    },
+    "notes": "from SCADA",
+    "new-total-discharge-override": 161.406026,
+    "old-total-discharge-override": 158.574341,
+    "discharge-units": "cms",
+    "pool-elevation": 221.62008,
+    "tailwater-elevation": 195.352416,
+    "elevation-units": "m",
+    "settings": [
+      {
+        "type": "turbine-setting",
+        "location-id": {
+          "office-id": "SPK",
+          "name": "PROJECT-TURBINE1"
+        },
+        "discharge-units": "cms",
+        "old-discharge": 164.004096,
+        "new-discharge": 164.004096,
+        "scheduled-load": 35.0,
+        "generation-units": "MW",
+        "real-power": 35.1
+      },
+      {
+        "type": "turbine-setting",
+        "location-id": {
+          "office-id": "SPK",
+          "name": "PROJECT-TURBINE2"
+        },
+        "discharge-units": "cms",
+        "old-discharge": 163.478252,
+        "new-discharge": 163.478252,
+        "scheduled-load": 35.0,
+        "generation-units": "MW",
+        "real-power": 35.5
+      },
+      {
+        "type": "turbine-setting",
+        "location-id": {
+          "office-id": "SPK",
+          "name": "TURBINE3"
+        },
+        "discharge-units": "cms",
+        "old-discharge": 163.478252,
+        "new-discharge": 163.478252,
+        "scheduled-load": 35.0,
+        "generation-units": "MW",
+        "real-power": 35.5
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SPK",
+      "name": "PROJECT"
+    },
+    "change-date": 1709542800000,
+    "protected": false,
+    "discharge-computation-type": {
+      "office-id": "SPK",
+      "display-value": "R",
+      "tooltip": "Reported by powerhouse",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SPK",
+      "display-value": "S",
+      "tooltip": "Scheduled release to meet loads",
+      "active": true
+    },
+    "notes": "from SCADA",
+    "new-total-discharge-override": 161.406026,
+    "old-total-discharge-override": 158.574341,
+    "discharge-units": "cms",
+    "pool-elevation": 221.62008,
+    "tailwater-elevation": 195.352416,
+    "elevation-units": "m",
+    "settings": [
+      {
+        "type": "turbine-setting",
+        "location-id": {
+          "office-id": "SPK",
+          "name": "PROJECT-TURBINE1"
+        },
+        "discharge-units": "cms",
+        "old-discharge": 164.004096,
+        "new-discharge": 164.004096,
+        "scheduled-load": 35.0,
+        "generation-units": "MW",
+        "real-power": 35.1
+      },
+      {
+        "type": "turbine-setting",
+        "location-id": {
+          "office-id": "SPK",
+          "name": "PROJECT-TURBINE2"
+        },
+        "discharge-units": "cms",
+        "old-discharge": 163.478252,
+        "new-discharge": 163.478252,
+        "scheduled-load": 35.0,
+        "generation-units": "MW",
+        "real-power": 35.5
+      },
+      {
+        "type": "turbine-setting",
+        "location-id": {
+          "office-id": "SPK",
+          "name": "TURBINE3"
+        },
+        "discharge-units": "cms",
+        "old-discharge": 163.478252,
+        "new-discharge": 163.478252,
+        "scheduled-load": 35.0,
+        "generation-units": "MW",
+        "real-power": 35.5
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SPK",
+      "name": "PROJECT"
+    },
+    "change-date": 1709546400000,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SPK",
+      "display-value": "R",
+      "tooltip": "Reported by powerhouse",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SPK",
+      "display-value": "S",
+      "tooltip": "Scheduled release to meet loads",
+      "active": true
+    },
+    "notes": "from SCADA",
+    "new-total-discharge-override": 161.406026,
+    "old-total-discharge-override": 158.574341,
+    "discharge-units": "cms",
+    "pool-elevation": 221.62008,
+    "tailwater-elevation": 195.352416,
+    "elevation-units": "m",
+    "settings": [
+      {
+        "type": "turbine-setting",
+        "location-id": {
+          "office-id": "SPK",
+          "name": "PROJECT-TURBINE1"
+        },
+        "discharge-units": "cms",
+        "old-discharge": 164.004096,
+        "new-discharge": 164.004096,
+        "scheduled-load": 35.0,
+        "generation-units": "MW",
+        "real-power": 35.1
+      },
+      {
+        "type": "turbine-setting",
+        "location-id": {
+          "office-id": "SPK",
+          "name": "PROJECT-TURBINE2"
+        },
+        "discharge-units": "cms",
+        "old-discharge": 163.478252,
+        "new-discharge": 163.478252,
+        "scheduled-load": 35.0,
+        "generation-units": "MW",
+        "real-power": 35.5
+      },
+      {
+        "type": "turbine-setting",
+        "location-id": {
+          "office-id": "SPK",
+          "name": "TURBINE3"
+        },
+        "discharge-units": "cms",
+        "old-discharge": 163.478252,
+        "new-discharge": 163.478252,
+        "scheduled-load": 35.0,
+        "generation-units": "MW",
+        "real-power": 35.5
+      }
+    ]
+  }
+]

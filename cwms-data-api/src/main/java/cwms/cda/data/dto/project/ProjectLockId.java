@@ -28,7 +28,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -37,7 +36,7 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
-public class ProjectLockId implements CwmsDTOBase {
+public class ProjectLockId extends CwmsDTOBase {
     private final String id;
 
     public ProjectLockId(@JsonProperty(value = "id") String id) {
@@ -46,10 +45,5 @@ public class ProjectLockId implements CwmsDTOBase {
 
     public String getId() {
         return id;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-
     }
 }

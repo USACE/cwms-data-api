@@ -47,11 +47,6 @@ public class TimeSeriesIdentifierDescriptor extends CwmsDTO {
         return active;
     }
 
-    @Override
-    public void validate() throws FieldException {
-        // Nothing to validate
-    }
-
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {

@@ -27,7 +27,7 @@ package cwms.cda.data.dao.location.kind;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
-import cwms.cda.data.dto.LookupTypeTest;
+import cwms.cda.helpers.DTOMatch;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
@@ -70,7 +70,7 @@ final class LocationUtilTest {
         LookupType expected = buildTestLookupType();
         LOOKUP_TYPE_OBJ_T lookupTypeObjT = LocationUtil.getLookupType(expected);
         LookupType lookupType = LocationUtil.getLookupType(lookupTypeObjT);
-        LookupTypeTest.assertSame(expected, lookupType);
+        DTOMatch.assertMatch(expected, lookupType);
     }
 
     private LookupType buildTestLookupType() {

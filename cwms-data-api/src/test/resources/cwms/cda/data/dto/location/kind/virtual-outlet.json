@@ -1,0 +1,66 @@
+{
+  "project-id": {
+    "office-id": "SPK",
+    "name": "BIGH"
+  },
+  "virtual-outlet-id": {
+    "office-id": "SPK",
+    "name": "Compound Tainter Gates"
+  },
+  "virtual-records": [
+    {
+      "outlet-id": {
+        "office-id": "SPK",
+        "name": "TG1"
+      },
+      "downstream-outlet-ids": [
+        {
+          "office-id": "SPK",
+          "name": "TG2"
+        }
+      ]
+    },
+    {
+      "outlet-id": {
+        "office-id": "SPK",
+        "name": "TG2"
+      },
+      "downstream-outlet-ids": [
+        {
+          "office-id": "SPK",
+          "name": "TG3"
+        }
+      ]
+    },
+    {
+      "outlet-id": {
+        "office-id": "SPK",
+        "name": "TG3"
+      },
+      "downstream-outlet-ids": [
+        {
+          "office-id": "SPK",
+          "name": "TG4"
+        },
+        {
+          "office-id": "SPK",
+          "name": "TG5"
+        }
+      ]
+    },
+    {
+      "outlet-id": {
+        "office-id": "SPK",
+        "name": "TG4"
+      },
+      "downstream-outlet-ids": []
+    },
+    {
+      "outlet-id": {
+        "office-id": "SPK",
+        "name": "TG5"
+      },
+      "downstream-outlet-ids": []
+    }
+  ]
+}
