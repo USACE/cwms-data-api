@@ -21,7 +21,7 @@ public final class ProfileTimeSeries {
     private final String timeZone;
     private final List<TimeValuePair> values;
 
-    protected ProfileTimeSeries(Builder builder)
+    ProfileTimeSeries(Builder builder)
     {
         parameter = builder.parameter;
         unit = builder.unit;

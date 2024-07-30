@@ -16,96 +16,98 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 final class TimeSeriesProfileParserTest {
     @Test
-    void testTimeSeriesProfileSerializationRoundTrip() {
-        TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser();
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParser.class);
-
-        String serialized = Formats.format(contentType, timeSeriesProfileParser);
-        TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParser.class), serialized, TimeSeriesProfileParser.class);
-        testAssertEquals(timeSeriesProfileParser, deserialized, "Roundtrip serialization failed");
-    }
-    @Test
     void testTimeSeriesProfileColumnarSerializationRoundTrip() {
-        TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParserColumnar();
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParser.class);
+        TimeSeriesProfileParserColumnar timeSeriesProfileParser = buildTestTimeSeriesProfileParserColumnar();
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParserColumnar.class);
 
         String serialized = Formats.format(contentType, timeSeriesProfileParser);
-        TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParser.class), serialized, TimeSeriesProfileParser.class);
-        testAssertEquals(timeSeriesProfileParser, deserialized, "Roundtrip serialization failed");
+        TimeSeriesProfileParserColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParserColumnar.class), serialized, TimeSeriesProfileParserColumnar.class);
+        testAssertEquals(timeSeriesProfileParser,  deserialized, "Roundtrip serialization failed");
     }
+
     @Test
-    void testTimeSeriesProfileSerializationRoundTripFromFile() throws Exception {
-        TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser();
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofileparser.json");
-        assertNotNull(resource);
-        String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParser.class), serialized, TimeSeriesProfileParser.class);
-        testAssertEquals(timeSeriesProfileParser, deserialized, "Roundtrip serialization from file failed");
+    void testTimeSeriesProfileIndexedSerializationRoundTrip() {
+        TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParserIndexed();
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParserColumnar.class);
+
+        String serialized = Formats.format(contentType, timeSeriesProfileParser);
+        TimeSeriesProfileParserIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParserIndexed.class), serialized, TimeSeriesProfileParserIndexed.class);
+        testAssertEquals((TimeSeriesProfileParserIndexed)timeSeriesProfileParser, deserialized, "Roundtrip serialization failed");
     }
     @Test
     void testTimeSeriesProfileSerializationRoundTripColumnarFromFile() throws Exception {
-        TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParserColumnar();
+        TimeSeriesProfileParserColumnar timeSeriesProfileParser = buildTestTimeSeriesProfileParserColumnar();
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofileparsercolumnar.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        TimeSeriesProfileParser deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParser.class), serialized, TimeSeriesProfileParser.class);
-        testAssertEquals(timeSeriesProfileParser, deserialized, "Roundtrip serialization from file failed");
+        TimeSeriesProfileParserColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParserColumnar.class), serialized, TimeSeriesProfileParserColumnar.class);
+        testAssertEquals(timeSeriesProfileParser,  deserialized, "Roundtrip serialization from file failed");
     }
 
-    private static TimeSeriesProfileParser buildTestTimeSeriesProfileParser() {
-        List<ParameterInfo> parameterInfo = new ArrayList<>();
-        parameterInfo.add(new ParameterInfo.Builder()
-                .withParameter("Depth")
-                .withIndex(3)
-                .withUnit("m")
-                .build());
-        parameterInfo.add(new ParameterInfo.Builder()
-                .withParameter("Temp-Water")
-                .withIndex(5)
-                .withUnit("F")
-                .build());
-        CwmsId locationId = new CwmsId.Builder()
-                .withOfficeId("SWT")
-                .withName("location")
-                .build();
-        return
-                new TimeSeriesProfileParser.Builder()
-                        .withLocationId(locationId)
-                        .withKeyParameter("Depth")
-                        .withRecordDelimiter((char) 10)
-                        .withFieldDelimiter(',')
-                        .withTimeFormat("MM/DD/YYYY,HH24:MI:SS")
-                        .withTimeZone("UTC")
-                        .withTimeField(1)
-                        .withTimeInTwoFields(false)
-                        .withParameterInfoList(parameterInfo)
-                        .build();
+    @Test
+    void testTimeSeriesProfileSerializationRoundTripIndexedFromFile() throws Exception {
+        TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParserIndexed();
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofileparserindexed.json");
+        assertNotNull(resource);
+        String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        TimeSeriesProfileParserIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParserIndexed.class), serialized, TimeSeriesProfileParserIndexed.class);
+        testAssertEquals((TimeSeriesProfileParserIndexed) timeSeriesProfileParser, deserialized, "Roundtrip serialization from file failed");
     }
-    private static TimeSeriesProfileParser buildTestTimeSeriesProfileParserColumnar() {
+
+    private static TimeSeriesProfileParserColumnar buildTestTimeSeriesProfileParserColumnar() {
         List<ParameterInfo> parameterInfo = new ArrayList<>();
-        parameterInfo.add(new ParameterInfo.Builder()
-                .withParameter("Depth")
-                .withUnit("m")
+        parameterInfo.add(new ParameterInfoColumnar.Builder()
                 .withStartColumn(11)
                 .withEndColumn(20)
-                .build());
-        parameterInfo.add(new ParameterInfo.Builder()
-                .withParameter("Temp-Water")
-                .withUnit("F")
+                .withParameter("Depth")
+                .withUnit("m")
+               .build());
+        parameterInfo.add(new ParameterInfoColumnar.Builder()
                 .withStartColumn(21)
                 .withEndColumn(30)
+                .withParameter("Temp-Water")
+                .withUnit("F")
+                 .build());
+        CwmsId locationId = new CwmsId.Builder()
+                .withOfficeId("SWT")
+                .withName("location")
+                .build();
+        return (TimeSeriesProfileParserColumnar)
+                new TimeSeriesProfileParserColumnar.Builder()
+                        .withTimeStartColumn(1)
+                        .withTimeEndColumn(10)
+                        .withLocationId(locationId)
+                        .withKeyParameter("Depth")
+                        .withRecordDelimiter((char) 10)
+                        .withTimeFormat("MM/DD/YYYY,HH24:MI:SS")
+                        .withTimeZone("UTC")
+                        .withTimeInTwoFields(false)
+                        .withParameterInfoList(parameterInfo)
+                        .build();
+    }
+    private static TimeSeriesProfileParser buildTestTimeSeriesProfileParserIndexed() {
+        List<ParameterInfo> parameterInfo = new ArrayList<>();
+        parameterInfo.add(new ParameterInfoIndexed.Builder()
+                .withIndex(3)
+                .withParameter("Depth")
+                .withUnit("m")
+                .build());
+        parameterInfo.add(new ParameterInfoIndexed.Builder()
+                .withIndex(5)
+                .withParameter("Temp-Water")
+                .withUnit("F")
                 .build());
         CwmsId locationId = new CwmsId.Builder()
                 .withOfficeId("SWT")
                 .withName("location")
                 .build();
         return
-                new TimeSeriesProfileParser.Builder()
+                new TimeSeriesProfileParserIndexed.Builder()
+                        .withTimeField(1)
+                        .withFieldDelimiter(',')
                         .withLocationId(locationId)
                         .withKeyParameter("Depth")
                         .withRecordDelimiter((char) 10)
-                        .withTimeStartColumn(1)
-                        .withTimeEndColumn(10)
                         .withTimeFormat("MM/DD/YYYY,HH24:MI:SS")
                         .withTimeZone("UTC")
                         .withTimeInTwoFields(false)
@@ -113,14 +115,12 @@ final class TimeSeriesProfileParserTest {
                         .build();
     }
 
-    private void testAssertEquals(TimeSeriesProfileParser expected, TimeSeriesProfileParser actual, String message) {
+    private void testAssertEquals(TimeSeriesProfileParserColumnar expected, TimeSeriesProfileParserColumnar actual, String message) {
         assertEquals(expected.getLocationId().getName(), actual.getLocationId().getName(), message);
         assertEquals(expected.getLocationId().getOfficeId(), actual.getLocationId().getOfficeId(), message);
-        assertEquals(expected.getFieldDelimiter(), actual.getFieldDelimiter(), message);
         assertEquals(expected.getLocationId().getName(), actual.getLocationId().getName(), message);
         assertEquals(expected.getLocationId().getOfficeId(), actual.getLocationId().getOfficeId(), message);
         assertEquals(expected.getKeyParameter(), actual.getKeyParameter(), message);
-        assertEquals(expected.getTimeField(), actual.getTimeField(), message);
         assertEquals(expected.getTimeFormat(), actual.getTimeFormat(), message);
         testAssertEquals(expected.getParameterInfoList(), actual.getParameterInfoList(),message);
         assertEquals(expected.getRecordDelimiter(), actual.getRecordDelimiter(), message);
@@ -129,16 +129,37 @@ final class TimeSeriesProfileParserTest {
         assertEquals(expected.getTimeEndColumn(), actual.getTimeEndColumn());
         assertEquals(expected.getTimeStartColumn(), actual.getTimeStartColumn());
     }
-
+    private void testAssertEquals(TimeSeriesProfileParserIndexed expected, TimeSeriesProfileParserIndexed actual, String message) {
+        assertEquals(expected.getLocationId().getName(), actual.getLocationId().getName(), message);
+        assertEquals(expected.getLocationId().getOfficeId(), actual.getLocationId().getOfficeId(), message);
+        assertEquals(expected.getLocationId().getName(), actual.getLocationId().getName(), message);
+        assertEquals(expected.getLocationId().getOfficeId(), actual.getLocationId().getOfficeId(), message);
+        assertEquals(expected.getKeyParameter(), actual.getKeyParameter(), message);
+        assertEquals(expected.getTimeFormat(), actual.getTimeFormat(), message);
+        testAssertEquals(expected.getParameterInfoList(), actual.getParameterInfoList(),message);
+        assertEquals(expected.getRecordDelimiter(), actual.getRecordDelimiter(), message);
+        assertEquals(expected.getTimeZone(), actual.getTimeZone());
+        assertEquals(expected.getTimeInTwoFields(), actual.getTimeInTwoFields());
+        assertEquals(expected.getTimeField(), actual.getTimeField());
+        assertEquals(expected.getFieldDelimiter(), actual.getFieldDelimiter());
+    }
     private void testAssertEquals(List<ParameterInfo> expected, List<ParameterInfo> actual, String message) {
         assertEquals(expected.size(), actual.size());
         for(int i=0;i<expected.size();i++)
         {
-            assertEquals(expected.get(i).getIndex(), actual.get(i).getIndex(), message);
             assertEquals(expected.get(i).getParameter(), actual.get(i).getParameter(), message);
             assertEquals(expected.get(i).getUnit(), actual.get(i).getUnit(), message);
-            assertEquals(expected.get(i).getStartColumn(), actual.get(i).getStartColumn());
-            assertEquals(expected.get(i).getEndColumn(), actual.get(i).getEndColumn());
+            if(expected.get(i) instanceof ParameterInfoIndexed &&  actual.get(i) instanceof ParameterInfoIndexed) {
+                assertEquals(((ParameterInfoIndexed) expected.get(i)).getIndex(), ((ParameterInfoIndexed) actual.get(i)).getIndex(), message);
+            }
+            else if(expected.get(i) instanceof ParameterInfoColumnar &&  actual.get(i) instanceof ParameterInfoColumnar) {
+                assertEquals(((ParameterInfoColumnar) expected.get(i)).getStartColumn(), ((ParameterInfoColumnar) actual.get(i)).getStartColumn(), message);
+                assertEquals(((ParameterInfoColumnar) expected.get(i)).getEndColumn(), ((ParameterInfoColumnar) actual.get(i)).getEndColumn(), message);
+            }
+            else
+            {
+                assertEquals(expected.get(i).getClass(), actual.get(i).getClass());
+            }
         }
     }
 }

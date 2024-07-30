@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -20,7 +21,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonDeserialize(builder = TimeSeriesProfile.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class TimeSeriesProfile implements CwmsDTOBase {
+public final class TimeSeriesProfile extends CwmsDTOBase {
     @Schema(description = "Location ID")
     private final CwmsId locationId;
     @Schema(description = "Description")
@@ -61,7 +62,9 @@ public final class TimeSeriesProfile implements CwmsDTOBase {
     }
 
     @Override
-    public void validate() throws FieldException {
+    protected void validateInternal(CwmsDTOValidator validator){
+        super.validateInternal(validator);
+
         if (this.parameterList.isEmpty()) {
             throw new FieldException("Parameter list field must not be empty");
         }

@@ -4,10 +4,13 @@ import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.timeseriesprofile.ParameterInfo;
+import cwms.cda.data.dto.timeseriesprofile.ParameterInfoColumnar;
+import cwms.cda.data.dto.timeseriesprofile.ParameterInfoIndexed;
 import cwms.cda.data.dto.timeseriesprofile.ProfileTimeSeries;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileInstance;
-import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParser;
+import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserColumnar;
+import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
 import cwms.cda.data.dto.timeseriesprofile.TimeValuePair;
 import fixtures.CwmsDataApiSetupCallback;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -74,7 +77,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             profileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
 
             // store a time series parser
-            TimeSeriesProfileParser parser = buildTestTimeSeriesProfileParser(officeId, locationName, parameterArray, parameterIndexArray, parameterUnitArray, recordDelimiter, fieldDelimiter,
+            TimeSeriesProfileParserIndexed parser = buildTestTimeSeriesProfileParserIndexed(officeId, locationName, parameterArray, parameterIndexArray, parameterUnitArray, recordDelimiter, fieldDelimiter,
                     timeFormat, timeZone, timeField);
             TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
 
@@ -141,7 +144,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             profileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
 
             // store a time series parser
-            TimeSeriesProfileParser parser = buildTestTimeSeriesProfileParser(officeId, locationName, parameterArray, parameterStartEndArray, parameterUnitArray, recordDelimiter,
+            TimeSeriesProfileParserColumnar parser = buildTestTimeSeriesProfileParserColumnar(officeId, locationName, parameterArray, parameterStartEndArray, parameterUnitArray, recordDelimiter,
                     timeFormat, timeZone, timeStartEnd);
             TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
             timeSeriesProfileParserDao.storeTimeSeriesProfileParser(parser, false);
@@ -309,12 +312,11 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                     firstDate, timeZone, overrideProtection, versionDate);
 
             // check if instance was deleted
-            timeSeriesProfileInstance = null;
             try {
                 timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, keyParameter[0], version, unit,
                         startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion);
             } catch (SQLException e) {
-                e.printStackTrace();
+                throw(new RuntimeException(e));
             }
             // instance does not exist anymore
             assertNull(timeSeriesProfileInstance);
@@ -369,7 +371,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             profileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
 
             // store a parser
-            TimeSeriesProfileParser parser = buildTestTimeSeriesProfileParser(officeId, locationName, parameterArray, parameterIndexArray, parameterUnitArray, recordDelimiter, fieldDelimiter,
+            TimeSeriesProfileParserIndexed parser = buildTestTimeSeriesProfileParserIndexed(officeId, locationName, parameterArray, parameterIndexArray, parameterUnitArray, recordDelimiter, fieldDelimiter,
                     timeFormat, timeZone, timeField);
             TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
             timeSeriesProfileParserDao.storeTimeSeriesProfileParser(parser, false);
@@ -381,8 +383,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                     dateTimeArray, valueArray, timeZone, versionDate);
             // test storeTImeSeriesProfileInstance method
             timeSeriesProfileInstanceDao.storeTimeSeriesProfileInstance(timeseriesProfileInstance, versionId, versionDate, storeRule, null);
-            timeSeriesProfileInstance = null;
-            // check is the timeseries profile instance can be retrieved
+             // check is the timeseries profile instance can be retrieved
             try {
                 timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, keyParameter[0], versionId, unit,
                         startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion);
@@ -500,55 +501,56 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                 .build();
 
     }
-    private TimeSeriesProfileParser buildTestTimeSeriesProfileParser(String officeId, String location, String[] parameterArray, int[][] parameterStartEndArray, String[] parameterUnitArray, char recordDelimiter, String timeFormat, String timeZone, int[] timeStartEnd) {
+    private TimeSeriesProfileParserColumnar buildTestTimeSeriesProfileParserColumnar(String officeId, String location, String[] parameterArray, int[][] parameterStartEndArray, String[] parameterUnitArray, char recordDelimiter, String timeFormat, String timeZone, int[] timeStartEnd) {
         List<ParameterInfo> parameterInfoList = new ArrayList<>();
         for (int i = 0; i < parameterArray.length; i++) {
-            parameterInfoList.add(new ParameterInfo.Builder()
-                    .withParameter(parameterArray[i])
+            parameterInfoList.add(new ParameterInfoColumnar.Builder()
                     .withStartColumn(parameterStartEndArray[i][0])
                     .withEndColumn(parameterStartEndArray[i][1])
                     .withUnit(parameterUnitArray[i])
+                    .withParameter(parameterArray[i])
                     .build());
         }
 
         CwmsId locationId = new CwmsId.Builder().withOfficeId(officeId).withName(location).build();
-        return
+        return (TimeSeriesProfileParserColumnar)
 
-                new TimeSeriesProfileParser.Builder()
+                new TimeSeriesProfileParserColumnar.Builder()
+                        .withTimeStartColumn(timeStartEnd[0])
+                        .withTimeEndColumn(timeStartEnd[1])
                         .withLocationId(locationId)
                         .withKeyParameter(parameterArray[0])
                         .withRecordDelimiter(recordDelimiter)
                         .withTimeFormat(timeFormat)
                         .withTimeZone(timeZone)
-                        .withTimeStartColumn(timeStartEnd[0])
-                        .withTimeEndColumn(timeStartEnd[1])
+
                         .withTimeInTwoFields(false)
                         .withParameterInfoList(parameterInfoList)
                         .build();
     }
 
-    static private TimeSeriesProfileParser buildTestTimeSeriesProfileParser(String officeId, String location, String[] parameterArray, int[] parameterIndexArray, String[] parameterUnitArray,
+    static private TimeSeriesProfileParserIndexed buildTestTimeSeriesProfileParserIndexed(String officeId, String location, String[] parameterArray, int[] parameterIndexArray, String[] parameterUnitArray,
             char recordDelimiter, char fieldDelimiter, String timeFormat, String timeZone, int timeField) {
         List<ParameterInfo> parameterInfoList = new ArrayList<>();
         for (int i = 0; i < parameterArray.length; i++) {
-            parameterInfoList.add(new ParameterInfo.Builder()
-                    .withParameter(parameterArray[i])
+            parameterInfoList.add(new ParameterInfoIndexed.Builder()
                     .withIndex(parameterIndexArray[i])
+                    .withParameter(parameterArray[i])
                     .withUnit(parameterUnitArray[i])
                     .build());
         }
 
         CwmsId locationId = new CwmsId.Builder().withOfficeId(officeId).withName(location).build();
-        return
+        return (TimeSeriesProfileParserIndexed)
 
-                new TimeSeriesProfileParser.Builder()
+                new TimeSeriesProfileParserIndexed.Builder()
+                        .withFieldDelimiter(fieldDelimiter)
+                        .withTimeField(timeField)
                         .withLocationId(locationId)
                         .withKeyParameter(parameterArray[0])
                         .withRecordDelimiter(recordDelimiter)
-                        .withFieldDelimiter(fieldDelimiter)
                         .withTimeFormat(timeFormat)
                         .withTimeZone(timeZone)
-                        .withTimeField(timeField)
                         .withTimeInTwoFields(true)
                         .withParameterInfoList(parameterInfoList)
                         .build();
