@@ -163,6 +163,7 @@ public final class Controllers {
     public static final String STATUS_501 = "501";
     public static final String STATUS_400 = "400";
     public static final String TEXT_MASK = "text-mask";
+    public static final String DELETE_MODE = "delete-mode";
     public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
     public static final String STANDARD_TEXT_ID = "standard-text-id";
     public static final String STREAM_ID_MASK = "stream-id-mask";
@@ -238,7 +239,7 @@ public final class Controllers {
      * @return value
      */
     public static <T> T queryParamAsClass(io.javalin.http.Context ctx,
-                                          Class<T> clazz, T defaultValue, String name, String ... aliases) {
+                                          Class<T> clazz, T defaultValue, String name, String... aliases) {
         List<String> items = new ArrayList<>();
         items.add(name);
         if (aliases != null) {
@@ -363,7 +364,8 @@ public final class Controllers {
      * @param ctx      The context of the request.
      * @param param    The name of the query parameter to retrieve.
      * @param timezone The timezone to use for parsing the date.
-     * @return The query parameter value as a ZonedDateTime object, or null if the parameter is not found or cannot be parsed.
+     * @return The query parameter value as a ZonedDateTime object,
+     *     or null if the parameter is not found or cannot be parsed.
      */
     @Nullable
     public static ZonedDateTime queryParamAsZdt(Context ctx, String param, String timezone) {
@@ -386,7 +388,7 @@ public final class Controllers {
      * @param ctx   The context of the request.
      * @param param The name of the query parameter to retrieve.
      * @return The query parameter value as an Instant object, or null if the parameter is not
-     * found or cannot be parsed.
+     *     found or cannot be parsed.
      */
     @Nullable
     public static Instant queryParamAsInstant(Context ctx, String param) {
