@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.VirtualOutletRecord;
 import cwms.cda.data.dto.location.kind.Embankment;
@@ -42,12 +43,16 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
+import cwms.cda.data.dto.watersupply.WaterSupplyPump;
+import cwms.cda.data.dto.watersupply.WaterUser;
+import cwms.cda.data.dto.watersupply.WaterUserContract;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
+
 
 @SuppressWarnings({"LongLine", "checkstyle:LineLength"})
 public final class DTOMatch {
@@ -220,6 +225,73 @@ public final class DTOMatch {
                   () -> assertAll(IntStream.range(0, first.size())
                                            .mapToObj(i -> () -> matcher.assertMatch(first.get(i), second.get(i)))));
     }
+
+    public static void assertMatch(WaterSupplyPump firstPump, WaterSupplyPump secondPump) {
+        assertAll(
+                () -> assertMatch(firstPump.getPumpLocation(), secondPump.getPumpLocation()),
+                () -> assertEquals(firstPump.getPumpType(), secondPump.getPumpType())
+        );
+    }
+
+    public static void assertMatch(WaterUser firstUser, WaterUser secondUser) {
+        assertAll(
+                () -> assertEquals(firstUser.getEntityName(), secondUser.getEntityName()),
+                () -> DTOMatch.assertMatch(firstUser.getProjectId(), secondUser.getProjectId()),
+                () -> assertEquals(firstUser.getWaterRight(), secondUser.getWaterRight())
+        );
+    }
+
+    public static void assertMatch(Location first, Location second) {
+        assertAll(
+                () -> assertEquals(first.getName(), second.getName()),
+                () -> assertEquals(first.getLatitude(), second.getLatitude()),
+                () -> assertEquals(first.getLongitude(), second.getLongitude()),
+                () -> assertEquals(first.getHorizontalDatum(), second.getHorizontalDatum()),
+                () -> assertEquals(first.getElevation(), second.getElevation()),
+                () -> assertEquals(first.getElevationUnits(), second.getElevationUnits()),
+                () -> assertEquals(first.getVerticalDatum(), second.getVerticalDatum()),
+                () -> assertEquals(first.getPublicName(), second.getPublicName()),
+                () -> assertEquals(first.getLongName(), second.getLongName()),
+                () -> assertEquals(first.getDescription(), second.getDescription()),
+                () -> assertEquals(first.getActive(), second.getActive()),
+                () -> assertEquals(first.getLocationKind(), second.getLocationKind()),
+                () -> assertEquals(first.getMapLabel(), second.getMapLabel()),
+                () -> assertEquals(first.getPublishedLatitude(), second.getPublishedLatitude()),
+                () -> assertEquals(first.getPublishedLongitude(), second.getPublishedLongitude()),
+                () -> assertEquals(first.getBoundingOfficeId(), second.getBoundingOfficeId()),
+                () -> assertEquals(first.getNation(), second.getNation()),
+                () -> assertEquals(first.getNearestCity(), second.getNearestCity()),
+                () -> assertEquals(first.getStateInitial(), second.getStateInitial()),
+                () -> assertEquals(first.getCountyName(), second.getCountyName()),
+                () -> assertEquals(first.getTimezoneName(), second.getTimezoneName()),
+                () -> assertEquals(first.getOfficeId(), second.getOfficeId()),
+                () -> assertEquals(first.getLocationType(), second.getLocationType())
+        );
+    }
+
+    public static void assertMatch(WaterUserContract firstContract, WaterUserContract secondContract) {
+        assertAll(
+                () -> assertMatch(firstContract.getWaterUser(), secondContract.getWaterUser()),
+                () -> DTOMatch.assertMatch(firstContract.getContractId(), secondContract.getContractId()),
+                () -> DTOMatch.assertMatch(firstContract.getContractType(), secondContract.getContractType()),
+                () -> assertEquals(firstContract.getContractEffectiveDate().toString(),
+                        secondContract.getContractEffectiveDate().toString()),
+                () -> assertEquals(firstContract.getContractExpirationDate().toString(),
+                        secondContract.getContractExpirationDate().toString()),
+                () -> assertEquals(firstContract.getContractedStorage(), secondContract.getContractedStorage()),
+                () -> assertEquals(firstContract.getInitialUseAllocation(), secondContract.getInitialUseAllocation()),
+                () -> assertEquals(firstContract.getFutureUseAllocation(), secondContract.getFutureUseAllocation()),
+                () -> assertEquals(firstContract.getStorageUnitsId(), secondContract.getStorageUnitsId()),
+                () -> assertEquals(firstContract.getFutureUsePercentActivated(),
+                        secondContract.getFutureUsePercentActivated()),
+                () -> assertEquals(firstContract.getTotalAllocPercentActivated(),
+                        secondContract.getTotalAllocPercentActivated()),
+                () -> assertMatch(firstContract.getPumpOutLocation(), secondContract.getPumpOutLocation()),
+                () -> assertMatch(firstContract.getPumpOutBelowLocation(), secondContract.getPumpOutBelowLocation()),
+                () -> assertMatch(firstContract.getPumpInLocation(), secondContract.getPumpInLocation())
+        );
+    }
+
 
     @FunctionalInterface
     public interface AssertMatchMethod<T>{
