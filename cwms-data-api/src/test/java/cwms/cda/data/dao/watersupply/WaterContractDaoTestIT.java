@@ -60,7 +60,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class WaterContractDaoTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
     private static final String DELETE_ACTION = "DELETE ALL";
-    private static final String TEST_DELETE_ACTION = "DELETE ALL";
     private static final Location testLocation = buildTestLocation("Test Location Name", "Test Location");
     private static final Project testProject = buildTestProject();
     private static final WaterUser testUser = buildTestWaterUser("Test User");
@@ -267,7 +266,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
-            dao.deleteWaterUser(user.getProjectId(), user.getEntityName(), TEST_DELETE_ACTION);
+            dao.deleteWaterUser(user.getProjectId(), user.getEntityName(), DELETE_ACTION);
         });
     }
 
@@ -276,7 +275,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
-            dao.deleteWaterContract(contract, TEST_DELETE_ACTION);
+            dao.deleteWaterContract(contract, DELETE_ACTION);
         });
     }
 
