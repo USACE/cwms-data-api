@@ -1,13 +1,16 @@
 {
-  "description" : "Description",
-  "parameter-list" : ["Temperature","Depth"],
-  "location-id" : {
-    "office-id" : "office",
-    "name" : "location"
+  "description": "Description",
+  "parameter-list": [
+    "Temp-Water",
+    "Depth"
+  ],
+  "location-id": {
+    "office-id": "SWT",
+    "name": "SWAN"
   },
-  "reference-ts-id" : {
-    "office-id" : "office",
-    "name" : "location.Elev.Inst.0.0.REV"
+  "reference-ts-id": {
+    "office-id": "SWT",
+    "name": "SWAN.Elev.Inst.1Hour.0.DSS-Obs"
   },
-  "key-parameter" : "Depth"
+  "key-parameter": "Depth"
 }

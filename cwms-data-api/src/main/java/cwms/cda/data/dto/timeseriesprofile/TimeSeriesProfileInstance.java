@@ -5,9 +5,9 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -19,7 +19,7 @@ import java.util.List;
 @JsonDeserialize(builder = TimeSeriesProfileInstance.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class TimeSeriesProfileInstance implements CwmsDTOBase {
+public final class TimeSeriesProfileInstance extends CwmsDTOBase {
     private final TimeSeriesProfile timeSeriesProfile;
     private final List<ProfileTimeSeries> timeSeriesList;
     private final String version;
@@ -62,7 +62,7 @@ public final class TimeSeriesProfileInstance implements CwmsDTOBase {
         return lastDate;
     }
     @Override
-    public void validate() throws FieldException {
+    protected void validateInternal(CwmsDTOValidator validator){
         if(timeSeriesProfile==null)
         {
             throw new RequiredFieldException("timeSeriesProfile");

@@ -1,4 +1,5 @@
 {
+  "type": "TimeSeriesProfileParserIndexed",
   "location-id": {
     "office-id": "SWT",
     "name": "location"
@@ -12,11 +13,13 @@
   "time-in-two-fields": false,
   "parameter-info-list": [
     {
+      "type": "ParameterInfoIndexed",
       "parameter":"Depth",
       "unit":"m",
       "index":3
     },
     {
+      "type": "ParameterInfoIndexed",
       "parameter":"Temp-Water",
       "unit":"F",
       "index":5

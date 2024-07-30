@@ -8,8 +8,10 @@ import java.util.List;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.timeseriesprofile.ParameterInfo;
+import cwms.cda.data.dto.timeseriesprofile.ParameterInfoIndexed;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParser;
+import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
 import fixtures.CwmsDataApiSetupCallback;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
@@ -43,7 +45,7 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
             timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
 
             TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
-            TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser(officeId, locationName, parameter[0]);
+            TimeSeriesProfileParserIndexed timeSeriesProfileParser = buildTestTimeSeriesProfileParserIndexed(officeId, locationName, parameter[0]);
             timeSeriesProfileParserDao.storeTimeSeriesProfileParser(timeSeriesProfileParser, false);
 
             TimeSeriesProfileParser retrieved = timeSeriesProfileParserDao.retrieveTimeSeriesProfileParser(timeSeriesProfileParser.getLocationId().getName(),
@@ -76,8 +78,8 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
             timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
 
             TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
-            TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser(officeId, locationName, parameter[0]);
-            timeSeriesProfileParserDao.storeTimeSeriesProfileParser(timeSeriesProfileParser, false);
+            TimeSeriesProfileParserIndexed timeSeriesProfileParser = buildTestTimeSeriesProfileParserIndexed(officeId, locationName, parameter[0]);
+            timeSeriesProfileParserDao.storeTimeSeriesProfileParser( timeSeriesProfileParser, false);
 
             timeSeriesProfileParserDao.deleteTimeSeriesProfileParser(timeSeriesProfileParser.getLocationId().getName(),
                     timeSeriesProfileParser.getKeyParameter(), timeSeriesProfileParser.getLocationId().getOfficeId());
@@ -112,7 +114,7 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
 
 
             for(String parameter : parameters) {
-                TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser(officeId, locationName, parameter);
+                TimeSeriesProfileParserIndexed timeSeriesProfileParser = buildTestTimeSeriesProfileParserIndexed(officeId, locationName, parameter);
                 timeSeriesProfileParserDao.storeTimeSeriesProfileParser(timeSeriesProfileParser, false);
             }
 
@@ -149,8 +151,8 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
             timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
 
             TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
-            TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParser(officeId, locationName, parameter[0]);
-            timeSeriesProfileParserDao.storeTimeSeriesProfileParser(timeSeriesProfileParser, false);
+            TimeSeriesProfileParserIndexed timeSeriesProfileParser = buildTestTimeSeriesProfileParserIndexed(officeId, locationName, parameter[0]);
+            timeSeriesProfileParserDao.storeTimeSeriesProfileParser( timeSeriesProfileParser, false);
 
             TimeSeriesProfileParser retrieved = timeSeriesProfileParserDao.retrieveTimeSeriesProfileParser(timeSeriesProfileParser.getLocationId().getName(),
                     timeSeriesProfileParser.getKeyParameter(), timeSeriesProfileParser.getLocationId().getOfficeId());
@@ -177,30 +179,30 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
 
     }
 
-    static private TimeSeriesProfileParser buildTestTimeSeriesProfileParser(String officeId, String location, String keyParameter) {
+    static private TimeSeriesProfileParserIndexed buildTestTimeSeriesProfileParserIndexed(String officeId, String location, String keyParameter) {
         List<ParameterInfo> parameterInfoList = new ArrayList<>();
-        parameterInfoList.add(new ParameterInfo.Builder()
-                .withParameter("Depth")
+        parameterInfoList.add(new ParameterInfoIndexed.Builder()
                 .withIndex(6)
+                .withParameter("Depth")
                 .withUnit("m")
                 .build());
-        parameterInfoList.add(new ParameterInfo.Builder()
-                .withParameter("Pres")
+        parameterInfoList.add(new ParameterInfoIndexed.Builder()
                 .withIndex(5)
+                .withParameter("Pres")
                 .withUnit("bar")
                 .build());
          CwmsId locationId = new CwmsId.Builder().withOfficeId(officeId).withName(location).build();
         return
-
-                new TimeSeriesProfileParser.Builder()
+                (TimeSeriesProfileParserIndexed)
+                new TimeSeriesProfileParserIndexed.Builder()
+                        .withFieldDelimiter(',')
+                        .withTimeField(1)
                         .withLocationId(locationId)
                         .withKeyParameter(keyParameter)
                         .withRecordDelimiter((char) 10)
-                        .withFieldDelimiter(',')
-                        .withTimeFormat("MM/DD/YYYY,HH24:MI:SS")
+                         .withTimeFormat("MM/DD/YYYY,HH24:MI:SS")
                         .withTimeZone("UTC")
-                        .withTimeField(1)
-                        .withTimeInTwoFields(true)
+                         .withTimeInTwoFields(true)
                         .withParameterInfoList(parameterInfoList)
                         .build();
     }

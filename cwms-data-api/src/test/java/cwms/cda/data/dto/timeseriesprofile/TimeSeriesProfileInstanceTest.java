@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class TimeSeriesProfileInstanceTest {
     private static final Map<String, String> PARAMETER_UNIT_MAP = new HashMap<>();
     @BeforeAll
-    public static void setup() throws Exception {
+    public static void setup() {
         PARAMETER_UNIT_MAP.put("Depth", "ft");
         PARAMETER_UNIT_MAP.put("Temp-Water", "F");
     }
