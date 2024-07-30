@@ -25,13 +25,6 @@
 package cwms.cda;
 
 import static cwms.cda.api.Controllers.NAME;
-import cwms.cda.api.DownstreamLocationsGetController;
-import cwms.cda.api.location.kind.VirtualOutletController;
-import cwms.cda.api.LookupTypeController;
-import cwms.cda.api.StreamController;
-import cwms.cda.api.StreamLocationController;
-import cwms.cda.api.StreamReachController;
-import cwms.cda.api.UpstreamLocationsGetController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -67,7 +60,6 @@ import cwms.cda.api.LocationController;
 import cwms.cda.api.LocationGroupController;
 import cwms.cda.api.LookupTypeController;
 import cwms.cda.api.OfficeController;
-import cwms.cda.api.location.kind.OutletController;
 import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
 import cwms.cda.api.ProjectController;
@@ -106,6 +98,9 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
+import cwms.cda.api.location.kind.OutletController;
+import cwms.cda.api.location.kind.VirtualOutletController;
+import cwms.cda.api.location.kind.VirtualOutletCreateController;
 import cwms.cda.api.project.LockRevokerRightsCatalog;
 import cwms.cda.api.project.ProjectLockCatalog;
 import cwms.cda.api.project.ProjectLockGetOne;
@@ -116,7 +111,6 @@ import cwms.cda.api.project.ProjectLockRevokeDeny;
 import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
-import cwms.cda.api.location.kind.VirtualOutletCreateController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -193,9 +187,9 @@ import org.owasp.html.PolicyFactory;
     "/levels/*",
     "/basins/*",
     "/streams/*",
-        "/stream-locations/*",
-        "/stream-reaches/*",
-        "/blobs/*",
+    "/stream-locations/*",
+    "/stream-reaches/*",
+    "/blobs/*",
     "/clobs/*",
     "/pools/*",
     "/specified-levels/*",
@@ -369,11 +363,14 @@ public class ApiServlet extends HttpServlet {
                     switch (e.getAuthFailCode()) {
                         case 401: {
                             String msg = !e.suppressMessage() ? e.getLocalizedMessage() : "Invalid User";
-                            re = new CdaError(msg,true);
+                            re = new CdaError(msg, true);
                             break;
                         }
-                        case 403: re = new CdaError("Not Authorized",true); break;
-                        default: re = new CdaError("Unknown auth error.");
+                        case 403:
+                            re = new CdaError("Not Authorized", true);
+                            break;
+                        default:
+                            re = new CdaError("Unknown auth error.");
                     }
 
                     if (logger.atFine().isEnabled()) {
@@ -392,7 +389,6 @@ public class ApiServlet extends HttpServlet {
                     ctx.contentType(ContentType.APPLICATION_JSON.toString());
                     ctx.json(errResponse);
                 })
-
                 .routes(this::configureRoutes)
                 .javalinServlet();
     }
@@ -451,7 +447,6 @@ public class ApiServlet extends HttpServlet {
         String levelTsPath = format("/levels/{%s}/timeseries", Controllers.LEVEL_ID);
         get(levelTsPath, new LevelsAsTimeSeriesController(metrics));
         addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
-        TimeSeriesController tsController = new TimeSeriesController(metrics);
         String recentPath = "/timeseries/recent/";
         get(recentPath, new TimeSeriesRecentController(metrics));
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
@@ -477,7 +472,8 @@ public class ApiServlet extends HttpServlet {
                 new TimeSeriesIdentifierDescriptorController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/group/{group-id}",
                 new TimeSeriesGroupController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/timeseries/{timeseries}", tsController, requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/timeseries/{timeseries}",
+                new TimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/ratings/template/{template-id}",
                 new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/ratings/spec/{rating-id}",
@@ -492,10 +488,12 @@ public class ApiServlet extends HttpServlet {
                 new BasinController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/streams/{%s}", NAME),
                 new StreamController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        String downstreamLocations = format("/stream-locations/{%s}/{%s}/downstream-locations", Controllers.OFFICE, Controllers.NAME);
+        String downstreamLocations = format("/stream-locations/{%s}/{%s}/downstream-locations",
+                Controllers.OFFICE, Controllers.NAME);
         get(downstreamLocations,new DownstreamLocationsGetController(metrics));
         addCacheControl(downstreamLocations, 5, TimeUnit.MINUTES);
-        String upstreamLocations = format("/stream-locations/{%s}/{%s}/upstream-locations", Controllers.OFFICE, Controllers.NAME);
+        String upstreamLocations = format("/stream-locations/{%s}/{%s}/upstream-locations",
+                Controllers.OFFICE, Controllers.NAME);
         get(upstreamLocations,new UpstreamLocationsGetController(metrics));
         addCacheControl(upstreamLocations, 5, TimeUnit.MINUTES);
         cdaCrudCache(format("/stream-locations/{%s}", NAME),
