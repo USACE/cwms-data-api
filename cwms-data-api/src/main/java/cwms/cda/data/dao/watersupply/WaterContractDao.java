@@ -58,39 +58,34 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
         return connectionResult(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
             LOCATION_REF_T projectLocationRef =  LocationUtil.getLocationRef(projectLocation);
-            WATER_USER_CONTRACT_TAB_T waterUserContractObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_CONTRACTS(
-                    DSL.using(c).configuration(), projectLocationRef, entityName);
-            return waterUserContractObjTs.stream()
+            return CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_CONTRACTS(
+                    DSL.using(c).configuration(), projectLocationRef, entityName)
+                    .stream()
                     .map(WaterSupplyUtils::toWaterContract)
                     .collect(toList());
         });
     }
 
     public WaterUserContract getWaterContract(String contractName, CwmsId projectLocation, String entityName) {
-        List<WaterUserContract> contracts =  connectionResult(dsl, c -> {
+        return connectionResult(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
             LOCATION_REF_T projectLocationRef =  LocationUtil.getLocationRef(projectLocation);
-            WATER_USER_CONTRACT_TAB_T waterUserContractObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_CONTRACTS(
-                    DSL.using(c).configuration(), projectLocationRef, entityName);
-            return waterUserContractObjTs.stream()
+            return CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_CONTRACTS(
+                    DSL.using(c).configuration(), projectLocationRef, entityName)
+                    .stream()
                     .map(WaterSupplyUtils::toWaterContract)
-                    .collect(toList());
+                    .filter(contract -> contract.getContractId().getName().equals(contractName))
+                    .findAny()
+                    .orElseThrow(() -> new NotFoundException("Water contract not found: " + contractName));
         });
-
-        for (WaterUserContract contract : contracts) {
-            if (contract.getContractId().getName().equals(contractName)) {
-                return contract;
-            }
-        }
-        throw new NotFoundException("Water contract not found: " + contractName);
     }
 
     public List<LookupType> getAllWaterContractTypes(String officeId) {
         return connectionResult(dsl, c -> {
             setOffice(c, officeId);
-            LOOKUP_TYPE_TAB_T lookupTypeObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_GET_CONTRACT_TYPES(
-                    DSL.using(c).configuration(), officeId);
-            return lookupTypeObjTs.stream()
+            return CWMS_WATER_SUPPLY_PACKAGE.call_GET_CONTRACT_TYPES(
+                    DSL.using(c).configuration(), officeId)
+                    .stream()
                     .map(LocationUtil::getLookupType)
                     .collect(toList());
         });
@@ -100,30 +95,26 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
         return connectionResult(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
             LOCATION_REF_T projectLocationRef =  LocationUtil.getLocationRef(projectLocation);
-            WATER_USER_TAB_T waterUserObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_WATER_USERS(
-                DSL.using(c).configuration(), projectLocationRef);
-            return waterUserObjTs.stream()
+            return CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_WATER_USERS(
+                DSL.using(c).configuration(), projectLocationRef)
+                .stream()
                 .map(WaterSupplyUtils::toWaterUser)
                 .collect(toList());
         });
     }
 
     public WaterUser getWaterUser(CwmsId projectLocation, String entityName) {
-        List<WaterUser> results =  connectionResult(dsl, c -> {
+        return connectionResult(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
             LOCATION_REF_T projectLocationRef =  LocationUtil.getLocationRef(projectLocation);
-            WATER_USER_TAB_T waterUserObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_WATER_USERS(
-                    DSL.using(c).configuration(), projectLocationRef);
-            return waterUserObjTs.stream()
+            return CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_WATER_USERS(
+                    DSL.using(c).configuration(), projectLocationRef)
+                    .stream()
                     .map(WaterSupplyUtils::toWaterUser)
-                    .collect(toList());
+                    .filter(waterUser -> waterUser.getEntityName().equals(entityName))
+                    .findAny()
+                    .orElseThrow(() -> new NotFoundException("Water user not found: " + entityName));
         });
-        for (WaterUser waterUser : results) {
-            if (waterUser.getEntityName().equals(entityName)) {
-                return waterUser;
-            }
-        }
-        throw new NotFoundException("Water user not found: " + entityName);
     }
 
     public void storeWaterContract(WaterUserContract waterContract, boolean failIfExists, boolean ignoreNulls) {
@@ -138,7 +129,6 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
     }
 
     public void renameWaterUser(String oldWaterUser, String newWaterUser, CwmsId projectLocation) {
-
         connection(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
             LOCATION_REF_T projectLocationRefT =  LocationUtil.getLocationRef(projectLocation);
@@ -159,7 +149,6 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
 
     public void renameWaterContract(WaterUser waterUser, String oldContractName,
             String newContractName) {
-
         connection(dsl, c -> {
             setOffice(c, waterUser.getProjectId().getOfficeId());
             WATER_USER_OBJ_T waterUserT = WaterSupplyUtils.toWaterUser(waterUser);
