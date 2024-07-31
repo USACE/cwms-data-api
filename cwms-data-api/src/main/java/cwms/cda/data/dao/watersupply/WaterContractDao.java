@@ -28,20 +28,17 @@ package cwms.cda.data.dao.watersupply;
 
 import static java.util.stream.Collectors.toList;
 
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.watersupply.PumpType;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
-import java.util.ArrayList;
 import java.util.List;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.ifc.loc.LocationRefType;
-import usace.cwms.db.dao.ifc.watersupply.WaterUserContractRefType;
-import usace.cwms.db.dao.ifc.watersupply.WaterUserContractType;
-import usace.cwms.db.dao.ifc.watersupply.WaterUserType;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_WATER_SUPPLY_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
@@ -50,10 +47,6 @@ import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_TAB_T;
-import usace.cwms.db.jooq.dao.util.LocationTypeUtil;
-import usace.cwms.db.jooq.dao.util.LookupTypeUtil;
-import usace.cwms.db.jooq.dao.util.WaterUserTypeUtil;
-
 
 
 public class WaterContractDao extends JooqDao<WaterUserContract> {
@@ -62,195 +55,133 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
     }
 
     public List<WaterUserContract> getAllWaterContracts(CwmsId projectLocation, String entityName) {
-        List<WaterUserContract> retVal = new ArrayList<>();
-        List<WaterUserContractType> waterUserContractTypes = new ArrayList<>();
-
-        LocationRefType locationRefType = WaterSupplyUtils.map(projectLocation);
-
-        waterUserContractTypes.addAll(connectionResult(dsl, c -> {
+        return connectionResult(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
-            LOCATION_REF_T projectLocationRef =  LocationTypeUtil.toLocationRefT(locationRefType);
+            LOCATION_REF_T projectLocationRef =  LocationUtil.getLocationRef(projectLocation);
             WATER_USER_CONTRACT_TAB_T waterUserContractObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_CONTRACTS(
                     DSL.using(c).configuration(), projectLocationRef, entityName);
             return waterUserContractObjTs.stream()
-                    .map(WaterUserTypeUtil::toWaterUserContractType)
+                    .map(WaterSupplyUtils::toWaterContract)
                     .collect(toList());
-        }));
+        });
+    }
 
-        for (WaterUserContractType waterUserContractType : waterUserContractTypes) {
-            WaterUserContract waterUserContract = new WaterUserContract.Builder()
-                    .withContractType(WaterSupplyUtils.map(waterUserContractType.getWaterSupplyContractType()))
-                    .withWaterUser(WaterSupplyUtils.map(waterUserContractType
-                            .getWaterUserContractRefType()
-                            .getWaterUserType(),
-                            projectLocation))
-                    .withContractEffectiveDate(waterUserContractType.getContractEffectiveDate())
-                    .withOfficeId(waterUserContractType.getWaterSupplyContractType().getOfficeId())
-                    .withContractId(new CwmsId.Builder()
-                            .withOfficeId(waterUserContractType.getWaterSupplyContractType().getOfficeId())
-                            .withName(waterUserContractType.getWaterUserContractRefType().getContractName())
-                            .build())
-                    .withContractExpirationDate(waterUserContractType.getContractExpirationDate())
-                    .withContractedStorage(waterUserContractType.getContractedStorage())
-                    .withInitialUseAllocation(waterUserContractType.getInitialUseAllocation())
-                    .withFutureUseAllocation(waterUserContractType.getFutureUseAllocation())
-                    .withStorageUnitsId(waterUserContractType.getStorageUnitsId())
-                    .withFutureUsePercentActivated(waterUserContractType.getFutureUsePercentActivated())
-                    .withTotalAllocPercentActivated(waterUserContractType.getTotalAllocPercentActivated())
-                    .withPumpOutLocation(WaterSupplyUtils.map(waterUserContractType.getPumpOutLocation(),
-                            PumpType.OUT))
-                    .withPumpOutBelowLocation(WaterSupplyUtils.map(waterUserContractType.getPumpOutBelowLocation(),
-                            PumpType.BELOW))
-                    .withPumpInLocation(WaterSupplyUtils.map(waterUserContractType.getPumpInLocation(),
-                            PumpType.IN))
-                    .build();
-            retVal.add(waterUserContract);
+    public WaterUserContract getWaterContract(String contractName, CwmsId projectLocation, String entityName) {
+        List<WaterUserContract> contracts =  connectionResult(dsl, c -> {
+            setOffice(c, projectLocation.getOfficeId());
+            LOCATION_REF_T projectLocationRef =  LocationUtil.getLocationRef(projectLocation);
+            WATER_USER_CONTRACT_TAB_T waterUserContractObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_CONTRACTS(
+                    DSL.using(c).configuration(), projectLocationRef, entityName);
+            return waterUserContractObjTs.stream()
+                    .map(WaterSupplyUtils::toWaterContract)
+                    .collect(toList());
+        });
+
+        for (WaterUserContract contract : contracts) {
+            if (contract.getContractId().getName().equals(contractName)) {
+                return contract;
+            }
         }
-        return retVal;
+        throw new NotFoundException("Water contract not found: " + contractName);
     }
 
     public List<LookupType> getAllWaterContractTypes(String officeId) {
-        List<LookupType> retVal = new ArrayList<>();
-        List<usace.cwms.db.dao.ifc.cat.LookupType> contractTypeList = connectionResult(dsl, c -> {
+        return connectionResult(dsl, c -> {
             setOffice(c, officeId);
             LOOKUP_TYPE_TAB_T lookupTypeObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_GET_CONTRACT_TYPES(
                     DSL.using(c).configuration(), officeId);
             return lookupTypeObjTs.stream()
-                    .map(LookupTypeUtil::toLookupType)
+                    .map(LocationUtil::getLookupType)
                     .collect(toList());
-
         });
-        for (usace.cwms.db.dao.ifc.cat.LookupType lookupType : contractTypeList) {
-            LookupType waterUserContractType = WaterSupplyUtils.map(lookupType);
-            retVal.add(waterUserContractType);
-        }
-        return retVal;
     }
 
     public List<WaterUser> getAllWaterUsers(CwmsId projectLocation) {
-        List<WaterUser> retVal = new ArrayList<>();
-        LocationRefType locationRefType = WaterSupplyUtils.map(projectLocation);
-        List<WaterUserType> waterUserTypes = connectionResult(dsl, c -> {
+        return connectionResult(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
-            LOCATION_REF_T projectLocationRef =  LocationTypeUtil.toLocationRefT(locationRefType);
+            LOCATION_REF_T projectLocationRef =  LocationUtil.getLocationRef(projectLocation);
             WATER_USER_TAB_T waterUserObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_WATER_USERS(
                 DSL.using(c).configuration(), projectLocationRef);
             return waterUserObjTs.stream()
-                .map(WaterUserTypeUtil::toWaterUserType)
+                .map(WaterSupplyUtils::toWaterUser)
                 .collect(toList());
         });
-        for (WaterUserType waterUserType : waterUserTypes) {
-            WaterUser waterUser = WaterSupplyUtils.map(waterUserType, projectLocation);
-            retVal.add(waterUser);
-        }
-        return retVal;
     }
 
     public WaterUser getWaterUser(CwmsId projectLocation, String entityName) {
-        LocationRefType locationRefType = WaterSupplyUtils.map(projectLocation);
-        List<WaterUserType> userList = connectionResult(dsl, c -> {
+        List<WaterUser> results =  connectionResult(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
-            LOCATION_REF_T projectLocationRef =  LocationTypeUtil.toLocationRefT(locationRefType);
+            LOCATION_REF_T projectLocationRef =  LocationUtil.getLocationRef(projectLocation);
             WATER_USER_TAB_T waterUserObjTs = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_WATER_USERS(
                     DSL.using(c).configuration(), projectLocationRef);
             return waterUserObjTs.stream()
-                    .map(WaterUserTypeUtil::toWaterUserType)
+                    .map(WaterSupplyUtils::toWaterUser)
                     .collect(toList());
         });
-        for (WaterUserType waterUser : userList) {
+        for (WaterUser waterUser : results) {
             if (waterUser.getEntityName().equals(entityName)) {
-                return WaterSupplyUtils.map(waterUser, projectLocation);
+                return waterUser;
             }
         }
-        return null;
+        throw new NotFoundException("Water user not found: " + entityName);
     }
 
-    public void storeWaterContract(WaterUserContract waterContractType, boolean failIfExists, boolean ignoreNulls) {
-        List<WaterUserContractType> waterUserContractTypeModified = new ArrayList<>();
-        waterUserContractTypeModified.add(WaterSupplyUtils.map(waterContractType));
-
+    public void storeWaterContract(WaterUserContract waterContract, boolean failIfExists, boolean ignoreNulls) {
         connection(dsl, c -> {
-            setOffice(c, waterContractType.getOfficeId());
-            String pFailIfExists = OracleTypeMap.formatBool(failIfExists);
-            String pIgnoreNulls = OracleTypeMap.formatBool(ignoreNulls);
-            WATER_USER_CONTRACT_TAB_T pContracts = WaterUserTypeUtil
-                    .toWaterUserContractTs(waterUserContractTypeModified);
-            CWMS_WATER_SUPPLY_PACKAGE.call_STORE_CONTRACTS2(DSL.using(c).configuration(), pContracts,
-                    pFailIfExists, pIgnoreNulls);
+            setOffice(c, waterContract.getOfficeId());
+            String paramFailIfExists = OracleTypeMap.formatBool(failIfExists);
+            String paramIgnoreNulls = OracleTypeMap.formatBool(ignoreNulls);
+            WATER_USER_CONTRACT_TAB_T paramContracts = WaterSupplyUtils.toWaterUserContractTs(waterContract);
+            CWMS_WATER_SUPPLY_PACKAGE.call_STORE_CONTRACTS2(DSL.using(c).configuration(), paramContracts,
+                    paramFailIfExists, paramIgnoreNulls);
         });
     }
 
     public void renameWaterUser(String oldWaterUser, String newWaterUser, CwmsId projectLocation) {
 
-        LocationRefType locationRefType = WaterSupplyUtils.map(projectLocation);
-
         connection(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
-            LOCATION_REF_T projectLocationRefT =  LocationTypeUtil.toLocationRefT(locationRefType);
+            LOCATION_REF_T projectLocationRefT =  LocationUtil.getLocationRef(projectLocation);
             CWMS_WATER_SUPPLY_PACKAGE.call_RENAME_WATER_USER(DSL.using(c).configuration(), projectLocationRefT,
                     oldWaterUser, newWaterUser);
         });
     }
 
     public void storeWaterUser(WaterUser waterUser, boolean failIfExists) {
-
-        usace.cwms.db.dao.ifc.loc.LocationRefType locationRefType = WaterSupplyUtils
-                .map(waterUser.getProjectId());
-
-        List<WaterUserType> waterUserTypeModified = new ArrayList<>();
-        waterUserTypeModified.add(new usace.cwms.db.dao.ifc.watersupply.WaterUserType(waterUser.getEntityName(),
-                locationRefType, waterUser.getWaterRight()));
-
         connection(dsl, c -> {
             setOffice(c, waterUser.getProjectId().getOfficeId());
-            WATER_USER_TAB_T waterUsers = WaterUserTypeUtil.toWaterUserTs(waterUserTypeModified);
-            String pFailIfExists = OracleTypeMap.formatBool(failIfExists);
-            CWMS_WATER_SUPPLY_PACKAGE.call_STORE_WATER_USERS(DSL.using(c).configuration(), waterUsers, pFailIfExists);
+            WATER_USER_TAB_T waterUsers = WaterSupplyUtils.toWaterUserTs(waterUser);
+            String paramFailIfExists = OracleTypeMap.formatBool(failIfExists);
+            CWMS_WATER_SUPPLY_PACKAGE.call_STORE_WATER_USERS(DSL.using(c).configuration(),
+                    waterUsers, paramFailIfExists);
         });
     }
 
     public void renameWaterContract(WaterUser waterUser, String oldContractName,
             String newContractName) {
 
-        WaterUserContractRefType waterUserContractRefType =
-                WaterSupplyUtils.map(waterUser, waterUser.getProjectId(), newContractName);
-
         connection(dsl, c -> {
             setOffice(c, waterUser.getProjectId().getOfficeId());
-            WATER_USER_OBJ_T waterUserT = WaterUserTypeUtil.toWaterUserT(waterUserContractRefType.getWaterUserType());
-            String contractName = waterUserContractRefType.getContractName();
-            WATER_USER_CONTRACT_REF_T waterUserContract = new WATER_USER_CONTRACT_REF_T(waterUserT, contractName);
+            WATER_USER_OBJ_T waterUserT = WaterSupplyUtils.toWaterUser(waterUser);
+            WATER_USER_CONTRACT_REF_T waterUserContract = new WATER_USER_CONTRACT_REF_T(waterUserT, oldContractName);
             CWMS_WATER_SUPPLY_PACKAGE.call_RENAME_CONTRACT(DSL.using(c).configuration(), waterUserContract,
-                    oldContractName,
-                    newContractName);
+                    oldContractName, newContractName);
         });
     }
 
     public void deleteWaterUser(CwmsId location, String entityName, String deleteAction) {
-
-        LocationRefType locationRefType = WaterSupplyUtils.map(location);
-
         connection(dsl, c -> {
             setOffice(c, location.getOfficeId());
-            LOCATION_REF_T projectLocationRef =  LocationTypeUtil.toLocationRefT(locationRefType);
+            LOCATION_REF_T projectLocationRef =  LocationUtil.getLocationRef(location);
             CWMS_WATER_SUPPLY_PACKAGE.call_DELETE_WATER_USER(DSL.using(c).configuration(), projectLocationRef,
                     entityName, deleteAction);
         });
     }
 
     public void deleteWaterContract(WaterUserContract contract, String deleteAction) {
-
-        WaterUser waterUser = new WaterUser.Builder().withEntityName(contract.getWaterUser().getEntityName())
-                .withProjectId(contract.getWaterUser().getProjectId())
-                .withWaterRight(contract.getWaterUser().getWaterRight()).build();
-
-        WaterUserContractRefType waterUserContractRefTypeModified =
-                WaterSupplyUtils.map(waterUser, waterUser.getProjectId(), contract.getContractId().getName());
-
         connection(dsl, c -> {
             setOffice(c, contract.getOfficeId());
-            WATER_USER_OBJ_T waterUserT = WaterUserTypeUtil.toWaterUserT(waterUserContractRefTypeModified
-                    .getWaterUserType());
+            WATER_USER_OBJ_T waterUserT = WaterSupplyUtils.toWaterUser(contract.getWaterUser());
             String contractName = contract.getContractId().getName();
             WATER_USER_CONTRACT_REF_T waterUserContract = new WATER_USER_CONTRACT_REF_T(waterUserT, contractName);
             CWMS_WATER_SUPPLY_PACKAGE.call_DELETE_CONTRACT(DSL.using(c).configuration(), waterUserContract,
@@ -260,34 +191,24 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
 
     public void storeWaterContractTypes(List<LookupType> lookupTypes,
             boolean failIfExists) {
-
-        List<usace.cwms.db.dao.ifc.cat.LookupType> lookups = new ArrayList<>();
-
-        for (LookupType lookupType : lookupTypes) {
-            lookups.add(WaterSupplyUtils.map(lookupType));
-        }
         connection(dsl, c -> {
             setOffice(c, lookupTypes.get(0).getOfficeId());
-            LOOKUP_TYPE_TAB_T contractTypes = LookupTypeUtil.buildLookupTypeTab(lookups);
-            String pFailIfExists = OracleTypeMap.formatBool(failIfExists);
+            LOOKUP_TYPE_TAB_T contractTypes = WaterSupplyUtils.toLookupTypeT(lookupTypes);
+            String paramFailIfExists = OracleTypeMap.formatBool(failIfExists);
             CWMS_WATER_SUPPLY_PACKAGE.call_SET_CONTRACT_TYPES(DSL.using(c).configuration(),
-                    contractTypes, pFailIfExists);
+                    contractTypes, paramFailIfExists);
         });
     }
 
-    public void removePumpFromContract(WaterUserContract contract, String pumpLocId,
-            String usageId, boolean deleteAccountingData) {
-
-        WaterUserContractRefType contractRefType = new WaterUserContractRefType(WaterSupplyUtils
-                .map(contract.getWaterUser()),
-                contract.getContractId().getName());
+    public void removePumpFromContract(WaterUserContract contract, String pumpLocName,
+            PumpType pumpType, boolean deleteAccountingData) {
         connection(dsl, c -> {
             setOffice(c, contract.getOfficeId());
-            WATER_USER_CONTRACT_REF_T waterUserContractRefT = WaterUserTypeUtil
-                    .toWaterUserContractReft(contractRefType);
-            String pDeleteAccountingData = OracleTypeMap.formatBool(deleteAccountingData);
+            WATER_USER_CONTRACT_REF_T waterUserContractRefT = WaterSupplyUtils
+                    .toWaterUserContractRefTs(contract);
+            String paramDeleteAccountingData = OracleTypeMap.formatBool(deleteAccountingData);
             CWMS_WATER_SUPPLY_PACKAGE.call_DISASSOCIATE_PUMP(DSL.using(c).configuration(),
-                    waterUserContractRefT, pumpLocId, usageId, pDeleteAccountingData);
+                    waterUserContractRefT, pumpLocName, pumpType.toString(), paramDeleteAccountingData);
         });
     }
 }
