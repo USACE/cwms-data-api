@@ -200,7 +200,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
             TimeSeriesProfileInstanceDao timeSeriesProfileInstanceDao = new TimeSeriesProfileInstanceDao(context);
             // test retrieveTimeSeriesProfileInstances
-            List<TimeSeriesProfileInstance> result = timeSeriesProfileInstanceDao.retrieveTimeSeriesProfileInstances(officeIdMask, locationMask, parameterMask,
+            List<TimeSeriesProfileInstance> result = timeSeriesProfileInstanceDao.catalogTimeSeriesProfileInstances(officeIdMask, locationMask, parameterMask,
                     versionMask, startDate, endDate, timeZone);
 
             // cleanup: delete the time series profile instances we created

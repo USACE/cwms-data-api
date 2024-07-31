@@ -118,7 +118,7 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
                 timeSeriesProfileParserDao.storeTimeSeriesProfileParser(timeSeriesProfileParser, false);
             }
 
-            List<TimeSeriesProfileParser> profileParserList = timeSeriesProfileParserDao.retrieveTimeSeriesProfileParsers("*", "*", "*");
+            List<TimeSeriesProfileParser> profileParserList = timeSeriesProfileParserDao.catalogTimeSeriesProfileParsers("*", "*", "*");
             for (TimeSeriesProfileParser profileParser : profileParserList) {
                 timeSeriesProfileParserDao.deleteTimeSeriesProfileParser(profileParser.getLocationId().getName(), profileParser.getKeyParameter(), profileParser.getLocationId().getOfficeId());
             }

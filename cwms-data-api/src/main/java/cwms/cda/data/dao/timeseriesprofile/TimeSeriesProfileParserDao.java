@@ -92,7 +92,7 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
 		});
 	}
 
-	public List<TimeSeriesProfileParser> retrieveTimeSeriesProfileParsers(String locationIdMask, String parameterIdMask, String officeIdMask)
+	public List<TimeSeriesProfileParser> catalogTimeSeriesProfileParsers(String locationIdMask, String parameterIdMask, String officeIdMask)
 	{
 		return connectionResult(dsl, conn -> {
 			Result<Record> tsProfileParserResult = CWMS_TS_PROFILE_PACKAGE.call_CAT_TS_PROFILE_PARSER(DSL.using(conn).configuration(),

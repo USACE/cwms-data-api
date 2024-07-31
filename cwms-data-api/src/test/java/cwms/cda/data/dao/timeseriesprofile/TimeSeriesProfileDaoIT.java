@@ -80,13 +80,13 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
 
 
             List<TimeSeriesProfile> timeSeriesProfileListBefore =
-                    timeSeriesProfileDao.retrieveTimeSeriesProfiles("*", "*", "*");
+                    timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*");
 
             for (TimeSeriesProfile timeSeriesProfile : timeSeriesProfileListBefore) {
                     timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfile.getLocationId().getName(), timeSeriesProfile.getKeyParameter(),
                             timeSeriesProfile.getLocationId().getOfficeId());
             }
-            List<TimeSeriesProfile> timeSeriesProfileListAfter = timeSeriesProfileDao.retrieveTimeSeriesProfiles("*", "*", "*");
+            List<TimeSeriesProfile> timeSeriesProfileListAfter = timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*");
 
             assertEquals(0, timeSeriesProfileListAfter.size());
             assertEquals(2, timeSeriesProfileListBefore.size());
@@ -105,13 +105,13 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
             timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
 
             List<TimeSeriesProfile> timeSeriesProfileListBefore =
-                    timeSeriesProfileDao.retrieveTimeSeriesProfiles("*", "*", "*");
+                    timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*");
 
             timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfile.getLocationId().getName(), timeSeriesProfile.getKeyParameter(),
                     timeSeriesProfile.getLocationId().getOfficeId());
 
             List<TimeSeriesProfile> timeSeriesProfileListAfter =
-                    timeSeriesProfileDao.retrieveTimeSeriesProfiles("*", "*", "*");
+                    timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*");
 
 
             assertEquals(timeSeriesProfileListBefore.size() - 1, timeSeriesProfileListAfter.size());
