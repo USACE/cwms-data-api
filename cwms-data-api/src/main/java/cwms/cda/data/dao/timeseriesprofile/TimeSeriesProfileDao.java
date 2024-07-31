@@ -61,7 +61,7 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
                         officeId));
     }
 
-    public List<TimeSeriesProfile> retrieveTimeSeriesProfiles(String locationIdMask, String parameterIdMask, String officeIdMask) {
+    public List<TimeSeriesProfile> catalogTimeSeriesProfiles(String locationIdMask, String parameterIdMask, String officeIdMask) {
         return connectionResult(dsl, conn -> {
             List<TimeSeriesProfile> timeSeriesProfileList = new ArrayList<>();
             Result<Record> timeSeriesProfileResults = CWMS_TS_PROFILE_PACKAGE.call_CAT_TS_PROFILE(

@@ -145,7 +145,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			}
 			);
 	}
-	List<TimeSeriesProfileInstance> retrieveTimeSeriesProfileInstances( String officeIdMask, String locationMask, String parameterMask, String versionMask,
+	List<TimeSeriesProfileInstance> catalogTimeSeriesProfileInstances( String officeIdMask, String locationMask, String parameterMask, String versionMask,
 			Instant startTime, Instant endTime, String timeZone)
 	{
 		return connectionResult(dsl, conn -> {
