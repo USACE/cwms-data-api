@@ -26,7 +26,10 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -46,7 +49,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -114,28 +117,18 @@ public class WaterContractController implements Handler {
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
             WaterContractDao contractDao = getContractDao(dsl);
-            List<WaterUserContract> contracts = contractDao.getAllWaterContracts(projectLocation, waterUser);
+            WaterUserContract contract = contractDao.getWaterContract(contractName, projectLocation, waterUser);
 
-            if (contracts.isEmpty()) {
-                CdaError error = new CdaError("No contracts found for the provided parameters.");
-                LOGGER.log(Level.SEVERE, "Error retrieving contracts");
+            if (contract == null) {
+                CdaError error = new CdaError("No contract found for the provided parameters.");
+                LOGGER.log(Level.SEVERE, "Error retrieving contract");
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
                 return;
             }
 
-            for (WaterUserContract contract : contracts) {
-                if (contract.getContractId().getName().equals(contractName)) {
-                    contracts.clear();
-                    contracts.add(contract);
-                    result = Formats.format(contentType, contracts, WaterUserContract.class);
-                    ctx.result(result);
-                    ctx.status(HttpServletResponse.SC_OK);
-                    return;
-                }
-            }
-            CdaError error = new CdaError("No contract found for the provided name.");
-            LOGGER.log(Level.SEVERE, "Error retrieving contract");
-            ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
+            result = Formats.format(contentType, Collections.singletonList(contract), WaterUserContract.class);
+            ctx.result(result);
+            ctx.status(HttpServletResponse.SC_OK);
         }
     }
 }

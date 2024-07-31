@@ -67,12 +67,16 @@ public final class WaterSupplyUtils {
                 .withFutureUseAllocation(contract.getFUTURE_USE_ALLOCATION())
                 .withFutureUsePercentActivated(contract.getFUTURE_USE_PERCENT_ACTIVATED())
                 .withInitialUseAllocation(contract.getINITIAL_USE_ALLOCATION())
-                .withPumpOutLocation(new WaterSupplyPump.Builder().withPumpLocation(LocationUtil
-                        .getLocation(contract.getPUMP_OUT_LOCATION())).withPumpType(PumpType.OUT).build())
-                .withPumpOutBelowLocation(new WaterSupplyPump.Builder().withPumpLocation(LocationUtil
-                        .getLocation(contract.getPUMP_OUT_BELOW_LOCATION())).withPumpType(PumpType.BELOW).build())
-                .withPumpInLocation(new WaterSupplyPump.Builder().withPumpLocation(LocationUtil
-                        .getLocation(contract.getPUMP_IN_LOCATION())).withPumpType(PumpType.IN).build())
+                .withPumpOutLocation(contract.getPUMP_OUT_LOCATION() != null
+                        ? new WaterSupplyPump.Builder().withPumpLocation(LocationUtil
+                        .getLocation(contract.getPUMP_OUT_LOCATION())).withPumpType(PumpType.OUT).build() : null)
+                .withPumpOutBelowLocation(contract.getPUMP_OUT_BELOW_LOCATION() != null
+                        ? new WaterSupplyPump.Builder().withPumpLocation(LocationUtil
+                        .getLocation(contract.getPUMP_OUT_BELOW_LOCATION()))
+                        .withPumpType(PumpType.BELOW).build() : null)
+                .withPumpInLocation(contract.getPUMP_IN_LOCATION() != null
+                        ? new WaterSupplyPump.Builder().withPumpLocation(LocationUtil
+                        .getLocation(contract.getPUMP_IN_LOCATION())).withPumpType(PumpType.IN).build() : null)
                 .build();
     }
 
@@ -148,12 +152,12 @@ public final class WaterSupplyUtils {
         waterUserContractObjT.setFUTURE_USE_ALLOCATION(waterUserContract.getFutureUseAllocation());
         waterUserContractObjT.setFUTURE_USE_PERCENT_ACTIVATED(waterUserContract.getFutureUsePercentActivated());
         waterUserContractObjT.setINITIAL_USE_ALLOCATION(waterUserContract.getInitialUseAllocation());
-        waterUserContractObjT.setPUMP_OUT_LOCATION(LocationUtil.getLocation(waterUserContract.getPumpOutLocation()
-                .getPumpLocation()));
-        waterUserContractObjT.setPUMP_OUT_BELOW_LOCATION(LocationUtil.getLocation(waterUserContract
-                .getPumpOutBelowLocation().getPumpLocation()));
-        waterUserContractObjT.setPUMP_IN_LOCATION(LocationUtil.getLocation(waterUserContract.getPumpInLocation()
-                .getPumpLocation()));
+        waterUserContractObjT.setPUMP_OUT_LOCATION(waterUserContract.getPumpOutLocation() != null
+                ? LocationUtil.getLocation(waterUserContract.getPumpOutLocation().getPumpLocation()) : null);
+        waterUserContractObjT.setPUMP_OUT_BELOW_LOCATION(waterUserContract.getPumpOutBelowLocation() != null
+                ? LocationUtil.getLocation(waterUserContract.getPumpOutBelowLocation().getPumpLocation()) : null);
+        waterUserContractObjT.setPUMP_IN_LOCATION(waterUserContract.getPumpInLocation() != null
+                ? LocationUtil.getLocation(waterUserContract.getPumpInLocation().getPumpLocation()) : null);
 
         List<WATER_USER_CONTRACT_OBJ_T> contractList = new ArrayList<>();
         contractList.add(waterUserContractObjT);

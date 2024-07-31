@@ -26,36 +26,45 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 import cwms.cda.api.watersupply.WaterContractController;
+import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 
 
 @Tag("integration")
 class WaterContractTypeCreateControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "HQ";
     private static final WaterUserContract CONTRACT;
+    private static final LookupType CONTRACT_TYPE;
     static {
         try (InputStream contractStream = WaterContractController.class.getResourceAsStream("/cwms/cda/api/waterusercontract.json")){
             assert contractStream != null;
             String contractJson = IOUtils.toString(contractStream, StandardCharsets.UTF_8);
             CONTRACT = Formats.parseContent(new ContentType(Formats.JSONV1), contractJson, WaterUserContract.class);
+            CONTRACT_TYPE = new LookupType.Builder().withActive(true).withOfficeId(OFFICE_ID)
+                    .withDisplayValue("TEST Contract Type").withTooltip("TEST LOOKUP").build();
         } catch(Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -66,12 +75,10 @@ class WaterContractTypeCreateControllerTestIT extends DataApiTestIT {
         // Test Structure
         // 1) Create a WaterContractType
         // 2) Get the WaterContractType, assert it exists
-
-        LookupType contractType = new LookupType.Builder().withActive(true).withOfficeId(OFFICE_ID)
-                .withDisplayValue("TEST Contract Type").withTooltip("TEST LOOKUP").build();
+        // 3) Cleanup
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        String json = JsonV1.buildObjectMapper().writeValueAsString(contractType);
+        String json = JsonV1.buildObjectMapper().writeValueAsString(CONTRACT_TYPE);
 
         // create water contract type
         given()
@@ -108,10 +115,22 @@ class WaterContractTypeCreateControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("[0].office-id", equalTo(OFFICE_ID))
-            .body("[0].display-value", equalTo(contractType.getDisplayValue()))
-            .body("[0].tooltip", equalTo(contractType.getTooltip()))
-            .body("[0].active", equalTo(contractType.getActive()))
+            .body("[0].display-value", equalTo(CONTRACT_TYPE.getDisplayValue()))
+            .body("[0].tooltip", equalTo(CONTRACT_TYPE.getTooltip()))
+            .body("[0].active", equalTo(CONTRACT_TYPE.getActive()))
         ;
 
+        // cleanup
+        cleanupType();
+    }
+
+    private void cleanupType() throws SQLException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            DSLContext ctx = getDslContext(c, OFFICE_ID);
+            LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
+            lookupTypeDao.deleteLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE",
+                    CONTRACT_TYPE.getOfficeId(), CONTRACT_TYPE.getDisplayValue());
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 }

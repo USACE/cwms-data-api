@@ -30,10 +30,12 @@ import cwms.cda.api.enums.Nation;
 import cwms.cda.api.watersupply.WaterContractController;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
+import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
@@ -104,16 +106,19 @@ class WaterContractControllerTestIT extends DataApiTestIT {
                 .withAuthorizingLaw("NEW LAW").withCostUnit("$")
                 .withProjectOwner(CONTRACT.getWaterUser().getEntityName())
                 .build();
+        LookupType contractType = CONTRACT.getContractType();
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(ctx);
             ProjectDao projectDao = new ProjectDao(ctx);
+            LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
             WaterContractDao waterContractDao = new WaterContractDao(ctx);
             try {
                 locationsDao.storeLocation(contractLocation);
                 locationsDao.storeLocation(parentLocation);
+                lookupTypeDao.storeLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE", contractType);
                 projectDao.store(project, true);
                 waterContractDao.storeWaterUser(waterUser, true);
             } catch (IOException e) {
@@ -132,11 +137,13 @@ class WaterContractControllerTestIT extends DataApiTestIT {
                 CONTRACT.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
                 .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
                 .withLongitude(38.0).withLatitude(56.5).build();
+        LookupType contractType = CONTRACT.getContractType();
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(ctx);
+            LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
             ProjectDao projectDao = new ProjectDao(ctx);
             WaterContractDao waterContractDao = new WaterContractDao(ctx);
             waterContractDao.deleteWaterUser(CONTRACT.getWaterUser().getProjectId(),
@@ -145,11 +152,13 @@ class WaterContractControllerTestIT extends DataApiTestIT {
                     DeleteRule.DELETE_ALL);
             locationsDao.deleteLocation(contractLocation.getName(), contractLocation.getOfficeId(), true);
             locationsDao.deleteLocation(parentLocation.getName(), parentLocation.getOfficeId(), true);
+            lookupTypeDao.deleteLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE", contractType.getOfficeId(),
+                    contractType.getDisplayValue());
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
-    void test_create_get_delete_WaterUserContract() throws Exception {
+    void test_create_get_delete_WaterUserContract() {
         // Test Structure:
         // 1) Create a WaterUser
         // 2) Create a Water Contract
@@ -158,19 +167,20 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         // 5) Get the WaterUserContract, assert that it is not found
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        String json = JsonV1.buildObjectMapper().writeValueAsString(CONTRACT.getWaterUser());
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUser.class), CONTRACT.getWaterUser());
 
-        // create WaterUser
+        // create water user
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, "true")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName() + "/water-user")
+            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
+                    + "/water-user")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -420,26 +430,27 @@ class WaterContractControllerTestIT extends DataApiTestIT {
 
 
     @Test
-    void test_rename_WaterUserContract() throws IOException {
+    void test_rename_WaterUserContract() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
         final String NEW_CONTRACT_NAME = "NEW CONTRACT NAME";
-        String json = JsonV1.buildObjectMapper().writeValueAsString(CONTRACT.getWaterUser());
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUser.class), CONTRACT.getWaterUser());
 
-        // create WaterUser
+        // create water user
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .contentType(Formats.JSONV1)
-                .accept(Formats.JSONV1)
-                .body(json)
-                .header(AUTH_HEADER, user.toHeaderValue())
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName() + "/water-user")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
+                    + "/water-user")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
 
         json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
@@ -559,20 +570,20 @@ class WaterContractControllerTestIT extends DataApiTestIT {
 
         // create contract
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .contentType(Formats.JSONV1)
-                .body(json2)
-                .header(AUTH_HEADER, user.toHeaderValue())
-                .queryParam(FAIL_IF_EXISTS, "true")
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
-                        + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
+                    + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
 
 

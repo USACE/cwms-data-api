@@ -26,7 +26,11 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -35,6 +39,7 @@ import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.watersupply.PumpType;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -127,19 +132,19 @@ public class WaterPumpDeleteController implements Handler {
                         case "IN":
                             contractDao.removePumpFromContract(waterUserContract,
                                     waterUserContract.getPumpInLocation().getPumpLocation().getName(),
-                                    pumpType, deleteAccounting);
+                                    PumpType.IN, deleteAccounting);
                             ctx.status(HttpServletResponse.SC_NO_CONTENT);
                             return;
                         case "OUT":
                             contractDao.removePumpFromContract(waterUserContract,
                                     waterUserContract.getPumpOutLocation().getPumpLocation().getName(),
-                                    pumpType, deleteAccounting);
+                                    PumpType.OUT, deleteAccounting);
                             ctx.status(HttpServletResponse.SC_NO_CONTENT);
                             return;
                         case "BELOW":
                             contractDao.removePumpFromContract(waterUserContract,
                                     waterUserContract.getPumpOutBelowLocation().getPumpLocation().getName(),
-                                    pumpType, deleteAccounting);
+                                    PumpType.BELOW, deleteAccounting);
                             ctx.status(HttpServletResponse.SC_NO_CONTENT);
                             return;
                         default:
