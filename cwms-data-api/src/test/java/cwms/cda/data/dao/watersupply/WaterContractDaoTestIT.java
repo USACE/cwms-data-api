@@ -26,11 +26,15 @@
 
 package cwms.cda.data.dao.watersupply;
 
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+import static org.junit.jupiter.api.Assertions.*;
+
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
+import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
@@ -42,21 +46,20 @@ import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
-import org.jooq.DSLContext;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import org.jooq.DSLContext;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import static cwms.cda.data.dao.JooqDao.getDslContext;
-import static org.junit.jupiter.api.Assertions.*;
 
 class WaterContractDaoTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
@@ -64,6 +67,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
     private static final Location testLocation = buildTestLocation("Test Location Name", "Test Location");
     private static final Project testProject = buildTestProject();
     private static final WaterUser testUser = buildTestWaterUser("Test User");
+    private final List<WaterUser> waterUserList = new ArrayList<>();
+    private final List<WaterUserContract> waterUserContractList = new ArrayList<>();
 
     @BeforeAll
     static void setup() throws Exception {
@@ -71,10 +76,13 @@ class WaterContractDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             LocationsDaoImpl dao = new LocationsDaoImpl(ctx);
+            LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
             ProjectDao projectDao = new ProjectDao(ctx);
             try {
                 projectDao.create(testProject);
                 dao.storeLocation(testLocation);
+                lookupTypeDao.storeLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE",
+                        buildTestWaterContract("Test", false).getContractType());
             } catch (IOException e) {
                 throw new RuntimeException("Failed to store location or project", e);
             }
@@ -87,9 +95,29 @@ class WaterContractDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             ProjectDao projectDao = new ProjectDao(ctx);
+            LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
             LocationsDaoImpl locationDao = new LocationsDaoImpl(ctx);
             projectDao.delete(OFFICE_ID, testProject.getLocation().getName(), DeleteRule.DELETE_ALL);
             locationDao.deleteLocation(testLocation.getName(), testLocation.getOfficeId(), false);
+            lookupTypeDao.deleteLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE", OFFICE_ID,
+                    buildTestWaterContract("Test", false).getContractType().getDisplayValue());
+        }, CwmsDataApiSetupCallback.getWebUser());
+    }
+
+    @AfterEach
+    void cleanup() throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection(c -> {
+            DSLContext ctx = getDslContext(c, OFFICE_ID);
+            WaterContractDao dao = new WaterContractDao(ctx);
+            for (WaterUserContract waterUserContract : waterUserContractList) {
+                dao.deleteWaterContract(waterUserContract, DELETE_ACTION);
+            }
+            waterUserContractList.clear();
+            for (WaterUser waterUser : waterUserList) {
+                dao.deleteWaterUser(waterUser.getProjectId(), waterUser.getEntityName(), DELETE_ACTION);
+            }
+            waterUserList.clear();
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -99,14 +127,17 @@ class WaterContractDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
-            dao.storeWaterUser(buildTestWaterUser("TEST RETRIEVE USER 1"), false);
-            dao.storeWaterUser(buildTestWaterUser("TEST RETRIEVE USER 2"), false);
-            List<WaterUser> results = dao.getAllWaterUsers(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName(testLocation.getName()).build());
-            DTOMatch.assertMatch(results.get(0), buildTestWaterUser("TEST RETRIEVE USER 1"));
-            DTOMatch.assertMatch(results.get(1), buildTestWaterUser("TEST RETRIEVE USER 2"));
+            WaterUser user1 = buildTestWaterUser("TEST USER 1");
+            WaterUser user2 = buildTestWaterUser("TEST USER 2");
+            dao.storeWaterUser(user1, false);
+            dao.storeWaterUser(user2, false);
+            waterUserList.add(user1);
+            waterUserList.add(user2);
+            List<WaterUser> results = dao.getAllWaterUsers(new CwmsId.Builder().withOfficeId(OFFICE_ID)
+                    .withName(testLocation.getName()).build());
+            DTOMatch.assertMatch(buildTestWaterUser("TEST USER 1"), results.get(0));
+            DTOMatch.assertMatch(buildTestWaterUser("TEST USER 2"), results.get(1));
         }, CwmsDataApiSetupCallback.getWebUser());
-        cleanupUserRoutine(buildTestWaterUser("TEST RETRIEVE USER 1"));
-        cleanupUserRoutine(buildTestWaterUser("TEST RETRIEVE USER 2"));
     }
 
     @Test
@@ -117,16 +148,15 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                 .build();
         String entityName = "Test Entity";
         WaterUser newUser = buildTestWaterUser(entityName);
-
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
             dao.storeWaterUser(newUser, false);
+            waterUserList.add(newUser);
             WaterUser retrievedUser = dao.getWaterUser(projectLocation, entityName);
             DTOMatch.assertMatch(newUser, retrievedUser);
         }, CwmsDataApiSetupCallback.getWebUser());
-        cleanupUserRoutine(newUser);
     }
 
     @Test
@@ -140,6 +170,10 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             dao.storeWaterUser(contract.getWaterUser(), false);
             dao.storeWaterContract(contract, false, false);
             dao.storeWaterContract(contract2, false, false);
+            waterUserContractList.add(contract);
+            waterUserContractList.add(contract2);
+            waterUserList.add(contract.getWaterUser());
+            waterUserList.add(contract2.getWaterUser());
             List<WaterUserContract> retrievedContract = dao.getAllWaterContracts(contract.getWaterUser().getProjectId(),
                     contract.getWaterUser().getEntityName());
             WaterUserContract result = retrievedContract.get(0);
@@ -147,26 +181,23 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             result = retrievedContract.get(1);
             DTOMatch.assertMatch(contract2, result);
         }, CwmsDataApiSetupCallback.getWebUser());
-        cleanupContractRoutine(contract);
-        cleanupContractRoutine(contract2);
-        cleanupUserRoutine(contract.getWaterUser());
     }
 
     @Test
     void testStoreAndRetrieveWaterContract() throws Exception {
-        WaterUserContract contract = buildTestWaterContract("Test retrieve", false);
+        WaterUserContract contract = buildTestWaterContract("Test retrieve 1", false);
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
             dao.storeWaterUser(contract.getWaterUser(), false);
+            waterUserList.add(contract.getWaterUser());
             dao.storeWaterContract(contract, false, false);
+            waterUserContractList.add(contract);
             WaterUserContract retrievedContract = dao.getWaterContract(contract.getContractId().getName(),
                     contract.getWaterUser().getProjectId(), contract.getWaterUser().getEntityName());
             DTOMatch.assertMatch(contract, retrievedContract);
         }, CwmsDataApiSetupCallback.getWebUser());
-        cleanupContractRoutine(contract);
-        cleanupUserRoutine(contract.getWaterUser());
     }
 
     @Test
@@ -195,27 +226,29 @@ class WaterContractDaoTestIT extends DataApiTestIT {
 
     @Test
     void testRenameWaterUser() throws Exception {
-        WaterUser newUser = buildTestWaterUser("TEST RENAME USER");
-        WaterUser updatedUser = buildTestWaterUser("TEST RENAME USER 2");
+        WaterUser newUser = buildTestWaterUser("TEST USER");
+        WaterUser updatedUser = buildTestWaterUser("TEST USER 2");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
             dao.storeWaterUser(newUser, false);
+            waterUserList.add(newUser);
+            waterUserList.add(updatedUser);
             dao.renameWaterUser(newUser.getEntityName(), updatedUser.getEntityName(), newUser.getProjectId());
+            waterUserList.remove(newUser);
             WaterUser retrievedUser = dao.getWaterUser(newUser.getProjectId(), updatedUser.getEntityName());
             String entityName = newUser.getEntityName();
             CwmsId projectId = newUser.getProjectId();
             assertThrows(NotFoundException.class, () -> dao.getWaterUser(projectId, entityName));
             DTOMatch.assertMatch(updatedUser, retrievedUser);
         }, CwmsDataApiSetupCallback.getWebUser());
-        cleanupUserRoutine(updatedUser);
     }
 
     @Test
     void testRenameWaterContract() throws Exception {
-        WaterUserContract oldContract = buildTestWaterContract("Test Old Name", true);
-        WaterUserContract renamedContract = buildTestWaterContract("Test New Name", true);
+        WaterUserContract oldContract = buildTestWaterContract("Test contract", true);
+        WaterUserContract renamedContract = buildTestWaterContract("Test contract 2", true);
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
@@ -225,8 +258,12 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             WaterUser user = new WaterUser.Builder().withEntityName(oldContract.getWaterUser().getEntityName())
                     .withProjectId(oldContract.getWaterUser().getProjectId())
                     .withWaterRight(oldContract.getContractId().getName()).build();
+            waterUserList.add(user);
+            waterUserContractList.add(oldContract);
+            waterUserContractList.add(renamedContract);
             dao.renameWaterContract(user, oldContract.getContractId().getName(),
                     renamedContract.getContractId().getName());
+            waterUserContractList.remove(oldContract);
             WaterUserContract retrievedContract = dao.getWaterContract(renamedContract.getContractId().getName(),
                     renamedContract.getWaterUser().getProjectId(), renamedContract.getWaterUser().getEntityName());
             assertNotNull(retrievedContract);
@@ -237,13 +274,11 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                     projectId, entityName));
             DTOMatch.assertMatch(retrievedContract, renamedContract);
         }, CwmsDataApiSetupCallback.getWebUser());
-        cleanupContractRoutine(renamedContract);
-        cleanupUserRoutine(renamedContract.getWaterUser());
     }
 
     @Test
     void testDeleteWaterUser() throws Exception {
-        WaterUser newUser = buildTestWaterUser("TEST DELETE USER");
+        WaterUser newUser = buildTestWaterUser("TEST USER");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
@@ -254,12 +289,11 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             String entityName = newUser.getEntityName();
             assertThrows(NotFoundException.class, () -> dao.getWaterUser(projectId, entityName));
         }, CwmsDataApiSetupCallback.getWebUser());
-        cleanupUserRoutine(newUser);
     }
 
     @Test
     void testDeleteWaterContract() throws Exception {
-        WaterUserContract contract = buildTestWaterContract("Test Delete", false);
+        WaterUserContract contract = buildTestWaterContract("Test contract", false);
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
@@ -267,18 +301,18 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             dao.storeWaterUser(contract.getWaterUser(), false);
             dao.storeWaterContract(contract, false, false);
             dao.deleteWaterContract(contract, DELETE_ACTION);
+            waterUserList.add(contract.getWaterUser());
             String contractName = contract.getContractId().getName();
             CwmsId projectId = contract.getWaterUser().getProjectId();
             String entityName = contract.getWaterUser().getEntityName();
             assertThrows(NotFoundException.class, () -> dao.getWaterContract(contractName,
                     projectId, entityName));
         }, CwmsDataApiSetupCallback.getWebUser());
-        cleanupUserRoutine(contract.getWaterUser());
     }
 
     @Test
     void testRemovePumpFromContract() throws Exception {
-        WaterUserContract contract = buildTestWaterContract("Test Remove Pump", false);
+        WaterUserContract contract = buildTestWaterContract("Test contract", false);
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
@@ -286,32 +320,14 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             assertNotNull(contract);
             dao.storeWaterUser(contract.getWaterUser(), false);
             dao.storeWaterContract(contract, false, false);
+            waterUserContractList.add(contract);
+            waterUserList.add(contract.getWaterUser());
             dao.removePumpFromContract(contract, contract.getPumpInLocation().getPumpLocation().getName(),
                     PumpType.IN, false);
             WaterUserContract retrievedContract = dao.getWaterContract(contract.getContractId().getName(),
                     contract.getWaterUser().getProjectId(), contract.getWaterUser().getEntityName());
             assertNotNull(retrievedContract);
             assertNull(retrievedContract.getPumpInLocation().getPumpLocation());
-        }, CwmsDataApiSetupCallback.getWebUser());
-        cleanupContractRoutine(contract);
-        cleanupUserRoutine(contract.getWaterUser());
-    }
-
-    private void cleanupUserRoutine(WaterUser user) throws Exception {
-        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection(c -> {
-            DSLContext ctx = getDslContext(c, OFFICE_ID);
-            WaterContractDao dao = new WaterContractDao(ctx);
-            dao.deleteWaterUser(user.getProjectId(), user.getEntityName(), DELETE_ACTION);
-        }, CwmsDataApiSetupCallback.getWebUser());
-    }
-
-    private void cleanupContractRoutine(WaterUserContract contract) throws Exception {
-        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection(c -> {
-            DSLContext ctx = getDslContext(c, OFFICE_ID);
-            WaterContractDao dao = new WaterContractDao(ctx);
-            dao.deleteWaterContract(contract, DELETE_ACTION);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -323,7 +339,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                 .withWaterRight("Test Water Right").build();
     }
 
-    private WaterUserContract buildTestWaterContract(String contractName, boolean renameTest) {
+    private static WaterUserContract buildTestWaterContract(String contractName, boolean renameTest) {
         if (!renameTest){
             return new WaterUserContract.Builder()
                     .withContractType(new LookupType.Builder()
@@ -384,7 +400,6 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                             "PUMP")).withPumpType(PumpType.BELOW).build())
                     .build();
         }
-
     }
 
     private static Location buildTestLocation(String locationName, String locationType) {
