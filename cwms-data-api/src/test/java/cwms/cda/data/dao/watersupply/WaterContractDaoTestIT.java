@@ -64,11 +64,15 @@ import org.junit.jupiter.api.Test;
 class WaterContractDaoTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
     private static final String DELETE_ACTION = "DELETE ALL";
-    private static final Location testLocation = buildTestLocation("Test Location Name", "Test Location");
+    private static final Location testLocation = buildTestLocation("Test Location Name",
+            "Test Location Type");
     private static final Project testProject = buildTestProject();
     private static final WaterUser testUser = buildTestWaterUser("Test User");
     private final List<WaterUser> waterUserList = new ArrayList<>();
     private final List<WaterUserContract> waterUserContractList = new ArrayList<>();
+    private static final Location pumpInLoc = buildTestLocation("Pump 1", "PUMP");
+    private static final Location pumpOutLoc = buildTestLocation("Pump 2", "PUMP");
+    private static final Location pumpOutBelowLoc = buildTestLocation("Pump 3", "PUMP");
 
     @BeforeAll
     static void setup() throws Exception {
@@ -110,8 +114,15 @@ class WaterContractDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
+            LocationsDaoImpl locationDao = new LocationsDaoImpl(ctx);
             for (WaterUserContract waterUserContract : waterUserContractList) {
                 dao.deleteWaterContract(waterUserContract, DELETE_ACTION);
+                locationDao.deleteLocation(waterUserContract.getPumpInLocation().getPumpLocation().getName(),
+                        waterUserContract.getPumpInLocation().getPumpLocation().getOfficeId(), true);
+                locationDao.deleteLocation(waterUserContract.getPumpOutLocation().getPumpLocation().getName(),
+                        waterUserContract.getPumpOutLocation().getPumpLocation().getOfficeId(), true);
+                locationDao.deleteLocation(waterUserContract.getPumpOutBelowLocation().getPumpLocation().getName(),
+                        waterUserContract.getPumpOutBelowLocation().getPumpLocation().getOfficeId(), true);
             }
             waterUserContractList.clear();
             for (WaterUser waterUser : waterUserList) {
@@ -168,8 +179,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
             dao.storeWaterUser(contract.getWaterUser(), false);
-            dao.storeWaterContract(contract, false, false);
-            dao.storeWaterContract(contract2, false, false);
+            dao.storeWaterContract(contract, false, true);
+            dao.storeWaterContract(contract2, false, true);
             waterUserContractList.add(contract);
             waterUserContractList.add(contract2);
             waterUserList.add(contract.getWaterUser());
@@ -192,7 +203,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             WaterContractDao dao = new WaterContractDao(ctx);
             dao.storeWaterUser(contract.getWaterUser(), false);
             waterUserList.add(contract.getWaterUser());
-            dao.storeWaterContract(contract, false, false);
+            dao.storeWaterContract(contract, false, true);
             waterUserContractList.add(contract);
             WaterUserContract retrievedContract = dao.getWaterContract(contract.getContractId().getName(),
                     contract.getWaterUser().getProjectId(), contract.getWaterUser().getEntityName());
@@ -254,7 +265,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
             dao.storeWaterUser(oldContract.getWaterUser(), false);
-            dao.storeWaterContract(oldContract, false, false);
+            dao.storeWaterContract(oldContract, false, true);
             WaterUser user = new WaterUser.Builder().withEntityName(oldContract.getWaterUser().getEntityName())
                     .withProjectId(oldContract.getWaterUser().getProjectId())
                     .withWaterRight(oldContract.getContractId().getName()).build();
@@ -272,7 +283,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             String entityName = oldContract.getWaterUser().getEntityName();
             assertThrows(NotFoundException.class, () -> dao.getWaterContract(contractName,
                     projectId, entityName));
-            DTOMatch.assertMatch(retrievedContract, renamedContract);
+            DTOMatch.assertMatch(renamedContract, retrievedContract);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -299,7 +310,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
             dao.storeWaterUser(contract.getWaterUser(), false);
-            dao.storeWaterContract(contract, false, false);
+            dao.storeWaterContract(contract, false, true);
             dao.deleteWaterContract(contract, DELETE_ACTION);
             waterUserList.add(contract.getWaterUser());
             String contractName = contract.getContractId().getName();
@@ -319,7 +330,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             WaterContractDao dao = new WaterContractDao(ctx);
             assertNotNull(contract);
             dao.storeWaterUser(contract.getWaterUser(), false);
-            dao.storeWaterContract(contract, false, false);
+            dao.storeWaterContract(contract, false, true);
             waterUserContractList.add(contract);
             waterUserList.add(contract.getWaterUser());
             dao.removePumpFromContract(contract, contract.getPumpInLocation().getPumpLocation().getName(),
@@ -392,12 +403,9 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                             .build())
                     .withFutureUsePercentActivated(35.7)
                     .withWaterUser(buildTestWaterUser("Water User Name"))
-                    .withPumpInLocation(new WaterSupplyPump.Builder().withPumpLocation(buildTestLocation("Pump 1",
-                            "PUMP")).withPumpType(PumpType.IN).build())
-                    .withPumpOutLocation(new WaterSupplyPump.Builder().withPumpLocation(buildTestLocation("Pump 2",
-                            "PUMP")).withPumpType(PumpType.OUT).build())
-                    .withPumpOutBelowLocation(new WaterSupplyPump.Builder().withPumpLocation(buildTestLocation("Pump 3",
-                            "PUMP")).withPumpType(PumpType.BELOW).build())
+                    .withPumpInLocation(new WaterSupplyPump.Builder().withPumpLocation(pumpInLoc).withPumpType(PumpType.IN).build())
+                    .withPumpOutLocation(new WaterSupplyPump.Builder().withPumpLocation(pumpOutLoc).withPumpType(PumpType.OUT).build())
+                    .withPumpOutBelowLocation(new WaterSupplyPump.Builder().withPumpLocation(pumpOutBelowLoc).withPumpType(PumpType.BELOW).build())
                     .build();
         }
     }
@@ -409,19 +417,19 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                 .withElevation(150.6)
                 .withNation(Nation.US)
                 .withStateInitial("CA")
-                .withCountyName("Sacramento")
+                .withCountyName("Yolo")
                 .withTimeZoneName(ZoneId.of("UTC"))
                 .withElevationUnits("m")
-                .withVerticalDatum("LOCAL")
+                .withVerticalDatum("NGVD29")
                 .withHorizontalDatum("WGS84")
                 .withPublicName("Test Public Name")
                 .withLongName("Test Long Name")
                 .withDescription("Test Description")
                 .withNearestCity("Davis")
-                .withLatitude(35.6)
-                .withLongitude(-120.6)
-                .withPublishedLatitude(35.6)
-                .withPublishedLongitude(-120.6)
+                .withLatitude(38.55)
+                .withLongitude(-121.73)
+                .withPublishedLatitude(38.55)
+                .withPublishedLongitude(-121.73)
                 .withActive(true)
                 .withLocationType(locationType)
                 .withLocationKind(locationType)
