@@ -109,12 +109,11 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
     private static void testCanRequest(DSLContext dsl, TestAccounts.KeyUser user, String projId, String appId) {
         ProjectLockDao lockDao = new ProjectLockDao(dsl);
 
-        String officeMask = OFFICE;
         String userName = user.getName();
 
         try {
-            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName); // start fresh
-            lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, userName); // start fresh
+            lockDao.allowLockRevokerRights(OFFICE, projId, appId, userName);
 
             ProjectLock toRequest = new ProjectLock.Builder()
                     .withOfficeId(OFFICE)
@@ -159,7 +158,7 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         } finally {
-            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName);
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, userName);
 
         }
     }
@@ -171,8 +170,6 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
         final String[] lockId = {null};
         final String[] lockId2 = {null};
 
-
-        String officeMask = OFFICE;
         TestAccounts.KeyUser user1 = TestAccounts.KeyUser.SPK_NORMAL;
         TestAccounts.KeyUser user2 = TestAccounts.KeyUser.SPK_NORMAL2;
         int revokeTimeout = 4;
@@ -184,8 +181,8 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
                 DSLContext dsl = getDslContext(c, OFFICE);
 
                 ProjectLockDao lockDao = new ProjectLockDao(dsl);
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, revPrj, appId, user1.getName(), true);
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, revPrj, appId, user2.getName(), true);
+                lockDao.updateLockRevokerRights(OFFICE, revPrj, appId, user1.getName(), true);
+                lockDao.updateLockRevokerRights(OFFICE, revPrj, appId, user2.getName(), true);
 
                 ProjectLock req1 = new ProjectLock.Builder(OFFICE, revPrj, appId).build();
                 lockId[0] = lockDao.requestLock(req1, dontRevoke, revokeTimeout);

@@ -69,7 +69,7 @@ public class ProjectLockRevokeDenyHandlerIT extends DataApiTestIT {
 
     String projId = "deny_Proj";
     String appId = "deny_test";
-    String officeMask = OFFICE;
+
     TestAccounts.KeyUser user1 = TestAccounts.KeyUser.SPK_NORMAL;
     TestAccounts.KeyUser user2 = TestAccounts.KeyUser.SPK_NORMAL2;
     int revokeTimeout = 10;
@@ -84,8 +84,8 @@ public class ProjectLockRevokeDenyHandlerIT extends DataApiTestIT {
             Project testProject = buildTestProject(OFFICE, projId);
             prjDao.create(testProject);
 
-            lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, user1.getName());
-            lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, user2.getName());
+            lockDao.allowLockRevokerRights(OFFICE, projId, appId, user1.getName());
+            lockDao.allowLockRevokerRights(OFFICE, projId, appId, user2.getName());
 
             boolean dontRevoke = false;
 
@@ -132,7 +132,7 @@ public class ProjectLockRevokeDenyHandlerIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK));
     }
 
-    private void requestOnThread(){
+    private void requestOnThread() {
         // try to get the lock on another thread.
         Thread thread = new Thread(() -> {
             try {

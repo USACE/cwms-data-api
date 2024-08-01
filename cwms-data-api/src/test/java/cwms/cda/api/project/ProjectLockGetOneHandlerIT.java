@@ -60,7 +60,7 @@ public class ProjectLockGetOneHandlerIT extends DataApiTestIT {
     public static final String OFFICE = "SPK";
     String projId = "stProj";
     String appId = "isLocked_test";
-    String officeMask = OFFICE;
+
     int revokeTimeout = 10;
     boolean revokeExisting = true;
     String lockId = null;
@@ -79,7 +79,7 @@ public class ProjectLockGetOneHandlerIT extends DataApiTestIT {
             TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
             String userName = user.getName();
 
-            lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
+            lockDao.allowLockRevokerRights(OFFICE, projId, appId, userName);
             ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
             lockId = lockDao.requestLock(req1, revokeExisting, revokeTimeout);
 

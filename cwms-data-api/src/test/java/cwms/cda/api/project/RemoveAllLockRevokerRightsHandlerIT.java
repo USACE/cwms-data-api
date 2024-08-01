@@ -24,9 +24,7 @@
 
 package cwms.cda.api.project;
 
-
 import static cwms.cda.api.Controllers.APPLICATION_MASK;
-import static cwms.cda.api.Controllers.OFFICE_MASK;
 import static cwms.cda.api.Controllers.USER_ID;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.buildTestProject;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.deleteProject;
@@ -61,15 +59,13 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
     public static final String OFFICE = "SPK";
     String projId = "remAllIT";
     String appId = "test_remAll";
-    String officeMask = OFFICE;
 
     @BeforeEach
     void setUp() throws SQLException {
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
-            ProjectLockDao lockDao = new ProjectLockDao(dsl);
-            ProjectDao prjDao = new ProjectDao(dsl);
 
+            ProjectDao prjDao = new ProjectDao(dsl);
 
             Project testProject = buildTestProject(OFFICE, projId);
             prjDao.create(testProject);
@@ -81,7 +77,7 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
-            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, TestAccounts.KeyUser.SPK_NORMAL.getName());
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, TestAccounts.KeyUser.SPK_NORMAL.getName());
             deleteProject(dsl, projId, OFFICE, appId);
         });
     }
@@ -92,7 +88,6 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSON)
             .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
-            .queryParam(OFFICE_MASK, officeMask)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(USER_ID, TestAccounts.KeyUser.SPK_NORMAL.getName())
             .queryParam(APPLICATION_MASK, appId)
@@ -109,9 +104,9 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
-            ProjectDao prjDao = new ProjectDao(dsl);
+
             // Add an allow
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, TestAccounts.KeyUser.SPK_NORMAL.getName(), true);
+            lockDao.updateLockRevokerRights(OFFICE, projId, appId, TestAccounts.KeyUser.SPK_NORMAL.getName(), true);
 
             // make sure its there.
             List<LockRevokerRights> lockRevokerRights = lockDao.catLockRevokerRights(OFFICE, projId, appId);
@@ -125,7 +120,6 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(OFFICE_MASK, officeMask)
             .queryParam(USER_ID, TestAccounts.KeyUser.SPK_NORMAL.getName())
             .queryParam(APPLICATION_MASK, appId)
         .when()
@@ -147,7 +141,6 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
             assertNotNull(lockRevokerRights);
             assertTrue(lockRevokerRights.isEmpty());
         });
-
 
     }
 

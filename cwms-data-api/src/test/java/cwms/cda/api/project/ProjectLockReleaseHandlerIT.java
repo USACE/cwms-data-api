@@ -61,7 +61,7 @@ public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
     public static final String OFFICE = "SPK";
     String projId = "lockRelease";
     String appId = "test_release";
-    String officeMask = OFFICE;
+
     String lockId;
 
     String userName = TestAccounts.KeyUser.SPK_NORMAL.getName();
@@ -76,8 +76,8 @@ public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
             Project testProject = buildTestProject(OFFICE, projId);
             prjDao.create(testProject);
 
-            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName); // start fresh
-            lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, userName); // start fresh
+            lockDao.allowLockRevokerRights(OFFICE, projId, appId, userName);
 
             ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
             lockId = lockDao.requestLock(req1, true, 10);
@@ -99,7 +99,7 @@ public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
             releaseLock(dsl, OFFICE, lockId);
             revokeLock(dsl, OFFICE, projId, appId);
 
-            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName);
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, userName);
             deleteProject(dsl, projId, OFFICE, appId);
         });
     }

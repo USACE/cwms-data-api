@@ -57,7 +57,7 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
 
     String projId = "catRightsIT";
     String appId = "test_catRights";
-    String officeMask = OFFICE;
+
 
     @BeforeEach
     void setup() throws SQLException {
@@ -72,8 +72,8 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
             TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
             String userName = user.getName();
 
-            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, userName);
-            lockDao.allowLockRevokerRights(OFFICE, officeMask, projId, appId, userName);
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, userName);
+            lockDao.allowLockRevokerRights(OFFICE, projId, appId, userName);
         });
     }
 
@@ -83,7 +83,7 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
             DSLContext dsl = getDslContext(c, OFFICE);
 
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
-            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, TestAccounts.KeyUser.SPK_NORMAL.getName());
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, TestAccounts.KeyUser.SPK_NORMAL.getName());
 
             deleteProject(dsl, projId, OFFICE, appId);
         });
@@ -140,7 +140,7 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
             DSLContext dsl = getDslContext(c, OFFICE);
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
 
-            lockDao.denyLockRevokerRights(OFFICE, officeMask, projId, appId, TestAccounts.KeyUser.SPK_NORMAL.getName());
+            lockDao.denyLockRevokerRights(OFFICE, projId, appId, TestAccounts.KeyUser.SPK_NORMAL.getName());
         });
     }
 

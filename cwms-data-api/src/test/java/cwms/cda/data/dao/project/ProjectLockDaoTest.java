@@ -71,12 +71,11 @@ class ProjectLockDaoTest {
 
         String projId = "needsRevoke";
         String appId = "needsRevoke_test";
-        String officeMask = OFFICE;
         Project testProject = buildTestProject(OFFICE, projId);
         prjDao.create(testProject);
 
         try {
-            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, USER_ID); // reset
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, USER_ID); // reset
 
             int revokeTimeout = 10;
             boolean revokeExisting = false;
@@ -95,7 +94,7 @@ class ProjectLockDaoTest {
                 }
 
             } finally {
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, USER_ID, true);
+                lockDao.updateLockRevokerRights(OFFICE, projId, appId, USER_ID, true);
                 lockDao.revokeLock(OFFICE, projId, appId, 0);
             }
         } finally {
@@ -114,7 +113,7 @@ class ProjectLockDaoTest {
         try {
             lockDao.hasLockRevokerRights(OFFICE, projId, appId, USER_ID);
             fail("Should have thrown an exception");
-        } catch (NotFoundException e){
+        } catch (NotFoundException e) {
             logger.at(Level.INFO).log("Expected exception: %s", e.getMessage());
         }
     }
@@ -128,20 +127,19 @@ class ProjectLockDaoTest {
 
         String projId = "hasRights";
         String appId = "unitest";
-        String officeMask = OFFICE;
 
         Project testProject = buildTestProject(OFFICE, projId);
         prjDao.create(testProject);
 
         try {
             assertFalse(lockDao.hasLockRevokerRights(OFFICE, projId, appId, USER_ID));
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, USER_ID, true);
+            lockDao.updateLockRevokerRights(OFFICE, projId, appId, USER_ID, true);
             assertTrue(lockDao.hasLockRevokerRights(OFFICE, projId, appId, USER_ID));
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, USER_ID, false);
+            lockDao.updateLockRevokerRights(OFFICE, projId, appId, USER_ID, false);
             assertFalse(lockDao.hasLockRevokerRights(OFFICE, projId, appId, USER_ID));
 
         } finally {
-            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, USER_ID);
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, USER_ID);
             deleteProject(prjDao, projId, lockDao, appId);
         }
     }
@@ -153,17 +151,16 @@ class ProjectLockDaoTest {
 
         String projId = "AAnoProj";
         String appId = "dont_exist";
-        String officeMask = OFFICE;
         try {
             // verify that this doesn't throw an exception
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, USER_ID, true);
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, USER_ID, false);
+            lockDao.updateLockRevokerRights(OFFICE, projId, appId, USER_ID, true);
+            lockDao.updateLockRevokerRights(OFFICE, projId, appId, USER_ID, false);
 
-            List<LockRevokerRights> lockRevokerRights = lockDao.catLockRevokerRights(officeMask, projId, appId);
+            List<LockRevokerRights> lockRevokerRights = lockDao.catLockRevokerRights(OFFICE, projId, appId);
             assertNotNull(lockRevokerRights);
             assertTrue(lockRevokerRights.isEmpty());
         } finally {
-             lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, USER_ID);
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, USER_ID);
         }
     }
 
@@ -181,23 +178,23 @@ class ProjectLockDaoTest {
         prjDao.create(testProject);
 
         try {
-            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, USER_ID); // start fresh
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, USER_ID); // start fresh
 
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, USER_ID, true);
+            lockDao.updateLockRevokerRights(OFFICE, projId, appId, USER_ID, true);
 
             List<LockRevokerRights> lockRevokerRights = lockDao.catLockRevokerRights(officeMask, projId, appId);
             assertNotNull(lockRevokerRights);
             assertFalse(lockRevokerRights.isEmpty());
 
             // Now deny
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, USER_ID, false);
+            lockDao.updateLockRevokerRights(OFFICE, projId, appId, USER_ID, false);
             lockRevokerRights = lockDao.catLockRevokerRights(officeMask, projId, appId);
             assertNotNull(lockRevokerRights);
             assertTrue(lockRevokerRights.isEmpty());
 
 
         } finally {
-            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, USER_ID);
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, USER_ID);
             deleteProject(prjDao, projId, lockDao, appId);
         }
     }
@@ -217,7 +214,6 @@ class ProjectLockDaoTest {
 
         String projId = "canUnset";
         String appId = "revoke_test";
-        String officeMask = OFFICE;
         Project testProject = buildTestProject(OFFICE, projId);
         prjDao.create(testProject);
 
@@ -238,9 +234,9 @@ class ProjectLockDaoTest {
                     logger.at(Level.INFO).log("Expected exception: %s", e.getMessage());
                 }
 
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, USER_ID, true);
+                lockDao.updateLockRevokerRights(OFFICE, projId, appId, USER_ID, true);
                 // Normally we'd be able to revoke the lock now, but we want to get on the deny list too
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, USER_ID, false);
+                lockDao.updateLockRevokerRights(OFFICE, projId, appId, USER_ID, false);
                 // Now on the allow AND deny list.
 
                 try {
@@ -251,7 +247,7 @@ class ProjectLockDaoTest {
                     logger.at(Level.INFO).log("Expected exception: %s", e.getMessage());
                 }
 
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, USER_ID, true);
+                lockDao.updateLockRevokerRights(OFFICE, projId, appId, USER_ID, true);
                 // still expect this to fail
                 try {
                     lockDao.revokeLock(OFFICE, projId, appId, 0);
@@ -263,12 +259,12 @@ class ProjectLockDaoTest {
 
             } finally {
                 // cleanup
-                lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, USER_ID);
-                lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, USER_ID, true);
+                lockDao.removeAllLockRevokerRights(OFFICE, appId, USER_ID);
+                lockDao.updateLockRevokerRights(OFFICE, projId, appId, USER_ID, true);
                 lockDao.revokeLock(OFFICE, projId, appId, 0);
             }
         } finally {
-            lockDao.removeAllLockRevokerRights(OFFICE, officeMask, appId, USER_ID);
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, USER_ID);
             deleteProject(prjDao, projId, lockDao, appId);
         }
 
@@ -281,10 +277,9 @@ class ProjectLockDaoTest {
             logger.at(Level.WARNING).withCause(e).log("Failed to delete project: %s", projId);
             List<ProjectLock> locks = lockDao.retrieveLocks(OFFICE, projId, appId);
             locks.forEach(lock -> {
-               logger.atFine().log("Remaining Locks: " + lock.getProjectId() + " " +
-                        lock.getApplicationId() + " " + lock.getAcquireTime() + " " +
-                        lock.getSessionUser() + " " + lock.getOsUser() + " " +
-                        lock.getSessionProgram() + " " + lock.getSessionMachine());
+                logger.atFine().log("Remaining Locks: %s %s %s %s %s %s %s",
+                       lock.getProjectId(), lock.getApplicationId(), lock.getAcquireTime(),
+                       lock.getSessionUser(), lock.getOsUser(), lock.getSessionProgram(), lock.getSessionMachine());
             });
         }
     }
@@ -298,7 +293,6 @@ class ProjectLockDaoTest {
 
         String projId = "isLockd";
         String appId = "isLocked_test";
-        String officeMask = OFFICE;
         Project testProject = buildTestProject(OFFICE, projId);
         prjDao.create(testProject);
         String lockId;
@@ -306,7 +300,7 @@ class ProjectLockDaoTest {
             int revokeTimeout = 10;
             boolean revokeExisting = true;
 
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId, appId, USER_ID, true);
+            lockDao.updateLockRevokerRights(OFFICE, projId, appId, USER_ID, true);
             ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
             lockId = lockDao.requestLock(req1, revokeExisting, revokeTimeout);
 
@@ -343,7 +337,6 @@ class ProjectLockDaoTest {
         String projId1 = "catLocks1";
         String projId2 = "catLocks2";
         String appId = "catLocks_test";
-        String officeMask = OFFICE;
         Project testProject = buildTestProject(OFFICE, projId1);
         prjDao.create(testProject);
         Project testProject2 = buildTestProject(OFFICE, projId2);
@@ -351,27 +344,27 @@ class ProjectLockDaoTest {
         try {
             int revokeTimeout = 10;
 
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId1, appId , USER_ID, true);
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId2, appId, USER_ID, true);
+            lockDao.updateLockRevokerRights(OFFICE, projId1, appId, USER_ID, true);
+            lockDao.updateLockRevokerRights(OFFICE, projId2, appId, USER_ID, true);
 
-            ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId1, appId ).build();
+            ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId1, appId).build();
             String lock1 = lockDao.requestLock(req1, true, revokeTimeout);
             assertTrue(lock1.length() > 8);
 
-            ProjectLock req2 = new ProjectLock.Builder(OFFICE, projId2, appId ).build();
+            ProjectLock req2 = new ProjectLock.Builder(OFFICE, projId2, appId).build();
             String lock2 = lockDao.requestLock(req2, false, revokeTimeout);
             assertTrue(lock2.length() > 8);
             assertNotEquals(lock1, lock2);
 
-            List<ProjectLock> locks = lockDao.retrieveLocks(officeMask, projId + "*", appId);
+            List<ProjectLock> locks = lockDao.retrieveLocks(OFFICE, projId + "*", appId);
             assertNotNull(locks);
             assertFalse(locks.isEmpty());
 
             lockDao.releaseLock(OFFICE, lock1);
             lockDao.releaseLock(OFFICE, lock2);
 
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId1, appId, USER_ID, true);
-            lockDao.updateLockRevokerRights(OFFICE, officeMask, projId2, appId, USER_ID, true);
+            lockDao.updateLockRevokerRights(OFFICE, projId1, appId, USER_ID, true);
+            lockDao.updateLockRevokerRights(OFFICE, projId2, appId, USER_ID, true);
 
         } finally {
             try {

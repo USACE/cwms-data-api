@@ -26,7 +26,6 @@ package cwms.cda.api.project;
 
 import static cwms.cda.api.Controllers.APPLICATION_MASK;
 import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.OFFICE_MASK;
 import static cwms.cda.api.Controllers.PROJECT_MASK;
 import static cwms.cda.api.Controllers.USER_ID;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -64,8 +63,6 @@ public class UpdateLockRevokerRights implements Handler {
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description =
                         "Specifies the session office."),
-                @OpenApiParam(name = OFFICE_MASK, description =
-                        "Specifies the office mask. If not provided defaults to provided OFFICE"),
                 @OpenApiParam(name = PROJECT_MASK, description =
                         "Specifies the project mask to be used Defaults to '*'"),
                 @OpenApiParam(name = APPLICATION_MASK, required = true, description =
@@ -82,7 +79,6 @@ public class UpdateLockRevokerRights implements Handler {
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         String office = requiredParam(ctx, OFFICE);
-        String officeMask = ctx.queryParamAsClass(OFFICE_MASK, String.class).getOrDefault(office);
         String userId = requiredParam(ctx, USER_ID);
         String projMask = ctx.queryParamAsClass(PROJECT_MASK, String.class).getOrDefault("*");
         String appMask = requiredParam(ctx, APPLICATION_MASK);
@@ -91,7 +87,7 @@ public class UpdateLockRevokerRights implements Handler {
 
         try (final Timer.Context ignored = markAndTime("updateRights")) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
-            lockDao.updateLockRevokerRights(office, officeMask, projMask, appMask, userId, allow);
+            lockDao.updateLockRevokerRights(office, projMask, appMask, userId, allow);
         }
         ctx.status(HttpServletResponse.SC_OK);
     }

@@ -85,8 +85,8 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
             String webUser = CwmsDataApiSetupCallback.getWebUser();  // l2webtest
             //  removeAllLockRevokerRights seems to hang..
-            lockDao.updateLockRevokerRights(OFFICE, OFFICE, projId1, appId, webUser, true);
-            lockDao.updateLockRevokerRights(OFFICE, OFFICE, projId2, appId, webUser, true);
+            lockDao.updateLockRevokerRights(OFFICE,  projId1, appId, webUser, true);
+            lockDao.updateLockRevokerRights(OFFICE,  projId2, appId, webUser, true);
 
             ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId1, appId).build();
 
@@ -113,8 +113,8 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
             String webUser = CwmsDataApiSetupCallback.getWebUser();  // l2webtest
 
-            lockDao.updateLockRevokerRights(OFFICE, null, projId1, appId, webUser, true);
-            lockDao.updateLockRevokerRights(OFFICE, null, projId2, appId, webUser, true);
+            lockDao.updateLockRevokerRights(OFFICE,  projId1, appId, webUser, true);
+            lockDao.updateLockRevokerRights(OFFICE,  projId2, appId, webUser, true);
 
             revokeLock(dsl, OFFICE, projId1, appId);  // happens as L2WEBTEST
             revokeLock(dsl, OFFICE, projId2, appId);
@@ -165,7 +165,7 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
 
     private Matcher<String> getMatcher(Map<String, String> lock1, Map<String, String> lock2) {
 
-        return new BaseMatcher<String>(){
+        return new BaseMatcher<String>() {
 
             @Override
             public void describeTo(Description description) {
@@ -177,7 +177,7 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
                 // o is LinkedHashMap<String, String>.  keys are office-id, project-id, application-id...
                 // values are "SPK", "catLocks2"
 
-                if(o instanceof Map) {
+                if (o instanceof Map) {
                     Map<String, String> jsonLock = (Map<String, String>) o;
                     return matches(lock1, jsonLock) || matches(lock2, jsonLock);
                 }
@@ -185,9 +185,9 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
                 return false;
             }
 
-            private boolean matches(Map<String,String> expected, Map<String, String> provided){
+            private boolean matches(Map<String,String> expected, Map<String, String> provided) {
 
-                if(provided.keySet().containsAll(expected.keySet())){
+                if (provided.keySet().containsAll(expected.keySet())) {
                         return expected.entrySet().stream()
                                 .allMatch(entry -> entry.getValue().equalsIgnoreCase(provided.get(entry.getKey())));
                 }

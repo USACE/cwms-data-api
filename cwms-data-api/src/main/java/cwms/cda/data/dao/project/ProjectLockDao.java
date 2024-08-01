@@ -126,6 +126,7 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
      * @param projectName the project
      * @param applicationName the application
      * @return the matching project lock or null
+     * @throws TooManyRowsException if the provided arguments match more then one row.
      */
     public ProjectLock retrieveLock(String office, String projectName, String applicationName) {
         ProjectLock retval = null;
@@ -133,9 +134,9 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
         List<ProjectLock> locks = CWMS_PROJECT_PACKAGE.call_CAT_LOCKS(dsl.configuration(),
                         projectName, applicationName, "UTC", office)
                 .map(ProjectLockDao::buildLockFromCatLocksRecord);
-        if(locks.size() > 1) {
+        if (locks.size() > 1) {
             throw new TooManyRowsException("Provided arguments matched " + locks.size() + " rows");
-        } else if(locks.size() == 1) {
+        } else if (locks.size() == 1) {
             retval = locks.get(0);
         }
 
@@ -208,19 +209,18 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
      * Either adds the user to allow list or the deny list.
      *
      * @param sessionOffice          the office to use in the session
-     * @param officeMask      the office mask
      * @param projectMask     the project mask
      * @param applicationMask the application mask
      * @param userId          the user to add
      * @param allow           true to add to allow list, false to add to deny list
      */
-    public void updateLockRevokerRights(String sessionOffice, String officeMask, String projectMask,
+    public void updateLockRevokerRights(String sessionOffice, String projectMask,
                                         String applicationMask, String userId, boolean allow) {
 
         connection(dsl, c -> {
             Configuration conf = getDslContext(c, sessionOffice).configuration();
             CWMS_PROJECT_PACKAGE.call_UPDATE_LOCK_REVOKER_RIGHTS(conf,
-                userId, projectMask, OracleTypeMap.formatBool(allow), applicationMask, officeMask);
+                userId, projectMask, OracleTypeMap.formatBool(allow), applicationMask, null);
         });
     }
 
@@ -228,28 +228,26 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
      * Adds a user to the LockRevokeRights allow list. Equivalent to calling updateLockRevokerRights with allow=true.
      *
      * @param sessionOffice          the office to use in the session
-     * @param officeMask      the office mask
      * @param projectMask     the project mask
      * @param applicationMask the application mask
      * @param userId          the user to add
      */
-    public void allowLockRevokerRights(String sessionOffice, String officeMask, String projectMask,
+    public void allowLockRevokerRights(String sessionOffice, String projectMask,
                                        String applicationMask, String userId) {
-        updateLockRevokerRights(sessionOffice, officeMask, projectMask, applicationMask, userId, true);
+        updateLockRevokerRights(sessionOffice, projectMask, applicationMask, userId, true);
     }
 
     /**
      * Adds a user to the LockRevokeRights deny list. Equivalent to calling updateLockRevokerRights with allow=false.
      *
      * @param sessionOffice          the office to use in the session
-     * @param officeMask      the office mask
      * @param projectMask     the project mask
      * @param applicationMask the application mask
      * @param userId          the user to add
      */
-    public void denyLockRevokerRights(String sessionOffice, String officeMask, String projectMask,
+    public void denyLockRevokerRights(String sessionOffice, String projectMask,
                                       String applicationMask, String userId) {
-        updateLockRevokerRights(sessionOffice, officeMask, projectMask, applicationMask, userId, false);
+        updateLockRevokerRights(sessionOffice, projectMask, applicationMask, userId, false);
     }
 
     /**
@@ -259,13 +257,12 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
      * allow and deny list.
      *
      * @param sessionOffice          the office to use in the session
-     * @param officeMask      the office mask
      * @param applicationMask the application mask
      * @param userId          the user for which to remove all rights
      */
-    public void removeAllLockRevokerRights(String sessionOffice, String officeMask, String applicationMask, String userId) {
+    public void removeAllLockRevokerRights(String sessionOffice, String applicationMask, String userId) {
 
-        updateLockRevokerRights(sessionOffice, officeMask, "*", applicationMask, userId, false);
+        updateLockRevokerRights(sessionOffice, "*", applicationMask, userId, false);
     }
 
     /**
