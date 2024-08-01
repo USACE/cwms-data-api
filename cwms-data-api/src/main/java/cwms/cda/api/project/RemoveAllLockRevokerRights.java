@@ -24,7 +24,7 @@
 
 package cwms.cda.api.project;
 
-import static cwms.cda.api.Controllers.APPLICATION_MASK;
+import static cwms.cda.api.Controllers.APPLICATION_ID;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.USER_ID;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -62,8 +62,8 @@ public class RemoveAllLockRevokerRights implements Handler {
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description =
                             "Specifies the session office."),
-                @OpenApiParam(name = APPLICATION_MASK, required = true, description =
-                        "Specifies the application mask."),
+                @OpenApiParam(name = APPLICATION_ID, required = true, description =
+                        "Specifies the application id."),
                 @OpenApiParam(name = USER_ID, required = true,
                         description = "Specifies the user."),
             },
@@ -75,12 +75,12 @@ public class RemoveAllLockRevokerRights implements Handler {
     public void handle(@NotNull Context ctx) throws Exception {
         String office = requiredParam(ctx, OFFICE);
         String userId = requiredParam(ctx, USER_ID);
-        String appMask = requiredParam(ctx, APPLICATION_MASK);
+        String appId = requiredParam(ctx, APPLICATION_ID);
 
         try (final Timer.Context ignored = markAndTime("removeAll")) {
             DSLContext dslContext = getDslContext(ctx);
             ProjectLockDao lockDao = new ProjectLockDao(dslContext);
-            lockDao.removeAllLockRevokerRights(office, appMask, userId);
+            lockDao.removeAllLockRevokerRights(office, appId, userId);
         }
         ctx.status(HttpServletResponse.SC_OK);
     }

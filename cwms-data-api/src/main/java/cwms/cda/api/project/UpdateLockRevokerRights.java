@@ -24,7 +24,7 @@
 
 package cwms.cda.api.project;
 
-import static cwms.cda.api.Controllers.APPLICATION_MASK;
+import static cwms.cda.api.Controllers.APPLICATION_ID;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_MASK;
 import static cwms.cda.api.Controllers.USER_ID;
@@ -65,8 +65,8 @@ public class UpdateLockRevokerRights implements Handler {
                         "Specifies the session office."),
                 @OpenApiParam(name = PROJECT_MASK, description =
                         "Specifies the project mask to be used Defaults to '*'"),
-                @OpenApiParam(name = APPLICATION_MASK, required = true, description =
-                        "Specifies the application mask."),
+                @OpenApiParam(name = APPLICATION_ID, required = true, description =
+                        "Specifies the application id."),
                 @OpenApiParam(name = USER_ID, required = true,
                         description = "Specifies the user."),
                 @OpenApiParam(name = Controllers.ALLOW, required = true, type = Boolean.class, description =
@@ -81,13 +81,13 @@ public class UpdateLockRevokerRights implements Handler {
         String office = requiredParam(ctx, OFFICE);
         String userId = requiredParam(ctx, USER_ID);
         String projMask = ctx.queryParamAsClass(PROJECT_MASK, String.class).getOrDefault("*");
-        String appMask = requiredParam(ctx, APPLICATION_MASK);
+        String appId = requiredParam(ctx, APPLICATION_ID);
         Boolean allow = ctx.queryParamAsClass(Controllers.ALLOW, Boolean.class)
                 .getOrThrow(e -> new RequiredQueryParameterException(Controllers.ALLOW));
 
         try (final Timer.Context ignored = markAndTime("updateRights")) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
-            lockDao.updateLockRevokerRights(office, projMask, appMask, userId, allow);
+            lockDao.updateLockRevokerRights(office, projMask, appId, userId, allow);
         }
         ctx.status(HttpServletResponse.SC_OK);
     }

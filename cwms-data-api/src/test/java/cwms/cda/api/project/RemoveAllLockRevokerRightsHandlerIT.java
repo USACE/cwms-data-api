@@ -24,7 +24,7 @@
 
 package cwms.cda.api.project;
 
-import static cwms.cda.api.Controllers.APPLICATION_MASK;
+import static cwms.cda.api.Controllers.APPLICATION_ID;
 import static cwms.cda.api.Controllers.USER_ID;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.buildTestProject;
 import static cwms.cda.api.project.ProjectLockHandlerUtil.deleteProject;
@@ -90,7 +90,7 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
             .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(USER_ID, TestAccounts.KeyUser.SPK_NORMAL.getName())
-            .queryParam(APPLICATION_MASK, appId)
+            .queryParam(APPLICATION_ID, appId)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -121,7 +121,7 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
             .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(USER_ID, TestAccounts.KeyUser.SPK_NORMAL.getName())
-            .queryParam(APPLICATION_MASK, appId)
+            .queryParam(APPLICATION_ID, appId)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
