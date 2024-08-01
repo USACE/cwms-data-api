@@ -27,7 +27,7 @@
 package cwms.cda.api;
 
 import cwms.cda.api.enums.Nation;
-import cwms.cda.api.watersupply.WaterContractController;
+import cwms.cda.api.watersupply.WaterContractCreateController;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao.DeleteMethod;
 import cwms.cda.data.dao.LocationsDaoImpl;
@@ -76,9 +76,9 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
     private static final WaterUserContract CONTRACT_NO_PUMP;
     static {
         try (
-                InputStream contractStream = WaterContractController.class
+                InputStream contractStream = WaterContractCreateController.class
                         .getResourceAsStream("/cwms/cda/api/waterusercontract.json");
-                InputStream contractStreamNoPump = WaterContractController.class
+                InputStream contractStreamNoPump = WaterContractCreateController.class
                         .getResourceAsStream("/cwms/cda/api/waterusercontract_no_pump.json")
         ) {
             assert contractStream != null;

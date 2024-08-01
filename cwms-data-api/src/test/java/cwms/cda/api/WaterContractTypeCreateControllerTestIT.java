@@ -32,7 +32,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import cwms.cda.api.watersupply.WaterContractController;
+import cwms.cda.api.watersupply.WaterContractCreateController;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
@@ -59,7 +59,8 @@ class WaterContractTypeCreateControllerTestIT extends DataApiTestIT {
     private static final WaterUserContract CONTRACT;
     private static final LookupType CONTRACT_TYPE;
     static {
-        try (InputStream contractStream = WaterContractController.class.getResourceAsStream("/cwms/cda/api/waterusercontract.json")){
+        try (InputStream contractStream = WaterContractCreateController.class
+                .getResourceAsStream("/cwms/cda/api/waterusercontract.json")){
             assert contractStream != null;
             String contractJson = IOUtils.toString(contractStream, StandardCharsets.UTF_8);
             CONTRACT = Formats.parseContent(new ContentType(Formats.JSONV1), contractJson, WaterUserContract.class);
