@@ -315,12 +315,6 @@ public class BasinController implements CrudHandler {
                 .withName(name)
                 .withOfficeId(ctx.queryParam(OFFICE))
                 .build();
-        cwms.cda.data.dto.basin.Basin retBasin = basinDao.getBasin(basinId, "EN");
-        if (retBasin == null) {
-            CdaError error = new CdaError("No matching basin " + name);
-            ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
-            return;
-        }
         basinDao.deleteBasin(basinId, deleteMethod.getRule().getRule());
         ctx.status(HttpServletResponse.SC_NO_CONTENT).json(basinId.getName() + " Deleted");
     }
