@@ -69,7 +69,7 @@ public class LocationLevelsDaoTest extends DaoTest
             location = buildTestLocation("TEST_LOC");
             locationsDao.storeLocation(location);
             LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
-            levelsDao.storeLocationLevel(levelToStore, ZoneId.of("UTC"));
+            levelsDao.storeLocationLevel(levelToStore);
             LocationLevel retrievedLevel = levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelToStore.getLevelDate(), "LRL");
             assertNotNull(retrievedLevel);
             assertEquals(levelToStore.getLocationLevelId(), retrievedLevel.getLocationLevelId());
@@ -91,7 +91,7 @@ public class LocationLevelsDaoTest extends DaoTest
         LocationsDao locationsDao = new LocationsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
         Location location = buildTestLocation("TEST_LOC5");
         locationsDao.storeLocation(location);
-        levelsDao.storeLocationLevel(levelToStore, ZoneId.of("UTC"));
+        levelsDao.storeLocationLevel(levelToStore);
         LocationLevel retrievedLevel = levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelToStore.getLevelDate(), OFFICE_ID);
         assertNotNull(retrievedLevel);
         levelsDao.deleteLocationLevel(levelToStore.getLocationLevelId(), levelToStore.getLevelDate(), OFFICE_ID, true);
@@ -109,7 +109,7 @@ public class LocationLevelsDaoTest extends DaoTest
         Location location = buildTestLocation("TEST_LOC6");
         try {
             locationsDao.storeLocation(location);
-            levelsDao.storeLocationLevel(levelToStore, ZoneId.of("UTC"));
+            levelsDao.storeLocationLevel(levelToStore);
             String body = getRenamedExampleJSON();
             String format = Formats.JSON;
 
@@ -123,7 +123,7 @@ public class LocationLevelsDaoTest extends DaoTest
             {
                 levelsDao.renameLocationLevel(levelToStore.getLocationLevelId(), updatedLocationLevel.getLocationLevelId(), OFFICE_ID);
             } else {
-                levelsDao.storeLocationLevel(updatedLocationLevel, updatedLocationLevel.getLevelDate().getZone());
+                levelsDao.storeLocationLevel(updatedLocationLevel);
             }
             LocationLevel retrievedLevel = levelsDao.retrieveLocationLevel(updatedLocationLevel.getLocationLevelId(), UnitSystem.EN.getValue(), updatedLocationLevel.getLevelDate(), OFFICE_ID);
             assertNotNull(retrievedLevel);
@@ -134,61 +134,6 @@ public class LocationLevelsDaoTest extends DaoTest
                 deleteLevel(updatedLocationLevel);
             }
         }
-    }
-
-
-    @Test
-    void testIfcToDto(){
-        usace.cwms.db.dao.ifc.level.SeasonalValueBean ifcBean =
-                new usace.cwms.db.dao.ifc.level.SeasonalValueBean();
-        double value = 23.0;
-        ifcBean.setValue(value);
-
-        // just value
-        SeasonalValueBean dtoBean = LocationLevelsDaoImpl.buildSeasonalValue(ifcBean);
-        assertEquals(value, dtoBean.getValue());
-        assertNull(dtoBean.getOffsetMonths());
-        assertNull(dtoBean.getOffsetMinutes());
-
-        // just minutes
-        ifcBean.setOffsetMinutes(BigInteger.valueOf(22));
-        dtoBean = LocationLevelsDaoImpl.buildSeasonalValue(ifcBean);
-        assertNull(dtoBean.getOffsetMonths());
-        assertEquals(22, dtoBean.getOffsetMinutes().intValue());
-
-
-        // just months
-        ifcBean.setOffsetMinutes(null);
-        ifcBean.setOffsetMonths(Integer.valueOf(7).byteValue());
-        dtoBean = LocationLevelsDaoImpl.buildSeasonalValue(ifcBean);
-        assertNull(dtoBean.getOffsetMinutes());
-        assertEquals(7, dtoBean.getOffsetMonths());
-    }
-
-    @Test
-    void testDtoToIfc() {
-        // Now go the other way
-        SeasonalValueBean.Builder builder = new SeasonalValueBean.Builder(23.0);
-
-        // just value
-        usace.cwms.db.dao.ifc.level.SeasonalValueBean ifcBean = LocationLevelsDaoImpl.buildSeasonalValue(builder.build());
-        assertEquals(23.0, ifcBean.getValue());
-        assertNull(ifcBean.getOffsetMonths());
-        assertNull(ifcBean.getOffsetMinutes());
-
-        // just minutes
-        builder.withOffsetMinutes(BigInteger.valueOf(22));
-        ifcBean = LocationLevelsDaoImpl.buildSeasonalValue(builder.build());
-        assertEquals(23.0, ifcBean.getValue());
-        assertNull(ifcBean.getOffsetMonths());
-        assertEquals(22, ifcBean.getOffsetMinutes().intValue());
-
-        // just months
-        builder.withOffsetMinutes(null).withOffsetMonths(Integer.valueOf(7).byteValue());
-        ifcBean = LocationLevelsDaoImpl.buildSeasonalValue(builder.build());
-        assertEquals(23.0, ifcBean.getValue());
-        assertNull(ifcBean.getOffsetMinutes());
-        assertEquals(7, ifcBean.getOffsetMonths().intValue());
     }
 
         private LocationLevel deserializeLocationLevel(String body, String format, String office) throws IOException
