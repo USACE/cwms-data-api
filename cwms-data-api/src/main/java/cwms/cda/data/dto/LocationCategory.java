@@ -33,7 +33,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "A representation of a location category")
 @JsonRootName("location_category")
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class LocationCategory extends CwmsDTO
 {
 	private final String id;

@@ -39,7 +39,7 @@ import java.util.Objects;
 @Schema(description = "A representation of a timeseries group")
 @JsonRootName("timeseries-group")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class TimeSeriesGroup extends CwmsDTO {
     private String id;
     private TimeSeriesCategory timeSeriesCategory;
