@@ -239,7 +239,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
 
     public void delete(String categoryId, String groupId, String office) {
-        dsl.connection(c -> 
+        connection(dsl, c ->
             CWMS_TS_PACKAGE.call_DELETE_TS_GROUP(
                 getDslContext(c,office).configuration(), categoryId, groupId, office
             )
@@ -247,7 +247,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public void create(TimeSeriesGroup group, boolean failIfExists) {
-        dsl.connection(c-> {
+        connection(dsl, c-> {
             Configuration configuration = getDslContext(c,group.getOfficeId()).configuration();
             String categoryId = group.getTimeSeriesCategory().getId();
             CWMS_TS_PACKAGE.call_STORE_TS_GROUP(configuration, categoryId,
@@ -273,7 +273,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public void assignTs(TimeSeriesGroup group) {
-        dsl.connection(c->assignTs(getDslContext(c,group.getOfficeId()).configuration(),group));
+        connection(dsl, c->assignTs(getDslContext(c,group.getOfficeId()).configuration(),group));
     }
 
     private static TS_ALIAS_T convertToTsAliasType(AssignedTimeSeries assignedTimeSeries) {
@@ -283,7 +283,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public void renameTimeSeriesGroup(String oldGroupId, TimeSeriesGroup group) {
-        dsl.connection(c->
+        connection(dsl, c->
             CWMS_TS_PACKAGE.call_RENAME_TS_GROUP(
                 getDslContext(c,group.getOfficeId()).configuration(), 
                 group.getTimeSeriesCategory().getId(), oldGroupId, group.getId(),
@@ -292,7 +292,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public void unassignAllTs(TimeSeriesGroup group) {
-        dsl.connection(c ->
+        connection(dsl, c ->
             CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(
                 getDslContext(c,group.getOfficeId()).configuration(), 
                 group.getTimeSeriesCategory().getId(), group.getId(),
