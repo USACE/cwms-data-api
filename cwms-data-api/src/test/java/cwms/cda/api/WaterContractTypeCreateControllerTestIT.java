@@ -55,7 +55,7 @@ import java.sql.SQLException;
 
 @Tag("integration")
 class WaterContractTypeCreateControllerTestIT extends DataApiTestIT {
-    private static final String OFFICE_ID = "HQ";
+    private static final String OFFICE_ID = "SWT";
     private static final WaterUserContract CONTRACT;
     private static final LookupType CONTRACT_TYPE;
     static {

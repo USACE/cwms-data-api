@@ -338,7 +338,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             WaterUserContract retrievedContract = dao.getWaterContract(contract.getContractId().getName(),
                     contract.getWaterUser().getProjectId(), contract.getWaterUser().getEntityName());
             assertNotNull(retrievedContract);
-            assertNull(retrievedContract.getPumpInLocation().getPumpLocation());
+            assertNull(retrievedContract.getPumpInLocation());
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
