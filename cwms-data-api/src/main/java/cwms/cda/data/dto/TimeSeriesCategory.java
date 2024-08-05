@@ -33,7 +33,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "A representation of a TimeSeries category")
 @JsonRootName("timeseries-category")
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class TimeSeriesCategory extends CwmsDTO
 {
 	private String id;

@@ -161,6 +161,8 @@ public final class Controllers {
     public static final String STATUS_400 = "400";
     public static final String TEXT_MASK = "text-mask";
     public static final String DELETE_MODE = "delete-mode";
+    public static final String MIN_ATTRIBUTE = "min-attribute";
+    public static final String MAX_ATTRIBUTE = "max-attribute";
     public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
     public static final String STANDARD_TEXT_ID = "standard-text-id";
     public static final String STREAM_ID_MASK = "stream-id-mask";
@@ -338,6 +340,18 @@ public final class Controllers {
             throw new RequiredQueryParameterException(name);
         }
         return param;
+    }
+
+    /**
+     * Returns the first matching query param or throws RequiredQueryParameterException.
+     * @param ctx Request Context
+     * @param name Query parameter name
+     * @return value of the parameter
+     * @throws RequiredQueryParameterException if the parameter is not found
+     */
+    public static <T> T requiredParamAs(io.javalin.http.Context ctx, String name, Class<T> type) {
+        return ctx.queryParamAsClass(name, type)
+            .getOrThrow(e -> new RequiredQueryParameterException(name));
     }
 
     @Nullable

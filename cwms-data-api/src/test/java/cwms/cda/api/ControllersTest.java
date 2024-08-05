@@ -399,4 +399,18 @@ class ControllersTest {
         // if its present it should work
         assertEquals(JooqDao.DeleteMethod.DELETE_KEY, Controllers.queryParamAsClass(ctx, JooqDao.DeleteMethod.class, null, "Not a key", Controllers.METHOD));
     }
+
+    @Test
+    void testRequiredParamAs() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        Map<String, String> urlParams = new LinkedHashMap<>();
+        urlParams.put("boring", "the_value");
+        String paramStr = ControllerTest.buildParamStr(urlParams);
+        when(request.getQueryString()).thenReturn(paramStr);
+        Context ctx = new Context(request, response, new LinkedHashMap<String, String>());
+        assertEquals("the_value", Controllers.requiredParamAs(ctx, "boring", String.class));
+        assertThrows(RequiredQueryParameterException.class,
+            () -> Controllers.requiredParamAs(ctx, Controllers.OFFICE, String.class));
+    }
 }

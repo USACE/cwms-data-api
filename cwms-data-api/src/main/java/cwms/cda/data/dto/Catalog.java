@@ -18,7 +18,7 @@ import java.util.Objects;
 
 @JsonRootName("catalog")
 @FormattableWith(contentType = Formats.XML, formatter = XMLv1.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class Catalog extends CwmsDTOPaginated {
     @Schema(
