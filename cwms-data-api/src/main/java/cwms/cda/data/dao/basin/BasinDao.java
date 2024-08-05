@@ -24,6 +24,7 @@
 
 package cwms.cda.data.dao.basin;
 
+import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.basin.Basin;
@@ -128,12 +129,13 @@ public class BasinDao extends JooqDao<Basin> {
 
     }
 
-    public void deleteBasin(CwmsId basinId, String deleteAction) {
+    public void deleteBasin(CwmsId basinId, DeleteRule deleteAction) {
         basinId.validate();
 
         connection(dsl, c -> {
             setOffice(c, basinId.getOfficeId());
-            CWMS_BASIN_PACKAGE.call_DELETE_BASIN(DSL.using(c).configuration(), basinId.getName(), deleteAction, basinId.getOfficeId());
+            CWMS_BASIN_PACKAGE.call_DELETE_BASIN(DSL.using(c).configuration(), basinId.getName(),
+                deleteAction.getRule(), basinId.getOfficeId());
         });
     }
 

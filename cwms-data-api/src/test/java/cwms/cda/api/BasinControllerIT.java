@@ -25,6 +25,7 @@
 package cwms.cda.api;
 
 import cwms.cda.api.enums.Nation;
+import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.basin.BasinDao;
 import cwms.cda.data.dto.Location;
@@ -61,7 +62,6 @@ class BasinControllerIT extends DataApiTestIT
 	private static final String OFFICE = "SWT";
 	private static final Basin BASIN;
 	private static final Basin BASIN_CONNECT;
-	private static final String DELETE_ACTION = "DELETE ALL";
 	static {
 		try {
 			BASIN = new Basin.Builder()
@@ -110,7 +110,8 @@ class BasinControllerIT extends DataApiTestIT
 					.withActive(true)
 					.withNearestCity("Davis")
 					.build();
-			Location loc2 = new Location.Builder(BASIN_CONNECT.getBasinId().getOfficeId(), BASIN_CONNECT.getBasinId().getName())
+			Location loc2 = new Location.Builder(BASIN_CONNECT.getBasinId().getOfficeId(),
+				BASIN_CONNECT.getBasinId().getName())
 					.withStateInitial("CO")
 					.withNation(Nation.US)
 					.withLocationKind("BASIN")
@@ -143,7 +144,7 @@ class BasinControllerIT extends DataApiTestIT
 			LocationsDaoImpl locationsDao = new LocationsDaoImpl(ctx);
 			BasinDao basinDao = new BasinDao(ctx);
 			locationsDao.deleteLocation(BASIN.getBasinId().getName(), OFFICE, true);
-			basinDao.deleteBasin(BASIN_CONNECT.getBasinId(), DELETE_ACTION);
+			basinDao.deleteBasin(BASIN_CONNECT.getBasinId(), DeleteRule.DELETE_ALL);
 			locationsDao.deleteLocation(BASIN_CONNECT.getBasinId().getName(), OFFICE, true);
 		}, CwmsDataApiSetupCallback.getWebUser());
 	}
@@ -276,7 +277,7 @@ class BasinControllerIT extends DataApiTestIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(Formats.JSONV1)
 			.queryParam(Controllers.OFFICE, OFFICE)
-			.queryParam(METHOD, DELETE_ACTION)
+			.queryParam(METHOD, DeleteRule.DELETE_ALL.getRule())
 			.header(AUTH_HEADER, user.toHeaderValue())
 		.when()
 			.redirects().follow(true)
@@ -336,7 +337,7 @@ class BasinControllerIT extends DataApiTestIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(Formats.JSONV1)
 			.queryParam(Controllers.OFFICE, OFFICE)
-			.queryParam(METHOD, DELETE_ACTION)
+			.queryParam(METHOD, DeleteRule.DELETE_ALL.getRule())
 			.header(AUTH_HEADER, user.toHeaderValue())
 		.when()
 			.redirects().follow(true)
@@ -477,7 +478,7 @@ class BasinControllerIT extends DataApiTestIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 			.accept(Formats.JSONV1)
 			.queryParam(Controllers.OFFICE, OFFICE)
-			.queryParam(METHOD, DELETE_ACTION)
+			.queryParam(METHOD, DeleteRule.DELETE_ALL.getRule())
 			.header(AUTH_HEADER, user.toHeaderValue())
 		.when()
 			.redirects().follow(true)

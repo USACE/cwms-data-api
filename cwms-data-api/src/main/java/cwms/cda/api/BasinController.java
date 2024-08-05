@@ -315,7 +315,7 @@ public class BasinController implements CrudHandler {
                 .withName(name)
                 .withOfficeId(ctx.queryParam(OFFICE))
                 .build();
-        basinDao.deleteBasin(basinId, deleteMethod.getRule().getRule());
+        basinDao.deleteBasin(basinId, deleteMethod.getRule());
         ctx.status(HttpServletResponse.SC_NO_CONTENT).json(basinId.getName() + " Deleted");
     }
 }
