@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.data.dto.CwmsDTOBase;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(value = ParameterInfoIndexed.class),
-            @JsonSubTypes.Type(value = ParameterInfoColumnar.class)
+@JsonSubTypes({@JsonSubTypes.Type(value = ParameterInfoIndexed.class, name = "indexed-parameter-info"),
+            @JsonSubTypes.Type(value = ParameterInfoColumnar.class, name = "columnar-parameter-info")
 })
 
 public abstract class ParameterInfo extends CwmsDTOBase {
@@ -20,7 +20,7 @@ public abstract class ParameterInfo extends CwmsDTOBase {
         parameter = builder.parameter;
         unit = builder.unit;
     }
-    public abstract String parameterInfoString();
+    public abstract String getParameterInfoString();
 
     public String getParameter() {
         return parameter;

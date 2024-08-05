@@ -11,8 +11,8 @@ import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(value = TimeSeriesProfileParserIndexed.class),
-        @JsonSubTypes.Type(value = TimeSeriesProfileParserColumnar.class)
+@JsonSubTypes({@JsonSubTypes.Type(value = TimeSeriesProfileParserIndexed.class, name = "indexed-timeseries-profile-parser"),
+        @JsonSubTypes.Type(value = TimeSeriesProfileParserColumnar.class, name = "columnar-timeseries-profile-parser")
 })
 
 public  class TimeSeriesProfileParser extends CwmsDTOBase {

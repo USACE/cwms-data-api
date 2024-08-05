@@ -39,7 +39,7 @@ public  class TimeSeriesProfileParserIndexed extends TimeSeriesProfileParser {
 
 
     public BigInteger getTimeField() {
-        return timeField==null ? null : BigInteger.valueOf(timeField);
+        return BigInteger.valueOf(timeField);
     }
 
     @JsonPOJOBuilder
