@@ -45,8 +45,15 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonPropertyOrder({"project-id", "change-date", "protected", "discharge-computation-type", "reason-type", "notes"})
 public final class TurbineChange extends PhysicalStructureChange<TurbineSetting> {
 
+    private Double poolElevation;
+
     TurbineChange(Builder builder) {
         super(builder);
+        poolElevation = builder.poolElevation;
+    }
+
+    public Double getPoolElevation() {
+        return poolElevation;
     }
 
     public static final class Builder extends PhysicalStructureChange.Builder<Builder, TurbineSetting> {
