@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
@@ -62,21 +61,11 @@ public final class TimeSeriesProfile extends CwmsDTOBase {
     }
 
     @Override
-    protected void validateInternal(CwmsDTOValidator validator){
+    protected void validateInternal(CwmsDTOValidator validator) {
         super.validateInternal(validator);
-
-        if (this.parameterList.isEmpty()) {
-            throw new FieldException("Parameter list field must not be empty");
-        }
-        if (this.keyParameter == null) {
-            throw new FieldException("Key Parameter field can't be null");
-        }
-        if (this.locationId == null) {
-            throw new FieldException("Location Id field can't be null");
-        }
-        if (!parameterList.contains(keyParameter)) {
-            throw new FieldException("Key Parameter must be part of Parameter list");
-        }
+        validator.required(getParameterList(), "parameterList");
+        validator.required(getKeyParameter(), "keyParameter");
+        validator.required(getLocationId(), "locationId");
     }
 
     @JsonPOJOBuilder

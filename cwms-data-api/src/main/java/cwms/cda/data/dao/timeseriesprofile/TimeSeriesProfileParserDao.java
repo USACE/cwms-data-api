@@ -49,12 +49,12 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
 		List<ParameterInfo> parameterInfo = timeSeriesProfileParser.getParameterInfoList();
 
 		StringBuilder parameterInfoBuilder = new StringBuilder();
-		parameterInfoBuilder.append(parameterInfo.get(0).parameterInfoString());
+		parameterInfoBuilder.append(parameterInfo.get(0).getParameterInfoString());
 
 		for(int i = 1; i < parameterInfo.size(); i++)
 		{
 			parameterInfoBuilder.append(timeSeriesProfileParser.getRecordDelimiter())
-					.append(parameterInfo.get(i).parameterInfoString());
+					.append(parameterInfo.get(i).getParameterInfoString());
 		}
 		return parameterInfoBuilder.toString();
 	}

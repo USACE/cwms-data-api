@@ -1,5 +1,5 @@
 {
-  "type":"TimeSeriesProfileParserColumnar",
+  "type": "columnar-timeseries-profile-parser",
   "location-id": {
     "office-id": "SWT",
     "name": "location"
@@ -10,14 +10,14 @@
   "time-zone": "UTC",
   "parameter-info-list": [
     {
-      "type": "ParameterInfoColumnar",
+      "type": "columnar-parameter-info",
       "parameter": "Depth",
       "unit": "m",
       "start-column": 11,
       "end-column": 20
     },
     {
-      "type": "ParameterInfoColumnar",
+      "type": "columnar-parameter-info",
       "parameter": "Temp-Water",
       "unit": "F",
       "start-column": 21,

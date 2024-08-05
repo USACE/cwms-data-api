@@ -1,28 +1,28 @@
 {
-  "type": "TimeSeriesProfileParserIndexed",
+  "type": "indexed-timeseries-profile-parser",
   "location-id": {
     "office-id": "SWT",
     "name": "location"
   },
   "key-parameter": "Depth",
   "record-delimiter": "\n",
-  "field-delimiter": ",",
   "time-format": "MM/DD/YYYY,HH24:MI:SS",
   "time-zone": "UTC",
-  "time-field": 1,
-  "time-in-two-fields": false,
   "parameter-info-list": [
     {
-      "type": "ParameterInfoIndexed",
-      "parameter":"Depth",
-      "unit":"m",
-      "index":3
+      "type": "indexed-parameter-info",
+      "parameter": "Depth",
+      "unit": "m",
+      "index": 3
     },
     {
-      "type": "ParameterInfoIndexed",
-      "parameter":"Temp-Water",
-      "unit":"F",
-      "index":5
+      "type": "indexed-parameter-info",
+      "parameter": "Temp-Water",
+      "unit": "F",
+      "index": 5
     }
-  ]
+  ],
+  "time-in-two-fields": false,
+  "field-delimiter": ",",
+  "time-field": 1
 }

@@ -49,6 +49,8 @@ public class TimeSeriesProfileInstanceTest {
         return new TimeSeriesProfileInstance.Builder()
                 .withTimeSeriesProfile(timeSeriesProfile)
                 .withTimeSeriesList(timeSeriesList)
+                .withFirstDate(Instant.parse("2020-07-09T12:00:00.00Z"))
+                .withLastDate(Instant.parse("2025-07-09T12:00:00.00Z"))
                 .build();
     }
 
@@ -77,6 +79,8 @@ public class TimeSeriesProfileInstanceTest {
     private void testAssertEquals(TimeSeriesProfileInstance expected, TimeSeriesProfileInstance actual, String message) {
         TimeSeriesProfileTest.testAssertEquals(expected.getTimeSeriesProfile(), actual.getTimeSeriesProfile(), message);
         testAssertEquals(expected.getTimeSeriesList(), actual.getTimeSeriesList(), message);
+        assertEquals(expected.getFirstDate(), actual.getFirstDate());
+        assertEquals(expected.getLastDate(), actual.getLastDate());
     }
 
     private void testAssertEquals(List<ProfileTimeSeries> expected, List<ProfileTimeSeries> actual, String message) {
