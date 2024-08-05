@@ -25,6 +25,7 @@ import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
@@ -74,7 +75,10 @@ public class TimeZoneController implements CrudHandler {
                             + "\n* `json`  (default)")
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200),
+                    @OpenApiResponse(status = STATUS_200, content = {
+                        @OpenApiContent(from = TimeZoneIds.class, type = Formats.JSONV2),
+                        @OpenApiContent(from = TimeZoneIds.class, type = Formats.JSON)
+                    }),
                     @OpenApiResponse(status = STATUS_501, description = "The format requested is not "
                             + "implemented")
             },
