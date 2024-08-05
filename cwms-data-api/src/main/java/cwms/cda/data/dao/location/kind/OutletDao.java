@@ -27,10 +27,16 @@ import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationGroup;
+import cwms.cda.data.dto.LookupType;
+import cwms.cda.data.dto.location.kind.GateChange;
+import cwms.cda.data.dto.location.kind.GateSetting;
 import cwms.cda.data.dto.location.kind.Outlet;
 import cwms.cda.data.dto.location.kind.ProjectStructure;
 import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.data.dto.location.kind.VirtualOutletRecord;
+import java.math.BigInteger;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -39,10 +45,15 @@ import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_OUTLET_PACKAGE;
+import usace.cwms.db.jooq.codegen.udt.records.GATE_CHANGE_OBJ_T;
+import usace.cwms.db.jooq.codegen.udt.records.GATE_CHANGE_TAB_T;
+import usace.cwms.db.jooq.codegen.udt.records.GATE_SETTING_OBJ_T;
+import usace.cwms.db.jooq.codegen.udt.records.GATE_SETTING_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_STRUCTURE_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_TAB_T;
+import static cwms.cda.data.dao.location.kind.LocationUtil.getLocationRef;
 
 public class OutletDao extends JooqDao<Outlet> {
 
@@ -241,5 +252,117 @@ public class OutletDao extends JooqDao<Outlet> {
             setOffice(conn, officeId);
             CWMS_OUTLET_PACKAGE.call_RENAME_OUTLET(DSL.using(conn).configuration(), oldOutletId, newOutletId, officeId);
         });
+    }
+
+    public List<GateChange> retrieveOperationalChanges(CwmsId projectId, Instant startTime, Instant endTime,
+                                                       boolean startInclusive, boolean endInclusive, String unitSystem,
+                                                       long rowLimit) {
+        return connectionResult(dsl, conn -> {
+            setOffice(conn, projectId.getOfficeId());
+
+            LOCATION_REF_T locationRef = getLocationRef(projectId);
+            Timestamp startTimestamp = Timestamp.from(startTime);
+            Timestamp endTimestamp = Timestamp.from(endTime);
+            BigInteger rowLimitBig = BigInteger.valueOf(rowLimit);
+            GATE_CHANGE_TAB_T changeTab = CWMS_OUTLET_PACKAGE.call_RETRIEVE_GATE_CHANGES(
+                    DSL.using(conn).configuration(), locationRef, startTimestamp, endTimestamp, "UTC", unitSystem,
+                    OracleTypeMap.formatBool(startInclusive), OracleTypeMap.formatBool(endInclusive), rowLimitBig);
+
+            List<GateChange> output = new ArrayList<>();
+            if (changeTab != null) {
+                changeTab.stream().map(OutletDao::map).forEach(output::add);
+            }
+            return output;
+        });
+    }
+
+    public void storeOperationalChanges(List<GateChange> physicalStructureChange, boolean overrideProtection) {
+        if (physicalStructureChange.isEmpty()) {
+            return;
+        }
+        connection(dsl, conn -> {
+            setOffice(conn, physicalStructureChange.get(0).getProjectId().getOfficeId());
+            GATE_CHANGE_TAB_T changes = new GATE_CHANGE_TAB_T();
+            physicalStructureChange.stream().map(OutletDao::map).forEach(changes::add);
+            CWMS_OUTLET_PACKAGE.call_STORE_GATE_CHANGES(DSL.using(conn).configuration(), changes, null, null, "UTC",
+                                                        "T", "T", OracleTypeMap.formatBool(overrideProtection));
+        });
+    }
+
+    public void deleteOperationalChanges(CwmsId projectId, Instant startTime, Instant endTime,
+                                         boolean overrideProtection) {
+        connection(dsl, conn -> {
+            setOffice(conn, projectId.getOfficeId());
+            String startInclusive = "T";
+            String endInclusive = "T";
+            LOCATION_REF_T locationRef = getLocationRef(projectId);
+            Timestamp startTimestamp = Timestamp.from(startTime);
+            Timestamp endTimestamp = Timestamp.from(endTime);
+            CWMS_OUTLET_PACKAGE.call_DELETE_GATE_CHANGES(DSL.using(conn).configuration(), locationRef, startTimestamp,
+                                                         endTimestamp, "UTC", startInclusive, endInclusive,
+                                                         OracleTypeMap.formatBool(overrideProtection));
+        });
+    }
+
+    private static GATE_SETTING_OBJ_T map(GateSetting setting) {
+        GATE_SETTING_OBJ_T output = new GATE_SETTING_OBJ_T();
+        output.setOPENING(setting.getOpening());
+        output.setINVERT_ELEV(setting.getInvertElevation());
+        output.setOPENING_UNITS(setting.getOpeningUnits());
+        output.setOPENING_PARAMETER(setting.getOpeningParameter());
+        output.setOUTLET_LOCATION_REF(LocationUtil.getLocationRef(setting.getLocationId()));
+        return output;
+    }
+
+    private static GateSetting map(GATE_SETTING_OBJ_T setting) {
+        CwmsId locationId = LocationUtil.getLocationIdentifier(setting.getOUTLET_LOCATION_REF());
+        return new GateSetting.Builder().withLocationId(locationId)
+                                        .withOpening(setting.getOPENING())
+                                        .withOpeningParameter(setting.getOPENING_PARAMETER())
+                                        .withOpeningUnits(setting.getOPENING_UNITS())
+                                        .withInvertElevation(setting.getINVERT_ELEV())
+                                        .build();
+    }
+
+    private static GateChange map(GATE_CHANGE_OBJ_T change) {
+        List<GateSetting> settings = change.getSETTINGS().stream().map(OutletDao::map).collect(Collectors.toList());
+        CwmsId projectId = LocationUtil.getLocationIdentifier(change.getPROJECT_LOCATION_REF());
+        LookupType compType = LocationUtil.getLookupType(change.getDISCHARGE_COMPUTATION());
+        return new GateChange.Builder().withProjectId(projectId)
+                                       .withDischargeComputationType(compType)
+                                       .withReasonType(LocationUtil.getLookupType(change.getRELEASE_REASON()))
+                                       .withProtected(OracleTypeMap.parseBool(change.getPROTECTED()))
+                                       .withNewTotalDischargeOverride(change.getNEW_TOTAL_DISCHARGE_OVERRIDE())
+                                       .withOldTotalDischargeOverride(change.getOLD_TOTAL_DISCHARGE_OVERRIDE())
+                                       .withDischargeUnits(change.getDISCHARGE_UNITS())
+                                       .withPoolElevation(change.getELEV_POOL())
+                                       .withTailwaterElevation(change.getELEV_TAILWATER())
+                                       .withElevationUnits(change.getELEV_UNITS())
+                                       .withNotes(change.getCHANGE_NOTES())
+                                       .withChangeDate(change.getCHANGE_DATE().toInstant())
+                                       .withSettings(settings)
+                                       .build();
+    }
+
+    private static GATE_CHANGE_OBJ_T map(GateChange change) {
+        GATE_CHANGE_OBJ_T output = new GATE_CHANGE_OBJ_T();
+        GATE_SETTING_TAB_T settings = new GATE_SETTING_TAB_T();
+        change.getSettings().stream().map(OutletDao::map).forEach(settings::add);
+
+        output.setELEV_TAILWATER(change.getTailwaterElevation());
+        output.setELEV_POOL(change.getPoolElevation());
+        output.setELEV_UNITS(change.getElevationUnits());
+        output.setCHANGE_DATE(Timestamp.from(change.getChangeDate()));
+        output.setCHANGE_NOTES(change.getNotes());
+        output.setDISCHARGE_UNITS(change.getDischargeUnits());
+        output.setNEW_TOTAL_DISCHARGE_OVERRIDE(change.getNewTotalDischargeOverride());
+        output.setOLD_TOTAL_DISCHARGE_OVERRIDE(change.getOldTotalDischargeOverride());
+        output.setPROTECTED(OracleTypeMap.formatBool(change.isProtected()));
+        output.setPROJECT_LOCATION_REF(LocationUtil.getLocationRef(change.getProjectId()));
+        output.setDISCHARGE_COMPUTATION(LocationUtil.getLookupType(change.getDischargeComputationType()));
+        output.setRELEASE_REASON(LocationUtil.getLookupType(change.getReasonType()));
+        output.setREFERENCE_ELEV(change.getReferenceElevation());
+        output.setSETTINGS(settings);
+        return output;
     }
 }

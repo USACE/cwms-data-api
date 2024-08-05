@@ -24,6 +24,9 @@
 
 package cwms.cda.helpers;
 
+import cwms.cda.data.dto.location.kind.GateChange;
+import cwms.cda.data.dto.location.kind.GateSetting;
+import cwms.cda.data.dto.location.kind.Setting;
 import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.data.dto.stream.StreamLocationNode;
@@ -57,6 +60,8 @@ import org.junit.jupiter.api.function.Executable;
 
 @SuppressWarnings({"LongLine", "checkstyle:LineLength"})
 public final class DTOMatch {
+
+    private static final double DEFAULT_DELTA = 0.0001;
 
     private DTOMatch() {
         throw new AssertionError("Utility class");
@@ -163,7 +168,7 @@ public final class DTOMatch {
         assertAll(() -> assertMatch(first.getProjectId(), second.getProjectId()),
             () -> assertMatch(first.getReasonType(), second.getReasonType()),
             () -> assertMatch(first.getDischargeComputationType(), second.getDischargeComputationType()),
-            () -> assertSettingsMatch(first.getSettings(), second.getSettings()),
+            () -> assertSettingsMatch(first.getSettings(), second.getSettings(), DTOMatch::assertMatch, "Turbine"),
             () -> assertEquals(first.getChangeDate(), second.getChangeDate(), "Change dates do not match"),
             () -> assertEquals(first.getDischargeUnits(), second.getDischargeUnits(), "Discharge units do not match"),
             () -> assertEquals(first.getNewTotalDischargeOverride(), second.getNewTotalDischargeOverride(),"New total discharge override does not match"),
@@ -175,21 +180,26 @@ public final class DTOMatch {
             () -> assertEquals(first.isProtected(), second.isProtected(), "Protected status does not match"));
     }
 
-    public static void assertSettingsMatch(Set<TurbineSetting> first, Set<TurbineSetting> second) {
+    public static <T extends Setting> void assertSettingsMatch(Set<T> first, Set<T> second,
+                                                               AssertMatchMethod<T> matcher, String settingType) {
         List<Executable> assertions = new ArrayList<>();
-        assertions.add(() -> assertEquals(first.size(), second.size(), "Turbine settings lists sizes do not match"));
-        for (TurbineSetting setting : first) {
+        assertions.add(() -> assertEquals(first.size(), second.size(), settingType + " settings lists sizes do not match"));
+        for (T setting : first) {
             assertions.add(() -> {
-                TurbineSetting match = second.stream()
-                    .filter(
-                        s -> s.getLocationId().getOfficeId().equalsIgnoreCase(setting.getLocationId().getOfficeId()))
-                    .filter(s -> s.getLocationId().getName().equalsIgnoreCase(setting.getLocationId().getName()))
-                    .findAny()
-                    .orElseThrow(() -> fail("Setting " + setting.getLocationId().getName() + " not found"));
-                assertMatch(setting, match);
+                T match = second.stream()
+                                .filter(s -> s.getLocationId()
+                                              .getOfficeId()
+                                              .equalsIgnoreCase(setting.getLocationId().getOfficeId()))
+                                .filter(s -> s.getLocationId()
+                                              .getName()
+                                              .equalsIgnoreCase(setting.getLocationId().getName()))
+                                .findFirst()
+                                .orElseThrow(() -> fail("Setting " + setting.getLocationId().getName() + " not found"));
+                matcher.assertMatch(setting, match);
             });
         }
-        assertAll(assertions.toArray(new Executable[0]));
+
+        assertAll(assertions.toArray(new Executable[]{}));
     }
 
     public static void assertMatch(TurbineSetting first, TurbineSetting second) {
@@ -301,6 +311,48 @@ public final class DTOMatch {
                 () -> assertEquals(first.getLocationId(), second.getLocationId()),
                 () -> assertEquals(first.getAttribute(), second.getAttribute())
         );
+    }
+
+    public static void assertMatch(GateSetting first, GateSetting second) {
+        assertAll(
+                () -> assertMatch(first.getLocationId(), second.getLocationId(), "Location ID"),
+                () -> assertMatch(first.getInvertElevation(), second.getInvertElevation(), "Invert Elevation"),
+                () -> assertMatch(first.getOpening(), second.getOpening(), "Opening"),
+                () -> assertEquals(first.getOpeningParameter(), second.getOpeningParameter(), "Opening Parameter"),
+                () -> assertEquals(first.getOpeningUnits(), second.getOpeningUnits(), "Opening Units")
+        );
+    }
+
+    public static void assertMatch(GateChange first, GateChange second) {
+        assertAll(
+                () -> assertEquals(first.getPoolElevation(), second.getPoolElevation(), "Pool Elevation"),
+                () -> assertMatch(first.getReferenceElevation(), second.getReferenceElevation(), "Reference Elevation"),
+                () -> assertMatch(first.getProjectId(), second.getProjectId(), "Project ID"),
+                () -> assertMatch(first.getReasonType(), second.getReasonType()),
+                () -> assertMatch(first.getDischargeComputationType(), second.getDischargeComputationType()),
+                () -> assertSettingsMatch(first.getSettings(), second.getSettings(), DTOMatch::assertMatch, "Gate"),
+                () -> assertEquals(first.getChangeDate(), second.getChangeDate(), "Change dates do not match"),
+                () -> assertEquals(first.getDischargeUnits(), second.getDischargeUnits(), "Discharge units do not match"),
+                () -> assertMatch(first.getNewTotalDischargeOverride(), second.getNewTotalDischargeOverride(),"New total discharge override does not match"),
+                () -> assertMatch(first.getOldTotalDischargeOverride(), second.getOldTotalDischargeOverride(),"Old total discharge override does not match"),
+                () -> assertEquals(first.getElevationUnits(), second.getElevationUnits(), "Elevation units do not match"),
+                () -> assertMatch(first.getTailwaterElevation(), second.getTailwaterElevation(),"Tailwater elevations do not match"),
+                () -> assertMatch(first.getPoolElevation(), second.getPoolElevation(), "Pool elevations do not match"),
+                () -> assertEquals(first.getNotes(), second.getNotes(), "Notes do not match"),
+                () -> assertEquals(first.isProtected(), second.isProtected(), "Protected status does not match")
+        );
+    }
+
+    private static void assertMatch(Double first, Double second, double delta, String message) {
+        if (first != null && second != null) {
+            assertEquals(first, second, delta, message);
+        } else if (first != null || second != null) {
+            assertEquals(first, second, message);
+        }
+    }
+
+    private static void assertMatch(Double first, Double second, String message) {
+        assertMatch(first, second, DEFAULT_DELTA, message);
     }
 
 
