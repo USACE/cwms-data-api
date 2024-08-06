@@ -39,6 +39,7 @@ import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.location.kind.EmbankmentDao;
 import cwms.cda.data.dao.project.ProjectDao;
+import cwms.cda.data.dao.project.ProjectKind;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
@@ -113,30 +114,29 @@ public class ProjectChildLocationHandlerIT extends DataApiTestIT {
             try {
 
                 given()
-                    .log().ifValidationFails(LogDetail.ALL, true)
-                    .accept(Formats.JSON)
-                    .queryParam(Controllers.OFFICE, OFFICE)
-                    .queryParam(PROJECT_LIKE, projectName)
-                    .queryParam(LOCATION_KIND_LIKE, "(EMBANKMENT|TURBINE)")
-                .when()
-                    .redirects().follow(true)
-                    .redirects().max(3)
-                    .get("/projects/locations/")
-                .then()
-                    .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                    .statusCode(is(HttpServletResponse.SC_OK))
-                    .body("size()", is(1))
-                    .body("[0].project.office-id", equalToIgnoringCase(OFFICE))
-                    .body("[0].project.name", equalToIgnoringCase(projectName))
-                    .body("[0].embankments.size()", is(2))
-                    .body("[0].embankments[0].office-id", equalToIgnoringCase(OFFICE))
-                    .body("[0].embankments[0].name", equalToIgnoringCase(locName1))
-                    .body("[0].embankments[1].office-id", equalToIgnoringCase(OFFICE))
-                    .body("[0].embankments[1].name", equalToIgnoringCase(locName2))
+                        .log().ifValidationFails(LogDetail.ALL, true)
+                        .accept(Formats.JSON)
+                        .queryParam(Controllers.OFFICE, OFFICE)
+                        .queryParam(PROJECT_LIKE, projectName)
+                        .queryParam(LOCATION_KIND_LIKE, "(EMBANKMENT|TURBINE)")
+                        .when()
+                        .redirects().follow(true)
+                        .redirects().max(3)
+                        .get("/projects/locations/")
+                        .then()
+                        .log().ifValidationFails(LogDetail.ALL, true)
+                        .assertThat()
+                        .statusCode(is(HttpServletResponse.SC_OK))
+                        .body("size()", is(1))
+                        .body("[0].project.office-id", equalToIgnoringCase(OFFICE))
+                        .body("[0].project.name", equalToIgnoringCase(projectName))
+                        .body("[0].locations-by-kind.size()", is(1))
+                        .body("[0].locations-by-kind[0].kind", equalToIgnoringCase(String.valueOf(ProjectKind.EMBANKMENT)))
+                        .body("[0].locations-by-kind[0].locations.size()", is(2))
+                        .body("[0].locations-by-kind[0].locations[0].name", equalToIgnoringCase(locName1))
                 ;
             } finally {
-                embankmentDao.deleteEmbankment(embank.getLocation().getName(), OFFICE, DeleteRule.DELETE_ALL );
+                embankmentDao.deleteEmbankment(embank.getLocation().getName(), OFFICE, DeleteRule.DELETE_ALL);
                 embankmentDao.deleteEmbankment(embank2.getLocation().getName(), OFFICE, DeleteRule.DELETE_ALL);
                 prjDao.delete(projectId.getOfficeId(), projectId.getName(), DeleteRule.DELETE_ALL);
             }
@@ -144,7 +144,7 @@ public class ProjectChildLocationHandlerIT extends DataApiTestIT {
 
     }
 
-    private Embankment buildTestEmbankment(Location location,  CwmsId projId) {
+    private Embankment buildTestEmbankment(Location location, CwmsId projId) {
         return new Embankment.Builder()
                 .withLocation(location)
                 .withMaxHeight(5.0)
@@ -195,11 +195,11 @@ public class ProjectChildLocationHandlerIT extends DataApiTestIT {
     }
 
     public static Project buildTestProject(String office, String prjId) {
-        Location pbLoc = new Location.Builder(office,prjId + "-PB")
+        Location pbLoc = new Location.Builder(office, prjId + "-PB")
                 .withTimeZoneName(ZoneId.of("UTC"))
                 .withActive(null)
                 .build();
-        Location ngLoc = new Location.Builder(office,prjId + "-NG")
+        Location ngLoc = new Location.Builder(office, prjId + "-NG")
                 .withTimeZoneName(ZoneId.of("UTC"))
                 .withActive(null)
                 .build();
