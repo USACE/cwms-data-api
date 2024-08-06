@@ -212,26 +212,37 @@ class WaterContractDaoTestIT extends DataApiTestIT {
     }
 
     @Test
-    void testStoreAndRetrieveWaterContractTypeList() throws Exception {
+    void testRetrieveNonexistentContract() throws Exception {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
-            List<LookupType> contractType = new ArrayList<>();
-            contractType.add(new LookupType.Builder()
+            WaterUserContract contract = buildTestWaterContract("Test retrieve", false);
+            dao.storeWaterUser(contract.getWaterUser(), false);
+            dao.storeWaterContract(contract, false, true);
+            CwmsId projectId = new CwmsId.Builder().withOfficeId(OFFICE_ID)
+                    .withName(contract.getWaterUser().getProjectId().getName()).build();
+            String contractName = contract.getContractId().getName();
+            assertThrows(NotFoundException.class, () -> dao.getWaterContract(contractName,
+                   projectId, "NonExistantUser"));
+            dao.deleteWaterContract(contract, DELETE_ACTION);
+        }, CwmsDataApiSetupCallback.getWebUser());
+    }
+
+    @Test
+    void testStoreAndRetrieveWaterContractType() throws Exception {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection(c -> {
+            DSLContext ctx = getDslContext(c, OFFICE_ID);
+            WaterContractDao dao = new WaterContractDao(ctx);
+            LookupType contractType = new LookupType.Builder()
                     .withTooltip("Test Tooltip")
                     .withActive(true)
                     .withDisplayValue("Test Display Value")
-                    .withOfficeId(OFFICE_ID).build());
-            contractType.add(new LookupType.Builder()
-                    .withTooltip("Test Tooltip 2")
-                    .withActive(true)
-                    .withDisplayValue("Test Display Value 2")
-                    .withOfficeId(OFFICE_ID).build());
+                    .withOfficeId(OFFICE_ID).build();
             dao.storeWaterContractTypes(contractType, false);
             List<LookupType> results = dao.getAllWaterContractTypes(OFFICE_ID);
-            DTOMatch.assertMatch(contractType.get(0), results.get(0));
-            DTOMatch.assertMatch(contractType.get(1), results.get(1));
+            DTOMatch.assertMatch(contractType, results.get(0));
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 

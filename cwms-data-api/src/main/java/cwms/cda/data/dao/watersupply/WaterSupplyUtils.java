@@ -106,7 +106,7 @@ final class WaterSupplyUtils {
         return new WATER_USER_TAB_T(waterUserList);
     }
 
-    public static LOOKUP_TYPE_OBJ_T toLookupTypeT(LookupType lookupType) {
+    public static LOOKUP_TYPE_OBJ_T toLookupTypeO(LookupType lookupType) {
         LOOKUP_TYPE_OBJ_T lookupTypeObjT = new LOOKUP_TYPE_OBJ_T();
         lookupTypeObjT.setOFFICE_ID(lookupType.getOfficeId());
         lookupTypeObjT.setDISPLAY_VALUE(lookupType.getDisplayValue());
@@ -115,11 +115,9 @@ final class WaterSupplyUtils {
         return lookupTypeObjT;
     }
 
-    public static LOOKUP_TYPE_TAB_T toLookupTypeT(List<LookupType> lookupTypes) {
+    public static LOOKUP_TYPE_TAB_T toLookupTypeT(LookupType lookupType) {
         List<LOOKUP_TYPE_OBJ_T> lookupTypeList = new ArrayList<>();
-        for (LookupType lookupType : lookupTypes) {
-            lookupTypeList.add(toLookupTypeT(lookupType));
-        }
+        lookupTypeList.add(toLookupTypeO(lookupType));
         return new LOOKUP_TYPE_TAB_T(lookupTypeList);
     }
 
@@ -148,7 +146,7 @@ final class WaterSupplyUtils {
                 .getContractExpirationDate().toEpochMilli()));
         waterUserContractObjT.setWATER_USER_CONTRACT_REF(toContractRef(waterUserContract.getWaterUser(),
                 waterUserContract.getContractId().getName()));
-        waterUserContractObjT.setWATER_SUPPLY_CONTRACT_TYPE(toLookupTypeT(waterUserContract.getContractType()));
+        waterUserContractObjT.setWATER_SUPPLY_CONTRACT_TYPE(toLookupTypeO(waterUserContract.getContractType()));
         waterUserContractObjT.setFUTURE_USE_ALLOCATION(waterUserContract.getFutureUseAllocation());
         waterUserContractObjT.setFUTURE_USE_PERCENT_ACTIVATED(waterUserContract.getFutureUsePercentActivated());
         waterUserContractObjT.setINITIAL_USE_ALLOCATION(waterUserContract.getInitialUseAllocation());

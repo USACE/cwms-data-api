@@ -49,7 +49,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Collections;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -100,7 +99,7 @@ public final class WaterContractTypeCreateController extends WaterSupplyControll
             ctx.contentType(contentType.toString());
             LookupType contractType = Formats.parseContent(contentType, ctx.body(), LookupType.class);
             WaterContractDao contractDao = getContractDao(dsl);
-            contractDao.storeWaterContractTypes(Collections.singletonList(contractType), failIfExists);
+            contractDao.storeWaterContractTypes(contractType, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED).json("Contract type successfully stored to CWMS.");
         }
     }

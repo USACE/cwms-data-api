@@ -58,7 +58,6 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
-import java.util.Collections;
 
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
@@ -140,7 +139,7 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
                 projectDao.store(project, true);
                 projectDao.store(project1, true);
                 waterContractDao.storeWaterUser(waterUser, true);
-                waterContractDao.storeWaterContractTypes(Collections.singletonList(CONTRACT.getContractType()), false);
+                waterContractDao.storeWaterContractTypes(CONTRACT.getContractType(), false);
                 waterContractDao.storeWaterUser(waterUserNoPump, true);
             } catch (IOException e) {
                 throw new RuntimeException(e);

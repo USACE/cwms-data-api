@@ -178,11 +178,11 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
         });
     }
 
-    public void storeWaterContractTypes(List<LookupType> lookupTypes,
+    public void storeWaterContractTypes(LookupType lookupType,
             boolean failIfExists) {
         connection(dsl, c -> {
-            setOffice(c, lookupTypes.get(0).getOfficeId());
-            LOOKUP_TYPE_TAB_T contractTypes = WaterSupplyUtils.toLookupTypeT(lookupTypes);
+            setOffice(c, lookupType.getOfficeId());
+            LOOKUP_TYPE_TAB_T contractTypes = WaterSupplyUtils.toLookupTypeT(lookupType);
             String paramFailIfExists = OracleTypeMap.formatBool(failIfExists);
             CWMS_WATER_SUPPLY_PACKAGE.call_SET_CONTRACT_TYPES(DSL.using(c).configuration(),
                     contractTypes, paramFailIfExists);
