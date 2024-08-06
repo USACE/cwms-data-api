@@ -27,8 +27,11 @@ package cwms.cda.data.dao.project;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.project.ProjectChildLocations;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
@@ -48,7 +51,8 @@ public class ProjectChildLocationDao extends JooqDao<ProjectChildLocations> {
         return retrieveProjectChildLocations(office, projLike, ProjectKind.getMatchingKinds(kindRegex));
     }
 
-    private List<ProjectChildLocations> retrieveProjectChildLocations(String office, String projLike, Set<ProjectKind> kinds) {
+    private List<ProjectChildLocations> retrieveProjectChildLocations(
+            String office, String projLike, Set<ProjectKind> kinds) {
 
         Map<String, ProjectChildLocations.Builder> builderMap = new LinkedHashMap<>();  // proj-id->
 
@@ -64,25 +68,7 @@ public class ProjectChildLocationDao extends JooqDao<ProjectChildLocations> {
                                             .withOfficeId(office)
                                             .withName(projId)
                                             .build()));
-                    switch (kind) {
-                        case EMBANKMENT:
-                            builder.withEmbankments(locs);
-                            break;
-                        case LOCK:
-                            builder.withLocks(locs);
-                            break;
-                        case OUTLET:
-                            builder.withOutlets(locs);
-                            break;
-                        case TURBINE:
-                            builder.withTurbines(locs);
-                            break;
-                        case GATE:
-                            builder.withGates(locs);
-                            break;
-                        default:
-                            break;
-                    }
+                    builder.withLocations(kind, locs);
                 }
             }
         }

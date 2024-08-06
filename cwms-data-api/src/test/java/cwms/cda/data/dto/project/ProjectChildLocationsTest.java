@@ -24,7 +24,11 @@
 
 package cwms.cda.data.dto.project;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,7 +49,7 @@ class ProjectChildLocationsTest {
     public static final String OFFICE = "SPK";
 
     @Test
-    void test_ctor(){
+    void test_ctor() {
         CwmsId proj = buildId(OFFICE, "TestProject");
 
         List<CwmsId> embanks = new ArrayList<>();
@@ -81,7 +85,6 @@ class ProjectChildLocationsTest {
         assertEquals(locks, projectChildLocations.getLocks());
 
         String json = Formats.format(new ContentType(Formats.JSON), projectChildLocations);
-
 
         assertNotNull(json);
 
@@ -119,7 +122,7 @@ class ProjectChildLocationsTest {
     }
 
     @Test
-    void test_list_serialization(){
+    void test_list_serialization() {
         List<ProjectChildLocations> list = new ArrayList<>();
 
         list.add(buildTestProjectChildLocations(OFFICE, "TestProject1"));
@@ -140,12 +143,12 @@ class ProjectChildLocationsTest {
         String input = IOUtils.toString(stream, StandardCharsets.UTF_8);
 
         ObjectMapper om = JsonV2.buildObjectMapper();
-        List<ProjectChildLocations> list = om.readValue(input, new TypeReference<List<ProjectChildLocations>>(){});
+        List<ProjectChildLocations> list = om.readValue(input, new TypeReference<List<ProjectChildLocations>>() {
+        });
 
         assertNotNull(list);
         assertFalse(list.isEmpty());
     }
-    
 
     @Test
     void testDeserialize() throws IOException {
@@ -218,7 +221,8 @@ class ProjectChildLocationsTest {
         assertProjectChildLocationsEqual(projectChildLocations1, projectChildLocations2);
     }
 
-    private static void assertProjectChildLocationsEqual(ProjectChildLocations projectChildLocations1, ProjectChildLocations projectChildLocations2) {
+    private static void assertProjectChildLocationsEqual(ProjectChildLocations projectChildLocations1,
+                                                         ProjectChildLocations projectChildLocations2) {
         assertAll("ProjectChildLocations",
                 () -> assertCwmsIdEqual(projectChildLocations1.getProject(), projectChildLocations2.getProject()),
                 () -> assertListEqual(projectChildLocations1.getEmbankments(), projectChildLocations2.getEmbankments()),
@@ -238,7 +242,7 @@ class ProjectChildLocationsTest {
 
     private static void assertListEqual(List<CwmsId> locks1, List<CwmsId> locks2) {
         assertEquals(locks1.size(), locks2.size());
-        for(int i = 0; i < locks1.size(); i++){
+        for (int i = 0; i < locks1.size(); i++) {
             assertCwmsIdEqual(locks1.get(i), locks2.get(i));
         }
     }

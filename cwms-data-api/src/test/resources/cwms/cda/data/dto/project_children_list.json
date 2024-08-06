@@ -4,14 +4,19 @@
       "office-id": "SPK",
       "name": "TestProject1"
     },
-    "embankments": [
+    "locations-by-kind": [
       {
-        "office-id": "SPK",
-        "name": "TestEmbankment1"
-      },
-      {
-        "office-id": "SPK",
-        "name": "TestEmbankment2"
+        "kind": "EMBANKMENT",
+        "locations": [
+          {
+            "office-id": "SPK",
+            "name": "TestEmbankment1"
+          },
+          {
+            "office-id": "SPK",
+            "name": "TestEmbankment2"
+          }
+        ]
       }
     ]
   }

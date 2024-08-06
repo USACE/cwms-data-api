@@ -3,46 +3,63 @@
     "office-id": "SPK",
     "name": "TestProject"
   },
-  "embankments": [
+  "locations-by-kind": [
     {
-      "office-id": "SPK",
-      "name": "TestEmbankment1"
+      "kind": "EMBANKMENT",
+      "locations": [
+        {
+          "office-id": "SPK",
+          "name": "TestEmbankment1"
+        },
+        {
+          "office-id": "SPK",
+          "name": "TestEmbankment2"
+        }
+      ]
     },
     {
-      "office-id": "SPK",
-      "name": "TestEmbankment2"
-    }
-  ],
-  "locks": [
-    {
-      "office-id": "SPK",
-      "name": "TestLock1"
+      "kind": "LOCK",
+      "locations": [
+        {
+          "office-id": "SPK",
+          "name": "TestLock1"
+        },
+        {
+          "office-id": "SPK",
+          "name": "TestLock2"
+        },
+        {
+          "office-id": "SPK",
+          "name": "TestLock3"
+        }
+      ]
     },
     {
-      "office-id": "SPK",
-      "name": "TestLock2"
+      "kind": "OUTLET",
+      "locations": [
+        {
+          "office-id": "SPK",
+          "name": "TestOutlet1"
+        }
+      ]
     },
     {
-      "office-id": "SPK",
-      "name": "TestLock3"
-    }
-  ],
-  "outlets": [
+      "kind": "TURBINE",
+      "locations": [
+        {
+          "office-id": "SPK",
+          "name": "TestTurbine1"
+        }
+      ]
+    },
     {
-      "office-id": "SPK",
-      "name": "TestOutlet1"
-    }
-  ],
-  "turbines": [
-    {
-      "office-id": "SPK",
-      "name": "TestTurbine1"
-    }
-  ],
-  "gates": [
-    {
-      "office-id": "SPK",
-      "name": "TestGate1"
+      "kind": "GATE",
+      "locations": [
+        {
+          "office-id": "SPK",
+          "name": "TestGate1"
+        }
+      ]
     }
   ]
 }

@@ -24,18 +24,23 @@
 
 package cwms.cda.data.dto.project;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import cwms.cda.data.dao.project.ProjectKind;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
-import org.jetbrains.annotations.Nullable;
+import java.util.Map;
 
 /**
  * This class holds a project and lists of the project child locations by kind.
@@ -48,92 +53,132 @@ public class ProjectChildLocations extends CwmsDTOBase {
 
     private final CwmsId project;
 
-    private final List<CwmsId> embankments;
-    private final List<CwmsId> locks;
-    private final List<CwmsId> outlets;
-    private final List<CwmsId> turbines;
-    private final List<CwmsId> gates;
+    @JsonIgnore
+    private EnumMap<ProjectKind, List<CwmsId>> locationsByKind;
 
     private ProjectChildLocations(Builder builder) {
         this.project = builder.project;
-        this.embankments = builder.embankments;
-        this.locks = builder.locks;
-        this.outlets = builder.outlets;
-        this.turbines = builder.turbines;
-        this.gates = builder.gates;
+
+        if (builder.locationsByKind != null) {
+            this.locationsByKind = new EnumMap<>(builder.locationsByKind);
+        }
     }
 
     public CwmsId getProject() {
         return project;
     }
 
+    @JsonProperty
+    public List<LocationsWithProjectKind> getLocationsByKind() {
+        List<LocationsWithProjectKind> result = null;
+
+        if (locationsByKind != null && !locationsByKind.isEmpty()) {
+            result = new ArrayList<>();
+
+            for (Map.Entry<ProjectKind, List<CwmsId>> entry : locationsByKind.entrySet()) {
+                result.add(new LocationsWithProjectKind.Builder()
+                        .withKind(entry.getKey())
+                        .withLocations(entry.getValue()).build());
+            }
+        }
+
+        return result;
+    }
+
+    public List<CwmsId> getLocations(ProjectKind kind) {
+        if (locationsByKind != null && !locationsByKind.isEmpty()) {
+            return locationsByKind.get(kind);
+        }
+        return null;
+    }
+
+    @JsonIgnore
     public List<CwmsId> getEmbankments() {
-        return embankments;
+        return getLocations(ProjectKind.EMBANKMENT);
     }
 
+    @JsonIgnore
     public List<CwmsId> getLocks() {
-        return locks;
+        return getLocations(ProjectKind.LOCK);
     }
 
+    @JsonIgnore
     public List<CwmsId> getOutlets() {
-        return outlets;
+        return getLocations(ProjectKind.OUTLET);
     }
 
+    @JsonIgnore
     public List<CwmsId> getTurbines() {
-        return turbines;
+        return getLocations(ProjectKind.TURBINE);
     }
 
+    @JsonIgnore
     public List<CwmsId> getGates() {
-        return gates;
+        return getLocations(ProjectKind.GATE);
     }
 
-
+    @JsonPOJOBuilder
+    @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
         private CwmsId project;
-        private List<CwmsId> embankments;
-        private List<CwmsId> locks;
-        private List<CwmsId> outlets;
-        private List<CwmsId> turbines;
-        private List<CwmsId> gates;
+
+        private EnumMap<ProjectKind, List<CwmsId>> locationsByKind;
 
         public Builder withProject(CwmsId project) {
             this.project = project;
             return this;
         }
 
-        public Builder withEmbankments(List<CwmsId> embankments) {
-            this.embankments = wrapList(embankments);
-            return this;
-        }
-
-
-        public Builder withLocks(List<CwmsId> locks) {
-            this.locks = wrapList(locks);
-            return this;
-        }
-
-        public Builder withOutlets(List<CwmsId> outlets) {
-            this.outlets = outlets;
-            return this;
-        }
-
-        public Builder withTurbines(List<CwmsId> turbines) {
-            this.turbines = wrapList(turbines);
-            return this;
-        }
-
-        public Builder withGates(List<CwmsId> gates) {
-            this.gates = wrapList(gates);
-            return this;
-        }
-
-        @Nullable
-        private static List<CwmsId> wrapList(@Nullable List<CwmsId> embankments) {
-            List<CwmsId> retval = null;
-            if (embankments != null) {
-                retval = Collections.unmodifiableList(embankments);
+        public Builder withLocationsByKind(List<LocationsWithProjectKind> locationsByKind) {
+            Builder retval = this;
+            if (locationsByKind != null) {
+                for (LocationsWithProjectKind item : locationsByKind) {
+                    retval = retval.withLocations(item.getKind(), item.getLocations());
+                }
             }
+
             return retval;
+        }
+
+        public Builder withLocations(ProjectKind kind, List<CwmsId> locations) {
+
+            if (locationsByKind == null) {
+                locationsByKind = new EnumMap<>(ProjectKind.class);
+            }
+
+            if (locations != null) {
+                List<CwmsId> locOfKind = locationsByKind.computeIfAbsent(kind, k -> new ArrayList<>());
+                if (!locations.isEmpty()) {
+                    locOfKind.addAll(locations);
+                }
+            }
+
+            return this;
+        }
+
+        @JsonIgnore
+        public Builder withEmbankments(List<CwmsId> embankments) {
+            return withLocations(ProjectKind.EMBANKMENT, embankments);
+        }
+
+        @JsonIgnore
+        public Builder withLocks(List<CwmsId> locks) {
+            return withLocations(ProjectKind.LOCK, locks);
+        }
+
+        @JsonIgnore
+        public Builder withOutlets(List<CwmsId> outlets) {
+            return withLocations(ProjectKind.OUTLET, outlets);
+        }
+
+        @JsonIgnore
+        public Builder withTurbines(List<CwmsId> turbines) {
+            return withLocations(ProjectKind.TURBINE, turbines);
+        }
+
+        @JsonIgnore
+        public Builder withGates(List<CwmsId> gates) {
+            return withLocations(ProjectKind.GATE, gates);
         }
 
         public ProjectChildLocations build() {
