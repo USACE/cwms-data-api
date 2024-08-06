@@ -38,7 +38,7 @@ import java.util.List;
 @Schema(description = "A representation of a location group")
 @JsonRootName("location_group")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.CSV, formatter = CsvV1.class)
 public class LocationGroup extends CwmsDTO {
     private String id;
