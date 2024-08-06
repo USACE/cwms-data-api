@@ -121,7 +121,7 @@ public class ProjectChildLocationHandlerIT extends DataApiTestIT {
                 .when()
                     .redirects().follow(true)
                     .redirects().max(3)
-                    .get("/projects/child-locations/")
+                    .get("/projects/locations/")
                 .then()
                     .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
