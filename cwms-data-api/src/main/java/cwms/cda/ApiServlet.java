@@ -520,7 +520,7 @@ public class ApiServlet extends HttpServlet {
         cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
         post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics));
 
-        get("/projects/child-locations/", new ProjectChildLocationHandler(metrics));
+        get("/projects/locations/", new ProjectChildLocationHandler(metrics));
         cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
                 new ProjectController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/properties/{%s}", Controllers.NAME),
