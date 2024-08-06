@@ -26,16 +26,17 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -48,30 +49,15 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class WaterContractCatalogController implements Handler {
-    private final Logger LOGGER = Logger.getLogger(WaterContractCatalogController.class.getName());
-    public static final String TAG = "Water Contracts";
-    private static final String WATER_USER = "water-user";
-    private final MetricRegistry metrics;
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
+public final class WaterContractCatalogController extends WaterSupplyControllerBase implements Handler {
 
     public WaterContractCatalogController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    @NotNull
-    protected WaterContractDao getContractDao(DSLContext dsl) {
-        return new WaterContractDao(dsl);
+        waterMetrics(metrics);
     }
 
     @OpenApi(
@@ -101,28 +87,17 @@ public class WaterContractCatalogController implements Handler {
     @Override
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
-            final String office = ctx.pathParam(OFFICE);
-            final String locationId = ctx.pathParam(PROJECT_ID);
-            final String waterUserEntity = ctx.pathParam(WATER_USER);
             DSLContext dsl = getDslContext(ctx);
-            String result;
-            CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();
+            String office = ctx.pathParam(OFFICE);
+            String locationId = ctx.pathParam(PROJECT_ID);
+            CwmsId projectLocation = buildCwmsId(office, locationId);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
             WaterContractDao contractDao = getContractDao(dsl);
-
-            WaterUser waterUser = contractDao.getWaterUser(projectLocation, waterUserEntity);
-
-            if (waterUser == null) {
-                CdaError error = new CdaError("No water user found for the provided parameters.");
-                LOGGER.log(Level.SEVERE, "Error retrieving water user contracts - no water user found.");
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
-                return;
-            }
-
+            String waterUserEntity = ctx.pathParam(WATER_USER);
             List<WaterUserContract> contracts = contractDao.getAllWaterContracts(projectLocation, waterUserEntity);
-            result = Formats.format(contentType, contracts, WaterUserContract.class);
+            String result = Formats.format(contentType, contracts, WaterUserContract.class);
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
         }

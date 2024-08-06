@@ -26,12 +26,17 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.WaterUser;
@@ -51,21 +56,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class WaterUserUpdateController implements Handler {
-    public static final String TAG = "Water Contracts";
-    private final MetricRegistry metrics;
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
+public final class WaterUserUpdateController extends WaterSupplyControllerBase implements Handler {
 
     public WaterUserUpdateController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    @NotNull
-    protected WaterContractDao getContractDao(DSLContext dsl) {
-        return new WaterContractDao(dsl);
+        waterMetrics(metrics);
     }
 
     @OpenApi(
@@ -106,7 +100,7 @@ public class WaterUserUpdateController implements Handler {
             String office = ctx.pathParam(OFFICE);
             String oldName = ctx.pathParam(WATER_USER);
             String locationId = ctx.pathParam(PROJECT_ID);
-            CwmsId location = new CwmsId.Builder().withName(locationId).withOfficeId(office).build();
+            CwmsId location = buildCwmsId(office, locationId);
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.renameWaterUser(oldName, newName, location);
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Water user renamed successfully.");

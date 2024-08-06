@@ -24,7 +24,6 @@
 
 package cwms.cda;
 
-import static cwms.cda.api.Controllers.NAME;
 import cwms.cda.api.DownstreamLocationsGetController;
 import cwms.cda.api.location.kind.VirtualOutletController;
 import cwms.cda.api.LookupTypeController;
@@ -33,6 +32,7 @@ import cwms.cda.api.StreamLocationController;
 import cwms.cda.api.StreamReachController;
 import cwms.cda.api.UpstreamLocationsGetController;
 
+import static cwms.cda.api.Controllers.*;
 import static io.javalin.apibuilder.ApiBuilder.*;
 import static java.lang.String.format;
 
@@ -99,6 +99,7 @@ import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.api.watersupply.WaterContractCatalogController;
 import cwms.cda.api.watersupply.WaterContractController;
 import cwms.cda.api.watersupply.WaterContractCreateController;
+import cwms.cda.api.watersupply.WaterContractDeleteController;
 import cwms.cda.api.watersupply.WaterContractTypeCatalogController;
 import cwms.cda.api.watersupply.WaterContractTypeCreateController;
 import cwms.cda.api.watersupply.WaterContractUpdateController;
@@ -483,10 +484,10 @@ public class ApiServlet extends HttpServlet {
                 new BasinController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/streams/{%s}", NAME),
                 new StreamController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        String downstreamLocations = format("/stream-locations/{%s}/{%s}/downstream-locations", Controllers.OFFICE, Controllers.NAME);
+        String downstreamLocations = format("/stream-locations/{%s}/{%s}/downstream-locations", OFFICE, Controllers.NAME);
         get(downstreamLocations,new DownstreamLocationsGetController(metrics));
         addCacheControl(downstreamLocations, 5, TimeUnit.MINUTES);
-        String upstreamLocations = format("/stream-locations/{%s}/{%s}/upstream-locations", Controllers.OFFICE, Controllers.NAME);
+        String upstreamLocations = format("/stream-locations/{%s}/{%s}/upstream-locations", OFFICE, Controllers.NAME);
         get(upstreamLocations,new UpstreamLocationsGetController(metrics));
         addCacheControl(upstreamLocations, 5, TimeUnit.MINUTES);
         cdaCrudCache(format("/stream-locations/{%s}", NAME),
@@ -509,24 +510,26 @@ public class ApiServlet extends HttpServlet {
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
 
-        addWaterUserHandlers("/projects/{office}/{project-id}/water-user", requiredRoles);
-        addWaterContractHandlers("/projects/{office}/{project-id}/water-user/{water-user}/contracts", requiredRoles);
-        addWaterContractTypeHandlers("/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-id}/types", requiredRoles);
-        delete("/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-id}/pumps/{name}",
-                new WaterPumpDeleteController(metrics), requiredRoles);
+        addWaterUserHandlers(format("/projects/{%s}/{%s}/water-user", OFFICE, PROJECT_ID), requiredRoles);
+        addWaterContractHandlers(format("/projects/{%s}/{%s}/water-user/{%s}/contracts", OFFICE, PROJECT_ID,
+                WATER_USER), requiredRoles);
+        addWaterContractTypeHandlers(format("/projects/{%s}/{%s}/water-user/{%s}/contracts/{%s}/types", OFFICE,
+                PROJECT_ID, WATER_USER, CONTRACT_NAME), requiredRoles);
+        delete(format("/projects/{%s}/{%s}/water-user/{%s}/contracts/{%s}/pumps/{%s}", OFFICE, PROJECT_ID,
+                        WATER_USER, CONTRACT_NAME, NAME), new WaterPumpDeleteController(metrics), requiredRoles);
 
         cdaCrudCache(format("/projects/embankments/{%s}", Controllers.NAME),
             new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/projects/turbines/{%s}", Controllers.NAME),
             new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        String turbineChanges = format("/projects/{%s}/{%s}/turbine-changes", Controllers.OFFICE, Controllers.NAME);
+        String turbineChanges = format("/projects/{%s}/{%s}/turbine-changes", OFFICE, Controllers.NAME);
         get(turbineChanges,new TurbineChangesGetController(metrics));
         addCacheControl(turbineChanges, 5, TimeUnit.MINUTES);
         post(turbineChanges, new TurbineChangesPostController(metrics), requiredRoles);
         delete(turbineChanges, new TurbineChangesDeleteController(metrics), requiredRoles);
 
         String outletPath = format("/projects/outlets/{%s}", NAME);
-        String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", Controllers.OFFICE,
+        String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", OFFICE,
                                           Controllers.PROJECT_ID, NAME);
         String virtualOutletCreatePath = "/projects/virtual-outlets";
         cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
@@ -543,19 +546,19 @@ public class ApiServlet extends HttpServlet {
 
 
     private void addWaterUserHandlers(String path, RouteRole[] requiredRoles) {
-        get(path + "/{water-user}", new WaterUserController(metrics));
+        get(path + format("/{%s}", WATER_USER), new WaterUserController(metrics));
         get(path, new WaterUserCatalogController(metrics));
         post(path, new WaterUserCreateController(metrics), requiredRoles);
-        patch(path + "/{water-user}", new WaterUserUpdateController(metrics), requiredRoles);
-        delete(path + "/{water-user}", new WaterUserDeleteController(metrics), requiredRoles);
+        patch(path + format("/{%s}", WATER_USER), new WaterUserUpdateController(metrics), requiredRoles);
+        delete(path + format("/{%s}", WATER_USER), new WaterUserDeleteController(metrics), requiredRoles);
     }
 
     private void addWaterContractHandlers(String path, RouteRole[] requiredRoles) {
-        get(path + "/{contract-id}", new WaterContractController(metrics));
+        get(path + format("/{%s}", CONTRACT_NAME), new WaterContractController(metrics));
         get(path, new WaterContractCatalogController(metrics));
         post(path, new WaterContractCreateController(metrics), requiredRoles);
-        patch(path + "/{contract-id}", new WaterContractUpdateController(metrics), requiredRoles);
-        delete(path + "/{contract-id}", new WaterUserDeleteController(metrics), requiredRoles);
+        patch(path + format("/{%s}", CONTRACT_NAME), new WaterContractUpdateController(metrics), requiredRoles);
+        delete(path + format("/{%s}", CONTRACT_NAME), new WaterContractDeleteController(metrics), requiredRoles);
     }
 
     private void addWaterContractTypeHandlers(String path, RouteRole[] requiredRoles) {

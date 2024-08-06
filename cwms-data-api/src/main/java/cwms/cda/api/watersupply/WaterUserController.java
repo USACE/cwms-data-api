@@ -26,12 +26,15 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
@@ -56,22 +59,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class WaterUserController implements Handler {
+public final class WaterUserController extends WaterSupplyControllerBase implements Handler {
     private static final Logger LOGGER = Logger.getLogger(WaterUserController.class.getName());
-    public static final String TAG = "Water Contracts";
-    private final MetricRegistry metrics;
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
 
     public WaterUserController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    @NotNull
-    protected WaterContractDao getContractDao(DSLContext dsl) {
-        return new WaterContractDao(dsl);
+        waterMetrics(metrics);
     }
 
     @OpenApi(
@@ -99,11 +91,10 @@ public class WaterUserController implements Handler {
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             String location = ctx.pathParam(PROJECT_ID);
-            CwmsId projectLocation = new CwmsId.Builder().withOfficeId(ctx.pathParam(OFFICE))
-                    .withName(location).build();
+            String office = ctx.pathParam(OFFICE);
+            CwmsId projectLocation = buildCwmsId(office, location);
             DSLContext dsl = getDslContext(ctx);
             String entityName = ctx.pathParam(WATER_USER);
-            String result;
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
@@ -118,7 +109,7 @@ public class WaterUserController implements Handler {
             }
             List<WaterUser> params = new ArrayList<>();
             params.add(user);
-            result = Formats.format(contentType, params, WaterUserContract.class);
+            String result = Formats.format(contentType, params, WaterUserContract.class);
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
         }

@@ -26,12 +26,14 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
@@ -55,22 +57,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class WaterUserCatalogController implements Handler {
+public final class WaterUserCatalogController extends WaterSupplyControllerBase implements Handler {
     private static final Logger LOGGER = Logger.getLogger(WaterUserCatalogController.class.getName());
-    public static final String TAG = "Water Contracts";
-    private final MetricRegistry metrics;
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
 
     public WaterUserCatalogController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    @NotNull
-    protected WaterContractDao getContractDao(DSLContext dsl) {
-        return new WaterContractDao(dsl);
+        waterMetrics(metrics);
     }
 
     @OpenApi(
@@ -98,7 +89,7 @@ public class WaterUserCatalogController implements Handler {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE);
             String locationId = ctx.pathParam(PROJECT_ID);
-            CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();
+            CwmsId projectLocation = buildCwmsId(office, locationId);
             String result;
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);

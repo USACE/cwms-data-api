@@ -26,16 +26,16 @@
 
 package cwms.cda.api.watersupply;
 
+import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
@@ -50,36 +50,20 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Collections;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class WaterContractController implements Handler {
-    private final Logger LOGGER = Logger.getLogger(WaterContractController.class.getName());
-    public static final String TAG = "Water Contracts";
-    private static final String WATER_USER = "water-user";
-    private static final String CONTRACT_ID = "contract-id";
-    private final MetricRegistry metrics;
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
+public final class WaterContractController extends WaterSupplyControllerBase implements Handler {
 
     public WaterContractController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    @NotNull
-    protected WaterContractDao getContractDao(DSLContext dsl) {
-        return new WaterContractDao(dsl);
+        waterMetrics(metrics);
     }
 
     @OpenApi(
         pathParams = {
-            @OpenApiParam(name = CONTRACT_ID, description = "The name of the contract to retrieve.", required = true),
+            @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract to retrieve.", required = true),
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
                     required = true),
             @OpenApiParam(name = PROJECT_ID, description = "The project Id the contract is associated with.",
@@ -106,11 +90,11 @@ public class WaterContractController implements Handler {
     @Override
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
-            final String office = ctx.pathParam(OFFICE);
-            final String locationId = ctx.pathParam(PROJECT_ID);
+            String office = ctx.pathParam(OFFICE);
+            String locationId = ctx.pathParam(PROJECT_ID);
             DSLContext dsl = getDslContext(ctx);
-            final String contractName = ctx.pathParam(CONTRACT_ID);
-            final String waterUser = ctx.pathParam(WATER_USER);
+            String contractName = ctx.pathParam(CONTRACT_NAME);
+            String waterUser = ctx.pathParam(WATER_USER);
             String result;
             CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
@@ -118,13 +102,6 @@ public class WaterContractController implements Handler {
             ctx.contentType(contentType.toString());
             WaterContractDao contractDao = getContractDao(dsl);
             WaterUserContract contract = contractDao.getWaterContract(contractName, projectLocation, waterUser);
-
-            if (contract == null) {
-                CdaError error = new CdaError("No contract found for the provided parameters.");
-                LOGGER.log(Level.SEVERE, "Error retrieving contract");
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
-                return;
-            }
 
             result = Formats.format(contentType, Collections.singletonList(contract), WaterUserContract.class);
             ctx.result(result);

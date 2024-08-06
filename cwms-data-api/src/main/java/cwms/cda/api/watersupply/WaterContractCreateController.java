@@ -26,12 +26,18 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.IGNORE_NULLS;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
@@ -50,21 +56,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class WaterContractCreateController implements Handler {
-    public static final String TAG = "Water Contracts";
-    private final MetricRegistry metrics;
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
+public final class WaterContractCreateController extends WaterSupplyControllerBase implements Handler {
 
     public WaterContractCreateController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    @NotNull
-    protected WaterContractDao getContractDao(DSLContext dsl) {
-        return new WaterContractDao(dsl);
+        waterMetrics(metrics);
     }
 
     @OpenApi(
@@ -73,6 +68,12 @@ public class WaterContractCreateController implements Handler {
                 @OpenApiContent(from = WaterUserContract.class, type = Formats.JSONV1)
             },
             required = true),
+        queryParams = {
+            @OpenApiParam(name = FAIL_IF_EXISTS, description = "If true, the contract will not be stored if "
+                    + "it already exists.", type = Boolean.class),
+            @OpenApiParam(name = IGNORE_NULLS, description = "If true, null fields will be ignored "
+                    + "when storing the contract.", type = Boolean.class)
+        },
         responses = {
             @OpenApiResponse(status = STATUS_204, description = "Water contract successfully stored to CWMS."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented.")
@@ -99,10 +100,11 @@ public class WaterContractCreateController implements Handler {
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
             WaterUserContract waterContract = Formats.parseContent(contentType, ctx.body(), WaterUserContract.class);
-
+            boolean failIfExists = Boolean.parseBoolean(ctx.queryParam(FAIL_IF_EXISTS));
+            boolean ignoreNulls = Boolean.parseBoolean(ctx.queryParam(IGNORE_NULLS));
             String newContractName = ctx.pathParam(WATER_USER);
             WaterContractDao contractDao = getContractDao(dsl);
-            contractDao.storeWaterContract(waterContract, true, true);
+            contractDao.storeWaterContract(waterContract, failIfExists, ignoreNulls);
             ctx.status(HttpServletResponse.SC_CREATED).json(newContractName + " created successfully");
         }
     }

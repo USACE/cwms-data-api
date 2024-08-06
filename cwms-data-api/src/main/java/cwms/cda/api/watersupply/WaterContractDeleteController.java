@@ -26,13 +26,16 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CONTRACT_NAME;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.METHOD;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
@@ -42,39 +45,22 @@ import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class WaterContractDeleteController implements Handler {
-    private final Logger LOGGER = Logger.getLogger(WaterContractDeleteController.class.getName());
-    public static final String TAG = "Water Contracts";
-    private static final String WATER_USER = "water-user";
-    private final MetricRegistry metrics;
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
-
+public final class WaterContractDeleteController extends WaterSupplyControllerBase implements Handler {
     public WaterContractDeleteController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    @NotNull
-    protected WaterContractDao getContractDao(DSLContext dsl) {
-        return new WaterContractDao(dsl);
+        waterMetrics(metrics);
     }
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = DELETE_MODE, description = "Specifies the delete method used."),
+            @OpenApiParam(name = METHOD, description = "Specifies the delete method used."),
         },
         pathParams = {
-            @OpenApiParam(name = NAME, description = "The name of the contract to be deleted."),
+            @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract to be deleted."),
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
                     required = true),
             @OpenApiParam(name = PROJECT_ID, description = "The project Id the contract is associated with.",
@@ -97,32 +83,16 @@ public class WaterContractDeleteController implements Handler {
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            final String contractName = ctx.pathParam(NAME);
-            final String deleteMethod = ctx.queryParam(DELETE_MODE);
-            final String locationId = ctx.pathParam(PROJECT_ID);
-            final String office = ctx.pathParam(OFFICE);
+            String contractName = ctx.pathParam(CONTRACT_NAME);
+            String deleteMethod = ctx.queryParam(METHOD);
+            String locationId = ctx.pathParam(PROJECT_ID);
+            String entityName = ctx.pathParam(WATER_USER);
+            String office = ctx.pathParam(OFFICE);
             WaterContractDao contractDao = getContractDao(dsl);
-            CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();
-
-            List<WaterUserContract> retContracts = contractDao.getAllWaterContracts(projectLocation, contractName);
-
-            if (retContracts.isEmpty()) {
-                CdaError error = new CdaError("No contract found for the provided parameters.");
-                LOGGER.log(Level.SEVERE, "Error retrieving contracts");
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
-                return;
-            }
-
-            for (WaterUserContract contract : retContracts) {
-                if (contract.getContractId().getName().equals(contractName)) {
-                    contractDao.deleteWaterContract(contract, deleteMethod);
-                    ctx.status(HttpServletResponse.SC_NO_CONTENT).json(contractName + " deleted successfully");
-                    return;
-                }
-            }
-            CdaError error = new CdaError("No contract found for the provided name.");
-            LOGGER.log(Level.SEVERE, "No matching contract found for deletion.");
-            ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
+            CwmsId projectLocation = buildCwmsId(office, locationId);
+            WaterUserContract contract = contractDao.getWaterContract(contractName, projectLocation, entityName);
+            contractDao.deleteWaterContract(contract, deleteMethod);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(contractName + " deleted successfully");
         }
     }
 }

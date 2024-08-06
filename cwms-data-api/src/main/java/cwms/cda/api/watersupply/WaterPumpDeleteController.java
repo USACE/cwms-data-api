@@ -26,6 +26,7 @@
 
 package cwms.cda.api.watersupply;
 
+import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
@@ -35,7 +36,6 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
@@ -55,29 +55,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class WaterPumpDeleteController implements Handler {
+public final class WaterPumpDeleteController extends WaterSupplyControllerBase implements Handler {
     private static final Logger LOGGER = Logger.getLogger(WaterPumpDeleteController.class.getName());
-    public static final String TAG = "Water Contracts";
-    private static final String CONTRACT_ID = "contract-id";
     private static final String PUMP_TYPE = "pump-type";
-    private final MetricRegistry metrics;
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
 
     public WaterPumpDeleteController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    @NotNull
-    protected WaterContractDao getContractDao(DSLContext dsl) {
-        return new WaterContractDao(dsl);
+        waterMetrics(metrics);
     }
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = PUMP_TYPE, required = true,
+            @OpenApiParam(name = PUMP_TYPE, required = true, type = PumpType.class,
                     description = "The type of pump to be removed from the contract."
                             + " Expected values: IN, OUT, OUT BELOW"),
             @OpenApiParam(name = DELETE, type = boolean.class, required = true,
@@ -88,7 +76,7 @@ public class WaterPumpDeleteController implements Handler {
                     + "removed from the specified contract.", required = true),
             @OpenApiParam(name = OFFICE, description = "The office the project is associated with.", required = true),
             @OpenApiParam(name = PROJECT_ID, description = "The name of the project.", required = true),
-            @OpenApiParam(name = CONTRACT_ID, description = "The name of the contract the pump is associated with.",
+            @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract the pump is associated with.",
                     required = true),
             @OpenApiParam(name = WATER_USER, description = "The name of the water user the contract "
                     + "is associated with.", required = true)
@@ -112,36 +100,28 @@ public class WaterPumpDeleteController implements Handler {
             String officeId = ctx.pathParam(OFFICE);
             String projectName = ctx.pathParam(PROJECT_ID);
             String entityName = ctx.pathParam(WATER_USER);
-            String pumpType = ctx.queryParam(PUMP_TYPE);
-            String contractName = ctx.pathParam(CONTRACT_ID);
-            assert pumpType != null;
+            PumpType pumpType = PumpType.valueOf(ctx.queryParam(PUMP_TYPE));
+            String contractName = ctx.pathParam(CONTRACT_NAME);
             WaterContractDao contractDao = getContractDao(dsl);
-            CwmsId projectLocation = new CwmsId.Builder().withName(projectName).withOfficeId(officeId).build();
+            CwmsId projectLocation = buildCwmsId(officeId, projectName);
             List<WaterUserContract> contract = contractDao.getAllWaterContracts(projectLocation, entityName);
-
-            if (contract.isEmpty()) {
-                CdaError error = new CdaError("No contract found for the provided name.");
-                LOGGER.log(Level.SEVERE, "No matching contract found.");
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
-                return;
-            }
 
             for (WaterUserContract waterUserContract : contract) {
                 if (waterUserContract.getContractId().getName().equals(contractName)) {
                     switch (pumpType) {
-                        case "IN":
+                        case IN:
                             contractDao.removePumpFromContract(waterUserContract,
                                     waterUserContract.getPumpInLocation().getPumpLocation().getName(),
                                     PumpType.IN, deleteAccounting);
                             ctx.status(HttpServletResponse.SC_NO_CONTENT);
                             return;
-                        case "OUT":
+                        case OUT:
                             contractDao.removePumpFromContract(waterUserContract,
                                     waterUserContract.getPumpOutLocation().getPumpLocation().getName(),
                                     PumpType.OUT, deleteAccounting);
                             ctx.status(HttpServletResponse.SC_NO_CONTENT);
                             return;
-                        case "BELOW":
+                        case BELOW:
                             contractDao.removePumpFromContract(waterUserContract,
                                     waterUserContract.getPumpOutBelowLocation().getPumpLocation().getName(),
                                     PumpType.BELOW, deleteAccounting);

@@ -49,7 +49,7 @@ import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_TAB_T;
 
 
-public class WaterContractDao extends JooqDao<WaterUserContract> {
+public final class WaterContractDao extends JooqDao<WaterUserContract> {
     public WaterContractDao(DSLContext dsl) {
         super(dsl);
     }

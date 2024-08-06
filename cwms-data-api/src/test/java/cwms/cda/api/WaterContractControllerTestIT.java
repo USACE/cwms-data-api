@@ -160,34 +160,13 @@ class WaterContractControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_get_delete_WaterUserContract() {
         // Test Structure:
-        // 1) Create a WaterUser
-        // 2) Create a Water Contract
-        // 3) Get the WaterUserContract, assert that it is same as created contract
-        // 4) Delete the WaterUserContract
-        // 5) Get the WaterUserContract, assert that it is not found
+        // 1) Create a Water Contract
+        // 2) Get the WaterUserContract, assert that it is same as created contract
+        // 3) Delete the WaterUserContract
+        // 4) Get the WaterUserContract, assert that it is not found
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUser.class), CONTRACT.getWaterUser());
-
-        // create water user
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .contentType(Formats.JSONV1)
-            .body(json)
-            .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(FAIL_IF_EXISTS, "true")
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
-                    + "/water-user")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED))
-        ;
-
-        json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
 
         // Create contract
         given()
@@ -233,9 +212,9 @@ class WaterContractControllerTestIT extends DataApiTestIT {
                 .body("[0].contract-type.tooltip", equalTo(CONTRACT.getContractType().getTooltip()))
                 .body("[0].contract-type.active", equalTo(CONTRACT.getContractType().getActive()))
                 .body("[0].contract-effective-date",
-                        hasToString(String.valueOf(CONTRACT.getContractEffectiveDate().getTime())))
+                        hasToString(String.valueOf(CONTRACT.getContractEffectiveDate().toEpochMilli())))
                 .body("[0].contract-expiration-date",
-                        hasToString(String.valueOf(CONTRACT.getContractExpirationDate().getTime())))
+                        hasToString(String.valueOf(CONTRACT.getContractExpirationDate().toEpochMilli())))
                 .body("[0].contracted-storage", hasToString(String.valueOf(CONTRACT.getContractedStorage())))
                 .body("[0].initial-use-allocation", hasToString(String.valueOf(CONTRACT.getInitialUseAllocation())))
                 .body("[0].future-use-allocation", hasToString(String.valueOf(CONTRACT.getFutureUseAllocation())))
@@ -396,7 +375,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         // delete contract
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .queryParam(DELETE_MODE, "DELETE ALL")
+            .queryParam(METHOD, "DELETE ALL")
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -433,27 +412,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
     void test_rename_WaterUserContract() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
         final String NEW_CONTRACT_NAME = "NEW CONTRACT NAME";
-        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUser.class), CONTRACT.getWaterUser());
-
-        // create water user
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .contentType(Formats.JSONV1)
-            .body(json)
-            .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(FAIL_IF_EXISTS, "true")
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
-                    + "/water-user")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED))
-        ;
-
-        json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
 
         // create contract
         given()
@@ -461,7 +420,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(FAIL_IF_EXISTS, "true")
+            .queryParam(FAIL_IF_EXISTS, "false")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -479,7 +438,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(NAME, NEW_CONTRACT_NAME)
+            .queryParam(CONTRACT_NAME, NEW_CONTRACT_NAME)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -514,7 +473,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         // delete contract
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .queryParam(DELETE_MODE, "DELETE ALL")
+            .queryParam(METHOD, "DELETE ALL")
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -541,7 +500,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(FAIL_IF_EXISTS, "true")
+            .queryParam(FAIL_IF_EXISTS, "false")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -586,7 +545,6 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
 
-
         // get all contracts
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -610,7 +568,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         // delete contract
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .queryParam(DELETE_MODE, "DELETE ALL")
+            .queryParam(METHOD, "DELETE ALL")
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -628,7 +586,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         // delete contract
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .queryParam(DELETE_MODE, "DELETE ALL")
+                .queryParam(METHOD, "DELETE ALL")
                 .header(AUTH_HEADER, user.toHeaderValue())
                 .when()
                 .redirects().follow(true)

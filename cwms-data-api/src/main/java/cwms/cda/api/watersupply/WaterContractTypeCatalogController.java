@@ -26,14 +26,14 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.ContentType;
@@ -47,29 +47,15 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class WaterContractTypeCatalogController implements Handler {
-    private static final Logger LOGGER = Logger.getLogger(WaterContractTypeCatalogController.class.getName());
-    public static final String TAG = "Water Contracts";
-    private final MetricRegistry metrics;
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
+public final class WaterContractTypeCatalogController extends WaterSupplyControllerBase implements Handler {
 
     public WaterContractTypeCatalogController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    @NotNull
-    protected WaterContractDao getContractDao(DSLContext dsl) {
-        return new WaterContractDao(dsl);
+        waterMetrics(metrics);
     }
 
     @OpenApi(
@@ -107,14 +93,6 @@ public class WaterContractTypeCatalogController implements Handler {
             ctx.contentType(contentType.toString());
             WaterContractDao dao = getContractDao(dsl);
             List<LookupType> typeList = dao.getAllWaterContractTypes(officeId);
-
-            if (typeList.isEmpty()) {
-                CdaError error = new CdaError("No contract types found for office: " + officeId);
-                LOGGER.log(Level.SEVERE, "Error retrieving contract types");
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
-                return;
-            }
-
             result = Formats.format(contentType, typeList, LookupType.class);
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);

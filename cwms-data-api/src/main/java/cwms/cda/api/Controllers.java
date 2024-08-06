@@ -129,6 +129,7 @@ public final class Controllers {
     public static final String TIMESERIES = "timeseries";
     public static final String LOCATIONS = "locations";
     public static final String WATER_USER = "water-user";
+    public static final String CONTRACT_NAME = "contract-name";
 
     public static final String LOCATION_ID = "location-id";
     public static final String SOURCE_ENTITY = "source-entity";

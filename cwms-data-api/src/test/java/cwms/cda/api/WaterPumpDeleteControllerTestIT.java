@@ -60,8 +60,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.util.Collections;
 
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.DELETE_MODE;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
@@ -262,8 +261,8 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
             .body("[0].contract-type.display-value", equalTo(CONTRACT.getContractType().getDisplayValue()))
             .body("[0].contract-type.tooltip", equalTo(CONTRACT.getContractType().getTooltip()))
             .body("[0].contract-type.active", equalTo(CONTRACT.getContractType().getActive()))
-            .body("[0].contract-effective-date", hasToString(String.valueOf(CONTRACT.getContractEffectiveDate().getTime())))
-            .body("[0].contract-expiration-date", hasToString(String.valueOf(CONTRACT.getContractExpirationDate().getTime())))
+            .body("[0].contract-effective-date", hasToString(String.valueOf(CONTRACT.getContractEffectiveDate().toEpochMilli())))
+            .body("[0].contract-expiration-date", hasToString(String.valueOf(CONTRACT.getContractExpirationDate().toEpochMilli())))
             .body("[0].contracted-storage", hasToString(String.valueOf(CONTRACT.getContractedStorage())))
             .body("[0].initial-use-allocation", hasToString(String.valueOf(CONTRACT.getInitialUseAllocation())))
             .body("[0].future-use-allocation", hasToString(String.valueOf(CONTRACT.getFutureUseAllocation())))
@@ -370,7 +369,7 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(DELETE_MODE, "DELETE ALL")
+            .queryParam(METHOD, "DELETE ALL")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -435,7 +434,7 @@ class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(DELETE_MODE, "DELETE ALL")
+            .queryParam(METHOD, "DELETE ALL")
         .when()
             .redirects().follow(true)
             .redirects().max(3)

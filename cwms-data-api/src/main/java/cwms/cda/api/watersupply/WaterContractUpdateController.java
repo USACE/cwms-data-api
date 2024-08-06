@@ -26,12 +26,15 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CONTRACT_NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
@@ -51,23 +54,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class WaterContractUpdateController implements Handler {
-    public static final String TAG = "Water Contracts";
-    private static final String WATER_USER = "water-user";
-    private static final String CONTRACT_ID = "contract-id";
-    private final MetricRegistry metrics;
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
+public final class WaterContractUpdateController extends WaterSupplyControllerBase implements Handler {
 
     public WaterContractUpdateController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    @NotNull
-    protected WaterContractDao getContractDao(DSLContext dsl) {
-        return new WaterContractDao(dsl);
+        waterMetrics(metrics);
     }
 
     @OpenApi(
@@ -77,10 +67,11 @@ public class WaterContractUpdateController implements Handler {
             },
             required = true),
         queryParams = {
-            @OpenApiParam(name = NAME, description = "Specifies the new name of the contract.", required = true)
+            @OpenApiParam(name = CONTRACT_NAME, description = "Specifies the new name of the contract.",
+                    required = true)
         },
         pathParams = {
-            @OpenApiParam(name = CONTRACT_ID, description = "Specifies the name of the contract to be renamed.",
+            @OpenApiParam(name = CONTRACT_NAME, description = "Specifies the name of the contract to be renamed.",
                     required = true),
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
                     required = true),
@@ -104,11 +95,11 @@ public class WaterContractUpdateController implements Handler {
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
-            String contractName = ctx.pathParam(CONTRACT_ID);
+            String contractName = ctx.pathParam(CONTRACT_NAME);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
-            String newName = ctx.queryParam(NAME);
+            String newName = ctx.queryParam(CONTRACT_NAME);
             WaterUserContract waterContract = Formats.parseContent(contentType, ctx.body(), WaterUserContract.class);
             WaterContractDao contractDao = getContractDao(dsl);
             WaterUser ref = new WaterUser.Builder().withEntityName(waterContract.getWaterUser().getEntityName())

@@ -26,13 +26,17 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.api.Controllers.DELETE_MODE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.METHOD;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import io.javalin.http.Context;
@@ -46,26 +50,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class WaterUserDeleteController implements Handler {
-    public static final String TAG = "Water Contracts";
-    private final MetricRegistry metrics;
+public final class WaterUserDeleteController extends WaterSupplyControllerBase implements Handler {
 
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
 
     public WaterUserDeleteController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    @NotNull
-    protected WaterContractDao getContractDao(DSLContext dsl) {
-        return new WaterContractDao(dsl);
+        waterMetrics(metrics);
     }
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = DELETE_MODE, description = "Specifies the delete method used."),
+            @OpenApiParam(name = METHOD, description = "Specifies the delete method used."),
         },
         pathParams = {
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
@@ -90,9 +84,9 @@ public class WaterUserDeleteController implements Handler {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE);
             String locationId = ctx.pathParam(PROJECT_ID);
-            String deleteMode = ctx.queryParam(DELETE_MODE);
+            String deleteMode = ctx.queryParam(METHOD);
             String entityName = ctx.pathParam(WATER_USER);
-            CwmsId location = new CwmsId.Builder().withName(locationId).withOfficeId(office).build();
+            CwmsId location = buildCwmsId(office, locationId);
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.deleteWaterUser(location, entityName, deleteMode);
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Water user deleted successfully.");

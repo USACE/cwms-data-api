@@ -46,7 +46,7 @@ import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_TAB_T;
 
 
-public final class WaterSupplyUtils {
+final class WaterSupplyUtils {
 
     private WaterSupplyUtils() {
         throw new IllegalStateException("Utility class");
@@ -56,10 +56,10 @@ public final class WaterSupplyUtils {
         return new WaterUserContract.Builder().withContractedStorage(contract.getCONTRACTED_STORAGE())
                 .withTotalAllocPercentActivated(contract.getTOTAL_ALLOC_PERCENT_ACTIVATED())
                 .withContractType(LocationUtil.getLookupType(contract.getWATER_SUPPLY_CONTRACT_TYPE()))
-                .withContractEffectiveDate(contract.getWS_CONTRACT_EFFECTIVE_DATE())
+                .withContractEffectiveDate(contract.getWS_CONTRACT_EFFECTIVE_DATE().toInstant())
                 .withOfficeId(contract.getWATER_SUPPLY_CONTRACT_TYPE().getOFFICE_ID())
                 .withStorageUnitsId(contract.getSTORAGE_UNITS_ID())
-                .withContractExpirationDate(contract.getWS_CONTRACT_EXPIRATION_DATE())
+                .withContractExpirationDate(contract.getWS_CONTRACT_EXPIRATION_DATE().toInstant())
                 .withWaterUser(toWaterUser(contract.getWATER_USER_CONTRACT_REF().getWATER_USER()))
                 .withContractId(new CwmsId.Builder().withOfficeId(contract.getWATER_SUPPLY_CONTRACT_TYPE()
                                 .getOFFICE_ID()).withName(contract.getWATER_USER_CONTRACT_REF()
@@ -142,10 +142,10 @@ public final class WaterSupplyUtils {
         waterUserContractObjT.setCONTRACTED_STORAGE(waterUserContract.getContractedStorage());
         waterUserContractObjT.setTOTAL_ALLOC_PERCENT_ACTIVATED(waterUserContract.getTotalAllocPercentActivated());
         waterUserContractObjT.setWS_CONTRACT_EFFECTIVE_DATE(new Timestamp(waterUserContract
-                .getContractEffectiveDate().toInstant().toEpochMilli()));
+                .getContractEffectiveDate().toEpochMilli()));
         waterUserContractObjT.setSTORAGE_UNITS_ID(waterUserContract.getStorageUnitsId());
         waterUserContractObjT.setWS_CONTRACT_EXPIRATION_DATE(new Timestamp(waterUserContract
-                .getContractExpirationDate().toInstant().toEpochMilli()));
+                .getContractExpirationDate().toEpochMilli()));
         waterUserContractObjT.setWATER_USER_CONTRACT_REF(toContractRef(waterUserContract.getWaterUser(),
                 waterUserContract.getContractId().getName()));
         waterUserContractObjT.setWATER_SUPPLY_CONTRACT_TYPE(toLookupTypeT(waterUserContract.getContractType()));
