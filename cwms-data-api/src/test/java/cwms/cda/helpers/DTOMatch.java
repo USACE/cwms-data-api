@@ -24,6 +24,7 @@
 
 package cwms.cda.helpers;
 
+import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.data.dto.stream.StreamLocationNode;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -292,6 +293,14 @@ public final class DTOMatch {
         );
     }
 
+    public static void assertMatch(Lock first, Lock second) {
+
+        assertAll(
+            //TODO fill out the rest - subject to change based on https://jira.hecdev.net/browse/CTO-147
+            () -> assertEquals(first.getLocation(), second.getLocation(), "Location doesn't match"),
+            () -> assertMatch(first.getProjectId(), second.getProjectId(), "Project ID does not match")
+        );
+    }
 
     @FunctionalInterface
     public interface AssertMatchMethod<T>{
