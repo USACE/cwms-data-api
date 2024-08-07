@@ -38,7 +38,7 @@ public interface LocationLevelsDao {
     void deleteLocationLevel(String locationLevelName, ZonedDateTime date, String officeId,
                              Boolean cascadeDelete);
 
-    void storeLocationLevel(LocationLevel level, ZoneId zoneId);
+    void storeLocationLevel(LocationLevel level);
 
     void renameLocationLevel(String oldLocationLevelName, String newLocationLevelName, String officeId);
 

@@ -73,7 +73,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
                 DSLContext dsl = dslContext(c, OFFICE);
                 LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
-                dao.storeLocationLevel(level, level.getLevelDate().getZone());
+                dao.storeLocationLevel(level);
             });
 
         //Read level without unit
@@ -136,7 +136,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
                 DSLContext dsl = dslContext(c, OFFICE);
                 LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
-                dao.storeLocationLevel(level, level.getLevelDate().getZone());
+                dao.storeLocationLevel(level);
             });
         }
 
@@ -196,7 +196,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                     .build();
             DSLContext dsl = dslContext(c, OFFICE);
             LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
-            dao.storeLocationLevel(level, level.getLevelDate().getZone());
+            dao.storeLocationLevel(level);
         });
 
         String locId2 = "level_get_all_loc2";
@@ -211,7 +211,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                     .build();
             DSLContext dsl = dslContext(c, OFFICE);
             LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
-            dao.storeLocationLevel(level, level.getLevelDate().getZone());
+            dao.storeLocationLevel(level);
         });
 
         String startStr = "2023-06-01T00:00:00Z";
