@@ -26,6 +26,7 @@ package cwms.cda;
 
 import static cwms.cda.api.Controllers.NAME;
 import cwms.cda.api.DownstreamLocationsGetController;
+import cwms.cda.api.location.kind.LockController;
 import cwms.cda.api.location.kind.VirtualOutletController;
 import cwms.cda.api.LookupTypeController;
 import cwms.cda.api.StreamController;
@@ -505,6 +506,8 @@ public class ApiServlet extends HttpServlet {
             new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/projects/turbines/{%s}", Controllers.NAME),
             new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/projects/locks/{%s}", Controllers.NAME),
+            new LockController(metrics), requiredRoles,1, TimeUnit.DAYS);
         String turbineChanges = format("/projects/{%s}/{%s}/turbine-changes", Controllers.OFFICE, Controllers.NAME);
         get(turbineChanges,new TurbineChangesGetController(metrics));
         addCacheControl(turbineChanges, 5, TimeUnit.MINUTES);
