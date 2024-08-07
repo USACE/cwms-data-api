@@ -216,7 +216,7 @@ class BasinDaoIT extends DataApiTestIT {
                 assertNotNull(basin1);
                 basinDao.storeBasin(basin1);
                 basins.add(basin1);
-                List<Basin> retrievedBasins = basinDao.getAllBasins(UNIT_SYSTEM, OFFICE_ID);
+                List<Basin> retrievedBasins = basinDao.getAllBasins(OFFICE_ID, UNITS);
 
                 assertNotNull(retrievedBasins);
                 for (int i = 0; i < basins.size(); i++) {
@@ -240,7 +240,7 @@ class BasinDaoIT extends DataApiTestIT {
                 assertNotNull(basin);
                 BasinDao basinDao = new BasinDao(ctx);
                 basinDao.storeBasin(basin);
-                Basin retrievedBasin = basinDao.getBasin(basin.getBasinId(), UNIT_SYSTEM);
+                Basin retrievedBasin = basinDao.getBasin(basin.getBasinId(), UNITS);
                 BasinTest.assertSame(basin, retrievedBasin);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -275,7 +275,7 @@ class BasinDaoIT extends DataApiTestIT {
             try {
                 basinDao.storeBasin(basin);
                 basinDao.renameBasin(basin.getBasinId(), renamedBasin.getBasinId());
-                Basin retrievedBasin = basinDao.getBasin(renamedBasin.getBasinId(), UNIT_SYSTEM);
+                Basin retrievedBasin = basinDao.getBasin(renamedBasin.getBasinId(), UNITS);
                 assertNotNull(retrievedBasin);
                 BasinTest.assertSame(renamedBasin, retrievedBasin);
             } catch (Exception e) {
