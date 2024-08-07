@@ -34,7 +34,6 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.WaterUser;
@@ -50,15 +49,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
 public final class WaterUserCatalogController extends WaterSupplyControllerBase implements Handler {
-    private static final Logger LOGGER = Logger.getLogger(WaterUserCatalogController.class.getName());
 
     public WaterUserCatalogController(MetricRegistry metrics) {
         waterMetrics(metrics);
@@ -89,22 +85,13 @@ public final class WaterUserCatalogController extends WaterSupplyControllerBase 
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE);
             String locationId = ctx.pathParam(PROJECT_ID);
-            CwmsId projectLocation = buildCwmsId(office, locationId);
-            String result;
+            CwmsId projectLocation = CwmsId.buildCwmsId(office, locationId);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
             WaterContractDao contractDao = getContractDao(dsl);
             List<WaterUser> users = contractDao.getAllWaterUsers(projectLocation);
-
-            if (users.isEmpty()) {
-                CdaError error = new CdaError("No water users found for the provided parameters.");
-                LOGGER.log(Level.SEVERE, "Error retrieving all water users.");
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
-                return;
-            }
-
-            result = Formats.format(contentType, users, WaterUserContract.class);
+            String result = Formats.format(contentType, users, WaterUserContract.class);
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
         }

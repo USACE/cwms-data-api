@@ -29,13 +29,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-import java.util.ArrayList;
-import java.util.List;
 
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
 @JsonDeserialize(builder = CwmsId.Builder.class)
@@ -49,6 +45,13 @@ public final class CwmsId extends CwmsDTO {
     public CwmsId(Builder builder) {
         super(builder.officeId);
         this.name = builder.name;
+    }
+
+    public static CwmsId buildCwmsId(String officeId, String name) {
+        return new CwmsId.Builder()
+            .withOfficeId(officeId)
+            .withName(name)
+            .build();
     }
 
     @Override

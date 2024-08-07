@@ -32,43 +32,28 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import cwms.cda.api.watersupply.WaterContractCreateController;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dto.LookupType;
-import cwms.cda.data.dto.watersupply.WaterUserContract;
-import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
-import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import javax.servlet.http.HttpServletResponse;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
 
 @Tag("integration")
 class WaterContractTypeCreateControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SWT";
-    private static final WaterUserContract CONTRACT;
     private static final LookupType CONTRACT_TYPE;
     static {
-        try (InputStream contractStream = WaterContractCreateController.class
-                .getResourceAsStream("/cwms/cda/api/waterusercontract.json")){
-            assert contractStream != null;
-            String contractJson = IOUtils.toString(contractStream, StandardCharsets.UTF_8);
-            CONTRACT = Formats.parseContent(new ContentType(Formats.JSONV1), contractJson, WaterUserContract.class);
-            CONTRACT_TYPE = new LookupType.Builder().withActive(true).withOfficeId(OFFICE_ID)
-                    .withDisplayValue("TEST Contract Type").withTooltip("TEST LOOKUP").build();
-        } catch(Exception ex) {
-            throw new RuntimeException(ex);
-        }
+        CONTRACT_TYPE = new LookupType.Builder().withActive(true).withOfficeId(OFFICE_ID)
+                .withDisplayValue("TEST Contract Type").withTooltip("TEST LOOKUP").build();
     }
 
     @Test
@@ -91,9 +76,7 @@ class WaterContractTypeCreateControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
-                    + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
-                    + CONTRACT.getContractId().getName() + "/types")
+            .post("/projects/" + OFFICE_ID + "/contract-types")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -108,9 +91,7 @@ class WaterContractTypeCreateControllerTestIT extends DataApiTestIT {
         .when()
                 .redirects().follow(true)
                 .redirects().max(3)
-                .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
-                        + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
-                        + CONTRACT.getContractId().getName() + "/types")
+                .get("/projects/" + OFFICE_ID + "/contract-types")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()

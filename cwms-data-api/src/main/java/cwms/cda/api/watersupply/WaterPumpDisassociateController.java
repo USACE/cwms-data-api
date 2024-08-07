@@ -28,6 +28,7 @@ package cwms.cda.api.watersupply;
 
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
@@ -36,7 +37,6 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.PumpType;
@@ -46,34 +46,29 @@ import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class WaterPumpDeleteController extends WaterSupplyControllerBase implements Handler {
-    private static final Logger LOGGER = Logger.getLogger(WaterPumpDeleteController.class.getName());
+public final class WaterPumpDisassociateController extends WaterSupplyControllerBase implements Handler {
     private static final String PUMP_TYPE = "pump-type";
 
-    public WaterPumpDeleteController(MetricRegistry metrics) {
+    public WaterPumpDisassociateController(MetricRegistry metrics) {
         waterMetrics(metrics);
     }
 
     @OpenApi(
         queryParams = {
             @OpenApiParam(name = PUMP_TYPE, required = true, type = PumpType.class,
-                    description = "The type of pump to be removed from the contract."
+                    description = "The type of pump to be disassociated from the contract."
                             + " Expected values: IN, OUT, OUT BELOW"),
-            @OpenApiParam(name = DELETE, type = boolean.class, required = true,
+            @OpenApiParam(name = METHOD, type = boolean.class, required = true,
                     description = "Whether to delete the associated accounting data.")
         },
         pathParams = {
             @OpenApiParam(name = NAME, description = "The name of the pump to be "
-                    + "removed from the specified contract.", required = true),
+                    + "disassociated from the specified contract.", required = true),
             @OpenApiParam(name = OFFICE, description = "The office the project is associated with.", required = true),
             @OpenApiParam(name = PROJECT_ID, description = "The name of the project.", required = true),
             @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract the pump is associated with.",
@@ -81,12 +76,7 @@ public final class WaterPumpDeleteController extends WaterSupplyControllerBase i
             @OpenApiParam(name = WATER_USER, description = "The name of the water user the contract "
                     + "is associated with.", required = true)
         },
-        responses = {
-            @OpenApiResponse(status = "404", description = "The provided combination of parameters"
-                    + " did not find any contracts."),
-            @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
-        },
-        description = "Delete a pump from a contract",
+        description = "Disassociate a pump from a contract",
         path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-id}/pumps/{name}",
         method = HttpMethod.DELETE,
         tags = {TAG}
@@ -96,49 +86,38 @@ public final class WaterPumpDeleteController extends WaterSupplyControllerBase i
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            boolean deleteAccounting = Boolean.parseBoolean(ctx.queryParam(DELETE));
+            boolean deleteAccounting = Boolean.parseBoolean(ctx.queryParam(METHOD));
             String officeId = ctx.pathParam(OFFICE);
             String projectName = ctx.pathParam(PROJECT_ID);
             String entityName = ctx.pathParam(WATER_USER);
             PumpType pumpType = PumpType.valueOf(ctx.queryParam(PUMP_TYPE));
             String contractName = ctx.pathParam(CONTRACT_NAME);
             WaterContractDao contractDao = getContractDao(dsl);
-            CwmsId projectLocation = buildCwmsId(officeId, projectName);
-            List<WaterUserContract> contract = contractDao.getAllWaterContracts(projectLocation, entityName);
+            CwmsId projectLocation = CwmsId.buildCwmsId(officeId, projectName);
+            WaterUserContract contract = contractDao.getWaterContract(contractName, projectLocation, entityName);
 
-            for (WaterUserContract waterUserContract : contract) {
-                if (waterUserContract.getContractId().getName().equals(contractName)) {
-                    switch (pumpType) {
-                        case IN:
-                            contractDao.removePumpFromContract(waterUserContract,
-                                    waterUserContract.getPumpInLocation().getPumpLocation().getName(),
-                                    PumpType.IN, deleteAccounting);
-                            ctx.status(HttpServletResponse.SC_NO_CONTENT);
-                            return;
-                        case OUT:
-                            contractDao.removePumpFromContract(waterUserContract,
-                                    waterUserContract.getPumpOutLocation().getPumpLocation().getName(),
-                                    PumpType.OUT, deleteAccounting);
-                            ctx.status(HttpServletResponse.SC_NO_CONTENT);
-                            return;
-                        case BELOW:
-                            contractDao.removePumpFromContract(waterUserContract,
-                                    waterUserContract.getPumpOutBelowLocation().getPumpLocation().getName(),
-                                    PumpType.BELOW, deleteAccounting);
-                            ctx.status(HttpServletResponse.SC_NO_CONTENT);
-                            return;
-                        default:
-                            CdaError error = new CdaError("Invalid pump type provided.");
-                            LOGGER.log(Level.SEVERE, "Invalid pump type provided.");
-                            ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
-                            return;
-                    }
-
-                }
+            switch (pumpType) {
+                case IN:
+                    contractDao.removePumpFromContract(contract,
+                            contract.getPumpInLocation().getPumpLocation().getName(),
+                            PumpType.IN, deleteAccounting);
+                    ctx.status(HttpServletResponse.SC_NO_CONTENT);
+                    return;
+                case OUT:
+                    contractDao.removePumpFromContract(contract,
+                            contract.getPumpOutLocation().getPumpLocation().getName(),
+                            PumpType.OUT, deleteAccounting);
+                    ctx.status(HttpServletResponse.SC_NO_CONTENT);
+                    return;
+                case BELOW:
+                    contractDao.removePumpFromContract(contract,
+                            contract.getPumpOutBelowLocation().getPumpLocation().getName(),
+                            PumpType.BELOW, deleteAccounting);
+                    ctx.status(HttpServletResponse.SC_NO_CONTENT);
+                    return;
+                default:
+                    throw new IllegalArgumentException("Invalid pump type provided: " + pumpType);
             }
-            CdaError error = new CdaError("No contract found for the provided name.");
-            LOGGER.log(Level.SEVERE, "No matching contract found.");
-            ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
         }
     }
 

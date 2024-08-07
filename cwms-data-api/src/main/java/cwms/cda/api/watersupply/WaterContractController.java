@@ -95,15 +95,14 @@ public final class WaterContractController extends WaterSupplyControllerBase imp
             DSLContext dsl = getDslContext(ctx);
             String contractName = ctx.pathParam(CONTRACT_NAME);
             String waterUser = ctx.pathParam(WATER_USER);
-            String result;
-            CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();
+            CwmsId projectLocation = CwmsId.buildCwmsId(office, locationId);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
             WaterContractDao contractDao = getContractDao(dsl);
             WaterUserContract contract = contractDao.getWaterContract(contractName, projectLocation, waterUser);
 
-            result = Formats.format(contentType, Collections.singletonList(contract), WaterUserContract.class);
+            String result = Formats.format(contentType, Collections.singletonList(contract), WaterUserContract.class);
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
         }

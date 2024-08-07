@@ -30,13 +30,12 @@ import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
-import static cwms.cda.api.Controllers.STATUS_204;
-import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import io.javalin.http.Context;
@@ -44,7 +43,6 @@ import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -59,7 +57,8 @@ public final class WaterUserDeleteController extends WaterSupplyControllerBase i
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = METHOD, description = "Specifies the delete method used."),
+            @OpenApiParam(name = METHOD, description = "Specifies the delete method used.",
+                    type = JooqDao.DeleteMethod.class),
         },
         pathParams = {
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
@@ -68,10 +67,6 @@ public final class WaterUserDeleteController extends WaterSupplyControllerBase i
                     required = true),
             @OpenApiParam(name = WATER_USER, description = "The water user the contract is associated with.",
                     required = true)
-        },
-        responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Water user successfully deleted from CWMS."),
-            @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
         description = "Deletes a water user from CWMS.",
         method = HttpMethod.DELETE,
@@ -86,7 +81,7 @@ public final class WaterUserDeleteController extends WaterSupplyControllerBase i
             String locationId = ctx.pathParam(PROJECT_ID);
             String deleteMode = ctx.queryParam(METHOD);
             String entityName = ctx.pathParam(WATER_USER);
-            CwmsId location = buildCwmsId(office, locationId);
+            CwmsId location = CwmsId.buildCwmsId(office, locationId);
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.deleteWaterUser(location, entityName, deleteMode);
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Water user deleted successfully.");

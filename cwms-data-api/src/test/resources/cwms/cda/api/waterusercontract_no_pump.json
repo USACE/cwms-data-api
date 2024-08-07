@@ -29,7 +29,7 @@
   "pump-out-location": {
     "pump-location": {
       "office-id": "SWT",
-      "name": "PUMP11",
+      "name": "TEST_LOCATION1-PUMP11",
       "latitude": 0.5,
       "longitude": 0.6,
       "active": true,
@@ -57,7 +57,7 @@
   "pump-out-below-location": {
     "pump-location": {
       "office-id": "SWT",
-      "name": "PUMP21",
+      "name": "TEST_LOCATION1-PUMP21",
       "latitude": 0.8,
       "longitude": 0.7,
       "active": true,

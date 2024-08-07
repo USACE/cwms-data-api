@@ -35,7 +35,6 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.WaterUser;
@@ -50,17 +49,12 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
 public final class WaterUserController extends WaterSupplyControllerBase implements Handler {
-    private static final Logger LOGGER = Logger.getLogger(WaterUserController.class.getName());
 
     public WaterUserController(MetricRegistry metrics) {
         waterMetrics(metrics);
@@ -92,7 +86,7 @@ public final class WaterUserController extends WaterSupplyControllerBase impleme
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             String location = ctx.pathParam(PROJECT_ID);
             String office = ctx.pathParam(OFFICE);
-            CwmsId projectLocation = buildCwmsId(office, location);
+            CwmsId projectLocation = CwmsId.buildCwmsId(office, location);
             DSLContext dsl = getDslContext(ctx);
             String entityName = ctx.pathParam(WATER_USER);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
@@ -100,16 +94,7 @@ public final class WaterUserController extends WaterSupplyControllerBase impleme
             ctx.contentType(contentType.toString());
             WaterContractDao contractDao = getContractDao(dsl);
             WaterUser user = contractDao.getWaterUser(projectLocation, entityName);
-
-            if (user == null) {
-                CdaError error = new CdaError("No water user found for the provided parameters.");
-                LOGGER.log(Level.SEVERE, "Error retrieving water user.");
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
-                return;
-            }
-            List<WaterUser> params = new ArrayList<>();
-            params.add(user);
-            String result = Formats.format(contentType, params, WaterUserContract.class);
+            String result = Formats.format(contentType, user);
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
         }

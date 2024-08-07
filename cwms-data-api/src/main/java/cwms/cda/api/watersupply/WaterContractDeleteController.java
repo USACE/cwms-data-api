@@ -36,6 +36,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
@@ -44,7 +45,6 @@ import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -57,7 +57,8 @@ public final class WaterContractDeleteController extends WaterSupplyControllerBa
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = METHOD, description = "Specifies the delete method used."),
+            @OpenApiParam(name = METHOD, description = "Specifies the delete method used.",
+                    type = JooqDao.DeleteMethod.class),
         },
         pathParams = {
             @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract to be deleted."),
@@ -67,11 +68,6 @@ public final class WaterContractDeleteController extends WaterSupplyControllerBa
                     required = true),
             @OpenApiParam(name = WATER_USER, description = "The water user the contract is associated with.",
                     required = true)
-        },
-        responses = {
-            @OpenApiResponse(status = "404", description = "The provided combination of parameters"
-                    + " did not find any contracts."),
-            @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
         },
         description = "Delete a specified water contract",
         path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{name}",
@@ -89,7 +85,7 @@ public final class WaterContractDeleteController extends WaterSupplyControllerBa
             String entityName = ctx.pathParam(WATER_USER);
             String office = ctx.pathParam(OFFICE);
             WaterContractDao contractDao = getContractDao(dsl);
-            CwmsId projectLocation = buildCwmsId(office, locationId);
+            CwmsId projectLocation = CwmsId.buildCwmsId(office, locationId);
             WaterUserContract contract = contractDao.getWaterContract(contractName, projectLocation, entityName);
             contractDao.deleteWaterContract(contract, deleteMethod);
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json(contractName + " deleted successfully");

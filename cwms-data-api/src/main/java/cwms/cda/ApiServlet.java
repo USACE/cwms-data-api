@@ -103,7 +103,7 @@ import cwms.cda.api.watersupply.WaterContractDeleteController;
 import cwms.cda.api.watersupply.WaterContractTypeCatalogController;
 import cwms.cda.api.watersupply.WaterContractTypeCreateController;
 import cwms.cda.api.watersupply.WaterContractUpdateController;
-import cwms.cda.api.watersupply.WaterPumpDeleteController;
+import cwms.cda.api.watersupply.WaterPumpDisassociateController;
 import cwms.cda.api.watersupply.WaterUserCatalogController;
 import cwms.cda.api.watersupply.WaterUserController;
 import cwms.cda.api.watersupply.WaterUserCreateController;
@@ -513,10 +513,9 @@ public class ApiServlet extends HttpServlet {
         addWaterUserHandlers(format("/projects/{%s}/{%s}/water-user", OFFICE, PROJECT_ID), requiredRoles);
         addWaterContractHandlers(format("/projects/{%s}/{%s}/water-user/{%s}/contracts", OFFICE, PROJECT_ID,
                 WATER_USER), requiredRoles);
-        addWaterContractTypeHandlers(format("/projects/{%s}/{%s}/water-user/{%s}/contracts/{%s}/types", OFFICE,
-                PROJECT_ID, WATER_USER, CONTRACT_NAME), requiredRoles);
         delete(format("/projects/{%s}/{%s}/water-user/{%s}/contracts/{%s}/pumps/{%s}", OFFICE, PROJECT_ID,
-                        WATER_USER, CONTRACT_NAME, NAME), new WaterPumpDeleteController(metrics), requiredRoles);
+                        WATER_USER, CONTRACT_NAME, NAME), new WaterPumpDisassociateController(metrics), requiredRoles);
+        addWaterContractTypeHandlers(format("/projects/{%s}/contract-types", OFFICE), requiredRoles);
 
         cdaCrudCache(format("/projects/embankments/{%s}", Controllers.NAME),
             new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);

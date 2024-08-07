@@ -28,8 +28,6 @@ package cwms.cda.api.watersupply;
 
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PROJECT_ID;
-import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -62,10 +60,6 @@ public final class WaterContractTypeCatalogController extends WaterSupplyControl
         pathParams = {
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
                     required = true),
-            @OpenApiParam(name = PROJECT_ID, description = "The project Id the contract is associated with.",
-                    required = true),
-            @OpenApiParam(name = WATER_USER, description = "The water user the contract is associated with.",
-                    required = true)
         },
         responses = {
             @OpenApiResponse(status = "200", content = {
@@ -77,7 +71,7 @@ public final class WaterContractTypeCatalogController extends WaterSupplyControl
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
         },
         description = "Get all water contract types",
-        path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-id}/types",
+        path = "/projects/contracts/{office}/contract-types",
         method = HttpMethod.GET,
         tags = {TAG}
     )

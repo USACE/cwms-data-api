@@ -67,7 +67,7 @@ import static org.hamcrest.Matchers.*;
 
 
 @Tag("integration")
-class WaterPumpDeleteControllerTestIT extends DataApiTestIT {
+class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
     private static final String USAGE_ID = "usage-id";
     private static final String OFFICE_ID = "SWT";
     private static final WaterUserContract CONTRACT;

@@ -30,7 +30,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
-import cwms.cda.data.dto.CwmsId;
 import org.jooq.DSLContext;
 
 public class WaterSupplyControllerBase {
@@ -47,9 +46,5 @@ public class WaterSupplyControllerBase {
 
     void waterMetrics(MetricRegistry metrics) {
         this.metrics = metrics;
-    }
-
-    CwmsId buildCwmsId(String officeId, String name) {
-        return new CwmsId.Builder().withOfficeId(officeId).withName(name).build();
     }
 }

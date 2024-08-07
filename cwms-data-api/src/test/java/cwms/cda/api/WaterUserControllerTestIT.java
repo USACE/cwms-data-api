@@ -185,10 +185,10 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("entity-name[0]", equalTo(CONTRACT.getWaterUser().getEntityName()))
-            .body("project-id.name[0]", equalTo(CONTRACT.getWaterUser().getProjectId().getName()))
-            .body("project-id.office-id[0]", equalTo(CONTRACT.getWaterUser().getProjectId().getOfficeId()))
-            .body("water-right[0]", equalTo(CONTRACT.getWaterUser().getWaterRight()))
+            .body("entity-name", equalTo(CONTRACT.getWaterUser().getEntityName()))
+            .body("project-id.name", equalTo(CONTRACT.getWaterUser().getProjectId().getName()))
+            .body("project-id.office-id", equalTo(CONTRACT.getWaterUser().getProjectId().getOfficeId()))
+            .body("water-right", equalTo(CONTRACT.getWaterUser().getWaterRight()))
         ;
 
         // delete WaterUser
@@ -292,7 +292,24 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("entity-name[0]", equalTo("NEW USER NAME"))
+            .body("entity-name", equalTo("NEW USER NAME"))
+        ;
+
+        // get old water user and assert that it does not exist
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .accept(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
+                    + "/water-user/" + CONTRACT.getWaterUser().getEntityName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
         ;
 
         // delete WaterUser

@@ -26,12 +26,8 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PROJECT_ID;
-import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -70,22 +66,13 @@ public final class WaterContractTypeCreateController extends WaterSupplyControll
             @OpenApiParam(name = FAIL_IF_EXISTS, type = boolean.class, description = "Create will fail if provided"
                     + "display value already exists. Default: true")
         },
-        pathParams = {
-            @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract.", required = true),
-            @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
-                    required = true),
-            @OpenApiParam(name = PROJECT_ID, description = "The project Id the contract is associated with.",
-                    required = true),
-            @OpenApiParam(name = WATER_USER, description = "The water user the contract is associated with.",
-                    required = true)
-        },
         responses = {
             @OpenApiResponse(status = "204", description = "Contract type successfully stored to CWMS."),
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
         },
         description = "Create a new water contract type",
         method = HttpMethod.POST,
-        path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{name}/types",
+        path = "/projects/{office}/contract-types",
         tags = {TAG}
     )
 

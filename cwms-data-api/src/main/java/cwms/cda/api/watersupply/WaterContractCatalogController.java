@@ -90,7 +90,7 @@ public final class WaterContractCatalogController extends WaterSupplyControllerB
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE);
             String locationId = ctx.pathParam(PROJECT_ID);
-            CwmsId projectLocation = buildCwmsId(office, locationId);
+            CwmsId projectLocation = CwmsId.buildCwmsId(office, locationId);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());

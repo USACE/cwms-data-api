@@ -29,7 +29,7 @@
   "pump-out-location": {
     "pump-location": {
       "office-id": "SWT",
-      "name": "PUMP1",
+      "name": "SACRAMENTO-PUMP1",
       "latitude": 0,
       "longitude": 0,
       "active": true,
@@ -57,7 +57,7 @@
   "pump-out-below-location": {
     "pump-location": {
       "office-id": "SWT",
-      "name": "PUMP2",
+      "name": "SACRAMENTO-PUMP2",
       "latitude": 0,
       "longitude": 0,
       "active": true,
@@ -85,7 +85,7 @@
   "pump-in-location": {
     "pump-location": {
       "office-id": "SWT",
-      "name": "PUMP3",
+      "name": "SACRAMENTO-PUMP3",
       "latitude": 0,
       "longitude": 0,
       "active": true,
