@@ -33,6 +33,7 @@ import static cwms.cda.api.Controllers.STATUS_204;
 import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.WATER_USER;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -51,7 +52,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Objects;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -97,7 +97,7 @@ public final class WaterUserUpdateController extends WaterSupplyControllerBase i
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUser.class);
             ctx.contentType(contentType.toString());
-            String newName = Objects.requireNonNull(ctx.queryParam(NAME));
+            String newName = requiredParam(ctx, NAME);
             String office = ctx.pathParam(OFFICE);
             String oldName = ctx.pathParam(WATER_USER);
             String locationId = ctx.pathParam(PROJECT_ID);

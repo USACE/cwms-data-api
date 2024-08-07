@@ -32,11 +32,12 @@ import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
+import static cwms.cda.api.Controllers.getDeleteMethod;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.JooqDao.DeleteMethod;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
@@ -58,7 +59,7 @@ public final class WaterContractDeleteController extends WaterSupplyControllerBa
     @OpenApi(
         queryParams = {
             @OpenApiParam(name = METHOD, description = "Specifies the delete method used.",
-                    type = JooqDao.DeleteMethod.class),
+                    type = DeleteMethod.class),
         },
         pathParams = {
             @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract to be deleted."),
@@ -80,7 +81,7 @@ public final class WaterContractDeleteController extends WaterSupplyControllerBa
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             String contractName = ctx.pathParam(CONTRACT_NAME);
-            String deleteMethod = ctx.queryParam(METHOD);
+            DeleteMethod deleteMethod = getDeleteMethod(ctx.queryParam(METHOD));
             String locationId = ctx.pathParam(PROJECT_ID);
             String entityName = ctx.pathParam(WATER_USER);
             String office = ctx.pathParam(OFFICE);

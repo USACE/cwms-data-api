@@ -33,6 +33,7 @@ import cwms.cda.api.DataApiTestIT;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.JooqDao.DeleteMethod;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.project.ProjectDao;
@@ -63,7 +64,7 @@ import org.junit.jupiter.api.Test;
 
 class WaterContractDaoTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
-    private static final String DELETE_ACTION = "DELETE ALL";
+    private static final DeleteMethod DELETE_ACTION = DeleteMethod.DELETE_ALL;
     private static final Location testLocation = buildTestLocation("Test Location Name",
             "Test Location Type");
     private static final Project testProject = buildTestProject();

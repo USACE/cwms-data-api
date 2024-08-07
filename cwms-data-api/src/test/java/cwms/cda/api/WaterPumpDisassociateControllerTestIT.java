@@ -68,8 +68,8 @@ import static org.hamcrest.Matchers.*;
 
 @Tag("integration")
 class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
-    private static final String USAGE_ID = "usage-id";
     private static final String OFFICE_ID = "SWT";
+    private final String PUMP_TYPE = "pump-type";
     private static final WaterUserContract CONTRACT;
     private static final WaterUserContract CONTRACT_NO_PUMP;
     static {
@@ -138,9 +138,9 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
                 locationsDao.storeLocation(parentLocation2);
                 projectDao.store(project, true);
                 projectDao.store(project1, true);
-                waterContractDao.storeWaterUser(waterUser, true);
+                waterContractDao.storeWaterUser(waterUser, false);
                 waterContractDao.storeWaterContractTypes(CONTRACT.getContractType(), false);
-                waterContractDao.storeWaterUser(waterUserNoPump, true);
+                waterContractDao.storeWaterUser(waterUserNoPump, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -174,9 +174,9 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
             WaterContractDao waterContractDao = new WaterContractDao(ctx);
             ProjectDao projectDao = new ProjectDao(ctx);
             waterContractDao.deleteWaterUser(waterUser.getProjectId(), waterUser.getEntityName(),
-                    DeleteRule.DELETE_ALL.toString());
+                    DeleteMethod.DELETE_ALL);
             waterContractDao.deleteWaterUser(waterUserNoPump.getProjectId(), waterUserNoPump.getEntityName(),
-                    DeleteRule.DELETE_ALL.toString());
+                    DeleteMethod.DELETE_ALL);
             projectDao.delete(CONTRACT.getOfficeId(), CONTRACT.getWaterUser().getProjectId().getName(),
                     DeleteRule.DELETE_ALL);
             projectDao.delete(CONTRACT_NO_PUMP.getOfficeId(), CONTRACT_NO_PUMP.getWaterUser().getProjectId().getName(),
@@ -189,7 +189,6 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_remove_from_contract() throws Exception {
-        final String PUMP_TYPE = "pump-type";
         // Structure of test:
         // 1) Create contract with pump
         // 2) Remove the pump from the contract
@@ -219,8 +218,8 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
 
         // Remove pump and assert it is removed
         given()
-            .queryParam(DELETE, false)
-            .queryParam(PUMP_TYPE, PumpType.IN.getName())
+            .queryParam(METHOD, false)
+            .queryParam(PUMP_TYPE, PumpType.IN)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -368,7 +367,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(METHOD, "DELETE ALL")
+            .queryParam(METHOD, DeleteMethod.DELETE_ALL)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -412,20 +411,19 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
         // Remove pump
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .queryParam(USAGE_ID, "PUMP1")
-            .queryParam(DELETE, DeleteMethod.DELETE_ALL.toString())
+            .queryParam(METHOD, DeleteMethod.DELETE_ALL)
+            .queryParam(PUMP_TYPE, PumpType.IN)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/projects/" + OFFICE_ID + "/" + CONTRACT_NO_PUMP.getContractId().getName() + "/water-user/"
                     + CONTRACT_NO_PUMP.getWaterUser().getEntityName() + "/contracts/"
-                    + CONTRACT_NO_PUMP.getContractId().getName()+ "/pumps/"
-                    + null)
+                    + CONTRACT_NO_PUMP.getContractId().getName()+ "/pumps/" + null)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_INTERNAL_SERVER_ERROR))
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
         ;
 
         // Delete contract
@@ -433,7 +431,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(METHOD, "DELETE ALL")
+            .queryParam(METHOD, DeleteMethod.DELETE_ALL)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

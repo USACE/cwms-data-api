@@ -49,7 +49,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.Collections;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -101,8 +100,7 @@ public final class WaterContractController extends WaterSupplyControllerBase imp
             ctx.contentType(contentType.toString());
             WaterContractDao contractDao = getContractDao(dsl);
             WaterUserContract contract = contractDao.getWaterContract(contractName, projectLocation, waterUser);
-
-            String result = Formats.format(contentType, Collections.singletonList(contract), WaterUserContract.class);
+            String result = Formats.format(contentType, contract);
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
         }

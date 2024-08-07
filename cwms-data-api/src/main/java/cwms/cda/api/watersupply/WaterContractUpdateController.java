@@ -31,6 +31,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.WATER_USER;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -99,7 +100,7 @@ public final class WaterContractUpdateController extends WaterSupplyControllerBa
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
-            String newName = ctx.queryParam(CONTRACT_NAME);
+            String newName = requiredParam(ctx, CONTRACT_NAME);
             WaterUserContract waterContract = Formats.parseContent(contentType, ctx.body(), WaterUserContract.class);
             WaterContractDao contractDao = getContractDao(dsl);
             WaterUser ref = new WaterUser.Builder().withEntityName(waterContract.getWaterUser().getEntityName())

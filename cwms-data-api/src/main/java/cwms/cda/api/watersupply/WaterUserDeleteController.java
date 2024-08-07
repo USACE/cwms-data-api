@@ -31,11 +31,12 @@ import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
+import static cwms.cda.api.Controllers.getDeleteMethod;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.JooqDao.DeleteMethod;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import io.javalin.http.Context;
@@ -57,8 +58,8 @@ public final class WaterUserDeleteController extends WaterSupplyControllerBase i
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = METHOD, description = "Specifies the delete method used.",
-                    type = JooqDao.DeleteMethod.class),
+            @OpenApiParam(name = METHOD, description = "Specifies the delete method used. Default is DELETE_ALL.",
+                    type = DeleteMethod.class),
         },
         pathParams = {
             @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
@@ -79,7 +80,8 @@ public final class WaterUserDeleteController extends WaterSupplyControllerBase i
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE);
             String locationId = ctx.pathParam(PROJECT_ID);
-            String deleteMode = ctx.queryParam(METHOD);
+            DeleteMethod deleteMode = getDeleteMethod(ctx.queryParamAsClass(METHOD, String.class)
+                    .getOrDefault(DeleteMethod.DELETE_ALL.toString()));
             String entityName = ctx.pathParam(WATER_USER);
             CwmsId location = CwmsId.buildCwmsId(office, locationId);
             WaterContractDao contractDao = getContractDao(dsl);

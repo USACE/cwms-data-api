@@ -33,6 +33,7 @@ import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -86,41 +87,18 @@ public final class WaterPumpDisassociateController extends WaterSupplyController
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            boolean deleteAccounting = Boolean.parseBoolean(ctx.queryParam(METHOD));
+            boolean deleteAccounting = Boolean.parseBoolean(requiredParam(ctx, METHOD));
             String officeId = ctx.pathParam(OFFICE);
+            String pumpName = ctx.pathParam(NAME);
             String projectName = ctx.pathParam(PROJECT_ID);
             String entityName = ctx.pathParam(WATER_USER);
-            PumpType pumpType = PumpType.valueOf(ctx.queryParam(PUMP_TYPE));
+            PumpType pumpType = PumpType.valueOf(requiredParam(ctx, PUMP_TYPE));
             String contractName = ctx.pathParam(CONTRACT_NAME);
             WaterContractDao contractDao = getContractDao(dsl);
             CwmsId projectLocation = CwmsId.buildCwmsId(officeId, projectName);
             WaterUserContract contract = contractDao.getWaterContract(contractName, projectLocation, entityName);
-
-            switch (pumpType) {
-                case IN:
-                    contractDao.removePumpFromContract(contract,
-                            contract.getPumpInLocation().getPumpLocation().getName(),
-                            PumpType.IN, deleteAccounting);
-                    ctx.status(HttpServletResponse.SC_NO_CONTENT);
-                    return;
-                case OUT:
-                    contractDao.removePumpFromContract(contract,
-                            contract.getPumpOutLocation().getPumpLocation().getName(),
-                            PumpType.OUT, deleteAccounting);
-                    ctx.status(HttpServletResponse.SC_NO_CONTENT);
-                    return;
-                case BELOW:
-                    contractDao.removePumpFromContract(contract,
-                            contract.getPumpOutBelowLocation().getPumpLocation().getName(),
-                            PumpType.BELOW, deleteAccounting);
-                    ctx.status(HttpServletResponse.SC_NO_CONTENT);
-                    return;
-                default:
-                    throw new IllegalArgumentException("Invalid pump type provided: " + pumpType);
-            }
+            contractDao.removePumpFromContract(contract, pumpName, pumpType, deleteAccounting);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
-
-
-
 }
