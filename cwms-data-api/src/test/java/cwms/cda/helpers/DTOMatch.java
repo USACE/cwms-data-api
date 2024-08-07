@@ -24,6 +24,7 @@
 
 package cwms.cda.helpers;
 
+import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.location.kind.GateChange;
 import cwms.cda.data.dto.location.kind.GateSetting;
@@ -441,6 +442,15 @@ public final class DTOMatch {
                 () -> assertEquals(first.getDeltaTime(), second.getDeltaTime(), "Delta time does not match"),
                 () -> assertEquals(first.getAirTemp(), second.getAirTemp(), "Air temperature does not match"),
                 () -> assertEquals(first.getWaterTemp(), second.getWaterTemp(), "Water temperature does not match")
+        );
+    }
+
+    public static void assertMatch(Lock first, Lock second) {
+
+        assertAll(
+                //TODO fill out the rest - subject to change based on https://jira.hecdev.net/browse/CTO-147
+                () -> assertEquals(first.getLocation(), second.getLocation(), "Location doesn't match"),
+                () -> assertMatch(first.getProjectId(), second.getProjectId(), "Project ID does not match")
         );
     }
 
