@@ -417,5 +417,24 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
         ;
+
+        // delete WaterUser
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .accept(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getProjectId().getName())
+            .queryParam(DELETE_MODE, "DELETE ALL")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
+                    + "/water-user/" + waterUser.getEntityName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+        ;
     }
 }
