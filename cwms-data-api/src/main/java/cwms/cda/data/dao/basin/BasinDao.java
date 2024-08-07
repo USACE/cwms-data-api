@@ -52,9 +52,9 @@ public class BasinDao extends JooqDao<Basin> {
             setOffice(c, officeId);
             // possibly call another procedure to get the units
             Configuration configuration = getDslContext(c, officeId).configuration();
-            String areaUnitIn = unitSystem.compareToIgnoreCase(UnitSystem.SI.toString()) == 0
+            String areaUnitIn = unitSystem.equalsIgnoreCase(UnitSystem.SI.toString())
                     ||
-                    unitSystem.compareToIgnoreCase(UnitSystem.EN.toString()) == 0
+                    unitSystem.equalsIgnoreCase(UnitSystem.EN.toString())
                     ?
                     CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(configuration, "Area", unitSystem)
                     :
