@@ -24,15 +24,15 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.METHOD;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_204;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.api.Controllers.requiredParamAs;
@@ -51,7 +51,6 @@ import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -135,7 +134,7 @@ public class BasinController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
                 cwms.cda.data.dao.basin.BasinDao basinDao = new cwms.cda.data.dao.basin.BasinDao(dsl);
-                List<cwms.cda.data.dto.basin.Basin> basins = basinDao.getAllBasins(units, office);
+                List<cwms.cda.data.dto.basin.Basin> basins = basinDao.getAllBasins(office, units);
                 result = Formats.format(contentType, basins, cwms.cda.data.dto.basin.Basin.class);
                 ctx.result(result);
                 ctx.status(HttpServletResponse.SC_OK);
@@ -151,17 +150,16 @@ public class BasinController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = OFFICE, description = "Specifies the"
                     + " owning office of the basin whose data is to be included in the "
-                    + "response. If this field is not specified, matching basin "
-                    + "information from all offices shall be returned."),
-            @OpenApiParam(name = UNIT, description = "Specifies the "
+                    + "response.", required = true),
+            @OpenApiParam(name = UNIT,  description = "Specifies the "
                     + "unit or unit system of the response. Valid values for the unit "
-                    + "field are:"
-                    + "\n* `EN`  Specifies English unit system. Basin values will be in "
-                    + "the default English units for their parameters. "
-                    + "(This is default if no value is entered)"
-                    + "\n* `SI`  Specifies the SI unit system. Basin values will be in "
-                    + "the default SI units for "
-                    + "their parameters."),
+                    + "field are: "
+                    + "\n* `EN`  (default) Specifies English unit system.  "
+                    + "Basin area values will be in the default English units for "
+                    + "their parameters."
+                    + "\n* `SI`  Specifies the SI unit system.  "
+                    + "\n* `Other`  Any unit returned in the response to the units URI "
+                    + "request that is appropriate for the requested parameters."),
         },
         pathParams = {
             @OpenApiParam(name = NAME, description = "Specifies the name of "
@@ -246,14 +244,14 @@ public class BasinController implements CrudHandler {
     public void update(@NotNull Context ctx, @NotNull String name) {
         DSLContext dsl = getDslContext(ctx);
         String officeId = requiredParam(ctx, OFFICE);
-        String newStreamId = requiredParam(ctx, NAME);
+        String newBasinId = requiredParam(ctx, NAME);
         cwms.cda.data.dao.basin.BasinDao basinDao = new cwms.cda.data.dao.basin.BasinDao(dsl);
         CwmsId oldLoc = new CwmsId.Builder()
             .withName(name)
             .withOfficeId(officeId)
             .build();
         CwmsId newLoc = new CwmsId.Builder()
-            .withName(newStreamId)
+            .withName(newBasinId)
             .withOfficeId(officeId)
             .build();
         basinDao.renameBasin(oldLoc, newLoc);
@@ -296,12 +294,6 @@ public class BasinController implements CrudHandler {
         pathParams = {
             @OpenApiParam(name = NAME, description = "Specifies the name of "
                     + "the basin to be deleted.")
-        },
-        responses = {
-            @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
-                    + "parameters did not find a basin."),
-            @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
-                    + "implemented")
         },
         description = "Renames CWMS Basin",
         tags = {TAG}
