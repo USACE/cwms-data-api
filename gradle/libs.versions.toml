@@ -1,7 +1,7 @@
 [versions]
 jaxb-api = "2.3.1"
 jaxb-impl = "3.0.2"
-jooq-codegen = "99-99-99-CWDB-269-F0232-99-99-99-CWDB-269-F0232"
+jooq-codegen = "99.99.99.1-CDA_STAGING_1"
 jooq = "3.18.7-jdk8"
 hec-data-access = "9.8.0"
 slf4j = "1.7.36"
