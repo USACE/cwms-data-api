@@ -24,6 +24,7 @@
 
 package cwms.cda.data.dao.basin;
 
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
@@ -51,9 +52,9 @@ public class BasinDao extends JooqDao<Basin> {
             setOffice(c, officeId);
             // possibly call another procedure to get the units
             Configuration configuration = getDslContext(c, officeId).configuration();
-            String areaUnitIn = unitSystem.compareToIgnoreCase("SI") == 0
+            String areaUnitIn = unitSystem.compareToIgnoreCase(UnitSystem.SI.toString()) == 0
                     ||
-                    unitSystem.compareToIgnoreCase("EN") == 0
+                    unitSystem.compareToIgnoreCase(UnitSystem.EN.toString()) == 0
                     ?
                     CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(configuration, "Area", unitSystem)
                     :
@@ -69,9 +70,9 @@ public class BasinDao extends JooqDao<Basin> {
         return connectionResult(dsl, c -> {
             // possibly call another procedure to get the units
             Configuration configuration = getDslContext(c, basinId.getOfficeId()).configuration();
-            String areaUnitIn = unitSystem.compareToIgnoreCase("SI") == 0
+            String areaUnitIn = unitSystem.compareToIgnoreCase(UnitSystem.SI.toString()) == 0
                     ||
-                    unitSystem.compareToIgnoreCase("EN") == 0
+                    unitSystem.compareToIgnoreCase(UnitSystem.EN.toString()) == 0
                     ?
                     CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(configuration, "Area", unitSystem)
                     :
