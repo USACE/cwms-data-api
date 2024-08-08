@@ -24,22 +24,22 @@
 
 package cwms.cda.data.dao.basin;
 
+import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.basin.Basin;
-import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.api.enums.Unit;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import org.jooq.Configuration;
+import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_BASIN_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.cwms_basin.RETRIEVE_BASIN;
-
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.util.List;
-import java.util.ArrayList;
-
-import org.jooq.DSLContext;
 
 public class BasinDao extends JooqDao<Basin> {
 
@@ -47,12 +47,20 @@ public class BasinDao extends JooqDao<Basin> {
         super(dsl);
     }
 
-    public List<Basin> getAllBasins(String unitSystem, String officeId) {
+    public List<Basin> getAllBasins(String officeId, String unitSystem) {
         return connectionResult(dsl, c -> {
             setOffice(c, officeId);
-            String areaUnitIn = UnitSystem.EN.value().equals(unitSystem)
-                    ? Unit.SQUARE_MILES.getValue() : Unit.SQUARE_KILOMETERS.getValue();
-            try(ResultSet rs = CWMS_BASIN_PACKAGE.call_CAT_BASINS(DSL.using(c).configuration(), null, null, null, areaUnitIn, officeId).intoResultSet()) {
+            // possibly call another procedure to get the units
+            Configuration configuration = getDslContext(c, officeId).configuration();
+            String areaUnitIn = unitSystem.equalsIgnoreCase(UnitSystem.SI.toString())
+                    ||
+                    unitSystem.equalsIgnoreCase(UnitSystem.EN.toString())
+                    ?
+                    CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(configuration, "Area", unitSystem)
+                    :
+                    unitSystem;
+            try (ResultSet rs = CWMS_BASIN_PACKAGE.call_CAT_BASINS(DSL.using(c).configuration(),
+                    null, null, null, areaUnitIn, officeId).intoResultSet()) {
                 return buildBasinsFromResultSet(rs, areaUnitIn);
             }
         });
@@ -60,8 +68,15 @@ public class BasinDao extends JooqDao<Basin> {
 
     public Basin getBasin(CwmsId basinId, String unitSystem) {
         return connectionResult(dsl, c -> {
-            String areaUnitIn = UnitSystem.EN.value().equals(unitSystem)
-                ? Unit.SQUARE_MILES.getValue() : Unit.SQUARE_KILOMETERS.getValue();
+            // possibly call another procedure to get the units
+            Configuration configuration = getDslContext(c, basinId.getOfficeId()).configuration();
+            String areaUnitIn = unitSystem.compareToIgnoreCase(UnitSystem.SI.toString()) == 0
+                    ||
+                    unitSystem.compareToIgnoreCase(UnitSystem.EN.toString()) == 0
+                    ?
+                    CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(configuration, "Area", unitSystem)
+                    :
+                    unitSystem;
             String[] pParentBasinId = new String[1];
             Double[] pSortOrder = new Double[1];
             String[] pPrimaryStreamId = new String[1];
@@ -87,8 +102,8 @@ public class BasinDao extends JooqDao<Basin> {
                     .withTotalDrainageArea(pTotalDrainageArea[0])
                     .withContributingDrainageArea(pContributingDrainageArea[0])
                     .withParentBasinId(new CwmsId.Builder()
-                            .withName(pParentBasinId[0]).
-                            withOfficeId(pOfficeId)
+                            .withName(pParentBasinId[0])
+                            .withOfficeId(pOfficeId)
                             .build())
                     .withSortOrder(pSortOrder[0])
                     .withAreaUnit(areaUnitIn)
@@ -113,8 +128,10 @@ public class BasinDao extends JooqDao<Basin> {
             Double contributingDrainageArea = basin.getContributingDrainageArea();
             String areaUnit = basin.getAreaUnit();
             setOffice(c, officeId);
-            CWMS_BASIN_PACKAGE.call_STORE_BASIN(DSL.using(c).configuration(), basinId, OracleTypeMap.formatBool(false), OracleTypeMap.formatBool(false),
-                    parentBasinId, sortOrder, primaryStreamId, totalDrainageArea, contributingDrainageArea, areaUnit, officeId);
+            CWMS_BASIN_PACKAGE.call_STORE_BASIN(DSL.using(c).configuration(), basinId,
+                    OracleTypeMap.formatBool(false), OracleTypeMap.formatBool(false),
+                    parentBasinId, sortOrder, primaryStreamId, totalDrainageArea,
+                    contributingDrainageArea, areaUnit, officeId);
         });
     }
 
@@ -123,17 +140,19 @@ public class BasinDao extends JooqDao<Basin> {
 
         connection(dsl, c -> {
             setOffice(c, oldBasin.getOfficeId());
-            CWMS_BASIN_PACKAGE.call_RENAME_BASIN(DSL.using(c).configuration(), oldBasin.getName(), newBasin.getName(), oldBasin.getOfficeId());
+            CWMS_BASIN_PACKAGE.call_RENAME_BASIN(DSL.using(c).configuration(), oldBasin.getName(),
+                    newBasin.getName(), oldBasin.getOfficeId());
         });
 
     }
 
-    public void deleteBasin(CwmsId basinId, String deleteAction) {
+    public void deleteBasin(CwmsId basinId, DeleteRule deleteAction) {
         basinId.validate();
 
         connection(dsl, c -> {
             setOffice(c, basinId.getOfficeId());
-            CWMS_BASIN_PACKAGE.call_DELETE_BASIN(DSL.using(c).configuration(), basinId.getName(), deleteAction, basinId.getOfficeId());
+            CWMS_BASIN_PACKAGE.call_DELETE_BASIN(DSL.using(c).configuration(), basinId.getName(),
+                deleteAction.getRule(), basinId.getOfficeId());
         });
     }
 

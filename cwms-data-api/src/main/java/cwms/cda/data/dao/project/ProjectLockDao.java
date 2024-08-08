@@ -61,8 +61,9 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
                               boolean revokeExisting, int revokeTimeout) {
         BigInteger revokeTimeoutBI = toBigInteger(revokeTimeout);
         return connectionResult(dsl,
-                c -> CWMS_PROJECT_PACKAGE.call_REQUEST_LOCK(getDslContext(c, office).configuration(),
-                projectId, appId, OracleTypeMap.formatBool(revokeExisting), revokeTimeoutBI, office)
+            c -> CWMS_PROJECT_PACKAGE.call_REQUEST_LOCK(getDslContext(c, office).configuration(),
+                projectId, appId, OracleTypeMap.formatBool(revokeExisting), revokeTimeoutBI, office,
+                null, null, null, null)
         );
     }
 

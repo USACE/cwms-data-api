@@ -39,7 +39,7 @@ import java.time.Instant;
 @JsonDeserialize(builder = ProjectLock.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class ProjectLock extends CwmsDTO {
     // officeId held by CwmsDTO
     private final String projectId;

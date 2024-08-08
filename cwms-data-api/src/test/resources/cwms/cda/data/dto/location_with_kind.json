@@ -1,0 +1,12 @@
+{
+  "kind": "EMBANKMENT",
+  "locations": [
+    {
+      "name": "TestEmbankment1"
+    },
+    {
+      "office-id": "SPK",
+      "name": "TestEmbankment2"
+    }
+  ]
+}

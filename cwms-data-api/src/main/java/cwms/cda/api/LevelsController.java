@@ -137,18 +137,11 @@ public class LevelsController implements CrudHandler {
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
             ContentType contentType = Formats.parseHeader(formatHeader);
             LocationLevel level = Formats.parseContent(contentType, ctx.body(), LocationLevel.class);
-            ZonedDateTime unmarshalledDateTime = level.getLevelDate(); //getUnmarshalledDateTime
-
-            ZoneId timezoneId = unmarshalledDateTime.getZone();
-            if (timezoneId == null) {
-                timezoneId = ZoneId.systemDefault();
-            }
-            level = new LocationLevel.Builder(level).withLevelDate(unmarshalledDateTime).build();
             level.validate();
 
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
-            levelsDao.storeLocationLevel(level, timezoneId);
+            levelsDao.storeLocationLevel(level);
             ctx.status(HttpServletResponse.SC_OK).json("Created Location Level");
         }
     }
@@ -446,7 +439,7 @@ public class LevelsController implements CrudHandler {
                     levelFromBody);
                 updatedLocationLevel = new LocationLevel.Builder(updatedLocationLevel)
                     .withLevelDate(unmarshalledDateTime).build();
-                levelsDao.storeLocationLevel(updatedLocationLevel, unmarshalledDateTime.getZone());
+                levelsDao.storeLocationLevel(updatedLocationLevel);
                 ctx.status(HttpServletResponse.SC_OK).json("Updated Location Level");
             }
         } catch (JsonProcessingException ex) {
