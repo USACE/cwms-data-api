@@ -301,8 +301,7 @@ public class ProjectDao extends JooqDao<Project> {
         return sql;
     }
 
-    public void create(Project project) {
-        boolean failIfExists = true;
+    public void create(Project project, boolean failIfExists) {
         String office = project.getLocation().getOfficeId();
 
         PROJECT_OBJ_T projectT = toProjectT(project);
