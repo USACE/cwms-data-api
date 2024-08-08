@@ -79,15 +79,12 @@ public class OutletDao extends JooqDao<Outlet> {
         });
     }
 
-    private LocGroupReturn getRatingGroupId(String locationId, List<LocationGroup> groups) {
+    private LocationGroup getRatingGroupId(String locationId, List<LocationGroup> groups) {
         return groups.stream()
                      .filter(group -> group.getAssignedLocations()
                                            .stream()
                                            .anyMatch(loc -> loc.getLocationId().equalsIgnoreCase(locationId)))
                      .findFirst()
-                     .map(locGroup -> new LocGroupReturn(new CwmsId.Builder().withName(locGroup.getId())
-                                                          .withOfficeId(locGroup.getOfficeId())
-                                                          .build(), locGroup.getSharedLocAliasId()))
                      .orElse(null);
     }
 
@@ -188,8 +185,11 @@ public class OutletDao extends JooqDao<Outlet> {
     private Outlet mapToOutlet(PROJECT_STRUCTURE_OBJ_T outlet,
                                List<LocationGroup> groups) {
         Location location = LocationUtil.getLocation(outlet.getSTRUCTURE_LOCATION());
-        LocGroupReturn locGroupReturn = getRatingGroupId(location.getName(), groups);
-        CwmsId ratingGroupId = locGroupReturn == null ? null : locGroupReturn.getRatingGroupId();
+        LocationGroup locGroupReturn = getRatingGroupId(location.getName(), groups);
+        CwmsId ratingGroupId = locGroupReturn == null ? null
+                : new CwmsId.Builder().withOfficeId(locGroupReturn.getOfficeId())
+                                      .withName(locGroupReturn.getId())
+                                      .build();
         String sharedLocAliasId = locGroupReturn == null ? null : locGroupReturn.getSharedLocAliasId();
         CwmsId projectId = LocationUtil.getLocationIdentifier(outlet.getPROJECT_LOCATION_REF());
 
@@ -239,23 +239,5 @@ public class OutletDao extends JooqDao<Outlet> {
             setOffice(conn, officeId);
             CWMS_OUTLET_PACKAGE.call_RENAME_OUTLET(DSL.using(conn).configuration(), oldOutletId, newOutletId, officeId);
         });
-    }
-
-    private static class LocGroupReturn {
-        private final CwmsId ratingGroupId;
-        private final String sharedLocAliasId;
-
-        public LocGroupReturn(CwmsId ratingGroupId, String sharedLocAliasId) {
-            this.ratingGroupId = ratingGroupId;
-            this.sharedLocAliasId = sharedLocAliasId;
-        }
-
-        public CwmsId getRatingGroupId() {
-            return ratingGroupId;
-        }
-
-        public String getSharedLocAliasId() {
-            return sharedLocAliasId;
-        }
     }
 }
