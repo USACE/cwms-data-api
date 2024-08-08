@@ -22,7 +22,6 @@ package cwms.cda.api.location.kind;
 
 import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.DeleteRule;
-import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dao.location.kind.ProjectStructureIT;
 import cwms.cda.data.dto.CwmsId;
@@ -37,7 +36,6 @@ import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
@@ -105,7 +103,6 @@ class OutletControllerTestIT extends ProjectStructureIT {
         tearDownProject();
     }
 
-    @Disabled("Disabled due to a DB issue.  See https://jira.hecdev.net/browse/CWDB-296")
     @Test
     void test_outlet_rename() {
         String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Outlet.class), NEW_CONDUIT_GATE_2_OUTLET);

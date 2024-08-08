@@ -217,6 +217,95 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     }
 
     /**
+     * Get all location groups for a given office and category,
+     * as well as a where clause to filter the shared_ref_location_id.
+     * @Param officeId The office id to use for the query.
+     * @Param locCategoryLike A regex to use to filter the location categories.  May be null.
+     * @Param sharedLocAliasLike A where clause to filter the shared_loc_alias_id.  May be null.
+     * @return A list of all location groups for the given parameters.
+     */
+
+    public List<LocationGroup> getLocationGroups(String officeId, String locCategoryLike, String sharedLocAliasLike) {
+        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
+        AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
+
+        final RecordMapper<Record, Pair<LocationGroup, AssignedLocation>> mapper = grpRecord -> {
+            LocationCategory category = buildLocationCategory(grpRecord);
+
+            LocationGroup group = buildLocationGroup(grpRecord, category);
+            AssignedLocation loc = buildAssignedLocation(grpRecord);
+
+            return new Pair<>(group, loc);
+        };
+
+        Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
+
+        SelectConnectByStep<? extends Record> connectBy;
+        SelectOnConditionStep<? extends Record> onStep = dsl.select(
+                        alcg.CAT_DB_OFFICE_ID,
+                        alcg.LOC_CATEGORY_ID,
+                        alcg.LOC_CATEGORY_DESC,
+                        alcg.GRP_DB_OFFICE_ID,
+                        alcg.LOC_GROUP_ID,
+                        alcg.LOC_GROUP_DESC,
+                        alcg.LOC_GROUP_ATTRIBUTE,
+                        alcg.SHARED_LOC_ALIAS_ID,
+                        alcg.SHARED_REF_LOCATION_ID,
+                        alga.DB_OFFICE_ID,
+                        alga.LOCATION_ID,
+                        alga.ALIAS_ID,
+                        alga.ATTRIBUTE,
+                        alga.REF_LOCATION_ID)
+                .from(alcg).leftJoin(alga)
+                .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
+                        .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
+
+
+        Condition condition = noCondition();
+        if (locCategoryLike != null && !locCategoryLike.isEmpty()) {
+            condition = caseInsensitiveLikeRegex(alcg.LOC_CATEGORY_ID, locCategoryLike);
+        }
+
+        if (sharedLocAliasLike != null && !sharedLocAliasLike.isEmpty()) {
+            condition = condition.and(caseInsensitiveLikeRegex(alcg.SHARED_LOC_ALIAS_ID, sharedLocAliasLike));
+        }
+
+        if (officeId != null) {
+            if (CWMS.equalsIgnoreCase(officeId)) {
+                connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.eq(CWMS)
+                        .and(alcg.GRP_DB_OFFICE_ID.eq(CWMS))
+                        .and(condition)
+                );
+            } else {
+                connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId)
+                        .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
+                        .and(alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(officeId)))
+                        .and(condition)
+                );
+            }
+        } else {
+            connectBy = onStep.where(alcg.LOC_GROUP_ID.isNotNull());
+        }
+
+        connectBy.orderBy(alcg.LOC_CATEGORY_ID, alcg.LOC_GROUP_ID, alga.ATTRIBUTE)
+                .fetchSize(1000)  // This made the query go from 2 minutes to 10 seconds?
+                .stream().map(mapper::map).forEach(pair -> {
+                    LocationGroup locationGroup = pair.component1();
+                    List<AssignedLocation> list = map.computeIfAbsent(locationGroup, k -> new ArrayList<>());
+                    AssignedLocation assignedLocation = pair.component2();
+                    if (assignedLocation != null) {
+                        list.add(assignedLocation);
+                    }
+                });
+
+        List<LocationGroup> retVal = new ArrayList<>();
+        for (final Map.Entry<LocationGroup, List<AssignedLocation>> entry : map.entrySet()) {
+            retVal.add(new LocationGroup(entry.getKey(), entry.getValue()));
+        }
+        return retVal;
+    }
+
+    /**
      * Get all location groups for a given office and category.
      * @param officeId The office id to use for the query.
      * @param locCategoryLike A regex to use to filter the location categories.  May be null.
