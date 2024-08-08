@@ -79,7 +79,7 @@ public class ProjectChildLocationHandlerIT extends DataApiTestIT {
                     .build();
 
             Project testProject = buildTestProject(OFFICE, projectName);
-            prjDao.create(testProject);
+            prjDao.create(testProject, true);
 
             String locName1 = "TEST_LOCATION1";
             String locName2 = "TEST_LOCATION2";
