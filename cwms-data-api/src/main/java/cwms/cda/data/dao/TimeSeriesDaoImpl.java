@@ -429,11 +429,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     public static String getTimeZoneId(DSLContext dsl, String tsId, String officeId) {
-        return dsl.connectionResult(c -> {
-            Configuration config = getDslContext(c, officeId).configuration();
-            String locationId = TimeSeriesDaoImpl.parseLocFromTimeSeriesId(tsId);
-            return CWMS_LOC_PACKAGE.call_GET_LOCAL_TIMEZONE__2(config, locationId, officeId);
-        });
+        String locationId = TimeSeriesDaoImpl.parseLocFromTimeSeriesId(tsId);
+        return CWMS_LOC_PACKAGE.call_GET_LOCAL_TIMEZONE__2(dsl.configuration(), locationId, officeId);
     }
 
     public static VersionType getVersionType(DSLContext dsl, String names, String office, boolean dateProvided) {
@@ -460,14 +457,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Boolean cachedValue = isVersionedCache.getIfPresent(cacheKey);
         if (cachedValue == null) {
-            cachedValue = connectionResult(dsl, connection -> {
-                Configuration configuration = getDslContext(connection, null).configuration();
-                boolean isVersioned =
-                        OracleTypeMap.parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(configuration,
-                                tsId, office));
-                isVersionedCache.put(cacheKey, isVersioned);
-                return isVersioned;
-            });
+            boolean isVersioned =
+                    OracleTypeMap.parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED_F(dsl.configuration(),
+                            tsId, office));
+            isVersionedCache.put(cacheKey, isVersioned);
+            return isVersioned;
         }
         return cachedValue;
     }
