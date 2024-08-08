@@ -33,7 +33,7 @@ import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
-import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.requiredParamAs;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -42,6 +42,7 @@ import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.PumpType;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
+import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -87,12 +88,13 @@ public final class WaterPumpDisassociateController extends WaterSupplyController
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            boolean deleteAccounting = Boolean.parseBoolean(requiredParam(ctx, METHOD));
+            boolean deleteAccounting = requiredParamAs(ctx, METHOD, boolean.class);
             String officeId = ctx.pathParam(OFFICE);
             String pumpName = ctx.pathParam(NAME);
             String projectName = ctx.pathParam(PROJECT_ID);
             String entityName = ctx.pathParam(WATER_USER);
-            PumpType pumpType = PumpType.valueOf(requiredParam(ctx, PUMP_TYPE));
+            JavalinValidation.register(PumpType.class, PumpType::valueOf);
+            PumpType pumpType = requiredParamAs(ctx, PUMP_TYPE, PumpType.class);
             String contractName = ctx.pathParam(CONTRACT_NAME);
             WaterContractDao contractDao = getContractDao(dsl);
             CwmsId projectLocation = CwmsId.buildCwmsId(officeId, projectName);

@@ -347,6 +347,18 @@ public final class Controllers {
         return param;
     }
 
+    /**
+     * Returns the first matching query param or throws RequiredQueryParameterException.
+     * @param ctx Request Context
+     * @param name Query parameter name
+     * @return value of the parameter
+     * @throws RequiredQueryParameterException if the parameter is not found
+     */
+    public static <T> T requiredParamAs(io.javalin.http.Context ctx, String name, Class<T> type) {
+        return ctx.queryParamAsClass(name, type)
+            .getOrThrow(e -> new RequiredQueryParameterException(name));
+    }
+
     @Nullable
     public static ZonedDateTime queryParamAsZdt(Context ctx, String param, String timezone) {
         ZonedDateTime beginZdt = null;

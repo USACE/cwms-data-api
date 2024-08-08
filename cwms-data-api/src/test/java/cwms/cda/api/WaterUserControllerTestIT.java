@@ -35,6 +35,7 @@ import static org.hamcrest.Matchers.is;
 
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.JooqDao.DeleteMethod;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dto.Location;
@@ -197,7 +198,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getProjectId().getName())
-            .queryParam(DELETE_MODE, "DELETE ALL")
+            .queryParam(METHOD, DeleteMethod.DELETE_ALL)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -319,7 +320,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getProjectId().getName())
-            .queryParam(DELETE_MODE, "DELETE ALL")
+            .queryParam(METHOD, DeleteMethod.DELETE_ALL)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -406,7 +407,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getProjectId().getName())
-            .queryParam(DELETE_MODE, "DELETE ALL")
+            .queryParam(METHOD, DeleteMethod.DELETE_ALL)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -425,7 +426,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(LOCATION_ID, CONTRACT.getWaterUser().getProjectId().getName())
-            .queryParam(DELETE_MODE, "DELETE ALL")
+            .queryParam(METHOD, DeleteMethod.DELETE_ALL)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
