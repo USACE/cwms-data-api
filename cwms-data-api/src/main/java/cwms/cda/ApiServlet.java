@@ -96,6 +96,7 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
+import cwms.cda.api.project.ProjectChildLocationHandler;
 import cwms.cda.api.watersupply.WaterContractCatalogController;
 import cwms.cda.api.watersupply.WaterContractController;
 import cwms.cda.api.watersupply.WaterContractCreateController;
