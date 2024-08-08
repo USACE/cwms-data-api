@@ -49,7 +49,7 @@ import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_TAB_T;
 
 
-public class WaterContractDao extends JooqDao<WaterUserContract> {
+public final class WaterContractDao extends JooqDao<WaterUserContract> {
     public WaterContractDao(DSLContext dsl) {
         super(dsl);
     }
@@ -158,31 +158,31 @@ public class WaterContractDao extends JooqDao<WaterUserContract> {
         });
     }
 
-    public void deleteWaterUser(CwmsId location, String entityName, String deleteAction) {
+    public void deleteWaterUser(CwmsId location, String entityName, DeleteMethod deleteAction) {
         connection(dsl, c -> {
             setOffice(c, location.getOfficeId());
             LOCATION_REF_T projectLocationRef =  LocationUtil.getLocationRef(location);
             CWMS_WATER_SUPPLY_PACKAGE.call_DELETE_WATER_USER(DSL.using(c).configuration(), projectLocationRef,
-                    entityName, deleteAction);
+                    entityName, deleteAction.getRule().toString());
         });
     }
 
-    public void deleteWaterContract(WaterUserContract contract, String deleteAction) {
+    public void deleteWaterContract(WaterUserContract contract, DeleteMethod deleteAction) {
         connection(dsl, c -> {
             setOffice(c, contract.getOfficeId());
             WATER_USER_OBJ_T waterUserT = WaterSupplyUtils.toWaterUser(contract.getWaterUser());
             String contractName = contract.getContractId().getName();
             WATER_USER_CONTRACT_REF_T waterUserContract = new WATER_USER_CONTRACT_REF_T(waterUserT, contractName);
             CWMS_WATER_SUPPLY_PACKAGE.call_DELETE_CONTRACT(DSL.using(c).configuration(), waterUserContract,
-                    deleteAction);
+                    deleteAction.getRule().toString());
         });
     }
 
-    public void storeWaterContractTypes(List<LookupType> lookupTypes,
+    public void storeWaterContractTypes(LookupType lookupType,
             boolean failIfExists) {
         connection(dsl, c -> {
-            setOffice(c, lookupTypes.get(0).getOfficeId());
-            LOOKUP_TYPE_TAB_T contractTypes = WaterSupplyUtils.toLookupTypeT(lookupTypes);
+            setOffice(c, lookupType.getOfficeId());
+            LOOKUP_TYPE_TAB_T contractTypes = WaterSupplyUtils.toLookupTypeT(lookupType);
             String paramFailIfExists = OracleTypeMap.formatBool(failIfExists);
             CWMS_WATER_SUPPLY_PACKAGE.call_SET_CONTRACT_TYPES(DSL.using(c).configuration(),
                     contractTypes, paramFailIfExists);
