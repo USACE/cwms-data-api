@@ -235,6 +235,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildNotAuthorizedForOffice(input);
         } else if (isInvalidUnits(input)) {
             retVal = buildInvalidUnits(input);
+        } else if (isUnsupportedOperationException(input)) {
+            retVal = buildUnsupportedOperationException(input);
         }
 
         return retVal;
@@ -502,6 +504,31 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
 
         return new InvalidItemException(localizedMessage, cause);
+    }
+
+    public static boolean isUnsupportedOperationException(RuntimeException input) {
+        boolean retVal = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+            int errorCode = sqlException.getErrorCode();
+            //procedure doesn't exist
+            retVal = errorCode == 904
+                //Table or view does not exist
+                || errorCode == 942;
+        }
+        return retVal;
+    }
+
+
+    private static UnsupportedOperationException buildUnsupportedOperationException(RuntimeException input) {
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+        return new UnsupportedOperationException("CWMS currently does not support the requested operation", cause);
     }
 
     private static @Nullable String sanitizeOrNull(@Nullable String localizedMessage) {
