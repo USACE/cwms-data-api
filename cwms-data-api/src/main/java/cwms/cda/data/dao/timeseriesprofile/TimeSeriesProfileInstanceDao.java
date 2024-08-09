@@ -7,6 +7,7 @@ import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileInstance;
 import cwms.cda.data.dto.timeseriesprofile.TimeValuePair;
 import org.jetbrains.annotations.NotNull;
+import org.jooq.Condition;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Record;
@@ -15,6 +16,7 @@ import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PROFILE_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.AV_TS_PROFILE_INST;
 import usace.cwms.db.jooq.codegen.udt.records.PVQ_T;
 import usace.cwms.db.jooq.codegen.udt.records.PVQ_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_T;
@@ -41,21 +43,15 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 	void storeTimeSeriesProfileInstance(TimeSeriesProfile timeSeriesProfile, String profileData, Instant versionDate,
 			String versionId, String storeRule, boolean overrideProtection)
 	{
-		connection(dsl, conn -> {
-			try {
-				CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_INSTANCE__2(DSL.using(conn).configuration(),
-						timeSeriesProfile.getLocationId().getName(),
-						timeSeriesProfile.getKeyParameter(),
-						profileData,
-						versionId,
-						storeRule,
-						overrideProtection?"T":"F",
-						versionDate!=null?Timestamp.from(versionDate):null,
-						timeSeriesProfile.getLocationId().getOfficeId());
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-		});
+		connection(dsl, conn -> CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_INSTANCE__2(DSL.using(conn).configuration(),
+                timeSeriesProfile.getLocationId().getName(),
+                timeSeriesProfile.getKeyParameter(),
+                profileData,
+                versionId,
+                storeRule,
+                overrideProtection?"T":"F",
+                versionDate!=null?Timestamp.from(versionDate):null,
+                timeSeriesProfile.getLocationId().getOfficeId()));
 	}
 
 	void storeTimeSeriesProfileInstance(TimeSeriesProfileInstance timeseriesProfileInstance, String versionId, Instant versionInstant, String storeRule,String overrideProtection)
@@ -127,7 +123,6 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 
 			Timestamp versionTimeStamp =  Timestamp.from(versionInstant);
 
-			try {
 
 
 				CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_INSTANCE(DSL.using(conn).configuration(),
@@ -137,44 +132,44 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 						overrideProtection,
 						versionTimeStamp,
 						timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId());
-			}
-			catch(Exception ex)
-			{
-				ex.printStackTrace();
-			}
-			}
+				}
 			);
 	}
-	List<TimeSeriesProfileInstance> catalogTimeSeriesProfileInstances( String officeIdMask, String locationMask, String parameterMask, String versionMask,
-			Instant startTime, Instant endTime, String timeZone)
+
+
+	List<TimeSeriesProfileInstance> catalogTimeSeriesProfileInstances( String officeIdMask, String locationIdMask, String parameterIdMask, String versionMask)
 	{
-		return connectionResult(dsl, conn -> {
-			List<TimeSeriesProfileInstance> instanceList = new ArrayList<>();
-			Result<Record> results = CWMS_TS_PROFILE_PACKAGE.call_CAT_TS_PROFILE_INSTANCE(DSL.using(conn).configuration(),
-					locationMask, parameterMask, versionMask, Timestamp.from(startTime), Timestamp.from(endTime),
-					timeZone, officeIdMask);
-			for (Record result : results) {
+		List<TimeSeriesProfileInstance> timeSeriesProfileInstanceList = new ArrayList<>();
+
+		Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.LOCATION_ID, locationIdMask);
+		whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.OFFICE_ID, officeIdMask));
+		whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.KEY_PARAMETER_ID, parameterIdMask));
+		whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.VERSION_ID, versionMask));
+
+		@NotNull Result<Record> timeSeriesProfileInstanceResults =  dsl.select(DSL.asterisk()).from(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST)
+				.where(whereCondition)
+				.fetch();
+		for (Record result : timeSeriesProfileInstanceResults) {
 				CwmsId locationId = new CwmsId.Builder()
-						.withOfficeId((String) result.get(0))
-						.withName((String) result.get(1))
+						.withOfficeId(result.get("OFFICE_ID",String.class))
+						.withName(result.get("LOCATION_ID", String.class))
 						.build();
-				String parameterId = (String) result.get(2);
+				String parameterId = result.get("KEY_PARAMETER_ID", String.class);
 				TimeSeriesProfile timeSeriesProfile = new TimeSeriesProfile.Builder()
 						.withLocationId(locationId)
 						.withKeyParameter(parameterId)
 						.build();
 				TimeSeriesProfileInstance timeSeriesProfileInstance = new TimeSeriesProfileInstance.Builder()
 						.withTimeSeriesProfile(timeSeriesProfile)
-						.withVersion(result.get(3, String.class))
-						.withVersionDate(result.get(4, Instant.class))
-						.withFirstDate(result.get(5, Instant.class))
-						.withLastDate(result.get(6, Instant.class))
+						.withVersion(result.get("VERSION_ID", String.class))
+						.withVersionDate(result.get("VERSION_DATE", Instant.class))
+						.withFirstDate(result.get("FIRST_DATE_TIME", Instant.class))
+						.withLastDate(result.get("LAST_DATE_TIME", Instant.class))
 						.build();
 
-				instanceList.add(timeSeriesProfileInstance);
-			}
-			return instanceList;
-		});
+			timeSeriesProfileInstanceList.add(timeSeriesProfileInstance);
+		}
+		return timeSeriesProfileInstanceList;
 	}
 
 	TimeSeriesProfileInstance retrieveTimeSeriesProfileInstance(CwmsId location, String keyParameter,
@@ -192,7 +187,6 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 	{
 		return connectionResult(dsl, conn -> {
 			TS_PROF_DATA_T timeSeriesProfileData;
-			try {
 				timeSeriesProfileData = CWMS_TS_PROFILE_PACKAGE.call_RETRIEVE_TS_PROFILE_DATA(
 						DSL.using(conn).configuration(),
 						location.getName(),
@@ -210,13 +204,8 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 						maxVersion,
 						location.getOfficeId()
 				);
-			}
-			catch(Exception ex)
-			{
-				ex.printStackTrace();
-				return null;
-			}
-			return map(DSL.using(conn).configuration(), location.getOfficeId(), timeSeriesProfileData);
+
+			return map(DSL.using(conn).configuration(), location.getOfficeId(), timeSeriesProfileData, version, versionDate);
 		});
 	}
 	void deleteTimeSeriesProfileInstance(CwmsId location, String keyParameter,
@@ -230,7 +219,6 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 				versionTimestamp = Timestamp.from(versionDate);
 			}
 
-			try {
 				CWMS_TS_PROFILE_PACKAGE.call_DELETE_TS_PROFILE_INSTANCE(
 						DSL.using(conn).configuration(),
 						location.getName(),
@@ -242,16 +230,12 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 						versionTimestamp,
 						location.getOfficeId()
 				);
-			}
-			catch (Exception ex)
-			{
-				ex.printStackTrace();
-			}
+
 		});
 	}
 
 
-	private TimeSeriesProfileInstance map(@NotNull Configuration configuration, String officeId, TS_PROF_DATA_T timeSeriesProfileData)  {
+	private TimeSeriesProfileInstance map(@NotNull Configuration configuration, String officeId, TS_PROF_DATA_T timeSeriesProfileData, String version, Instant versionDate)  {
 		String timeZone = timeSeriesProfileData.getTIME_ZONE();
 		STR_TAB_T units = timeSeriesProfileData.getUNITS();
 		TS_PROF_DATA_TAB_T records = timeSeriesProfileData.getRECORDS();
@@ -261,6 +245,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		String keyParameter = CWMS_UTIL_PACKAGE.call_GET_PARAMETER_ID(configuration, keyParameterCode);
 		List<Instant> timeList = new ArrayList<>();
 		List<List<Double>> valuesList = new ArrayList<>();
+		List<List<Integer>> qualitiesList = new ArrayList<>();
 		List<List<BigInteger>> parametersList = new ArrayList<>();
 		for(TS_PROF_DATA_REC_T dataRecord : records)
 		{
@@ -268,14 +253,17 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			timeList.add(dateTime);
 			PVQ_TAB_T parameters = dataRecord.getPARAMETERS();
 			List<Double> valueList = new ArrayList<>();
+			List<Integer> qualityList = new ArrayList<>();
 			List<BigInteger> parameterList = new ArrayList<>();
 			for(PVQ_T parameter : parameters)
 			{
 				valueList.add(parameter.getVALUE());
+				qualityList.add(parameter.getQUALITY_CODE().intValue());
 				parameterList.add(parameter.getPARAMETER_CODE());
 			}
 			valuesList.add(valueList);
 			parametersList.add(parameterList);
+			qualitiesList.add(qualityList);
 		}
 		List<String> parameterList = new ArrayList<>();
 		List<List<TimeValuePair>> timeValuePairList = new ArrayList<>();
@@ -293,6 +281,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 					TimeValuePair timeValuePair = new TimeValuePair.Builder()
 							.withDateTime(timeList.get(i))
 							.withValue(valuesList.get(i).get(j))
+							.withQuality(qualitiesList.get(i).get(j))
 							.build();
 					timeValuePairList.get(j).add(timeValuePair);
 				}
@@ -321,6 +310,8 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		return new TimeSeriesProfileInstance.Builder()
 				.withTimeSeriesProfile(timeSeriesProfile)
 				.withTimeSeriesList(timeSeriesList)
+				.withVersion(version)
+				.withVersionDate(versionDate)
 				.build();
 	}
 }

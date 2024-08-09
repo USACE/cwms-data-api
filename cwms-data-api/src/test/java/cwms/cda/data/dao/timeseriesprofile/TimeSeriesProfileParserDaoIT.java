@@ -94,6 +94,47 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
     }
 
     @Test
+    void testCatalogTimeSeriesProfileInclusive() throws SQLException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        String officeId = "LRL";
+        String locationName = "Glensboro";
+        String[] parameters =  {"Depth", "Temp-Water"};
+        databaseLink.connection(c -> {
+            DSLContext context = getDslContext(c, databaseLink.getOfficeId());
+
+            TimeSeriesProfileDao timeSeriesProfileDao = new TimeSeriesProfileDao(context);
+
+            List<TimeSeriesProfile> timeSeriesProfileList = new ArrayList<>();
+            for(String parameter : parameters) {
+                TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile(officeId, locationName, parameter, parameters);
+                timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
+                timeSeriesProfileList.add(timeSeriesProfile);
+            }
+            TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
+
+
+            for(String parameter : parameters) {
+                TimeSeriesProfileParserIndexed timeSeriesProfileParser = buildTestTimeSeriesProfileParserIndexed(officeId, locationName, parameter);
+                timeSeriesProfileParserDao.storeTimeSeriesProfileParser(timeSeriesProfileParser, false);
+            }
+
+            List<TimeSeriesProfileParser> profileParserList = timeSeriesProfileParserDao.catalogTimeSeriesProfileParsers("*", "*", "*",true);
+            for (TimeSeriesProfileParser profileParser : profileParserList) {
+                timeSeriesProfileParserDao.deleteTimeSeriesProfileParser(profileParser.getLocationId().getName(), profileParser.getKeyParameter(), profileParser.getLocationId().getOfficeId());
+            }
+
+            for(TimeSeriesProfile timeSeriesProfile : timeSeriesProfileList) {
+                timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfile.getLocationId().getName(), timeSeriesProfile.getKeyParameter(),
+                        timeSeriesProfile.getLocationId().getOfficeId());
+            }
+
+            assertEquals(2, profileParserList.size());
+            assertEquals(2, profileParserList.get(0).getParameterInfoList().size() );
+            assertEquals(2, profileParserList.get(1).getParameterInfoList().size() );
+        }, CwmsDataApiSetupCallback.getWebUser());
+
+    }
+    @Test
     void testStoreAndRetrieveMultiple() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         String officeId = "LRL";

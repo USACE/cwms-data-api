@@ -1,11 +1,14 @@
 package cwms.cda.data.dao.timeseriesprofile;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
@@ -14,6 +17,8 @@ import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PROFILE_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.TS_PROFILE_T;
+
+import static usace.cwms.db.jooq.codegen.tables.AV_TS_PROFILE.AV_TS_PROFILE;
 
 public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
     public TimeSeriesProfileDao(DSLContext dsl) {
@@ -60,36 +65,38 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
                         destRefTsId, "F", "F",
                         officeId));
     }
+     public List<TimeSeriesProfile> catalogTimeSeriesProfiles(String locationIdMask, String parameterIdMask, String officeIdMask) {
+         List<TimeSeriesProfile> timeSeriesProfileList = new ArrayList<>();
 
-    public List<TimeSeriesProfile> catalogTimeSeriesProfiles(String locationIdMask, String parameterIdMask, String officeIdMask) {
-        return connectionResult(dsl, conn -> {
-            List<TimeSeriesProfile> timeSeriesProfileList = new ArrayList<>();
-            Result<Record> timeSeriesProfileResults = CWMS_TS_PROFILE_PACKAGE.call_CAT_TS_PROFILE(
-                    DSL.using(conn).configuration(), locationIdMask, parameterIdMask, officeIdMask);
-            for (Record timeSeriesProfileResult : timeSeriesProfileResults) {
-                Result<?> values = timeSeriesProfileResult.get("VALUE_PARAMETERS",  Result.class);
-                List<String> parameterList = new ArrayList<>();
-                for (Record value : values) {
-                    parameterList.add(value.get("PARMETER_ID", String.class));
-                }
-                CwmsId locationId = new CwmsId.Builder()
-                        .withName((String) timeSeriesProfileResult.get("LOCATION_ID"))
-                        .withOfficeId((String) timeSeriesProfileResult.get("OFFICE_ID"))
-                        .build();
-                CwmsId referenceTsId = new CwmsId.Builder()
-                        .withName((String) timeSeriesProfileResult.get("REF_TS_ID"))
-                        .withOfficeId((String) timeSeriesProfileResult.get("OFFICE_ID"))
-                        .build();
-                timeSeriesProfileList.add(new TimeSeriesProfile.Builder()
-                        .withDescription((String) timeSeriesProfileResult.get("DESCRIPTION"))
-                        .withReferenceTsId(referenceTsId)
-                        .withKeyParameter((String) timeSeriesProfileResult.get("KEY_PARAMETER_ID"))
-                        .withLocationId(locationId)
-                        .withParameterList(parameterList)
-                        .build());
-            }
-            return timeSeriesProfileList;
-        });
+        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_TS_PROFILE.LOCATION_ID, locationIdMask);
+        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE.OFFICE_ID, officeIdMask));
+        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE.KEY_PARAMETER_ID, parameterIdMask));
+
+         @NotNull Result<Record> timeSeriesProfileResults =  dsl.select(DSL.asterisk()).from(AV_TS_PROFILE)
+                 .where(whereCondition)
+                 .fetch();
+         for (Record timeSeriesProfileResult : timeSeriesProfileResults) {
+             String parameters = timeSeriesProfileResult.get("PARAMETERS", String.class);
+             String[] parameterArray = parameters.split(",");
+             List<String> parameterList = Arrays.asList(parameterArray);
+
+             CwmsId locationId = new CwmsId.Builder()
+                     .withName((String) timeSeriesProfileResult.get("LOCATION_ID"))
+                     .withOfficeId((String) timeSeriesProfileResult.get("OFFICE_ID"))
+                     .build();
+             CwmsId referenceTsId = new CwmsId.Builder()
+                     .withName((String) timeSeriesProfileResult.get("ELEV_TS_ID"))
+                     .withOfficeId((String) timeSeriesProfileResult.get("OFFICE_ID"))
+                     .build();
+             timeSeriesProfileList.add(new TimeSeriesProfile.Builder()
+                     .withDescription((String) timeSeriesProfileResult.get("DESCRIPTION"))
+                     .withReferenceTsId(referenceTsId)
+                     .withKeyParameter((String) timeSeriesProfileResult.get("KEY_PARAMETER_ID"))
+                     .withLocationId(locationId)
+                     .withParameterList(parameterList)
+                     .build());
+         }
+         return timeSeriesProfileList;
     }
 
     private TimeSeriesProfile map(TS_PROFILE_T timeSeriesProfile, String locationName, String keyParameter, String officeId) {
