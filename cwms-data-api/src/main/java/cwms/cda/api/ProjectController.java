@@ -3,6 +3,7 @@ package cwms.cda.api;
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.ID_MASK;
@@ -184,6 +185,10 @@ public class ProjectController implements CrudHandler {
                     @OpenApiContent(from = Project.class, type = Formats.JSON)
                 }
             ),
+            queryParams = {
+                @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                    description = "Create will fail if provided ID already exists. Default: true")
+            },
             method = HttpMethod.POST,
             tags = {TAG}
     )
@@ -192,13 +197,14 @@ public class ProjectController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader, Project.class);
             Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
             ProjectDao dao = new ProjectDao(dsl);
 
-            dao.create(project);
+            dao.create(project, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED);
         }
     }

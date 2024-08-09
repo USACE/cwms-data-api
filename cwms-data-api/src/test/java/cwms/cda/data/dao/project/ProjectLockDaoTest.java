@@ -73,7 +73,7 @@ class ProjectLockDaoTest {
         String appId = "needsRevoke_test";
         String officeMask = OFFICE;
         Project testProject = buildTestProject(OFFICE, projId);
-        prjDao.create(testProject);
+        prjDao.create(testProject, true);
 
         try {
             lockDao.removeAllLockRevokerRights(OFFICE, USER_ID, appId, officeMask); // reset
@@ -130,7 +130,7 @@ class ProjectLockDaoTest {
         String officeMask = OFFICE;
 
         Project testProject = buildTestProject(OFFICE, projId);
-        prjDao.create(testProject);
+        prjDao.create(testProject, true);
 
         try {
             assertFalse(lockDao.hasLockRevokerRights(OFFICE, USER_ID, projId, appId));
@@ -177,7 +177,7 @@ class ProjectLockDaoTest {
         String officeMask = OFFICE;
 
         Project testProject = buildTestProject(OFFICE, projId);
-        prjDao.create(testProject);
+        prjDao.create(testProject, true);
 
         try {
             lockDao.removeAllLockRevokerRights(OFFICE, USER_ID, appId, officeMask); // start fresh
@@ -218,7 +218,7 @@ class ProjectLockDaoTest {
         String appId = "revoke_test";
         String officeMask = OFFICE;
         Project testProject = buildTestProject(OFFICE, projId);
-        prjDao.create(testProject);
+        prjDao.create(testProject, true);
 
         try {
             int revokeTimeout = 10;
@@ -298,7 +298,7 @@ class ProjectLockDaoTest {
         String appId = "isLocked_test";
         String officeMask = OFFICE;
         Project testProject = buildTestProject(OFFICE, projId);
-        prjDao.create(testProject);
+        prjDao.create(testProject, true);
         String lockId;
         try {
             int revokeTimeout = 10;
@@ -340,7 +340,7 @@ class ProjectLockDaoTest {
         String appId = "catLocks_test";
         String officeMask = OFFICE;
         Project testProject = buildTestProject(OFFICE, projId);
-        prjDao.create(testProject);
+        prjDao.create(testProject, true);
         try {
             int revokeTimeout = 10;
 

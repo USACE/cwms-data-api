@@ -75,6 +75,7 @@ final class ProjectControllerIT extends DataApiTestIT {
             .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
             .body(json)
+            .queryParam(Controllers.FAIL_IF_EXISTS, true)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
