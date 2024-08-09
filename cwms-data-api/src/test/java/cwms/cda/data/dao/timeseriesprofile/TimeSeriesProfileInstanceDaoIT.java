@@ -172,7 +172,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
 
 
     @Test
-    void testRetrieveTimeSeriesProfileInstances() throws SQLException {
+    void testCatalogTimeSeriesProfileInstances() throws SQLException {
         Instant versionDate = Instant.parse("2024-07-09T12:00:00.00Z");
         String officeId = "LRL";
         String location = "Glensboro";
@@ -183,8 +183,6 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         String locationMask = "*";
         String parameterMask = "*";
         String versionMask = "*";
-        Instant startDate = Instant.parse("2020-07-09T12:00:00.00Z");
-        Instant endDate = Instant.parse("2025-07-09T12:00:00.00Z");
         String timeZone = "UTC";
         Instant firstDate = Instant.parse("2024-07-09T19:00:11.00Z");
         Instant[] dateTimeArray = {Instant.parse("2024-07-09T19:00:11.00Z"), Instant.parse("2024-07-09T20:00:22.00Z")};
@@ -201,7 +199,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             TimeSeriesProfileInstanceDao timeSeriesProfileInstanceDao = new TimeSeriesProfileInstanceDao(context);
             // test retrieveTimeSeriesProfileInstances
             List<TimeSeriesProfileInstance> result = timeSeriesProfileInstanceDao.catalogTimeSeriesProfileInstances(officeIdMask, locationMask, parameterMask,
-                    versionMask, startDate, endDate, timeZone);
+                    versionMask);
 
             // cleanup: delete the time series profile instances we created
             boolean overrideProtection = false;
@@ -209,6 +207,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                 timeSeriesProfileInstanceDao.deleteTimeSeriesProfileInstance(timeSeriesProfileInstance.getTimeSeriesProfile().getLocationId(),
                         timeSeriesProfileInstance.getTimeSeriesProfile().getKeyParameter(), timeSeriesProfileInstance.getVersion(),
                         firstDate, timeZone, overrideProtection, timeSeriesProfileInstance.getVersionDate());
+                break;
             }
             // check if we retrieve all the instances we stored
             assertEquals(versions.length, result.size(), CwmsDataApiSetupCallback.getWebUser());
@@ -223,7 +222,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         String[] keyParameter = {"Depth", "m"};
         String[] parameter1 = {"Pres", "psi"};
         String unit = "bar,m";
-        Instant startTime = Instant.parse("2023-07-09T19:00:11.00Z");
+        Instant startTime = Instant.parse("2024-07-09T19:00:11.00Z");
         Instant endTime = Instant.parse("2025-01-01T19:00:22.00Z");
         String timeZone = "UTC";
         String startInclusive = "T";
@@ -320,15 +319,15 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             }
             // instance does not exist anymore
             assertNull(timeSeriesProfileInstance);
-
-            // cleanup the timeseries
-            try {
-                CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, c);
-                tsDao.deleteAll(c, officeId, locationName + "." + keyParameter[0] + ".Inst.0.0." + version);
-                tsDao.deleteAll(c, officeId, locationName + "." + parameter1[0] + ".Inst.0.0." + version);
-            } catch (SQLException e) {
-                throw(new RuntimeException(e));
-            }
+//
+//            // cleanup the timeseries
+//            try {
+//                CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, c);
+//                tsDao.deleteAll(c, officeId, locationName + "." + keyParameter[0] + ".Inst.0.0." + version);
+//                tsDao.deleteAll(c, officeId, locationName + "." + parameter1[0] + ".Inst.0.0." + version);
+//            } catch (SQLException e) {
+//                throw(new RuntimeException(e));
+//            }
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -424,10 +423,15 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                     .withOfficeId(officeId)
                     .withName(locationName)
                     .build();
-            result[0] = timeSeriesProfileInstanceDao.retrieveTimeSeriesProfileInstance(location, keyParameter, version,
+            try {
+                result[0] = timeSeriesProfileInstanceDao.retrieveTimeSeriesProfileInstance(location, keyParameter, version,
                         unit, startTime, endTime, timeZone, startInclusive ? "T" : "F", endInclusive ? "T" : "F", previous ? "T" : "F", next ? "T" : "F", versionDate,
                         maxVersion ? "T" : "F");
-
+            }
+            catch(cwms.cda.api.errors.NotFoundException ex)
+            {
+                // return null for not found
+            }
         }, CwmsDataApiSetupCallback.getWebUser());
         return result[0];
     }
