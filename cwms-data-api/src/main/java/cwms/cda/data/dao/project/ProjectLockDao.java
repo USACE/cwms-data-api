@@ -64,16 +64,6 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
      * @param revokeTimeout  The time in seconds to wait for existing locks to be revoked
      * @return The lockId if the request was successful, null otherwise
      */
-    public String requestLock(String office, String projectId, String appId,
-                              boolean revokeExisting, int revokeTimeout) {
-        BigInteger revokeTimeoutBI = toBigInteger(revokeTimeout);
-        return connectionResult(dsl,
-            c -> CWMS_PROJECT_PACKAGE.call_REQUEST_LOCK(getDslContext(c, office).configuration(),
-                projectId, appId, OracleTypeMap.formatBool(revokeExisting), revokeTimeoutBI, office,
-                null, null, null, null)
-        );
-    }
-
     public String requestLock(ProjectLock request, boolean revokeExisting, int revokeTimeout) {
 
         String office = request.getOfficeId();
@@ -96,7 +86,6 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
             }
         });
     }
-
 
     /**
      * Determines if a project lock is active for the given parameters.

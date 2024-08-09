@@ -82,7 +82,7 @@ public class ProjectLockRevokeDenyHandlerIT extends DataApiTestIT {
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
 
             Project testProject = buildTestProject(OFFICE, projId);
-            prjDao.create(testProject);
+            prjDao.create(testProject, true);
 
             lockDao.allowLockRevokerRights(OFFICE, projId, appId, user1.getName());
             lockDao.allowLockRevokerRights(OFFICE, projId, appId, user2.getName());

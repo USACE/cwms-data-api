@@ -72,9 +72,9 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
             ProjectDao prjDao = new ProjectDao(dsl);
-            prjDao.create(buildTestProject(OFFICE, lockReqPrj));
-            prjDao.create(buildTestProject(OFFICE, lockReqPrj2));
-            prjDao.create(buildTestProject(OFFICE, revPrj));
+            prjDao.create(buildTestProject(OFFICE, lockReqPrj), true);
+            prjDao.create(buildTestProject(OFFICE, lockReqPrj2), true);
+            prjDao.create(buildTestProject(OFFICE, revPrj), true);
         });
     }
 

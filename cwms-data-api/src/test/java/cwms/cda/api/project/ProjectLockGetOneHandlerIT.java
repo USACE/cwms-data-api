@@ -74,7 +74,7 @@ public class ProjectLockGetOneHandlerIT extends DataApiTestIT {
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
 
             Project testProject = buildTestProject(OFFICE, projId);
-            prjDao.create(testProject);
+            prjDao.create(testProject, true);
 
             TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
             String userName = user.getName();

@@ -74,7 +74,7 @@ public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
             ProjectDao prjDao = new ProjectDao(dsl);
 
             Project testProject = buildTestProject(OFFICE, projId);
-            prjDao.create(testProject);
+            prjDao.create(testProject, true);
 
             lockDao.removeAllLockRevokerRights(OFFICE, appId, userName); // start fresh
             lockDao.allowLockRevokerRights(OFFICE, projId, appId, userName);

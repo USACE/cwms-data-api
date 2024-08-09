@@ -65,7 +65,7 @@ public class ProjectPublishStatusUpdateHandlerIT extends DataApiTestIT {
             ProjectDao prjDao = new ProjectDao(dsl);
 
             Project testProject = buildTestProject(OFFICE, projId);
-            prjDao.create(testProject);
+            prjDao.create(testProject, true);
         });
     }
 

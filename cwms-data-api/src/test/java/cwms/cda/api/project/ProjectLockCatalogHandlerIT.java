@@ -78,15 +78,15 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
             ProjectDao prjDao = new ProjectDao(dsl);
 
             Project testProject1 = buildTestProject(OFFICE, projId1);
-            prjDao.create(testProject1);
+            prjDao.create(testProject1, true);
             Project testProject2 = buildTestProject(OFFICE, projId2);
-            prjDao.create(testProject2);
+            prjDao.create(testProject2, true);
 
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
             String webUser = CwmsDataApiSetupCallback.getWebUser();  // l2webtest
             //  removeAllLockRevokerRights seems to hang..
-            lockDao.updateLockRevokerRights(OFFICE,  projId1, appId, webUser, true);
-            lockDao.updateLockRevokerRights(OFFICE,  projId2, appId, webUser, true);
+            lockDao.updateLockRevokerRights(OFFICE, projId1, appId, webUser, true);
+            lockDao.updateLockRevokerRights(OFFICE, projId2, appId, webUser, true);
 
             ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId1, appId).build();
 
@@ -113,8 +113,8 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
             String webUser = CwmsDataApiSetupCallback.getWebUser();  // l2webtest
 
-            lockDao.updateLockRevokerRights(OFFICE,  projId1, appId, webUser, true);
-            lockDao.updateLockRevokerRights(OFFICE,  projId2, appId, webUser, true);
+            lockDao.updateLockRevokerRights(OFFICE, projId1, appId, webUser, true);
+            lockDao.updateLockRevokerRights(OFFICE, projId2, appId, webUser, true);
 
             revokeLock(dsl, OFFICE, projId1, appId);  // happens as L2WEBTEST
             revokeLock(dsl, OFFICE, projId2, appId);

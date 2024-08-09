@@ -339,9 +339,9 @@ class ProjectLockDaoTest {
         String appId = "catLocks_test";
 
         Project testProject = buildTestProject(OFFICE, projId1);
-        prjDao.create(testProject);
+        prjDao.create(testProject,true);
         Project testProject2 = buildTestProject(OFFICE, projId2);
-        prjDao.create(testProject2);
+        prjDao.create(testProject2, true);
         try {
             int revokeTimeout = 10;
 
@@ -374,7 +374,7 @@ class ProjectLockDaoTest {
                 logger.at(Level.WARNING).withCause(e).log("Failed to revoke lock: %s", projId1);
             }
             try {
-                 lockDao.revokeLock(OFFICE, projId2, appId, 0);
+                lockDao.revokeLock(OFFICE, projId2, appId, 0);
             } catch (Exception e) {
                 logger.at(Level.WARNING).withCause(e).log("Failed to revoke lock: %s", projId2);
             }
@@ -422,8 +422,6 @@ class ProjectLockDaoTest {
                 .withHydropowerDesc("Hydropower Description")
                 .withSedimentationDesc("Sedimentation Description")
                 .build();
-
     }
-
 
 }

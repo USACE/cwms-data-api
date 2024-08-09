@@ -67,7 +67,7 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
             ProjectDao prjDao = new ProjectDao(dsl);
 
             Project testProject = buildTestProject(OFFICE, projId);
-            prjDao.create(testProject);
+            prjDao.create(testProject, true);
 
             TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
             String userName = user.getName();
