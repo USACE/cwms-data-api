@@ -221,11 +221,11 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * as well as a where clause to filter the shared_ref_location_id.
      * @Param officeId The office id to use for the query.
      * @Param locCategoryLike A regex to use to filter the location categories.  May be null.
-     * @Param sharedLocAliasLike A where clause to filter the shared_loc_alias_id.  May be null.
+     * @Param sharedRefLocLike A where clause to filter the shared_loc_alias_id.  May be null.
      * @return A list of all location groups for the given parameters.
      */
 
-    public List<LocationGroup> getLocationGroups(String officeId, String locCategoryLike, String sharedLocAliasLike) {
+    public List<LocationGroup> getLocationGroups(String officeId, String locCategoryLike, String sharedRefLocLike) {
         AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
@@ -266,8 +266,8 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             condition = caseInsensitiveLikeRegex(alcg.LOC_CATEGORY_ID, locCategoryLike);
         }
 
-        if (sharedLocAliasLike != null && !sharedLocAliasLike.isEmpty()) {
-            condition = condition.and(caseInsensitiveLikeRegex(alcg.SHARED_LOC_ALIAS_ID, sharedLocAliasLike));
+        if (sharedRefLocLike != null && !sharedRefLocLike.isEmpty()) {
+            condition = condition.and(caseInsensitiveLikeRegex(alcg.SHARED_REF_LOCATION_ID, sharedRefLocLike));
         }
 
         if (officeId != null) {

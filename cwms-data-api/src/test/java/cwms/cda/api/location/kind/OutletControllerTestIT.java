@@ -26,6 +26,8 @@ import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dao.location.kind.ProjectStructureIT;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LocationCategory;
+import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.data.dto.location.kind.Outlet;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
@@ -38,7 +40,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
@@ -54,19 +57,33 @@ class OutletControllerTestIT extends ProjectStructureIT {
     private static final Location NEW_CONDUIT_GATE_1 = buildProjectStructureLocation(PROJECT_1_ID.getName() + "-CG10",
                                                                                      OUTLET_KIND);
     private static final Outlet NEW_CONDUIT_GATE_1_OUTLET = buildTestOutlet(NEW_CONDUIT_GATE_1, PROJECT_LOC,
-                                                                            CONDUIT_GATE_RATING_GROUP);
+                                                                            CONDUIT_GATE_RATING_GROUP, null);
 
     private static final Location EXISTING_CONDUIT_GATE = buildProjectStructureLocation(
             PROJECT_1_ID.getName() + "-CG20", OUTLET_KIND);
     private static final Outlet EXISTING_CONDUIT_GATE_OUTLET = buildTestOutlet(EXISTING_CONDUIT_GATE, PROJECT_LOC,
-                                                                               CONDUIT_GATE_RATING_GROUP);
+                                                                               CONDUIT_GATE_RATING_GROUP, null);
 
     private static final Location NEW_CONDUIT_GATE_2 = buildProjectStructureLocation(PROJECT_1_ID.getName() + "-CG30",
                                                                                      OUTLET_KIND);
     private static final Outlet NEW_CONDUIT_GATE_2_OUTLET = buildTestOutlet(NEW_CONDUIT_GATE_2, PROJECT_LOC,
-                                                                            CONDUIT_GATE_RATING_GROUP);
+                                                                            CONDUIT_GATE_RATING_GROUP, null);
     private static final CwmsId RENAMED_CONDUIT_GATE = new CwmsId.Builder().withName(
             NEW_CONDUIT_GATE_2.getName() + "_Renamed").withOfficeId(OFFICE_ID).build();
+
+    private static final String RATING_PROJECT_ID = "BIGH-TG1";
+    private static final String RATING_SPEC_ID = RATING_PROJECT_ID
+            + ".Opening-Low_Flow_Gates,Elev;Flow-Low_Flow_Gates.Standard.Production";
+    private static final CwmsId RATING_GROUP = new CwmsId.Builder().withName("Rating-" + RATING_PROJECT_ID
+            + "-RatedGate").withOfficeId(OFFICE_ID).build();
+    private static final Location RATED_OUTLET_LOCATION
+            = buildProjectStructureLocation(RATING_PROJECT_ID, OUTLET_KIND);
+    private static final Outlet NEW_RATED_OUTLET
+            = buildTestOutlet(RATED_OUTLET_LOCATION, PROJECT_LOC, RATING_GROUP, RATING_SPEC_ID);
+    private static final LocationGroup RATING_GROUP_LOCATION_GROUP
+            = new LocationGroup(new LocationCategory(OFFICE_ID, "Rating",
+            "Contains groups the relate outlets to ratings"), OFFICE_ID, RATING_GROUP.getName(),
+            "Shared alias contains rating spec for assigned outlets.", RATING_SPEC_ID, null, null);
 
     @BeforeAll
     public static void setup() throws Exception {
@@ -80,6 +97,7 @@ class OutletControllerTestIT extends ProjectStructureIT {
                 deleteLocation(context, RENAMED_CONDUIT_GATE.getOfficeId(), RENAMED_CONDUIT_GATE.getName());
                 storeLocation(context, NEW_CONDUIT_GATE_2);
                 storeLocation(context, EXISTING_CONDUIT_GATE);
+                storeLocation(context, RATED_OUTLET_LOCATION);
                 outletDao.storeOutlet(EXISTING_CONDUIT_GATE_OUTLET, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -96,6 +114,7 @@ class OutletControllerTestIT extends ProjectStructureIT {
 
             outletDao.deleteOutlet(EXISTING_CONDUIT_GATE.getOfficeId(), EXISTING_CONDUIT_GATE.getName(),
                                    DeleteRule.DELETE_ALL);
+            deleteLocation(context, RATED_OUTLET_LOCATION.getOfficeId(), RATED_OUTLET_LOCATION.getName());
             deleteLocation(context, NEW_CONDUIT_GATE_1.getOfficeId(), NEW_CONDUIT_GATE_1.getName());
             deleteLocation(context, NEW_CONDUIT_GATE_2.getOfficeId(), NEW_CONDUIT_GATE_2.getName());
             deleteLocation(context, RENAMED_CONDUIT_GATE.getOfficeId(), RENAMED_CONDUIT_GATE.getName());
@@ -185,6 +204,121 @@ class OutletControllerTestIT extends ProjectStructureIT {
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
         ;
+    }
+
+    @Test
+    void test_rating_spec_id() {
+        // Structure of test:
+        // 1) Create the Rating Location group
+        // 2) Create the Outlet
+        // 3) Retrieve the Location Group and assert that it has the ratingSpecId (Shared loc alias id)
+        // 4) Retrieve the Outlet and assert that it has the ratingSpecId
+        // 5) Delete the Outlet
+        // 6) Delete the LocationGroup
+        // 7) Retrieve the Outlet and assert that it does not exist
+
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, LocationGroup.class),
+                RATING_GROUP_LOCATION_GROUP);
+
+        // Create the new location group
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, USER.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/group/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        json = Formats.format(Formats.parseHeader(Formats.JSONV1, Outlet.class), NEW_RATED_OUTLET);
+
+        // Create the outlet
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+        .body(json)
+            .header(AUTH_HEADER, USER.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, "false")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("projects/outlets")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Assert the locationGroup has rating spec id
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV1)
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(CATEGORY_ID, "Rating")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/group/" + RATING_GROUP.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("shared-loc-alias-id", equalTo(RATING_SPEC_ID))
+        ;
+
+        // Get the newly updated outlet, assert that it has rating spec id
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV1)
+            .queryParam(Controllers.OFFICE, OFFICE_ID)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("projects/outlets/" + RATED_OUTLET_LOCATION.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("rating-spec-id", equalTo(RATING_SPEC_ID))
+        ;
+
+        // Delete the Outlet
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .queryParam(Controllers.OFFICE, OFFICE_ID)
+            .header(AUTH_HEADER, USER.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(METHOD, "DELETE_KEY")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("projects/outlets/" + RATED_OUTLET_LOCATION.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        // Delete the LocationGroup
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .queryParam(Controllers.OFFICE, OFFICE_ID)
+            .header(AUTH_HEADER, USER.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(CATEGORY_ID, "Rating")
+            .queryParam(CASCADE_DELETE, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/location/group/" + RATING_GROUP.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
     }
 
     @Test
@@ -324,12 +458,13 @@ class OutletControllerTestIT extends ProjectStructureIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    private static Outlet buildTestOutlet(Location outletLoc, Location projectLoc, CwmsId ratingId) {
+    private static Outlet buildTestOutlet(Location outletLoc, Location projectLoc, CwmsId ratingId, String ratingSpecId) {
         return new Outlet.Builder().withProjectId(new CwmsId.Builder().withName(projectLoc.getName())
                                                                       .withOfficeId(projectLoc.getOfficeId())
                                                                       .build())
                                    .withLocation(outletLoc)
                                    .withRatingGroupId(ratingId)
+                                   .withRatingSpecId(ratingSpecId)
                                    .build();
     }
 }

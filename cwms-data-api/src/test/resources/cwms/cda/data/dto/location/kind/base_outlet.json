@@ -23,5 +23,5 @@
     "office-id": "SPK",
     "name": "Rating-BIGH-TG1"
   },
-  "shared-loc-alias-id": "Rating-BIGH-TG1.Elev;Flow-Uncontrolled_Spillway.Linear.Production"
+  "rating-spec-id": "Rating-BIGH-TG1.Elev;Flow-Uncontrolled_Spillway.Linear.Production"
 }

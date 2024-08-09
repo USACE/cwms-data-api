@@ -36,12 +36,12 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = Outlet.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({"projectId", "location", "ratingCatId", "ratingGroupId", "sharedLocAliasId"})
+@JsonPropertyOrder({"projectId", "location", "ratingCatId", "ratingGroupId", "ratingSpecId"})
 public final class Outlet extends ProjectStructure {
     public static final String RATING_LOC_GROUP_CATEGORY = "Rating";
     private final CwmsId ratingCategoryId;
     private final CwmsId ratingGroupId;
-    private final String sharedLocAliasId;
+    private final String ratingSpecId;
 
     private Outlet(Builder builder) {
         super(builder.projectId, builder.location);
@@ -49,7 +49,7 @@ public final class Outlet extends ProjectStructure {
         ratingCategoryId = new CwmsId.Builder().withOfficeId(builder.projectId.getOfficeId())
                                                .withName(RATING_LOC_GROUP_CATEGORY)
                                                .build();
-        sharedLocAliasId = builder.sharedLocAliasId;
+        ratingSpecId = builder.ratingSpecId;
     }
 
     public CwmsId getRatingGroupId() {
@@ -60,8 +60,8 @@ public final class Outlet extends ProjectStructure {
         return ratingCategoryId;
     }
 
-    public String getSharedLocAliasId() {
-        return sharedLocAliasId;
+    public String getRatingSpecId() {
+        return ratingSpecId;
     }
 
     @JsonIgnoreProperties(value = {"rating-category-id"})
@@ -69,7 +69,7 @@ public final class Outlet extends ProjectStructure {
         private CwmsId projectId;
         private Location location;
         private CwmsId ratingGroupId;
-        private String sharedLocAliasId;
+        private String ratingSpecId;
 
         public Builder() {
         }
@@ -78,7 +78,7 @@ public final class Outlet extends ProjectStructure {
             projectId = outlet.getProjectId();
             location = outlet.getLocation();
             ratingGroupId = outlet.getRatingGroupId();
-            sharedLocAliasId = outlet.getSharedLocAliasId();
+            ratingSpecId = outlet.getRatingSpecId();
         }
 
         public Outlet build() {
@@ -100,8 +100,8 @@ public final class Outlet extends ProjectStructure {
             return this;
         }
 
-        public Builder withSharedLocAliasId(String sharedLocAliasId) {
-            this.sharedLocAliasId = sharedLocAliasId;
+        public Builder withRatingSpecId(String ratingSpecId) {
+            this.ratingSpecId = ratingSpecId;
             return this;
         }
     }

@@ -32,6 +32,7 @@ import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.data.dto.location.kind.VirtualOutletRecord;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
@@ -79,13 +80,12 @@ public class OutletDao extends JooqDao<Outlet> {
         });
     }
 
-    private LocationGroup getRatingGroupId(String locationId, List<LocationGroup> groups) {
+    private Optional<LocationGroup> getRatingGroup(String locationId, List<LocationGroup> groups) {
         return groups.stream()
                      .filter(group -> group.getAssignedLocations()
                                            .stream()
                                            .anyMatch(loc -> loc.getLocationId().equalsIgnoreCase(locationId)))
-                     .findFirst()
-                     .orElse(null);
+                     .findFirst();
     }
 
     public void storeOutlet(Outlet outlet, boolean failIfExists) {
@@ -185,18 +185,19 @@ public class OutletDao extends JooqDao<Outlet> {
     private Outlet mapToOutlet(PROJECT_STRUCTURE_OBJ_T outlet,
                                List<LocationGroup> groups) {
         Location location = LocationUtil.getLocation(outlet.getSTRUCTURE_LOCATION());
-        LocationGroup locGroupReturn = getRatingGroupId(location.getName(), groups);
-        CwmsId ratingGroupId = locGroupReturn == null ? null
-                : new CwmsId.Builder().withOfficeId(locGroupReturn.getOfficeId())
-                                      .withName(locGroupReturn.getId())
-                                      .build();
-        String sharedLocAliasId = locGroupReturn == null ? null : locGroupReturn.getSharedLocAliasId();
+        Optional<LocationGroup> locGroupReturn = getRatingGroup(location.getName(), groups);
+        CwmsId ratingGroupId = locGroupReturn.map(id -> new CwmsId.Builder().withName(id.getId())
+                                                                         .withOfficeId(id.getOfficeId())
+                                                                         .build())
+                                             .orElse(null);
+        String sharedLocAliasId = locGroupReturn.map(LocationGroup::getSharedLocAliasId)
+                                                .orElse(null);
         CwmsId projectId = LocationUtil.getLocationIdentifier(outlet.getPROJECT_LOCATION_REF());
 
         return new Outlet.Builder().withLocation(location)
                                    .withProjectId(projectId)
                                    .withRatingGroupId(ratingGroupId)
-                                   .withSharedLocAliasId(sharedLocAliasId)
+                                   .withRatingSpecId(sharedLocAliasId)
                                    .build();
     }
 
