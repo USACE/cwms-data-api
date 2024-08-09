@@ -60,7 +60,6 @@ class BasinDaoIT extends DataApiTestIT {
     private static final String OFFICE_ID = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
     private static final String UNIT_SYSTEM = "SI";
     private static final String UNITS = "km2";
-    final String DELETE_ACTION = "DELETE ALL";
     private static final ArrayList<Location> locationsCreated = new ArrayList<>();
     private static final Basin parentBasin = new Basin.Builder()
             .withBasinId(new CwmsId.Builder()
@@ -217,7 +216,7 @@ class BasinDaoIT extends DataApiTestIT {
                 assertNotNull(basin1);
                 basinDao.storeBasin(basin1);
                 basins.add(basin1);
-                List<Basin> retrievedBasins = basinDao.getAllBasins(UNIT_SYSTEM, OFFICE_ID);
+                List<Basin> retrievedBasins = basinDao.getAllBasins(OFFICE_ID, UNITS);
 
                 assertNotNull(retrievedBasins);
                 for (int i = 0; i < basins.size(); i++) {
@@ -241,7 +240,7 @@ class BasinDaoIT extends DataApiTestIT {
                 assertNotNull(basin);
                 BasinDao basinDao = new BasinDao(ctx);
                 basinDao.storeBasin(basin);
-                Basin retrievedBasin = basinDao.getBasin(basin.getBasinId(), UNIT_SYSTEM);
+                Basin retrievedBasin = basinDao.getBasin(basin.getBasinId(), UNITS);
                 BasinTest.assertSame(basin, retrievedBasin);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -276,7 +275,7 @@ class BasinDaoIT extends DataApiTestIT {
             try {
                 basinDao.storeBasin(basin);
                 basinDao.renameBasin(basin.getBasinId(), renamedBasin.getBasinId());
-                Basin retrievedBasin = basinDao.getBasin(renamedBasin.getBasinId(), UNIT_SYSTEM);
+                Basin retrievedBasin = basinDao.getBasin(renamedBasin.getBasinId(), UNITS);
                 assertNotNull(retrievedBasin);
                 BasinTest.assertSame(renamedBasin, retrievedBasin);
             } catch (Exception e) {
@@ -296,7 +295,7 @@ class BasinDaoIT extends DataApiTestIT {
                 assertNotNull(basin);
                 BasinDao basinDao = new BasinDao(ctx);
                 basinDao.storeBasin(basin);
-                basinDao.deleteBasin(basin.getBasinId(), DELETE_ACTION);
+                basinDao.deleteBasin(basin.getBasinId(), DeleteRule.DELETE_ALL);
                 CwmsId basinId = basin.getBasinId();
                 assertThrows(NotFoundException.class, () -> basinDao.getBasin(basinId, UNIT_SYSTEM));
             } catch (Exception e) {
@@ -312,7 +311,7 @@ class BasinDaoIT extends DataApiTestIT {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             try {
                 BasinDao basinDao = new BasinDao(ctx);
-                basinDao.deleteBasin(basin.getBasinId(), DELETE_ACTION);
+                basinDao.deleteBasin(basin.getBasinId(), DeleteRule.DELETE_ALL);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

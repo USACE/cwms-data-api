@@ -313,9 +313,11 @@ public class ProjectDao extends JooqDao<Project> {
      * Creates a new project.
      *
      * @param project The project object to be created.
-     */
-    public void create(Project project) {
-        boolean failIfExists = true;
+     * @param failIfExists Flag indicating whether the create operation should fail if the
+     *                     project already exists. true if the operation should fail, false otherwise.
+     */   
+    public void create(Project project, boolean failIfExists) {
+
         String office = project.getLocation().getOfficeId();
 
         PROJECT_OBJ_T projectT = toProjectT(project);

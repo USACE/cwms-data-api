@@ -2,8 +2,10 @@ package cwms.cda.helpers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import cwms.cda.api.Controllers;
 import cwms.cda.data.dto.TimeSeries;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -120,6 +122,25 @@ class DateUtilsTest {
         ZonedDateTime ptChZdt = DateUtils.parseUserDate("PT-24H", centralZone, now);
 
         assertEquals(ptZdt.toInstant(), ptChZdt.toInstant(), "PT-24H should be the same in any zone");
+    }
+
+    @Test
+    void test_controllers_example_date(){
+        ZonedDateTime zdt =  DateUtils.parseUserDate(Controllers.EXAMPLE_DATE, "UTC");
+        assertNotNull(zdt);
+        Instant expected = ZonedDateTime.of(2021,6,10,13,0,0,0,
+                ZoneId.of("PST8PDT")).toInstant();
+        assertEquals(expected, zdt.toInstant());
+    }
+
+    @Test
+    void test_DateTimeFormatter_iso_zoned_example(){
+        String isoExample = "2011-12-03T10:15:30+01:00[Europe/Paris]";  // Example from java.time.format.DateTimeFormatter javadoc.
+        ZonedDateTime zdt =  DateUtils.parseUserDate(isoExample, "UTC");
+        assertNotNull(zdt);
+        Instant expected = ZonedDateTime.of(2011,12,3,10,15,30,0,
+                ZoneId.of("Europe/Paris")).toInstant();
+        assertEquals(expected, zdt.toInstant());
     }
 
 }

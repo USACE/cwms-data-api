@@ -72,7 +72,7 @@ class ProjectLockDaoTest {
         String projId = "needsRevoke";
         String appId = "needsRevoke_test";
         Project testProject = buildTestProject(OFFICE, projId);
-        prjDao.create(testProject);
+        prjDao.create(testProject, true);
 
         try {
             lockDao.removeAllLockRevokerRights(OFFICE, appId, USER_ID); // reset
@@ -129,7 +129,7 @@ class ProjectLockDaoTest {
         String appId = "unitest";
 
         Project testProject = buildTestProject(OFFICE, projId);
-        prjDao.create(testProject);
+        prjDao.create(testProject, true);
 
         try {
             assertFalse(lockDao.hasLockRevokerRights(OFFICE, projId, appId, USER_ID));
@@ -175,7 +175,7 @@ class ProjectLockDaoTest {
         String officeMask = OFFICE;
 
         Project testProject = buildTestProject(OFFICE, projId);
-        prjDao.create(testProject);
+        prjDao.create(testProject, true);
 
         try {
             lockDao.removeAllLockRevokerRights(OFFICE, appId, USER_ID); // start fresh
@@ -215,7 +215,7 @@ class ProjectLockDaoTest {
         String projId = "canUnset";
         String appId = "revoke_test";
         Project testProject = buildTestProject(OFFICE, projId);
-        prjDao.create(testProject);
+        prjDao.create(testProject, true);
 
         try {
             int revokeTimeout = 10;
@@ -294,7 +294,7 @@ class ProjectLockDaoTest {
         String projId = "isLockd";
         String appId = "isLocked_test";
         Project testProject = buildTestProject(OFFICE, projId);
-        prjDao.create(testProject);
+        prjDao.create(testProject, true);
         String lockId;
         try {
             int revokeTimeout = 10;
@@ -337,6 +337,7 @@ class ProjectLockDaoTest {
         String projId1 = "catLocks1";
         String projId2 = "catLocks2";
         String appId = "catLocks_test";
+
         Project testProject = buildTestProject(OFFICE, projId1);
         prjDao.create(testProject);
         Project testProject2 = buildTestProject(OFFICE, projId2);

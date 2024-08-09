@@ -77,9 +77,6 @@ public final class Controllers {
     public static final String LOCATION_CATEGORY_LIKE = "location-category-like";
     public static final String LOCATION_GROUP_LIKE = "location-group-like";
 
-
-
-
     public static final String TIMESERIES_GROUP_LIKE = "timeseries-group-like";
     public static final String ACCEPT = "Accept";
     public static final String CLOB_ID = "clob-id";
@@ -128,6 +125,8 @@ public final class Controllers {
     public static final String MAX_VERSION = "max-version";
     public static final String TIMESERIES = "timeseries";
     public static final String LOCATIONS = "locations";
+    public static final String WATER_USER = "water-user";
+    public static final String CONTRACT_NAME = "contract-name";
 
     public static final String LOCATION_ID = "location-id";
     public static final String SOURCE_ENTITY = "source-entity";
@@ -186,6 +185,7 @@ public final class Controllers {
     public static final String DEFAULT_VALUE = "default-value";
     public static final String CATEGORY = "category";
     public static final String PREFIX = "prefix";
+    public static final String PROJECT_LIKE = "project-like";
 
     public static final String APPLICATION_ID = "application-id";
     public static final String REVOKE_EXISTING = "revoke-existing";
@@ -359,14 +359,17 @@ public final class Controllers {
     }
 
     /**
-     * Retrieves the value of the specified query parameter and converts it to a ZonedDateTime object.
-     *
-     * @param ctx      The context of the request.
-     * @param param    The name of the query parameter to retrieve.
-     * @param timezone The timezone to use for parsing the date.
-     * @return The query parameter value as a ZonedDateTime object,
-     *     or null if the parameter is not found or cannot be parsed.
+     * Returns the first matching query param or throws RequiredQueryParameterException.
+     * @param ctx Request Context
+     * @param name Query parameter name
+     * @return value of the parameter
+     * @throws RequiredQueryParameterException if the parameter is not found
      */
+    public static <T> T requiredParamAs(io.javalin.http.Context ctx, String name, Class<T> type) {
+        return ctx.queryParamAsClass(name, type)
+            .getOrThrow(e -> new RequiredQueryParameterException(name));
+    }
+
     @Nullable
     public static ZonedDateTime queryParamAsZdt(Context ctx, String param, String timezone) {
         ZonedDateTime beginZdt = null;

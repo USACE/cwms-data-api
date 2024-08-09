@@ -101,8 +101,8 @@ public class OutletController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Office id for the reservoir project location " +
-                            "associated with the outlets.  Defaults to the user session id."),
+                    @OpenApiParam(name = OFFICE, required = true, description = "Office id for the reservoir project location " +
+                            "associated with the outlets."),
                     @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the " +
                             "Outlets whose data is to be included in the response."),
             },
