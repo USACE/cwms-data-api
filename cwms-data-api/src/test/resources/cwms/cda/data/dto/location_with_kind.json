@@ -1,6 +1,6 @@
 {
   "kind": "EMBANKMENT",
-  "locations": [
+  "location-ids": [
     {
       "name": "TestEmbankment1"
     },

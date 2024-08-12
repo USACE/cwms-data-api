@@ -40,7 +40,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_LOCK;
 import usace.cwms.db.jooq.codegen.tables.AV_OUTLET;
 import usace.cwms.db.jooq.codegen.tables.AV_TURBINE;
 
-public class ProjectChildLocationDao extends JooqDao<ProjectChildLocations> {
+public final class ProjectChildLocationDao extends JooqDao<ProjectChildLocations> {
 
     public ProjectChildLocationDao(DSLContext dsl) {
         super(dsl);
@@ -64,11 +64,11 @@ public class ProjectChildLocationDao extends JooqDao<ProjectChildLocations> {
                     List<CwmsId> locs = entry.getValue();
                     ProjectChildLocations.Builder builder = builderMap.computeIfAbsent(projId, k ->
                             new ProjectChildLocations.Builder()
-                                    .withProject(new CwmsId.Builder()
+                                    .withProjectId(new CwmsId.Builder()
                                             .withOfficeId(office)
                                             .withName(projId)
                                             .build()));
-                    builder.withLocations(kind, locs);
+                    builder.withLocationIds(kind, locs);
                 }
             }
         }

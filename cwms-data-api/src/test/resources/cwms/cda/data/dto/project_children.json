@@ -1,12 +1,12 @@
 {
-  "project": {
+  "project-id": {
     "office-id": "SPK",
     "name": "TestProject"
   },
   "locations-by-kind": [
     {
       "kind": "EMBANKMENT",
-      "locations": [
+      "location-ids": [
         {
           "office-id": "SPK",
           "name": "TestEmbankment1"
@@ -19,7 +19,7 @@
     },
     {
       "kind": "LOCK",
-      "locations": [
+      "location-ids": [
         {
           "office-id": "SPK",
           "name": "TestLock1"
@@ -36,7 +36,7 @@
     },
     {
       "kind": "OUTLET",
-      "locations": [
+      "location-ids": [
         {
           "office-id": "SPK",
           "name": "TestOutlet1"
@@ -45,7 +45,7 @@
     },
     {
       "kind": "TURBINE",
-      "locations": [
+      "location-ids": [
         {
           "office-id": "SPK",
           "name": "TestTurbine1"
@@ -54,7 +54,7 @@
     },
     {
       "kind": "GATE",
-      "locations": [
+      "location-ids": [
         {
           "office-id": "SPK",
           "name": "TestGate1"
