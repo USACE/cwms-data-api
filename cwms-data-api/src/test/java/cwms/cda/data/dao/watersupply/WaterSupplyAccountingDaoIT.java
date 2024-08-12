@@ -29,6 +29,7 @@ package cwms.cda.data.dao.watersupply;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.project.ProjectDao;
@@ -48,10 +49,10 @@ import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import java.util.ArrayList;
-import java.util.Date;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -62,9 +63,10 @@ import java.util.TimeZone;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 import static org.junit.jupiter.api.Assertions.*;
 
+@Tag("integration")
 class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
-    private static final String TEST_DELETE_ACTION = "DELETE ALL";
+    private static final JooqDao.DeleteMethod TEST_DELETE_ACTION = JooqDao.DeleteMethod.DELETE_ALL;
     private static final String PROJECT_NAME = "Test Project Name";
     private static final String WATER_USER_ENTITY_NAME = "Test entity";
     private static final Location testLocation = buildTestLocation(PROJECT_NAME, "Test Location");
@@ -251,8 +253,8 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
                 .withFutureUseAllocation(158900.6)
                 .withContractedStorage(1589005.6)
                 .withInitialUseAllocation(1500.2)
-                .withContractExpirationDate(new Date(Instant.ofEpochMilli(1979252516000L).toEpochMilli()))
-                .withContractEffectiveDate(new Date(Instant.ofEpochMilli(1766652851000L).toEpochMilli()))
+                .withContractExpirationDate(Instant.ofEpochMilli(1979252516000L))
+                .withContractEffectiveDate(Instant.ofEpochMilli(1766652851000L))
                 .withTotalAllocPercentActivated(55.1)
                 .withContractId(new CwmsId.Builder()
                         .withName(entityName)
