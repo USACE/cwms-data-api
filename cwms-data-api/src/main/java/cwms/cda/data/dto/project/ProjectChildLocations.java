@@ -36,6 +36,7 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -48,7 +49,7 @@ import java.util.Map;
 @JsonDeserialize(builder = ProjectChildLocations.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV2, aliases = {Formats.JSON}, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV1, aliases = {Formats.JSON}, formatter = JsonV1.class)
 public class ProjectChildLocations extends CwmsDTOBase {
 
     private final CwmsId projectId;
