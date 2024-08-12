@@ -65,7 +65,7 @@ import java.time.ZoneId;
 
 @Tag("integration")
 class WaterUserControllerTestIT extends DataApiTestIT {
-    private static final String OFFICE_ID = "SWT";
+    private static final String OFFICE_ID = "SPK";
     private static final WaterUserContract CONTRACT;
     static {
         try (InputStream userStream
@@ -150,7 +150,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         // 3) Delete the WaterUser
         // 4) Get the WaterUser, assert that it does not exist
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String json = JsonV1.buildObjectMapper().writeValueAsString(CONTRACT.getWaterUser());
 
         // create WaterUser
@@ -237,7 +237,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         // 3) Get WaterUser, assert name has changed
         // 4) Delete WaterUser
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String json = JsonV1.buildObjectMapper().writeValueAsString(CONTRACT.getWaterUser());
 
         // Create WaterUser
@@ -336,7 +336,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_getAllWaterUsers() throws Exception {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String json = JsonV1.buildObjectMapper().writeValueAsString(CONTRACT.getWaterUser());
 
         WaterUser waterUser = new WaterUser.Builder().withEntityName("ENTITY_NAME")
@@ -381,7 +381,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
-            .header(AUTH_HEADER, TestAccounts.KeyUser.SWT_NORMAL.toHeaderValue())
+            .header(AUTH_HEADER, TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
         .when()
             .redirects().follow(true)
             .redirects().max(3)

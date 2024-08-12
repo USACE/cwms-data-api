@@ -88,7 +88,7 @@ public final class WaterContractUpdateController extends WaterSupplyControllerBa
         },
         description = "Renames a water contract",
         method = HttpMethod.PATCH,
-        path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{contract-id}",
+        path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{contract-name}",
         tags = {TAG}
     )
 

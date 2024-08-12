@@ -59,9 +59,11 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 
+@Tag("integration")
 class WaterContractDaoTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
     private static final DeleteMethod DELETE_ACTION = DeleteMethod.DELETE_ALL;
@@ -155,7 +157,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
     @Test
     void testStoreAndRetrieveWaterUser() throws Exception {
         CwmsId projectLocation = new CwmsId.Builder()
-                .withName("Test Location Name")
+                .withName(testLocation.getName())
                 .withOfficeId(OFFICE_ID)
                 .build();
         String entityName = "Test Entity";
@@ -356,7 +358,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
 
     private static WaterUser buildTestWaterUser(String entityName) {
         return new WaterUser.Builder().withEntityName(entityName).withProjectId(new CwmsId.Builder()
-                                .withName("Test Location Name")
+                                .withName(testLocation.getName())
                                 .withOfficeId(OFFICE_ID)
                                 .build())
                 .withWaterRight("Test Water Right").build();
@@ -449,8 +451,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
     }
 
     private static Project buildTestProject() {
-        return new Project.Builder().withLocation(buildTestLocation("Test Location Name",
-                        "Test Location Type"))
+        return new Project.Builder().withLocation(buildTestLocation(testLocation.getName(),
+                        testLocation.getLocationType()))
                 .withFederalCost(new BigDecimal("15980654.55"))
             .build();
     }
