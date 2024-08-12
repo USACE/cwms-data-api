@@ -27,6 +27,7 @@
 package cwms.cda.data.dto.watersupply;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -43,7 +44,9 @@ import java.util.List;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class WaterSupplyAccounting extends CwmsDTOBase {
+    @JsonProperty(required = true)
     private final String contractName;
+    @JsonProperty(required = true)
     private final WaterUser waterUser;
     private final List<PumpAccounting> pumpAccounting;
 
