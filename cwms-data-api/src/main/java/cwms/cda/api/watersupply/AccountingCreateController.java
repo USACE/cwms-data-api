@@ -96,6 +96,7 @@ public class AccountingCreateController implements Handler {
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
         description = "Create a new pump accounting entry associated with a water supply contract.",
+        path = "/projects/{office}/water-user/{water-user}/contracts/{contract-name}/accounting",
         method = HttpMethod.POST,
         tags = {TAG}
     )
