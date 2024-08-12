@@ -24,7 +24,6 @@
 
 package cwms.cda.data.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
@@ -35,15 +34,10 @@ import cwms.cda.formatters.json.JsonV1;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class AssignedLocation extends CwmsDTOBase
 {
-	@JsonProperty("location-id")
 	private String locationId;
-	@JsonProperty("office-id")
 	private String officeId;
-	@JsonProperty("alias-id")
 	private String aliasId;
-	@JsonProperty("attribute")
 	private Number attribute;
-	@JsonProperty("ref-location-id")
 	private String refLocationId;
 
 	public AssignedLocation()
