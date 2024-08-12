@@ -51,21 +51,21 @@ import java.util.Map;
 @FormattableWith(contentType = Formats.JSONV2, aliases = {Formats.JSON}, formatter = JsonV2.class)
 public class ProjectChildLocations extends CwmsDTOBase {
 
-    private final CwmsId project;
+    private final CwmsId projectId;
 
     @JsonIgnore
     private EnumMap<ProjectKind, List<CwmsId>> locationsByKind;
 
     private ProjectChildLocations(Builder builder) {
-        this.project = builder.project;
+        this.projectId = builder.projectId;
 
         if (builder.locationsByKind != null) {
             this.locationsByKind = new EnumMap<>(builder.locationsByKind);
         }
     }
 
-    public CwmsId getProject() {
-        return project;
+    public CwmsId getProjectId() {
+        return projectId;
     }
 
     @JsonProperty
@@ -78,14 +78,14 @@ public class ProjectChildLocations extends CwmsDTOBase {
             for (Map.Entry<ProjectKind, List<CwmsId>> entry : locationsByKind.entrySet()) {
                 result.add(new LocationsWithProjectKind.Builder()
                         .withKind(entry.getKey())
-                        .withLocations(entry.getValue()).build());
+                        .withLocationIds(entry.getValue()).build());
             }
         }
 
         return result;
     }
 
-    public List<CwmsId> getLocations(ProjectKind kind) {
+    public List<CwmsId> getLocationIds(ProjectKind kind) {
         if (locationsByKind != null && !locationsByKind.isEmpty()) {
             return locationsByKind.get(kind);
         }
@@ -93,39 +93,39 @@ public class ProjectChildLocations extends CwmsDTOBase {
     }
 
     @JsonIgnore
-    public List<CwmsId> getEmbankments() {
-        return getLocations(ProjectKind.EMBANKMENT);
+    public List<CwmsId> getEmbankmentIds() {
+        return getLocationIds(ProjectKind.EMBANKMENT);
     }
 
     @JsonIgnore
-    public List<CwmsId> getLocks() {
-        return getLocations(ProjectKind.LOCK);
+    public List<CwmsId> getLockIds() {
+        return getLocationIds(ProjectKind.LOCK);
     }
 
     @JsonIgnore
-    public List<CwmsId> getOutlets() {
-        return getLocations(ProjectKind.OUTLET);
+    public List<CwmsId> getOutletIds() {
+        return getLocationIds(ProjectKind.OUTLET);
     }
 
     @JsonIgnore
-    public List<CwmsId> getTurbines() {
-        return getLocations(ProjectKind.TURBINE);
+    public List<CwmsId> getTurbineIds() {
+        return getLocationIds(ProjectKind.TURBINE);
     }
 
     @JsonIgnore
-    public List<CwmsId> getGates() {
-        return getLocations(ProjectKind.GATE);
+    public List<CwmsId> getGateIds() {
+        return getLocationIds(ProjectKind.GATE);
     }
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
-        private CwmsId project;
+        private CwmsId projectId;
 
         private EnumMap<ProjectKind, List<CwmsId>> locationsByKind;
 
-        public Builder withProject(CwmsId project) {
-            this.project = project;
+        public Builder withProjectId(CwmsId projectId) {
+            this.projectId = projectId;
             return this;
         }
 
@@ -133,23 +133,23 @@ public class ProjectChildLocations extends CwmsDTOBase {
             Builder retval = this;
             if (locationsByKind != null) {
                 for (LocationsWithProjectKind item : locationsByKind) {
-                    retval = retval.withLocations(item.getKind(), item.getLocations());
+                    retval = retval.withLocationIds(item.getKind(), item.getLocationIds());
                 }
             }
 
             return retval;
         }
 
-        public Builder withLocations(ProjectKind kind, List<CwmsId> locations) {
+        public Builder withLocationIds(ProjectKind kind, List<CwmsId> locationIds) {
 
             if (locationsByKind == null) {
                 locationsByKind = new EnumMap<>(ProjectKind.class);
             }
 
-            if (locations != null) {
+            if (locationIds != null) {
                 List<CwmsId> locOfKind = locationsByKind.computeIfAbsent(kind, k -> new ArrayList<>());
-                if (!locations.isEmpty()) {
-                    locOfKind.addAll(locations);
+                if (!locationIds.isEmpty()) {
+                    locOfKind.addAll(locationIds);
                 }
             }
 
@@ -157,28 +157,28 @@ public class ProjectChildLocations extends CwmsDTOBase {
         }
 
         @JsonIgnore
-        public Builder withEmbankments(List<CwmsId> embankments) {
-            return withLocations(ProjectKind.EMBANKMENT, embankments);
+        public Builder withEmbankmentIds(List<CwmsId> embankmentIds) {
+            return withLocationIds(ProjectKind.EMBANKMENT, embankmentIds);
         }
 
         @JsonIgnore
-        public Builder withLocks(List<CwmsId> locks) {
-            return withLocations(ProjectKind.LOCK, locks);
+        public Builder withLockIds(List<CwmsId> lockIds) {
+            return withLocationIds(ProjectKind.LOCK, lockIds);
         }
 
         @JsonIgnore
-        public Builder withOutlets(List<CwmsId> outlets) {
-            return withLocations(ProjectKind.OUTLET, outlets);
+        public Builder withOutletIds(List<CwmsId> outletIds) {
+            return withLocationIds(ProjectKind.OUTLET, outletIds);
         }
 
         @JsonIgnore
-        public Builder withTurbines(List<CwmsId> turbines) {
-            return withLocations(ProjectKind.TURBINE, turbines);
+        public Builder withTurbineIds(List<CwmsId> turbineIds) {
+            return withLocationIds(ProjectKind.TURBINE, turbineIds);
         }
 
         @JsonIgnore
-        public Builder withGates(List<CwmsId> gates) {
-            return withLocations(ProjectKind.GATE, gates);
+        public Builder withGateIds(List<CwmsId> gateIds) {
+            return withLocationIds(ProjectKind.GATE, gateIds);
         }
 
         public ProjectChildLocations build() {

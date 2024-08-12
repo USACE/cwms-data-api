@@ -19,26 +19,26 @@ import java.util.List;
 @FormattableWith(contentType = Formats.JSONV2, aliases = {Formats.JSON}, formatter = JsonV2.class)
 public class LocationsWithProjectKind {
     ProjectKind kind;
-    List<CwmsId> locations;
+    List<CwmsId> locationIds;
 
     private LocationsWithProjectKind(Builder builder) {
         kind = builder.kind;
-        locations = builder.locations;
+        locationIds = builder.locationIds;
     }
 
     public ProjectKind getKind() {
         return kind;
     }
 
-    public List<CwmsId> getLocations() {
-        return locations;
+    public List<CwmsId> getLocationIds() {
+        return locationIds;
     }
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
         private ProjectKind kind;
-        private List<CwmsId> locations = new ArrayList<>();
+        private List<CwmsId> locationIds = new ArrayList<>();
 
         public Builder() {
 
@@ -49,11 +49,11 @@ public class LocationsWithProjectKind {
             return this;
         }
 
-        public Builder withLocations(List<CwmsId> locations) {
-            if (locations == null) {
-                this.locations = null;
+        public Builder withLocationIds(List<CwmsId> locationIds) {
+            if (locationIds == null) {
+                this.locationIds = null;
             } else {
-                this.locations = new ArrayList<>(locations);
+                this.locationIds = new ArrayList<>(locationIds);
             }
             return this;
         }
