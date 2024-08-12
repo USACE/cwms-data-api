@@ -66,9 +66,9 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
             setOffice(c, accounting.getWaterUser().getProjectId().getOfficeId());
 
             WAT_USR_CONTRACT_ACCT_TAB_T accountingTab = WaterUserTypeUtil.toWaterUserContractAcctTs(WaterSupplyUtils
-                    .map(accounting, accounting.getWaterUser(), accounting.getContractName()));
+                    .toWaterUserAccTypeList(accounting, accounting.getWaterUser(), accounting.getContractName()));
             WATER_USER_CONTRACT_REF_T contractRefT = WaterUserTypeUtil.toWaterUserContractReft(WaterSupplyUtils
-                    .map(accounting.getWaterUser(), accounting.getWaterUser().getProjectId(),
+                    .toWaterUserContractRefType(accounting.getWaterUser(), accounting.getWaterUser().getProjectId(),
                             accounting.getContractName()));
             LOC_REF_TIME_WINDOW_TAB_T pumpTimeWindowTab = WaterUserTypeUtil
                     .toLocRefTimeWindowTs(getTimeWindowTypeList(accounting));
@@ -85,7 +85,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
 
         String transferType = null;
         WATER_USER_CONTRACT_REF_T contractRefT = WaterUserTypeUtil.toWaterUserContractReft(WaterSupplyUtils
-                .map(waterUser, projectLocation, contractName));
+                .toWaterUserContractRefType(waterUser, projectLocation, contractName));
         Timestamp startTimestamp = OracleTypeMap.buildTimestamp(new Date(startTime.toEpochMilli()));
         Timestamp endTimestamp = OracleTypeMap.buildTimestamp(new Date(endTime.toEpochMilli()));
         String timeZoneId = null;
@@ -101,7 +101,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
                     contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
                     endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
             if (!watUsrContractAcctObjTs.isEmpty()) {
-                return WaterSupplyUtils.map(watUsrContractAcctObjTs);
+                return WaterSupplyUtils.toWaterSupplyAccountingList(watUsrContractAcctObjTs);
             } else {
                 return new ArrayList<>();
             }

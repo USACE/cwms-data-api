@@ -30,13 +30,24 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
+import cwms.cda.data.dto.watersupply.AccountingKey;
+import cwms.cda.data.dto.watersupply.PumpAccounting;
 import cwms.cda.data.dto.watersupply.PumpType;
+import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.data.dto.watersupply.WaterSupplyPump;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+import usace.cwms.db.dao.ifc.loc.LocationRefType;
+import usace.cwms.db.dao.ifc.watersupply.WaterUserAccountingType;
+import usace.cwms.db.dao.ifc.watersupply.WaterUserContractRefType;
+import usace.cwms.db.dao.ifc.watersupply.WaterUserType;
 import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_OBJ_T;
@@ -44,6 +55,9 @@ import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_TAB_T;
+import usace.cwms.db.jooq.codegen.udt.records.WAT_USR_CONTRACT_ACCT_OBJ_T;
+import usace.cwms.db.jooq.codegen.udt.records.WAT_USR_CONTRACT_ACCT_TAB_T;
+import usace.cwms.db.jooq.dao.util.WaterUserTypeUtil;
 
 
 final class WaterSupplyUtils {
@@ -161,4 +175,106 @@ final class WaterSupplyUtils {
         contractList.add(waterUserContractObjT);
         return new WATER_USER_CONTRACT_TAB_T(contractList);
     }
+
+    public static List<WaterUserAccountingType> toWaterUserAccTypeList(WaterSupplyAccounting accounting, WaterUser waterUser,
+            String contractName) {
+        return accounting.getPumpAccounting().stream()
+                .map(pumpAccounting -> toWaterUserAccType(pumpAccounting, waterUser, contractName))
+                .collect(Collectors.toList());
+    }
+
+    public static WaterUserAccountingType toWaterUserAccType(PumpAccounting accounting, WaterUser user, String contractName) {
+        return new WaterUserAccountingType(new WaterUserContractRefType(toWaterUserType(user),
+                contractName), new LocationRefType(accounting.getPumpLocation().getName(),
+                null, accounting.getPumpLocation().getOfficeId()), toLookupType(accounting.getTransferType()),
+                accounting.getFlow(), new Date(accounting.getTransferDate().toEpochMilli()), accounting.getComment());
+    }
+
+    public static WaterUserType toWaterUserType(WaterUser waterUser) {
+        return new WaterUserType(waterUser.getEntityName(),
+                toLocationRefType(waterUser.getProjectId()), waterUser.getWaterRight());
+    }
+
+    public static LocationRefType toLocationRefType(CwmsId projectLocation) {
+        return new LocationRefType(projectLocation.getName(),null,
+                projectLocation.getOfficeId());
+    }
+
+    public static usace.cwms.db.dao.ifc.cat.LookupType toLookupType(LookupType lookupType) {
+        return new usace.cwms.db.dao.ifc.cat.LookupType(lookupType.getOfficeId(),
+                lookupType.getDisplayValue(), lookupType.getTooltip(), lookupType.getActive());
+    }
+
+    public static WaterUserType toWaterUserType(WaterUser waterUserType,
+            CwmsId projectLocation) {
+        return new WaterUserType(waterUserType.getEntityName(),
+                toLocationRefType(projectLocation), waterUserType.getWaterRight());
+    }
+
+    public static WaterUserContractRefType toWaterUserContractRefType(WaterUser user,
+            CwmsId projectLocation, String contractName) {
+        return new WaterUserContractRefType(toWaterUserType(user,
+                projectLocation), contractName);
+    }
+
+    public static List<WaterSupplyAccounting> toWaterSupplyAccountingList(WAT_USR_CONTRACT_ACCT_TAB_T watUsrContractAcctTabT) {
+
+        List<WaterSupplyAccounting> waterSupplyAccounting = new ArrayList<>();
+        Map<AccountingKey, List<PumpAccounting>> cacheMap = new TreeMap<>();
+
+        for (WAT_USR_CONTRACT_ACCT_OBJ_T watUsrContractAcctObjT : watUsrContractAcctTabT) {
+            WaterUserAccountingType accounting = WaterUserTypeUtil.toWaterUserAccountingType(watUsrContractAcctObjT);
+            AccountingKey key = new AccountingKey.Builder().withWaterUser(new WaterUser.Builder()
+                            .withProjectId(new CwmsId.Builder()
+                                    .withOfficeId(accounting.getContractRefTUser()
+                                            .getWaterUserType().getParentLocationRefType().getOfficeId())
+                                    .withName(accounting.getContractRefTUser().getWaterUserType()
+                                            .getParentLocationRefType().getBaseLocationId()).build())
+                            .withEntityName(accounting.getContractRefTUser().getWaterUserType().getEntityName())
+                            .withWaterRight(accounting.getContractRefTUser().getWaterUserType().getWaterRight()).build())
+                    .withContractName(accounting.getContractRefTUser().getContractName()).build();
+            if (cacheMap.containsKey(key)) {
+                cacheMap.get(key).add(new PumpAccounting.Builder()
+                        .withTransferDate(accounting.getTransferStartDatetime().toInstant())
+                        .withTransferType(toLookupType(accounting.getPhysicalXferTYpe()))
+                        .withFlow(accounting.getAccountingFlow())
+                        .withComment(accounting.getAccountingRemarks())
+                        .withPumpLocation(new CwmsId.Builder().withOfficeId(accounting
+                                        .getPumpLocationRefTUser().getOfficeId())
+                                .withName(accounting.getPumpLocationRefTUser().getBaseLocationId()).build())
+                        .build());
+            } else {
+                List<PumpAccounting> pumpAccounting = new ArrayList<>();
+                pumpAccounting.add(new PumpAccounting.Builder()
+                        .withTransferDate(accounting.getTransferStartDatetime().toInstant())
+                        .withTransferType(toLookupType(accounting.getPhysicalXferTYpe()))
+                        .withFlow(accounting.getAccountingFlow())
+                        .withComment(accounting.getAccountingRemarks())
+                        .withPumpLocation(new CwmsId.Builder().withOfficeId(accounting
+                                        .getPumpLocationRefTUser().getOfficeId())
+                                .withName(accounting.getPumpLocationRefTUser().getBaseLocationId()).build())
+                        .build());
+                cacheMap.put(key, pumpAccounting);
+            }
+        }
+
+        for (Map.Entry<AccountingKey, List<PumpAccounting>> entry : cacheMap.entrySet()) {
+            waterSupplyAccounting.add(new WaterSupplyAccounting.Builder()
+                    .withContractName(entry.getKey().getContractName())
+                    .withWaterUser(entry.getKey().getWaterUser())
+                    .withPumpAccounting(entry.getValue())
+                    .build());
+        }
+        return waterSupplyAccounting;
+    }
+
+    public static LookupType toLookupType(usace.cwms.db.dao.ifc.cat.LookupType lookupType) {
+        return new LookupType.Builder()
+                .withOfficeId(lookupType.getOfficeId())
+                .withDisplayValue(lookupType.getDisplayValue())
+                .withTooltip(lookupType.getTooltip())
+                .withActive(lookupType.getActive())
+                .build();
+    }
+
 }
