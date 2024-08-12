@@ -1,6 +1,5 @@
 package cwms.cda.data.dto.basinconnectivity;
 
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.NamedPgJsonFormatter;
@@ -116,10 +115,5 @@ public final class Basin extends CwmsDTO
         {
             return new Basin(this);
         }
-    }
-
-    @Override
-    public void validate() throws FieldException {
-
     }
 }

@@ -1,16 +1,18 @@
 {
-  "id": {
-    "office-id": "SPK",
-    "name": "StreamLoc123"
-  },
-  "stream-node": {
-    "stream-id": {
+  "stream-location-node":{
+    "id": {
       "office-id": "SPK",
-      "name": "ImOnThisStream"
+      "name": "StreamLoc123"
     },
-    "bank": "R",
-    "station": 678.9,
-    "station-units": "ft"
+    "stream-node": {
+      "stream-id": {
+        "office-id": "SPK",
+        "name": "ImOnThisStream"
+      },
+      "bank": "R",
+      "station": 678.9,
+      "station-units": "ft"
+    }
   },
   "published-station": 123.45,
   "navigation-station": 12,

@@ -1,0 +1,86 @@
+{
+  "office-id": "SWT",
+  "water-user": {
+    "entity-name": "Test User",
+    "project-id": {
+      "office-id": "SWT",
+      "name": "TEST_LOCATION1"
+    },
+    "water-right": "Test Water Right"
+  },
+  "contract-id": {
+    "office-id": "SWT",
+    "name": "TEST_CONTRACT"
+  },
+  "contract-type": {
+    "office-id": "SWT",
+    "display-value": "Test Display Value",
+    "tooltip": "Test Tooltip",
+    "active": true
+  },
+  "contract-effective-date": 158001,
+  "contract-expiration-date": 167001,
+  "contracted-storage": 210000.5,
+  "initial-use-allocation": 12600,
+  "future-use-allocation": 27300.5,
+  "storage-units-id": "m3",
+  "future-use-percent-activated": 15.6,
+  "total-alloc-percent-activated": 66.2,
+  "pump-out-location": {
+    "pump-location": {
+      "office-id": "SWT",
+      "name": "TEST_LOCATION-PUMP11",
+      "latitude": 0.5,
+      "longitude": 0.6,
+      "active": true,
+      "public-name": "Test Public Pump Name 1",
+      "long-name": "Test Long Name 1",
+      "description": "Test Description 1",
+      "timezone-name": "UTC",
+      "location-type": "Test Location Type 1",
+      "location-kind": "PUMP",
+      "nation": "US",
+      "state-initial": "NV",
+      "county-name": "Clark",
+      "nearest-city": "Sparks",
+      "horizontal-datum": "WGS84",
+      "published-longitude": 0.6,
+      "published-latitude": 0.7,
+      "vertical-datum": "NGVD29",
+      "elevation": 150,
+      "map-label": "Test Map Label 1",
+      "bounding-office-id": "SWT",
+      "elevation-units": "m"
+    },
+    "pump-type": "OUT"
+  },
+  "pump-out-below-location": {
+    "pump-location": {
+      "office-id": "SWT",
+      "name": "PUMP21",
+      "latitude": 0.8,
+      "longitude": 0.7,
+      "active": true,
+      "public-name": "Test Public Pump Name 2",
+      "long-name": "Test Long Name 2",
+      "description": "Test Description 2",
+      "timezone-name": "UTC",
+      "location-type": "Test Location Type 2",
+      "location-kind": "PUMP",
+      "nation": "US",
+      "state-initial": "NV",
+      "county-name": "Clark",
+      "nearest-city": "Sparks",
+      "horizontal-datum": "WGS84",
+      "published-longitude": 0.9,
+      "published-latitude": 0.8,
+      "vertical-datum": "NGVD29",
+      "elevation": 140,
+      "map-label": "Test Map Label 2",
+      "bounding-office-id": "SWT",
+      "elevation-units": "m"
+    },
+    "pump-type": "BELOW"
+  },
+  "pump-in-location": {}
+}

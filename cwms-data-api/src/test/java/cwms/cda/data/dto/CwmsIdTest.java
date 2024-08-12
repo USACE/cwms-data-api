@@ -27,6 +27,7 @@ package cwms.cda.data.dto;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.DTOMatch;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +36,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public final class CwmsIdTest {
+final class CwmsIdTest {
 
     @Test
     void createLocationIdentifier_allFieldsProvided_success() {
@@ -76,7 +77,7 @@ public final class CwmsIdTest {
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, cwmsId);
         CwmsId deserialized = Formats.parseContent(contentType, json, CwmsId.class);
-        assertSame(cwmsId, deserialized);
+        DTOMatch.assertMatch(cwmsId, deserialized);
     }
 
     @Test
@@ -90,7 +91,7 @@ public final class CwmsIdTest {
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = new ContentType(Formats.JSON);
         CwmsId deserialized = Formats.parseContent(contentType, json, CwmsId.class);
-        assertSame(cwmsId, deserialized);
+        DTOMatch.assertMatch(cwmsId, deserialized);
     }
 
     @Test
@@ -108,12 +109,5 @@ public final class CwmsIdTest {
         int locationIdIndex = json.indexOf("\"name\"");
 
         assertTrue(officeIdIndex < locationIdIndex, "The officeId field should come before the locationId field in the JSON string");
-    }
-
-    public static void assertSame(CwmsId first, CwmsId second) {
-        assertAll(
-                () -> assertEquals(first.getOfficeId(), second.getOfficeId(), "LocationIdentifiers not the same. Office id differs"),
-                () -> assertEquals(first.getName(), second.getName(), "LocationIdentifiers not the same. Office id differs")
-        );
     }
 }

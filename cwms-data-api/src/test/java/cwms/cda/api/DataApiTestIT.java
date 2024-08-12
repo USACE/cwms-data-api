@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.catalina.Manager;
@@ -314,9 +315,13 @@ public class DataApiTestIT {
      * @throws SQLException Any error saving the data
      */
     protected static void createLocation(String location, boolean active, String office) throws SQLException {
+        createLocation(location,active,office, "STREAM");
+    }
+
+    protected static void createLocation(String location, boolean active, String office, String kind) throws SQLException {
         createLocation(location,active,office,
                        0.0,0.0,"WGS84",
-                       "UTC","STREAM");
+                       "UTC", kind);
     }
 
     /**
@@ -603,5 +608,15 @@ public class DataApiTestIT {
         public Map<String, Object> getModel() {
             return Collections.unmodifiableMap(dataModel);
         }
+    }
+
+    /**
+     * Many Integration Tests want to use a web user connection in order to setup or verify
+     * @param function
+     * @throws SQLException
+     */
+    public static void connectionAsWebUser(Consumer<Connection> function) throws SQLException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(function, CwmsDataApiSetupCallback.getWebUser());
     }
 }

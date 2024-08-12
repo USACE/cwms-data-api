@@ -24,9 +24,7 @@
 
 package cwms.cda.data.dto;
 
-import cwms.cda.api.errors.FieldException;
-
-public class AssignedLocation implements CwmsDTOBase
+public class AssignedLocation extends CwmsDTOBase
 {
 	private String locationId;
 	private String officeId;
@@ -73,10 +71,5 @@ public class AssignedLocation implements CwmsDTOBase
 	public String getRefLocationId()
 	{
 		return refLocationId;
-	}
-
-	@Override
-	public void validate() throws FieldException {
-
 	}
 }

@@ -18,17 +18,17 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.TimeZoneDao;
-import cwms.cda.data.dto.TimeZone;
-import cwms.cda.data.dto.TimeZones;
+import cwms.cda.data.dto.TimeZoneId;
+import cwms.cda.data.dto.TimeZoneIds;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -75,7 +75,10 @@ public class TimeZoneController implements CrudHandler {
                             + "\n* `json`  (default)")
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200),
+                    @OpenApiResponse(status = STATUS_200, content = {
+                        @OpenApiContent(from = TimeZoneIds.class, type = Formats.JSONV2),
+                        @OpenApiContent(from = TimeZoneIds.class, type = Formats.JSON)
+                    }),
                     @OpenApiResponse(status = STATUS_501, description = "The format requested is not "
                             + "implemented")
             },
@@ -89,7 +92,7 @@ public class TimeZoneController implements CrudHandler {
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String header = ctx.header(ACCEPT);
 
-            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, TimeZone.class);
+            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, TimeZoneId.class);
             String version = contentType.getParameters()
                                         .getOrDefault(VERSION, "");
 
@@ -98,7 +101,7 @@ public class TimeZoneController implements CrudHandler {
             String results;
             if (format.isEmpty() && !isLegacyVersion)
             {
-                TimeZones zones = dao.getTimeZones();
+                TimeZoneIds zones = dao.getTimeZones();
                 results = Formats.format(contentType, zones);
                 ctx.contentType(contentType.toString());
             }

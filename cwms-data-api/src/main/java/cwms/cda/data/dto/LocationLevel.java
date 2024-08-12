@@ -10,9 +10,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.ExclusiveFieldsException;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -24,8 +21,6 @@ import hec.data.level.ISeasonalInterval;
 import hec.data.level.ISeasonalValue;
 import hec.data.level.ISeasonalValues;
 import hec.data.level.JDomLocationLevelImpl;
-import io.javalin.http.HttpCode;
-import io.javalin.http.HttpResponseException;
 import io.swagger.v3.oas.annotations.media.Schema;
 import rma.util.RMAConst;
 
@@ -34,13 +29,10 @@ import java.math.BigInteger;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 
 @JsonRootName("LocationLevel")
@@ -580,36 +572,18 @@ public final class LocationLevel extends CwmsDTO {
     }
 
     @Override
-    public void validate() throws FieldException {
-        Set<String> requiredFields = new HashSet<>();
-        List<String> mutuallyExclusiveFields = new ArrayList<>();
-        if (getOfficeId() == null) {
-            requiredFields.add("office-id");
+    protected void validateInternal(CwmsDTOValidator validator) {
+        super.validateInternal(validator);
+        validator.required(getOfficeId(), "office-id");
+        validator.required(getLocationLevelId(), "location-level-id");
+        if(getConstantValue() == null && getSeasonalTimeSeriesId() == null) {
+            validator.required(getSeasonalValues(), "seasonal-values");
+        } else if(getSeasonalValues() == null && getSeasonalTimeSeriesId() == null) {
+            validator.required(getConstantValue(), "constant-value");
+        } else if(getConstantValue() == null && getSeasonalValues() == null) {
+            validator.required(getSeasonalTimeSeriesId(), "seasonable-time-series-id");
         }
-        if (getLocationLevelId() == null) {
-            requiredFields.add("location-level-id");
-        }
-        if (seasonalValues != null) {
-            requiredFields.add("seasonal-values");
-            mutuallyExclusiveFields.add("seasonal-values");
-        }
-
-        if (constantValue != null) {
-            requiredFields.add("constant-value");
-            mutuallyExclusiveFields.add("constant-value");
-        }
-
-        if (seasonalTimeSeriesId != null) {
-            requiredFields.add("seasonable-time-series-id");
-            mutuallyExclusiveFields.add("seasonable-time-series-id");
-        }
-        if (requiredFields.isEmpty()) {
-            throw new RequiredFieldException(Arrays.asList("seasonal-values", "constant-value",
-                    "season-time-series-id", "office-id", "location-level-id"));
-        }
-        //Requires level id, office id, and one of the level type identifiers
-        if (mutuallyExclusiveFields.size() != 1) {
-            throw new ExclusiveFieldsException(mutuallyExclusiveFields);
-        }
+        validator.mutuallyExclusive("Only one of the following can be defined for location levels: constant-value, seasonal-values, seasonable-time-series-id",
+            getConstantValue(), getSeasonalValues(), getSeasonalTimeSeriesId());
     }
 }

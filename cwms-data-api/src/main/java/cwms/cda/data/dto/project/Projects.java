@@ -24,7 +24,6 @@
 
 package cwms.cda.data.dto.project;
 
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
@@ -36,7 +35,7 @@ import java.util.Collections;
 import java.util.List;
 
 
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV1, aliases = {Formats.JSON, Formats.DEFAULT}, formatter = JsonV2.class)
 public class Projects extends CwmsDTOPaginated {
 
     List<Project> projects;
@@ -137,12 +136,4 @@ public class Projects extends CwmsDTOPaginated {
             return this;
         }
     }
-
-
-    @Override
-    public void validate() throws FieldException {
-
-    }
-
-
 }

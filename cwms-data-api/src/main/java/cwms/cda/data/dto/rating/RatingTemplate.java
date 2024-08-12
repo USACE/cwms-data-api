@@ -109,12 +109,6 @@ public class RatingTemplate extends CwmsDTO {
         return result;
     }
 
-    @Override
-    public void validate() throws FieldException {
-        // TODO Auto-generated method stub
-
-    }
-
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {

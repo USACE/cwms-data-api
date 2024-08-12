@@ -1,8 +1,33 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.ID_MASK;
@@ -25,14 +50,12 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.Projects;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -107,9 +130,10 @@ public class ProjectController implements CrudHandler {
                     Integer.class, DEFAULT_PAGE_SIZE, metrics,
                     name(ProjectController.class.getName(), GET_ALL));
 
-            Projects projects = dao.retrieveProjectsFromTable(cursor, pageSize, projectIdMask, office);
+            Projects projects = dao.retrieveProjects(cursor, office, projectIdMask, pageSize);
 
-            ContentType contentType = getContentType(ctx);
+            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSON;
+            ContentType contentType = Formats.parseHeader(formatHeader, Projects.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, projects);
             ctx.result(serialized);
@@ -118,11 +142,6 @@ public class ProjectController implements CrudHandler {
 
         }
 
-    }
-
-    private static @NotNull ContentType getContentType(Context ctx) {
-        String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSON;
-        return Formats.parseHeader(formatHeader);
     }
 
     @OpenApi(
@@ -137,7 +156,8 @@ public class ProjectController implements CrudHandler {
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
-                    @OpenApiContent(from = Project.class, type = Formats.JSON)}),
+                    @OpenApiContent(from = Project.class, type = Formats.JSONV1)
+                }),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the Project was not found."),
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "
@@ -164,7 +184,7 @@ public class ProjectController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             } else {
                 String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+                ContentType contentType = Formats.parseHeader(formatHeader, Project.class);
                 ctx.contentType(contentType.toString());
 
                 String result = Formats.format(contentType, project);
@@ -180,8 +200,15 @@ public class ProjectController implements CrudHandler {
     @OpenApi(
             description = "Create new Project",
             requestBody = @OpenApiRequestBody(required = true,
-                    content = {@OpenApiContent(from = Project.class, type = Formats.JSON)}
+                content = {
+                    @OpenApiContent(from = Project.class, type = Formats.JSONV1),
+                    @OpenApiContent(from = Project.class, type = Formats.JSON)
+                }
             ),
+            queryParams = {
+                @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                    description = "Create will fail if provided ID already exists. Default: true")
+            },
             method = HttpMethod.POST,
             tags = {TAG}
     )
@@ -190,13 +217,14 @@ public class ProjectController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, Project.class);
             Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
             ProjectDao dao = new ProjectDao(dsl);
 
-            dao.create(project);
+            dao.create(project, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED);
         }
     }
@@ -209,6 +237,7 @@ public class ProjectController implements CrudHandler {
             requestBody = @OpenApiRequestBody(
                 content = {
                     @OpenApiContent(from = Project.class, type = Formats.JSON),
+                    @OpenApiContent(from = Project.class, type = Formats.JSONV1),
                 },
                 required = true
             ),
@@ -221,7 +250,7 @@ public class ProjectController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, Project.class);
             Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
             DSLContext dsl = getDslContext(ctx);
 
@@ -256,28 +285,11 @@ public class ProjectController implements CrudHandler {
                     .getOrDefault(JooqDao.DeleteMethod.DELETE_KEY);
 
             ProjectDao dao = new ProjectDao(dsl);
-            dao.delete(office, name, getDeleteRule(deleteMethod));
+            dao.delete(office, name, deleteMethod.getRule());
 
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
 
-    private static @NotNull DeleteRule getDeleteRule(JooqDao.DeleteMethod deleteMethod) {
-        DeleteRule deleteRule;
-        switch (deleteMethod) {
-            case DELETE_ALL:
-                deleteRule = DeleteRule.DELETE_ALL;
-                break;
-            case DELETE_DATA:
-                deleteRule = DeleteRule.DELETE_DATA;
-                break;
-            case DELETE_KEY:
-                deleteRule = DeleteRule.DELETE_KEY;
-                break;
-            default:
-                throw new IllegalArgumentException("Delete Method provided does not match accepted rule constants: "
-                        + deleteMethod);
-        }
-        return deleteRule;
-    }
+
 }

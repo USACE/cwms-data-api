@@ -24,6 +24,8 @@
 
 package cwms.cda.data.dto.project;
 
+import static helpers.SameEpochMillis.assertSameEpoch;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -104,27 +106,30 @@ class ProjectTest {
 
         Location loc = project.getLocation();
         assertNotNull(loc);
-        assertEquals("SPK", loc.getOfficeId());
-        assertEquals("Project Id", loc.getName());
-        assertEquals("Project Owner", project.getProjectOwner());
-        assertEquals("Authorizing Law", project.getAuthorizingLaw());
-        assertEquals(100.0, project.getFederalCost().doubleValue());
-        assertEquals(50.0, project.getNonFederalCost().doubleValue());
-        assertEquals(10.0, project.getFederalOAndMCost().doubleValue());
-        assertEquals(5.0, project.getNonFederalOAndMCost().doubleValue());
-        assertEquals(1717199914902L, project.getCostYear().toEpochMilli());
-        assertEquals("$", project.getCostUnit());
-        assertEquals(1717199914902L, project.getYieldTimeFrameStart().toEpochMilli());
-        assertEquals(1717199914902L, project.getYieldTimeFrameEnd().toEpochMilli());
-        assertEquals("Remarks", project.getProjectRemarks());
-        assertEquals("Pumpback Location Id", project.getPumpBackLocation().getName());
-        assertEquals("SPK", project.getPumpBackLocation().getOfficeId());
-        assertEquals("Near Gage Location Id", project.getNearGageLocation().getName());
-        assertEquals("SPK", project.getNearGageLocation().getOfficeId());
-        assertEquals("Bank Full Capacity Description", project.getBankFullCapacityDesc());
-        assertEquals("Downstream Urban Description", project.getDownstreamUrbanDesc());
-        assertEquals("Hydropower Description", project.getHydropowerDesc());
-        assertEquals("Sedimentation Description", project.getSedimentationDesc());
+
+        assertAll(
+                () -> assertEquals("SPK", loc.getOfficeId(), "Office ID does not match"),
+                () -> assertEquals("Project Id", loc.getName(), "Project ID does not match"),
+                () -> assertEquals("Project Owner", project.getProjectOwner(), "Project Owner does not match"),
+                () -> assertEquals("Authorizing Law", project.getAuthorizingLaw(), "Authorizing Law does not match"),
+                () -> assertEquals(100.0, project.getFederalCost().doubleValue(), "Federal Cost does not match"),
+                () -> assertEquals(50.0, project.getNonFederalCost().doubleValue(), "Non-federal Cost does not match"),
+                () -> assertEquals(10.0, project.getFederalOAndMCost().doubleValue(), "Federal O And M Cost does not match"),
+                () -> assertEquals(5.0, project.getNonFederalOAndMCost().doubleValue(), "Non-Federal O And M Cost does not match"),
+                () -> assertSameEpoch( 1717199914902L, project.getCostYear(), "Cost Year does not match"),
+                () -> assertEquals("$", project.getCostUnit(), "Cost Unit does not match"),
+                () -> assertSameEpoch( 1717199914902L, project.getYieldTimeFrameStart(), "Yield Time Frame Start does not match"),
+                () -> assertSameEpoch( 1717199914902L, project.getYieldTimeFrameEnd(), "Yield Time Frame End does not match"),
+                () -> assertEquals("Remarks", project.getProjectRemarks(), "Project Remarks do not match"),
+                () -> assertEquals("Pumpback Location Id", project.getPumpBackLocation().getName(), "Pumpback Location ID does not match"),
+                () -> assertEquals("SPK", project.getPumpBackLocation().getOfficeId(), "Pumpback Location Office ID does not match"),
+                () -> assertEquals("Near Gage Location Id", project.getNearGageLocation().getName(), "Near Gage Location ID does not match"),
+                () -> assertEquals("SPK", project.getNearGageLocation().getOfficeId(), "Near Gage Location Office ID does not match"),
+                () -> assertEquals("Bank Full Capacity Description", project.getBankFullCapacityDesc(), "Bank Full Capacity Description does not match"),
+                () -> assertEquals("Downstream Urban Description", project.getDownstreamUrbanDesc(), "Downstream Urban Description does not match"),
+                () -> assertEquals("Hydropower Description", project.getHydropowerDesc(), "Hydropower Description does not match"),
+                () -> assertEquals("Sedimentation Description", project.getSedimentationDesc(), "Sedimentation Description does not match")
+        );
 
     }
 
@@ -143,33 +148,34 @@ class ProjectTest {
         Project project2 = om.readValue(json, Project.class);
         assertNotNull(project2);
 
-        assertEquals(project.getLocation().getOfficeId(), project2.getLocation().getOfficeId());
-        assertEquals(project.getLocation().getName(), project2.getLocation().getName());
-        assertEquals(project.getProjectOwner(), project2.getProjectOwner());
-        assertEquals(project.getAuthorizingLaw(), project2.getAuthorizingLaw());
-        assertEquals(project.getFederalCost(), project2.getFederalCost());
-        assertEquals(project.getNonFederalCost(), project2.getNonFederalCost());
-        assertEquals(project.getFederalOAndMCost(), project2.getFederalOAndMCost());
-        assertEquals(project.getNonFederalOAndMCost(), project2.getNonFederalOAndMCost());
-        assertEquals(project.getCostYear(), project2.getCostYear());
-        assertEquals(project.getCostUnit(), project2.getCostUnit());
-        assertEquals(project.getYieldTimeFrameStart(), project2.getYieldTimeFrameStart());
-        assertEquals(project.getYieldTimeFrameEnd(), project2.getYieldTimeFrameEnd());
-        assertEquals(project.getProjectRemarks(), project2.getProjectRemarks());
-        assertEquals(project.getPumpBackLocation().getName(),
-                project2.getPumpBackLocation().getName());
-        assertEquals(project.getPumpBackLocation().getOfficeId(),
-                project2.getPumpBackLocation().getOfficeId());
-        assertEquals(project.getNearGageLocation().getName(),
-                project2.getNearGageLocation().getName());
-        assertEquals(project.getNearGageLocation().getOfficeId(),
-                project2.getNearGageLocation().getOfficeId());
-        assertEquals(project.getBankFullCapacityDesc(), project2.getBankFullCapacityDesc());
-        assertEquals(project.getDownstreamUrbanDesc(), project2.getDownstreamUrbanDesc());
-        assertEquals(project.getHydropowerDesc(), project2.getHydropowerDesc());
-        assertEquals(project.getSedimentationDesc(), project2.getSedimentationDesc());
+        assertSame(project, project2);
+    }
 
+    public static void assertSame(Project project, Project project2) {
 
+        assertAll(
+                () -> assertEquals(project.getLocation().getOfficeId(), project2.getLocation().getOfficeId(), "Location Offices don't match"),
+                () -> assertEquals(project.getLocation().getName(), project2.getLocation().getName(), "Location names don't match"),
+                () -> assertEquals(project.getProjectOwner(), project2.getProjectOwner(), "Project Owners don't match"),
+                () -> assertEquals(project.getAuthorizingLaw(), project2.getAuthorizingLaw(), "Authorizing Laws don't match"),
+                () -> assertEquals(project.getFederalCost(), project2.getFederalCost(), "Federal Costs don't match"),
+                () -> assertEquals(project.getNonFederalCost(), project2.getNonFederalCost(), "Non-Federal Costs don't match"),
+                () -> assertEquals(project.getFederalOAndMCost(), project2.getFederalOAndMCost(), "Federal O And M Costs don't match"),
+                () -> assertEquals(project.getNonFederalOAndMCost(), project2.getNonFederalOAndMCost(), "Non-Federal O And M Costs don't match"),
+                () -> assertEquals(project.getCostYear(), project2.getCostYear(), "Cost Years don't match"),
+                () -> assertEquals(project.getCostUnit(), project2.getCostUnit(), "Cost Units don't match"),
+                () -> assertEquals(project.getYieldTimeFrameStart(), project2.getYieldTimeFrameStart(), "Yield TimeFrame Starts don't match"),
+                () -> assertEquals(project.getYieldTimeFrameEnd(), project2.getYieldTimeFrameEnd(), "Yield TimeFrame Ends don't match"),
+                () -> assertEquals(project.getProjectRemarks(), project2.getProjectRemarks(), "Project Remarks don't match"),
+                () -> assertEquals(project.getPumpBackLocation().getName(), project2.getPumpBackLocation().getName(), "Pump Back Location Names don't match"),
+                () -> assertEquals(project.getPumpBackLocation().getOfficeId(), project2.getPumpBackLocation().getOfficeId(), "Pump Back Location Offices don't match"),
+                () -> assertEquals(project.getNearGageLocation().getName(), project2.getNearGageLocation().getName(), "Near Gage Location Names don't match"),
+                () -> assertEquals(project.getNearGageLocation().getOfficeId(), project2.getNearGageLocation().getOfficeId(), "Near Gage Location Offices don't match"),
+                () -> assertEquals(project.getBankFullCapacityDesc(), project2.getBankFullCapacityDesc(), "Bank Full Capacities don't match"),
+                () -> assertEquals(project.getDownstreamUrbanDesc(), project2.getDownstreamUrbanDesc(), "Downstream Urban Descriptions don't match"),
+                () -> assertEquals(project.getHydropowerDesc(), project2.getHydropowerDesc(), "Hydropower Descriptions don't match"),
+                () -> assertEquals(project.getSedimentationDesc(), project2.getSedimentationDesc(), "Sedimentation Descriptions don't match")
+        );
     }
 
 }

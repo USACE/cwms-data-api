@@ -32,6 +32,7 @@ import cwms.cda.data.dto.Location;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 class ProjectsTest {
@@ -57,10 +58,6 @@ class ProjectsTest {
         assertNotNull(listInObj);
         assertEquals(10, listInObj.size());
 
-        List<String> pages = new ArrayList<>();
-
-        pages.add(first.getPage());
-
         String nextPage = first.getNextPage();
 
         String id = Projects.getId(nextPage);
@@ -72,7 +69,6 @@ class ProjectsTest {
         int total = Projects.getTotal(nextPage);
         assertEquals(TOTAL, total, "Expected total to be " + TOTAL);
 
-        pages.add(nextPage);
         String currentPage = nextPage;
         projList.clear();
 
@@ -96,7 +92,6 @@ class ProjectsTest {
         total = Projects.getTotal(nextPage);
         assertEquals(TOTAL, total, "Expected total to be " + TOTAL);
 
-        pages.add(nextPage);
         currentPage = nextPage;
         projList.clear();
 
@@ -121,7 +116,6 @@ class ProjectsTest {
         total = Projects.getTotal(nextPage);
         assertEquals(TOTAL, total, "Expected total to be " + TOTAL);
 
-        pages.add(nextPage);
         currentPage = nextPage;
         projList.clear();
 

@@ -34,12 +34,10 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ExtractableResponse;
@@ -62,7 +60,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(json);
-        Project project = Formats.parseContent(new ContentType(Formats.JSON), json, Project.class);
+        Project project = Formats.parseContent(new ContentType(Formats.JSONV1), json, Project.class);
 
         // Structure of test:
         // 1)Create the Project
@@ -74,9 +72,10 @@ final class ProjectControllerIT extends DataApiTestIT {
         //Create the project
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
-            .contentType(Formats.JSON)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(json)
+            .queryParam(Controllers.FAIL_IF_EXISTS, true)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -93,7 +92,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         // Retrieve the project and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -302,8 +301,6 @@ final class ProjectControllerIT extends DataApiTestIT {
         // 3)Delete the Projects
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
-        ObjectMapper om = JsonV2.buildObjectMapper();
-
         for (int i = 0; i < 15; i++) {
             Project.Builder builder = new Project.Builder();
             builder.from(project)
@@ -311,7 +308,8 @@ final class ProjectControllerIT extends DataApiTestIT {
                             .withName(String.format("PageTest%2d", i))
                             .build());
             Project build = builder.build();
-            String projJson = om.writeValueAsString(build);
+
+            String projJson = Formats.format(Formats.parseHeader(Formats.JSONV1, Project.class), build);
 
             //Create the project
             given()

@@ -162,7 +162,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    static Double toDouble(BigDecimal bigDecimal) {
+    protected static Double toDouble(BigDecimal bigDecimal) {
         Double retVal = null;
         if (bigDecimal != null) {
             retVal = bigDecimal.doubleValue();
@@ -235,6 +235,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildNotAuthorizedForOffice(input);
         } else if (isInvalidUnits(input)) {
             retVal = buildInvalidUnits(input);
+        } else if (isUnsupportedOperationException(input)) {
+            retVal = buildUnsupportedOperationException(input);
         }
 
         return retVal;
@@ -289,6 +291,12 @@ public abstract class JooqDao<T> extends Dao<T> {
                     " does not exist.");
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
+
+            if(!retVal)
+            {
+                segments = Collections.singletonList("does not exist as a stream location");
+                retVal = hasCodeAndMessage(sqlException, Collections.singletonList(20998), segments);
+            }
         }
         return retVal;
     }    
@@ -498,6 +506,31 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new InvalidItemException(localizedMessage, cause);
     }
 
+    public static boolean isUnsupportedOperationException(RuntimeException input) {
+        boolean retVal = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+            int errorCode = sqlException.getErrorCode();
+            //procedure doesn't exist
+            retVal = errorCode == 904
+                //Table or view does not exist
+                || errorCode == 942;
+        }
+        return retVal;
+    }
+
+
+    private static UnsupportedOperationException buildUnsupportedOperationException(RuntimeException input) {
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+        return new UnsupportedOperationException("CWMS currently does not support the requested operation", cause);
+    }
+
     private static @Nullable String sanitizeOrNull(@Nullable String localizedMessage) {
         if (localizedMessage != null && !localizedMessage.isEmpty()) {
             int length = localizedMessage.length();
@@ -516,8 +549,8 @@ public abstract class JooqDao<T> extends Dao<T> {
 
 
     /**
-     * JooqDao provides its own connection method because the DSL.connection
-     * method does not cause thrown exception to be wrapped.
+     * JooqDao provides its own connection() which wraps throw exceptions
+     * because the DSL.connection() method does not wrap exceptions.
      * @param dslContext the DSLContext to use
      * @param cr the ConnectionRunnable to run with the connection
      */
@@ -532,7 +565,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     /**
      * Like DSL.connection the DSL.connectionResult method does not cause thrown
      * exceptions to be wrapped.  This method delegates to DSL.connectionResult
-     * but will wrap exceptions into more specific exception types were possible.
+     * but will wrap exceptions into more specific exception types where possible.
      * @param dslContext the DSLContext to use
      * @param var1 the ConnectionCallable to run with the connection
      */

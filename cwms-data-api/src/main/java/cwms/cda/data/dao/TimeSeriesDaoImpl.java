@@ -29,6 +29,8 @@ import cwms.cda.data.dto.TsvId;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
+import cwms.cda.formatters.FormattingException;
+import cwms.cda.formatters.xml.XMLv1;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -52,8 +54,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import cwms.cda.formatters.FormattingException;
-import cwms.cda.formatters.xml.XMLv1;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.CommonTableExpression;
@@ -75,13 +75,9 @@ import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableLike;
 import org.jooq.TableOnConditionStep;
-import org.jooq.WindowOrderByStep;
-import org.jooq.WindowSpecification;
-import org.jooq.WindowSpecificationRowsStep;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
@@ -294,13 +290,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 trim, startInclusive, endInclusive, previous, next,
                 versionDateMilli, maxVersion, officeId);
 
-        Field<String> tzName;
-        if (this.getDbVersion() >= Dao.CWMS_21_1_1) {
-            tzName = AV_CWMS_TS_ID2.TIME_ZONE_ID;
-        } else {
-            tzName = DSL.inline(null, SQLDataType.VARCHAR);
-        }
-
+        Field<String> tzName = AV_CWMS_TS_ID2.TIME_ZONE_ID;
 
         Field<Integer> totalField;
         if (total != null) {
@@ -495,7 +485,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String cursorOffice = null;
         Catalog.CatalogPage catPage = null;
         if (page == null || page.isEmpty()) {
-            CommonTableExpression<?> limiter = buildWithClause(inputParams, buildWhereConditions(inputParams), new ArrayList<Condition>(), pageSize, true);
+            CommonTableExpression<?> limiter = buildWithClause(inputParams, buildWhereConditions(inputParams), new ArrayList<>(), pageSize, true);
             SelectJoinStep<Record1<Integer>> totalQuery = dsl.with(limiter)
                     .select(countDistinct(limiter.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)))
                     .from(limiter);
@@ -560,9 +550,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         .units(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.UNIT_ID))
                         .interval(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_ID))
                         .intervalOffset(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_UTC_OFFSET));
-                if (this.getDbVersion() > Dao.CWMS_21_1_1) {
-                    builder.timeZone(row.get("TIME_ZONE_ID", String.class));
-                }
+
+                builder.timeZone(row.get("TIME_ZONE_ID", String.class));
+
                 if (params.isIncludeExtents()) {
                     builder.withExtents(new ArrayList<>());
                 }
@@ -622,9 +612,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.UNIT_ID);
         cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_ID);
         cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_UTC_OFFSET);
-        if (this.getDbVersion() >= Dao.CWMS_21_1_1) {
-            cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TIME_ZONE_ID);
-        }
+        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TIME_ZONE_ID);
+
         return cwmsTsIdFields;
     }
 
