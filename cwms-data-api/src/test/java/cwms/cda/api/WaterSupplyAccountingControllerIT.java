@@ -28,6 +28,7 @@ package cwms.cda.api;
 
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.JooqDao.DeleteMethod;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.project.ProjectDao;
@@ -51,7 +52,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
-
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
@@ -77,6 +77,10 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
     private static final String ASCENDING = "ascending";
     private static final WaterUserContract CONTRACT;
     private static final LookupType testTransferType;
+    private static final LookupType testContractType;
+    private static final Location pump1;
+    private static final Location pump3;
+
     static {
         try (InputStream accountStream = WaterSupplyAccounting.class
                 .getResourceAsStream("/cwms/cda/api/pump_accounting.json");
@@ -90,6 +94,11 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             WATER_SUPPLY_ACCOUNTING = Formats.parseContent(new ContentType(Formats.JSONV1),
                     accountingJson, WaterSupplyAccounting.class);
             testTransferType = WATER_SUPPLY_ACCOUNTING.getPumpAccounting().get(0).getTransferType();
+            testContractType = CONTRACT.getContractType();
+            pump1 = buildTestLocation(WATER_SUPPLY_ACCOUNTING.getPumpAccounting().get(0).getPumpLocation().getName(),
+                    "PUMP");
+            pump3 = buildTestLocation(WATER_SUPPLY_ACCOUNTING.getPumpAccounting().get(1).getPumpLocation().getName(),
+                    "PUMP");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -101,20 +110,8 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         // create water user
         // create water user contract
 
-        Location contractLocation = new Location.Builder(CONTRACT.getContractId().getOfficeId(),
-                CONTRACT.getContractId().getName()).withLocationKind("PROJECT")
-                .withTimeZoneName(ZoneId.of("UTC"))
-                .withHorizontalDatum("WGS84").withLongitude(78.0).withLatitude(67.9).withVerticalDatum("WGS84")
-                .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
-                .withElevation(456.7).withElevationUnits("m").withPublishedLongitude(78.9).withPublishedLatitude(45.3)
-                .withLocationType("PROJECT").withDescription("TEST PROJECT").build();
-        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectId().getOfficeId(),
-                CONTRACT.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
-                .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
-                .withLongitude(38.0).withLatitude(56.5).withVerticalDatum("WGS84")
-                .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
-                .withElevation(456.7).withElevationUnits("m").withPublishedLongitude(78.9).withPublishedLatitude(45.3)
-                .withLocationType("PROJECT").withDescription("TEST PROJECT").build();
+        Location contractLocation = buildTestLocation(CONTRACT.getContractId().getName(), "PROJECT");
+        Location parentLocation = buildTestLocation(CONTRACT.getWaterUser().getProjectId().getName(), "PROJECT");
 
         Project project = new Project.Builder().withLocation(parentLocation)
                 .withFederalCost(BigDecimal.valueOf(123456789))
@@ -134,11 +131,15 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             try {
                 lookupTypeDao.storeLookupType("AT_PHYSICAL_TRANSFER_TYPE","PHYS_TRANS_TYPE",
                         testTransferType);
+                lookupTypeDao.storeLookupType("AT_WS_CONTRACT_TYPE","WS_CONTRACT_TYPE",
+                        testContractType);
                 locationsDao.storeLocation(contractLocation);
                 locationsDao.storeLocation(parentLocation);
+                locationsDao.storeLocation(pump1);
+                locationsDao.storeLocation(pump3);
                 projectDao.store(project, true);
                 waterContractDao.storeWaterUser(waterUser, true);
-                waterContractDao.storeWaterContract(CONTRACT, true, false);
+                waterContractDao.storeWaterContract(CONTRACT, true, true);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -167,10 +168,16 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(ctx);
             LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
             ProjectDao projectDao = new ProjectDao(ctx);
+            WaterContractDao waterContractDao = new WaterContractDao(ctx);
+            waterContractDao.deleteWaterContract(CONTRACT, DeleteMethod.DELETE_ALL);
             lookupTypeDao.deleteLookupType("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE",
                     OFFICE_ID, testTransferType.getDisplayValue());
+            lookupTypeDao.deleteLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE",
+                    OFFICE_ID, testContractType.getDisplayValue());
             projectDao.delete(CONTRACT.getOfficeId(), CONTRACT.getWaterUser().getProjectId().getName(),
                     DeleteRule.DELETE_ALL);
+            locationsDao.deleteLocation(pump1.getName(), pump1.getOfficeId(), true);
+            locationsDao.deleteLocation(pump3.getName(), pump3.getOfficeId(), true);
             locationsDao.deleteLocation(contractLocation.getName(), contractLocation.getOfficeId(), true);
             locationsDao.deleteLocation(parentLocation.getName(), parentLocation.getOfficeId(), true);
         }, CwmsDataApiSetupCallback.getWebUser());
@@ -289,5 +296,14 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body(is("[]"))
         ;
+    }
+
+    private static Location buildTestLocation(String name, String locationKind) {
+        return new Location.Builder(OFFICE_ID, name).withLocationKind(locationKind)
+                .withTimeZoneName(ZoneId.of("UTC"))
+                .withHorizontalDatum("NAD84").withLongitude(-121.73).withLatitude(38.56).withVerticalDatum("WGS84")
+                .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
+                .withElevation(456.7).withElevationUnits("m").withPublishedLongitude(-121.73).withPublishedLatitude(38.56)
+                .withLocationType(locationKind).withDescription("TEST PROJECT").build();
     }
 }

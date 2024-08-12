@@ -26,6 +26,16 @@
 
 package cwms.cda.api.watersupply;
 
+import static cwms.cda.api.Controllers.CONTRACT_NAME;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.WATER_USER;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
@@ -47,22 +57,18 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-
-import javax.servlet.http.HttpServletResponse;
 import java.time.Instant;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
 
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 public class AccountingCatalogController implements Handler {
     private final Logger LOGGER = Logger.getLogger(AccountingCatalogController.class.getName());
     private static final String TAG = "Pump Accounting";
-    private static final String CONTRACT_ID = "contract-id";
     private static final String START_TIME = "start";
     private static final String START_INCLUSIVE = "start-inclusive";
     private static final String END_INCLUSIVE = "end-inclusive";
@@ -104,7 +110,7 @@ public class AccountingCatalogController implements Handler {
                             required = true),
                     @OpenApiParam(name = WATER_USER, description = "The water user the pump accounting is "
                             + "associated with.", required = true),
-                    @OpenApiParam(name = CONTRACT_ID, description = "The name of the contract associated with "
+                    @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract associated with "
                             + "the pump accounting.", required = true),
                     @OpenApiParam(name = PROJECT_ID, description = "The project ID the pump accounting is "
                             + "associated with.", required = true)
@@ -122,7 +128,7 @@ public class AccountingCatalogController implements Handler {
                     @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
             },
             description = "Get pump accounting entries associated with a water supply contract.",
-            path = "/projects/{office}/water-user/{water-user}/contracts/{contract-id}/accounting",
+            path = "/projects/{office}/water-user/{water-user}/contracts/{contract-name}/accounting",
             method = HttpMethod.GET,
             tags = {TAG}
     )
@@ -132,7 +138,7 @@ public class AccountingCatalogController implements Handler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             final String office = ctx.pathParam(OFFICE);
             final String waterUserName = ctx.pathParam(WATER_USER);
-            final String contractId = ctx.pathParam(CONTRACT_ID);
+            final String contractId = ctx.pathParam(CONTRACT_NAME);
             final String locationId = ctx.pathParam(PROJECT_ID);
             final String startTime = ctx.queryParam(START_TIME) == null
                     ? "1800-01-01T00:00:00Z" : ctx.queryParam(START_TIME);
@@ -145,7 +151,6 @@ public class AccountingCatalogController implements Handler {
                     || Boolean.parseBoolean(ctx.queryParam(ASCENDING));
             final int rowLimit = ctx.queryParam(ROW_LIMIT) != null ? Integer.parseInt(ctx.queryParam(ROW_LIMIT)) : 0;
             DSLContext dsl = getDslContext(ctx);
-            String result;
             Instant startInstant = DateUtils.parseUserDate(startTime, "UTC").toInstant();
             Instant endInstant = DateUtils.parseUserDate(endTime, "UTC").toInstant();
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
@@ -155,11 +160,12 @@ public class AccountingCatalogController implements Handler {
 
             WaterContractDao contractDao = new WaterContractDao(dsl);
             WaterUser waterUser = contractDao.getWaterUser(projectLocation, waterUserName);
-            List<WaterUserContract> contract = contractDao.getAllWaterContracts(projectLocation, waterUser.getEntityName());
+            List<WaterUserContract> contract = contractDao.getAllWaterContracts(projectLocation,
+                    waterUser.getEntityName());
 
             if (waterUser.getEntityName() == null) {
-                CdaError error = new CdaError("Unable to retrieve accounting - no water user found for the" +
-                        " provided parameters.");
+                CdaError error = new CdaError("Unable to retrieve accounting - no water user found for the"
+                        + " provided parameters.");
                 LOGGER.log(Level.SEVERE, "Error retrieving water pump accounting - no water user found.");
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
                 return;
@@ -174,8 +180,8 @@ public class AccountingCatalogController implements Handler {
             }
 
             if (!contractExists) {
-                CdaError error = new CdaError("Unable to retrieve accounting - no matching contract found for the" +
-                        " provided parameters.");
+                CdaError error = new CdaError("Unable to retrieve accounting - no matching contract found for the"
+                        + " provided parameters.");
                 LOGGER.log(Level.SEVERE, "Error retrieving water pump accounting - no contract found.");
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
                 return;
@@ -186,7 +192,7 @@ public class AccountingCatalogController implements Handler {
                     projectLocation, null, startInstant, endInstant, startInclusive, endInclusive,
                     ascending, rowLimit);
 
-            result = Formats.format(contentType, accounting, WaterSupplyAccounting.class);
+            String result = Formats.format(contentType, accounting, WaterSupplyAccounting.class);
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
         }

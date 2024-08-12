@@ -26,7 +26,12 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CONTRACT_NAME;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -55,7 +60,6 @@ import org.jooq.DSLContext;
 
 public class AccountingCreateController implements Handler {
     private static final String TAG = "Pump Accounting";
-    private static final String CONTRACT_ID = "contract-id";
     private final MetricRegistry metrics;
 
     private Timer.Context markAndTime(String subject) {
@@ -82,15 +86,15 @@ public class AccountingCreateController implements Handler {
                     required = true),
             @OpenApiParam(name = WATER_USER, description = "The water user the accounting is associated with.",
                     required = true),
-            @OpenApiParam(name = CONTRACT_ID, description = "The name of the contract associated with the accounting.",
-                    required = true),
+            @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract associated with the "
+                    + "accounting.", required = true),
         },
         responses = {
             @OpenApiResponse(status = STATUS_204, description = "The pump accounting entry was created."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
         description = "Create a new pump accounting entry associated with a water supply contract.",
-        path = "/projects/{office}/water-user/{water-user}/contracts/{contract-id}/accounting",
+        path = "/projects/{office}/water-user/{water-user}/contracts/{contract-name}/accounting",
         method = HttpMethod.POST,
         tags = {TAG}
     )
@@ -98,7 +102,7 @@ public class AccountingCreateController implements Handler {
     @Override
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            final String contractId = ctx.pathParam(CONTRACT_ID);
+            final String contractId = ctx.pathParam(CONTRACT_NAME);
             final String office = ctx.pathParam(OFFICE);
             DSLContext dsl = getDslContext(ctx);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
