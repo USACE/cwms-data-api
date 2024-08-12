@@ -118,6 +118,8 @@ import cwms.cda.api.project.ProjectLockRevokeDeny;
 import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
+import cwms.cda.api.watersupply.AccountingCatalogController;
+import cwms.cda.api.watersupply.AccountingCreateController;
 import cwms.cda.api.watersupply.WaterContractCatalogController;
 import cwms.cda.api.watersupply.WaterContractController;
 import cwms.cda.api.watersupply.WaterContractCreateController;
@@ -544,6 +546,8 @@ public class ApiServlet extends HttpServlet {
         addWaterUserHandlers(format("/projects/{%s}/{%s}/water-user", OFFICE, PROJECT_ID), requiredRoles);
         addWaterContractHandlers(format("/projects/{%s}/{%s}/water-user/{%s}/contracts", OFFICE, PROJECT_ID,
                 WATER_USER), requiredRoles);
+        addAccountingHandlers(format("/projects/{%s}/{%s}/water-user/{%s}"
+                + "/contracts/{%s}/accounting", OFFICE, PROJECT_ID, WATER_USER, CONTRACT_NAME), requiredRoles);
         delete(format("/projects/{%s}/{%s}/water-user/{%s}/contracts/{%s}/pumps/{%s}", OFFICE, PROJECT_ID,
                         WATER_USER, CONTRACT_NAME, NAME), new WaterPumpDisassociateController(metrics), requiredRoles);
         addWaterContractTypeHandlers(format("/projects/{%s}/contract-types", OFFICE), requiredRoles);
@@ -578,6 +582,10 @@ public class ApiServlet extends HttpServlet {
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
     }
 
+    private void addAccountingHandlers(String path, RouteRole[] requiredRoles) {
+        get(path, new AccountingCatalogController(metrics));
+        post(path, new AccountingCreateController(metrics), requiredRoles);
+    }
 
     private void addProjectLocksHandlers(String path, RouteRole[] requiredRoles) {
         String pathWithoutResource = path.replace(getResourceId(path), "");
