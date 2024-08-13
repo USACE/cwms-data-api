@@ -33,7 +33,6 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_STREAM_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.STREAM_T;
 
@@ -107,9 +106,9 @@ public final class StreamDao extends JooqDao<Stream> {
     public void storeStream(Stream stream, boolean failIfExists) {
         connectionResult(dsl, conn -> {
             setOffice(conn, stream.getOfficeId());
-            String failsIfExistsStr = OracleTypeMap.formatBool(failIfExists);
-            String ignoreNullsStr = OracleTypeMap.formatBool(true);
-            String startsDownstream = OracleTypeMap.formatBool(stream.getStartsDownstream());
+            String failsIfExistsStr = formatBool(failIfExists);
+            String ignoreNullsStr = formatBool(true);
+            String startsDownstream = formatBool(stream.getStartsDownstream());
             String stationUnits = getStationUnits(stream);
             String flowIntoStream = null;
             Double flowIntoStation = null;
@@ -181,7 +180,7 @@ public final class StreamDao extends JooqDao<Stream> {
 
     static Stream fromJooqStream(STREAM_T stream) {
         return new Stream.Builder()
-                .withStartsDownstream(OracleTypeMap.parseBool(stream.getSTATIONING_STARTS_DS()))
+                .withStartsDownstream(parseBool(stream.getSTATIONING_STARTS_DS()))
                 .withFlowsIntoStreamNode(buildStreamNode(stream.getOFFICE_ID(),
                         stream.getFLOWS_INTO_STREAM(),
                         stream.getFLOWS_INTO_STATION(),

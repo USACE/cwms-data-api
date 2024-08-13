@@ -36,7 +36,6 @@ import java.util.List;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_BASIN_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.cwms_basin.RETRIEVE_BASIN;
@@ -129,7 +128,7 @@ public class BasinDao extends JooqDao<Basin> {
             String areaUnit = basin.getAreaUnit();
             setOffice(c, officeId);
             CWMS_BASIN_PACKAGE.call_STORE_BASIN(DSL.using(c).configuration(), basinId,
-                    OracleTypeMap.formatBool(false), OracleTypeMap.formatBool(false),
+                    formatBool(false), formatBool(false),
                     parentBasinId, sortOrder, primaryStreamId, totalDrainageArea,
                     contributingDrainageArea, areaUnit, officeId);
         });

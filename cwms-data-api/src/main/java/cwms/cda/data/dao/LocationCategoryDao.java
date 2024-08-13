@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Optional;
 import org.jooq.DSLContext;
 import org.jooq.Record3;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_CAT_GRP;
 
@@ -76,7 +75,7 @@ public final class LocationCategoryDao extends JooqDao<LocationCategory> {
     }
 
     public void delete(String categoryId, boolean cascade, String office) {
-        String cascadeParam = OracleTypeMap.formatBool(cascade);
+        String cascadeParam = formatBool(cascade);
         connection(dsl, conn -> {
                     DSLContext dslContext = getDslContext(conn, office);
                     CWMS_LOC_PACKAGE.call_DELETE_LOC_CAT(dslContext.configuration(), categoryId, cascadeParam, office);

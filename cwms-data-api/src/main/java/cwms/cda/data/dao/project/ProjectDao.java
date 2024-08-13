@@ -50,7 +50,6 @@ import java.util.List;
 import java.util.TimeZone;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.*;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.cwms_project.CAT_PROJECT;
 import usace.cwms.db.jooq.codegen.tables.AV_PROJECT;
@@ -324,7 +323,7 @@ public class ProjectDao extends JooqDao<Project> {
         connection(dsl, c -> {
             Configuration conf = getDslContext(c, office).configuration();
             CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(conf,
-            projectT, OracleTypeMap.formatBool(failIfExists));
+            projectT, formatBool(failIfExists));
         });
     }
 
@@ -342,7 +341,7 @@ public class ProjectDao extends JooqDao<Project> {
         connection(dsl, c -> {
             Configuration conf = getDslContext(c, office).configuration();
             CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(conf,
-            projectT, OracleTypeMap.formatBool(failIfExists));
+            projectT, formatBool(failIfExists));
         });
 
     }
@@ -350,7 +349,9 @@ public class ProjectDao extends JooqDao<Project> {
     /**
      * Updates a project in the database.
      *
-     * @param project The project object containing the updated information.
+     * @param office The project's office id
+     * @param oldName The project to rename.
+     * @param newName The project's new name.
      * @throws NotFoundException If the project to update is not found.
      */
     public void renameProject(String office, String oldName, String newName) {
@@ -463,7 +464,7 @@ public class ProjectDao extends JooqDao<Project> {
 
         String timeZoneName = r.get(TIME_ZONE_NAME, String.class);
         if (timeZoneName != null) {
-            builder.withTimeZoneName(OracleTypeMap.toZoneId(timeZoneName, name));
+            builder.withTimeZoneName(toZoneId(timeZoneName, name));
         }
         Double latitude = r.get(LATITUDE, Double.class);
         if (latitude != null) {
@@ -485,7 +486,7 @@ public class ProjectDao extends JooqDao<Project> {
         builder.withDescription(r.get(DESCRIPTION, String.class));
         String activeStr = r.get(ACTIVE_FLAG, String.class);
         if (activeStr != null) {
-            builder.withActive(OracleTypeMap.parseBool(activeStr));
+            builder.withActive(parseBool(activeStr));
         }
 
         return builder.build();

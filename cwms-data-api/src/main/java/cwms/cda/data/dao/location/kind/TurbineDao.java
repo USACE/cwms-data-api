@@ -45,7 +45,6 @@ import java.util.List;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TURBINE_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_STRUCTURE_OBJ_T;
@@ -101,7 +100,7 @@ public class TurbineDao extends JooqDao<Turbine> {
         connection(dsl, conn -> {
             setOffice(conn, turbine.getLocation().getOfficeId());
             CWMS_TURBINE_PACKAGE.call_STORE_TURBINE(DSL.using(conn).configuration(), map(turbine),
-                OracleTypeMap.formatBool(failIfExists));
+                formatBool(failIfExists));
         });
     }
 
@@ -131,7 +130,7 @@ public class TurbineDao extends JooqDao<Turbine> {
             BigInteger rowLimitBig = BigInteger.valueOf(rowLimit);
             TURBINE_CHANGE_TAB_T turbineChanges = CWMS_TURBINE_PACKAGE.call_RETRIEVE_TURBINE_CHANGES(
                 DSL.using(conn).configuration(), locationRef, startTimestamp, endTimestamp,
-                "UTC", unitSystem, OracleTypeMap.formatBool(startInclusive), OracleTypeMap.formatBool(endInclusive),
+                "UTC", unitSystem, formatBool(startInclusive), formatBool(endInclusive),
                 rowLimitBig);
             List<TurbineChange> retval = new ArrayList<>();
             if (turbineChanges != null) {
@@ -156,7 +155,7 @@ public class TurbineDao extends JooqDao<Turbine> {
                 .forEach(changes::add);
             CWMS_TURBINE_PACKAGE.call_STORE_TURBINE_CHANGES(DSL.using(conn).configuration(), changes, null, null,
                 "UTC", "T", "T",
-                OracleTypeMap.formatBool(overrideProtection));
+                formatBool(overrideProtection));
         });
     }
 
@@ -171,7 +170,7 @@ public class TurbineDao extends JooqDao<Turbine> {
             Timestamp endTimestamp = Timestamp.from(endTime);
             CWMS_TURBINE_PACKAGE.call_DELETE_TURBINE_CHANGES(DSL.using(conn).configuration(), locationRef,
                 startTimestamp, endTimestamp, "UTC", startInclusive, endInclusive,
-                OracleTypeMap.formatBool(overrideProtection));
+                formatBool(overrideProtection));
         });
     }
 
@@ -191,7 +190,7 @@ public class TurbineDao extends JooqDao<Turbine> {
             .withDischargeUnits(change.getDISCHARGE_UNITS())
             .withNewTotalDischargeOverride(change.getNEW_TOTAL_DISCHARGE_OVERRIDE())
             .withOldTotalDischargeOverride(change.getOLD_TOTAL_DISCHARGE_OVERRIDE())
-            .withProtected(OracleTypeMap.parseBool(change.getPROTECTED()))
+            .withProtected(parseBool(change.getPROTECTED()))
             .withProjectId(LocationUtil.getLocationIdentifier(change.getPROJECT_LOCATION_REF()))
             .withDischargeComputationType(LocationUtil.getLookupType(change.getDISCHARGE_COMPUTATION()))
             .withReasonType(LocationUtil.getLookupType(change.getSETTING_REASON()))
@@ -213,7 +212,7 @@ public class TurbineDao extends JooqDao<Turbine> {
         retval.setDISCHARGE_UNITS(change.getDischargeUnits());
         retval.setNEW_TOTAL_DISCHARGE_OVERRIDE(change.getNewTotalDischargeOverride());
         retval.setOLD_TOTAL_DISCHARGE_OVERRIDE(change.getOldTotalDischargeOverride());
-        retval.setPROTECTED(OracleTypeMap.formatBool(change.isProtected()));
+        retval.setPROTECTED(formatBool(change.isProtected()));
         retval.setPROJECT_LOCATION_REF(LocationUtil.getLocationRef(change.getProjectId()));
         retval.setDISCHARGE_COMPUTATION(LocationUtil.getLookupType(change.getDischargeComputationType()));
         retval.setSETTING_REASON(LocationUtil.getLookupType(change.getReasonType()));

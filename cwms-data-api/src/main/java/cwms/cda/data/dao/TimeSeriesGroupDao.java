@@ -32,7 +32,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.*;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
@@ -251,7 +250,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             Configuration configuration = getDslContext(c,group.getOfficeId()).configuration();
             String categoryId = group.getTimeSeriesCategory().getId();
             CWMS_TS_PACKAGE.call_STORE_TS_GROUP(configuration, categoryId,
-            group.getId(), group.getDescription(), OracleTypeMap.formatBool(failIfExists),
+            group.getId(), group.getDescription(), formatBool(failIfExists),
             "T", group.getSharedAliasId(),
             group.getSharedRefTsId(), group.getOfficeId());
             assignTs(configuration,group);
@@ -277,7 +276,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     private static TS_ALIAS_T convertToTsAliasType(AssignedTimeSeries assignedTimeSeries) {
-        BigDecimal attribute = OracleTypeMap.toBigDecimal(assignedTimeSeries.getAttribute());
+        BigDecimal attribute = toBigDecimal(assignedTimeSeries.getAttribute());
         return new TS_ALIAS_T(assignedTimeSeries.getTimeseriesId(), attribute,
             assignedTimeSeries.getAliasId(), assignedTimeSeries.getRefTsId());
     }

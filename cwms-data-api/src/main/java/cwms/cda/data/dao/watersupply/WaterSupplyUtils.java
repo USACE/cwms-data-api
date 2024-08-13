@@ -26,6 +26,7 @@
 
 package cwms.cda.data.dao.watersupply;
 
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
@@ -36,7 +37,6 @@ import cwms.cda.data.dto.watersupply.WaterUserContract;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_OBJ_T;
@@ -111,7 +111,7 @@ final class WaterSupplyUtils {
         lookupTypeObjT.setOFFICE_ID(lookupType.getOfficeId());
         lookupTypeObjT.setDISPLAY_VALUE(lookupType.getDisplayValue());
         lookupTypeObjT.setTOOLTIP(lookupType.getTooltip());
-        lookupTypeObjT.setACTIVE(OracleTypeMap.formatBool(lookupType.getActive()));
+        lookupTypeObjT.setACTIVE(JooqDao.formatBool(lookupType.getActive()));
         return lookupTypeObjT;
     }
 

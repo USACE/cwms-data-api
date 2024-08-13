@@ -39,10 +39,13 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
@@ -577,4 +580,48 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
     }
 
+    public static String formatBool(Boolean tf) {
+        String parsed = null;
+        if (tf != null) {
+            parsed = tf ? "T" : "F";
+        }
+        return parsed;
+    }
+
+    public static boolean parseBool(String str) {
+        if ("T".equalsIgnoreCase(str)) {
+            return true;
+        }
+        return Boolean.parseBoolean(str);
+    }
+
+    protected static ZoneId toZoneId(String zoneId, String locationId) {
+        ZoneId retval = null;
+        if (zoneId != null) {
+            try {
+                retval = ZoneId.of(zoneId);
+            } catch (DateTimeException e) {
+                if ("Unknown or Not Applicable".equalsIgnoreCase(zoneId)) {
+                    logger.atFine().withCause(e).log("Location %s has an undefined time zone", locationId);
+                } else {
+                    if (logger.atFine().isEnabled()) {
+                        logger.atWarning().withCause(e)
+                            .log("Location %s has an invalid location time zone: %s", locationId, zoneId);
+                    } else {
+                        logger.atWarning().log("Location %s has an invalid location time zone: %s", locationId, zoneId);
+                    }
+                }
+            }
+        }
+        return retval;
+    }
+
+    public static BigDecimal toBigDecimal(Number number) {
+        return (number == null) ? null : BigDecimal.valueOf(
+            number.doubleValue());
+    }
+
+    public static double buildDouble(BigDecimal bigDecimal) {
+        return (bigDecimal == null) ? 0.0 : bigDecimal.doubleValue();
+    }
 }

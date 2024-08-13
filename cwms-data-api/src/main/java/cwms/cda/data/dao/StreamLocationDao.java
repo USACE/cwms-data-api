@@ -34,7 +34,6 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_STREAM_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.cwms_stream.RETRIEVE_STREAM_LOCATION;
 
@@ -91,8 +90,8 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
     public List<StreamLocation> retrieveDownstreamLocations(String officeId, String locationId, Boolean allDownstream, Boolean sameStreamOnly,
                                                             String stationUnits, String stageUnits, String areaUnits) {
         return connectionResult(dsl, conn -> {
-            String allDsLocationsStr = OracleTypeMap.formatBool(allDownstream);
-            String sameStreamOnlyStr = OracleTypeMap.formatBool(sameStreamOnly);
+            String allDsLocationsStr = formatBool(allDownstream);
+            String sameStreamOnlyStr = formatBool(sameStreamOnly);
             STR_TAB_T downstreamLocIds = CWMS_STREAM_PACKAGE.call_GET_DS_LOCATIONS__2(DSL.using(conn).configuration(),
                     locationId, allDsLocationsStr, sameStreamOnlyStr, officeId);
             return downstreamLocIds.stream()
@@ -117,8 +116,8 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
     public List<StreamLocation> retrieveUpstreamLocations(String officeId, String locationId, Boolean allUpstream, Boolean sameStreamOnly,
                                                             String stationUnits, String stageUnits, String areaUnits) {
         return connectionResult(dsl, conn -> {
-            String allUsLocationsStr = OracleTypeMap.formatBool(allUpstream);
-            String sameStreamOnlyStr = OracleTypeMap.formatBool(sameStreamOnly);
+            String allUsLocationsStr = formatBool(allUpstream);
+            String sameStreamOnlyStr = formatBool(sameStreamOnly);
             STR_TAB_T upstreamLocIds = CWMS_STREAM_PACKAGE.call_GET_US_LOCATIONS__2(DSL.using(conn).configuration(),
                     locationId, allUsLocationsStr, sameStreamOnlyStr, officeId);
             return upstreamLocIds.stream()
@@ -164,8 +163,8 @@ public final class StreamLocationDao extends JooqDao<StreamLocation> {
     public void storeStreamLocation(StreamLocation streamLocation, boolean failIfExists) {
         connectionResult(dsl, conn -> {
             setOffice(conn, streamLocation.getId().getOfficeId());
-            String failsIfExistsStr = OracleTypeMap.formatBool(failIfExists);
-            String ignoreNullsStr = OracleTypeMap.formatBool(true);
+            String failsIfExistsStr = formatBool(failIfExists);
+            String ignoreNullsStr = formatBool(true);
             StreamLocationNode streamLocationNode = streamLocation.getStreamLocationNode();
             StreamNode streamNode = streamLocationNode.getStreamNode();
             String bank = streamNode.getBank() == null ? null : streamNode.getBank().getCode();

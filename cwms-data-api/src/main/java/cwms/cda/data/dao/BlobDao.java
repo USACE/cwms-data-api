@@ -6,7 +6,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.ResultQuery;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 import java.io.ByteArrayOutputStream;
@@ -165,8 +164,8 @@ public class BlobDao extends JooqDao<Blob> {
     }
 
     public void create(Blob blob, boolean failIfExists, boolean ignoreNulls) {
-        String pFailIfExists = OracleTypeMap.formatBool(failIfExists);
-        String pIgnoreNulls = OracleTypeMap.formatBool(ignoreNulls);
+        String pFailIfExists = formatBool(failIfExists);
+        String pIgnoreNulls = formatBool(ignoreNulls);
         dsl.connection(c -> CWMS_TEXT_PACKAGE.call_STORE_BINARY(
                 getDslContext(c, blob.getOfficeId()).configuration(),
                 blob.getValue(),
