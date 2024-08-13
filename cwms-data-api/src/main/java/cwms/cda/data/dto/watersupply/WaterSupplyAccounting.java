@@ -41,7 +41,6 @@ import java.util.Map;
         aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonDeserialize(builder = WaterSupplyAccounting.Builder.class)
-@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class WaterSupplyAccounting extends CwmsDTOBase {
     @JsonProperty(required = true)
