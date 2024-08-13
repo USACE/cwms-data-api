@@ -207,7 +207,7 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
         connection(dsl, c -> {
             Configuration conf = getDslContext(c, sessionOffice).configuration();
             CWMS_PROJECT_PACKAGE.call_UPDATE_LOCK_REVOKER_RIGHTS(conf,
-                userId, projectMask, formatBool(allow), applicationId, null);
+                userId, projectMask, formatBool(allow), applicationId, sessionOffice);
         });
     }
 

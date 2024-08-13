@@ -35,12 +35,14 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
 import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.data.dto.project.ProjectLockId;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.security.DataApiPrincipal;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -102,16 +104,11 @@ public class ProjectLockRequest implements Handler {
 
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
-
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader, ProjectLock.class);
-            ProjectLock lock = Formats.parseContent(contentType, ctx.bodyAsInputStream(), ProjectLock.class);
-            boolean revokeExisting =
-                    ctx.queryParamAsClass(REVOKE_EXISTING, Boolean.class).getOrDefault(REVOKE_DEFAULT);
-            int revokeTimeout =
-                    ctx.queryParamAsClass(REVOKE_TIMEOUT, Integer.class).getOrDefault(DEFAULT_TIMEOUT);
-
+            ProjectLock lock = getProjectLock(ctx);
+            boolean revokeExisting = ctx.queryParamAsClass(REVOKE_EXISTING, Boolean.class)
+                .getOrDefault(REVOKE_DEFAULT);
+            int revokeTimeout = ctx.queryParamAsClass(REVOKE_TIMEOUT, Integer.class)
+                .getOrDefault(DEFAULT_TIMEOUT);
             String lockId = lockDao.requestLock(lock, revokeExisting, revokeTimeout);
             if (lockId != null) {
                 ProjectLockId id = new ProjectLockId(lockId);
@@ -130,6 +127,23 @@ public class ProjectLockRequest implements Handler {
 
         }
 
+    }
+
+    private static ProjectLock getProjectLock(@NotNull Context ctx) {
+        String reqContentType = ctx.req.getContentType();
+        String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+        ContentType contentType = Formats.parseHeader(formatHeader, ProjectLock.class);
+        ProjectLock lock = Formats.parseContent(contentType, ctx.bodyAsInputStream(), ProjectLock.class);
+        if(lock.getSessionUser() == null) {
+            Object principal = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
+            if(principal == null || !(principal instanceof DataApiPrincipal)) {
+                throw new IllegalArgumentException("Session user was not provided and user principal is not registered");
+            }
+            lock = new ProjectLock.Builder(lock)
+                .withSessionUser(((DataApiPrincipal) principal).getName())
+                .build();
+        }
+        return lock;
     }
 
 }

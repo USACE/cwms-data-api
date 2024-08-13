@@ -103,6 +103,17 @@ public class ProjectLock extends CwmsDTO {
         public Builder() {
         }
 
+        public Builder(ProjectLock lock) {
+            this.officeId = lock.officeId;
+            this.projectId = lock.projectId;
+            this.applicationId = lock.applicationId;
+            this.acquireTime = lock.acquireTime;
+            this.sessionUser = lock.sessionUser;
+            this.osUser = lock.osUser;
+            this.sessionProgram = lock.sessionProgram;
+            this.sessionMachine = lock.sessionMachine;
+        }
+
         public Builder(String officeId, String projectId, String applicationId) {
             this.officeId = officeId;
             this.projectId = projectId;

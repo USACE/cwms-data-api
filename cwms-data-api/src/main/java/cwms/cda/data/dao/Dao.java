@@ -37,8 +37,7 @@ import java.util.concurrent.TimeUnit;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.ifc.env.CwmsDbEnv;
-import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
+import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 public abstract class Dao<T> {
     public static final int CWMS_18_1_8 = 180108;
@@ -101,8 +100,7 @@ public abstract class Dao<T> {
     }
 
     protected void setOffice(Connection c, String office) throws SQLException {
-        CwmsDbEnv db = CwmsDbServiceLookup.buildCwmsDb(CwmsDbEnv.class, c);
-        db.setSessionOfficeId(c,office);
+        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
     }
 
 
