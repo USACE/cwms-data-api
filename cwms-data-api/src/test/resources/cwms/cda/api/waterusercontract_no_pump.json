@@ -4,13 +4,13 @@
     "entity-name": "Test User",
     "project-id": {
       "office-id": "SWT",
-      "name": "TEST_LOCATION1"
+      "name": "NO_PUMP"
     },
     "water-right": "Test Water Right"
   },
   "contract-id": {
     "office-id": "SWT",
-    "name": "TEST_CONTRACT"
+    "name": "NO_PUMP_CONTRACT"
   },
   "contract-type": {
     "office-id": "SWT",
@@ -29,7 +29,7 @@
   "pump-out-location": {
     "pump-location": {
       "office-id": "SWT",
-      "name": "TEST_LOCATION-PUMP11",
+      "name": "NO_PUMP-PUMP11",
       "latitude": 0.5,
       "longitude": 0.6,
       "active": true,

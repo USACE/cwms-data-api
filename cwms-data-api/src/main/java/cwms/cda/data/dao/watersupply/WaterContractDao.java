@@ -45,7 +45,6 @@ import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_OBJ_T;
-import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_TAB_T;
 
 
 public final class WaterContractDao extends JooqDao<WaterUserContract> {
@@ -139,9 +138,9 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
     public void storeWaterUser(WaterUser waterUser, boolean failIfExists) {
         connection(dsl, c -> {
             setOffice(c, waterUser.getProjectId().getOfficeId());
-            WATER_USER_TAB_T waterUsers = WaterSupplyUtils.toWaterUserTs(waterUser);
+            WATER_USER_OBJ_T waterUsers = WaterSupplyUtils.toWaterUserObjT(waterUser);
             String paramFailIfExists = formatBool(failIfExists);
-            CWMS_WATER_SUPPLY_PACKAGE.call_STORE_WATER_USERS(DSL.using(c).configuration(),
+            CWMS_WATER_SUPPLY_PACKAGE.call_STORE_WATER_USER(DSL.using(c).configuration(),
                     waterUsers, paramFailIfExists);
         });
     }

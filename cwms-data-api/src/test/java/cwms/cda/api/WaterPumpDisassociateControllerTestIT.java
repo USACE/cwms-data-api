@@ -75,7 +75,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
     static {
         try (
                 InputStream contractStream = WaterContractCreateController.class
-                        .getResourceAsStream("/cwms/cda/api/waterusercontract.json");
+                        .getResourceAsStream("/cwms/cda/api/waterusercontract_diss.json");
                 InputStream contractStreamNoPump = WaterContractCreateController.class
                         .getResourceAsStream("/cwms/cda/api/waterusercontract_no_pump.json")
         ) {
@@ -93,32 +93,58 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
 
     @BeforeAll
     static void setUp() throws Exception {
-        Location contractLocation = new Location.Builder(CONTRACT.getContractId().getOfficeId(),
-                CONTRACT.getContractId().getName()).withLocationKind("PROJECT").withTimeZoneName(ZoneId.of("UTC"))
-                .withHorizontalDatum("WGS84").withLongitude(78.0).withLatitude(67.9).withVerticalDatum("WGS84")
-                .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
-                .withElevation(456.7).withElevationUnits("m").withPublishedLongitude(78.9).withPublishedLatitude(45.3)
-                .withLocationType("PROJECT").withDescription("TEST PROJECT").build();
-        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectId().getOfficeId(),
-                CONTRACT.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
-                .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
-                .withLongitude(38.0).withLatitude(56.5).withVerticalDatum("WGS84")
-                .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
-                .withElevation(456.7).withElevationUnits("m").withPublishedLongitude(78.9).withPublishedLatitude(45.3)
-                .withLocationType("PROJECT").withDescription("TEST PROJECT").build();
-        Location parentLocation2 = new Location.Builder(CONTRACT_NO_PUMP.getWaterUser().getProjectId().getOfficeId(),
-                CONTRACT_NO_PUMP.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
-                .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
-                .withLongitude(38.0).withLatitude(56.5).withVerticalDatum("WGS84")
-                .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
-                .withElevation(456.7).withElevationUnits("m").withPublishedLongitude(78.9).withPublishedLatitude(45.3)
-                .withLocationType("PROJECT").withDescription("TEST PROJECT").build();
-        Project project = new Project.Builder().withLocation(parentLocation).withFederalCost(BigDecimal.valueOf(123456789))
-                .withAuthorizingLaw("NEW LAW").withCostUnit("$").withProjectOwner(CONTRACT.getWaterUser().getEntityName())
-                .build();
-        Project project1 = new Project.Builder().withLocation(parentLocation2).withFederalCost(BigDecimal.valueOf(123456789))
-                .withAuthorizingLaw("NEW LAW").withCostUnit("$").withProjectOwner(CONTRACT_NO_PUMP.getWaterUser().getEntityName())
-                .build();
+        String office1 = CONTRACT.getWaterUser().getProjectId().getOfficeId();
+        String projectId1 = CONTRACT.getWaterUser().getProjectId().getName();
+        Location parentLocation = new Location.Builder(office1, projectId1)
+            .withLocationKind("PROJECT")
+            .withTimeZoneName(ZoneId.of("UTC"))
+            .withHorizontalDatum("WGS84")
+            .withLongitude(38.0).withLatitude(56.5)
+            .withVerticalDatum("WGS84")
+            .withLongName("TEST CONTRACT LOCATION")
+            .withActive(true).withMapLabel("LABEL")
+            .withNation(Nation.US)
+            .withElevation(456.7)
+            .withElevationUnits("m")
+            .withPublishedLongitude(78.9)
+            .withPublishedLatitude(45.3)
+            .withLocationType("PROJECT")
+            .withDescription("TEST PROJECT")
+            .build();
+        String office2 = CONTRACT_NO_PUMP.getWaterUser().getProjectId().getOfficeId();
+        String projectId2 = CONTRACT_NO_PUMP.getWaterUser().getProjectId().getName();
+        Location parentLocation2 = new Location.Builder(office2, projectId2)
+            .withLocationKind("PROJECT")
+            .withTimeZoneName(ZoneId.of("UTC"))
+            .withHorizontalDatum("WGS84")
+            .withLongitude(38.0)
+            .withLatitude(56.5)
+            .withVerticalDatum("WGS84")
+            .withLongName("TEST CONTRACT LOCATION")
+            .withActive(true)
+            .withMapLabel("LABEL")
+            .withNation(Nation.US)
+            .withElevation(456.7)
+            .withElevationUnits("m")
+            .withPublishedLongitude(78.9)
+            .withPublishedLatitude(45.3)
+            .withLocationType("PROJECT")
+            .withDescription("TEST PROJECT")
+            .build();
+        Project project1 = new Project.Builder()
+            .withLocation(parentLocation)
+            .withFederalCost(BigDecimal.valueOf(123456789))
+            .withAuthorizingLaw("NEW LAW")
+            .withCostUnit("$")
+            .withProjectOwner(CONTRACT.getWaterUser().getEntityName())
+            .build();
+        Project project2 = new Project.Builder()
+            .withLocation(parentLocation2)
+            .withFederalCost(BigDecimal.valueOf(123456789))
+            .withAuthorizingLaw("NEW LAW")
+            .withCostUnit("$")
+            .withProjectOwner(CONTRACT_NO_PUMP.getWaterUser().getEntityName())
+            .build();
         WaterUser waterUser = new WaterUser.Builder().withEntityName(CONTRACT.getWaterUser().getEntityName())
                 .withProjectId(CONTRACT.getWaterUser().getProjectId())
                 .withWaterRight(CONTRACT.getWaterUser().getWaterRight()).build();
@@ -133,11 +159,10 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
             ProjectDao projectDao = new ProjectDao(ctx);
             WaterContractDao waterContractDao = new WaterContractDao(ctx);
             try {
-                locationsDao.storeLocation(contractLocation);
                 locationsDao.storeLocation(parentLocation);
                 locationsDao.storeLocation(parentLocation2);
-                projectDao.store(project, true);
                 projectDao.store(project1, true);
+                projectDao.store(project2, true);
                 waterContractDao.storeWaterUser(waterUser, false);
                 waterContractDao.storeWaterContractTypes(CONTRACT.getContractType(), false);
                 waterContractDao.storeWaterUser(waterUserNoPump, false);
@@ -149,17 +174,6 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
 
     @AfterAll
     static void tearDown() throws Exception {
-        Location contractLocation = new Location.Builder(CONTRACT.getContractId().getOfficeId(),
-                CONTRACT.getContractId().getName()).withLocationKind("PROJECT").withTimeZoneName(ZoneId.of("UTC"))
-                .withHorizontalDatum("WGS84").withLongitude(78.0).withLatitude(67.9).build();
-        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectId().getOfficeId(),
-                CONTRACT.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
-                .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
-                .withLongitude(38.0).withLatitude(56.5).build();
-        Location parentLocation2 = new Location.Builder(CONTRACT_NO_PUMP.getWaterUser().getProjectId().getOfficeId(),
-                CONTRACT_NO_PUMP.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
-                .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
-                .withLongitude(38.0).withLatitude(56.5).build();
         WaterUser waterUser = new WaterUser.Builder().withEntityName(CONTRACT.getWaterUser().getEntityName())
                 .withProjectId(CONTRACT.getWaterUser().getProjectId())
                 .withWaterRight(CONTRACT.getWaterUser().getWaterRight()).build();
@@ -177,13 +191,13 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
                     DeleteMethod.DELETE_ALL);
             waterContractDao.deleteWaterUser(waterUserNoPump.getProjectId(), waterUserNoPump.getEntityName(),
                     DeleteMethod.DELETE_ALL);
-            projectDao.delete(CONTRACT.getOfficeId(), CONTRACT.getWaterUser().getProjectId().getName(),
-                    DeleteRule.DELETE_ALL);
+            projectDao.delete(CONTRACT.getOfficeId(), CONTRACT.getWaterUser().getProjectId().getName(), DeleteRule.DELETE_ALL);
             projectDao.delete(CONTRACT_NO_PUMP.getOfficeId(), CONTRACT_NO_PUMP.getWaterUser().getProjectId().getName(),
                     DeleteRule.DELETE_ALL);
-            locationsDao.deleteLocation(contractLocation.getName(), contractLocation.getOfficeId(), true);
-            locationsDao.deleteLocation(parentLocation.getName(), parentLocation.getOfficeId(), true);
-            locationsDao.deleteLocation(parentLocation2.getName(), parentLocation2.getOfficeId(), true);
+            locationsDao.deleteLocation(CONTRACT.getWaterUser().getProjectId().getName(), 
+                CONTRACT.getWaterUser().getProjectId().getOfficeId(), true);
+            locationsDao.deleteLocation(CONTRACT_NO_PUMP.getWaterUser().getProjectId().getName(), 
+                CONTRACT_NO_PUMP.getWaterUser().getProjectId().getOfficeId(), true);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
