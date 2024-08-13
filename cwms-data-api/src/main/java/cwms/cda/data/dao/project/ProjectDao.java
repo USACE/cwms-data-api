@@ -353,18 +353,10 @@ public class ProjectDao extends JooqDao<Project> {
      * @param project The project object containing the updated information.
      * @throws NotFoundException If the project to update is not found.
      */
-    public void update(Project project) {
-        String office = project.getLocation().getOfficeId();
-        Project existingProject = retrieveProject(office, project.getLocation().getName());
-        if (existingProject == null) {
-            throw new NotFoundException("Could not find project to update.");
-        }
-
-        PROJECT_OBJ_T projectT = toProjectT(project);
+    public void renameProject(String office, String oldName, String newName) {
         connection(dsl, c -> {
             Configuration conf = getDslContext(c, office).configuration();
-            CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(conf,
-            projectT, OracleTypeMap.formatBool(false));
+            CWMS_PROJECT_PACKAGE.call_RENAME_PROJECT(conf,oldName, newName, office);
         });
 
     }
