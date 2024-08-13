@@ -81,7 +81,7 @@ public final class WaterContractController extends WaterSupplyControllerBase imp
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
         },
         description = "Return a specified water contract",
-        path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{contract-id}",
+        path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{contract-name}",
         method = HttpMethod.GET,
         tags = {TAG}
     )

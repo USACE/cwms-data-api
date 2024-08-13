@@ -26,11 +26,7 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PROJECT_ID;
-import static cwms.cda.api.Controllers.STATUS_204;
-import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -60,6 +56,10 @@ public final class WaterUserCreateController extends WaterSupplyControllerBase i
     }
 
     @OpenApi(
+        queryParams = {
+            @OpenApiParam(name = FAIL_IF_EXISTS, description = "If true, the operation will fail if the water user "
+                    + "already exists. Default: true", type = Boolean.class),
+        },
         requestBody = @OpenApiRequestBody(
             content = {
                 @OpenApiContent(from = WaterUser.class, type = Formats.JSONV1)
@@ -69,13 +69,6 @@ public final class WaterUserCreateController extends WaterSupplyControllerBase i
             @OpenApiResponse(status = STATUS_204, description = "Water user successfully stored to CWMS."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
-        pathParams = {
-            @OpenApiParam(name = OFFICE, description = "The office Id the contract is associated with.",
-                    required = true),
-            @OpenApiParam(name = PROJECT_ID, description = "The project Id the contract is associated with.",
-                    required = true)
-        },
-
         description = "Stores a water user to CWMS.",
         method = HttpMethod.POST,
         path = "/projects/{office}/{project-id}/water-user",
@@ -89,8 +82,9 @@ public final class WaterUserCreateController extends WaterSupplyControllerBase i
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUser.class);
             ctx.contentType(contentType.toString());
             WaterUser user = Formats.parseContent(contentType, ctx.body(), WaterUser.class);
+            boolean failIfExists = Boolean.parseBoolean(ctx.queryParam(FAIL_IF_EXISTS));
             WaterContractDao contractDao = getContractDao(dsl);
-            contractDao.storeWaterUser(user, true);
+            contractDao.storeWaterUser(user, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED).json(user.getEntityName() + " user created successfully.");
         }
     }
