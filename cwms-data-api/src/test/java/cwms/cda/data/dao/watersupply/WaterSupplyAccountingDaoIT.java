@@ -174,6 +174,8 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
                 endInclusive = false;
                 inDB = false;
                 break;
+            default:
+                break;
         }
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
@@ -211,7 +213,7 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
             assertFalse(pumpAccounting.isEmpty());
             for (WaterSupplyAccounting returnedAccounting : pumpAccounting) {
                 assertNotNull(returnedAccounting.getPumpAccounting());
-                DTOMatch.assertMatch(returnedAccounting, buildTestAccounting());
+                DTOMatch.assertMatch(buildTestAccounting(), returnedAccounting);
             }
         }, CwmsDataApiSetupCallback.getWebUser());
     }
@@ -263,13 +265,13 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
                 .withFutureUsePercentActivated(35.7)
                 .withWaterUser(testUser)
                 .withPumpInLocation(new WaterSupplyPump.Builder()
-                        .withPumpLocation(buildTestLocation("Pump 1 " + entityName,
+                        .withPumpLocation(buildTestLocation("Pump 1-" + entityName + "1",
                         "PUMP")).withPumpType(PumpType.IN).build())
                 .withPumpOutLocation(new WaterSupplyPump.Builder()
-                        .withPumpLocation(buildTestLocation("Pump 2 " + entityName,
+                        .withPumpLocation(buildTestLocation("Pump 2-" + entityName + "2",
                         "PUMP")).withPumpType(PumpType.OUT).build())
                 .withPumpOutBelowLocation(new WaterSupplyPump.Builder()
-                        .withPumpLocation(buildTestLocation("Pump 3 " + entityName,
+                        .withPumpLocation(buildTestLocation("Pump 3-" + entityName + "3",
                         "PUMP")).withPumpType(PumpType.BELOW).build())
                 .build();
 
