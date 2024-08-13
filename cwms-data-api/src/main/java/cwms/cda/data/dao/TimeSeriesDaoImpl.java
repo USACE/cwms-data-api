@@ -79,7 +79,6 @@ import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
@@ -263,7 +262,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
-        String trim = OracleTypeMap.formatBool(shouldTrim);
+        String trim = formatBool(shouldTrim);
         String startInclusive = "T";
         String endInclusive = "T";
         String previous = "F";
@@ -453,7 +452,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             cachedValue = connectionResult(dsl, connection -> {
                 Configuration configuration = getDslContext(connection, office).configuration();
                 boolean isVersioned =
-                        OracleTypeMap.parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(configuration,
+                        parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(configuration,
                                 tsId, office));
                 isVersionedCache.put(cacheKey, isVersioned);
                 return isVersioned;

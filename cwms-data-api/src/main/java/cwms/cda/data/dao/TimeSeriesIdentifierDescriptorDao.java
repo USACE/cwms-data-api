@@ -24,9 +24,6 @@
 
 package cwms.cda.data.dao;
 
-import static usace.cwms.db.dao.util.OracleTypeMap.parseBool;
-import static usace.cwms.db.dao.util.OracleTypeMap.toZoneId;
-
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
@@ -41,7 +38,6 @@ import org.jooq.Condition;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2;
@@ -62,9 +58,9 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
                 getDslContext(c,tsid.getOfficeId()).configuration(),
                 tsid.getTimeSeriesId(),
                 tsid.getIntervalOffsetMinutes(), intervalForward, intervalBackward,
-                OracleTypeMap.formatBool(versionedFlag),
-                OracleTypeMap.formatBool(tsid.isActive()),
-                OracleTypeMap.formatBool(failIfExists), tsid.getOfficeId());
+                formatBool(versionedFlag),
+                formatBool(tsid.isActive()),
+                formatBool(failIfExists), tsid.getOfficeId());
             logger.atFine().log("Created tsCode: %s for %s", tsCode, tsid.getTimeSeriesId());
         });
     }

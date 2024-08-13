@@ -18,7 +18,6 @@ import org.jooq.exception.TooManyRowsException;
 import org.jooq.impl.DSL;
 
 import usace.cwms.db.dao.ifc.pool.PoolNameType;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_POOL_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.cwms_pool.RETRIEVE_POOL;
 import usace.cwms.db.jooq.codegen.tables.AV_POOL;
@@ -98,8 +97,8 @@ public class PoolDao extends JooqDao<Pool> {
 												String projectIdMask, String poolNameMask, String bottomLevelMask,
 												String topLevelMask, String officeIdMask)
 	{
-		String includeExplicitStr = OracleTypeMap.formatBool(includeExplicit);
-		String includeImplicitStr = OracleTypeMap.formatBool(includeImplicit);
+		String includeExplicitStr = formatBool(includeExplicit);
+		String includeImplicitStr = formatBool(includeImplicit);
 		Result<Record> records = CWMS_POOL_PACKAGE.call_CAT_POOLS(dsl.configuration(), projectIdMask,
 				poolNameMask, bottomLevelMask, topLevelMask, includeExplicitStr, includeImplicitStr,
 				officeIdMask);

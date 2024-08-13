@@ -56,7 +56,6 @@ import org.jooq.SelectOnConditionStep;
 import org.jooq.SelectSeekStep1;
 import org.jooq.TableField;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_CAT_GRP;
@@ -391,7 +390,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
             CWMS_LOC_PACKAGE.call_DELETE_LOC_GROUP__2(dslContext.configuration(), categoryId,
-                    groupId, OracleTypeMap.formatBool(cascadeDelete), office);
+                    groupId, formatBool(cascadeDelete), office);
         });
     }
 
@@ -414,7 +413,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
     @NotNull
     private static LOC_ALIAS_TYPE3 convertToLocAliasType(AssignedLocation a) {
-        BigDecimal attribute = OracleTypeMap.toBigDecimal(a.getAttribute());
+        BigDecimal attribute = toBigDecimal(a.getAttribute());
         return new LOC_ALIAS_TYPE3(a.getLocationId(),
             attribute, a.getAliasId(), a.getRefLocationId());
     }

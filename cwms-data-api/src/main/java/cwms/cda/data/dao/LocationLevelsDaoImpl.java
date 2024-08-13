@@ -80,7 +80,6 @@ import org.jooq.TableField;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
@@ -248,11 +247,11 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             for(SeasonalValueBean seasonalValue : seasonalValues)
             {
                 SEASONAL_VALUE_T seasonalValueT = new SEASONAL_VALUE_T();
-                seasonalValueT.setOFFSET_MINUTES(OracleTypeMap.toBigDecimal(seasonalValue.getOffsetMinutes()));
+                seasonalValueT.setOFFSET_MINUTES(toBigDecimal(seasonalValue.getOffsetMinutes()));
                 if(seasonalValue.getOffsetMonths() != null) {
                     seasonalValueT.setOFFSET_MONTHS(seasonalValue.getOffsetMonths().byteValue());
                 }
-                seasonalValueT.setVALUE(OracleTypeMap.toBigDecimal(seasonalValue.getValue()));
+                seasonalValueT.setVALUE(toBigDecimal(seasonalValue.getValue()));
                 pSeasonalValues.add(seasonalValueT);
             }
         }
@@ -594,7 +593,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     private ZoneId getLocationZoneId(LocationTemplate locationRef) {
         String timeZone = CWMS_LOC_PACKAGE.call_GET_LOCAL_TIMEZONE__2(dsl.configuration(),
                 locationRef.getLocationId(), locationRef.getOfficeId());
-        return OracleTypeMap.toZoneId(timeZone, locationRef.getLocationId());
+        return toZoneId(timeZone, locationRef.getLocationId());
     }
 
     private static TimeSeries buildTimeSeries(ILocationLevelRef levelRef, Interval interval,

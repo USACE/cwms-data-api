@@ -3,7 +3,6 @@ package cwms.cda.data.dao.binarytimeseries;
 import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_DOES_NOT_EXIST_ERROR_CODE;
 import static cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao.TEXT_ID_DOES_NOT_EXIST_ERROR_CODE;
 import static java.lang.String.format;
-import static usace.cwms.db.dao.util.OracleTypeMap.formatBool;
 
 import cwms.cda.api.Controllers;
 import cwms.cda.api.enums.VersionType;
@@ -33,7 +32,6 @@ import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import org.jooq.exception.NoDataFoundException;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
@@ -55,8 +53,6 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
 
     public void delete(String officeId, String tsId, String binaryTypeMask,
                        Instant startTime, Instant endTime, Instant versionInstant) {
-        TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
-
         connection(dsl, connection -> {
             Configuration configuration = getDslContext(connection, officeId).configuration();
             CWMS_TEXT_PACKAGE.call_DELETE_TS_BINARY(
@@ -65,7 +61,7 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                     startTime == null ? null : Timestamp.from(startTime),
                     endTime == null ? null : Timestamp.from(endTime),
                     versionInstant == null ? null : Timestamp.from(versionInstant),
-                    timeZone.getID(),
+                    "UTC",
                     "T", null, null, officeId);
         });
     }
@@ -78,7 +74,7 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
         Timestamp endStamp = endTime == null ? null : Timestamp.from(endTime);
         Timestamp verStamp = versionInstant == null ? null : Timestamp.from(versionInstant);
         store(dsl.configuration(), officeId, tsId, binaryData, binaryType,
-                startStamp, endStamp, verStamp, OracleTypeMap.GMT_TIME_ZONE,
+                startStamp, endStamp, verStamp, TimeZone.getTimeZone("UTC"),
                 maxVersion, storeExisting, storeNonExisting, replaceAll);
     }
 
@@ -283,7 +279,7 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
         Timestamp dateTimestamp = dateTime == null ? null : Timestamp.from(dateTime);
         Timestamp versionStamp = versionDate == null ? null : Timestamp.from(versionDate);
         store(configuration, officeId, tsId, binRecord.getBinaryValue(), binRecord.getMediaType(),
-                dateTimestamp, dateTimestamp, versionStamp, OracleTypeMap.GMT_TIME_ZONE,
+                dateTimestamp, dateTimestamp, versionStamp, TimeZone.getTimeZone("UTC"),
                 maxVersion, storeExisting, storeNonExisting, replaceAll);
     }
 

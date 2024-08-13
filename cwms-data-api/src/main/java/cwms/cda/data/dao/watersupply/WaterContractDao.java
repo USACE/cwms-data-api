@@ -39,7 +39,6 @@ import cwms.cda.data.dto.watersupply.WaterUserContract;
 import java.util.List;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_WATER_SUPPLY_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_TAB_T;
@@ -120,8 +119,8 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
     public void storeWaterContract(WaterUserContract waterContract, boolean failIfExists, boolean ignoreNulls) {
         connection(dsl, c -> {
             setOffice(c, waterContract.getOfficeId());
-            String paramFailIfExists = OracleTypeMap.formatBool(failIfExists);
-            String paramIgnoreNulls = OracleTypeMap.formatBool(ignoreNulls);
+            String paramFailIfExists = formatBool(failIfExists);
+            String paramIgnoreNulls = formatBool(ignoreNulls);
             WATER_USER_CONTRACT_TAB_T paramContracts = WaterSupplyUtils.toWaterUserContractTs(waterContract);
             CWMS_WATER_SUPPLY_PACKAGE.call_STORE_CONTRACTS2(DSL.using(c).configuration(), paramContracts,
                     paramFailIfExists, paramIgnoreNulls);
@@ -141,7 +140,7 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
         connection(dsl, c -> {
             setOffice(c, waterUser.getProjectId().getOfficeId());
             WATER_USER_TAB_T waterUsers = WaterSupplyUtils.toWaterUserTs(waterUser);
-            String paramFailIfExists = OracleTypeMap.formatBool(failIfExists);
+            String paramFailIfExists = formatBool(failIfExists);
             CWMS_WATER_SUPPLY_PACKAGE.call_STORE_WATER_USERS(DSL.using(c).configuration(),
                     waterUsers, paramFailIfExists);
         });
@@ -183,7 +182,7 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
         connection(dsl, c -> {
             setOffice(c, lookupType.getOfficeId());
             LOOKUP_TYPE_TAB_T contractTypes = WaterSupplyUtils.toLookupTypeT(lookupType);
-            String paramFailIfExists = OracleTypeMap.formatBool(failIfExists);
+            String paramFailIfExists = formatBool(failIfExists);
             CWMS_WATER_SUPPLY_PACKAGE.call_SET_CONTRACT_TYPES(DSL.using(c).configuration(),
                     contractTypes, paramFailIfExists);
         });
@@ -195,7 +194,7 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
             setOffice(c, contract.getOfficeId());
             WATER_USER_CONTRACT_REF_T waterUserContractRefT = WaterSupplyUtils
                     .toWaterUserContractRefTs(contract);
-            String paramDeleteAccountingData = OracleTypeMap.formatBool(deleteAccountingData);
+            String paramDeleteAccountingData = formatBool(deleteAccountingData);
             CWMS_WATER_SUPPLY_PACKAGE.call_DISASSOCIATE_PUMP(DSL.using(c).configuration(),
                     waterUserContractRefT, pumpLocName, pumpType.toString(), paramDeleteAccountingData);
         });
