@@ -130,11 +130,11 @@ class PumpAccountingTest {
     private List<PumpAccounting> buildTestPumpAccountingList() {
         List<PumpAccounting> retList = new ArrayList<>();
         retList.add(new PumpAccounting.Builder().withPumpLocation(new CwmsId.Builder().withOfficeId(OFFICE)
-                .withName("Test Pump").build()).withTransferType(new LookupType.Builder().withActive(true)
+                .withName("Test Location-Test Pump").build()).withTransferType(new LookupType.Builder().withActive(true)
                         .withTooltip("Test Tool Tip").withOfficeId(OFFICE).withDisplayValue("Test Transfer Type").build())
                 .withFlow(1.0).withTransferDate(Instant.ofEpochMilli(10000012648000L)).withComment("Test Comment").build());
         retList.add(new PumpAccounting.Builder().withPumpLocation(new CwmsId.Builder().withOfficeId(OFFICE)
-                .withName("Test Pump 2").build()).withTransferType(new LookupType.Builder().withActive(true)
+                .withName("Test Location-Test Pump 2").build()).withTransferType(new LookupType.Builder().withActive(true)
                         .withTooltip("Test Tool Tip 2").withOfficeId(OFFICE).withDisplayValue("Test Transfer Type 2").build())
                 .withFlow(2.0).withTransferDate(Instant.ofEpochMilli(10000012648000L)).withComment("Test Comment 2").build());
         return retList;
