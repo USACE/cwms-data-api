@@ -21,7 +21,9 @@
 package cwms.cda.api.location.kind;
 
 import cwms.cda.api.Controllers;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dao.location.kind.ProjectStructureIT;
 import cwms.cda.data.dto.CwmsId;
@@ -34,7 +36,6 @@ import io.restassured.filter.log.LogDetail;
 import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
-import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -95,7 +96,16 @@ class OutletControllerTestIT extends ProjectStructureIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao outletDao = new OutletDao(context);
+            LocationGroupDao locationGroupDao = new LocationGroupDao(context);
             try {
+                try {
+                    locationGroupDao.delete(NEW_RATED_OUTLET_CONTROLLED.getRatingCategoryId().getName(),
+                            NEW_RATED_OUTLET_CONTROLLED.getRatingGroupId().getName(), true, OFFICE_ID);
+                    locationGroupDao.delete(NEW_RATED_OUTLET_UNCONTROLLED.getRatingCategoryId().getName(),
+                            NEW_RATED_OUTLET_UNCONTROLLED.getRatingGroupId().getName(), true, OFFICE_ID);
+                } catch (NotFoundException e) {
+                    // Ignore
+                }
                 deleteLocation(context, NEW_CONDUIT_GATE_1.getOfficeId(), NEW_CONDUIT_GATE_1.getName());
                 deleteLocation(context, RENAMED_CONDUIT_GATE.getOfficeId(), RENAMED_CONDUIT_GATE.getName());
                 storeLocation(context, NEW_CONDUIT_GATE_2);
@@ -115,8 +125,17 @@ class OutletControllerTestIT extends ProjectStructureIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao outletDao = new OutletDao(context);
+            LocationGroupDao locationGroupDao = new LocationGroupDao(context);
             outletDao.deleteOutlet(EXISTING_CONDUIT_GATE.getOfficeId(), EXISTING_CONDUIT_GATE.getName(),
                                    DeleteRule.DELETE_ALL);
+            try {
+                locationGroupDao.delete(NEW_RATED_OUTLET_CONTROLLED.getRatingCategoryId().getName(),
+                        NEW_RATED_OUTLET_CONTROLLED.getRatingGroupId().getName(), true, OFFICE_ID);
+                locationGroupDao.delete(NEW_RATED_OUTLET_UNCONTROLLED.getRatingCategoryId().getName(),
+                        NEW_RATED_OUTLET_UNCONTROLLED.getRatingGroupId().getName(), true, OFFICE_ID);
+            } catch (NotFoundException e) {
+                // Ignore
+            }
             deleteLocation(context, NEW_CONDUIT_GATE_1.getOfficeId(), NEW_CONDUIT_GATE_1.getName());
             deleteLocation(context, NEW_CONDUIT_GATE_2.getOfficeId(), NEW_CONDUIT_GATE_2.getName());
             deleteLocation(context, RENAMED_CONDUIT_GATE.getOfficeId(), RENAMED_CONDUIT_GATE.getName());
@@ -255,7 +274,7 @@ class OutletControllerTestIT extends ProjectStructureIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("rating-spec-id", equalTo(null))
+            .body("rating-spec-id", nullValue())
         ;
 
         // Assert the locationGroup has rating spec id
@@ -272,10 +291,10 @@ class OutletControllerTestIT extends ProjectStructureIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("shared-loc-alias-id", equalTo(null))
+            .body("shared-loc-alias-id", nullValue())
             .extract().as(LocationGroup.class);
 
-        LocationGroup modifiedLocGroup = getLocationGroup(locGroup, RATING_SPEC_ID_UNCONTROLLED);
+        LocationGroup modifiedLocGroup = modifyRatingSpecId(locGroup, RATING_SPEC_ID_UNCONTROLLED);
 
         json = Formats.format(Formats.parseHeader(Formats.JSONV1, LocationGroup.class), modifiedLocGroup);
 
@@ -404,7 +423,7 @@ class OutletControllerTestIT extends ProjectStructureIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("rating-spec-id", equalTo(null))
+            .body("rating-spec-id", nullValue())
         ;
 
         // Assert the locationGroup has rating spec id
@@ -421,10 +440,10 @@ class OutletControllerTestIT extends ProjectStructureIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("shared-loc-alias-id", equalTo(null))
+            .body("shared-loc-alias-id", nullValue())
             .extract().as(LocationGroup.class);
 
-        LocationGroup modifiedLocGroup = getLocationGroup(locGroup, RATING_SPEC_ID_CONTROLLED);
+        LocationGroup modifiedLocGroup = modifyRatingSpecId(locGroup, RATING_SPEC_ID_CONTROLLED);
 
         json = Formats.format(Formats.parseHeader(Formats.JSONV1, LocationGroup.class), modifiedLocGroup);
 
@@ -508,15 +527,6 @@ class OutletControllerTestIT extends ProjectStructureIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
-    }
-
-    private static @NotNull LocationGroup getLocationGroup(LocationGroup locGroup, String ratingSpecId) {
-        LocationGroup modifiedLocGroup = new LocationGroup(locGroup.getLocationCategory(), locGroup.getOfficeId(),
-                                                           locGroup.getId(), locGroup.getDescription(),
-                ratingSpecId, locGroup.getSharedRefLocationId(),
-                                                           locGroup.getLocGroupAttribute());
-        modifiedLocGroup = new LocationGroup(modifiedLocGroup, locGroup.getAssignedLocations());
-        return modifiedLocGroup;
     }
 
     @Test
@@ -654,6 +664,15 @@ class OutletControllerTestIT extends ProjectStructureIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    private static LocationGroup modifyRatingSpecId(LocationGroup locGroup, String ratingSpecId) {
+        LocationGroup modifiedLocGroup = new LocationGroup(locGroup.getLocationCategory(), locGroup.getOfficeId(),
+                locGroup.getId(), locGroup.getDescription(), ratingSpecId,
+                locGroup.getSharedRefLocationId(),
+                locGroup.getLocGroupAttribute());
+        modifiedLocGroup = new LocationGroup(modifiedLocGroup, locGroup.getAssignedLocations());
+        return modifiedLocGroup;
     }
 
     private static Outlet buildTestOutlet(Location outletLoc, Location projectLoc, CwmsId ratingId, String ratingSpecId) {
