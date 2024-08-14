@@ -176,23 +176,31 @@ final class WaterSupplyUtils {
         return new WATER_USER_CONTRACT_TAB_T(contractList);
     }
 
-    public static List<WaterUserAccountingType> toWaterUserAccTypeList(WaterSupplyAccounting accounting, WaterUser waterUser,
-            String contractName) {
+    public static List<WaterUserAccountingType> toWaterUserAccTypeList(WaterSupplyAccounting accounting,
+            WaterUser waterUser, String contractName) {
         return accounting.getPumpAccounting().stream()
                 .map(pumpAccounting -> toWaterUserAccType(pumpAccounting, waterUser, contractName))
                 .collect(Collectors.toList());
     }
 
-    public static WaterUserAccountingType toWaterUserAccType(PumpAccounting accounting, WaterUser user, String contractName) {
+    public static WaterUserAccountingType toWaterUserAccType(PumpAccounting accounting, WaterUser user,
+            String contractName) {
         return new WaterUserAccountingType(new WaterUserContractRefType(toWaterUserType(user),
                 contractName), new LocationRefType(accounting.getPumpLocation().getName(),
-                null, accounting.getPumpLocation().getOfficeId()), toLookupType(accounting.getTransferType()),
-                accounting.getFlow(), new Date(accounting.getTransferDate().toEpochMilli()), accounting.getComment());
+                null, accounting.getPumpLocation().getOfficeId()),
+                toLookupType(accounting.getTransferType()), accounting.getFlow(),
+                new Date(accounting.getTransferDate().toEpochMilli()), accounting.getComment());
     }
 
     public static WaterUserType toWaterUserType(WaterUser waterUser) {
         return new WaterUserType(waterUser.getEntityName(),
                 toLocationRefType(waterUser.getProjectId()), waterUser.getWaterRight());
+    }
+
+    public static WaterUserType toWaterUserType(WaterUser waterUserType,
+            CwmsId projectLocation) {
+        return new WaterUserType(waterUserType.getEntityName(),
+                toLocationRefType(projectLocation), waterUserType.getWaterRight());
     }
 
     public static LocationRefType toLocationRefType(CwmsId projectLocation) {
@@ -205,10 +213,13 @@ final class WaterSupplyUtils {
                 lookupType.getDisplayValue(), lookupType.getTooltip(), lookupType.getActive());
     }
 
-    public static WaterUserType toWaterUserType(WaterUser waterUserType,
-            CwmsId projectLocation) {
-        return new WaterUserType(waterUserType.getEntityName(),
-                toLocationRefType(projectLocation), waterUserType.getWaterRight());
+    public static LookupType toLookupType(usace.cwms.db.dao.ifc.cat.LookupType lookupType) {
+        return new LookupType.Builder()
+                .withOfficeId(lookupType.getOfficeId())
+                .withDisplayValue(lookupType.getDisplayValue())
+                .withTooltip(lookupType.getTooltip())
+                .withActive(lookupType.getActive())
+                .build();
     }
 
     public static WaterUserContractRefType toWaterUserContractRefType(WaterUser user,
@@ -217,7 +228,8 @@ final class WaterSupplyUtils {
                 projectLocation), contractName);
     }
 
-    public static List<WaterSupplyAccounting> toWaterSupplyAccountingList(WAT_USR_CONTRACT_ACCT_TAB_T watUsrContractAcctTabT) {
+    public static List<WaterSupplyAccounting> toWaterSupplyAccountingList(WAT_USR_CONTRACT_ACCT_TAB_T
+            watUsrContractAcctTabT) {
 
         List<WaterSupplyAccounting> waterSupplyAccounting = new ArrayList<>();
         Map<AccountingKey, List<PumpAccounting>> cacheMap = new TreeMap<>();
@@ -231,7 +243,8 @@ final class WaterSupplyUtils {
                                     .withName(accounting.getContractRefTUser().getWaterUserType()
                                             .getParentLocationRefType().getBaseLocationId()).build())
                             .withEntityName(accounting.getContractRefTUser().getWaterUserType().getEntityName())
-                            .withWaterRight(accounting.getContractRefTUser().getWaterUserType().getWaterRight()).build())
+                            .withWaterRight(accounting.getContractRefTUser().getWaterUserType()
+                                            .getWaterRight()).build())
                     .withContractName(accounting.getContractRefTUser().getContractName()).build();
             if (cacheMap.containsKey(key)) {
                 cacheMap.get(key).add(new PumpAccounting.Builder()
@@ -241,7 +254,11 @@ final class WaterSupplyUtils {
                         .withComment(accounting.getAccountingRemarks())
                         .withPumpLocation(new CwmsId.Builder().withOfficeId(accounting
                                         .getPumpLocationRefTUser().getOfficeId())
-                                .withName(accounting.getPumpLocationRefTUser().getBaseLocationId()).build())
+                                .withName(accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                                        || accounting.getPumpLocationRefTUser().getSubLocationId().isEmpty()
+                                        ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                        : accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                        + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()).build())
                         .build());
             } else {
                 List<PumpAccounting> pumpAccounting = new ArrayList<>();
@@ -252,7 +269,11 @@ final class WaterSupplyUtils {
                         .withComment(accounting.getAccountingRemarks())
                         .withPumpLocation(new CwmsId.Builder().withOfficeId(accounting
                                         .getPumpLocationRefTUser().getOfficeId())
-                                .withName(accounting.getPumpLocationRefTUser().getBaseLocationId()).build())
+                                .withName(accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                                        || accounting.getPumpLocationRefTUser().getSubLocationId().isEmpty()
+                                        ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                        : accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                        + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()).build())
                         .build());
                 cacheMap.put(key, pumpAccounting);
             }
@@ -267,14 +288,4 @@ final class WaterSupplyUtils {
         }
         return waterSupplyAccounting;
     }
-
-    public static LookupType toLookupType(usace.cwms.db.dao.ifc.cat.LookupType lookupType) {
-        return new LookupType.Builder()
-                .withOfficeId(lookupType.getOfficeId())
-                .withDisplayValue(lookupType.getDisplayValue())
-                .withTooltip(lookupType.getTooltip())
-                .withActive(lookupType.getActive())
-                .build();
-    }
-
 }
