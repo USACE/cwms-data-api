@@ -68,7 +68,7 @@ import static org.hamcrest.Matchers.*;
 
 @Tag("integration")
 class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
-    private static final String OFFICE_ID = "SWT";
+    private static final String OFFICE_ID = "SPK";
     private final String PUMP_TYPE = "pump-type";
     private static final WaterUserContract CONTRACT;
     private static final WaterUserContract CONTRACT_NO_PUMP;
@@ -93,9 +93,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
 
     @BeforeAll
     static void setUp() throws Exception {
-        String office1 = CONTRACT.getWaterUser().getProjectId().getOfficeId();
-        String projectId1 = CONTRACT.getWaterUser().getProjectId().getName();
-        Location parentLocation = new Location.Builder(office1, projectId1)
+        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectId())
             .withLocationKind("PROJECT")
             .withTimeZoneName(ZoneId.of("UTC"))
             .withHorizontalDatum("WGS84")
@@ -111,9 +109,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
             .withLocationType("PROJECT")
             .withDescription("TEST PROJECT")
             .build();
-        String office2 = CONTRACT_NO_PUMP.getWaterUser().getProjectId().getOfficeId();
-        String projectId2 = CONTRACT_NO_PUMP.getWaterUser().getProjectId().getName();
-        Location parentLocation2 = new Location.Builder(office2, projectId2)
+        Location parentLocation2 = new Location.Builder(CONTRACT_NO_PUMP.getWaterUser().getProjectId())
             .withLocationKind("PROJECT")
             .withTimeZoneName(ZoneId.of("UTC"))
             .withHorizontalDatum("WGS84")
@@ -145,12 +141,6 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
             .withCostUnit("$")
             .withProjectOwner(CONTRACT_NO_PUMP.getWaterUser().getEntityName())
             .build();
-        WaterUser waterUser = new WaterUser.Builder().withEntityName(CONTRACT.getWaterUser().getEntityName())
-                .withProjectId(CONTRACT.getWaterUser().getProjectId())
-                .withWaterRight(CONTRACT.getWaterUser().getWaterRight()).build();
-        WaterUser waterUserNoPump = new WaterUser.Builder().withEntityName(CONTRACT_NO_PUMP.getWaterUser().getEntityName())
-                .withProjectId(CONTRACT_NO_PUMP.getWaterUser().getProjectId())
-                .withWaterRight(CONTRACT_NO_PUMP.getWaterUser().getWaterRight()).build();
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -163,9 +153,9 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
                 locationsDao.storeLocation(parentLocation2);
                 projectDao.store(project1, true);
                 projectDao.store(project2, true);
-                waterContractDao.storeWaterUser(waterUser, false);
+                waterContractDao.storeWaterUser(CONTRACT.getWaterUser(), false);
                 waterContractDao.storeWaterContractTypes(CONTRACT.getContractType(), false);
-                waterContractDao.storeWaterUser(waterUserNoPump, false);
+                waterContractDao.storeWaterUser(CONTRACT_NO_PUMP.getWaterUser(), false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -209,7 +199,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
         // 3) Retrieve the contract and assert it does not contain the pump
         // 4) Delete the contract
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String json = JsonV1.buildObjectMapper().writeValueAsString(CONTRACT);
 
         // Create contract with pump
@@ -401,7 +391,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
         // 2) Try to remove the pump from contract and assert that an error is thrown
         // 3) Delete the contract
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String json = JsonV1.buildObjectMapper().writeValueAsString(CONTRACT_NO_PUMP);
 
         // Create contract with no pump
