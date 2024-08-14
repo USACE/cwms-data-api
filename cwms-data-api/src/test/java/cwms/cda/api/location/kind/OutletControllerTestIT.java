@@ -34,6 +34,7 @@ import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import io.restassured.filter.log.LogDetail;
 import java.io.IOException;
+import java.sql.SQLException;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
@@ -96,16 +97,11 @@ class OutletControllerTestIT extends ProjectStructureIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao outletDao = new OutletDao(context);
-            LocationGroupDao locationGroupDao = new LocationGroupDao(context);
             try {
-                try {
-                    locationGroupDao.delete(NEW_RATED_OUTLET_CONTROLLED.getRatingCategoryId().getName(),
-                            NEW_RATED_OUTLET_CONTROLLED.getRatingGroupId().getName(), true, OFFICE_ID);
-                    locationGroupDao.delete(NEW_RATED_OUTLET_UNCONTROLLED.getRatingCategoryId().getName(),
-                            NEW_RATED_OUTLET_UNCONTROLLED.getRatingGroupId().getName(), true, OFFICE_ID);
-                } catch (NotFoundException e) {
-                    // Ignore
-                }
+                cleanupLocationGroup(NEW_RATED_OUTLET_CONTROLLED.getRatingCategoryId().getName(),
+                        NEW_RATED_OUTLET_CONTROLLED.getRatingGroupId().getName());
+                cleanupLocationGroup(NEW_RATED_OUTLET_UNCONTROLLED.getRatingCategoryId().getName(),
+                        NEW_RATED_OUTLET_UNCONTROLLED.getRatingGroupId().getName());
                 deleteLocation(context, NEW_CONDUIT_GATE_1.getOfficeId(), NEW_CONDUIT_GATE_1.getName());
                 deleteLocation(context, RENAMED_CONDUIT_GATE.getOfficeId(), RENAMED_CONDUIT_GATE.getName());
                 storeLocation(context, NEW_CONDUIT_GATE_2);
@@ -113,7 +109,7 @@ class OutletControllerTestIT extends ProjectStructureIT {
                 storeLocation(context, RATED_OUTLET_LOCATION_UNCONTROLLED);
                 storeLocation(context, EXISTING_CONDUIT_GATE);
                 outletDao.storeOutlet(EXISTING_CONDUIT_GATE_OUTLET, false);
-            } catch (IOException e) {
+            } catch (IOException | SQLException e) {
                 throw new RuntimeException(e);
             }
         }, CwmsDataApiSetupCallback.getWebUser());
@@ -125,16 +121,15 @@ class OutletControllerTestIT extends ProjectStructureIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao outletDao = new OutletDao(context);
-            LocationGroupDao locationGroupDao = new LocationGroupDao(context);
             outletDao.deleteOutlet(EXISTING_CONDUIT_GATE.getOfficeId(), EXISTING_CONDUIT_GATE.getName(),
                                    DeleteRule.DELETE_ALL);
             try {
-                locationGroupDao.delete(NEW_RATED_OUTLET_CONTROLLED.getRatingCategoryId().getName(),
-                        NEW_RATED_OUTLET_CONTROLLED.getRatingGroupId().getName(), true, OFFICE_ID);
-                locationGroupDao.delete(NEW_RATED_OUTLET_UNCONTROLLED.getRatingCategoryId().getName(),
-                        NEW_RATED_OUTLET_UNCONTROLLED.getRatingGroupId().getName(), true, OFFICE_ID);
-            } catch (NotFoundException e) {
-                // Ignore
+                cleanupLocationGroup(NEW_RATED_OUTLET_CONTROLLED.getRatingCategoryId().getName(),
+                        NEW_RATED_OUTLET_CONTROLLED.getRatingGroupId().getName());
+                cleanupLocationGroup(NEW_RATED_OUTLET_UNCONTROLLED.getRatingCategoryId().getName(),
+                        NEW_RATED_OUTLET_UNCONTROLLED.getRatingGroupId().getName());
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             }
             deleteLocation(context, NEW_CONDUIT_GATE_1.getOfficeId(), NEW_CONDUIT_GATE_1.getName());
             deleteLocation(context, NEW_CONDUIT_GATE_2.getOfficeId(), NEW_CONDUIT_GATE_2.getName());
@@ -673,6 +668,19 @@ class OutletControllerTestIT extends ProjectStructureIT {
                 locGroup.getLocGroupAttribute());
         modifiedLocGroup = new LocationGroup(modifiedLocGroup, locGroup.getAssignedLocations());
         return modifiedLocGroup;
+    }
+
+    private static void cleanupLocationGroup(String categoryId, String groupId) throws SQLException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            DSLContext context = getDslContext(c, OFFICE_ID);
+            LocationGroupDao locationGroupDao = new LocationGroupDao(context);
+            try {
+                locationGroupDao.delete(categoryId, groupId, true, OFFICE_ID);
+            } catch (NotFoundException e) {
+                // Ignore
+            }
+        });
     }
 
     private static Outlet buildTestOutlet(Location outletLoc, Location projectLoc, CwmsId ratingId, String ratingSpecId) {
