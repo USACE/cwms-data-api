@@ -243,7 +243,7 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
             .withWaterRight("Test Water Right").build();
     }
 
-    protected static WaterUserContract buildTestWaterContract(String entityName) {
+    protected static WaterUserContract buildTestWaterContract(String contractName) {
         return new WaterUserContract.Builder()
                 .withContractType(new LookupType.Builder()
                         .withTooltip("Storage contract")
@@ -259,19 +259,19 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
                 .withContractEffectiveDate(Instant.ofEpochMilli(1766652851000L))
                 .withTotalAllocPercentActivated(55.1)
                 .withContractId(new CwmsId.Builder()
-                        .withName(entityName)
+                        .withName(contractName)
                         .withOfficeId(OFFICE_ID)
                         .build())
                 .withFutureUsePercentActivated(35.7)
                 .withWaterUser(testUser)
                 .withPumpInLocation(new WaterSupplyPump.Builder()
-                        .withPumpLocation(buildTestLocation("Pump 1-" + entityName + "1",
+                        .withPumpLocation(buildTestLocation(contractName + "-Pump 1",
                         "PUMP")).withPumpType(PumpType.IN).build())
                 .withPumpOutLocation(new WaterSupplyPump.Builder()
-                        .withPumpLocation(buildTestLocation("Pump 2-" + entityName + "2",
+                        .withPumpLocation(buildTestLocation(contractName + "-Pump 2",
                         "PUMP")).withPumpType(PumpType.OUT).build())
                 .withPumpOutBelowLocation(new WaterSupplyPump.Builder()
-                        .withPumpLocation(buildTestLocation("Pump 3-" + entityName + "3",
+                        .withPumpLocation(buildTestLocation(contractName + "-Pump 3",
                         "PUMP")).withPumpType(PumpType.BELOW).build())
                 .build();
 
