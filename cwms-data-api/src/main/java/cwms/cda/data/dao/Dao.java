@@ -28,6 +28,7 @@ import static usace.cwms.db.jooq.codegen.tables.AV_DB_CHANGE_LOG.AV_DB_CHANGE_LO
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTO;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -52,6 +53,7 @@ public abstract class Dao<T> {
             .expireAfterWrite(Integer.getInteger(PROP_BASE + "." + VERSION_NAME
                     + ".expireAfterSeconds", 300), TimeUnit.SECONDS)
             .build();
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     @SuppressWarnings("unused")
     protected DSLContext dsl;
@@ -72,7 +74,9 @@ public abstract class Dao<T> {
     public int getDbVersion() {
         Integer cachedValue = versionCache.getIfPresent(VERSION_NAME);
         if (cachedValue == null) {
-            int newValue = versionAsInteger(getVersion(dsl));
+            String version = getVersion(dsl);
+            LOGGER.atInfo().log("Connected to CWMS Database schema version: %s", version);
+            int newValue = versionAsInteger(version);
             versionCache.put(VERSION_NAME, newValue);
             return newValue;
         } else {
