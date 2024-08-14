@@ -12,7 +12,7 @@
     {
       "pump-location": {
         "office-id": "SPK",
-        "name": "Test Pump"
+        "name": "Test Location-Test Pump"
       },
       "transfer-type": {
         "office-id": "SPK",
@@ -27,7 +27,7 @@
     {
       "pump-location": {
         "office-id": "SPK",
-        "name": "Test Pump 2"
+        "name": "Test Location-Test Pump 2"
       },
       "transfer-type": {
         "office-id": "SPK",
