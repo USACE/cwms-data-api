@@ -1,19 +1,19 @@
 {
-  "office-id": "SWT",
+  "office-id": "SPK",
   "water-user": {
     "entity-name": "Test User",
     "project-id": {
-      "office-id": "SWT",
-      "name": "TEST_LOCATION1"
+      "office-id": "SPK",
+      "name": "NO_PUMP"
     },
     "water-right": "Test Water Right"
   },
   "contract-id": {
-    "office-id": "SWT",
-    "name": "TEST_CONTRACT"
+    "office-id": "SPK",
+    "name": "NO_PUMP_CONTRACT"
   },
   "contract-type": {
-    "office-id": "SWT",
+    "office-id": "SPK",
     "display-value": "Test Display Value",
     "tooltip": "Test Tooltip",
     "active": true
@@ -28,8 +28,8 @@
   "total-alloc-percent-activated": 66.2,
   "pump-out-location": {
     "pump-location": {
-      "office-id": "SWT",
-      "name": "TEST_LOCATION-PUMP11",
+      "office-id": "SPK",
+      "name": "NO_PUMP-PUMP11",
       "latitude": 0.5,
       "longitude": 0.6,
       "active": true,
@@ -49,14 +49,14 @@
       "vertical-datum": "NGVD29",
       "elevation": 150,
       "map-label": "Test Map Label 1",
-      "bounding-office-id": "SWT",
+      "bounding-office-id": "SPK",
       "elevation-units": "m"
     },
     "pump-type": "OUT"
   },
   "pump-out-below-location": {
     "pump-location": {
-      "office-id": "SWT",
+      "office-id": "SPK",
       "name": "PUMP21",
       "latitude": 0.8,
       "longitude": 0.7,
@@ -77,7 +77,7 @@
       "vertical-datum": "NGVD29",
       "elevation": 140,
       "map-label": "Test Map Label 2",
-      "bounding-office-id": "SWT",
+      "bounding-office-id": "SPK",
       "elevation-units": "m"
     },
     "pump-type": "BELOW"

@@ -43,7 +43,6 @@ import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_OBJ_T;
-import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_TAB_T;
 
 
 final class WaterSupplyUtils {
@@ -96,14 +95,12 @@ final class WaterSupplyUtils {
         return waterUserObjT;
     }
 
-    public static WATER_USER_TAB_T toWaterUserTs(WaterUser waterUser) {
+    public static WATER_USER_OBJ_T toWaterUserObjT(WaterUser waterUser) {
         WATER_USER_OBJ_T waterUserObjT = new WATER_USER_OBJ_T();
         waterUserObjT.setENTITY_NAME(waterUser.getEntityName());
         waterUserObjT.setPROJECT_LOCATION_REF(LocationUtil.getLocationRef(waterUser.getProjectId()));
         waterUserObjT.setWATER_RIGHT(waterUser.getWaterRight());
-        List<WATER_USER_OBJ_T> waterUserList = new ArrayList<>();
-        waterUserList.add(waterUserObjT);
-        return new WATER_USER_TAB_T(waterUserList);
+        return waterUserObjT;
     }
 
     public static LOOKUP_TYPE_OBJ_T toLookupTypeO(LookupType lookupType) {

@@ -1,0 +1,8 @@
+{
+  "entity-name": "Test User",
+  "project-id": {
+    "office-id": "SWT",
+    "name": "WU_PROJ"
+  },
+  "water-right": "Test Water Right"
+}

@@ -298,6 +298,12 @@ public final class Location extends CwmsDTO {
             buildPropertyFunctions();
         }
 
+        public Builder(CwmsId cwmsId) {
+            this.officeId = cwmsId.getOfficeId();
+            this.name = cwmsId.getName();
+            buildPropertyFunctions();
+        }
+
         public Builder(Location location) {
             this.name = location.getName();
             this.latitude = location.getLatitude();
