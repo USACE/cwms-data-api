@@ -99,10 +99,10 @@ class OutletControllerTestIT extends ProjectStructureIT {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao outletDao = new OutletDao(context);
             try {
-                deleteLocationGroup(context, NEW_RATED_OUTLET_CONTROLLED.getRatingCategoryId().getName(),
-                        NEW_RATED_OUTLET_CONTROLLED.getRatingGroupId().getName());
-                deleteLocationGroup(context, NEW_RATED_OUTLET_UNCONTROLLED.getRatingCategoryId().getName(),
-                        NEW_RATED_OUTLET_UNCONTROLLED.getRatingGroupId().getName());
+                deleteLocationGroup(context, NEW_RATED_OUTLET_CONTROLLED);
+                deleteLocationGroup(context, NEW_RATED_OUTLET_UNCONTROLLED);
+                deleteLocationGroup(context, NEW_CONDUIT_GATE_1_OUTLET);
+                deleteLocationGroup(context, NEW_CONDUIT_GATE_2_OUTLET);
                 deleteLocation(context, NEW_CONDUIT_GATE_1.getOfficeId(), NEW_CONDUIT_GATE_1.getName());
                 deleteLocation(context, RENAMED_CONDUIT_GATE.getOfficeId(), RENAMED_CONDUIT_GATE.getName());
                 storeLocation(context, NEW_CONDUIT_GATE_2);
@@ -124,10 +124,11 @@ class OutletControllerTestIT extends ProjectStructureIT {
             OutletDao outletDao = new OutletDao(context);
             outletDao.deleteOutlet(EXISTING_CONDUIT_GATE.getOfficeId(), EXISTING_CONDUIT_GATE.getName(),
                                    DeleteRule.DELETE_ALL);
-            deleteLocationGroup(context, NEW_RATED_OUTLET_CONTROLLED.getRatingCategoryId().getName(),
-                    NEW_RATED_OUTLET_CONTROLLED.getRatingGroupId().getName());
-            deleteLocationGroup(context, NEW_RATED_OUTLET_UNCONTROLLED.getRatingCategoryId().getName(),
-                    NEW_RATED_OUTLET_UNCONTROLLED.getRatingGroupId().getName());
+            deleteLocationGroup(context, NEW_RATED_OUTLET_CONTROLLED);
+            deleteLocationGroup(context, NEW_RATED_OUTLET_UNCONTROLLED);
+            deleteLocationGroup(context, EXISTING_CONDUIT_GATE_OUTLET);
+            deleteLocationGroup(context, NEW_CONDUIT_GATE_1_OUTLET);
+            deleteLocationGroup(context, NEW_CONDUIT_GATE_2_OUTLET);
             deleteLocation(context, NEW_CONDUIT_GATE_1.getOfficeId(), NEW_CONDUIT_GATE_1.getName());
             deleteLocation(context, NEW_CONDUIT_GATE_2.getOfficeId(), NEW_CONDUIT_GATE_2.getName());
             deleteLocation(context, RENAMED_CONDUIT_GATE.getOfficeId(), RENAMED_CONDUIT_GATE.getName());
@@ -539,11 +540,18 @@ class OutletControllerTestIT extends ProjectStructureIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("location.name", contains(EXISTING_CONDUIT_GATE.getName()))
             .body("project-id.name", contains(EXISTING_CONDUIT_GATE_OUTLET.getProjectId().getName()))
-            .body("project-id.office-id", contains(EXISTING_CONDUIT_GATE_OUTLET.getProjectId().getOfficeId()));
+            .body("project-id.office-id", contains(EXISTING_CONDUIT_GATE_OUTLET.getProjectId().getOfficeId()))
+            .body("rating-group-id.name", contains(EXISTING_CONDUIT_GATE_OUTLET.getRatingGroupId().getName()))
+            .body("rating-group-id.office-id", contains(EXISTING_CONDUIT_GATE_OUTLET.getRatingGroupId().getOfficeId()))
+            .body("rating-spec-id", contains(EXISTING_CONDUIT_GATE_OUTLET.getRatingSpecId()))
+            .body("rating-category-id.name", contains(EXISTING_CONDUIT_GATE_OUTLET.getRatingCategoryId().getName()))
+            .body("rating-category-id.office-id", contains(EXISTING_CONDUIT_GATE_OUTLET.getRatingCategoryId().getOfficeId())
+            );
+
     }
 
     @Test
-    void test_outlet_crud() {
+    void test_outlet_crud() throws Exception {
         // Structure of test:
         // 1)Create the Outlet - TG3 does not exist in the db.
         // 2)Retrieve the Outlet and assert that it exists
@@ -643,6 +651,12 @@ class OutletControllerTestIT extends ProjectStructureIT {
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            DSLContext context = getDslContext(c, OFFICE_ID);
+            deleteLocationGroup(context, modifiedOutlet);
+        }, CwmsDataApiSetupCallback.getWebUser());
+
         //Re-retrieve, and ensure it doesn't exist anymore.
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -667,12 +681,13 @@ class OutletControllerTestIT extends ProjectStructureIT {
         return modifiedLocGroup;
     }
 
-    private static void deleteLocationGroup(DSLContext context, String categoryId, String groupId) {
+    private static void deleteLocationGroup(DSLContext context, Outlet outlet) {
         LocationGroupDao locationGroupDao = new LocationGroupDao(context);
         try {
-            locationGroupDao.delete(categoryId, groupId, true, OFFICE_ID);
+            locationGroupDao.delete(outlet.getRatingCategoryId().getName(), outlet.getRatingGroupId().getName(), true, OFFICE_ID);
         } catch (NotFoundException e) {
-            LOGGER.atFinest().withCause(e).log("No data found for category:" + categoryId + ", group-id:" + groupId);
+            LOGGER.atFinest().withCause(e).log("No data found for category:" + outlet.getRatingCategoryId().getName()
+                    + ", group-id:" + outlet.getRatingGroupId().getName());
         }
     }
 

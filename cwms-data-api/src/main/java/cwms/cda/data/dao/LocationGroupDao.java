@@ -238,8 +238,6 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             return new Pair<>(group, loc);
         };
 
-        Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
-
         SelectConnectByStep<? extends Record> connectBy;
         SelectOnConditionStep<? extends Record> onStep = dsl.select(
                         alcg.CAT_DB_OFFICE_ID,
@@ -271,22 +269,15 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         }
 
         if (officeId != null) {
-            if (CWMS.equalsIgnoreCase(officeId)) {
-                connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.eq(CWMS)
-                        .and(alcg.GRP_DB_OFFICE_ID.eq(CWMS))
-                        .and(condition)
-                );
-            } else {
-                connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId)
-                        .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
-                        .and(alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(officeId)))
-                        .and(condition)
-                );
-            }
+            connectBy = onStep.where(DSL.upper(alcg.CAT_DB_OFFICE_ID).in(officeId.toUpperCase())
+                    .and(DSL.upper(alcg.GRP_DB_OFFICE_ID).in(officeId.toUpperCase()))
+                    .and(alcg.LOC_GROUP_ID.isNotNull()).and(condition)
+            );
         } else {
             connectBy = onStep.where(alcg.LOC_GROUP_ID.isNotNull());
         }
 
+        Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
         connectBy.orderBy(alcg.LOC_CATEGORY_ID, alcg.LOC_GROUP_ID, alga.ATTRIBUTE)
                 .fetchSize(1000)  // This made the query go from 2 minutes to 10 seconds?
                 .stream().map(mapper::map).forEach(pair -> {

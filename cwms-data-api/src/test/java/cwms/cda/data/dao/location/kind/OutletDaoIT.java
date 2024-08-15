@@ -20,8 +20,10 @@
 
 package cwms.cda.data.dao.location.kind;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
@@ -42,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 class OutletDaoIT extends ProjectStructureIT {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final CwmsId TAINTER_GATE_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_1_ID.getName() + "-TainterGate").withOfficeId(OFFICE_ID).build();
     private static final CwmsId BOX_CULVERT_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_2_ID.getName() + "-BoxCulvert").withOfficeId(OFFICE_ID).build();
     private static final CwmsId TAINTER_GATE_RATING_GROUP_MODIFIED = new CwmsId.Builder().withName("Rating-" + PROJECT_1_ID.getName() + "-TainterGate Modified").withOfficeId(OFFICE_ID).build();
@@ -89,6 +92,9 @@ class OutletDaoIT extends ProjectStructureIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao outletDao = new OutletDao(context);
+            deleteLocationGroup(context, TAINTER_GATE_1_OUTLET);
+            deleteLocationGroup(context, TAINTER_GATE_2_OUTLET);
+            deleteLocationGroup(context, BOX_CULVERT_1_OUTLET);
             outletDao.deleteOutlet(TAINTER_GATE_1_LOC.getOfficeId(), TAINTER_GATE_1_LOC.getName(),
                                    DeleteRule.DELETE_ALL);
             outletDao.deleteOutlet(TAINTER_GATE_2_LOC.getOfficeId(), TAINTER_GATE_2_LOC.getName(),
@@ -137,6 +143,8 @@ class OutletDaoIT extends ProjectStructureIT {
             Outlet retrievedModifiedOutlet = dao.retrieveOutlet(TAINTER_GATE_2_LOC.getOfficeId(),
                                                       TAINTER_GATE_2_LOC.getName());
             DTOMatch.assertMatch(modifiedOutlet, retrievedModifiedOutlet);
+
+            deleteLocationGroup(context, modifiedOutlet);
 
             //Update (back to original)
             dao.storeOutlet(TAINTER_GATE_2_OUTLET, false);
@@ -221,5 +229,15 @@ class OutletDaoIT extends ProjectStructureIT {
                                    .withLocation(outletLoc)
                                    .withRatingGroupId(ratingId)
                                    .build();
+    }
+
+    private static void deleteLocationGroup(DSLContext context, Outlet outlet) {
+        LocationGroupDao locationGroupDao = new LocationGroupDao(context);
+        try {
+            locationGroupDao.delete(outlet.getRatingCategoryId().getName(), outlet.getRatingGroupId().getName(), true, OFFICE_ID);
+        } catch (NotFoundException e) {
+            LOGGER.atFinest().withCause(e).log("No data found for category:" + outlet.getRatingCategoryId().getName()
+                    + ", group-id:" + outlet.getRatingGroupId().getName());
+        }
     }
 }

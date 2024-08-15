@@ -23,6 +23,7 @@ package cwms.cda.data.dao.location.kind;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.LocationGroupDao;
+import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationGroup;
@@ -84,7 +85,8 @@ public class OutletDao extends JooqDao<Outlet> {
         return groups.stream()
                      .filter(group -> group.getAssignedLocations()
                                            .stream()
-                                           .anyMatch(loc -> loc.getLocationId().equalsIgnoreCase(locationId)))
+                                           .map(AssignedLocation::getLocationId)
+                                           .anyMatch(id -> id.equalsIgnoreCase(locationId)))
                      .findFirst();
     }
 
