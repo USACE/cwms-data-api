@@ -69,7 +69,6 @@ import org.jooq.DSLContext;
 public class BasinController implements CrudHandler {
     private static final Logger LOGGER = Logger.getLogger(BasinController.class.getName());
     public static final String TAG = "Basins";
-    public static final String BASIN_ID = "basin-id";
 
     private final MetricRegistry metrics;
 
@@ -163,7 +162,7 @@ public class BasinController implements CrudHandler {
                     + "request that is appropriate for the requested parameters."),
         },
         pathParams = {
-            @OpenApiParam(name = BASIN_ID, description = "Specifies the name of "
+            @OpenApiParam(name = NAME, description = "Specifies the name of "
                     + "the basin to be retrieved.")
         },
         responses = {
@@ -225,10 +224,10 @@ public class BasinController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = NAME, required = true, description = "Specifies the new name for the basin."),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-            + "the basin to be renamed."),
+                    + "the basin to be renamed."),
         },
         pathParams = {
-            @OpenApiParam(name = BASIN_ID, description = "Specifies the name of "
+            @OpenApiParam(name = NAME, description = "Specifies the name of "
                     + "the basin to be renamed.")
         },
         responses = {
@@ -293,7 +292,7 @@ public class BasinController implements CrudHandler {
                 type = JooqDao.DeleteMethod.class)
         },
         pathParams = {
-            @OpenApiParam(name = BASIN_ID, description = "Specifies the name of "
+            @OpenApiParam(name = NAME, description = "Specifies the name of "
                     + "the basin to be deleted.")
         },
         description = "Renames CWMS Basin",
