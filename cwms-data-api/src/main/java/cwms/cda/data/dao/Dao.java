@@ -28,6 +28,7 @@ import static usace.cwms.db.jooq.codegen.tables.AV_DB_CHANGE_LOG.AV_DB_CHANGE_LO
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTO;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -37,8 +38,7 @@ import java.util.concurrent.TimeUnit;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.ifc.env.CwmsDbEnv;
-import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
+import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 public abstract class Dao<T> {
     public static final int CWMS_18_1_8 = 180108;
@@ -53,6 +53,7 @@ public abstract class Dao<T> {
             .expireAfterWrite(Integer.getInteger(PROP_BASE + "." + VERSION_NAME
                     + ".expireAfterSeconds", 300), TimeUnit.SECONDS)
             .build();
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     @SuppressWarnings("unused")
     protected DSLContext dsl;
@@ -73,7 +74,9 @@ public abstract class Dao<T> {
     public int getDbVersion() {
         Integer cachedValue = versionCache.getIfPresent(VERSION_NAME);
         if (cachedValue == null) {
-            int newValue = versionAsInteger(getVersion(dsl));
+            String version = getVersion(dsl);
+            LOGGER.atInfo().log("Connected to CWMS Database schema version: %s", version);
+            int newValue = versionAsInteger(version);
             versionCache.put(VERSION_NAME, newValue);
             return newValue;
         } else {
@@ -101,8 +104,7 @@ public abstract class Dao<T> {
     }
 
     protected void setOffice(Connection c, String office) throws SQLException {
-        CwmsDbEnv db = CwmsDbServiceLookup.buildCwmsDb(CwmsDbEnv.class, c);
-        db.setSessionOfficeId(c,office);
+        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
     }
 
 

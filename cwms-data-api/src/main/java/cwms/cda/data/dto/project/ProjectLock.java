@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -102,6 +101,17 @@ public class ProjectLock extends CwmsDTO {
         private String sessionMachine;
 
         public Builder() {
+        }
+
+        public Builder(ProjectLock lock) {
+            this.officeId = lock.officeId;
+            this.projectId = lock.projectId;
+            this.applicationId = lock.applicationId;
+            this.acquireTime = lock.acquireTime;
+            this.sessionUser = lock.sessionUser;
+            this.osUser = lock.osUser;
+            this.sessionProgram = lock.sessionProgram;
+            this.sessionMachine = lock.sessionMachine;
         }
 
         public Builder(String officeId, String projectId, String applicationId) {

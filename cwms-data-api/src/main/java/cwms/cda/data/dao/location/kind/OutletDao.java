@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_OUTLET_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_STRUCTURE_OBJ_T;
@@ -94,8 +93,8 @@ public class OutletDao extends JooqDao<Outlet> {
         connection(dsl, conn -> {
             setOffice(conn, outlet.getProjectId().getOfficeId());
             PROJECT_STRUCTURE_OBJ_T structure = mapToProjectStructure(outlet);
-            CWMS_OUTLET_PACKAGE.call_STORE_OUTLET(DSL.using(conn).configuration(), structure,
-                    outlet.getRatingGroupId().getName(), OracleTypeMap.formatBool(failIfExists));
+            CWMS_OUTLET_PACKAGE.call_STORE_OUTLET(DSL.using(conn).configuration(), structure, 
+                    outlet.getRatingGroupId().getName(), formatBool(failIfExists));
         });
     }
 
@@ -171,7 +170,7 @@ public class OutletDao extends JooqDao<Outlet> {
             setOffice(conn, outlet.getProjectId().getOfficeId());
             CWMS_OUTLET_PACKAGE.call_STORE_COMPOUND_OUTLET(DSL.using(conn).configuration(), projectId.getName(),
                                                            outletId.getName(), outlets,
-                                                           OracleTypeMap.formatBool(failIfExists),
+                                                           formatBool(failIfExists),
                                                            projectId.getOfficeId());
         });
     }

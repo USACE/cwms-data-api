@@ -1,8 +1,33 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.ID_MASK;
@@ -105,9 +130,10 @@ public class ProjectController implements CrudHandler {
                     Integer.class, DEFAULT_PAGE_SIZE, metrics,
                     name(ProjectController.class.getName(), GET_ALL));
 
-            Projects projects = dao.retrieveProjectsFromTable(cursor, pageSize, projectIdMask, office);
+            Projects projects = dao.retrieveProjects(cursor, office, projectIdMask, pageSize);
 
-            ContentType contentType = getContentType(ctx);
+            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSON;
+            ContentType contentType = Formats.parseHeader(formatHeader, Projects.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, projects);
             ctx.result(serialized);
@@ -116,11 +142,6 @@ public class ProjectController implements CrudHandler {
 
         }
 
-    }
-
-    private static @NotNull ContentType getContentType(Context ctx) {
-        String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSON;
-        return Formats.parseHeader(formatHeader, Project.class);
     }
 
     @OpenApi(
@@ -184,6 +205,10 @@ public class ProjectController implements CrudHandler {
                     @OpenApiContent(from = Project.class, type = Formats.JSON)
                 }
             ),
+            queryParams = {
+                @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                    description = "Create will fail if provided ID already exists. Default: true")
+            },
             method = HttpMethod.POST,
             tags = {TAG}
     )
@@ -192,44 +217,46 @@ public class ProjectController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             ContentType contentType = Formats.parseHeader(formatHeader, Project.class);
             Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
             ProjectDao dao = new ProjectDao(dsl);
 
-            dao.create(project);
+            dao.create(project, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED);
         }
     }
 
     @OpenApi(
-            description = "Updates a project",
-            pathParams = {
-                @OpenApiParam(name = NAME, description = "The id of the project to be updated"),
+        description = "Rename a project",
+        pathParams = {
+            @OpenApiParam(name = NAME, description = "The name of the project to be renamed"),
+        },
+        queryParams = {
+            @OpenApiParam(name = NAME, description = "The new name of the project"),
+            @OpenApiParam(name = OFFICE, description = "The office of the project to be renamed"),
+        },
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = Project.class, type = Formats.JSON),
+                @OpenApiContent(from = Project.class, type = Formats.JSONV1),
             },
-            requestBody = @OpenApiRequestBody(
-                content = {
-                    @OpenApiContent(from = Project.class, type = Formats.JSON),
-                    @OpenApiContent(from = Project.class, type = Formats.JSONV1),
-                },
-                required = true
-            ),
-            method = HttpMethod.PATCH,
-            tags = {TAG}
+            required = true
+        ),
+        method = HttpMethod.PATCH,
+        tags = {TAG}
     )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String name) {
+    public void update(@NotNull Context ctx, @NotNull String oldName) {
 
         try (Timer.Context ignored = markAndTime(UPDATE)) {
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader, Project.class);
-            Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
+            String newName = requiredParam(ctx, NAME);
+            String office = requiredParam(ctx, OFFICE);
             DSLContext dsl = getDslContext(ctx);
-
             ProjectDao dao = new ProjectDao(dsl);
-            dao.update(project);
+            dao.renameProject(office, oldName, newName);
         }
     }
 

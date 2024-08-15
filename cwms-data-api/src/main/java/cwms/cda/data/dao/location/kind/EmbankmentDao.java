@@ -31,7 +31,6 @@ import cwms.cda.data.dto.location.kind.Embankment;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_EMBANK_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.EMBANKMENT_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
@@ -105,7 +104,7 @@ public class EmbankmentDao extends JooqDao<Embankment> {
         connection(dsl, conn -> {
             setOffice(conn, embankment.getLocation().getOfficeId());
             CWMS_EMBANK_PACKAGE.call_STORE_EMBANKMENT(DSL.using(conn).configuration(), map(embankment), 
-                    OracleTypeMap.formatBool(failIfExists));
+                    formatBool(failIfExists));
         });
     }
 

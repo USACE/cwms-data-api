@@ -34,7 +34,8 @@ import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-import java.util.Date;
+import java.time.Instant;
+
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = WaterUserContract.Builder.class)
@@ -47,9 +48,9 @@ public final class WaterUserContract extends CwmsDTO {
     @JsonProperty(required = true)
     private final LookupType contractType;
     @JsonProperty(required = true)
-    private final Date contractEffectiveDate;
+    private final Instant contractEffectiveDate;
     @JsonProperty(required = true)
-    private final Date contractExpirationDate;
+    private final Instant contractExpirationDate;
     @JsonProperty(required = true)
     private final Double contractedStorage;
     @JsonProperty(required = true)
@@ -88,11 +89,11 @@ public final class WaterUserContract extends CwmsDTO {
         return this.contractType;
     }
 
-    public Date getContractEffectiveDate() {
+    public Instant getContractEffectiveDate() {
         return this.contractEffectiveDate;
     }
 
-    public Date getContractExpirationDate() {
+    public Instant getContractExpirationDate() {
         return this.contractExpirationDate;
     }
 
@@ -145,8 +146,8 @@ public final class WaterUserContract extends CwmsDTO {
         private WaterUser waterUser;
         private CwmsId contractId;
         private LookupType contractType;
-        private Date contractEffectiveDate;
-        private Date contractExpirationDate;
+        private Instant contractEffectiveDate;
+        private Instant contractExpirationDate;
         private Double contractedStorage;
         private Double initialUseAllocation;
         private Double futureUseAllocation;
@@ -177,12 +178,12 @@ public final class WaterUserContract extends CwmsDTO {
             return this;
         }
 
-        public Builder withContractEffectiveDate(Date contractEffectiveDate) {
+        public Builder withContractEffectiveDate(Instant contractEffectiveDate) {
             this.contractEffectiveDate = contractEffectiveDate;
             return this;
         }
 
-        public Builder withContractExpirationDate(Date contractExpirationDate) {
+        public Builder withContractExpirationDate(Instant contractExpirationDate) {
             this.contractExpirationDate = contractExpirationDate;
             return this;
         }

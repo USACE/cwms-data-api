@@ -36,7 +36,6 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_STREAM_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.cwms_stream.RETRIEVE_STREAM_REACH;
 import java.util.List;
@@ -105,8 +104,8 @@ public final class StreamReachDao extends JooqDao<StreamReach> {
     public void storeStreamReach(StreamReach streamReach, boolean failIfExists) {
         connectionResult(dsl, conn -> {
             setOffice(conn, streamReach.getId().getOfficeId());
-            String failsIfExistsStr = OracleTypeMap.formatBool(failIfExists);
-            String ignoreNullsStr = OracleTypeMap.formatBool(true);
+            String failsIfExistsStr = formatBool(failIfExists);
+            String ignoreNullsStr = formatBool(true);
             String downstreamLocId = streamReach.getDownstreamNode().getId().getName();
             String upstreamLocId = streamReach.getUpstreamNode().getId().getName();
             String configId = streamReach.getConfigurationId() == null ? null : streamReach.getConfigurationId().getName();

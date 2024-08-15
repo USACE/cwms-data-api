@@ -39,10 +39,13 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
+import java.time.DateTimeException;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
@@ -235,6 +238,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildNotAuthorizedForOffice(input);
         } else if (isInvalidUnits(input)) {
             retVal = buildInvalidUnits(input);
+        } else if (isUnsupportedOperationException(input)) {
+            retVal = buildUnsupportedOperationException(input);
         }
 
         return retVal;
@@ -504,6 +509,31 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new InvalidItemException(localizedMessage, cause);
     }
 
+    public static boolean isUnsupportedOperationException(RuntimeException input) {
+        boolean retVal = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+            int errorCode = sqlException.getErrorCode();
+            //procedure doesn't exist
+            retVal = errorCode == 904
+                //Table or view does not exist
+                || errorCode == 942;
+        }
+        return retVal;
+    }
+
+
+    private static UnsupportedOperationException buildUnsupportedOperationException(RuntimeException input) {
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+        return new UnsupportedOperationException("CWMS currently does not support the requested operation", cause);
+    }
+
     private static @Nullable String sanitizeOrNull(@Nullable String localizedMessage) {
         if (localizedMessage != null && !localizedMessage.isEmpty()) {
             int length = localizedMessage.length();
@@ -522,8 +552,8 @@ public abstract class JooqDao<T> extends Dao<T> {
 
 
     /**
-     * JooqDao provides its own connection method because the DSL.connection
-     * method does not cause thrown exception to be wrapped.
+     * JooqDao provides its own connection() which wraps throw exceptions
+     * because the DSL.connection() method does not wrap exceptions.
      * @param dslContext the DSLContext to use
      * @param cr the ConnectionRunnable to run with the connection
      */
@@ -538,7 +568,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     /**
      * Like DSL.connection the DSL.connectionResult method does not cause thrown
      * exceptions to be wrapped.  This method delegates to DSL.connectionResult
-     * but will wrap exceptions into more specific exception types were possible.
+     * but will wrap exceptions into more specific exception types where possible.
      * @param dslContext the DSLContext to use
      * @param var1 the ConnectionCallable to run with the connection
      */
@@ -550,4 +580,48 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
     }
 
+    public static String formatBool(Boolean tf) {
+        String parsed = null;
+        if (tf != null) {
+            parsed = tf ? "T" : "F";
+        }
+        return parsed;
+    }
+
+    public static boolean parseBool(String str) {
+        if ("T".equalsIgnoreCase(str)) {
+            return true;
+        }
+        return Boolean.parseBoolean(str);
+    }
+
+    protected static ZoneId toZoneId(String zoneId, String locationId) {
+        ZoneId retval = null;
+        if (zoneId != null) {
+            try {
+                retval = ZoneId.of(zoneId);
+            } catch (DateTimeException e) {
+                if ("Unknown or Not Applicable".equalsIgnoreCase(zoneId)) {
+                    logger.atFine().withCause(e).log("Location %s has an undefined time zone", locationId);
+                } else {
+                    if (logger.atFine().isEnabled()) {
+                        logger.atWarning().withCause(e)
+                            .log("Location %s has an invalid location time zone: %s", locationId, zoneId);
+                    } else {
+                        logger.atWarning().log("Location %s has an invalid location time zone: %s", locationId, zoneId);
+                    }
+                }
+            }
+        }
+        return retval;
+    }
+
+    public static BigDecimal toBigDecimal(Number number) {
+        return (number == null) ? null : BigDecimal.valueOf(
+            number.doubleValue());
+    }
+
+    public static double buildDouble(BigDecimal bigDecimal) {
+        return (bigDecimal == null) ? 0.0 : bigDecimal.doubleValue();
+    }
 }

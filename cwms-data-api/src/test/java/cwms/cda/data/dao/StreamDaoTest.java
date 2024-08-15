@@ -33,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.udt.records.STREAM_T;
 
 final class StreamDaoTest {
@@ -58,7 +57,7 @@ final class StreamDaoTest {
         Stream result = StreamDao.fromJooqStream(streamT);
 
         assertNotNull(result);
-        assertEquals(OracleTypeMap.parseBool(streamT.getSTATIONING_STARTS_DS()), result.getStartsDownstream());
+        assertEquals(JooqDao.parseBool(streamT.getSTATIONING_STARTS_DS()), result.getStartsDownstream());
         assertEquals(streamT.getNAME(), result.getId().getName());
         assertEquals(streamT.getOFFICE_ID(), result.getId().getOfficeId());
         assertEquals(streamT.getFLOWS_INTO_STREAM(), result.getFlowsIntoStreamNode().getStreamId().getName());

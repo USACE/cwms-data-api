@@ -26,6 +26,7 @@
 
 package cwms.cda.data.dao.watersupply;
 
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
@@ -36,17 +37,15 @@ import cwms.cda.data.dto.watersupply.WaterUserContract;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_OBJ_T;
-import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_TAB_T;
 
 
-public final class WaterSupplyUtils {
+final class WaterSupplyUtils {
 
     private WaterSupplyUtils() {
         throw new IllegalStateException("Utility class");
@@ -56,10 +55,10 @@ public final class WaterSupplyUtils {
         return new WaterUserContract.Builder().withContractedStorage(contract.getCONTRACTED_STORAGE())
                 .withTotalAllocPercentActivated(contract.getTOTAL_ALLOC_PERCENT_ACTIVATED())
                 .withContractType(LocationUtil.getLookupType(contract.getWATER_SUPPLY_CONTRACT_TYPE()))
-                .withContractEffectiveDate(contract.getWS_CONTRACT_EFFECTIVE_DATE())
+                .withContractEffectiveDate(contract.getWS_CONTRACT_EFFECTIVE_DATE().toInstant())
                 .withOfficeId(contract.getWATER_SUPPLY_CONTRACT_TYPE().getOFFICE_ID())
                 .withStorageUnitsId(contract.getSTORAGE_UNITS_ID())
-                .withContractExpirationDate(contract.getWS_CONTRACT_EXPIRATION_DATE())
+                .withContractExpirationDate(contract.getWS_CONTRACT_EXPIRATION_DATE().toInstant())
                 .withWaterUser(toWaterUser(contract.getWATER_USER_CONTRACT_REF().getWATER_USER()))
                 .withContractId(new CwmsId.Builder().withOfficeId(contract.getWATER_SUPPLY_CONTRACT_TYPE()
                                 .getOFFICE_ID()).withName(contract.getWATER_USER_CONTRACT_REF()
@@ -67,12 +66,16 @@ public final class WaterSupplyUtils {
                 .withFutureUseAllocation(contract.getFUTURE_USE_ALLOCATION())
                 .withFutureUsePercentActivated(contract.getFUTURE_USE_PERCENT_ACTIVATED())
                 .withInitialUseAllocation(contract.getINITIAL_USE_ALLOCATION())
-                .withPumpOutLocation(new WaterSupplyPump.Builder().withPumpLocation(LocationUtil
-                        .getLocation(contract.getPUMP_OUT_LOCATION())).withPumpType(PumpType.OUT).build())
-                .withPumpOutBelowLocation(new WaterSupplyPump.Builder().withPumpLocation(LocationUtil
-                        .getLocation(contract.getPUMP_OUT_BELOW_LOCATION())).withPumpType(PumpType.BELOW).build())
-                .withPumpInLocation(new WaterSupplyPump.Builder().withPumpLocation(LocationUtil
-                        .getLocation(contract.getPUMP_IN_LOCATION())).withPumpType(PumpType.IN).build())
+                .withPumpOutLocation(contract.getPUMP_OUT_LOCATION() != null
+                        ? new WaterSupplyPump.Builder().withPumpLocation(LocationUtil
+                        .getLocation(contract.getPUMP_OUT_LOCATION())).withPumpType(PumpType.OUT).build() : null)
+                .withPumpOutBelowLocation(contract.getPUMP_OUT_BELOW_LOCATION() != null
+                        ? new WaterSupplyPump.Builder().withPumpLocation(LocationUtil
+                        .getLocation(contract.getPUMP_OUT_BELOW_LOCATION()))
+                        .withPumpType(PumpType.BELOW).build() : null)
+                .withPumpInLocation(contract.getPUMP_IN_LOCATION() != null
+                        ? new WaterSupplyPump.Builder().withPumpLocation(LocationUtil
+                        .getLocation(contract.getPUMP_IN_LOCATION())).withPumpType(PumpType.IN).build() : null)
                 .build();
     }
 
@@ -92,30 +95,26 @@ public final class WaterSupplyUtils {
         return waterUserObjT;
     }
 
-    public static WATER_USER_TAB_T toWaterUserTs(WaterUser waterUser) {
+    public static WATER_USER_OBJ_T toWaterUserObjT(WaterUser waterUser) {
         WATER_USER_OBJ_T waterUserObjT = new WATER_USER_OBJ_T();
         waterUserObjT.setENTITY_NAME(waterUser.getEntityName());
         waterUserObjT.setPROJECT_LOCATION_REF(LocationUtil.getLocationRef(waterUser.getProjectId()));
         waterUserObjT.setWATER_RIGHT(waterUser.getWaterRight());
-        List<WATER_USER_OBJ_T> waterUserList = new ArrayList<>();
-        waterUserList.add(waterUserObjT);
-        return new WATER_USER_TAB_T(waterUserList);
+        return waterUserObjT;
     }
 
-    public static LOOKUP_TYPE_OBJ_T toLookupTypeT(LookupType lookupType) {
+    public static LOOKUP_TYPE_OBJ_T toLookupTypeO(LookupType lookupType) {
         LOOKUP_TYPE_OBJ_T lookupTypeObjT = new LOOKUP_TYPE_OBJ_T();
         lookupTypeObjT.setOFFICE_ID(lookupType.getOfficeId());
         lookupTypeObjT.setDISPLAY_VALUE(lookupType.getDisplayValue());
         lookupTypeObjT.setTOOLTIP(lookupType.getTooltip());
-        lookupTypeObjT.setACTIVE(OracleTypeMap.formatBool(lookupType.getActive()));
+        lookupTypeObjT.setACTIVE(JooqDao.formatBool(lookupType.getActive()));
         return lookupTypeObjT;
     }
 
-    public static LOOKUP_TYPE_TAB_T toLookupTypeT(List<LookupType> lookupTypes) {
+    public static LOOKUP_TYPE_TAB_T toLookupTypeT(LookupType lookupType) {
         List<LOOKUP_TYPE_OBJ_T> lookupTypeList = new ArrayList<>();
-        for (LookupType lookupType : lookupTypes) {
-            lookupTypeList.add(toLookupTypeT(lookupType));
-        }
+        lookupTypeList.add(toLookupTypeO(lookupType));
         return new LOOKUP_TYPE_TAB_T(lookupTypeList);
     }
 
@@ -138,22 +137,22 @@ public final class WaterSupplyUtils {
         waterUserContractObjT.setCONTRACTED_STORAGE(waterUserContract.getContractedStorage());
         waterUserContractObjT.setTOTAL_ALLOC_PERCENT_ACTIVATED(waterUserContract.getTotalAllocPercentActivated());
         waterUserContractObjT.setWS_CONTRACT_EFFECTIVE_DATE(new Timestamp(waterUserContract
-                .getContractEffectiveDate().toInstant().toEpochMilli()));
+                .getContractEffectiveDate().toEpochMilli()));
         waterUserContractObjT.setSTORAGE_UNITS_ID(waterUserContract.getStorageUnitsId());
         waterUserContractObjT.setWS_CONTRACT_EXPIRATION_DATE(new Timestamp(waterUserContract
-                .getContractExpirationDate().toInstant().toEpochMilli()));
+                .getContractExpirationDate().toEpochMilli()));
         waterUserContractObjT.setWATER_USER_CONTRACT_REF(toContractRef(waterUserContract.getWaterUser(),
                 waterUserContract.getContractId().getName()));
-        waterUserContractObjT.setWATER_SUPPLY_CONTRACT_TYPE(toLookupTypeT(waterUserContract.getContractType()));
+        waterUserContractObjT.setWATER_SUPPLY_CONTRACT_TYPE(toLookupTypeO(waterUserContract.getContractType()));
         waterUserContractObjT.setFUTURE_USE_ALLOCATION(waterUserContract.getFutureUseAllocation());
         waterUserContractObjT.setFUTURE_USE_PERCENT_ACTIVATED(waterUserContract.getFutureUsePercentActivated());
         waterUserContractObjT.setINITIAL_USE_ALLOCATION(waterUserContract.getInitialUseAllocation());
-        waterUserContractObjT.setPUMP_OUT_LOCATION(LocationUtil.getLocation(waterUserContract.getPumpOutLocation()
-                .getPumpLocation()));
-        waterUserContractObjT.setPUMP_OUT_BELOW_LOCATION(LocationUtil.getLocation(waterUserContract
-                .getPumpOutBelowLocation().getPumpLocation()));
-        waterUserContractObjT.setPUMP_IN_LOCATION(LocationUtil.getLocation(waterUserContract.getPumpInLocation()
-                .getPumpLocation()));
+        waterUserContractObjT.setPUMP_OUT_LOCATION(waterUserContract.getPumpOutLocation() != null
+                ? LocationUtil.getLocation(waterUserContract.getPumpOutLocation().getPumpLocation()) : null);
+        waterUserContractObjT.setPUMP_OUT_BELOW_LOCATION(waterUserContract.getPumpOutBelowLocation() != null
+                ? LocationUtil.getLocation(waterUserContract.getPumpOutBelowLocation().getPumpLocation()) : null);
+        waterUserContractObjT.setPUMP_IN_LOCATION(waterUserContract.getPumpInLocation() != null
+                ? LocationUtil.getLocation(waterUserContract.getPumpInLocation().getPumpLocation()) : null);
 
         List<WATER_USER_CONTRACT_OBJ_T> contractList = new ArrayList<>();
         contractList.add(waterUserContractObjT);

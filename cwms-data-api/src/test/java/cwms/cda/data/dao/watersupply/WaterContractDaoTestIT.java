@@ -33,6 +33,7 @@ import cwms.cda.api.DataApiTestIT;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.JooqDao.DeleteMethod;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.project.ProjectDao;
@@ -58,12 +59,14 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 
+@Tag("integration")
 class WaterContractDaoTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
-    private static final String DELETE_ACTION = "DELETE ALL";
+    private static final DeleteMethod DELETE_ACTION = DeleteMethod.DELETE_ALL;
     private static final Location testLocation = buildTestLocation("Test Location Name",
             "Test Location Type");
     private static final Project testProject = buildTestProject();
@@ -83,7 +86,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
             ProjectDao projectDao = new ProjectDao(ctx);
             try {
-                projectDao.create(testProject);
+                projectDao.create(testProject, true);
                 dao.storeLocation(testLocation);
                 lookupTypeDao.storeLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE",
                         buildTestWaterContract("Test", false).getContractType());
@@ -154,7 +157,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
     @Test
     void testStoreAndRetrieveWaterUser() throws Exception {
         CwmsId projectLocation = new CwmsId.Builder()
-                .withName("Test Location Name")
+                .withName(testLocation.getName())
                 .withOfficeId(OFFICE_ID)
                 .build();
         String entityName = "Test Entity";
@@ -212,26 +215,37 @@ class WaterContractDaoTestIT extends DataApiTestIT {
     }
 
     @Test
-    void testStoreAndRetrieveWaterContractTypeList() throws Exception {
+    void testRetrieveNonexistentContract() throws Exception {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
-            List<LookupType> contractType = new ArrayList<>();
-            contractType.add(new LookupType.Builder()
+            WaterUserContract contract = buildTestWaterContract("Test retrieve", false);
+            dao.storeWaterUser(contract.getWaterUser(), false);
+            dao.storeWaterContract(contract, false, true);
+            CwmsId projectId = new CwmsId.Builder().withOfficeId(OFFICE_ID)
+                    .withName(contract.getWaterUser().getProjectId().getName()).build();
+            String contractName = contract.getContractId().getName();
+            assertThrows(NotFoundException.class, () -> dao.getWaterContract(contractName,
+                   projectId, "NonExistantUser"));
+            dao.deleteWaterContract(contract, DELETE_ACTION);
+        }, CwmsDataApiSetupCallback.getWebUser());
+    }
+
+    @Test
+    void testStoreAndRetrieveWaterContractType() throws Exception {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection(c -> {
+            DSLContext ctx = getDslContext(c, OFFICE_ID);
+            WaterContractDao dao = new WaterContractDao(ctx);
+            LookupType contractType = new LookupType.Builder()
                     .withTooltip("Test Tooltip")
                     .withActive(true)
                     .withDisplayValue("Test Display Value")
-                    .withOfficeId(OFFICE_ID).build());
-            contractType.add(new LookupType.Builder()
-                    .withTooltip("Test Tooltip 2")
-                    .withActive(true)
-                    .withDisplayValue("Test Display Value 2")
-                    .withOfficeId(OFFICE_ID).build());
+                    .withOfficeId(OFFICE_ID).build();
             dao.storeWaterContractTypes(contractType, false);
             List<LookupType> results = dao.getAllWaterContractTypes(OFFICE_ID);
-            DTOMatch.assertMatch(contractType.get(0), results.get(0));
-            DTOMatch.assertMatch(contractType.get(1), results.get(1));
+            DTOMatch.assertMatch(contractType, results.get(0));
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -338,13 +352,13 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             WaterUserContract retrievedContract = dao.getWaterContract(contract.getContractId().getName(),
                     contract.getWaterUser().getProjectId(), contract.getWaterUser().getEntityName());
             assertNotNull(retrievedContract);
-            assertNull(retrievedContract.getPumpInLocation().getPumpLocation());
+            assertNull(retrievedContract.getPumpInLocation());
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     private static WaterUser buildTestWaterUser(String entityName) {
         return new WaterUser.Builder().withEntityName(entityName).withProjectId(new CwmsId.Builder()
-                                .withName("Test Location Name")
+                                .withName(testLocation.getName())
                                 .withOfficeId(OFFICE_ID)
                                 .build())
                 .withWaterRight("Test Water Right").build();
@@ -363,8 +377,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                     .withFutureUseAllocation(158900.6)
                     .withContractedStorage(1589005.6)
                     .withInitialUseAllocation(1500.2)
-                    .withContractExpirationDate(new Date(1979252516))
-                    .withContractEffectiveDate(new Date(1766652851))
+                    .withContractExpirationDate(new Date(1979252516).toInstant())
+                    .withContractEffectiveDate(new Date(1766652851).toInstant())
                     .withTotalAllocPercentActivated(55.1)
                     .withContractId(new CwmsId.Builder()
                             .withName(contractName)
@@ -394,8 +408,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                     .withFutureUseAllocation(158900.6)
                     .withContractedStorage(1589005.6)
                     .withInitialUseAllocation(1500.2)
-                    .withContractExpirationDate(new Date(1979252516))
-                    .withContractEffectiveDate(new Date(1766652851))
+                    .withContractExpirationDate(new Date(1979252516).toInstant())
+                    .withContractEffectiveDate(new Date(1766652851).toInstant())
                     .withTotalAllocPercentActivated(55.1)
                     .withContractId(new CwmsId.Builder()
                             .withName(contractName)
@@ -437,8 +451,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
     }
 
     private static Project buildTestProject() {
-        return new Project.Builder().withLocation(buildTestLocation("Test Location Name",
-                        "Test Location Type"))
+        return new Project.Builder().withLocation(buildTestLocation(testLocation.getName(),
+                        testLocation.getLocationType()))
                 .withFederalCost(new BigDecimal("15980654.55"))
             .build();
     }

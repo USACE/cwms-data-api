@@ -77,9 +77,6 @@ public final class Controllers {
     public static final String LOCATION_CATEGORY_LIKE = "location-category-like";
     public static final String LOCATION_GROUP_LIKE = "location-group-like";
 
-
-
-
     public static final String TIMESERIES_GROUP_LIKE = "timeseries-group-like";
     public static final String ACCEPT = "Accept";
     public static final String CLOB_ID = "clob-id";
@@ -128,6 +125,8 @@ public final class Controllers {
     public static final String MAX_VERSION = "max-version";
     public static final String TIMESERIES = "timeseries";
     public static final String LOCATIONS = "locations";
+    public static final String WATER_USER = "water-user";
+    public static final String CONTRACT_NAME = "contract-name";
 
     public static final String LOCATION_ID = "location-id";
     public static final String SOURCE_ENTITY = "source-entity";
@@ -145,7 +144,6 @@ public final class Controllers {
     public static final String ANY_MASK = "*";
     public static final String OFFICE_MASK = "office-mask";
     public static final String ID_MASK = "id-mask";
-    public static final String LOCATION_MASK = "location-mask";
     public static final String NAME_MASK = "name-mask";
     public static final String BOTTOM_MASK = "bottom-mask";
     public static final String TOP_MASK = "top-mask";
@@ -164,8 +162,7 @@ public final class Controllers {
     public static final String STATUS_501 = "501";
     public static final String STATUS_400 = "400";
     public static final String TEXT_MASK = "text-mask";
-    public static final String MIN_ATTRIBUTE = "min-attribute";
-    public static final String MAX_ATTRIBUTE = "max-attribute";
+    public static final String DELETE_MODE = "delete-mode";
     public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
     public static final String STANDARD_TEXT_ID = "standard-text-id";
     public static final String STREAM_ID_MASK = "stream-id-mask";
@@ -188,6 +185,17 @@ public final class Controllers {
     public static final String DEFAULT_VALUE = "default-value";
     public static final String CATEGORY = "category";
     public static final String PREFIX = "prefix";
+    public static final String PROJECT_LIKE = "project-like";
+
+    public static final String APPLICATION_ID = "application-id";
+    public static final String REVOKE_EXISTING = "revoke-existing";
+    public static final String REVOKE_TIMEOUT = "revoke-timeout";
+    public static final String PROJECT_MASK = "project-mask";
+    public static final String APPLICATION_MASK = "application-mask";
+    public static final String USER_ID = "user-id";
+    public static final String LOCK_ID = "lock-id";
+    public static final String ALLOW = "allow";
+    public static final String SOURCE_ID = "source-id";
 
     private static final String DEPRECATED_HEADER = "CWMS-DATA-Format-Deprecated";
     private static final String DEPRECATED_TAB = "2024-11-01 TAB is not used often.";
@@ -231,7 +239,7 @@ public final class Controllers {
      * @return value
      */
     public static <T> T queryParamAsClass(io.javalin.http.Context ctx,
-                                          Class<T> clazz, T defaultValue, String name, String ... aliases) {
+                                          Class<T> clazz, T defaultValue, String name, String... aliases) {
         List<String> items = new ArrayList<>();
         items.add(name);
         if (aliases != null) {
@@ -319,6 +327,12 @@ public final class Controllers {
         return retval;
     }
 
+    /**
+     * Gets the delete method based on the input string.
+     *
+     * @param input The input string representing the delete method.
+     * @return JooqDao.DeleteMethod representing the delete method, or null if the input is null.
+     */
     public static JooqDao.DeleteMethod getDeleteMethod(String input) {
         JooqDao.DeleteMethod retval = null;
 
@@ -371,6 +385,14 @@ public final class Controllers {
         return queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
     }
 
+    /**
+     * Retrieves the value of the specified query parameter and converts it to an Instant object.
+     *
+     * @param ctx   The context of the request.
+     * @param param The name of the query parameter to retrieve.
+     * @return The query parameter value as an Instant object, or null if the parameter is not
+     *     found or cannot be parsed.
+     */
     @Nullable
     public static Instant queryParamAsInstant(Context ctx, String param) {
         ZonedDateTime zonedDateTime = queryParamAsZdt(ctx, param,

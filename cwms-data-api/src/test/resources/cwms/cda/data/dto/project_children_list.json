@@ -1,0 +1,23 @@
+[
+  {
+    "project-id": {
+      "office-id": "SPK",
+      "name": "TestProject1"
+    },
+    "locations-by-kind": [
+      {
+        "kind": "EMBANKMENT",
+        "location-ids": [
+          {
+            "office-id": "SPK",
+            "name": "TestEmbankment1"
+          },
+          {
+            "office-id": "SPK",
+            "name": "TestEmbankment2"
+          }
+        ]
+      }
+    ]
+  }
+]

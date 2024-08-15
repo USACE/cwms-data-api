@@ -31,7 +31,6 @@ import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 
 import java.util.List;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_CAT_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_TAB_T;
@@ -124,7 +123,7 @@ public final class LookupTypeDao extends JooqDao<LookupType> {
                     .withOfficeId(lookupType.getOFFICE_ID())
                     .withDisplayValue(lookupType.getDISPLAY_VALUE())
                     .withTooltip(lookupType.getTOOLTIP())
-                    .withActive(OracleTypeMap.parseBool(lookupType.getACTIVE()))
+                    .withActive(parseBool(lookupType.getACTIVE()))
                     .build();
         }
         return retVal;
@@ -136,7 +135,7 @@ public final class LookupTypeDao extends JooqDao<LookupType> {
             String officeId = lookupType.getOfficeId();
             String displayValue = lookupType.getDisplayValue();
             String tooltip = lookupType.getTooltip();
-            String active = OracleTypeMap.formatBool(lookupType.getActive());
+            String active = formatBool(lookupType.getActive());
             retVal = new LOOKUP_TYPE_OBJ_T(officeId, displayValue,
                     tooltip, active);
         }
