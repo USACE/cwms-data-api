@@ -224,7 +224,7 @@ public class BasinController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = NAME, required = true, description = "Specifies the new name for the basin."),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-            + "the basin to be renamed."),
+                    + "the basin to be renamed."),
         },
         pathParams = {
             @OpenApiParam(name = NAME, description = "Specifies the name of "
