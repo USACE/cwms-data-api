@@ -238,6 +238,17 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             return new Pair<>(group, loc);
         };
 
+        Condition condition = noCondition();
+        if (locCategoryLike != null && !locCategoryLike.isEmpty()) {
+            condition = caseInsensitiveLikeRegex(alcg.LOC_CATEGORY_ID, locCategoryLike);
+        }
+
+        if (sharedRefLocLike != null && !sharedRefLocLike.isEmpty()) {
+            condition = condition.and(caseInsensitiveLikeRegex(alcg.SHARED_REF_LOCATION_ID, sharedRefLocLike));
+        }
+
+        condition = condition.and(alcg.LOC_GROUP_ID.isNotNull());
+
         SelectConnectByStep<? extends Record> connectBy;
         SelectOnConditionStep<? extends Record> onStep = dsl.select(
                         alcg.CAT_DB_OFFICE_ID,
@@ -258,24 +269,12 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                 .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
                         .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
 
-
-        Condition condition = noCondition();
-        if (locCategoryLike != null && !locCategoryLike.isEmpty()) {
-            condition = caseInsensitiveLikeRegex(alcg.LOC_CATEGORY_ID, locCategoryLike);
-        }
-
-        if (sharedRefLocLike != null && !sharedRefLocLike.isEmpty()) {
-            condition = condition.and(caseInsensitiveLikeRegex(alcg.SHARED_REF_LOCATION_ID, sharedRefLocLike));
-        }
-
         if (officeId != null) {
-            connectBy = onStep.where(DSL.upper(alcg.CAT_DB_OFFICE_ID).in(officeId.toUpperCase())
-                    .and(DSL.upper(alcg.GRP_DB_OFFICE_ID).in(officeId.toUpperCase()))
-                    .and(alcg.LOC_GROUP_ID.isNotNull()).and(condition)
-            );
+            connectBy = onStep.where(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(officeId.toUpperCase()).and(condition));
         } else {
-            connectBy = onStep.where(alcg.LOC_GROUP_ID.isNotNull());
+            connectBy = onStep.where(condition);
         }
+
 
         Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
         connectBy.orderBy(alcg.LOC_CATEGORY_ID, alcg.LOC_GROUP_ID, alga.ATTRIBUTE)
