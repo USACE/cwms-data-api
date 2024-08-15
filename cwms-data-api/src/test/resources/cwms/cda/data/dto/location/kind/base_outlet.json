@@ -22,5 +22,6 @@
   "rating-group-id": {
     "office-id": "SPK",
     "name": "Rating-BIGH-TG1"
-  }
+  },
+  "rating-spec-id": "Rating-BIGH-TG1.Elev,Opening-Tainter_Gate;Flow-Uncontrolled_Spillway.Linear.Production"
 }

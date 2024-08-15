@@ -24,6 +24,7 @@
 
 package cwms.cda.helpers;
 
+import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.data.dto.stream.StreamLocationNode;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -289,6 +290,16 @@ public final class DTOMatch {
                 () -> assertMatch(firstContract.getPumpOutLocation(), secondContract.getPumpOutLocation()),
                 () -> assertMatch(firstContract.getPumpOutBelowLocation(), secondContract.getPumpOutBelowLocation()),
                 () -> assertMatch(firstContract.getPumpInLocation(), secondContract.getPumpInLocation())
+        );
+    }
+
+    public static void assertMatch(AssignedLocation first, AssignedLocation second) {
+        assertAll(
+                () -> assertEquals(first.getAliasId(), second.getAliasId()),
+                () -> assertEquals(first.getRefLocationId(), second.getRefLocationId()),
+                () -> assertEquals(first.getOfficeId(), second.getOfficeId()),
+                () -> assertEquals(first.getLocationId(), second.getLocationId()),
+                () -> assertEquals(first.getAttribute(), second.getAttribute())
         );
     }
 

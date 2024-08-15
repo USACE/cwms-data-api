@@ -36,11 +36,12 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = Outlet.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({"projectId", "location", "ratingCatId", "ratingGroupId"})
+@JsonPropertyOrder({"projectId", "location", "ratingCatId", "ratingGroupId", "ratingSpecId"})
 public final class Outlet extends ProjectStructure {
     public static final String RATING_LOC_GROUP_CATEGORY = "Rating";
     private final CwmsId ratingCategoryId;
     private final CwmsId ratingGroupId;
+    private final String ratingSpecId;
 
     private Outlet(Builder builder) {
         super(builder.projectId, builder.location);
@@ -48,6 +49,7 @@ public final class Outlet extends ProjectStructure {
         ratingCategoryId = new CwmsId.Builder().withOfficeId(builder.projectId.getOfficeId())
                                                .withName(RATING_LOC_GROUP_CATEGORY)
                                                .build();
+        ratingSpecId = builder.ratingSpecId;
     }
 
     public CwmsId getRatingGroupId() {
@@ -58,11 +60,16 @@ public final class Outlet extends ProjectStructure {
         return ratingCategoryId;
     }
 
+    public String getRatingSpecId() {
+        return ratingSpecId;
+    }
+
     @JsonIgnoreProperties(value = {"rating-category-id"})
     public static final class Builder {
         private CwmsId projectId;
         private Location location;
         private CwmsId ratingGroupId;
+        private String ratingSpecId;
 
         public Builder() {
         }
@@ -71,6 +78,7 @@ public final class Outlet extends ProjectStructure {
             projectId = outlet.getProjectId();
             location = outlet.getLocation();
             ratingGroupId = outlet.getRatingGroupId();
+            ratingSpecId = outlet.getRatingSpecId();
         }
 
         public Outlet build() {
@@ -89,6 +97,11 @@ public final class Outlet extends ProjectStructure {
 
         public Builder withRatingGroupId(CwmsId ratingGroupId) {
             this.ratingGroupId = ratingGroupId;
+            return this;
+        }
+
+        public Builder withRatingSpecId(String ratingSpecId) {
+            this.ratingSpecId = ratingSpecId;
             return this;
         }
     }
