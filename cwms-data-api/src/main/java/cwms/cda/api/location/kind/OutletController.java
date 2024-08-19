@@ -24,7 +24,6 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dto.location.kind.Outlet;
@@ -202,7 +201,7 @@ public class OutletController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = NAME, description = "Specifies the location-id of the outlet to be" +
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the location-id of the outlet to be" +
                             " deleted."),
             },
             queryParams = {
