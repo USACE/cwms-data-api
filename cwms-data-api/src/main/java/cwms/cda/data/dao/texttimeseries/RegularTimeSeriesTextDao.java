@@ -15,7 +15,6 @@ import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import org.jooq.exception.NoDataFoundException;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 import java.io.IOException;
@@ -213,7 +212,7 @@ public final class RegularTimeSeriesTextDao extends JooqDao {
         dateTableType.add(Timestamp.from(dateTime));
         CWMS_TEXT_PACKAGE.call_STORE_TS_TEXT__2(configuration, tsId, textValue, dateTableType,
                 versionDate == null ? null : Timestamp.from(versionDate), "UTC",
-                "T", OracleTypeMap.formatBool(replaceAll), null, officeId);
+                "T", formatBool(replaceAll), null, officeId);
     }
 
     public void delete(String officeId, String tsId, String textMask,

@@ -24,7 +24,7 @@ public class LocationsWithProjectKindTest {
         List<CwmsId> locs = new ArrayList<>();
         locs.add(new CwmsId.Builder().withName("Emb1").withOfficeId("SPK").build());
         locs.add(new CwmsId.Builder().withName("Emb2").withOfficeId("SPK").build());
-        builder.withLocations(locs);
+        builder.withLocationIds(locs);
         LocationsWithProjectKind locWithKind = builder.build();
 
         ObjectMapper objectMapper = JsonV2.buildObjectMapper();
@@ -43,8 +43,8 @@ public class LocationsWithProjectKindTest {
         LocationsWithProjectKind locationsWithKind = objectMapper.readValue(stream, LocationsWithProjectKind.class);
         assertNotNull(locationsWithKind);
         assertEquals(ProjectKind.EMBANKMENT, locationsWithKind.getKind());
-        assertEquals("TestEmbankment1", locationsWithKind.getLocations().get(0).getName());
-        assertEquals("TestEmbankment2", locationsWithKind.getLocations().get(1).getName());
+        assertEquals("TestEmbankment1", locationsWithKind.getLocationIds().get(0).getName());
+        assertEquals("TestEmbankment2", locationsWithKind.getLocationIds().get(1).getName());
 
     }
 

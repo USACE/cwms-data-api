@@ -71,13 +71,14 @@ import static org.hamcrest.Matchers.hasToString;
 class WaterContractControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SWT";
     private static final WaterUserContract CONTRACT;
+
     static {
         try (InputStream contractStream = WaterContractCreateController.class
-                .getResourceAsStream("/cwms/cda/api/waterusercontract.json")){
+            .getResourceAsStream("/cwms/cda/api/waterusercontract.json")) {
             assert contractStream != null;
             String contractJson = IOUtils.toString(contractStream, StandardCharsets.UTF_8);
             CONTRACT = Formats.parseContent(new ContentType(Formats.JSONV1), contractJson, WaterUserContract.class);
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
     }
@@ -85,28 +86,29 @@ class WaterContractControllerTestIT extends DataApiTestIT {
     @BeforeAll
     static void setup() throws Exception {
         // create water user, locations, and project
-        Location contractLocation = new Location.Builder(CONTRACT.getContractId().getOfficeId(),
-                CONTRACT.getContractId().getName()).withLocationKind("PROJECT")
-                .withTimeZoneName(ZoneId.of("UTC"))
-                .withHorizontalDatum("WGS84").withLongitude(78.0).withLatitude(67.9).withVerticalDatum("WGS84")
-                .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
-                .withElevation(456.7).withElevationUnits("m").withPublishedLongitude(78.9).withPublishedLatitude(45.3)
-                .withLocationType("PROJECT").withDescription("TEST PROJECT").build();
-        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectId().getOfficeId(),
-                CONTRACT.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
-                .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
-                .withLongitude(38.0).withLatitude(56.5).withVerticalDatum("WGS84")
-                .withLongName("TEST CONTRACT LOCATION").withActive(true).withMapLabel("LABEL").withNation(Nation.US)
-                .withElevation(456.7).withElevationUnits("m").withPublishedLongitude(78.9).withPublishedLatitude(45.3)
-                .withLocationType("PROJECT").withDescription("TEST PROJECT").build();
-        WaterUser waterUser = new WaterUser.Builder().withEntityName(CONTRACT.getWaterUser().getEntityName())
-                .withProjectId(CONTRACT.getWaterUser().getProjectId())
-                .withWaterRight(CONTRACT.getWaterUser().getWaterRight()).build();
-        Project project = new Project.Builder().withLocation(parentLocation)
-                .withFederalCost(BigDecimal.valueOf(123456789))
-                .withAuthorizingLaw("NEW LAW").withCostUnit("$")
-                .withProjectOwner(CONTRACT.getWaterUser().getEntityName())
-                .build();
+        Location projectLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectId())
+            .withLocationKind("PROJECT")
+            .withTimeZoneName(ZoneId.of("UTC"))
+            .withHorizontalDatum("WGS84")
+            .withLongitude(38.0)
+            .withLatitude(56.5)
+            .withVerticalDatum("WGS84")
+            .withLongName("TEST CONTRACT LOCATION")
+            .withActive(true)
+            .withMapLabel("LABEL")
+            .withNation(Nation.US)
+            .withElevation(456.7)
+            .withElevationUnits("m")
+            .withPublishedLongitude(78.9)
+            .withPublishedLatitude(45.3)
+            .withLocationType("PROJECT")
+            .withDescription("TEST PROJECT")
+            .build();
+        Project project = new Project.Builder().withLocation(projectLocation)
+            .withFederalCost(BigDecimal.valueOf(123456789))
+            .withAuthorizingLaw("NEW LAW").withCostUnit("$")
+            .withProjectOwner(CONTRACT.getWaterUser().getEntityName())
+            .build();
         LookupType contractType = CONTRACT.getContractType();
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -117,11 +119,10 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
             WaterContractDao waterContractDao = new WaterContractDao(ctx);
             try {
-                locationsDao.storeLocation(contractLocation);
-                locationsDao.storeLocation(parentLocation);
+                locationsDao.storeLocation(projectLocation);
                 lookupTypeDao.storeLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE", contractType);
                 projectDao.store(project, true);
-                waterContractDao.storeWaterUser(waterUser, true);
+                waterContractDao.storeWaterUser(CONTRACT.getWaterUser(), true);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -130,14 +131,6 @@ class WaterContractControllerTestIT extends DataApiTestIT {
 
     @AfterAll
     static void cleanup() throws Exception {
-        Location contractLocation = new Location.Builder(CONTRACT.getContractId().getOfficeId(),
-                CONTRACT.getContractId().getName()).withLocationKind("PROJECT")
-                .withTimeZoneName(ZoneId.of("UTC"))
-                .withHorizontalDatum("WGS84").withLongitude(78.0).withLatitude(67.9).build();
-        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectId().getOfficeId(),
-                CONTRACT.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
-                .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
-                .withLongitude(38.0).withLatitude(56.5).build();
         LookupType contractType = CONTRACT.getContractType();
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -148,13 +141,13 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             ProjectDao projectDao = new ProjectDao(ctx);
             WaterContractDao waterContractDao = new WaterContractDao(ctx);
             waterContractDao.deleteWaterUser(CONTRACT.getWaterUser().getProjectId(),
-                    CONTRACT.getWaterUser().getEntityName(), DeleteMethod.DELETE_ALL);
+                CONTRACT.getWaterUser().getEntityName(), DeleteMethod.DELETE_ALL);
             projectDao.delete(CONTRACT.getOfficeId(), CONTRACT.getWaterUser().getProjectId().getName(),
-                    DeleteRule.DELETE_ALL);
-            locationsDao.deleteLocation(contractLocation.getName(), contractLocation.getOfficeId(), true);
-            locationsDao.deleteLocation(parentLocation.getName(), parentLocation.getOfficeId(), true);
+                DeleteRule.DELETE_ALL);
+            locationsDao.deleteLocation(CONTRACT.getWaterUser().getProjectId().getName(),
+                CONTRACT.getWaterUser().getProjectId().getOfficeId(), true);
             lookupTypeDao.deleteLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE", contractType.getOfficeId(),
-                    contractType.getDisplayValue());
+                contractType.getDisplayValue());
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 

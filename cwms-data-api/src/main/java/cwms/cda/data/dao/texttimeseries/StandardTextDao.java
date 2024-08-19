@@ -30,7 +30,6 @@ import cwms.cda.data.dto.texttimeseries.StandardTextId;
 import cwms.cda.data.dto.texttimeseries.StandardTextValue;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_STD_TEXT;
 
@@ -88,7 +87,7 @@ public final class StandardTextDao extends JooqDao<StandardTextId> {
     }
 
     public void storeStandardText(String stdTextId, String stdTextValue, String officeId, boolean failIfExists) {
-        String failIfExistsString = OracleTypeMap.formatBool(failIfExists);
+        String failIfExistsString = formatBool(failIfExists);
         connection(dsl, c -> {
             Configuration configuration = getDslContext(c, officeId).configuration();
             CWMS_TEXT_PACKAGE.call_STORE_STD_TEXT(configuration, stdTextId, stdTextValue, failIfExistsString, officeId);

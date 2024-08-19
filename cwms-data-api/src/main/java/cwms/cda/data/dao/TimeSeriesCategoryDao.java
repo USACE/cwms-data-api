@@ -31,7 +31,6 @@ import org.jooq.DSLContext;
 import org.jooq.Record3;
 import org.jooq.Select;
 import org.jooq.SelectWhereStep;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 
@@ -81,7 +80,7 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
             DSLContext dslContext = getDslContext(conn, office);
             CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(
                     dslContext.configuration(), categoryId,
-                    OracleTypeMap.formatBool(cascadeDelete), office);
+                    formatBool(cascadeDelete), office);
         });
 
     }
@@ -93,7 +92,7 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
             DSLContext dslContext = getDslContext(conn, office);
             CWMS_TS_PACKAGE.call_STORE_TS_CATEGORY(
                 dslContext.configuration(), category.getId(), category.getDescription(),
-                OracleTypeMap.formatBool(failIfExists), "T", office);
+                formatBool(failIfExists), "T", office);
         });
     }
 }

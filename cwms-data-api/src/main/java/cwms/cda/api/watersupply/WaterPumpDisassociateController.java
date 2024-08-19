@@ -79,7 +79,7 @@ public final class WaterPumpDisassociateController extends WaterSupplyController
                     + "is associated with.", required = true)
         },
         description = "Disassociate a pump from a contract",
-        path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-id}/pumps/{name}",
+        path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-name}/pumps/{name}",
         method = HttpMethod.DELETE,
         tags = {TAG}
     )

@@ -24,6 +24,8 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.not;
@@ -93,7 +95,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV1)
-            .queryParam(Controllers.OFFICE, office)
+            .queryParam(OFFICE, office)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -110,7 +112,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(Controllers.OFFICE, office)
+            .queryParam(OFFICE, office)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -126,7 +128,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(Controllers.OFFICE, office)
+            .queryParam(OFFICE, office)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -151,19 +153,20 @@ final class ProjectControllerIT extends DataApiTestIT {
 
         //Try to update the project - should fail b/c it does not exist
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
-                .contentType(Formats.JSON)
-                .body(json)
-                .header(AUTH_HEADER, user.toHeaderValue())
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .patch("/projects/" + loc.getName())
-            .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, user.getOperatingOffice())
+            .queryParam(NAME, "NewName")
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch("/projects/" + loc.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
         ;
 
     }
@@ -175,7 +178,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(Controllers.OFFICE, user.getOperatingOffice())
+            .queryParam(OFFICE, user.getOperatingOffice())
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -230,7 +233,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(Controllers.OFFICE, office)
+            .queryParam(OFFICE, office)
             .queryParam(Controllers.ID_MASK, "^" + loc.getName() + "$")
         .when()
             .redirects().follow(true)
@@ -274,7 +277,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(Controllers.OFFICE, office)
+            .queryParam(OFFICE, office)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -333,7 +336,7 @@ final class ProjectControllerIT extends DataApiTestIT {
             ExtractableResponse<Response> extractableResponse = given()
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .accept(Formats.JSON)
-                    .queryParam(Controllers.OFFICE, office)
+                    .queryParam(OFFICE, office)
                     .queryParam(Controllers.PAGE_SIZE, 5)
                     .queryParam(Controllers.ID_MASK, "^PageTest.*$")
                 .when()
@@ -359,7 +362,7 @@ final class ProjectControllerIT extends DataApiTestIT {
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSON)
-                .queryParam(Controllers.OFFICE, office)
+                .queryParam(OFFICE, office)
                 .queryParam(Controllers.PAGE, next)
                 .queryParam(Controllers.PAGE_SIZE, 5)
                 .queryParam(Controllers.ID_MASK, "^PageTest.*$")
@@ -384,7 +387,7 @@ final class ProjectControllerIT extends DataApiTestIT {
                 given()
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .accept(Formats.JSON)
-                    .queryParam(Controllers.OFFICE, office)
+                    .queryParam(OFFICE, office)
                     .header(AUTH_HEADER, user.toHeaderValue())
                 .when()
                     .redirects().follow(true)

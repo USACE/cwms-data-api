@@ -9,10 +9,8 @@ import cwms.cda.data.dto.forecast.ForecastSpec;
 import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.helpers.ReplaceUtils;
+import java.util.TimeZone;
 import org.jooq.DSLContext;
-import org.jooq.impl.DSL;
-import org.jooq.impl.DefaultBinding;
-import usace.cwms.db.dao.util.OracleTypeMap;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +37,7 @@ import static java.util.stream.Collectors.toList;
 
 public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
 
-    private static final Calendar UTC_CALENDAR = Calendar.getInstance(OracleTypeMap.GMT_TIME_ZONE);
+        private static final Calendar UTC_CALENDAR = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     private static final String INSTANCE_QUERY = "select spec_id," +
             "       spec_description," +
             "       spec_designator," +

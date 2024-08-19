@@ -23,6 +23,7 @@ package cwms.cda.data.dao.location.kind;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.LocationGroupDao;
+import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationGroup;
@@ -32,11 +33,11 @@ import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.data.dto.location.kind.VirtualOutletRecord;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_OUTLET_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_STRUCTURE_OBJ_T;
@@ -56,7 +57,8 @@ public class OutletDao extends JooqDao<Outlet> {
             LOCATION_REF_T locRef = LocationUtil.getLocationRef(projectId, officeId);
 
             LocationGroupDao locGroupDao = new LocationGroupDao(dsl);
-            List<LocationGroup> groups = locGroupDao.getLocationGroups(officeId, Outlet.RATING_LOC_GROUP_CATEGORY);
+            List<LocationGroup> groups = locGroupDao.getLocationGroups(officeId,
+                    Outlet.RATING_LOC_GROUP_CATEGORY, projectId);
 
             return CWMS_OUTLET_PACKAGE.call_RETRIEVE_OUTLETS(config, locRef)
                                       .stream()
@@ -78,24 +80,21 @@ public class OutletDao extends JooqDao<Outlet> {
         });
     }
 
-    private CwmsId getRatingGroupId(String locationId, List<LocationGroup> groups) {
+    private Optional<LocationGroup> getRatingGroup(String locationId, List<LocationGroup> groups) {
         return groups.stream()
                      .filter(group -> group.getAssignedLocations()
                                            .stream()
-                                           .anyMatch(loc -> loc.getLocationId().equalsIgnoreCase(locationId)))
-                     .findFirst()
-                     .map(locGroup -> new CwmsId.Builder().withName(locGroup.getId())
-                                                          .withOfficeId(locGroup.getOfficeId())
-                                                          .build())
-                     .orElse(null);
+                                           .map(AssignedLocation::getLocationId)
+                                           .anyMatch(id -> id.equalsIgnoreCase(locationId)))
+                     .findFirst();
     }
 
     public void storeOutlet(Outlet outlet, boolean failIfExists) {
         connection(dsl, conn -> {
             setOffice(conn, outlet.getProjectId().getOfficeId());
             PROJECT_STRUCTURE_OBJ_T structure = mapToProjectStructure(outlet);
-            CWMS_OUTLET_PACKAGE.call_STORE_OUTLET(DSL.using(conn).configuration(), structure, outlet.getRatingGroupId().getName(),
-                                                  OracleTypeMap.formatBool(failIfExists));
+            CWMS_OUTLET_PACKAGE.call_STORE_OUTLET(DSL.using(conn).configuration(), structure, 
+                    outlet.getRatingGroupId().getName(), formatBool(failIfExists));
         });
     }
 
@@ -111,8 +110,8 @@ public class OutletDao extends JooqDao<Outlet> {
         return connectionResult(dsl, conn -> {
             Configuration config = DSL.using(conn).configuration();
             List<VirtualOutlet> output = new ArrayList<>();
-            //projectId and officeId are used as a mask in RETRIEVE_COMPOUND_OUTLETS, however this usage expects a specific
-            //id, since retrieveOutlets does not use a mask.
+            //projectId and officeId are used as a mask in RETRIEVE_COMPOUND_OUTLETS,
+            // however this usage expects a specific id, since retrieveOutlets does not use a mask.
             STR_TAB_TAB_T tabs = CWMS_OUTLET_PACKAGE.call_RETRIEVE_COMPOUND_OUTLETS(config, projectId, officeId);
 
             if (!tabs.isEmpty()) {
@@ -141,8 +140,8 @@ public class OutletDao extends JooqDao<Outlet> {
 
     private VirtualOutlet retrieveVirtualOutlet(Configuration config, String virtualOutletId, String projectId,
                                                 String officeId) {
-        List<VirtualOutletRecord> outletRecords = CWMS_OUTLET_PACKAGE.call_RETRIEVE_COMPOUND_OUTLET(config, virtualOutletId,
-                                                                                              projectId, officeId)
+        List<VirtualOutletRecord> outletRecords = CWMS_OUTLET_PACKAGE
+                .call_RETRIEVE_COMPOUND_OUTLET(config, virtualOutletId, projectId, officeId)
                                                                .stream()
                                                                .map(ArrayList::new)
                                                                .map(table -> mapToVirtualRecord(table, officeId))
@@ -171,7 +170,7 @@ public class OutletDao extends JooqDao<Outlet> {
             setOffice(conn, outlet.getProjectId().getOfficeId());
             CWMS_OUTLET_PACKAGE.call_STORE_COMPOUND_OUTLET(DSL.using(conn).configuration(), projectId.getName(),
                                                            outletId.getName(), outlets,
-                                                           OracleTypeMap.formatBool(failIfExists),
+                                                           formatBool(failIfExists),
                                                            projectId.getOfficeId());
         });
     }
@@ -184,15 +183,22 @@ public class OutletDao extends JooqDao<Outlet> {
         });
     }
 
-    private Outlet mapToOutlet(PROJECT_STRUCTURE_OBJ_T projectStructure,
+    private Outlet mapToOutlet(PROJECT_STRUCTURE_OBJ_T outlet,
                                List<LocationGroup> groups) {
-        Location location = LocationUtil.getLocation(projectStructure.getSTRUCTURE_LOCATION());
-        CwmsId ratingGroupId = getRatingGroupId(location.getName(), groups);
-        CwmsId projectId = LocationUtil.getLocationIdentifier(projectStructure.getPROJECT_LOCATION_REF());
+        Location location = LocationUtil.getLocation(outlet.getSTRUCTURE_LOCATION());
+        Optional<LocationGroup> locGroupReturn = getRatingGroup(location.getName(), groups);
+        CwmsId ratingGroupId = locGroupReturn.map(id -> new CwmsId.Builder().withName(id.getId())
+                                                                         .withOfficeId(id.getOfficeId())
+                                                                         .build())
+                                             .orElse(null);
+        String sharedLocAliasId = locGroupReturn.map(LocationGroup::getSharedLocAliasId)
+                                                .orElse(null);
+        CwmsId projectId = LocationUtil.getLocationIdentifier(outlet.getPROJECT_LOCATION_REF());
 
         return new Outlet.Builder().withLocation(location)
                                    .withProjectId(projectId)
                                    .withRatingGroupId(ratingGroupId)
+                                   .withRatingSpecId(sharedLocAliasId)
                                    .build();
     }
 
@@ -215,8 +221,8 @@ public class OutletDao extends JooqDao<Outlet> {
         if (!table.isEmpty()) {
             outlet = table.get(0);
         }
-        return new VirtualOutletRecord.Builder().withOutletId(
-                                                         new CwmsId.Builder().withName(outlet).withOfficeId(officeId).build())
+        return new VirtualOutletRecord.Builder().withOutletId(new CwmsId.Builder().withName(outlet)
+                                                                 .withOfficeId(officeId).build())
                                                 .withDownstreamOutletIds(downstreamOutlets)
                                                 .build();
     }

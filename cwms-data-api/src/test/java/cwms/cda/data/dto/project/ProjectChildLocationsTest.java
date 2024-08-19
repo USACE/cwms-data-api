@@ -71,18 +71,18 @@ class ProjectChildLocationsTest {
         outlets.add(buildId(OFFICE, "TestOutlet1"));
 
         ProjectChildLocations projectChildLocations = new ProjectChildLocations.Builder()
-                .withProject(proj)
-                .withEmbankments(embanks)
-                .withLocks(locks)
-                .withGates(gates)
-                .withTurbines(turbines)
-                .withOutlets(outlets)
+                .withProjectId(proj)
+                .withEmbankmentIds(embanks)
+                .withLockIds(locks)
+                .withGateIds(gates)
+                .withTurbineIds(turbines)
+                .withOutletIds(outlets)
                 .build();
         assertNotNull(projectChildLocations);
 
-        assertEquals(proj, projectChildLocations.getProject());
-        assertEquals(embanks, projectChildLocations.getEmbankments());
-        assertEquals(locks, projectChildLocations.getLocks());
+        assertEquals(proj, projectChildLocations.getProjectId());
+        assertEquals(embanks, projectChildLocations.getEmbankmentIds());
+        assertEquals(locks, projectChildLocations.getLockIds());
 
         String json = Formats.format(new ContentType(Formats.JSON), projectChildLocations);
 
@@ -112,12 +112,12 @@ class ProjectChildLocationsTest {
         outlets.add(buildId(office, "TestOutlet1"));
 
         return new ProjectChildLocations.Builder()
-                .withProject(proj)
-                .withEmbankments(embanks)
-                .withLocks(locks)
-                .withGates(gates)
-                .withTurbines(turbines)
-                .withOutlets(outlets)
+                .withProjectId(proj)
+                .withEmbankmentIds(embanks)
+                .withLockIds(locks)
+                .withGateIds(gates)
+                .withTurbineIds(turbines)
+                .withOutletIds(outlets)
                 .build();
     }
 
@@ -161,12 +161,12 @@ class ProjectChildLocationsTest {
         ProjectChildLocations projectChildLocations = om.readValue(input, ProjectChildLocations.class);
         assertNotNull(projectChildLocations);
 
-        CwmsId project = projectChildLocations.getProject();
+        CwmsId project = projectChildLocations.getProjectId();
         assertNotNull(project);
         assertEquals("SPK", project.getOfficeId());
         assertEquals("TestProject", project.getName());
 
-        List<CwmsId> embankments = projectChildLocations.getEmbankments();
+        List<CwmsId> embankments = projectChildLocations.getEmbankmentIds();
         assertNotNull(embankments);
         assertEquals(2, embankments.size());
         assertEquals("SPK", embankments.get(0).getOfficeId());
@@ -174,7 +174,7 @@ class ProjectChildLocationsTest {
         assertEquals("SPK", embankments.get(1).getOfficeId());
         assertEquals("TestEmbankment2", embankments.get(1).getName());
 
-        List<CwmsId> locks = projectChildLocations.getLocks();
+        List<CwmsId> locks = projectChildLocations.getLockIds();
         assertNotNull(locks);
         assertEquals(3, locks.size());
         assertEquals("SPK", locks.get(0).getOfficeId());
@@ -184,19 +184,19 @@ class ProjectChildLocationsTest {
         assertEquals("SPK", locks.get(2).getOfficeId());
         assertEquals("TestLock3", locks.get(2).getName());
 
-        List<CwmsId> outlets = projectChildLocations.getOutlets();
+        List<CwmsId> outlets = projectChildLocations.getOutletIds();
         assertNotNull(outlets);
         assertEquals(1, outlets.size());
         assertEquals("SPK", outlets.get(0).getOfficeId());
         assertEquals("TestOutlet1", outlets.get(0).getName());
 
-        List<CwmsId> turbines = projectChildLocations.getTurbines();
+        List<CwmsId> turbines = projectChildLocations.getTurbineIds();
         assertNotNull(turbines);
         assertEquals(1, turbines.size());
         assertEquals("SPK", turbines.get(0).getOfficeId());
         assertEquals("TestTurbine1", turbines.get(0).getName());
 
-        List<CwmsId> gates = projectChildLocations.getGates();
+        List<CwmsId> gates = projectChildLocations.getGateIds();
         assertNotNull(gates);
         assertEquals(1, gates.size());
         assertEquals("SPK", gates.get(0).getOfficeId());
@@ -224,12 +224,12 @@ class ProjectChildLocationsTest {
     private static void assertProjectChildLocationsEqual(ProjectChildLocations projectChildLocations1,
                                                          ProjectChildLocations projectChildLocations2) {
         assertAll("ProjectChildLocations",
-                () -> assertCwmsIdEqual(projectChildLocations1.getProject(), projectChildLocations2.getProject()),
-                () -> assertListEqual(projectChildLocations1.getEmbankments(), projectChildLocations2.getEmbankments()),
-                () -> assertListEqual(projectChildLocations1.getLocks(), projectChildLocations2.getLocks()),
-                () -> assertListEqual(projectChildLocations1.getGates(), projectChildLocations2.getGates()),
-                () -> assertListEqual(projectChildLocations1.getTurbines(), projectChildLocations2.getTurbines()),
-                () -> assertListEqual(projectChildLocations1.getOutlets(), projectChildLocations2.getOutlets())
+                () -> assertCwmsIdEqual(projectChildLocations1.getProjectId(), projectChildLocations2.getProjectId()),
+                () -> assertListEqual(projectChildLocations1.getEmbankmentIds(), projectChildLocations2.getEmbankmentIds()),
+                () -> assertListEqual(projectChildLocations1.getLockIds(), projectChildLocations2.getLockIds()),
+                () -> assertListEqual(projectChildLocations1.getGateIds(), projectChildLocations2.getGateIds()),
+                () -> assertListEqual(projectChildLocations1.getTurbineIds(), projectChildLocations2.getTurbineIds()),
+                () -> assertListEqual(projectChildLocations1.getOutletIds(), projectChildLocations2.getOutletIds())
         );
     }
 

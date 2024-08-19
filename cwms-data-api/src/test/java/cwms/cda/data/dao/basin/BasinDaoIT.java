@@ -46,6 +46,7 @@ import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -55,7 +56,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-
+@Tag("integration")
 class BasinDaoIT extends DataApiTestIT {
     private static final String OFFICE_ID = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
     private static final String UNIT_SYSTEM = "SI";

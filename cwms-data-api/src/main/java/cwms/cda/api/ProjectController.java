@@ -230,32 +230,33 @@ public class ProjectController implements CrudHandler {
     }
 
     @OpenApi(
-            description = "Updates a project",
-            pathParams = {
-                @OpenApiParam(name = NAME, description = "The id of the project to be updated"),
+        description = "Rename a project",
+        pathParams = {
+            @OpenApiParam(name = NAME, description = "The name of the project to be renamed"),
+        },
+        queryParams = {
+            @OpenApiParam(name = NAME, description = "The new name of the project"),
+            @OpenApiParam(name = OFFICE, description = "The office of the project to be renamed"),
+        },
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = Project.class, type = Formats.JSON),
+                @OpenApiContent(from = Project.class, type = Formats.JSONV1),
             },
-            requestBody = @OpenApiRequestBody(
-                content = {
-                    @OpenApiContent(from = Project.class, type = Formats.JSON),
-                    @OpenApiContent(from = Project.class, type = Formats.JSONV1),
-                },
-                required = true
-            ),
-            method = HttpMethod.PATCH,
-            tags = {TAG}
+            required = true
+        ),
+        method = HttpMethod.PATCH,
+        tags = {TAG}
     )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String name) {
+    public void update(@NotNull Context ctx, @NotNull String oldName) {
 
         try (Timer.Context ignored = markAndTime(UPDATE)) {
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader, Project.class);
-            Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
+            String newName = requiredParam(ctx, NAME);
+            String office = requiredParam(ctx, OFFICE);
             DSLContext dsl = getDslContext(ctx);
-
             ProjectDao dao = new ProjectDao(dsl);
-            dao.update(project);
+            dao.renameProject(office, oldName, newName);
         }
     }
 

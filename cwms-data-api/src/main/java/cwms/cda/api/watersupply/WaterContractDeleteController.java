@@ -71,7 +71,7 @@ public final class WaterContractDeleteController extends WaterSupplyControllerBa
                     required = true)
         },
         description = "Delete a specified water contract",
-        path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{name}",
+        path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{contract-name}",
         method = HttpMethod.DELETE,
         tags = {TAG}
     )

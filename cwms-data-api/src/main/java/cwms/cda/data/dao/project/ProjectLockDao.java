@@ -28,7 +28,6 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.project.LockRevokerRights;
 import cwms.cda.data.dto.project.ProjectLock;
 import java.math.BigInteger;
-import java.sql.CallableStatement;
 import java.time.Instant;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -38,7 +37,6 @@ import org.jooq.Record;
 import org.jooq.SQLDialect;
 import org.jooq.exception.TooManyRowsException;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 
 public class ProjectLockDao extends JooqDao<ProjectLock> {
@@ -68,22 +66,12 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
 
         String office = request.getOfficeId();
         return connectionResult(dsl, c -> {
+            Configuration configuration = getDslContext(c, office).configuration();
             setOffice(c, office);
-            int i = 1;
-            try (CallableStatement stmt = c.prepareCall("{? = call CWMS_PROJECT.REQUEST_LOCK(?,?,?,?,?,?,?,?,?)}")) {
-                stmt.registerOutParameter(i++, java.sql.Types.VARCHAR);
-                stmt.setString(i++, request.getProjectId());
-                stmt.setString(i++, request.getApplicationId());
-                stmt.setString(i++, OracleTypeMap.formatBool(revokeExisting));
-                stmt.setObject(i++, BigInteger.valueOf(revokeTimeout));
-                stmt.setString(i++, office);
-                stmt.setString(i++, request.getSessionUser());
-                stmt.setString(i++, request.getOsUser());
-                stmt.setString(i++, request.getSessionProgram());
-                stmt.setString(i++, request.getSessionMachine());
-                stmt.execute();
-                return stmt.getString(1);
-            }
+            return CWMS_PROJECT_PACKAGE.call_REQUEST_LOCK(configuration, request.getProjectId(),
+                request.getApplicationId(), formatBool(revokeExisting), BigInteger.valueOf(revokeTimeout),
+                office, request.getSessionUser(), request.getOsUser(), request.getSessionProgram(),
+                request.getSessionMachine());
         });
     }
 
@@ -101,7 +89,7 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
                     return CWMS_PROJECT_PACKAGE.call_IS_LOCKED(conf,
                     projectId, appId, office);
                 });
-        return OracleTypeMap.parseBool(s);
+        return parseBool(s);
     }
 
     /**
@@ -219,7 +207,7 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
         connection(dsl, c -> {
             Configuration conf = getDslContext(c, sessionOffice).configuration();
             CWMS_PROJECT_PACKAGE.call_UPDATE_LOCK_REVOKER_RIGHTS(conf,
-                userId, projectMask, OracleTypeMap.formatBool(allow), applicationId, null);
+                userId, projectMask, formatBool(allow), applicationId, sessionOffice);
         });
     }
 
@@ -306,7 +294,7 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
                     return CWMS_PROJECT_PACKAGE.call_HAS_REVOKER_RIGHTS(conf,
                     projectId, applicationId, userId, office, null);
                 });
-        return OracleTypeMap.parseBool(s);
+        return parseBool(s);
     }
 
 }

@@ -504,7 +504,7 @@ public class ApiServlet extends HttpServlet {
                 new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/catalog/{dataset}",
                 new CatalogController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/basins/{basin-id}",
+        cdaCrudCache("/basins/{name}",
                 new BasinController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/streams/{%s}", NAME),
                 new StreamController(metrics), requiredRoles,5, TimeUnit.MINUTES);
