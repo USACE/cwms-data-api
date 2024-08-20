@@ -266,7 +266,7 @@ public class OutletDao extends JooqDao<Outlet> {
             BigInteger rowLimitBig = BigInteger.valueOf(rowLimit);
             GATE_CHANGE_TAB_T changeTab = CWMS_OUTLET_PACKAGE.call_RETRIEVE_GATE_CHANGES(
                     DSL.using(conn).configuration(), locationRef, startTimestamp, endTimestamp, "UTC", unitSystem,
-                    OracleTypeMap.formatBool(startInclusive), OracleTypeMap.formatBool(endInclusive), rowLimitBig);
+                    formatBool(startInclusive), formatBool(endInclusive), rowLimitBig);
 
             List<GateChange> output = new ArrayList<>();
             if (changeTab != null) {
@@ -285,7 +285,7 @@ public class OutletDao extends JooqDao<Outlet> {
             GATE_CHANGE_TAB_T changes = new GATE_CHANGE_TAB_T();
             physicalStructureChange.stream().map(OutletDao::map).forEach(changes::add);
             CWMS_OUTLET_PACKAGE.call_STORE_GATE_CHANGES(DSL.using(conn).configuration(), changes, null, null, "UTC",
-                                                        "T", "T", OracleTypeMap.formatBool(overrideProtection));
+                                                        "T", "T", formatBool(overrideProtection));
         });
     }
 
@@ -300,7 +300,7 @@ public class OutletDao extends JooqDao<Outlet> {
             Timestamp endTimestamp = Timestamp.from(endTime);
             CWMS_OUTLET_PACKAGE.call_DELETE_GATE_CHANGES(DSL.using(conn).configuration(), locationRef, startTimestamp,
                                                          endTimestamp, "UTC", startInclusive, endInclusive,
-                                                         OracleTypeMap.formatBool(overrideProtection));
+                                                         formatBool(overrideProtection));
         });
     }
 
@@ -331,7 +331,7 @@ public class OutletDao extends JooqDao<Outlet> {
         return new GateChange.Builder().withProjectId(projectId)
                                        .withDischargeComputationType(compType)
                                        .withReasonType(LocationUtil.getLookupType(change.getRELEASE_REASON()))
-                                       .withProtected(OracleTypeMap.parseBool(change.getPROTECTED()))
+                                       .withProtected(parseBool(change.getPROTECTED()))
                                        .withNewTotalDischargeOverride(change.getNEW_TOTAL_DISCHARGE_OVERRIDE())
                                        .withOldTotalDischargeOverride(change.getOLD_TOTAL_DISCHARGE_OVERRIDE())
                                        .withDischargeUnits(change.getDISCHARGE_UNITS())
@@ -357,7 +357,7 @@ public class OutletDao extends JooqDao<Outlet> {
         output.setDISCHARGE_UNITS(change.getDischargeUnits());
         output.setNEW_TOTAL_DISCHARGE_OVERRIDE(change.getNewTotalDischargeOverride());
         output.setOLD_TOTAL_DISCHARGE_OVERRIDE(change.getOldTotalDischargeOverride());
-        output.setPROTECTED(OracleTypeMap.formatBool(change.isProtected()));
+        output.setPROTECTED(formatBool(change.isProtected()));
         output.setPROJECT_LOCATION_REF(LocationUtil.getLocationRef(change.getProjectId()));
         output.setDISCHARGE_COMPUTATION(LocationUtil.getLookupType(change.getDischargeComputationType()));
         output.setRELEASE_REASON(LocationUtil.getLookupType(change.getReasonType()));
