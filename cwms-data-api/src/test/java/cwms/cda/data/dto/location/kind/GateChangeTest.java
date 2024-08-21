@@ -28,6 +28,7 @@ import cwms.cda.helpers.DTOMatch;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -46,24 +47,10 @@ class GateChangeTest {
     private static final CwmsId BIGH_TG_2 = new CwmsId.Builder().withOfficeId(OFFICE_ID)
                                                                 .withName("TG2")
                                                                 .build();
-    private static final Instant JAN_FIRST = ZonedDateTime.now()
-                                                          .withYear(2024)
-                                                          .withMonth(1)
-                                                          .withDayOfMonth(1)
-                                                          .withHour(0)
-                                                          .withMinute(0)
-                                                          .withSecond(0)
-                                                          .withNano(0)
+    private static final Instant JAN_FIRST = ZonedDateTime.of(2024, 1, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"))
                                                           .toInstant();
-    private static final Instant JAN_SECOND = ZonedDateTime.now()
-                                                          .withYear(2024)
-                                                          .withMonth(1)
-                                                          .withDayOfMonth(2)
-                                                          .withHour(0)
-                                                          .withMinute(0)
-                                                          .withSecond(0)
-                                                          .withNano(0)
-                                                          .toInstant();
+    private static final Instant JAN_SECOND = ZonedDateTime.of(2024, 1, 2, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"))
+                                                           .toInstant();
     private static final GateChange TEST_GATE_CHANGE = buildTestGateChange(PROJECT_ID, JAN_FIRST,
                                                                            GateSettingTest.buildTestGateSetting(
                                                                                    BIGH_TG_1, 0, 1),
