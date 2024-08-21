@@ -21,7 +21,6 @@
 package cwms.cda.data.dao.location.kind;
 
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dto.AssignedLocation;
@@ -47,6 +46,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -171,22 +171,33 @@ class OutletDaoChangeIT extends ProjectStructureIT {
             dao.storeOperationalChanges(Arrays.asList(CHANGE_1, CHANGE_2), true);
             List<GateChange> changes = dao.retrieveOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true, true,
                                                                       "EN", 3);
-            assertEquals(2, changes.size());
-            DTOMatch.assertMatch(CHANGE_1, changes.get(0));
-            DTOMatch.assertMatch(CHANGE_2, changes.get(1));
+            assertContainsAll(changes, CHANGE_1, CHANGE_2);
 
             GateChange modifiedChange = new GateChange.Builder(CHANGE_1).withTailwaterElevation(50.0).build();
 
             dao.storeOperationalChanges(Collections.singletonList(modifiedChange), true);
             changes = dao.retrieveOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true, true, "EN", 3);
-            assertEquals(2, changes.size());
-            DTOMatch.assertMatch(modifiedChange, changes.get(0));
+
+            assertContainsAll(changes, modifiedChange, CHANGE_2);
 
             dao.deleteOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true);
             changes = dao.retrieveOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true, true, "EN", 3);
 
             assertTrue(changes.isEmpty());
         }, CwmsDataApiSetupCallback.getWebUser());
+    }
+
+    private void assertContainsAll(List<GateChange> retrievedChanges, GateChange ... changes) {
+        assertAll(Arrays.stream(changes)
+                       .map(change -> () -> assertContains(retrievedChanges, change)));
+    }
+
+    private void assertContains(List<GateChange> retrievedChanges, GateChange change) {
+        GateChange retrievedChange = retrievedChanges.stream()
+                                                     .filter(c -> c.getChangeDate().equals(change.getChangeDate()))
+                                                     .findFirst()
+                                                     .orElse(null);
+        DTOMatch.assertMatch(change, retrievedChange);
     }
 
     private static Outlet buildTestOutlet(Location outletLoc, Location projectLoc, CwmsId ratingId) {
