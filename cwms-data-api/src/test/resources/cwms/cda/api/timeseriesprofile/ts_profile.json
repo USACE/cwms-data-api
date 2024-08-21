@@ -1,0 +1,12 @@
+{
+  "location-id": {
+    "office-id": "SPK",
+    "name": "Test_TSP_Location"
+  },
+  "description": "Test Description",
+  "parameter-list": [
+    "Temp-Water",
+    "Depth"
+  ],
+  "key-parameter": "Depth"
+}

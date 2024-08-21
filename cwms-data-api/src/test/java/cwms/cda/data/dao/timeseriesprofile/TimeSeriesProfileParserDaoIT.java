@@ -28,9 +28,11 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
 
     @Test
     void testStoreAndRetrieve() throws Exception {
-        String officeId = "LRL";
+        String officeId = "SPK";
         String locationName = "Glensboro";
         String locationName1 = "Greensburg";
+        createLocation(locationName, true, officeId, "SITE");
+        createLocation(locationName1, true, officeId, "SITE");
         String[] parameter = {"Depth", "Temp-Water"};
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -65,8 +67,9 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
 
     @Test
     void testStoreAndDelete() throws SQLException {
-        String officeId = "LRL";
+        String officeId = "SPK";
         String locationName = "Glensboro";
+        createLocation(locationName, true, officeId, "SITE");
         String[] parameter = { "Depth", "Temp-Water"};
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -96,8 +99,9 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
     @Test
     void testCatalogTimeSeriesProfileInclusive() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        String officeId = "LRL";
+        String officeId = "SPK";
         String locationName = "Glensboro";
+        createLocation(locationName, true, officeId, "SITE");
         String[] parameters =  {"Depth", "Temp-Water"};
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
@@ -137,8 +141,9 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
     @Test
     void testStoreAndRetrieveMultiple() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        String officeId = "LRL";
+        String officeId = "SPK";
         String locationName = "Glensboro";
+        createLocation(locationName, true, officeId, "SITE");
         String[] parameters =  {"Depth", "Temp-Water"};
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
@@ -175,9 +180,11 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
 
     @Test
     void testStoreAndCopy() throws SQLException {
-        String officeId = "LRL";
+        String officeId = "SPK";
         String locationName = "Glensboro";
         String locationName1 = "Greensburg";
+        createLocation(locationName, true, officeId, "SITE");
+        createLocation(locationName1, true, officeId, "SITE");
         String[] parameter = {"Depth", "Temp-Water"};
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -220,7 +227,7 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
 
     }
 
-    static private TimeSeriesProfileParserIndexed buildTestTimeSeriesProfileParserIndexed(String officeId, String location, String keyParameter) {
+    private static TimeSeriesProfileParserIndexed buildTestTimeSeriesProfileParserIndexed(String officeId, String location, String keyParameter) {
         List<ParameterInfo> parameterInfoList = new ArrayList<>();
         parameterInfoList.add(new ParameterInfoIndexed.Builder()
                 .withIndex(6)

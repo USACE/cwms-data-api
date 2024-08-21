@@ -3,7 +3,6 @@ package cwms.cda.data.dto.timeseriesprofile;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
 
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.ContentType;
@@ -14,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-final public class TimeSeriesProfileTest {
+public final class TimeSeriesProfileTest {
     @Test
     void testTimeSeriesProfileSerializationRoundTrip() {
         TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile();

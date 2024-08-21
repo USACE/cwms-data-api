@@ -62,31 +62,34 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
     }
 
     public void storeTimeSeriesProfileParser(TimeSeriesProfileParserIndexed timeSeriesProfileParser, boolean failIfExists) {
-        connection(dsl, conn ->
-                CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_PARSER(DSL.using(conn).configuration(), timeSeriesProfileParser.getLocationId().getName(),
-                        timeSeriesProfileParser.getKeyParameter(), String.valueOf(timeSeriesProfileParser.getRecordDelimiter()),
-                        String.valueOf(timeSeriesProfileParser.getFieldDelimiter()), timeSeriesProfileParser.getTimeField(),
-                        null, null, timeSeriesProfileParser.getTimeFormat(),
-                        timeSeriesProfileParser.getTimeZone(), getParameterInfoString(timeSeriesProfileParser),
-                        timeSeriesProfileParser.getTimeInTwoFields() ? "T" : "F",
-                        failIfExists ? "T" : "F", "T", timeSeriesProfileParser.getLocationId().getOfficeId())
-        );
+        connection(dsl, conn -> {
+            setOffice(conn, timeSeriesProfileParser.getLocationId().getOfficeId());
+            CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_PARSER(DSL.using(conn).configuration(), timeSeriesProfileParser.getLocationId().getName(),
+                    timeSeriesProfileParser.getKeyParameter(), String.valueOf(timeSeriesProfileParser.getRecordDelimiter()),
+                    String.valueOf(timeSeriesProfileParser.getFieldDelimiter()), timeSeriesProfileParser.getTimeField(),
+                    null, null, timeSeriesProfileParser.getTimeFormat(),
+                    timeSeriesProfileParser.getTimeZone(), getParameterInfoString(timeSeriesProfileParser),
+                    timeSeriesProfileParser.getTimeInTwoFields() ? "T" : "F",
+                    failIfExists ? "T" : "F", "T", timeSeriesProfileParser.getLocationId().getOfficeId());
+        });
     }
 
     public void storeTimeSeriesProfileParser(TimeSeriesProfileParserColumnar timeSeriesProfileParser, boolean failIfExists) {
-        connection(dsl, conn ->
-                CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_PARSER(DSL.using(conn).configuration(), timeSeriesProfileParser.getLocationId().getName(),
-                        timeSeriesProfileParser.getKeyParameter(), String.valueOf(timeSeriesProfileParser.getRecordDelimiter()),
-                        null, null,
-                        timeSeriesProfileParser.getTimeStartColumn(), timeSeriesProfileParser.getTimeEndColumn(), timeSeriesProfileParser.getTimeFormat(),
-                        timeSeriesProfileParser.getTimeZone(), getParameterInfoString(timeSeriesProfileParser),
-                        timeSeriesProfileParser.getTimeInTwoFields() ? "T" : "F",
-                        failIfExists ? "T" : "F", "F", timeSeriesProfileParser.getLocationId().getOfficeId())
-        );
+        connection(dsl, conn -> {
+            setOffice(conn, timeSeriesProfileParser.getLocationId().getOfficeId());
+            CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_PARSER(DSL.using(conn).configuration(), timeSeriesProfileParser.getLocationId().getName(),
+                    timeSeriesProfileParser.getKeyParameter(), String.valueOf(timeSeriesProfileParser.getRecordDelimiter()),
+                    null, null,
+                    timeSeriesProfileParser.getTimeStartColumn(), timeSeriesProfileParser.getTimeEndColumn(), timeSeriesProfileParser.getTimeFormat(),
+                    timeSeriesProfileParser.getTimeZone(), getParameterInfoString(timeSeriesProfileParser),
+                    timeSeriesProfileParser.getTimeInTwoFields() ? "T" : "F",
+                    failIfExists ? "T" : "F", "F", timeSeriesProfileParser.getLocationId().getOfficeId());
+        });
     }
 
     public TimeSeriesProfileParser retrieveTimeSeriesProfileParser(String locationId, String parameterId, String officeId) {
         return connectionResult(dsl, conn -> {
+            setOffice(conn, officeId);
             RETRIEVE_TS_PROFILE_PARSER timeSeriesProfileParser = CWMS_TS_PROFILE_PACKAGE.call_RETRIEVE_TS_PROFILE_PARSER(
                     DSL.using(conn).configuration(), locationId, parameterId, officeId);
             return map(timeSeriesProfileParser, locationId, parameterId, officeId);
@@ -246,16 +249,19 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
 
 
     public void copyTimeSeriesProfileParser(String locationId, String parameterId, String officeId, String destinationLocation) {
-        connection(dsl, conn ->
-                CWMS_TS_PROFILE_PACKAGE.call_COPY_TS_PROFILE_PARSER(DSL.using(conn).configuration(), locationId, parameterId, destinationLocation,
-                        "F", officeId));
+        connection(dsl, conn -> {
+            setOffice(conn, officeId);
+            CWMS_TS_PROFILE_PACKAGE.call_COPY_TS_PROFILE_PARSER(DSL.using(conn).configuration(), locationId, parameterId, destinationLocation,
+                    "F", officeId);
+        });
     }
 
     public void deleteTimeSeriesProfileParser(String locationId, String parameterId, String officeId) {
-        connection(dsl, conn ->
-                CWMS_TS_PROFILE_PACKAGE.call_DELETE_TS_PROFILE_PARSER(DSL.using(conn).configuration(), locationId,
-                        parameterId, officeId)
-        );
+        connection(dsl, conn -> {
+            setOffice(conn, officeId);
+            CWMS_TS_PROFILE_PACKAGE.call_DELETE_TS_PROFILE_PARSER(DSL.using(conn).configuration(), locationId,
+                    parameterId, officeId);
+        });
     }
 
     private TimeSeriesProfileParser map(RETRIEVE_TS_PROFILE_PARSER timeSeriesProfileParser, String locationName, String keyParameter, String officeId) {

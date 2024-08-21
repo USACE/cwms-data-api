@@ -134,6 +134,9 @@ import cwms.cda.api.watersupply.WaterUserController;
 import cwms.cda.api.watersupply.WaterUserCreateController;
 import cwms.cda.api.watersupply.WaterUserDeleteController;
 import cwms.cda.api.watersupply.WaterUserUpdateController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -489,6 +492,12 @@ public class ApiServlet extends HttpServlet {
         get(textBinaryValuePath, new BinaryTimeSeriesValueController(metrics));
         addCacheControl(textBinaryValuePath, 1, TimeUnit.DAYS);
 
+        cdaCrudCache("/timeseries/parser/{parameter-id}", new TimeSeriesProfileParserController(metrics),
+                requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/timeseries/profile/{parameter-id}", new TimeSeriesProfileController(metrics),
+                requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/timeseries/instance/{timeseries-id}", new TimeSeriesProfileInstanceController(metrics),
+                requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",

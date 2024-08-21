@@ -1,24 +1,24 @@
 package cwms.cda.data.dao.timeseriesprofile;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import static usace.cwms.db.jooq.codegen.tables.AV_TS_PROFILE.AV_TS_PROFILE;
 
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import org.jetbrains.annotations.NotNull;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.impl.DSL;
-
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PROFILE_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.TS_PROFILE_T;
 
-import static usace.cwms.db.jooq.codegen.tables.AV_TS_PROFILE.AV_TS_PROFILE;
+
 
 public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
     public TimeSeriesProfileDao(DSLContext dsl) {
@@ -28,6 +28,7 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
     public void storeTimeSeriesProfile(TimeSeriesProfile timeSeriesProfile, boolean failIfExists) {
 
         connection(dsl, conn -> {
+            setOffice(conn, timeSeriesProfile.getLocationId().getOfficeId());
             List<String> parameterList = timeSeriesProfile.getParameterList();
             StringBuilder parameterString = new StringBuilder(parameterList.get(0));
 
@@ -38,6 +39,7 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
             if (timeSeriesProfile.getReferenceTsId() != null) {
                 referenceTsId = timeSeriesProfile.getReferenceTsId().getName();
             }
+            setOffice(conn, timeSeriesProfile.getLocationId().getOfficeId());
             CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE(DSL.using(conn).configuration(), timeSeriesProfile.getLocationId().getName(),
                     timeSeriesProfile.getKeyParameter(),
                     parameterString.toString(),
@@ -47,6 +49,7 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
 
     public TimeSeriesProfile retrieveTimeSeriesProfile(String locationId, String parameterId, String officeId) {
         return connectionResult(dsl, conn -> {
+            setOffice(conn, officeId);
             TS_PROFILE_T timeSeriesProfile = CWMS_TS_PROFILE_PACKAGE.call_RETRIEVE_TS_PROFILE(
                     DSL.using(conn).configuration(), locationId, parameterId, officeId);
             return map(timeSeriesProfile, locationId, parameterId, officeId);
@@ -54,16 +57,20 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
     }
 
     public void deleteTimeSeriesProfile(String locationId, String keyParameter, String officeId) {
-        connection(dsl, conn ->
+        connection(dsl, conn -> {
+                setOffice(conn, officeId);
                 CWMS_TS_PROFILE_PACKAGE.call_DELETE_TS_PROFILE(DSL.using(conn).configuration(), locationId, keyParameter, "DELETE ALL",
-                        officeId));
+                        officeId);
+        });
     }
 
     public void copyTimeSeriesProfile(String locationId, String keyParameter, String destinationLocation, String destRefTsId, String officeId) {
-        connection(dsl, conn ->
+        connection(dsl, conn -> {
+                setOffice(conn, officeId);
                 CWMS_TS_PROFILE_PACKAGE.call_COPY_TS_PROFILE(DSL.using(conn).configuration(), locationId, keyParameter, destinationLocation,
                         destRefTsId, "F", "F",
-                        officeId));
+                        officeId);
+        });
     }
      public List<TimeSeriesProfile> catalogTimeSeriesProfiles(String locationIdMask, String parameterIdMask, String officeIdMask) {
          List<TimeSeriesProfile> timeSeriesProfileList = new ArrayList<>();

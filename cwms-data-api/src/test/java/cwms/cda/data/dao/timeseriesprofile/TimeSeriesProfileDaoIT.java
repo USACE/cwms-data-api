@@ -23,7 +23,13 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
     void testCopyTimeSeriesProfile() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            String officeId ="LRL";
+            String officeId ="SPK";
+            try {
+            createLocation("Glensboro", true, officeId, "SITE");
+            createLocation("Greensburg", true, officeId, "SITE");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
             TimeSeriesProfileDao timeSeriesProfileDao = new TimeSeriesProfileDao(context);
             TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile(officeId, "Glensboro", "Depth");
@@ -49,8 +55,13 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
-            String officeId = "LRL";
-
+            String officeId = "SPK";
+            try {
+                createLocation("Glensboro", true, officeId, "SITE");
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             TimeSeriesProfileDao timeSeriesProfileDao = new TimeSeriesProfileDao(context);
 
             TimeSeriesProfile timeSeriesProfileIn = buildTestTimeSeriesProfile(officeId,"Glensboro","Depth");
@@ -72,8 +83,14 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
-            String officeId = "LRL";
-
+            String officeId = "SPK";
+            try {
+                createLocation("Glensboro", true, officeId, "SITE");
+                createLocation("Greensburg", true, officeId, "SITE");
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             TimeSeriesProfileDao timeSeriesProfileDao = new TimeSeriesProfileDao(context);
             timeSeriesProfileDao.storeTimeSeriesProfile(buildTestTimeSeriesProfile(officeId,"Glensboro","Depth"), false);
             timeSeriesProfileDao.storeTimeSeriesProfile(buildTestTimeSeriesProfile(officeId,"Greensburg","Pres"), false);
@@ -98,8 +115,13 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
-            String officeId = "LRL";
-
+            String officeId = "SPK";
+            try {
+                createLocation("Glensboro", true, officeId, "SITE");
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             TimeSeriesProfileDao timeSeriesProfileDao = new TimeSeriesProfileDao(context);
             TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile(officeId,"Glensboro","Depth");
             timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
@@ -118,7 +140,7 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    static private TimeSeriesProfile buildTestTimeSeriesProfile(String officeId, String location, String keyParameter) {
+    private static TimeSeriesProfile buildTestTimeSeriesProfile(String officeId, String location, String keyParameter) {
         CwmsId locationId = new CwmsId.Builder().withOfficeId(officeId).withName(location).build();
         CwmsId refTsId = new CwmsId.Builder().withOfficeId(officeId).withName("Greensburg.Stage.Inst.1Hour.0.USGS-rev").build();
         return new TimeSeriesProfile.Builder()

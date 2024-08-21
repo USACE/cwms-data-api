@@ -1,0 +1,28 @@
+{
+  "type": "indexed-timeseries-profile-parser",
+  "location-id": {
+    "office-id": "SPK",
+    "name": "Test_TSP_Location"
+  },
+  "key-parameter": "Depth",
+  "record-delimiter": "\n",
+  "time-format": "MM/DD/YYYY,HH24:MI:SS",
+  "time-zone": "UTC",
+  "parameter-info-list": [
+    {
+      "type": "indexed-parameter-info",
+      "parameter": "Depth",
+      "unit": "m",
+      "index": 7
+    },
+    {
+      "type": "indexed-parameter-info",
+      "parameter": "Temp-Water",
+      "unit": "F",
+      "index": 8
+    }
+  ],
+  "time-in-two-fields": false,
+  "field-delimiter": ",",
+  "time-field": 1
+}

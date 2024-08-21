@@ -1,0 +1,58 @@
+{
+  "time-series-profile": {
+    "location-id": {
+      "office-id": "SPK",
+      "name": "Test_TSP_Location"
+    },
+    "description": "Description",
+    "parameter-list": [
+      "Temp-Water",
+      "Depth"
+    ],
+    "key-parameter": "Depth",
+    "reference-ts-id": {
+      "office-id": "SPK",
+      "name": "Test_TSP_Location.Elev.Inst.1Hour.0.DSS-Obs"
+    }
+  },
+  "time-series-list": [
+    {
+      "parameter": "Temp-Water",
+      "unit": "F",
+      "time-zone": "PST",
+      "values": [
+        {
+          "date-time": 1612869582120,
+          "value": 1.0,
+          "quality": 0
+        },
+        {
+          "date-time": 1612869582220,
+          "value": 3.0,
+          "quality": 0
+        }
+      ]
+    },
+    {
+      "parameter": "Depth",
+      "unit": "ft",
+      "time-zone": "PST",
+      "values": [
+        {
+          "date-time": 1612869582120,
+          "value": 1.0,
+          "quality": 0
+        },
+        {
+          "date-time": 1612869582220,
+          "value": 3.0,
+          "quality": 0
+        }
+      ]
+    }
+  ],
+  "first-date": 1594296000000,
+  "last-date": 1752062400000,
+  "version": "Raw",
+  "version-date": 1612869582120
+}

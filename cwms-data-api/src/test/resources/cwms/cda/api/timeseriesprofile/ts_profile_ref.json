@@ -1,0 +1,16 @@
+{
+  "description": "Description",
+  "parameter-list": [
+    "Temp-Water",
+    "Depth"
+  ],
+  "location-id": {
+    "office-id": "SPK",
+    "name": "Test_TSP_Location"
+  },
+  "reference-ts-id": {
+    "office-id": "SWT",
+    "name": "Test_TSP_Location.Elev.Inst.1Hour.0.DSS-Obs"
+  },
+  "key-parameter": "Depth"
+}

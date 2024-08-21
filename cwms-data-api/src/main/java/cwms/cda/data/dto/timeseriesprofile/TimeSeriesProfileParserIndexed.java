@@ -16,7 +16,7 @@ import java.math.BigInteger;
 @JsonDeserialize(builder = TimeSeriesProfileParserIndexed.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public  class TimeSeriesProfileParserIndexed extends TimeSeriesProfileParser {
+public class TimeSeriesProfileParserIndexed extends TimeSeriesProfileParser {
     private final Character fieldDelimiter;
     private final Integer timeField;
 

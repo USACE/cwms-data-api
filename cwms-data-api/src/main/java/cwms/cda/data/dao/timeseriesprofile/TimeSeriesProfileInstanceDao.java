@@ -40,23 +40,27 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		super(dsl);
 	}
 
-	void storeTimeSeriesProfileInstance(TimeSeriesProfile timeSeriesProfile, String profileData, Instant versionDate,
+	public void storeTimeSeriesProfileInstance(TimeSeriesProfile timeSeriesProfile, String profileData, Instant versionDate,
 			String versionId, String storeRule, boolean overrideProtection)
 	{
-		connection(dsl, conn -> CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_INSTANCE__2(DSL.using(conn).configuration(),
-                timeSeriesProfile.getLocationId().getName(),
-                timeSeriesProfile.getKeyParameter(),
-                profileData,
-                versionId,
-                storeRule,
-                overrideProtection?"T":"F",
-                versionDate!=null?Timestamp.from(versionDate):null,
-                timeSeriesProfile.getLocationId().getOfficeId()));
+		connection(dsl, conn -> {
+			setOffice(conn, timeSeriesProfile.getLocationId().getOfficeId());
+			CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_INSTANCE__2(DSL.using(conn).configuration(),
+					timeSeriesProfile.getLocationId().getName(),
+					timeSeriesProfile.getKeyParameter(),
+					profileData,
+					versionId,
+					storeRule,
+					overrideProtection?"T":"F",
+					versionDate!=null?Timestamp.from(versionDate):null,
+					timeSeriesProfile.getLocationId().getOfficeId());
+		});
 	}
 
-	void storeTimeSeriesProfileInstance(TimeSeriesProfileInstance timeseriesProfileInstance, String versionId, Instant versionInstant, String storeRule,String overrideProtection)
+	public void storeTimeSeriesProfileInstance(TimeSeriesProfileInstance timeseriesProfileInstance, String versionId, Instant versionInstant, String storeRule,String overrideProtection)
 	{
 		connection(dsl, conn -> {
+			setOffice(conn, timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId());
 			BigDecimal locationCodeId = CWMS_LOC_PACKAGE.call_GET_LOCATION_CODE(DSL.using(conn).configuration(),
 					timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId(),
 					timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getName());
@@ -137,7 +141,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 	}
 
 
-	List<TimeSeriesProfileInstance> catalogTimeSeriesProfileInstances( String officeIdMask, String locationIdMask, String parameterIdMask, String versionMask)
+	public List<TimeSeriesProfileInstance> catalogTimeSeriesProfileInstances( String officeIdMask, String locationIdMask, String parameterIdMask, String versionMask)
 	{
 		List<TimeSeriesProfileInstance> timeSeriesProfileInstanceList = new ArrayList<>();
 
@@ -172,7 +176,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		return timeSeriesProfileInstanceList;
 	}
 
-	TimeSeriesProfileInstance retrieveTimeSeriesProfileInstance(CwmsId location, String keyParameter,
+	public TimeSeriesProfileInstance retrieveTimeSeriesProfileInstance(CwmsId location, String keyParameter,
 		String version,
 		String unit,
 		Instant startTime,
@@ -186,6 +190,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		String maxVersion)
 	{
 		return connectionResult(dsl, conn -> {
+			setOffice(conn, location.getOfficeId());
 			TS_PROF_DATA_T timeSeriesProfileData;
 				timeSeriesProfileData = CWMS_TS_PROFILE_PACKAGE.call_RETRIEVE_TS_PROFILE_DATA(
 						DSL.using(conn).configuration(),
@@ -208,11 +213,11 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			return map(DSL.using(conn).configuration(), location.getOfficeId(), timeSeriesProfileData, version, versionDate);
 		});
 	}
-	void deleteTimeSeriesProfileInstance(CwmsId location, String keyParameter,
+	public void deleteTimeSeriesProfileInstance(CwmsId location, String keyParameter,
 			String version, Instant firstDate, String timeZone,boolean overrideProtection, Instant versionDate)
 	{
 		connection(dsl, conn -> {
-
+			setOffice(conn, location.getOfficeId());
 			Timestamp versionTimestamp = null;
 			if(versionDate!=null)
 			{

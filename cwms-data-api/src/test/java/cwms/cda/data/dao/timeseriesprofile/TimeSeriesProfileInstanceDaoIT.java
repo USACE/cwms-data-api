@@ -40,8 +40,13 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
     void testStoreTimeSeriesProfileInstanceWithDataBlock() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            String officeId = "LRL";
+            String officeId = "SPK";
             String locationName = "Glensboro";
+            try {
+                createLocation(locationName, true, officeId, "SITE");
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
             String versionId = "VERSION";
             String unit = "kPa,m";
             String[] parameterArray = {"Depth", "Pres"};
@@ -107,8 +112,13 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
     void testStoreTimeSeriesProfileInstanceWithDataBlockColumnar() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            String officeId = "LRL";
+            String officeId = "SPK";
             String locationName = "Glensboro";
+            try {
+                createLocation(locationName, true, officeId, "SITE");
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
             String versionId = "VERSION";
             String unit = "kPa,m";
             String[] parameterArray = {"Depth", "Pres"};
@@ -174,8 +184,13 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
     @Test
     void testCatalogTimeSeriesProfileInstances() throws SQLException {
         Instant versionDate = Instant.parse("2024-07-09T12:00:00.00Z");
-        String officeId = "LRL";
+        String officeId = "SPK";
         String location = "Glensboro";
+        try {
+            createLocation(location, true, officeId, "SITE");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         String[] keyParameter = {"Depth", "m"};
         String[] parameter1 = {"Pres", "psi"};
         String[] versions = {"VERSION", "VERSION2", "VERSION3"};
@@ -211,14 +226,19 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             }
             // check if we retrieve all the instances we stored
             assertEquals(versions.length, result.size(), CwmsDataApiSetupCallback.getWebUser());
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
     void testRetrieveTimeSeriesProfileInstance() throws SQLException {
-        String officeId = "LRL";
+        String officeId = "SPK";
         String versionID = "VERSION";
         String locationName = "Glensboro";
+        try {
+            createLocation(locationName, true, officeId, "SITE");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         String[] keyParameter = {"Depth", "m"};
         String[] parameter1 = {"Pres", "psi"};
         String unit = "bar,m";
@@ -264,8 +284,13 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
     @Test
     void testDeleteTimeSeriesProfileInstance() throws SQLException {
         Instant versionDate = Instant.parse("2024-07-09T12:00:00.00Z");
-        String officeId = "LRL";
+        String officeId = "SPK";
         String locationName = "Glensboro";
+        try {
+            createLocation(locationName, true, officeId, "SITE");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         String[] keyParameter = {"Depth", "m"};
         String[] parameter1 = {"Pres", "psi"};
         String unit = "kPa,m";
@@ -334,8 +359,13 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
     @Test
     void testStoreTimeSeriesProfileInstance() throws SQLException {
         String versionId = "VERSION";
-        String officeId = "LRL";
+        String officeId = "SPK";
         String locationName = "Glensboro";
+        try {
+            createLocation(locationName, true, officeId, "SITE");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         String[] parameterArray = {"Depth", "Pres"};
         String[] parameterUnitArray = {"m", "bar"};
         int[] parameterIndexArray = {5, 6};
@@ -495,7 +525,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                 .build();
     }
 
-    static private TimeSeriesProfile buildTestTimeSeriesProfile(String officeId, String locationName, String keyParameter, String parameter1) {
+    private static TimeSeriesProfile buildTestTimeSeriesProfile(String officeId, String locationName, String keyParameter, String parameter1) {
         CwmsId locationId = new CwmsId.Builder().withOfficeId(officeId).withName(locationName).build();
         return new TimeSeriesProfile.Builder()
                 .withLocationId(locationId)
@@ -533,7 +563,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                         .build();
     }
 
-    static private TimeSeriesProfileParserIndexed buildTestTimeSeriesProfileParserIndexed(String officeId, String location, String[] parameterArray, int[] parameterIndexArray, String[] parameterUnitArray,
+    private static TimeSeriesProfileParserIndexed buildTestTimeSeriesProfileParserIndexed(String officeId, String location, String[] parameterArray, int[] parameterIndexArray, String[] parameterUnitArray,
             char recordDelimiter, char fieldDelimiter, String timeFormat, String timeZone, int timeField) {
         List<ParameterInfo> parameterInfoList = new ArrayList<>();
         for (int i = 0; i < parameterArray.length; i++) {
