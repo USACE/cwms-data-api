@@ -21,7 +21,6 @@
 package cwms.cda.data.dao.location.kind;
 
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dto.AssignedLocation;
