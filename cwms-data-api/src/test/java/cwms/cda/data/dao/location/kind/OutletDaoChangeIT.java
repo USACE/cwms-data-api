@@ -21,6 +21,7 @@
 package cwms.cda.data.dao.location.kind;
 
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dto.AssignedLocation;
@@ -181,9 +182,7 @@ class OutletDaoChangeIT extends ProjectStructureIT {
             assertContainsAll(changes, modifiedChange, CHANGE_2);
 
             dao.deleteOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true);
-            changes = dao.retrieveOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true, true, "EN", 3);
-
-            assertTrue(changes.isEmpty());
+            assertThrows(NotFoundException.class, () -> dao.retrieveOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true, true, "EN", 3));
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 

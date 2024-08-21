@@ -20,6 +20,7 @@
 
 package cwms.cda.data.dao.location.kind;
 
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.LocationGroupDao;
@@ -269,9 +270,15 @@ public class OutletDao extends JooqDao<Outlet> {
                     formatBool(startInclusive), formatBool(endInclusive), rowLimitBig);
 
             List<GateChange> output = new ArrayList<>();
-            if (changeTab != null) {
-                changeTab.stream().map(OutletDao::map).forEach(output::add);
+            if (changeTab == null) {
+                throw new NotFoundException("No operational changes found at " + projectId + " for time " + startTime +
+                                                    " to " + endTime + ".\n" +
+                                                    "Start inclusive: " + startInclusive + "\n" +
+                                                    "End inclusive: " + endInclusive + "\n" +
+                                                    "Unit system: " + unitSystem + "\n" +
+                                                    "Row limit: " + rowLimit);
             }
+            changeTab.stream().map(OutletDao::map).forEach(output::add);
             return output;
         });
     }
