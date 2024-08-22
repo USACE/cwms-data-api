@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -39,21 +40,19 @@ import java.util.Objects;
 public class GateChange  extends PhysicalStructureChange<GateSetting> {
     private final Double referenceElevation;
 
-    @JsonProperty(required = true)
-    private final double poolElevation;
-
     GateChange(Builder builder) {
         super(builder);
-        this.poolElevation = Objects.requireNonNull(builder.poolElevation, "Pool elevation is required when creating a GateChange");
         this.referenceElevation = builder.referenceElevation;
-    }
-
-    public double getPoolElevation() {
-        return poolElevation;
     }
 
     public Double getReferenceElevation() {
         return referenceElevation;
+    }
+
+    @Override
+    protected void validateInternal(CwmsDTOValidator validator) {
+        validator.required(getPoolElevation(), "pool-elevation");
+        super.validateInternal(validator);
     }
 
     public static final class Builder extends PhysicalStructureChange.Builder<GateChange.Builder, GateSetting> {
@@ -66,7 +65,6 @@ public class GateChange  extends PhysicalStructureChange<GateSetting> {
         public Builder(GateChange gateChange) {
             super(gateChange);
             this.referenceElevation = gateChange.referenceElevation;
-            this.poolElevation = gateChange.poolElevation;
         }
 
         public Builder referenceElevation(Double referenceElevation) {

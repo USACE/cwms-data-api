@@ -37,13 +37,13 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonTypeName("gate-setting")
 public final class GateSetting extends Setting {
     @JsonProperty(required = true)
-    private final double opening;
+    private final Double opening;
     @JsonProperty(required = true)
     private final String openingParameter;
     @JsonProperty(required = true)
     private final String openingUnits;
     @JsonProperty(required = true)
-    private final double invertElevation;
+    private final Double invertElevation;
 
     private GateSetting(Builder builder) {
         super(builder);
@@ -53,11 +53,11 @@ public final class GateSetting extends Setting {
         invertElevation = builder.invertElevation;
     }
 
-    public double getInvertElevation() {
+    public Double getInvertElevation() {
         return invertElevation;
     }
 
-    public double getOpening() {
+    public Double getOpening() {
         return opening;
     }
 
@@ -70,17 +70,17 @@ public final class GateSetting extends Setting {
     }
 
     public static final class Builder extends Setting.Builder<GateSetting.Builder> {
-        private double opening;
+        private Double opening;
         private String openingParameter;
         private String openingUnits;
-        private double invertElevation;
+        private Double invertElevation;
 
         @Override
         protected Builder self() {
             return this;
         }
 
-        public Builder withOpening(double opening) {
+        public Builder withOpening(Double opening) {
             this.opening = opening;
             return self();
         }
@@ -95,7 +95,7 @@ public final class GateSetting extends Setting {
             return self();
         }
 
-        public Builder withInvertElevation(double invertElevation) {
+        public Builder withInvertElevation(Double invertElevation) {
             this.invertElevation = invertElevation;
             return self();
         }

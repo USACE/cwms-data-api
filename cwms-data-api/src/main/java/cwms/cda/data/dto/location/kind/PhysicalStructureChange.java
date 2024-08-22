@@ -60,6 +60,7 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
     private final String elevationUnits;
     private final String notes;
     private final Set<T> settings;
+    private final Double poolElevation;
 
     PhysicalStructureChange(Builder<?,T> builder) {
         this.projectId = builder.projectId;
@@ -74,6 +75,7 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
         this.notes = builder.notes;
         this.changeDate = builder.changeDate;
         this.settings = builder.settings;
+        this.poolElevation = builder.poolElevation;
     }
 
     public CwmsId getProjectId() {
@@ -123,6 +125,10 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
 
     public Set<T> getSettings() {
         return settings;
+    }
+
+    public Double getPoolElevation() {
+        return poolElevation;
     }
 
     @Override

@@ -20,6 +20,7 @@
 
 package cwms.cda.data.dto.location.kind;
 
+import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -30,8 +31,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class GateSettingTest {
     private static final String OFFICE_ID = "SPK";
@@ -73,6 +73,42 @@ class GateSettingTest {
         List<GateSetting> deserialized = assertDoesNotThrow(() -> Formats.parseContentList(contentType, json, GateSetting.class), "Unable to parse gate change json");
         List<GateSetting> changes = Arrays.asList(TEST_GATE_SETTING, SECOND_GATE_SETTING);
         DTOMatch.assertMatch(changes, deserialized, DTOMatch::assertMatch);
+    }
+
+    @Test
+    void testMissingFields() {
+        String openingUnits = "ft";
+        String openingParameter = "Opening";
+        double invertElevation = 1;
+        double opening = 2;
+
+        GateSetting.Builder builder = new GateSetting.Builder().withLocationId(BIGH_TG_1)
+                                                               .withOpeningUnits(openingUnits)
+                                                               .withOpeningParameter(openingParameter)
+                                                               .withInvertElevation(invertElevation)
+                                                               .withOpening(opening);
+
+        assertAll(() -> assertDoesNotThrow(() -> builder.build().validate()),
+                  () -> assertThrows(RequiredFieldException.class, () -> builder.withLocationId(null)
+                                                                                .build()
+                                                                                .validate()),
+                  () -> assertThrows(RequiredFieldException.class, () -> builder.withLocationId(BIGH_TG_1)
+                                                                                .withOpeningUnits(null)
+                                                                                .build()
+                                                                                .validate()),
+                  () -> assertThrows(RequiredFieldException.class, () -> builder.withOpeningUnits(openingUnits)
+                                                                                .withOpeningParameter(null)
+                                                                                .build()
+                                                                                .validate()),
+                  () -> assertThrows(RequiredFieldException.class, () -> builder.withOpeningParameter(openingParameter)
+                                                                                .withOpening(null)
+                                                                                .build()
+                                                                                .validate()),
+                  () -> assertThrows(RequiredFieldException.class, () -> builder.withOpening(opening)
+                                                                                .withInvertElevation(null)
+                                                                                .build()
+                                                                                .validate())
+        );
     }
 
     static GateSetting buildTestGateSetting(CwmsId locationId, double opening, double invertElev) {

@@ -20,6 +20,7 @@
 
 package cwms.cda.data.dto.location.kind;
 
+import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.ContentType;
@@ -30,12 +31,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class GateChangeTest {
     private static final String OFFICE_ID = "SPK";
@@ -100,6 +101,68 @@ class GateChangeTest {
         List<GateChange> deserialized = assertDoesNotThrow(() -> Formats.parseContentList(contentType, json, GateChange.class), "Unable to parse gate change json");
         List<GateChange> changes = Arrays.asList(TEST_GATE_CHANGE, SECOND_GATE_CHANGE);
         DTOMatch.assertMatch(changes, deserialized, DTOMatch::assertMatch);
+    }
+
+    @Test
+    void testMissingRequiredFields() {
+        LookupType dischargeComputationType = new LookupType.Builder().withActive(true)
+                                                                      .withDisplayValue("A")
+                                                                      .withTooltip("Adjusted by an automated method")
+                                                                      .withOfficeId("CWMS")
+                                                                      .build();
+        LookupType reasonType = new LookupType.Builder().withActive(true)
+                                                        .withDisplayValue("O")
+                                                        .withTooltip("Other release")
+                                                        .withOfficeId("CWMS")
+                                                        .build();
+        boolean isProtected = true;
+        Double newTotalDischargeOverride = 1.0;
+        Double oldTotalDischargeOverride = 2.0;
+        String dischargeUnits = "cfs";
+        Double poolElevation = 3.0;
+        Double tailwaterElevation = 4.0;
+        String elevationUnits = "ft";
+        String notes = "Test notes";
+
+        GateChange.Builder builder = new GateChange.Builder().withProjectId(PROJECT_ID)
+                                                             .withDischargeComputationType(dischargeComputationType)
+                                                             .withReasonType(reasonType)
+                                                             .withProtected(isProtected)
+                                                             .withNewTotalDischargeOverride(newTotalDischargeOverride)
+                                                             .withOldTotalDischargeOverride(oldTotalDischargeOverride)
+                                                             .withDischargeUnits(dischargeUnits)
+                                                             .withPoolElevation(poolElevation)
+                                                             .withTailwaterElevation(tailwaterElevation)
+                                                             .withElevationUnits(elevationUnits)
+                                                             .withNotes(notes)
+                                                             .withChangeDate(JAN_FIRST)
+                                                             .withSettings(new ArrayList<>());
+        assertAll(() -> assertDoesNotThrow(() -> builder.build().validate()),
+                  () -> assertThrows(RequiredFieldException.class, () -> builder.withProjectId(null)
+                                                                                .build()
+                                                                                .validate(),
+                                     "project-id"),
+                  () -> assertThrows(RequiredFieldException.class, () -> builder.withProjectId(PROJECT_ID)
+                                                                                .withDischargeComputationType(null)
+                                                                                .build()
+                                                                                .validate(),
+                                     "discharge-computation-type"),
+                  () -> assertThrows(RequiredFieldException.class, () -> builder.withDischargeComputationType(dischargeComputationType)
+                                                                                .withReasonType(null)
+                                                                                .build()
+                                                                                .validate(),
+                                     "reason-type"),
+                  () -> assertThrows(RequiredFieldException.class, () -> builder.withReasonType(reasonType)
+                                                                                .withPoolElevation(null)
+                                                                                .build()
+                                                                                .validate(),
+                                     "pool-elevation"),
+                  () -> assertThrows(RequiredFieldException.class, () -> builder.withPoolElevation(poolElevation)
+                                                                                .withChangeDate(null)
+                                                                                .build()
+                                                                                .validate(),
+                                     "change-date")
+        );
     }
 
     static GateChange buildTestGateChange(CwmsId projectId, Instant changeDate, GateSetting ... settingVargs) {
