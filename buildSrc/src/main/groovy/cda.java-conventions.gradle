@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'checkstyle'
     id 'jacoco'
+    id 'org.owasp.dependencycheck'
 }
 
 eclipse {
