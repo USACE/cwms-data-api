@@ -71,10 +71,11 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+import usace.cwms.db.dao.util.OracleTypeMap;
 
 
 public final class TimeSeriesProfileInstanceController implements CrudHandler {
-    public static final String PROFILE_DATA = "profile-date";
+    public static final String PROFILE_DATA = "profile-data";
     public static final String PARAMETER_ID_MASK = "parameter-id-mask";
     public static final String VERSION_MASK = "version-mask";
     public static final String PARAMETER_ID = "parameter-id";
@@ -159,7 +160,7 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
                 @OpenApiParam(name = TIMESERIES_ID, description = "The time series ID of the"
                         + " time series profile instance. Default is null")
             },
-            path = "/timeseries/instance",
+            path = "/timeseries/instance/{timeseries-id}",
             method = HttpMethod.DELETE,
             summary = "Get all time series profile instances",
             tags = {TAG},
@@ -191,13 +192,13 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
     @OpenApi(
             queryParams = {
                 @OpenApiParam(name = OFFICE_MASK, description = "The office mask of the"
-                        + " time series profile instance. Default is null"),
+                        + " time series profile instance. Default is *"),
                 @OpenApiParam(name = LOCATION_MASK, description = "The location ID mask of the"
-                        + " time series profile instance. Default is null"),
+                        + " time series profile instance. Default is *"),
                 @OpenApiParam(name = PARAMETER_ID_MASK, description = "The parameter ID mask of the"
-                        + " time series profile instance. Default is null"),
+                        + " time series profile instance. Default is *"),
                 @OpenApiParam(name = VERSION_MASK, description = "The version mask of the"
-                        + " time series profile instance. Default is null"),
+                        + " time series profile instance. Default is *"),
             },
             path = "/timeseries/instance",
             method = HttpMethod.GET,
@@ -212,10 +213,10 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             TimeSeriesProfileInstanceDao tspInstanceDao = new TimeSeriesProfileInstanceDao(dsl);
-            String officeMask = ctx.queryParam(OFFICE_MASK);
-            String locationMask = ctx.queryParam(LOCATION_MASK);
-            String parameterIdMask = ctx.queryParam(PARAMETER_ID_MASK);
-            String versionMask = ctx.queryParam(VERSION_MASK);
+            String officeMask = ctx.queryParamAsClass(OFFICE_MASK, String.class).getOrDefault("*");
+            String locationMask = ctx.queryParamAsClass(LOCATION_MASK, String.class).getOrDefault("*");
+            String parameterIdMask = ctx.queryParamAsClass(PARAMETER_ID_MASK, String.class).getOrDefault("*");
+            String versionMask = ctx.queryParamAsClass(VERSION_MASK, String.class).getOrDefault("*");
             List<TimeSeriesProfileInstance> retrievedInstances = tspInstanceDao
                     .catalogTimeSeriesProfileInstances(officeMask, locationMask, parameterIdMask, versionMask);
             String acceptHeader = ctx.header(Header.ACCEPT);
@@ -244,12 +245,12 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
                 + " time series profile instance. Default is true"),
             @OpenApiParam(name = END_INCLUSIVE, type = Boolean.class, description = "The end inclusive of the"
                 + " time series profile instance. Default is true"),
-            @OpenApiParam(name = PREVIOUS, description = "The previous of the"
-                + " time series profile instance. Default is null"),
-            @OpenApiParam(name = NEXT, description = "The next of the"
-                + " time series profile instance. Default is null"),
-            @OpenApiParam(name = MAX_VERSION, description = "The max version of the"
-                + " time series profile instance. Default is null"),
+            @OpenApiParam(name = PREVIOUS, type = boolean.class, description = "The previous of the"
+                + " time series profile instance. Default is false"),
+            @OpenApiParam(name = NEXT, type = boolean.class, description = "The next of the"
+                + " time series profile instance. Default is false"),
+            @OpenApiParam(name = MAX_VERSION, type = boolean.class, description = "Whether the provided version"
+                + " is the max version of the time series profile instance. Default is false"),
             @OpenApiParam(name = START, type = Instant.class, description = "The start of the"
                 + " time series profile instance. Default is the year 1800"),
             @OpenApiParam(name = END, type = Instant.class, description = "The end of the"
@@ -281,13 +282,17 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
             Instant endTime = Instant.ofEpochMilli(ctx.queryParamAsClass(END, Long.class)
                     .getOrDefault(Instant.now().toEpochMilli()));
             String timeZone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-            String startInclusive = ctx.queryParamAsClass(START_INCLUSIVE, boolean.class).getOrDefault(true).toString();
-            String endInclusive = ctx.queryParamAsClass(END_INCLUSIVE, boolean.class).getOrDefault(true).toString();
-            String previous = ctx.queryParam(PREVIOUS);
-            String next = ctx.queryParam(NEXT);
+            String startInclusive = OracleTypeMap.formatBool(ctx.queryParamAsClass(START_INCLUSIVE, boolean.class)
+                    .getOrDefault(true));
+            String endInclusive = OracleTypeMap.formatBool(ctx.queryParamAsClass(END_INCLUSIVE, boolean.class)
+                    .getOrDefault(true));
+            String previous = OracleTypeMap.formatBool(ctx.queryParamAsClass(PREVIOUS, boolean.class)
+                    .getOrDefault(false));
+            String next = OracleTypeMap.formatBool(ctx.queryParamAsClass(NEXT, boolean.class).getOrDefault(false));
             Instant versionDate = Instant.ofEpochMilli(ctx.queryParamAsClass(VERSION_DATE, Long.class)
                     .getOrDefault(Instant.now().toEpochMilli()));
-            String maxVersion = ctx.queryParam(MAX_VERSION);
+            String maxVersion = OracleTypeMap.formatBool(ctx.queryParamAsClass(MAX_VERSION, boolean.class)
+                    .getOrDefault(false));
             CwmsId tspIdentifier = new CwmsId.Builder().withOfficeId(officeId).withName(timeSeriesId).build();
             TimeSeriesProfileInstance returnedInstance = tspInstanceDao.retrieveTimeSeriesProfileInstance(tspIdentifier,
                     keyParameter, version, unit, startTime, endTime, timeZone, startInclusive, endInclusive,

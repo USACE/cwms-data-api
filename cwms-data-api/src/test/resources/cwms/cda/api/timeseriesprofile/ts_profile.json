@@ -5,8 +5,8 @@
   },
   "description": "Test Description",
   "parameter-list": [
-    "Temp-Water",
-    "Depth"
+    "Depth",
+    "Temp-Water"
   ],
   "key-parameter": "Depth"
 }

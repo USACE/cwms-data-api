@@ -6,8 +6,8 @@
     },
     "description": "Description",
     "parameter-list": [
-      "Temp-Water",
-      "Depth"
+      "Depth",
+      "Temp-Water"
     ],
     "key-parameter": "Depth",
     "reference-ts-id": {
@@ -17,9 +17,9 @@
   },
   "time-series-list": [
     {
-      "parameter": "Temp-Water",
-      "unit": "F",
-      "time-zone": "PST",
+      "parameter": "Depth",
+      "unit": "m",
+      "time-zone": "UTC",
       "values": [
         {
           "date-time": 1612869582120,
@@ -34,9 +34,9 @@
       ]
     },
     {
-      "parameter": "Depth",
-      "unit": "ft",
-      "time-zone": "PST",
+      "parameter": "Temp-Water",
+      "unit": "F",
+      "time-zone": "UTC",
       "values": [
         {
           "date-time": 1612869582120,
@@ -53,6 +53,6 @@
   ],
   "first-date": 1594296000000,
   "last-date": 1752062400000,
-  "version": "Raw",
+  "version": "VERSION",
   "version-date": 1612869582120
 }

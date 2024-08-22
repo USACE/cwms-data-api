@@ -22,7 +22,7 @@
       "index": 8
     }
   ],
-  "time-in-two-fields": false,
+  "time-in-two-fields": true,
   "field-delimiter": ",",
   "time-field": 1
 }

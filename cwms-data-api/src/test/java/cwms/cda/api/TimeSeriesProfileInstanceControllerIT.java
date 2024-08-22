@@ -26,6 +26,13 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceController.*;
+import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
@@ -40,6 +47,10 @@ import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
@@ -47,18 +58,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceController.*;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 @Tag("integration")
@@ -73,13 +72,22 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_parser_columnar.json");
     private final InputStream resourceInstance = this.getClass()
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_instance.json");
-    private final InputStream profileResource = this.getClass()
+    private final InputStream profileResourceCol = this.getClass()
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_data_columnar.txt");
+    private final InputStream profileResourceInd = this.getClass()
+            .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_data.txt");
+    private final InputStream profileResourceCol2 = this.getClass()
+            .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_data_columnar_2.txt");
+    private final InputStream profileResourceInd2 = this.getClass()
+            .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_data_2.txt");
     private TimeSeriesProfile tsProfile;
     private TimeSeriesProfileParserIndexed tspParserIndexed;
     private TimeSeriesProfileParserColumnar tspParserColumnar;
     private TimeSeriesProfileInstance tspInstance;
-    private String tsProfileData;
+    private String tsProfileDataColumnar;
+    private String tsProfileDataIndexed;
+    private String tsProfileDataColumnar2;
+    private String tsProfileDataIndexed2;
     private String tspData;
 
     @BeforeEach
@@ -87,10 +95,16 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         assertNotNull(resource);
         assertNotNull(resourceIndexed);
         assertNotNull(resourceInstance);
-        assertNotNull(profileResource);
+        assertNotNull(profileResourceCol);
         assertNotNull(resourceColumnar);
+        assertNotNull(profileResourceInd);
+        assertNotNull(profileResourceCol2);
+        assertNotNull(profileResourceInd2);
         String tsDataInstance = IOUtils.toString(resourceInstance, StandardCharsets.UTF_8);
-        tsProfileData = IOUtils.toString(profileResource, StandardCharsets.UTF_8);
+        tsProfileDataColumnar = IOUtils.toString(profileResourceCol, StandardCharsets.UTF_8);
+        tsProfileDataIndexed = IOUtils.toString(profileResourceInd, StandardCharsets.UTF_8);
+        tsProfileDataColumnar2 = IOUtils.toString(profileResourceCol2, StandardCharsets.UTF_8);
+        tsProfileDataIndexed2 = IOUtils.toString(profileResourceInd2, StandardCharsets.UTF_8);
         tspData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         tsProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
                 TimeSeriesProfile.class), tspData, TimeSeriesProfile.class);
@@ -106,9 +120,6 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             DSLContext dsl = dslContext(c, OFFICE_ID);
             TimeSeriesProfileDao dao = new TimeSeriesProfileDao(dsl);
             dao.storeTimeSeriesProfile(tsProfile, false);
-            TimeSeriesProfileParserDao parserDao = new TimeSeriesProfileParserDao(dsl);
-            parserDao.storeTimeSeriesProfileParser(tspParserIndexed, false);
-            parserDao.storeTimeSeriesProfileParser(tspParserColumnar, false);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -117,20 +128,22 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext dsl = dslContext(c, OFFICE_ID);
-            cleanupTS(dsl, tsProfile.getLocationId().getName(), tsProfile.getKeyParameter());
+            cleanupInstance(dsl, tspInstance.getTimeSeriesProfile().getLocationId(),
+                    tspInstance.getTimeSeriesProfile().getKeyParameter(), tspInstance.getVersion(),
+                    tspInstance.getFirstDate(), "UTC",
+                    false, tspInstance.getVersionDate());
             cleanupParser(dsl, tspParserIndexed.getLocationId().getName(),
                     tspParserIndexed.getKeyParameter());
             cleanupParser(dsl, tspParserColumnar.getLocationId().getName(),
                     tspParserColumnar.getKeyParameter());
-            cleanupInstance(dsl, tspInstance.getTimeSeriesProfile().getLocationId(),
-                    tspInstance.getTimeSeriesProfile().getKeyParameter(), tspInstance.getVersion(),
-                    tspInstance.getFirstDate(), tspInstance.getTimeSeriesList().get(0).getTimeZone(),
-                    false, tspInstance.getVersionDate());
+            cleanupTS(dsl, tsProfile.getLocationId().getName(), tsProfile.getKeyParameter());
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
-    void test_create_retrieve_TimeSeriesProfileInstance() {
+    void test_create_retrieve_TimeSeriesProfileInstance_Columnar() throws Exception {
+
+        storeParser(null, tspParserColumnar);
 
         // Create instance
         given()
@@ -140,10 +153,10 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
-            .queryParam(OVERRIDE_PROTECTION, true)
-            .queryParam(VERSION_DATE, tspInstance.getVersionDate().toEpochMilli())
-            .queryParam(PROFILE_DATA, tsProfileData)
-            .queryParam(VERSION, tspInstance.getVersion())
+            .queryParam(OVERRIDE_PROTECTION, false)
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(PROFILE_DATA, tsProfileDataColumnar)
+            .queryParam(VERSION, "OBS")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -162,14 +175,14 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(PARAMETER_ID, tspInstance.getTimeSeriesProfile().getKeyParameter())
-            .queryParam(VERSION, tspInstance.getVersion())
-            .queryParam(VERSION_DATE, tspInstance.getVersionDate().toEpochMilli())
-            .queryParam(TIMEZONE, tspInstance.getTimeSeriesList().get(0).getTimeZone())
-            .queryParam(START, tspInstance.getFirstDate().toEpochMilli())
-            .queryParam(END, tspInstance.getLastDate().toEpochMilli())
+            .queryParam(VERSION, "OBS")
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
             .queryParam(START_INCLUSIVE, true)
             .queryParam(END_INCLUSIVE, true)
-            .queryParam(UNIT, "ft,F")
+            .queryParam(UNIT, "m,F")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -178,11 +191,80 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("version", equalTo("OBS"))
+            .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("time-series-profile.location-id.name",
+                    equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
+            .body("time-series-profile.key-parameter",
+                    equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
+            .body("time-series-profile.parameter-list[0]", equalTo("Depth"))
+            .body("time-series-list[0].values.size()", equalTo(3))
+            .body("time-series-profile.parameter-list[1]", equalTo("Temp-Water"))
         ;
     }
 
     @Test
-    void test_delete_TimeSeriesProfileInstance() {
+    void test_create_retrieve_TimeSeriesProfileInstance_Indexed() throws Exception {
+
+        storeParser(tspParserIndexed, null);
+
+        // Create instance
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tspData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(METHOD, StoreRule.REPLACE_ALL)
+            .queryParam(OVERRIDE_PROTECTION, true)
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(PROFILE_DATA, tsProfileDataIndexed)
+            .queryParam(VERSION, "Raw")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/instance")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Retrieve instance
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
+            .queryParam(VERSION, "Raw")
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(START_INCLUSIVE, true)
+            .queryParam(END_INCLUSIVE, true)
+            .queryParam(UNIT, "m,F")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .body("version", equalTo("Raw"))
+            .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .statusCode(is(HttpServletResponse.SC_OK))
+
+        // add further checking of body
+        ;
+    }
+
+    @Test
+    void test_delete_TimeSeriesProfileInstance_Columnar() throws Exception {
+
+        storeParser(null, tspParserColumnar);
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -193,7 +275,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
             .queryParam(OVERRIDE_PROTECTION, false)
             .queryParam(VERSION_DATE, tspInstance.getVersionDate().toEpochMilli())
-            .queryParam(PROFILE_DATA, tsProfileData)
+            .queryParam(PROFILE_DATA, tsProfileDataColumnar)
             .queryParam(VERSION, tspInstance.getVersion())
         .when()
             .redirects().follow(true)
@@ -212,11 +294,63 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
-            .queryParam(PARAMETER_ID, tspInstance.getTimeSeriesProfile().getKeyParameter())
+            .queryParam(PARAMETER_ID, tspParserColumnar.getKeyParameter())
             .queryParam(VERSION, tspInstance.getVersion())
             .queryParam(VERSION_DATE, tspInstance.getVersionDate().toEpochMilli())
-            .queryParam(TIMEZONE, tspInstance.getTimeSeriesList().get(0).getTimeZone())
+            .queryParam(TIMEZONE, "UTC")
             .queryParam(OVERRIDE_PROTECTION, false)
+            .queryParam(DATE, Instant.parse("2019-09-09T12:49:07Z").toEpochMilli())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+        ;
+    }
+
+    @Test
+    void test_delete_TimeSeriesProfileInstance_Indexed() throws Exception {
+
+        storeParser(tspParserIndexed, null);
+
+        // Create instance
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tspData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(METHOD, StoreRule.REPLACE_ALL)
+            .queryParam(OVERRIDE_PROTECTION, false)
+            .queryParam(VERSION_DATE, tspInstance.getVersionDate().toEpochMilli())
+            .queryParam(PROFILE_DATA, tsProfileDataIndexed)
+            .queryParam(VERSION, "Raw")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/instance")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Delete instance
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PARAMETER_ID, tspParserColumnar.getKeyParameter())
+            .queryParam(VERSION, "Raw")
+            .queryParam(VERSION_DATE, tspInstance.getVersionDate().toEpochMilli())
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(OVERRIDE_PROTECTION, false)
+            .queryParam(DATE, Instant.parse("2019-09-09T12:48:57Z").toEpochMilli())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -230,7 +364,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
 
     @Test
     void test_delete_nonExistent_TimeSeriesProfileInstance() {
-        // Retrieve instance
+        // Delete instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -255,7 +389,9 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
     }
 
     @Test
-    void test_retrieve_all_TimeSeriesProfileInstance() {
+    void test_retrieve_all_TimeSeriesProfileInstance_Columnar() throws Exception {
+        storeParser(null, tspParserColumnar);
+
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -265,8 +401,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
             .queryParam(OVERRIDE_PROTECTION, false)
-            .queryParam(VERSION_DATE, tspInstance.getVersionDate().toEpochMilli())
-            .queryParam(PROFILE_DATA, tsProfileData)
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(PROFILE_DATA, tsProfileDataColumnar)
             .queryParam(VERSION, tspInstance.getVersion())
         .when()
             .redirects().follow(true)
@@ -287,8 +423,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
             .queryParam(OVERRIDE_PROTECTION, false)
-            .queryParam(VERSION_DATE, tspInstance.getVersionDate().toEpochMilli())
-            .queryParam(PROFILE_DATA, tsProfileData)
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(PROFILE_DATA, tsProfileDataColumnar2)
             .queryParam(VERSION, tspInstance.getVersion())
         .when()
             .redirects().follow(true)
@@ -314,6 +450,87 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("[0].version", equalTo("VERSION"))
+            .body("[0].version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("[0].time-series-profile.key-parameter", equalTo("Depth"))
+            .body("[0].time-series-profile.parameter-list.size()", is(0))
+            .body("[1].version", equalTo("VERSION"))
+            .body("[1].version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("[1].time-series-profile.key-parameter", equalTo("Depth"))
+            .body("[1].time-series-profile.parameter-list.size()", is(0))
+        ;
+    }
+
+    @Test
+    void test_retrieve_all_TimeSeriesProfileInstance_Indexed() throws Exception {
+        storeParser(tspParserIndexed, null);
+
+        // Create instance
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tspData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(METHOD, StoreRule.REPLACE_ALL)
+            .queryParam(OVERRIDE_PROTECTION, false)
+            .queryParam(VERSION_DATE, tspInstance.getVersionDate().toEpochMilli())
+            .queryParam(VERSION, "Raw")
+            .queryParam(PROFILE_DATA, tsProfileDataIndexed)
+
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/instance")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tspData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(METHOD, StoreRule.REPLACE_ALL)
+            .queryParam(OVERRIDE_PROTECTION, false)
+            .queryParam(VERSION_DATE, tspInstance.getVersionDate().toEpochMilli())
+            .queryParam(PROFILE_DATA, tsProfileDataIndexed2)
+            .queryParam(VERSION, "Raw")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/instance/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Retrieve all instances
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/instance/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("[0].version", equalTo("Raw"))
+            .body("[0].version-date", equalTo(tspInstance.getVersionDate().toEpochMilli()))
+            .body("[0].time-series-profile.key-parameter", equalTo("Depth"))
+            .body("[0].time-series-profile.parameter-list.size()", is(0))
+            .body("[1].version", equalTo("OBS"))
+            .body("[1].version-date", equalTo(tspInstance.getVersionDate().toEpochMilli()))
+            .body("[1].time-series-profile.key-parameter", equalTo("Depth"))
+            .body("[1].time-series-profile.parameter-list.size()", is(0))
         ;
     }
 
@@ -344,5 +561,19 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         } catch (NotFoundException e) {
             // Ignore
         }
+    }
+
+    private void storeParser(TimeSeriesProfileParserIndexed parserI, TimeSeriesProfileParserColumnar parserC)
+            throws Exception {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE_ID);
+            TimeSeriesProfileParserDao dao = new TimeSeriesProfileParserDao(dsl);
+            if (parserI != null) {
+                dao.storeTimeSeriesProfileParser(parserI, false);
+            } else {
+                dao.storeTimeSeriesProfileParser(parserC, false);
+            }
+        });
     }
 }
