@@ -170,10 +170,11 @@ public final class TimeSeriesProfileParserController implements CrudHandler {
     @OpenApi(
         queryParams = {
             @OpenApiParam(name = PARAMETER_ID_MASK, description = "The ID mask of the TimeSeriesProfileParser"
-                    + " parameter"),
-            @OpenApiParam(name = OFFICE_MASK, description = "The office mask associated with the TimeSeriesProfile"),
+                    + " parameter. Default is *"),
+            @OpenApiParam(name = OFFICE_MASK, description = "The office mask associated with the "
+                    + "TimeSeriesProfile. Default is *"),
             @OpenApiParam(name = LOCATION_MASK, description = "The location ID mask associated"
-                    + " with the TimeSeriesProfile"),
+                    + " with the TimeSeriesProfile. Default is *"),
         },
         responses = {
             @OpenApiResponse(status = STATUS_200,
@@ -197,9 +198,9 @@ public final class TimeSeriesProfileParserController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String officeIdMask = ctx.queryParam(OFFICE_MASK);
-            String locationId = ctx.queryParam(LOCATION_MASK);
-            String parameterIdMask = ctx.queryParam(PARAMETER_ID_MASK);
+            String officeIdMask = ctx.queryParamAsClass(OFFICE_MASK, String.class).getOrDefault("*");
+            String locationId = ctx.queryParamAsClass(LOCATION_MASK, String.class).getOrDefault("*");
+            String parameterIdMask = ctx.queryParamAsClass(PARAMETER_ID_MASK, String.class).getOrDefault("*");
 
             TimeSeriesProfileParserDao tspParserDao = new TimeSeriesProfileParserDao(dsl);
             List<TimeSeriesProfileParser> tspParsers = tspParserDao.catalogTimeSeriesProfileParsers(locationId,

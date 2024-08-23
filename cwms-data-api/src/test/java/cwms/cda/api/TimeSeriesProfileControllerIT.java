@@ -47,7 +47,7 @@ import java.nio.charset.StandardCharsets;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
@@ -56,16 +56,24 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
     private static final TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     private final InputStream resource = this.getClass()
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile.json");
+    private final InputStream resource2 = this.getClass()
+            .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_2.json");
     private String tsData;
+    private String tsData2;
     private TimeSeriesProfile tsProfile;
 
     @BeforeEach
     public void setup() throws Exception {
         assertNotNull(resource);
+        assertNotNull(resource2);
         tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        tsData2 = IOUtils.toString(resource2, StandardCharsets.UTF_8);
         tsProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
                 TimeSeriesProfile.class), tsData, TimeSeriesProfile.class);
+        TimeSeriesProfile tsProfile2 = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+                TimeSeriesProfile.class), tsData2, TimeSeriesProfile.class);
         createLocation(tsProfile.getLocationId().getName(), true, OFFICE_ID, "SITE");
+        createLocation(tsProfile2.getLocationId().getName(), true, OFFICE_ID, "SITE");
     }
 
     @AfterEach
@@ -110,6 +118,11 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("location-id.name", is(tsProfile.getLocationId().getName()))
+            .body("key-parameter", is(tsProfile.getKeyParameter()))
+            .body("location-id.office-id", is(tsProfile.getLocationId().getOfficeId()))
+            .body("description", is(tsProfile.getDescription()))
+            .body("parameter-list[0]", equalTo(tsProfile.getKeyParameter()))
         ;
     }
 
@@ -139,7 +152,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .body(tsData)
+            .body(tsData2)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
         .when()
@@ -158,7 +171,6 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(OFFICE, OFFICE_ID)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -167,6 +179,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", is(2))
         ;
     }
 
@@ -208,6 +221,24 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+        ;
+
+        // Retrieve the Time Series Profile and assert that it is not found
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(LOCATION_ID, tsProfile.getLocationId().getName())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/profile/" + tsProfile.getKeyParameter())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
         ;
     }
 

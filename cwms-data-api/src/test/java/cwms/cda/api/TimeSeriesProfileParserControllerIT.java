@@ -31,6 +31,7 @@ import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
+import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserColumnar;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -50,9 +51,9 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserController.PARAMETER_ID_MASK;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -62,22 +63,31 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
     private static final TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     private final InputStream resourceIndexed = this.getClass()
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_parser_indexed.json");
+    private final InputStream resourceColumnar = this.getClass()
+            .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_parser_columnar.json");
     private final InputStream resource = this.getClass()
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile.json");
     private TimeSeriesProfileParserIndexed tspParserIndexed;
+    private TimeSeriesProfileParserColumnar tspParserColumnar;
     private TimeSeriesProfile tsProfile;
     private TimeSeriesProfile tspModified;
     private String tsDataIndexed;
+    private String tsDataColumnar;
+
 
     @BeforeEach
     public void setup() throws Exception {
         assertNotNull(resourceIndexed);
         assertNotNull(resource);
+        assertNotNull(resourceColumnar);
         tsDataIndexed = IOUtils.toString(resourceIndexed, StandardCharsets.UTF_8);
+        tsDataColumnar = IOUtils.toString(resourceColumnar, StandardCharsets.UTF_8);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
         tspParserIndexed = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
                 TimeSeriesProfileParserIndexed.class), tsDataIndexed, TimeSeriesProfileParserIndexed.class);
+        tspParserColumnar = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+                TimeSeriesProfileParserColumnar.class), tsDataColumnar, TimeSeriesProfileParserColumnar.class);
         tsProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
                 TimeSeriesProfile.class), tsData, TimeSeriesProfile.class);
         tspModified = new TimeSeriesProfile.Builder()
@@ -89,6 +99,8 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
         assertNotNull(tspModified);
         assertNotNull(tsDataIndexed);
         assertNotNull(tspParserIndexed);
+        assertNotNull(tsDataColumnar);
+        assertNotNull(tspParserColumnar);
         createLocation(tspParserIndexed.getLocationId().getName(), true, OFFICE_ID, "SITE");
         createLocation("NEW NAME", true, OFFICE_ID, "SITE");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -141,11 +153,63 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("location-id.name", is(tspParserIndexed.getLocationId().getName()))
+            .body("key-parameter", is(tspParserIndexed.getKeyParameter()))
+            .body("location-id.name", equalTo(tspParserIndexed.getLocationId().getName()))
+            .body("location-id.office-id", equalTo(tspParserIndexed.getLocationId().getOfficeId()))
+            .body("key-parameter", equalTo(tspParserIndexed.getKeyParameter()))
+            .body("time-format", equalTo(tspParserIndexed.getTimeFormat()))
+            .body("time-zone", equalTo(tspParserIndexed.getTimeZone()))
+            .body("parameter-info-list[0].parameter", equalTo(tspParserIndexed.getKeyParameter()))
         ;
     }
 
     @Test
-    void test_delete_TimeSeriesProfileParser() throws Exception {
+    void test_create_retrieve_TimeSeriesProfileParser_Columnar() {
+        // Create a Time Series Profile Parser
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsDataColumnar)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/parser")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Retrieve the Time Series Profile Parser
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(LOCATION_ID, tspParserColumnar.getLocationId().getName())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/parser/" + tspParserColumnar.getKeyParameter())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("location-id.name", equalTo(tspParserColumnar.getLocationId().getName()))
+            .body("location-id.office-id", equalTo(tspParserColumnar.getLocationId().getOfficeId()))
+            .body("key-parameter", equalTo(tspParserColumnar.getKeyParameter()))
+            .body("time-format", equalTo(tspParserColumnar.getTimeFormat()))
+            .body("time-zone", equalTo(tspParserColumnar.getTimeZone()))
+            .body("parameter-info-list[0].parameter", equalTo(tspParserColumnar.getKeyParameter()))
+        ;
+    }
+
+    @Test
+    void test_delete_TimeSeriesProfileParser() {
         // Create a Time Series Profile Parser
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -181,7 +245,22 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
         ;
 
-        cleanupParser(tspParserIndexed.getLocationId().getName(), tspParserIndexed.getKeyParameter());
+        // Attempt to retrieve the Time Series Profile Parser and assert it does not exist
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(LOCATION_ID, tspParserIndexed.getLocationId().getName())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/parser/" + tspParserIndexed.getKeyParameter())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
     }
 
     @Test
@@ -261,8 +340,6 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(OFFICE_MASK, OFFICE_ID)
-            .queryParam(PARAMETER_ID_MASK, tspParserIndexed.getLocationId().getName())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -271,6 +348,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", is(2))
         ;
 
         cleanupParser(tspIndex.getLocationId().getName(), tspIndex.getKeyParameter());

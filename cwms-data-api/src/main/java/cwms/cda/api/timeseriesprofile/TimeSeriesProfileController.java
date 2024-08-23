@@ -45,7 +45,6 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import cwms.cda.formatters.ContentType;
@@ -103,12 +102,7 @@ public final class TimeSeriesProfileController implements CrudHandler {
                     TimeSeriesProfile.class), ctx.body(), TimeSeriesProfile.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, boolean.class).getOrDefault(true);
             TimeSeriesProfileDao tspDao = new TimeSeriesProfileDao(dsl);
-            try {
-                tspDao.storeTimeSeriesProfile(timeSeriesProfile, failIfExists);
-            } catch (NotFoundException e) {
-                ctx.status(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
+            tspDao.storeTimeSeriesProfile(timeSeriesProfile, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED);
         }
     }
@@ -148,9 +142,12 @@ public final class TimeSeriesProfileController implements CrudHandler {
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = OFFICE_MASK, description = "The office mask for the time series profile"),
-            @OpenApiParam(name = LOCATION_MASK, description = "The location mask for the time series profile"),
-            @OpenApiParam(name = PARAMETER_ID_MASK, description = "The key parameter mask for the time series profile")
+            @OpenApiParam(name = OFFICE_MASK, description = "The office mask for the time series profile. "
+                    + "Default is *"),
+            @OpenApiParam(name = LOCATION_MASK, description = "The location mask for the time series profile. "
+                    + "Default is *"),
+            @OpenApiParam(name = PARAMETER_ID_MASK, description = "The key parameter mask for the time series "
+                    + "profile. Default is *")
         },
         path = "/timeseries/profile",
         method = HttpMethod.GET,
@@ -166,9 +163,9 @@ public final class TimeSeriesProfileController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             TimeSeriesProfileDao tspDao = new TimeSeriesProfileDao(dsl);
-            String officeMask = ctx.queryParam(OFFICE_MASK);
-            String locationMask = ctx.queryParam(LOCATION_MASK);
-            String parameterIdMask = ctx.queryParam(PARAMETER_ID_MASK);
+            String officeMask = ctx.queryParamAsClass(OFFICE_MASK, String.class).getOrDefault("*");
+            String locationMask = ctx.queryParamAsClass(LOCATION_MASK, String.class).getOrDefault("*");
+            String parameterIdMask = ctx.queryParamAsClass(PARAMETER_ID_MASK, String.class).getOrDefault("*");
             List<TimeSeriesProfile> retrievedProfiles = tspDao.catalogTimeSeriesProfiles(locationMask,
                     parameterIdMask, officeMask);
             String acceptHeader = ctx.header(Header.ACCEPT);

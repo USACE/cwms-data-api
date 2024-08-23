@@ -29,12 +29,15 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
+    private static final Logger logger = Logger.getLogger(TimeSeriesProfileInstanceDaoIT.class.getName());
 
     @Test
     void testStoreTimeSeriesProfileInstanceWithDataBlock() throws SQLException {
@@ -460,6 +463,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             }
             catch(cwms.cda.api.errors.NotFoundException ex)
             {
+                logger.log(Level.SEVERE, "TimeSeriesProfileInstance not found");
                 // return null for not found
             }
         }, CwmsDataApiSetupCallback.getWebUser());

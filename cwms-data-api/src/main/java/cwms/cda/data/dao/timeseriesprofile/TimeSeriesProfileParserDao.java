@@ -1,8 +1,5 @@
 package cwms.cda.data.dao.timeseriesprofile;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.timeseriesprofile.ParameterInfo;
@@ -11,13 +8,14 @@ import cwms.cda.data.dto.timeseriesprofile.ParameterInfoIndexed;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParser;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserColumnar;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
+import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.impl.DSL;
-
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PROFILE_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.cwms_ts_profile.RETRIEVE_TS_PROFILE_PARSER;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_PROFILE_PARSER;
@@ -29,16 +27,23 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
     private static final  String KEY_PARAMETER_ID = "KEY_PARAMTER_ID";
     private static final  String TIME_FORMAT = "TIME_FORMAT";
     private static final  String TIME_ZONE = "TIME_ZONE";
+
     public TimeSeriesProfileParserDao(DSLContext dsl) {
         super(dsl);
     }
 
     private List<ParameterInfo> getParameterInfoList(String info, String recordDelimiter, String fieldDelimiter) {
+        fieldDelimiter = fieldDelimiter == null ? "," : fieldDelimiter;
         List<ParameterInfo> parameterInfoList = new ArrayList<>();
         String[] records = info.split(recordDelimiter);
         for (String aRecord : records) {
             String[] fields = aRecord.split(fieldDelimiter);
-            int index = Integer.parseInt(fields[2]);
+            int index;
+            if (fields[2].isEmpty()) {
+                index = Integer.parseInt(fields[3]);
+            } else {
+                index = Integer.parseInt(fields[2]);
+            }
             ParameterInfo parameterInfo = new ParameterInfoIndexed.Builder().withIndex(index)
                     .withParameter(fields[0])
                     .withUnit(fields[1])
@@ -61,47 +66,62 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
         return parameterInfoBuilder.toString();
     }
 
-    public void storeTimeSeriesProfileParser(TimeSeriesProfileParserIndexed timeSeriesProfileParser, boolean failIfExists) {
+    public void storeTimeSeriesProfileParser(TimeSeriesProfileParserIndexed timeSeriesProfileParser,
+            boolean failIfExists) {
         connection(dsl, conn -> {
             setOffice(conn, timeSeriesProfileParser.getLocationId().getOfficeId());
-            CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_PARSER(DSL.using(conn).configuration(), timeSeriesProfileParser.getLocationId().getName(),
-                    timeSeriesProfileParser.getKeyParameter(), String.valueOf(timeSeriesProfileParser.getRecordDelimiter()),
+            CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_PARSER(DSL.using(conn).configuration(),
+                    timeSeriesProfileParser.getLocationId().getName(),
+                    timeSeriesProfileParser.getKeyParameter(),
+                    String.valueOf(timeSeriesProfileParser.getRecordDelimiter()),
                     String.valueOf(timeSeriesProfileParser.getFieldDelimiter()), timeSeriesProfileParser.getTimeField(),
                     null, null, timeSeriesProfileParser.getTimeFormat(),
                     timeSeriesProfileParser.getTimeZone(), getParameterInfoString(timeSeriesProfileParser),
                     timeSeriesProfileParser.getTimeInTwoFields() ? "T" : "F",
-                    failIfExists ? "T" : "F", "T", timeSeriesProfileParser.getLocationId().getOfficeId());
+                    failIfExists ? "T" : "F", "T",
+                    timeSeriesProfileParser.getLocationId().getOfficeId());
         });
     }
 
-    public void storeTimeSeriesProfileParser(TimeSeriesProfileParserColumnar timeSeriesProfileParser, boolean failIfExists) {
+    public void storeTimeSeriesProfileParser(TimeSeriesProfileParserColumnar timeSeriesProfileParser,
+            boolean failIfExists) {
         connection(dsl, conn -> {
             setOffice(conn, timeSeriesProfileParser.getLocationId().getOfficeId());
-            CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_PARSER(DSL.using(conn).configuration(), timeSeriesProfileParser.getLocationId().getName(),
-                    timeSeriesProfileParser.getKeyParameter(), String.valueOf(timeSeriesProfileParser.getRecordDelimiter()),
+            CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_PARSER(DSL.using(conn).configuration(),
+                    timeSeriesProfileParser.getLocationId().getName(),
+                    timeSeriesProfileParser.getKeyParameter(),
+                    String.valueOf(timeSeriesProfileParser.getRecordDelimiter()),
                     null, null,
-                    timeSeriesProfileParser.getTimeStartColumn(), timeSeriesProfileParser.getTimeEndColumn(), timeSeriesProfileParser.getTimeFormat(),
+                    timeSeriesProfileParser.getTimeStartColumn(), timeSeriesProfileParser.getTimeEndColumn(),
+                    timeSeriesProfileParser.getTimeFormat(),
                     timeSeriesProfileParser.getTimeZone(), getParameterInfoString(timeSeriesProfileParser),
                     timeSeriesProfileParser.getTimeInTwoFields() ? "T" : "F",
-                    failIfExists ? "T" : "F", "F", timeSeriesProfileParser.getLocationId().getOfficeId());
+                    failIfExists ? "T" : "F", "F",
+                    timeSeriesProfileParser.getLocationId().getOfficeId());
         });
     }
 
-    public TimeSeriesProfileParser retrieveTimeSeriesProfileParser(String locationId, String parameterId, String officeId) {
+    public TimeSeriesProfileParser retrieveTimeSeriesProfileParser(String locationId, String parameterId,
+            String officeId) {
         return connectionResult(dsl, conn -> {
             setOffice(conn, officeId);
-            RETRIEVE_TS_PROFILE_PARSER timeSeriesProfileParser = CWMS_TS_PROFILE_PACKAGE.call_RETRIEVE_TS_PROFILE_PARSER(
-                    DSL.using(conn).configuration(), locationId, parameterId, officeId);
+            RETRIEVE_TS_PROFILE_PARSER timeSeriesProfileParser
+                    = CWMS_TS_PROFILE_PACKAGE.call_RETRIEVE_TS_PROFILE_PARSER(DSL.using(conn).configuration(),
+                    locationId, parameterId, officeId);
             return map(timeSeriesProfileParser, locationId, parameterId, officeId);
         });
     }
 
     public List<ParameterInfo> retrieveParameterInfoList(String locationId, String parameterId, String officeId) {
         List<ParameterInfo> parameterInfoList = new ArrayList<>();
-        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_TS_PROFILE_PARSER_PARAM.AV_TS_PROFILE_PARSER_PARAM.LOCATION_ID, locationId);
-        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_PARSER_PARAM.AV_TS_PROFILE_PARSER_PARAM.OFFICE_ID, officeId));
-        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_PARSER_PARAM.AV_TS_PROFILE_PARSER_PARAM.KEY_PARAMETER_ID, parameterId));
-        Result<Record> parameterInfoResults = dsl.select(DSL.asterisk()).from(AV_TS_PROFILE_PARSER_PARAM.AV_TS_PROFILE_PARSER_PARAM)
+        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_TS_PROFILE_PARSER_PARAM
+                .AV_TS_PROFILE_PARSER_PARAM.LOCATION_ID, locationId);
+        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_PARSER_PARAM
+                .AV_TS_PROFILE_PARSER_PARAM.OFFICE_ID, officeId));
+        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_PARSER_PARAM
+                .AV_TS_PROFILE_PARSER_PARAM.KEY_PARAMETER_ID, parameterId));
+        Result<Record> parameterInfoResults = dsl.select(DSL.asterisk()).from(AV_TS_PROFILE_PARSER_PARAM
+                        .AV_TS_PROFILE_PARSER_PARAM)
                 .where(whereCondition)
                 .fetch();
         for (Record recordParameterInfo : parameterInfoResults) {
@@ -124,14 +144,19 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
         return parameterInfoList;
     }
 
-    public List<TimeSeriesProfileParser> catalogTimeSeriesProfileParsers(String locationIdMask, String parameterIdMask, String officeIdMask, boolean includeParameters) {
+    public List<TimeSeriesProfileParser> catalogTimeSeriesProfileParsers(String locationIdMask, String parameterIdMask,
+            String officeIdMask, boolean includeParameters) {
         List<TimeSeriesProfileParser> timeSeriesProfileParserList = new ArrayList<>();
 
-        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_TS_PROFILE_PARSER.AV_TS_PROFILE_PARSER.LOCATION_ID, locationIdMask);
-        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_PARSER.AV_TS_PROFILE_PARSER.OFFICE_ID, officeIdMask));
-        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_PARSER.AV_TS_PROFILE_PARSER.KEY_PARAMETER_ID, parameterIdMask));
+        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_TS_PROFILE_PARSER
+                .AV_TS_PROFILE_PARSER.LOCATION_ID, locationIdMask);
+        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_PARSER
+                .AV_TS_PROFILE_PARSER.OFFICE_ID, officeIdMask));
+        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_PARSER
+                .AV_TS_PROFILE_PARSER.KEY_PARAMETER_ID, parameterIdMask));
 
-        @NotNull Result<Record> timeSeriesProfileParserResults = dsl.select(DSL.asterisk()).from(AV_TS_PROFILE_PARSER.AV_TS_PROFILE_PARSER)
+        @NotNull Result<Record> timeSeriesProfileParserResults = dsl.select(DSL.asterisk())
+                .from(AV_TS_PROFILE_PARSER.AV_TS_PROFILE_PARSER)
                 .where(whereCondition)
                 .fetch();
         for (Record profileParser : timeSeriesProfileParserResults) {
@@ -148,7 +173,8 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
             TimeSeriesProfileParser timeSeriesProfileParser;
             List<ParameterInfo> parameterInfoList = null;
             if (includeParameters) {
-                parameterInfoList = retrieveParameterInfoList(locationId.getName(), keyParameter, locationId.getOfficeId());
+                parameterInfoList = retrieveParameterInfoList(locationId.getName(), keyParameter,
+                        locationId.getOfficeId());
             }
             if (timeField != null) {
                 timeSeriesProfileParser = new TimeSeriesProfileParserIndexed.Builder()
@@ -179,9 +205,11 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
         return timeSeriesProfileParserList;
     }
 
-    public List<TimeSeriesProfileParser> catalogTimeSeriesProfileParsers(String locationIdMask, String parameterIdMask, String officeIdMask) {
+    public List<TimeSeriesProfileParser> catalogTimeSeriesProfileParsers(String locationIdMask, String parameterIdMask,
+            String officeIdMask) {
         return connectionResult(dsl, conn -> {
-            Result<Record> tsProfileParserResult = CWMS_TS_PROFILE_PACKAGE.call_CAT_TS_PROFILE_PARSER(DSL.using(conn).configuration(),
+            Result<Record> tsProfileParserResult = CWMS_TS_PROFILE_PACKAGE.call_CAT_TS_PROFILE_PARSER(DSL.using(conn)
+                            .configuration(),
                     locationIdMask, parameterIdMask, officeIdMask);
             List<TimeSeriesProfileParser> timeSeriesProfileParserList = new ArrayList<>();
             for (Record profileParser : tsProfileParserResult) {
@@ -212,7 +240,7 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
 
 
                 CwmsId locationId = new CwmsId.Builder()
-                        .withOfficeId((String) profileParser.get("OFFICE_ID"))
+                        .withOfficeId((String) profileParser.get("CWMS_UTIL.GET_DB_OFFICE_ID(LOC.OFFICE_CODE)"))
                         .withName((String) profileParser.get("LOCATION_ID"))
                         .build();
                 TimeSeriesProfileParser timeSeriesProfileParser;
@@ -248,11 +276,12 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
     }
 
 
-    public void copyTimeSeriesProfileParser(String locationId, String parameterId, String officeId, String destinationLocation) {
+    public void copyTimeSeriesProfileParser(String locationId, String parameterId, String officeId,
+            String destinationLocation) {
         connection(dsl, conn -> {
             setOffice(conn, officeId);
-            CWMS_TS_PROFILE_PACKAGE.call_COPY_TS_PROFILE_PARSER(DSL.using(conn).configuration(), locationId, parameterId, destinationLocation,
-                    "F", officeId);
+            CWMS_TS_PROFILE_PACKAGE.call_COPY_TS_PROFILE_PARSER(DSL.using(conn).configuration(), locationId,
+                    parameterId, destinationLocation, "F", officeId);
         });
     }
 
@@ -264,7 +293,8 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
         });
     }
 
-    private TimeSeriesProfileParser map(RETRIEVE_TS_PROFILE_PARSER timeSeriesProfileParser, String locationName, String keyParameter, String officeId) {
+    private TimeSeriesProfileParser map(RETRIEVE_TS_PROFILE_PARSER timeSeriesProfileParser, String locationName,
+            String keyParameter, String officeId) {
         String info = timeSeriesProfileParser.getP_PARAMETER_INFO();
         List<ParameterInfo> parameterInfo = getParameterInfoList(info, timeSeriesProfileParser.getP_RECORD_DELIMITER(),
                 timeSeriesProfileParser.getP_FIELD_DELIMITER());
