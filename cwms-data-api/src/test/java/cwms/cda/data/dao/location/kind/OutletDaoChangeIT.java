@@ -21,6 +21,7 @@
 package cwms.cda.data.dao.location.kind;
 
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dto.AssignedLocation;
@@ -170,18 +171,18 @@ class OutletDaoChangeIT extends ProjectStructureIT {
             OutletDao dao = new OutletDao(context);
             dao.storeOperationalChanges(Arrays.asList(CHANGE_1, CHANGE_2), true);
             List<GateChange> changes = dao.retrieveOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true, true,
-                                                                      "EN", 3);
+                                                                      UnitSystem.EN, 3);
             assertContainsAll(changes, CHANGE_1, CHANGE_2);
 
             GateChange modifiedChange = new GateChange.Builder(CHANGE_1).withTailwaterElevation(50.0).build();
 
             dao.storeOperationalChanges(Collections.singletonList(modifiedChange), true);
-            changes = dao.retrieveOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true, true, "EN", 3);
+            changes = dao.retrieveOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true, true, UnitSystem.EN, 3);
 
             assertContainsAll(changes, modifiedChange, CHANGE_2);
 
             dao.deleteOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true);
-            assertThrows(NotFoundException.class, () -> dao.retrieveOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true, true, "EN", 3));
+            assertThrows(NotFoundException.class, () -> dao.retrieveOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true, true, UnitSystem.EN, 3));
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 

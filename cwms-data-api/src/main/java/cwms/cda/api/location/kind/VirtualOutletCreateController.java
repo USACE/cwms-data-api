@@ -39,7 +39,7 @@ import org.jooq.DSLContext;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-public class VirtualOutletCreateController extends BaseOutletHandler {
+public class VirtualOutletCreateController extends BaseHandler {
 
     public VirtualOutletCreateController(MetricRegistry metrics) {
         super(metrics);
