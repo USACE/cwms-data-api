@@ -107,7 +107,6 @@ import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.api.location.kind.GateChangeController;
 import cwms.cda.api.location.kind.OutletController;
 import cwms.cda.api.location.kind.VirtualOutletController;
-import cwms.cda.api.location.kind.VirtualCreateController;
 import cwms.cda.api.location.kind.VirtualOutletCreateController;
 import cwms.cda.api.project.LockRevokerRightsCatalog;
 import cwms.cda.api.project.ProjectChildLocationHandler;
