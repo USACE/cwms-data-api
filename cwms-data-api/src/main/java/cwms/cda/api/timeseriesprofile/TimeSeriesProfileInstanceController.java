@@ -26,25 +26,7 @@
 
 package cwms.cda.api.timeseriesprofile;
 
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DATE;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.LOCATION_MASK;
-import static cwms.cda.api.Controllers.MAX_VERSION;
-import static cwms.cda.api.Controllers.METHOD;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.OFFICE_MASK;
-import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
-import static cwms.cda.api.Controllers.START;
-import static cwms.cda.api.Controllers.TIMESERIES_ID;
-import static cwms.cda.api.Controllers.TIMEZONE;
-import static cwms.cda.api.Controllers.UNIT;
-import static cwms.cda.api.Controllers.VERSION;
-import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -205,6 +187,12 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
             summary = "Get all time series profile instances",
             tags = {TAG},
             responses = {
+                @OpenApiResponse(status = STATUS_200,
+                        description = "A TimeSeriesProfileInstance object",
+                        content = {
+                                @OpenApiContent(from = TimeSeriesProfileInstance.class, type = Formats.JSONV2),
+                                @OpenApiContent(from = TimeSeriesProfileInstance.class, type = Formats.XMLV2),
+                        }),
                 @OpenApiResponse(status = "400", description = "Invalid input")
             }
     )
@@ -265,6 +253,12 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
         summary = "Get all time series profile instances",
         tags = {TAG},
         responses = {
+            @OpenApiResponse(status = STATUS_200,
+                    description = "A TimeSeriesProfileParser object",
+                    content = {
+                            @OpenApiContent(from = TimeSeriesProfileInstance.class, type = Formats.JSONV2),
+                            @OpenApiContent(from = TimeSeriesProfileInstance.class, type = Formats.XMLV2),
+                    }),
             @OpenApiResponse(status = "400", description = "Invalid input")
         }
     )

@@ -4,6 +4,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.data.dto.CwmsDTOBase;
@@ -15,6 +16,8 @@ import cwms.cda.formatters.json.JsonV2;
 
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonDeserialize(builder = TimeSeriesProfileInstance.Builder.class)
 @JsonSubTypes({@JsonSubTypes.Type(value = TimeSeriesProfileParserIndexed.class, name = "indexed-timeseries-profile-parser"),
         @JsonSubTypes.Type(value = TimeSeriesProfileParserColumnar.class, name = "columnar-timeseries-profile-parser")
 })

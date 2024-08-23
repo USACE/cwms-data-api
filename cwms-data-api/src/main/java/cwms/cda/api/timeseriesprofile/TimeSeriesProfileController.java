@@ -26,20 +26,7 @@
 
 package cwms.cda.api.timeseriesprofile;
 
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.LOCATION_ID;
-import static cwms.cda.api.Controllers.LOCATION_MASK;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.OFFICE_MASK;
-import static cwms.cda.api.Controllers.STATUS_204;
-import static cwms.cda.api.Controllers.STATUS_400;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -120,7 +107,6 @@ public final class TimeSeriesProfileController implements CrudHandler {
         method = HttpMethod.DELETE,
         summary = "Update a time series profile",
         tags = {TAG},
-        requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = TimeSeriesProfile.class)}),
         responses = {
             @OpenApiResponse(status = STATUS_400, description = "Invalid input"),
             @OpenApiResponse(status = STATUS_204, description = "Time series profile deleted"),
@@ -154,6 +140,12 @@ public final class TimeSeriesProfileController implements CrudHandler {
         summary = "Get a time series profile",
         tags = {TAG},
         responses = {
+            @OpenApiResponse(status = STATUS_200,
+                    description = "A TimeSeriesProfile object",
+                    content = {
+                            @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.JSONV2),
+                            @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.XMLV2),
+                    }),
             @OpenApiResponse(status = STATUS_400, description = "Invalid input"),
             @OpenApiResponse(status = STATUS_404, description = "No data matching input parameters found")
         }
@@ -191,6 +183,12 @@ public final class TimeSeriesProfileController implements CrudHandler {
         summary = "Get a time series profile",
         tags = {TAG},
         responses = {
+            @OpenApiResponse(status = STATUS_200,
+                    description = "A TimeSeriesProfileParser object",
+                    content = {
+                            @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.JSONV2),
+                            @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.XMLV2),
+                    }),
             @OpenApiResponse(status = "400", description = "Invalid input")
         }
     )
