@@ -35,7 +35,7 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-import java.util.List;
+import java.util.Map;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class,
         aliases = {Formats.DEFAULT, Formats.JSON})
@@ -48,12 +48,16 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
     private final String contractName;
     @JsonProperty(required = true)
     private final WaterUser waterUser;
-    private final List<PumpAccounting> pumpAccounting;
+    private final Map<String, PumpAccounting> pumpInAccounting;
+    private final Map<String, PumpAccounting> pumpOutAccounting;
+    private final Map<String, PumpAccounting> pumpBelowAccounting;
 
     private WaterSupplyAccounting(Builder builder) {
         this.contractName = builder.contractName;
         this.waterUser = builder.waterUser;
-        this.pumpAccounting = builder.pumpAccounting;
+        this.pumpBelowAccounting = builder.pumpBelowAccounting;
+        this.pumpInAccounting = builder.pumpInAccounting;
+        this.pumpOutAccounting = builder.pumpOutAccounting;
     }
 
     public String getContractName() {
@@ -64,14 +68,24 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
         return this.waterUser;
     }
 
-    public List<PumpAccounting> getPumpAccounting() {
-        return this.pumpAccounting;
+    public Map<String, PumpAccounting> getPumpInAccounting() {
+        return this.pumpInAccounting;
+    }
+
+    public Map<String, PumpAccounting> getPumpOutAccounting() {
+        return this.pumpOutAccounting;
+    }
+
+    public Map<String, PumpAccounting> getPumpBelowAccounting() {
+        return this.pumpBelowAccounting;
     }
 
     public static final class Builder {
         private String contractName;
         private WaterUser waterUser;
-        private List<PumpAccounting> pumpAccounting;
+        private Map<String, PumpAccounting> pumpInAccounting;
+        private Map<String, PumpAccounting> pumpOutAccounting;
+        private Map<String, PumpAccounting> pumpBelowAccounting;
 
         public Builder withContractName(String contractName) {
             this.contractName = contractName;
@@ -83,9 +97,21 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
             return this;
         }
 
-        public Builder withPumpAccounting(
-                List<PumpAccounting> pumpAccounting) {
-            this.pumpAccounting = pumpAccounting;
+        public Builder withPumpInAccounting(
+                Map<String, PumpAccounting> pumpInAccounting) {
+            this.pumpInAccounting = pumpInAccounting;
+            return this;
+        }
+
+        public Builder withPumpOutAccounting(
+                Map<String, PumpAccounting> pumpOutAccounting) {
+            this.pumpOutAccounting = pumpOutAccounting;
+            return this;
+        }
+
+        public Builder withPumpBelowAccounting(
+                Map<String,  PumpAccounting> pumpBelowAccounting) {
+            this.pumpBelowAccounting = pumpBelowAccounting;
             return this;
         }
 

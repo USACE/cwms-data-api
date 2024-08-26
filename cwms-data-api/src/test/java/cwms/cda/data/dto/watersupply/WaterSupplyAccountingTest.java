@@ -30,7 +30,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DTOMatch;
 import org.junit.jupiter.api.Test;
@@ -38,8 +37,10 @@ import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 
 
 class WaterSupplyAccountingTest {
@@ -54,7 +55,7 @@ class WaterSupplyAccountingTest {
                 .build())
             .withWaterRight("Test Water Right").build();
         WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting.Builder()
-                .withWaterUser(user).withContractName("Test Contract").withPumpAccounting(buildPumpAccounting()).build();
+                .withWaterUser(user).withContractName("Test Contract").withPumpInAccounting(buildTestPumpInAccountingList()).build();
         String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterSupplyAccounting.class),
             waterSupplyAccounting);
         WaterSupplyAccounting deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
@@ -70,7 +71,9 @@ class WaterSupplyAccountingTest {
                         .withName("Test Location").build())
                 .withWaterRight("Test Water Right").build())
                 .withContractName("Test Contract")
-                .withPumpAccounting(buildPumpAccounting()).build();
+                .withPumpInAccounting(buildTestPumpInAccountingList())
+                .withPumpBelowAccounting(buildTestPumpInAccountingList())
+                .build();
         InputStream resource = this.getClass().getResourceAsStream(
             "/cwms/cda/data/dto/watersupply/water_supply_accounting.json");
         assertNotNull(resource);
@@ -115,20 +118,25 @@ class WaterSupplyAccountingTest {
     }
 
 
-    private static List<PumpAccounting> buildPumpAccounting() {
-        List<PumpAccounting> pumpList = new ArrayList<>();
-        PumpAccounting pumpAccounting = new PumpAccounting.Builder()
-                .withPumpLocation(new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location-Test Pump").build())
-                .withTransferType(new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
-                .withDisplayValue("Test Transfer Type").build()).withFlow(1.0)
-                .withTransferDate(Instant.ofEpochMilli(10000012648000L)).withComment("Test Comment").build();
-        pumpList.add(pumpAccounting);
-        PumpAccounting pumpAccounting2 = new PumpAccounting.Builder()
-                .withPumpLocation(new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location-Test Pump 2").build())
-                .withTransferType(new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip 2").withOfficeId(OFFICE)
-                .withDisplayValue("Test Transfer Type 2").build()).withFlow(2.0)
-                .withTransferDate(Instant.ofEpochMilli(10000012648000L)).withComment("Test Comment 2").build();
-        pumpList.add(pumpAccounting2);
-        return pumpList;
+    private Map<String, PumpAccounting> buildTestPumpInAccountingList() {
+        Map<String, PumpAccounting> retList = new HashMap<>();
+
+        NavigableMap<Instant, PumpTransfer> pumpMap = new TreeMap<>();
+        pumpMap.put(Instant.ofEpochMilli(10000012648000L), new PumpTransfer.Builder().withTransferTypeDisplay("Test Transfer Type")
+                .withFlow(1.0).withTransferDate(Instant.ofEpochMilli(10000012648000L)).withComment("Test Comment").build());
+        pumpMap.put(Instant.ofEpochMilli(10000012649000L), new PumpTransfer.Builder().withTransferTypeDisplay("Test Transfer Type")
+                .withFlow(2.0).withTransferDate(Instant.ofEpochMilli(10000012649000L)).withComment("Test Comment 2").build());
+        PumpAccounting accounting = new PumpAccounting.Builder().withPumpTransfers(pumpMap)
+                .withPumpLocation(new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location-Test Pump").build()).build();
+        retList.put("Test Pump", accounting);
+        pumpMap = new TreeMap<>();
+        pumpMap.put(Instant.ofEpochMilli(10000012699000L), new PumpTransfer.Builder().withTransferTypeDisplay("Test Transfer Type2")
+                .withFlow(1.0).withTransferDate(Instant.ofEpochMilli(10000012699000L)).withComment("Test Comment").build());
+        pumpMap.put(Instant.ofEpochMilli(10000012710000L), new PumpTransfer.Builder().withTransferTypeDisplay("Test Transfer Type2")
+                .withFlow(2.0).withTransferDate(Instant.ofEpochMilli(10000012710000L)).withComment("Test Comment 2").build());
+        accounting = new PumpAccounting.Builder().withPumpTransfers(pumpMap)
+                .withPumpLocation(new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location-Test Pump2").build()).build();
+        retList.put("Test Pump2", accounting);
+        return retList;
     }
 }

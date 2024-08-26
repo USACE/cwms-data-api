@@ -29,47 +29,70 @@ package cwms.cda.data.dto.watersupply;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.CwmsId;
+
 import java.time.Instant;
-import java.util.Map;
 
-
-@JsonDeserialize(builder = PumpAccounting.Builder.class)
-public final class PumpAccounting extends CwmsDTOBase {
+@JsonDeserialize(builder = PumpTransfer.Builder.class)
+public class PumpTransfer extends CwmsDTOBase {
     @JsonProperty(required = true)
-    private final CwmsId pumpLocation;
+    private final String transferTypeDisplay;
     @JsonProperty(required = true)
-    private final Map<Instant, PumpTransfer> pumpTransfers;
+    private final Double flow;
+    @JsonProperty(required = true)
+    private final Instant transferDate;
+    private final String comment;
 
-    private PumpAccounting(Builder builder) {
-        this.pumpLocation = builder.pumpLocation;
-        this.pumpTransfers = builder.pumpTransfers;
+    private PumpTransfer(Builder builder) {
+        this.transferTypeDisplay = builder.transferTypeDisplay;
+        this.flow = builder.flow;
+        this.transferDate = builder.transferDate;
+        this.comment = builder.comment;
     }
 
-    public CwmsId getPumpLocation() {
-        return this.pumpLocation;
+    public String getTransferTypeDisplay() {
+        return this.transferTypeDisplay;
     }
 
-    public Map<Instant, PumpTransfer> getPumpTransfers() {
-        return this.pumpTransfers;
+    public Double getFlow() {
+        return this.flow;
+    }
+
+    public Instant getTransferDate() {
+        return this.transferDate;
+    }
+
+    public String getComment() {
+        return this.comment;
     }
 
     public static final class Builder {
-        private CwmsId pumpLocation;
-        private Map<Instant, PumpTransfer> pumpTransfers;
+        private String transferTypeDisplay;
+        private Double flow;
+        private Instant transferDate;
+        private String comment;
 
-        public Builder withPumpLocation(CwmsId pumpLocation) {
-            this.pumpLocation = pumpLocation;
+        public Builder withTransferTypeDisplay(String transferTypeDisplay) {
+            this.transferTypeDisplay = transferTypeDisplay;
             return this;
         }
 
-        public Builder withPumpTransfers(Map<Instant, PumpTransfer> pumpTransfers) {
-            this.pumpTransfers = pumpTransfers;
+        public Builder withFlow(Double flow) {
+            this.flow = flow;
             return this;
         }
 
-        public PumpAccounting build() {
-            return new PumpAccounting(this);
+        public Builder withTransferDate(Instant transferDate) {
+            this.transferDate = transferDate;
+            return this;
+        }
+
+        public Builder withComment(String comment) {
+            this.comment = comment;
+            return this;
+        }
+
+        public PumpTransfer build() {
+            return new PumpTransfer(this);
         }
     }
 }

@@ -30,7 +30,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DTOMatch;
 import org.junit.jupiter.api.Test;
@@ -38,8 +37,8 @@ import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 
 class PumpAccountingTest {
@@ -71,50 +70,50 @@ class PumpAccountingTest {
     void testValidate() {
         assertAll(
             () -> {
+                Map<Instant, PumpTransfer> pumpMap = new TreeMap<>();
+                pumpMap.put(Instant.ofEpochSecond(10000012648112L), new PumpTransfer.Builder()
+                        .withTransferDate(Instant.ofEpochSecond(10000012648112L))
+                        .withTransferTypeDisplay("Test Transfer Type").withFlow(1.0)
+                        .withComment("Test Comment").build());
                 PumpAccounting pumpAccounting = new PumpAccounting.Builder()
                         .withPumpLocation(new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build())
-                        .withTransferType(new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").withOfficeId(OFFICE)
-                        .withDisplayValue("Test Transfer Type").build()).withFlow(1.0)
-                        .withTransferDate(Instant.ofEpochSecond(10000012648112L)).withComment("Test Comment").build();
+                        .withPumpTransfers(pumpMap).build();
                 assertDoesNotThrow(pumpAccounting::validate, "Expected validation to pass");
             },
             () -> {
+                Map<Instant, PumpTransfer> pumpMap = new TreeMap<>();
+                pumpMap.put(Instant.ofEpochSecond(10000012648112L), new PumpTransfer.Builder()
+                        .withTransferDate(Instant.ofEpochSecond(10000012648112L))
+                        .withTransferTypeDisplay("Test Transfer Type").withFlow(1.0)
+                        .withComment("Test Comment").build());
                 PumpAccounting pumpAccounting = new PumpAccounting.Builder()
-                        .withPumpLocation(null).withTransferType(new LookupType.Builder().withActive(true)
-                                .withTooltip("Test Tool Tip").withOfficeId(OFFICE)
-                                .withDisplayValue("Test Transfer Type").build())
-                        .withFlow(1.0).withTransferDate(Instant.ofEpochSecond(10000012648112L))
-                        .withComment("Test Comment").build();
+                        .withPumpLocation(null).withPumpTransfers(pumpMap).build();
                 assertThrows(FieldException.class, pumpAccounting::validate, "Expected validation to "
                     + "fail due to null location");
             },
             () -> {
-                PumpAccounting pumpAccounting = new PumpAccounting.Builder()
-                       .withPumpLocation(new CwmsId.Builder()
-                                        .withOfficeId(OFFICE).withName("Test Pump").build()).withTransferType(null)
-                        .withFlow(1.0).withTransferDate(Instant.ofEpochSecond(10000012648112L))
+                PumpTransfer pumpTransfer = new PumpTransfer.Builder()
+                        .withTransferDate(null)
+                        .withTransferTypeDisplay("Test Transfer Type").withFlow(1.0)
                         .withComment("Test Comment").build();
-                assertThrows(FieldException.class, pumpAccounting::validate, "Expected validation to "
-                    + "fail due to null transfer type");
+                assertThrows(FieldException.class, pumpTransfer::validate, "Expected validation to "
+                    + "fail due to null transfer date");
             },
             () -> {
-                PumpAccounting pumpAccounting = new PumpAccounting.Builder()
-                        .withPumpLocation(new CwmsId.Builder()
-                                        .withOfficeId(OFFICE).withName("Test Pump").build())
-                        .withTransferType(new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip").
-                                withOfficeId(OFFICE).withDisplayValue("Test Transfer Type").build()).withFlow(null)
-                        .withTransferDate(Instant.ofEpochSecond(10000012648112L)).withComment("Test Comment").build();
-                assertThrows(FieldException.class, pumpAccounting::validate, "Expected validation to "
+                PumpTransfer pumpTransfer = new PumpTransfer.Builder()
+                        .withTransferDate(Instant.ofEpochSecond(10000012648112L))
+                        .withTransferTypeDisplay("Test Transfer Type").withFlow(null)
+                        .withComment("Test Comment").build();
+                assertThrows(FieldException.class, pumpTransfer::validate, "Expected validation to "
                     + "fail due to null flow value");
             },
             () -> {
-                PumpAccounting pumpAccounting = new PumpAccounting.Builder()
-                        .withPumpLocation(new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Pump").build())
-                        .withTransferType(new LookupType.Builder().withActive(true).withTooltip("Test Tool Tip")
-                                .withOfficeId(OFFICE).withDisplayValue("Test Transfer Type").build())
-                        .withFlow(1.0).withTransferDate(null).withComment("Test Comment").build();
-                assertThrows(FieldException.class, pumpAccounting::validate, "Expected validation to "
-                    + "fail due to null transfer date");
+                PumpTransfer pumpTransfer = new PumpTransfer.Builder()
+                        .withTransferDate(Instant.ofEpochSecond(10000012648112L))
+                        .withTransferTypeDisplay(null).withFlow(1.0)
+                        .withComment(null).build();
+                assertThrows(FieldException.class, pumpTransfer::validate, "Expected validation to "
+                    + "fail due to null transfer type display value");
             }
         );
     }
@@ -123,20 +122,29 @@ class PumpAccountingTest {
         return new WaterSupplyAccounting.Builder().withWaterUser(new WaterUser.Builder().withEntityName("Test Entity")
                 .withWaterRight("Test Water Right").withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
                         .withName("Test Location").build()).build())
-                .withContractName("Test Contract").withPumpAccounting(buildTestPumpAccountingList())
+                .withContractName("Test Contract").withPumpInAccounting(buildTestPumpInAccountingList())
+                .withPumpBelowAccounting(buildTestPumpInAccountingList())
                 .build();
     }
 
-    private List<PumpAccounting> buildTestPumpAccountingList() {
-        List<PumpAccounting> retList = new ArrayList<>();
-        retList.add(new PumpAccounting.Builder().withPumpLocation(new CwmsId.Builder().withOfficeId(OFFICE)
-                .withName("Test Location-Test Pump").build()).withTransferType(new LookupType.Builder().withActive(true)
-                        .withTooltip("Test Tool Tip").withOfficeId(OFFICE).withDisplayValue("Test Transfer Type").build())
+    private Map<String, PumpAccounting> buildTestPumpInAccountingList() {
+        Map<String, PumpAccounting> retMap = new TreeMap<>();
+        Map<Instant, PumpTransfer> pumpMap = new TreeMap<>();
+        pumpMap.put(Instant.ofEpochMilli(10000012648000L), new PumpTransfer.Builder().withTransferTypeDisplay("Test Transfer Type")
                 .withFlow(1.0).withTransferDate(Instant.ofEpochMilli(10000012648000L)).withComment("Test Comment").build());
-        retList.add(new PumpAccounting.Builder().withPumpLocation(new CwmsId.Builder().withOfficeId(OFFICE)
-                .withName("Test Location-Test Pump 2").build()).withTransferType(new LookupType.Builder().withActive(true)
-                        .withTooltip("Test Tool Tip 2").withOfficeId(OFFICE).withDisplayValue("Test Transfer Type 2").build())
-                .withFlow(2.0).withTransferDate(Instant.ofEpochMilli(10000012648000L)).withComment("Test Comment 2").build());
-        return retList;
+        pumpMap.put(Instant.ofEpochMilli(10000012649000L), new PumpTransfer.Builder().withTransferTypeDisplay("Test Transfer Type")
+                .withFlow(2.0).withTransferDate(Instant.ofEpochMilli(10000012649000L)).withComment("Test Comment 2").build());
+        PumpAccounting pumpAccounting = new PumpAccounting.Builder().withPumpLocation(new CwmsId.Builder()
+                .withOfficeId(OFFICE).withName("Test Location-Test Pump").build()).withPumpTransfers(pumpMap).build();
+        retMap.put("Test Pump", pumpAccounting);
+        pumpMap = new TreeMap<>();
+        pumpMap.put(Instant.ofEpochMilli(10000012699000L), new PumpTransfer.Builder().withTransferTypeDisplay("Test Transfer Type2")
+                .withFlow(1.0).withTransferDate(Instant.ofEpochMilli(10000012699000L)).withComment("Test Comment").build());
+        pumpMap.put(Instant.ofEpochMilli(10000012710000L), new PumpTransfer.Builder().withTransferTypeDisplay("Test Transfer Type2")
+                .withFlow(2.0).withTransferDate(Instant.ofEpochMilli(10000012710000L)).withComment("Test Comment 2").build());
+        pumpAccounting = new PumpAccounting.Builder().withPumpLocation(new CwmsId.Builder()
+                .withOfficeId(OFFICE).withName("Test Location-Test Pump2").build()).withPumpTransfers(pumpMap).build();
+        retMap.put("Test Pump2", pumpAccounting);
+        return retMap;
     }
 }
