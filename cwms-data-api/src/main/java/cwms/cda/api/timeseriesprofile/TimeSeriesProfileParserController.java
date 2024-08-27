@@ -89,9 +89,7 @@ public final class TimeSeriesProfileParserController implements CrudHandler {
         requestBody = @OpenApiRequestBody(
             content = {
                 @OpenApiContent(from = TimeSeriesProfileParserIndexed.class, type = Formats.JSONV2),
-                @OpenApiContent(from = TimeSeriesProfileParserIndexed.class, type = Formats.XMLV2),
                 @OpenApiContent(from = TimeSeriesProfileParserColumnar.class, type = Formats.JSONV2),
-                @OpenApiContent(from = TimeSeriesProfileParserColumnar.class, type = Formats.XMLV2)
             },
             required = true
         ),
