@@ -33,7 +33,7 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import java.time.Instant;
 
 @JsonDeserialize(builder = PumpTransfer.Builder.class)
-public class PumpTransfer extends CwmsDTOBase {
+public final class PumpTransfer extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final String transferTypeDisplay;
     @JsonProperty(required = true)
