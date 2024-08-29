@@ -2,6 +2,7 @@ package cwms.cda.data.dto.timeseriesprofile;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -16,6 +17,7 @@ import cwms.cda.formatters.json.JsonV2;
 @JsonDeserialize(builder = ParameterInfoColumnar.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonTypeName("columnar-parameter-info")
 public final class ParameterInfoColumnar extends ParameterInfo {
     private final Integer startColumn;
     private final Integer endColumn;

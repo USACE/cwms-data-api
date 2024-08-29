@@ -507,7 +507,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("[0].version", equalTo("VERSION"))
+            .body("[0].version", equalTo(tspInstance.getVersion()))
             .body("[0].version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
             .body("[0].time-series-profile.key-parameter", equalTo("Depth"))
             .body("[0].time-series-profile.parameter-list.size()", is(0))

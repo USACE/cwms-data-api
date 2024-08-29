@@ -15,7 +15,7 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonDeserialize(builder = TimeSeriesProfileInstance.Builder.class)
 @JsonSubTypes({@JsonSubTypes.Type(value = TimeSeriesProfileParserIndexed.class, name = "indexed-timeseries-profile-parser"),

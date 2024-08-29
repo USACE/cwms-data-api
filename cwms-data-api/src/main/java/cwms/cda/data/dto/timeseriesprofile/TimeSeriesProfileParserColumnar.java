@@ -1,6 +1,7 @@
 package cwms.cda.data.dto.timeseriesprofile;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -15,6 +16,7 @@ import java.math.BigInteger;
 @JsonDeserialize(builder = TimeSeriesProfileParserColumnar.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonTypeName("columnar-timeseries-profile-parser")
 public final class TimeSeriesProfileParserColumnar extends TimeSeriesProfileParser {
     private final Integer timeStartColumn;
     private final Integer timeEndColumn;

@@ -3,6 +3,7 @@ package cwms.cda.data.dto.timeseriesprofile;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -16,6 +17,7 @@ import cwms.cda.formatters.json.JsonV2;
 @JsonDeserialize(builder = ParameterInfoIndexed.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonTypeName("indexed-parameter-info")
 public final class ParameterInfoIndexed extends ParameterInfo {
     private final Integer index;
 

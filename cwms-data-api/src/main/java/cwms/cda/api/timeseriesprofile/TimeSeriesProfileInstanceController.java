@@ -246,7 +246,7 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
         },
         pathParams = {
             @OpenApiParam(name = TIMESERIES_ID, description = "The time series ID of the"
-                    + " time series profile instance. Default is null")
+                    + " time series profile instance.", required = true)
         },
         path = "/timeseries/instance/{timeseries-id}",
         method = HttpMethod.GET,
@@ -271,10 +271,10 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
             String keyParameter = requiredParam(ctx, PARAMETER_ID);
             String version = requiredParam(ctx, VERSION);
             String unit = requiredParam(ctx, UNIT);
-            Instant startTime = Instant.ofEpochMilli(ctx.queryParamAsClass(START, Long.class)
-                    .getOrDefault(Instant.now().toEpochMilli()));
-            Instant endTime = Instant.ofEpochMilli(ctx.queryParamAsClass(END, Long.class)
-                    .getOrDefault(Instant.now().toEpochMilli()));
+            Instant startTime = Instant.ofEpochMilli(Long.parseLong(ctx.queryParamAsClass(START, String.class)
+                    .getOrDefault(String.valueOf(Instant.now().toEpochMilli()))));
+            Instant endTime = Instant.ofEpochMilli(Long.parseLong(ctx.queryParamAsClass(END, String.class)
+                    .getOrDefault(String.valueOf(Instant.now().toEpochMilli()))));
             String timeZone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
             String startInclusive = OracleTypeMap.formatBool(ctx.queryParamAsClass(START_INCLUSIVE, boolean.class)
                     .getOrDefault(true));
@@ -283,8 +283,8 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
             String previous = OracleTypeMap.formatBool(ctx.queryParamAsClass(PREVIOUS, boolean.class)
                     .getOrDefault(false));
             String next = OracleTypeMap.formatBool(ctx.queryParamAsClass(NEXT, boolean.class).getOrDefault(false));
-            Instant versionDate = Instant.ofEpochMilli(ctx.queryParamAsClass(VERSION_DATE, Long.class)
-                    .getOrDefault(Instant.now().toEpochMilli()));
+            Instant versionDate = Instant.ofEpochMilli(Long.parseLong(ctx.queryParamAsClass(VERSION_DATE, String.class)
+                    .getOrDefault(String.valueOf(Instant.now().toEpochMilli()))));
             String maxVersion = OracleTypeMap.formatBool(ctx.queryParamAsClass(MAX_VERSION, boolean.class)
                     .getOrDefault(false));
             CwmsId tspIdentifier = new CwmsId.Builder().withOfficeId(officeId).withName(timeSeriesId).build();

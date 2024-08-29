@@ -299,6 +299,31 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
         List<ParameterInfo> parameterInfo = getParameterInfoList(info, timeSeriesProfileParser.getP_RECORD_DELIMITER(),
                 timeSeriesProfileParser.getP_FIELD_DELIMITER());
         CwmsId locationId = new CwmsId.Builder().withOfficeId(officeId).withName(locationName).build();
+        if (timeSeriesProfileParser.getP_TIME_FIELD() != null
+                && timeSeriesProfileParser.getP_FIELD_DELIMITER() != null) {
+            return new TimeSeriesProfileParserIndexed.Builder()
+                    .withTimeField(timeSeriesProfileParser.getP_TIME_FIELD())
+                    .withFieldDelimiter(timeSeriesProfileParser.getP_FIELD_DELIMITER().toCharArray()[0])
+                    .withLocationId(locationId)
+                    .withTimeZone(timeSeriesProfileParser.getP_TIME_ZONE())
+                    .withTimeFormat(timeSeriesProfileParser.getP_TIME_FORMAT())
+                    .withKeyParameter(keyParameter)
+                    .withRecordDelimiter(timeSeriesProfileParser.getP_RECORD_DELIMITER().toCharArray()[0])
+                    .withParameterInfoList(parameterInfo)
+                    .build();
+        } else if (timeSeriesProfileParser.getP_TIME_COL_START() != null
+                && timeSeriesProfileParser.getP_TIME_COL_END() != null) {
+            return new TimeSeriesProfileParserColumnar.Builder()
+                    .withTimeStartColumn(timeSeriesProfileParser.getP_TIME_COL_START())
+                    .withTimeEndColumn(timeSeriesProfileParser.getP_TIME_COL_END())
+                    .withLocationId(locationId)
+                    .withTimeZone(timeSeriesProfileParser.getP_TIME_ZONE())
+                    .withTimeFormat(timeSeriesProfileParser.getP_TIME_FORMAT())
+                    .withKeyParameter(keyParameter)
+                    .withRecordDelimiter(timeSeriesProfileParser.getP_RECORD_DELIMITER().toCharArray()[0])
+                    .withParameterInfoList(parameterInfo)
+                    .build();
+        }
         return new TimeSeriesProfileParser.Builder()
                 .withLocationId(locationId)
 //				.withTimeField(timeSeriesProfileParser.getP_TIME_FIELD())

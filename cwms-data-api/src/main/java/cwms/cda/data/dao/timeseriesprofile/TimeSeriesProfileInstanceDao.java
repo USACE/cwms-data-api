@@ -316,6 +316,8 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 				.withTimeSeriesProfile(timeSeriesProfile)
 				.withTimeSeriesList(timeSeriesList)
 				.withVersion(version)
+				.withFirstDate(timeList.stream().min(Instant::compareTo).orElse(null))
+				.withLastDate(timeList.stream().max(Instant::compareTo).orElse(null))
 				.withVersionDate(versionDate)
 				.build();
 	}
