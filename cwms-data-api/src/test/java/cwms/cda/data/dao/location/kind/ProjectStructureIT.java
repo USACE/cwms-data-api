@@ -12,12 +12,21 @@ import cwms.cda.api.DataApiTestIT;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
+import cwms.cda.data.dto.AssignedLocation;
+import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LocationGroup;
+import cwms.cda.data.dto.location.kind.Outlet;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
@@ -29,6 +38,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public abstract class ProjectStructureIT extends DataApiTestIT {
 	private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
@@ -144,6 +155,54 @@ public abstract class ProjectStructureIT extends DataApiTestIT {
 			locationsDao.deleteLocation(locId, officeId, true);
 		} catch (NotFoundException ex) {
 			LOGGER.atFinest().withCause(ex).log("No data found for " + officeId + "." + locId);
+		}
+	}
+
+	public static void deleteLocationGroup(DSLContext context, Outlet outlet) {
+		LocationGroupDao locationGroupDao = new LocationGroupDao(context);
+		try {
+			locationGroupDao.delete(outlet.getRatingCategoryId().getName(), outlet.getRatingGroupId().getName(), true, OFFICE_ID);
+		} catch (NotFoundException e) {
+			LOGGER.atFinest().withCause(e).log("No data found for category:" + outlet.getRatingCategoryId().getName()
+													   + ", group-id:" + outlet.getRatingGroupId().getName());
+		}
+	}
+
+	public static <T extends CwmsDTOBase> void containsDto(List<T> outlets, T expectedDto, BiPredicate<T, T> identifier, BiConsumer<T, T> dtoMatcher) {
+		T receivedOutlet = outlets.stream()
+									   .filter(dto -> identifier.test(dto, expectedDto))
+									   .findFirst()
+									   .orElse(null);
+		assertNotNull(receivedOutlet);
+		dtoMatcher.accept(expectedDto, receivedOutlet);
+	}
+
+	public static <T extends CwmsDTOBase> void doesNotContainDto(List<T> outlets, T expectedDto, BiPredicate<T, T> identifier) {
+		T receivedDto = outlets.stream()
+									   .filter(dto -> identifier.test(dto, expectedDto))
+									   .findFirst()
+									   .orElse(null);
+		assertNull(receivedDto);
+	}
+
+	public static void createRatingSpecForOutlet(DSLContext context, Outlet outlet, String specId) {
+		LocationGroupDao locGroupDao = new LocationGroupDao(context);
+		Optional<LocationGroup> ratingGroup = locGroupDao.getLocationGroup(
+				outlet.getRatingCategoryId().getOfficeId(),
+				outlet.getRatingCategoryId().getName(),
+				outlet.getRatingGroupId().getName());
+
+		if (ratingGroup.isPresent()) {
+			LocationGroup realGroup = ratingGroup.get();
+			List<AssignedLocation> assLocs = realGroup.getAssignedLocations();
+			realGroup = new LocationGroup(realGroup.getLocationCategory(), realGroup.getOfficeId(),
+										  realGroup.getId(), realGroup.getDescription(),
+										  specId, realGroup.getSharedRefLocationId(),
+										  realGroup.getLocGroupAttribute());
+			realGroup = new LocationGroup(realGroup, assLocs);
+			locGroupDao.delete(realGroup.getLocationCategory().getId(), realGroup.getId(), true,
+							   realGroup.getOfficeId());
+			locGroupDao.create(realGroup);
 		}
 	}
 }

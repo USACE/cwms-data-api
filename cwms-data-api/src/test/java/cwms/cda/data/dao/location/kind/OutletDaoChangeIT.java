@@ -24,10 +24,8 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationGroupDao;
-import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.GateChange;
 import cwms.cda.data.dto.location.kind.GateSetting;
@@ -40,14 +38,12 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -104,45 +100,18 @@ class OutletDaoChangeIT extends ProjectStructureIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao outletDao = new OutletDao(context);
-            LocationGroupDao locGroupDao = new LocationGroupDao(context);
             try {
                 storeLocation(context, TAINTER_GATE_10_LOC);
                 storeLocation(context, TAINTER_GATE_20_LOC);
-                deleteLocGroup(locGroupDao);
+                deleteLocationGroup(context, TAINTER_GATE_10_OUTLET);
                 outletDao.storeOutlet(TAINTER_GATE_10_OUTLET, false);
                 outletDao.storeOutlet(TAINTER_GATE_20_OUTLET, false);
 
-                Optional<LocationGroup> ratingGroup = locGroupDao.getLocationGroup(
-                        TAINTER_GATE_10_OUTLET.getRatingCategoryId().getOfficeId(),
-                        TAINTER_GATE_10_OUTLET.getRatingCategoryId().getName(),
-                        TAINTER_GATE_10_OUTLET.getRatingGroupId().getName());
-
-                if (ratingGroup.isPresent()) {
-                    LocationGroup realGroup = ratingGroup.get();
-                    List<AssignedLocation> assLocs = realGroup.getAssignedLocations();
-                    realGroup = new LocationGroup(realGroup.getLocationCategory(), realGroup.getOfficeId(),
-                                                  realGroup.getId(), realGroup.getDescription(),
-                                                  TAINTER_GATE_RATING_SPEC_ID, realGroup.getSharedRefLocationId(),
-                                                  realGroup.getLocGroupAttribute());
-                    realGroup = new LocationGroup(realGroup, assLocs);
-                    locGroupDao.delete(realGroup.getLocationCategory().getId(), realGroup.getId(), true,
-                                       realGroup.getOfficeId());
-                    locGroupDao.create(realGroup);
-                }
+                createRatingSpecForOutlet(context, TAINTER_GATE_10_OUTLET, TAINTER_GATE_RATING_SPEC_ID);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }, CwmsDataApiSetupCallback.getWebUser());
-    }
-
-    private static void deleteLocGroup(LocationGroupDao locGroupDao) {
-        try {
-            locGroupDao.delete(TAINTER_GATE_10_OUTLET.getRatingCategoryId().getName(),
-                               TAINTER_GATE_10_OUTLET.getRatingGroupId().getName(), true,
-                               TAINTER_GATE_10_OUTLET.getRatingGroupId().getOfficeId());
-        } catch (RuntimeException e) {
-            LOGGER.atFinest().withCause(e).log("Failed to delete location group");
-        }
     }
 
     @AfterAll
@@ -151,12 +120,11 @@ class OutletDaoChangeIT extends ProjectStructureIT {
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             OutletDao outletDao = new OutletDao(context);
-            LocationGroupDao locGroupDao = new LocationGroupDao(context);
             outletDao.deleteOutlet(TAINTER_GATE_10_LOC.getOfficeId(), TAINTER_GATE_10_LOC.getName(),
                                    DeleteRule.DELETE_ALL);
             outletDao.deleteOutlet(TAINTER_GATE_20_LOC.getOfficeId(), TAINTER_GATE_20_LOC.getName(),
                                    DeleteRule.DELETE_ALL);
-            deleteLocGroup(locGroupDao);
+            deleteLocationGroup(context, TAINTER_GATE_10_OUTLET);
             deleteLocation(context, TAINTER_GATE_10_LOC.getOfficeId(), TAINTER_GATE_10_LOC.getName());
             deleteLocation(context, TAINTER_GATE_20_LOC.getOfficeId(), TAINTER_GATE_20_LOC.getName());
         }, CwmsDataApiSetupCallback.getWebUser());

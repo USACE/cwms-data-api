@@ -104,7 +104,9 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
-import cwms.cda.api.location.kind.GateChangeController;
+import cwms.cda.api.location.kind.GateChangeDeleteController;
+import cwms.cda.api.location.kind.GateChangeGetAllController;
+import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.OutletController;
 import cwms.cda.api.location.kind.VirtualOutletController;
 import cwms.cda.api.location.kind.VirtualOutletCreateController;
@@ -560,13 +562,16 @@ public class ApiServlet extends HttpServlet {
         delete(turbineChanges, new TurbineChangesDeleteController(metrics), requiredRoles);
 
         String outletPath = format("/projects/outlets/{%s}", NAME);
-        String gateChangePath = format("/projects/{%s}/{%s}/gate-changes/{%s}", OFFICE,
-                                      Controllers.PROJECT_ID, NAME);
+        String gateChangePath = format("/projects/{%s}/{%s}/gate-changes", OFFICE,
+                                      Controllers.PROJECT_ID);
+        String gateChangeCreatePath = "/projects/gate-changes";
         String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", OFFICE,
                                           Controllers.PROJECT_ID, NAME);
         String virtualOutletCreatePath = "/projects/virtual-outlets";
         cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
-        cdaCrudCache(gateChangePath, new GateChangeController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+        post(gateChangeCreatePath, new GateChangeCreateController(metrics));
+        get(gateChangePath, new GateChangeGetAllController(metrics));
+        delete(gateChangePath, new GateChangeDeleteController(metrics));
         cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
         post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics));
 

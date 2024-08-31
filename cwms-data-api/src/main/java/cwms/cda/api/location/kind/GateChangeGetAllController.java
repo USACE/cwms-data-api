@@ -22,23 +22,19 @@ package cwms.cda.api.location.kind;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.BaseCrudHandler;
+import cwms.cda.api.BaseHandler;
 import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.location.kind.GateChange;
-import cwms.cda.data.dto.location.kind.Outlet;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.sql.Timestamp;
 import java.util.List;
@@ -47,44 +43,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import static cwms.cda.api.Controllers.*;
 
-public class GateChangeController extends BaseCrudHandler {
+public class GateChangeGetAllController extends BaseHandler {
     private static final int DEFAULT_PAGE_SIZE = 500;
 
-    public GateChangeController(MetricRegistry metrics) {
+    public GateChangeGetAllController(MetricRegistry metrics) {
         super(metrics);
-    }
-
-    @OpenApi(
-            requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSONV1),
-                            @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSON)
-                    },
-                    required = true),
-            queryParams = {
-                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                            description = "Create will fail if provided Gate Changes already exist. Default: true")
-            },
-            description = "Create CWMS Gate Changes",
-            method = HttpMethod.POST,
-            tags = {OutletController.TAG},
-            responses = {
-                    @OpenApiResponse(status = STATUS_201, description = "Gate Changes successfully stored to CWMS.")
-            }
-    )
-    @Override
-    public void create(@NotNull Context context) {
-        boolean failIfExists = context.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
-        String formatHeader = context.header(Header.ACCEPT) != null ? context.header(Header.ACCEPT) : Formats.JSONV1;
-        ContentType contentType = Formats.parseHeader(formatHeader, GateChange.class);
-        List<GateChange> changes = Formats.parseContentList(contentType, context.body(), GateChange.class);
-
-        try (Timer.Context ignored = markAndTime(CREATE)) {
-            DSLContext dsl = JooqDao.getDslContext(context);
-            OutletDao dao = new OutletDao(dsl);
-            dao.storeOperationalChanges(changes, failIfExists);
-            context.status(HttpServletResponse.SC_CREATED);
-        }
     }
 
     @OpenApi(
@@ -109,7 +72,7 @@ public class GateChangeController extends BaseCrudHandler {
                             + "Can be SI (International Scientific) or EN (Imperial.) If unspecified, "
                             + "defaults to EN."),
                     @OpenApiParam(name = PAGE_SIZE, type = Integer.class,
-                            description = "the maximum number of turbine changes to retrieve, regardless of time window. " +
+                            description = "the maximum number of gate changes to retrieve, regardless of time window. " +
                                     "A positive integer is interpreted as the maximum number of changes from the " +
                                     "beginning of the time window. A negative integer is interpreted as the maximum number " +
                                     "from the end of the time window. " + "Default " + DEFAULT_PAGE_SIZE + "." +
@@ -122,11 +85,11 @@ public class GateChangeController extends BaseCrudHandler {
                             @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSONV1)
                     })
             },
-            description = "Returns matching CWMS Outlet Data for a Reservoir Project.",
+            description = "Returns matching CWMS gate change data for a Reservoir Project.",
             tags = {OutletController.TAG}
     )
     @Override
-    public void getAll(@NotNull Context context) {
+    public void handle(@NotNull Context context) {
         String office = context.pathParam(OFFICE);
         String id = context.pathParam(PROJECT_ID);
         CwmsId projectId = new CwmsId.Builder().withName(id).withOfficeId(office).build();
@@ -148,55 +111,7 @@ public class GateChangeController extends BaseCrudHandler {
             String serialized = Formats.format(contentType, changes, GateChange.class);
             context.result(serialized);
             context.status(HttpServletResponse.SC_OK);
-            updateResultSize(serialized);
-        }
-    }
-
-    @OpenApi(ignore = true)
-    @Override
-    public void getOne(@NotNull Context context, @NotNull String s) {
-        context.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
-    }
-
-    @OpenApi(ignore = true)
-    @Override
-    public void update(@NotNull Context context, @NotNull String s) {
-        context.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
-    }
-
-    @OpenApi(
-            pathParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Office id for the reservoir project " +
-                            "location associated with the Gate Changes."),
-                    @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the " +
-                            "Gate Changes whose data is to be included in the response."),
-            },
-            queryParams = {
-                    @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
-                    @OpenApiParam(name = END, required = true, description = "The end of the time window."),
-                    @OpenApiParam(name = OVERRIDE_PROTECTION, type = Boolean.class, description = "A flag "
-                            + "('True'/'False') specifying whether to delete protected data. "
-                            + "Default is False")
-            }, responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Turbine successfully deleted from CWMS."),
-                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                            + "inputs provided the project was not found.")},
-            description = "Delete CWMS Gate Change Data for a Reservoir Project.",
-            tags = {OutletController.TAG},
-            method = HttpMethod.DELETE
-    )
-    @Override
-    public void delete(@NotNull Context context, @NotNull String s) {
-        String office = context.pathParam(OFFICE);
-        String id = context.pathParam(PROJECT_ID);
-        CwmsId projectId = new CwmsId.Builder().withName(id).withOfficeId(office).build();
-        Timestamp startTime = Timestamp.from(requiredZdt(context, BEGIN).toInstant());
-        Timestamp endTime = Timestamp.from(requiredZdt(context, END).toInstant());
-        boolean overrideProtection = context.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(false);
-        try (Timer.Context ignored = markAndTime(GET_ALL)) {
-            DSLContext dsl = JooqDao.getDslContext(context);
-            OutletDao dao = new OutletDao(dsl);
-            dao.deleteOperationalChanges(projectId, startTime.toInstant(), endTime.toInstant(), overrideProtection);
+            updateResultSize(serialized.length());
         }
     }
 }

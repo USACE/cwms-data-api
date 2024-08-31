@@ -681,16 +681,6 @@ class OutletControllerTestIT extends ProjectStructureIT {
         return modifiedLocGroup;
     }
 
-    private static void deleteLocationGroup(DSLContext context, Outlet outlet) {
-        LocationGroupDao locationGroupDao = new LocationGroupDao(context);
-        try {
-            locationGroupDao.delete(outlet.getRatingCategoryId().getName(), outlet.getRatingGroupId().getName(), true, OFFICE_ID);
-        } catch (NotFoundException e) {
-            LOGGER.atFinest().withCause(e).log("No data found for category:" + outlet.getRatingCategoryId().getName()
-                    + ", group-id:" + outlet.getRatingGroupId().getName());
-        }
-    }
-
     private static Outlet buildTestOutlet(Location outletLoc, Location projectLoc, CwmsId ratingId, String ratingSpecId) {
         return new Outlet.Builder().withProjectId(new CwmsId.Builder().withName(projectLoc.getName())
                                                                       .withOfficeId(projectLoc.getOfficeId())

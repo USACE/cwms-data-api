@@ -23,10 +23,12 @@ package cwms.cda.api.location.kind;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.BaseHandler;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.OutletDao;
-import cwms.cda.data.dto.location.kind.VirtualOutlet;
+import cwms.cda.data.dto.location.kind.GateChange;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -34,47 +36,48 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-public class VirtualOutletCreateController extends BaseHandler {
+public class GateChangeCreateController extends BaseHandler {
 
-    public VirtualOutletCreateController(MetricRegistry metrics) {
+    public GateChangeCreateController(MetricRegistry metrics) {
         super(metrics);
     }
 
     @OpenApi(
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = VirtualOutlet.class, type = Formats.JSONV1),
-                            @OpenApiContent(from = VirtualOutlet.class, type = Formats.JSON)
+                            @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSONV1),
+                            @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSON)
                     },
                     required = true),
             queryParams = {
                     @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                            description = "Create will fail if provided ID already exists. Default: true"),
+                            description = "Create will fail if provided Gate Changes already exist. Default: true")
             },
-            description = "Create CWMS Virtual Outlet",
+            description = "Create CWMS Gate Changes",
             method = HttpMethod.POST,
             tags = {OutletController.TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Virtual Outlet successfully stored to CWMS.")
+                    @OpenApiResponse(status = STATUS_201, description = "Gate Changes successfully stored to CWMS.")
             }
     )
     @Override
-    public void handle(@NotNull Context ctx) throws Exception {
+    public void handle(@NotNull Context context) throws Exception {
+        boolean failIfExists = context.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+        String formatHeader = context.header(Header.ACCEPT) != null ? context.header(Header.ACCEPT) : Formats.JSONV1;
+        ContentType contentType = Formats.parseHeader(formatHeader, GateChange.class);
+        List<GateChange> changes = Formats.parseContentList(contentType, context.body(), GateChange.class);
+
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String formatHeader = ctx.req.getContentType();
-            ContentType contentType = Formats.parseHeader(formatHeader, VirtualOutlet.class);
-            VirtualOutlet virtualOutlet = Formats.parseContent(contentType, ctx.body(), VirtualOutlet.class);
-            boolean failIfExists = queryParamAsClass(ctx, Boolean.class, true, FAIL_IF_EXISTS);
-            DSLContext dsl = getDslContext(ctx);
+            DSLContext dsl = JooqDao.getDslContext(context);
             OutletDao dao = new OutletDao(dsl);
-            dao.storeVirtualOutlet(virtualOutlet, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Outlet");
+            dao.storeOperationalChanges(changes, failIfExists);
+            context.status(HttpServletResponse.SC_CREATED);
         }
     }
 }

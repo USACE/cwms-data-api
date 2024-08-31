@@ -18,23 +18,22 @@
  * SOFTWARE.
  */
 
-package cwms.cda.api.location.kind;
+package cwms.cda.api;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
 import io.javalin.http.Handler;
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 
-abstract class BaseHandler implements Handler {
+public abstract class BaseHandler implements Handler {
 
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
-    BaseHandler(MetricRegistry metrics) {
+    protected BaseHandler(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
 
@@ -45,7 +44,7 @@ abstract class BaseHandler implements Handler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    protected final void addToHistogram(int value) {
+    protected final void updateResultSize(int value) {
         requestResultSize.update(value);
     }
 }
