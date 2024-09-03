@@ -183,8 +183,8 @@ class GateChangeControllerTestIT extends ProjectStructureIT {
         List<GateChange> changes = Formats.parseContentList(Formats.parseHeader(Formats.JSONV1, GateChange.class),
                                                             allJson, GateChange.class);
 
-        containsDto(changes, CHANGE_1, this::isSimilar, DTOMatch::assertMatch);
-        containsDto(changes, CHANGE_2, this::isSimilar, DTOMatch::assertMatch);
+        DTOMatch.assertContainsDto(changes, CHANGE_1, this::isSimilar, DTOMatch::assertMatch, "Does not contain modified change for " + CHANGE_1.getChangeDate());
+        DTOMatch.assertContainsDto(changes, CHANGE_2, this::isSimilar, DTOMatch::assertMatch, "Does not contain modified change for " + CHANGE_2.getChangeDate());
 
         GateSetting modifiedSetting = buildTestGateSetting(CONDUIT_GATE_2_ID, 30, 40);
         GateChange modifiedChange = new GateChange.Builder(CHANGE_1).withSettings(Collections.singletonList(modifiedSetting))
@@ -231,7 +231,7 @@ class GateChangeControllerTestIT extends ProjectStructureIT {
         changes = Formats.parseContentList(Formats.parseHeader(Formats.JSONV1, GateChange.class),
                                            allJson, GateChange.class);
 
-        containsDto(changes, modifiedChange, this::isSimilar, DTOMatch::assertMatch);
+        DTOMatch.assertContainsDto(changes, modifiedChange, this::isSimilar, DTOMatch::assertMatch, "Does not contain modified change for " + modifiedChange.getChangeDate());
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)

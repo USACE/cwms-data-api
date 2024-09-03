@@ -168,23 +168,6 @@ public abstract class ProjectStructureIT extends DataApiTestIT {
 		}
 	}
 
-	public static <T extends CwmsDTOBase> void containsDto(List<T> outlets, T expectedDto, BiPredicate<T, T> identifier, BiConsumer<T, T> dtoMatcher) {
-		T receivedOutlet = outlets.stream()
-									   .filter(dto -> identifier.test(dto, expectedDto))
-									   .findFirst()
-									   .orElse(null);
-		assertNotNull(receivedOutlet);
-		dtoMatcher.accept(expectedDto, receivedOutlet);
-	}
-
-	public static <T extends CwmsDTOBase> void doesNotContainDto(List<T> outlets, T expectedDto, BiPredicate<T, T> identifier) {
-		T receivedDto = outlets.stream()
-									   .filter(dto -> identifier.test(dto, expectedDto))
-									   .findFirst()
-									   .orElse(null);
-		assertNull(receivedDto);
-	}
-
 	public static void createRatingSpecForOutlet(DSLContext context, Outlet outlet, String specId) {
 		LocationGroupDao locGroupDao = new LocationGroupDao(context);
 		Optional<LocationGroup> ratingGroup = locGroupDao.getLocationGroup(

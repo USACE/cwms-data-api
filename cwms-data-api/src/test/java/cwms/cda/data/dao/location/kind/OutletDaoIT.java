@@ -131,7 +131,7 @@ class OutletDaoIT extends ProjectStructureIT {
             //Retrieve for project
             List<Outlet> retrievedOutlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
                                                                           PROJECT_1_ID.getName());
-            doesNotContainDto(retrievedOutlets, TAINTER_GATE_2_OUTLET, this::isOutletSimilar);
+            DTOMatch.assertDoesNotContainDto(retrievedOutlets, TAINTER_GATE_2_OUTLET, this::isOutletSimilar, "Found " + TAINTER_GATE_2_OUTLET.getLocation().getName() + " when it should not be present.");
 
             //Create
             Outlet modifiedOutlet = new Outlet.Builder(TAINTER_GATE_2_OUTLET).withRatingGroupId(
@@ -150,7 +150,7 @@ class OutletDaoIT extends ProjectStructureIT {
 
             List<Outlet> finalOutlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
                                                                       PROJECT_1_ID.getName());
-            containsDto(finalOutlets, TAINTER_GATE_2_OUTLET, this::isOutletSimilar, DTOMatch::assertMatch);
+            DTOMatch.assertContainsDto(finalOutlets, TAINTER_GATE_2_OUTLET, this::isOutletSimilar, DTOMatch::assertMatch, "Unable to find " + TAINTER_GATE_2_OUTLET.getLocation().getName() + " when it should exist.");
 
             assertThrows(NotFoundException.class, () -> dao.retrieveOutlet(TAINTER_GATE_3_LOC.getOfficeId(),
                                                                            TAINTER_GATE_3_LOC.getName()));
@@ -166,8 +166,8 @@ class OutletDaoIT extends ProjectStructureIT {
 
             List<Outlet> outlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
                                                                  PROJECT_1_ID.getName());
-            containsDto(outlets, TAINTER_GATE_1_OUTLET, this::isOutletSimilar, DTOMatch::assertMatch);
-            containsDto(outlets, TAINTER_GATE_2_OUTLET, this::isOutletSimilar, DTOMatch::assertMatch);
+            DTOMatch.assertContainsDto(outlets, TAINTER_GATE_1_OUTLET, this::isOutletSimilar, DTOMatch::assertMatch, "Unable to find " + TAINTER_GATE_1_OUTLET.getLocation().getName() + " when it should exist.");
+            DTOMatch.assertContainsDto(outlets, TAINTER_GATE_2_OUTLET, this::isOutletSimilar, DTOMatch::assertMatch, "Unable to find " + TAINTER_GATE_2_OUTLET.getLocation().getName() + " when it should exist.");
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
