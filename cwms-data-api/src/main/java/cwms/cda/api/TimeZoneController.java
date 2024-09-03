@@ -91,8 +91,7 @@ public class TimeZoneController implements CrudHandler {
             TimeZoneDao dao = new TimeZoneDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String header = ctx.header(ACCEPT);
-
-            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, TimeZoneId.class);
+            ContentType contentType = Formats.parseQueryOrHeaderParam(header, format, TimeZoneId.class);
             String version = contentType.getParameters()
                                         .getOrDefault(VERSION, "");
 
