@@ -94,7 +94,7 @@ public class ParametersController implements CrudHandler {
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String office = ctx.queryParamAsClass(OFFICE, String.class).getOrDefault(null);
             String header = ctx.header(ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, Parameter.class);
+            ContentType contentType = Formats.parseQueryOrHeaderParam(header, format, Parameter.class);
             String version = contentType.getParameters()
                                         .getOrDefault(VERSION, "");
 
