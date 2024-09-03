@@ -38,10 +38,12 @@ ENV CDA_POOL_INIT_SIZE "5"
 ENV CDA_POOL_MAX_ACTIVE "30"
 ENV CDA_POOL_MAX_IDLE "10"
 ENV CDA_POOL_MIN_IDLE "5"
-ENV cwms.dataapi.access.providers ""
-ENV cwms.dataapi.access.openid.wellKnownUrl ""
-ENV cwms.dataapi.access.openid.issuer ""
+ENV cwms.dataapi.access.providers "KeyAccessManager,OpenID"
+ENV cwms.dataapi.access.openid.wellKnownUrl "https://identity-test.cwbi.us/auth/realms/cwbi/.well-known/openid-configuration"
+ENV cwms.dataapi.access.openid.issuer "https://identity-test.cwbi.us/auth/realms/cwbi"
 ENV cwms.dataapi.access.openid.timeout "604800"
+ENV cwms.dataapi.access.openid.altAuthUrl "https://identityc-test.cwbi.us/auth/realms/cwbi"
+
 # used to simplify redeploy in certain contexts. Update to match -<marker> in image label
-ENV IMAGE_MARKER="a"
+ENV IMAGE_MARKER="b"
 EXPOSE 7000
