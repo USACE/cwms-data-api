@@ -29,6 +29,7 @@ package cwms.cda.data.dao.watersupply;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.PumpAccounting;
+import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import hec.lang.Const;
@@ -101,7 +102,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
                     contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
                     endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
             if (!watUsrContractAcctObjTs.isEmpty()) {
-                return WaterSupplyUtils.toWaterSupplyAccountingList(watUsrContractAcctObjTs);
+                return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs);
             } else {
                 return new ArrayList<>();
             }
@@ -110,11 +111,35 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
 
     private List<TimeWindowType> getTimeWindowTypeList(WaterSupplyAccounting accounting) {
         List<TimeWindowType> retList = new ArrayList<>();
-        for (PumpAccounting pumpAccounting : accounting.getPumpAccounting()) {
-            LocationRefType locationRefType = new LocationRefType(pumpAccounting.getPumpLocation().getName(),
-                null, pumpAccounting.getPumpLocation().getOfficeId());
-            retList.add(new TimeWindowType(locationRefType, new Date(pumpAccounting.getTransferDate().toEpochMilli()),
-                    new Date(pumpAccounting.getTransferDate().toEpochMilli())));
+        if (accounting.getPumpInAccounting() != null) {
+            for (PumpAccounting pumpIn : accounting.getPumpInAccounting().values()) {
+                LocationRefType locationRefType = new LocationRefType(pumpIn.getPumpLocation().getName(),
+                        null, pumpIn.getPumpLocation().getOfficeId());
+                for (PumpTransfer transfer : pumpIn.getPumpTransfers().values()) {
+                    retList.add(new TimeWindowType(locationRefType, new Date(transfer.getTransferDate().toEpochMilli()),
+                            new Date(transfer.getTransferDate().toEpochMilli())));
+                }
+            }
+        }
+        if (accounting.getPumpOutAccounting() != null) {
+            for (PumpAccounting pumpOut : accounting.getPumpOutAccounting().values()) {
+                LocationRefType locationRefType = new LocationRefType(pumpOut.getPumpLocation().getName(),
+                        null, pumpOut.getPumpLocation().getOfficeId());
+                for (PumpTransfer transfer : pumpOut.getPumpTransfers().values()) {
+                    retList.add(new TimeWindowType(locationRefType, new Date(transfer.getTransferDate().toEpochMilli()),
+                            new Date(transfer.getTransferDate().toEpochMilli())));
+                }
+            }
+        }
+        if (accounting.getPumpBelowAccounting() != null) {
+            for (PumpAccounting pumpBelow : accounting.getPumpBelowAccounting().values()) {
+                LocationRefType locationRefType = new LocationRefType(pumpBelow.getPumpLocation().getName(),
+                        null, pumpBelow.getPumpLocation().getOfficeId());
+                for (PumpTransfer transfer : pumpBelow.getPumpTransfers().values()) {
+                    retList.add(new TimeWindowType(locationRefType, new Date(transfer.getTransferDate().toEpochMilli()),
+                            new Date(transfer.getTransferDate().toEpochMilli())));
+                }
+            }
         }
         return retList;
     }

@@ -363,7 +363,7 @@ public final class DTOMatch {
 
     public static void assertMatch(Map<String, PumpAccounting> first, Map<String, PumpAccounting> second) {
 
-        if (first == null && second == null) {
+        if ((first == null || first.isEmpty()) && (second == null || second.isEmpty())) {
             return;
         }
 
@@ -396,10 +396,10 @@ public final class DTOMatch {
                 fail("Second map does not contain key " + entry.getKey());
             }
             assertAll(
-                    () -> assertEquals(firstPumpTransfer.getTransferTypeDisplay(), secondPumpTransfer.getTransferTypeDisplay()),
-                    () -> assertEquals(firstPumpTransfer.getFlow(), secondPumpTransfer.getFlow()),
-                    () -> assertEquals(firstPumpTransfer.getTransferDate(), secondPumpTransfer.getTransferDate()),
-                    () -> assertEquals(firstPumpTransfer.getComment(), secondPumpTransfer.getComment())
+                () -> assertEquals(firstPumpTransfer.getTransferTypeDisplay(), secondPumpTransfer.getTransferTypeDisplay()),
+                () -> assertEquals(firstPumpTransfer.getFlow(), secondPumpTransfer.getFlow()),
+                () -> assertEquals(firstPumpTransfer.getTransferDate(), secondPumpTransfer.getTransferDate()),
+                () -> assertEquals(firstPumpTransfer.getComment(), secondPumpTransfer.getComment())
             );
         }
 
@@ -407,11 +407,11 @@ public final class DTOMatch {
 
     public static void assertMatch(WaterSupplyAccounting first, WaterSupplyAccounting second) {
         assertAll(
-                () -> assertEquals(first.getContractName(), second.getContractName()),
-                () -> assertMatch(first.getWaterUser(), second.getWaterUser()),
-                () -> assertMatch(first.getPumpInAccounting(), second.getPumpInAccounting()),
-                () -> assertMatch(first.getPumpOutAccounting(), second.getPumpOutAccounting()),
-                () -> assertMatch(first.getPumpBelowAccounting(), second.getPumpBelowAccounting())
+            () -> assertEquals(first.getContractName(), second.getContractName()),
+            () -> assertMatch(first.getWaterUser(), second.getWaterUser()),
+            () -> assertMatch(first.getPumpInAccounting(), second.getPumpInAccounting()),
+            () -> assertMatch(first.getPumpOutAccounting(), second.getPumpOutAccounting()),
+            () -> assertMatch(first.getPumpBelowAccounting(), second.getPumpBelowAccounting())
         );
     }
 

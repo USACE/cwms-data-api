@@ -149,7 +149,7 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
             String newContractName) {
         connection(dsl, c -> {
             setOffice(c, waterUser.getProjectId().getOfficeId());
-            WATER_USER_OBJ_T waterUserT = WaterSupplyUtils.toWaterUser(waterUser);
+            WATER_USER_OBJ_T waterUserT = WaterSupplyUtils.toWaterUserObjT(waterUser);
             WATER_USER_CONTRACT_REF_T waterUserContract = new WATER_USER_CONTRACT_REF_T(waterUserT, oldContractName);
             CWMS_WATER_SUPPLY_PACKAGE.call_RENAME_CONTRACT(DSL.using(c).configuration(), waterUserContract,
                     oldContractName, newContractName);
@@ -168,7 +168,7 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
     public void deleteWaterContract(WaterUserContract contract, DeleteMethod deleteAction) {
         connection(dsl, c -> {
             setOffice(c, contract.getOfficeId());
-            WATER_USER_OBJ_T waterUserT = WaterSupplyUtils.toWaterUser(contract.getWaterUser());
+            WATER_USER_OBJ_T waterUserT = WaterSupplyUtils.toWaterUserObjT(contract.getWaterUser());
             String contractName = contract.getContractId().getName();
             WATER_USER_CONTRACT_REF_T waterUserContract = new WATER_USER_CONTRACT_REF_T(waterUserT, contractName);
             CWMS_WATER_SUPPLY_PACKAGE.call_DELETE_CONTRACT(DSL.using(c).configuration(), waterUserContract,
