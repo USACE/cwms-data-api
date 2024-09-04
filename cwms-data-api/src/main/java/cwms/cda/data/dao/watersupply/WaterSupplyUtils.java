@@ -32,18 +32,21 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.watersupply.AccountingKey;
 import cwms.cda.data.dto.watersupply.PumpAccounting;
+import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.PumpType;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.data.dto.watersupply.WaterSupplyPump;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
+import java.sql.Connection;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
+import org.jooq.impl.DSL;
 import usace.cwms.db.dao.ifc.loc.LocationRefType;
 import usace.cwms.db.dao.ifc.watersupply.WaterUserAccountingType;
 import usace.cwms.db.dao.ifc.watersupply.WaterUserContractRefType;
@@ -54,6 +57,9 @@ import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_OBJ_T;
+import usace.cwms.db.jooq.codegen.udt.records.WAT_USR_CONTRACT_ACCT_OBJ_T;
+import usace.cwms.db.jooq.codegen.udt.records.WAT_USR_CONTRACT_ACCT_TAB_T;
+import usace.cwms.db.jooq.dao.util.WaterUserTypeUtil;
 
 
 final class WaterSupplyUtils {
@@ -98,14 +104,6 @@ final class WaterSupplyUtils {
                 .withWaterRight(waterUserTabT.getWATER_RIGHT()).build();
     }
 
-    public static WATER_USER_OBJ_T toWaterUser(WaterUser waterUser) {
-        WATER_USER_OBJ_T waterUserObjT = new WATER_USER_OBJ_T();
-        waterUserObjT.setENTITY_NAME(waterUser.getEntityName());
-        waterUserObjT.setPROJECT_LOCATION_REF(LocationUtil.getLocationRef(waterUser.getProjectId()));
-        waterUserObjT.setWATER_RIGHT(waterUser.getWaterRight());
-        return waterUserObjT;
-    }
-
     public static WATER_USER_OBJ_T toWaterUserObjT(WaterUser waterUser) {
         WATER_USER_OBJ_T waterUserObjT = new WATER_USER_OBJ_T();
         waterUserObjT.setENTITY_NAME(waterUser.getEntityName());
@@ -131,14 +129,14 @@ final class WaterSupplyUtils {
 
     public static WATER_USER_CONTRACT_REF_T toContractRef(WaterUser waterUser, String contractName) {
         WATER_USER_CONTRACT_REF_T waterUserContractRefT = new WATER_USER_CONTRACT_REF_T();
-        waterUserContractRefT.setWATER_USER(toWaterUser(waterUser));
+        waterUserContractRefT.setWATER_USER(toWaterUserObjT(waterUser));
         waterUserContractRefT.setCONTRACT_NAME(contractName);
         return waterUserContractRefT;
     }
 
     public static WATER_USER_CONTRACT_REF_T toWaterUserContractRefTs(WaterUserContract waterUserContract) {
         WATER_USER_CONTRACT_REF_T waterUserContractRefT = new WATER_USER_CONTRACT_REF_T();
-        waterUserContractRefT.setWATER_USER(toWaterUser(waterUserContract.getWaterUser()));
+        waterUserContractRefT.setWATER_USER(toWaterUserObjT(waterUserContract.getWaterUser()));
         waterUserContractRefT.setCONTRACT_NAME(waterUserContract.getContractId().getName());
         return waterUserContractRefT;
     }
@@ -172,18 +170,37 @@ final class WaterSupplyUtils {
 
     public static List<WaterUserAccountingType> toWaterUserAccTypeList(WaterSupplyAccounting accounting,
             WaterUser waterUser, String contractName) {
-        return accounting.getPumpAccounting().stream()
-                .map(pumpAccounting -> toWaterUserAccType(pumpAccounting, waterUser, contractName))
-                .collect(Collectors.toList());
+        List<WaterUserAccountingType> retList = new ArrayList<>();
+        if (accounting.getPumpInAccounting() != null) {
+            for (PumpAccounting pumpIn : accounting.getPumpInAccounting().values()) {
+                retList.addAll(toWaterUserAccType(pumpIn, waterUser, contractName));
+            }
+        }
+        if (accounting.getPumpOutAccounting() != null) {
+            for (PumpAccounting pumpOut : accounting.getPumpOutAccounting().values()) {
+                retList.addAll(toWaterUserAccType(pumpOut, waterUser, contractName));
+            }
+        }
+        if (accounting.getPumpBelowAccounting() != null) {
+            for (PumpAccounting pumpBelow : accounting.getPumpBelowAccounting().values()) {
+                retList.addAll(toWaterUserAccType(pumpBelow, waterUser, contractName));
+            }
+        }
+        return retList;
     }
 
-    public static WaterUserAccountingType toWaterUserAccType(PumpAccounting accounting, WaterUser user,
+    public static List<WaterUserAccountingType> toWaterUserAccType(PumpAccounting accounting, WaterUser user,
             String contractName) {
-        return new WaterUserAccountingType(new WaterUserContractRefType(toWaterUserType(user),
-                contractName), new LocationRefType(accounting.getPumpLocation().getName(),
-                null, accounting.getPumpLocation().getOfficeId()),
-                toLookupType(accounting.getTransferType()), accounting.getFlow(),
-                new Date(accounting.getTransferDate().toEpochMilli()), accounting.getComment());
+        List<WaterUserAccountingType> retList = new ArrayList<>();
+        for (PumpTransfer transfer : accounting.getPumpTransfers().values()) {
+            retList.add(new WaterUserAccountingType(new WaterUserContractRefType(toWaterUserType(user),
+                    contractName), new LocationRefType(accounting.getPumpLocation().getName(),
+                    null, accounting.getPumpLocation().getOfficeId()),
+                    new usace.cwms.db.dao.ifc.cat.LookupType(accounting.getPumpLocation().getOfficeId(),
+                            transfer.getTransferTypeDisplay(), null, true), transfer.getFlow(),
+                    new Date(transfer.getTransferDate().toEpochMilli()), transfer.getComment()));
+        }
+        return retList;
     }
 
     public static WaterUserType toWaterUserType(WaterUser waterUser) {
@@ -222,63 +239,240 @@ final class WaterSupplyUtils {
                 projectLocation), contractName);
     }
 
-    public static List<WaterSupplyAccounting> toWaterSupplyAccountingList(WAT_USR_CONTRACT_ACCT_TAB_T
+    public static List<WaterSupplyAccounting> toWaterSupplyAccountingList(Connection c, WAT_USR_CONTRACT_ACCT_TAB_T
             watUsrContractAcctTabT) {
 
         List<WaterSupplyAccounting> waterSupplyAccounting = new ArrayList<>();
-        Map<AccountingKey, List<PumpAccounting>> cacheMap = new TreeMap<>();
+        Map<AccountingKey, WaterSupplyAccounting> cacheMap = new TreeMap<>();
 
         for (WAT_USR_CONTRACT_ACCT_OBJ_T watUsrContractAcctObjT : watUsrContractAcctTabT) {
             WaterUserAccountingType accounting = WaterUserTypeUtil.toWaterUserAccountingType(watUsrContractAcctObjT);
+            WaterContractDao waterContractDao = new WaterContractDao(DSL.using(c));
+            WaterUserContract waterUserContract = waterContractDao.getWaterContract(accounting.getContractRefTUser()
+                .getContractName(), new CwmsId.Builder().withOfficeId(accounting.getContractRefTUser()
+                .getWaterUserType().getParentLocationRefType().getOfficeId()).withName(accounting.getContractRefTUser()
+                .getWaterUserType().getParentLocationRefType().getBaseLocationId()).build(), accounting.getContractRefTUser()
+                .getWaterUserType().getEntityName());
+            String pumpIn = waterUserContract.getPumpInLocation().getPumpLocation().getName();
+            String pumpOut = waterUserContract.getPumpOutLocation().getPumpLocation().getName();
+            String pumpBelow = waterUserContract.getPumpOutBelowLocation().getPumpLocation().getName();
             AccountingKey key = new AccountingKey.Builder().withWaterUser(new WaterUser.Builder()
-                            .withProjectId(new CwmsId.Builder()
-                                    .withOfficeId(accounting.getContractRefTUser()
-                                            .getWaterUserType().getParentLocationRefType().getOfficeId())
-                                    .withName(accounting.getContractRefTUser().getWaterUserType()
-                                            .getParentLocationRefType().getBaseLocationId()).build())
-                            .withEntityName(accounting.getContractRefTUser().getWaterUserType().getEntityName())
-                            .withWaterRight(accounting.getContractRefTUser().getWaterUserType()
-                                            .getWaterRight()).build())
-                    .withContractName(accounting.getContractRefTUser().getContractName()).build();
+                .withProjectId(new CwmsId.Builder()
+                    .withOfficeId(accounting.getContractRefTUser()
+                        .getWaterUserType().getParentLocationRefType().getOfficeId())
+                    .withName(accounting.getContractRefTUser().getWaterUserType()
+                        .getParentLocationRefType().getBaseLocationId()).build())
+                .withEntityName(accounting.getContractRefTUser().getWaterUserType().getEntityName())
+                .withWaterRight(accounting.getContractRefTUser().getWaterUserType()
+                            .getWaterRight()).build())
+                .withContractName(accounting.getContractRefTUser().getContractName()).build();
             if (cacheMap.containsKey(key)) {
-                cacheMap.get(key).add(new PumpAccounting.Builder()
-                        .withTransferDate(accounting.getTransferStartDatetime().toInstant())
-                        .withTransferType(toLookupType(accounting.getPhysicalXferTYpe()))
-                        .withFlow(accounting.getAccountingFlow())
-                        .withComment(accounting.getAccountingRemarks())
-                        .withPumpLocation(new CwmsId.Builder().withOfficeId(accounting
-                                        .getPumpLocationRefTUser().getOfficeId())
-                                .withName(accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                if (accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                    ? accounting.getPumpLocationRefTUser().getBaseLocationId().equals(pumpIn)
+                    : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                    + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()).equals(pumpIn))
+                {
+                    if (cacheMap.get(key).getPumpInAccounting() != null && cacheMap.get(key).getPumpInAccounting().containsKey(accounting
+                                .getPumpLocationRefTUser().getSubLocationId() == null
+                            ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                            : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                            + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()))) {
+                        cacheMap.get(key).getPumpInAccounting().get(accounting
+                                    .getPumpLocationRefTUser().getSubLocationId() == null
+                                ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()))
+                            .getPumpTransfers().put(accounting.getTransferStartDatetime().toInstant(),
+                                new PumpTransfer.Builder()
+                                    .withTransferTypeDisplay(accounting.getPhysicalXferTYpe()
+                                        .getDisplayValue())
+                                    .withTransferDate(accounting.getTransferStartDatetime().toInstant())
+                                    .withComment(accounting.getAccountingRemarks())
+                                    .withFlow(accounting.getAccountingFlow()).build());
+                    } else {
+                        Map<Instant, PumpTransfer> timeMap = new TreeMap<>();
+                        timeMap.put(accounting.getTransferStartDatetime().toInstant(),
+                            new PumpTransfer.Builder()
+                                .withTransferTypeDisplay(accounting.getPhysicalXferTYpe()
+                                    .getDisplayValue())
+                                .withTransferDate(accounting.getTransferStartDatetime().toInstant())
+                                .withComment(accounting.getAccountingRemarks())
+                                .withFlow(accounting.getAccountingFlow()).build());
+                        cacheMap.get(key).getPumpInAccounting().put(accounting.getPumpLocationRefTUser() != null &&
+                                accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                                ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()),
+                            new PumpAccounting.Builder()
+                                .withPumpLocation(new CwmsId.Builder().withOfficeId(accounting
+                                    .getPumpLocationRefTUser().getOfficeId())
+                                    .withName(accounting.getPumpLocationRefTUser().getSubLocationId() == null
                                         || accounting.getPumpLocationRefTUser().getSubLocationId().isEmpty()
                                         ? accounting.getPumpLocationRefTUser().getBaseLocationId()
                                         : accounting.getPumpLocationRefTUser().getBaseLocationId()
                                         + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()).build())
-                        .build());
+                                .withPumpTransfers(timeMap)
+                                .build());
+                    }
+                } else if (accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                        ? accounting.getPumpLocationRefTUser().getBaseLocationId().equals(pumpOut)
+                        : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                        + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()).equals(pumpOut)) {
+                    if (cacheMap.get(key).getPumpOutAccounting().containsKey(accounting
+                                .getPumpLocationRefTUser().getSubLocationId() == null
+                            ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                            : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                            + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()))) {
+                        cacheMap.get(key).getPumpOutAccounting().get(accounting
+                                    .getPumpLocationRefTUser().getSubLocationId() == null
+                                ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()))
+                            .getPumpTransfers().put(accounting.getTransferStartDatetime().toInstant(),
+                                new PumpTransfer.Builder()
+                                    .withTransferTypeDisplay(accounting.getPhysicalXferTYpe()
+                                        .getDisplayValue())
+                                    .withTransferDate(accounting.getTransferStartDatetime().toInstant())
+                                    .withComment(accounting.getAccountingRemarks())
+                                    .withFlow(accounting.getAccountingFlow()).build());
+                    } else {
+                        Map<Instant, PumpTransfer> timeMap = new TreeMap<>();
+                        timeMap.put(accounting.getTransferStartDatetime().toInstant(),
+                            new PumpTransfer.Builder()
+                                .withTransferTypeDisplay(accounting.getPhysicalXferTYpe()
+                                    .getDisplayValue())
+                                .withTransferDate(accounting.getTransferStartDatetime().toInstant())
+                                .withComment(accounting.getAccountingRemarks())
+                                .withFlow(accounting.getAccountingFlow()).build());
+                        cacheMap.get(key).getPumpOutAccounting().put(accounting
+                                    .getPumpLocationRefTUser().getSubLocationId() == null
+                                ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()),
+                            new PumpAccounting.Builder()
+                                .withPumpLocation(new CwmsId.Builder().withOfficeId(accounting
+                                        .getPumpLocationRefTUser().getOfficeId())
+                                    .withName(accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                                        || accounting.getPumpLocationRefTUser().getSubLocationId().isEmpty()
+                                        ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                        : accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                        + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()).build())
+                                .withPumpTransfers(timeMap)
+                                .build());
+                    }
+                } else if (accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                    ? accounting.getPumpLocationRefTUser().getBaseLocationId().equals(pumpBelow)
+                    : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                    + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()).equals(pumpBelow))
+                {
+                    if (cacheMap.get(key).getPumpBelowAccounting().containsKey(accounting
+                                .getPumpLocationRefTUser().getSubLocationId() == null
+                            ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                            : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                            + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()))) {
+                        cacheMap.get(key).getPumpBelowAccounting().get(accounting.getPumpLocationRefTUser()
+                                    .getSubLocationId() == null
+                                ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()))
+                            .getPumpTransfers().put(accounting.getTransferStartDatetime().toInstant(),
+                                new PumpTransfer.Builder()
+                                    .withTransferTypeDisplay(accounting.getPhysicalXferTYpe()
+                                        .getDisplayValue())
+                                    .withTransferDate(accounting.getTransferStartDatetime().toInstant())
+                                    .withComment(accounting.getAccountingRemarks())
+                                    .withFlow(accounting.getAccountingFlow()).build());
+                    } else {
+                        Map<Instant, PumpTransfer> timeMap = new TreeMap<>();
+                        timeMap.put(accounting.getTransferStartDatetime().toInstant(),
+                            new PumpTransfer.Builder()
+                                .withTransferTypeDisplay(accounting.getPhysicalXferTYpe()
+                                    .getDisplayValue())
+                                .withTransferDate(accounting.getTransferStartDatetime().toInstant())
+                                .withComment(accounting.getAccountingRemarks())
+                                .withFlow(accounting.getAccountingFlow()).build());
+                        cacheMap.get(key).getPumpBelowAccounting().put(accounting.getPumpLocationRefTUser()
+                                    .getSubLocationId() == null
+                                ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()),
+                            new PumpAccounting.Builder()
+                                .withPumpLocation(new CwmsId.Builder().withOfficeId(accounting
+                                    .getPumpLocationRefTUser().getOfficeId())
+                                    .withName(accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                                        || accounting.getPumpLocationRefTUser().getSubLocationId().isEmpty()
+                                        ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                        : accounting.getPumpLocationRefTUser().getBaseLocationId()
+                                        + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()).build())
+                                .withPumpTransfers(timeMap)
+                                .build());
+                    }
+                }
             } else {
-                List<PumpAccounting> pumpAccounting = new ArrayList<>();
-                pumpAccounting.add(new PumpAccounting.Builder()
+                Map<String, PumpAccounting> inMap = new TreeMap<>();
+                Map<String, PumpAccounting> outMap = new TreeMap<>();
+                Map<String, PumpAccounting> belowMap = new TreeMap<>();
+
+                Map<Instant, PumpTransfer> timeMap = new TreeMap<>();
+                timeMap.put(accounting.getTransferStartDatetime().toInstant(),
+                    new PumpTransfer.Builder()
+                        .withTransferTypeDisplay(accounting.getPhysicalXferTYpe()
+                            .getDisplayValue())
                         .withTransferDate(accounting.getTransferStartDatetime().toInstant())
-                        .withTransferType(toLookupType(accounting.getPhysicalXferTYpe()))
-                        .withFlow(accounting.getAccountingFlow())
                         .withComment(accounting.getAccountingRemarks())
-                        .withPumpLocation(new CwmsId.Builder().withOfficeId(accounting
-                                        .getPumpLocationRefTUser().getOfficeId())
-                                .withName(accounting.getPumpLocationRefTUser().getSubLocationId() == null
-                                        || accounting.getPumpLocationRefTUser().getSubLocationId().isEmpty()
-                                        ? accounting.getPumpLocationRefTUser().getBaseLocationId()
-                                        : accounting.getPumpLocationRefTUser().getBaseLocationId()
-                                        + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()).build())
-                        .build());
-                cacheMap.put(key, pumpAccounting);
+                        .withFlow(accounting.getAccountingFlow()).build());
+                PumpAccounting pumpAccounting = new PumpAccounting.Builder()
+                    .withPumpLocation(new CwmsId.Builder().withOfficeId(accounting
+                            .getPumpLocationRefTUser().getOfficeId())
+                        .withName(accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                            || accounting.getPumpLocationRefTUser().getSubLocationId().isEmpty()
+                            ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                            : accounting.getPumpLocationRefTUser().getBaseLocationId()
+                            + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()).build())
+                    .withPumpTransfers(timeMap)
+                    .build();
+
+                if (accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                        ? accounting.getPumpLocationRefTUser().getBaseLocationId().equals(pumpIn)
+                        : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                        + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()).equals(pumpIn))
+                {
+                    inMap.put(accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                        ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                        : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                        + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()), pumpAccounting);
+                } else if (accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                        ? accounting.getPumpLocationRefTUser().getBaseLocationId().equals(pumpOut)
+                        : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                        + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()).equals(pumpOut))
+                {
+                    outMap.put(accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                        ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                        : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                        + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()), pumpAccounting);
+                } else if (accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                        ? accounting.getPumpLocationRefTUser().getBaseLocationId().equals(pumpBelow)
+                        : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                        + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()).equals(pumpBelow)) {
+                    belowMap.put(accounting.getPumpLocationRefTUser().getSubLocationId() == null
+                        ? accounting.getPumpLocationRefTUser().getBaseLocationId()
+                        : (accounting.getPumpLocationRefTUser().getBaseLocationId()
+                        + "-" + accounting.getPumpLocationRefTUser().getSubLocationId()), pumpAccounting);
+                }
+
+                WaterSupplyAccounting supplyAccounting = new WaterSupplyAccounting.Builder()
+                    .withPumpBelowAccounting(belowMap)
+                    .withPumpInAccounting(inMap)
+                    .withPumpOutAccounting(outMap)
+                    .withContractName(key.getContractName())
+                    .withWaterUser(key.getWaterUser())
+                    .build();
+                cacheMap.put(key, supplyAccounting);
             }
         }
 
-        for (Map.Entry<AccountingKey, List<PumpAccounting>> entry : cacheMap.entrySet()) {
-            waterSupplyAccounting.add(new WaterSupplyAccounting.Builder()
-                    .withContractName(entry.getKey().getContractName())
-                    .withWaterUser(entry.getKey().getWaterUser())
-                    .withPumpAccounting(entry.getValue())
-                    .build());
+        for (Map.Entry<AccountingKey, WaterSupplyAccounting> entry : cacheMap.entrySet()) {
+            waterSupplyAccounting.add(entry.getValue());
         }
         return waterSupplyAccounting;
     }
