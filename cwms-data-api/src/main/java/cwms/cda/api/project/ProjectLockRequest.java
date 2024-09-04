@@ -130,8 +130,7 @@ public class ProjectLockRequest implements Handler {
     }
 
     private static ProjectLock getProjectLock(@NotNull Context ctx) {
-        String reqContentType = ctx.req.getContentType();
-        String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+        String formatHeader = ctx.req.getContentType();
         ContentType contentType = Formats.parseHeader(formatHeader, ProjectLock.class);
         ProjectLock lock = Formats.parseContent(contentType, ctx.bodyAsInputStream(), ProjectLock.class);
         if(lock.getSessionUser() == null) {

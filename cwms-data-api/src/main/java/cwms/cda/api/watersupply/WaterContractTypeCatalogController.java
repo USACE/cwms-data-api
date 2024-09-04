@@ -82,7 +82,7 @@ public final class WaterContractTypeCatalogController extends WaterSupplyControl
             String officeId = ctx.pathParam(OFFICE);
             DSLContext dsl = getDslContext(ctx);
             String result;
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, LookupType.class);
             ctx.contentType(contentType.toString());
             WaterContractDao dao = getContractDao(dsl);

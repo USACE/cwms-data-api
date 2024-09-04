@@ -96,7 +96,7 @@ class TimeSeriesIdentifierDescriptorTest {
         // If JsonV2 does not contain TimeSeriesIdentifierDescriptor in its list of classes
         TimeSeriesIdentifierDescriptor tsID = buildTsId();
 
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeriesIdentifierDescriptor.class);
         String jsonStr = Formats.format(contentType, tsID);
         assertNotNull(jsonStr);
     }

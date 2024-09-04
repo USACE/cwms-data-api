@@ -93,9 +93,8 @@ public final class PropertyController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);
             List<Property> properties = dao.retrieveProperties(officeMask, categoryMask, nameMask);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(formatHeader, Property.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, properties, Property.class);
             ctx.result(serialized);
@@ -135,9 +134,8 @@ public final class PropertyController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);
             Property property = dao.retrieveProperty(office, category, name, defaultValue);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(formatHeader, Property.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, property);
             ctx.result(serialized);
@@ -163,9 +161,8 @@ public final class PropertyController implements CrudHandler {
     @Override
     public void create(Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, Property.class);
             Property property = Formats.parseContent(contentType, ctx.body(), Property.class);
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);
@@ -191,9 +188,8 @@ public final class PropertyController implements CrudHandler {
     @Override
     public void update(Context ctx, String name) {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, Property.class);
             Property property = Formats.parseContent(contentType, ctx.body(), Property.class);
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);

@@ -42,7 +42,7 @@ import java.util.List;
 @JsonDeserialize(builder = RatingMetadataList.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class RatingMetadataList extends CwmsDTOPaginated {
 
     private List<RatingMetadata> metadata;

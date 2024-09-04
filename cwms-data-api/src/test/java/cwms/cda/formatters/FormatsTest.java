@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.Blobs;
+import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.Clob;
 import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.County;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.LocationLevels;
 import cwms.cda.data.dto.Office;
 import cwms.cda.data.dto.State;
 import cwms.cda.data.dto.basinconnectivity.Basin;
@@ -26,18 +28,17 @@ class FormatsTest {
 
     @Test
     void testParseHeaderAndQueryParmJson() {
-        ContentType contentType = Formats.parseHeaderAndQueryParm("application/json", null);
-
+        ContentType contentType = Formats.parseHeaderAndQueryParm("application/json", null, LocationLevels.class);
         assertNotNull(contentType);
         assertEquals("application/json", contentType.getType());
         Map<String, String> parameters = contentType.getParameters();
-        assertTrue(parameters == null || parameters.isEmpty());
-
+        assertEquals("2", parameters.get("version"));
     }
 
     @Test
     void testParseHeaderAndQueryParmJsonV2() {
-        ContentType contentType = Formats.parseHeaderAndQueryParm("application/json;version=2", null);
+        ContentType contentType = Formats.parseHeaderAndQueryParm("application/json;version=2",
+            null, LocationLevels.class);
 
         assertNotNull(contentType);
         assertEquals("application/json", contentType.getType());
@@ -50,39 +51,39 @@ class FormatsTest {
 
     @Test
     void testParseNullNull() {
-        assertThrows(FormattingException.class, () -> Formats.parseHeaderAndQueryParm(null, null));
+        assertThrows(FormattingException.class, () -> Formats.parseHeaderAndQueryParm(null, null, Catalog.class));
     }
 
     @Test
     void testParseEmptyHeader() {
 
-        ContentType contentType = Formats.parseHeaderAndQueryParm("", "json");
+        ContentType contentType = Formats.parseHeaderAndQueryParm("", "json", LocationLevels.class);
 
         assertNotNull(contentType);
         assertEquals("application/json", contentType.getType());
         Map<String, String> parameters = contentType.getParameters();
-        assertTrue(parameters == null || parameters.isEmpty());
+        assertEquals("2", parameters.get("version"));
     }
 
     @Test
     void testParseNullHeader() {
 
-        ContentType contentType = Formats.parseHeaderAndQueryParm(null, "json");
+        ContentType contentType = Formats.parseHeaderAndQueryParm(null, "json", Catalog.class);
 
         assertNotNull(contentType);
         assertEquals("application/json", contentType.getType());
         Map<String, String> parameters = contentType.getParameters();
-        assertTrue(parameters == null || parameters.isEmpty());
+        assertEquals("1", parameters.get("version"));
     }
 
 
     @Test
     void testParseHeaderAndQueryParmXml() {
         assertThrows(FormattingException.class, () -> {
-            Formats.parseHeaderAndQueryParm(null, null);
+            Formats.parseHeaderAndQueryParm(null, null, Catalog.class);
         });
 
-        ContentType contentType = Formats.parseHeaderAndQueryParm("application/xml", null);
+        ContentType contentType = Formats.parseHeaderAndQueryParm("application/xml", null, Catalog.class);
 
         assertNotNull(contentType);
         assertEquals("application/xml", contentType.getType());
@@ -90,7 +91,7 @@ class FormatsTest {
         assertTrue(parameters == null || parameters.isEmpty());
 
 
-        contentType = Formats.parseHeaderAndQueryParm("application/xml;version=2", null);
+        contentType = Formats.parseHeaderAndQueryParm("application/xml;version=2", null, Catalog.class);
 
         assertNotNull(contentType);
         assertEquals("application/xml", contentType.getType());
@@ -105,14 +106,14 @@ class FormatsTest {
     @Test
     void testParseBoth() {
         assertThrows(FormattingException.class, () -> {
-            Formats.parseHeaderAndQueryParm("application/json", "json");
+            Formats.parseHeaderAndQueryParm("application/json", "json", LocationLevels.class);
         });
     }
 
     @Test
     void testParseBothv2() {
         assertThrows(FormattingException.class, () -> {
-            Formats.parseHeaderAndQueryParm("application/json;version=2", "json");
+            Formats.parseHeaderAndQueryParm("application/json;version=2", "json", LocationLevels.class);
         });
 
     }
@@ -121,16 +122,26 @@ class FormatsTest {
     void testParseHeader() {
         ContentType contentType;
 
-        contentType = Formats.parseHeader("application/json");
+        contentType = Formats.parseHeader("application/json", Catalog.class);
         assertNotNull(contentType);
         assertEquals("application/json", contentType.getType());
 
-        contentType = Formats.parseHeader("application/json;version=2");
+        contentType = Formats.parseHeader("application/json;version=2", Catalog.class);
         assertNotNull(contentType);
         assertEquals("application/json", contentType.getType());
 
-        assertThrows(FormattingException.class, () -> Formats.parseHeader(null));
-        assertThrows(FormattingException.class, () -> Formats.parseHeader(""));
+        assertEquals(new ContentType("application/json;version=1"),
+            Formats.parseHeader(null, Catalog.class));
+        assertEquals(new ContentType("application/json;version=1"),
+            Formats.parseHeader("", Catalog.class));
+        assertEquals(new ContentType("application/json;version=1"),
+            Formats.parseHeader(" ", Catalog.class));
+        assertEquals(new ContentType("application/json;version=2"),
+            Formats.parseHeader("application/json;version=2,hello=world", Catalog.class));
+
+        assertThrows(FormattingException.class, () -> Formats.parseHeader("abc", CwmsDTOBase.class));
+        assertThrows(FormattingException.class, () -> Formats.parseHeader("abc", Catalog.class));
+        assertThrows(FormattingException.class, () -> Formats.parseHeader("abc,def", Catalog.class));
 
     }
 
@@ -143,7 +154,8 @@ class FormatsTest {
 
     @Test
     void testParseHeaderAndQueryParmJsonV2WithCharset() {
-        ContentType contentType = Formats.parseHeaderAndQueryParm("application/json;version=2; charset=utf-8", null);
+        ContentType contentType = Formats.parseHeaderAndQueryParm("application/json;version=2; charset=utf-8", null,
+            LocationLevels.class);
 
         assertNotNull(contentType);
         assertEquals("application/json", contentType.getType());
@@ -151,7 +163,7 @@ class FormatsTest {
 
     @Test
     void testParseHeaderJsonV2WithCharset() {
-        ContentType contentType = Formats.parseHeader("application/json;version=2; charset=utf-8");
+        ContentType contentType = Formats.parseHeader("application/json;version=2; charset=utf-8", Catalog.class);
 
         assertNotNull(contentType);
         assertEquals("application/json", contentType.getType());
@@ -160,9 +172,9 @@ class FormatsTest {
     @Test
     void testParseHeaderFromFirefox() {
         //The following header comes from firefox
-        ContentType contentType = Formats.parseHeader(FIREFOX_HEADER);
+        ContentType contentType = Formats.parseHeader(FIREFOX_HEADER, Catalog.class);
         assertNotNull(contentType);
-        assertEquals(Formats.XML, contentType.toString());
+        assertEquals(Formats.DEFAULT, contentType.toString());
     }
 
     @EnumSource(ParseHeaderClassAliasTest.class)
@@ -206,8 +218,8 @@ class FormatsTest {
         PROJECT_JSONV1(Project.class, Formats.JSONV1, Formats.JSONV1),
         PROJECT_JSON(Project.class, Formats.JSON, Formats.JSONV1),
       	LOCK_REVOKER_RIGHTS_JSON(LockRevokerRights.class, Formats.JSON, Formats.JSONV1),
-		    LOCK_REVOKER_RIGHTS_JSONV1(LockRevokerRights.class, Formats.JSONV1, Formats.JSONV1),
-		    LOCK_REVOKER_RIGHTS_DEFAULT(LockRevokerRights.class, Formats.DEFAULT, Formats.JSONV1)
+        LOCK_REVOKER_RIGHTS_JSONV1(LockRevokerRights.class, Formats.JSONV1, Formats.JSONV1),
+        LOCK_REVOKER_RIGHTS_DEFAULT(LockRevokerRights.class, Formats.DEFAULT, Formats.JSONV1)
         ;
 
         final Class<? extends CwmsDTOBase> klass;

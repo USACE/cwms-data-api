@@ -115,7 +115,7 @@ public final class StreamReachController implements CrudHandler {
             StreamReachDao dao = new StreamReachDao(dsl);
             String stationUnits = ctx.queryParamAsClass(STATION_UNIT, String.class).getOrDefault("mi");
             List<StreamReach> streamReaches = dao.retrieveStreamReaches(office, streamIdMask, reachIdMask, configurationIdMask, stationUnits);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, StreamReach.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, streamReaches, StreamReach.class);
@@ -188,8 +188,7 @@ public final class StreamReachController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
+            String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, StreamReach.class);
             StreamReach streamReach = Formats.parseContent(contentType, ctx.body(), StreamReach.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
