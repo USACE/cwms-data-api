@@ -137,7 +137,7 @@ class FormatsTest {
         assertEquals(new ContentType("application/json;version=1"),
             Formats.parseHeader(" ", Catalog.class));
         assertEquals(new ContentType("application/json;version=2"),
-            Formats.parseHeader("application/json;version=2,hello=world", Catalog.class));
+            Formats.parseHeader("application/json;version=2,hello=world", LocationLevels.class));
 
         assertThrows(FormattingException.class, () -> Formats.parseHeader("abc", CwmsDTOBase.class));
         assertThrows(FormattingException.class, () -> Formats.parseHeader("abc", Catalog.class));

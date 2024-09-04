@@ -27,14 +27,10 @@ package cwms.cda.formatters;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.annotations.FormattableWith;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import javax.validation.constraints.NotNull;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,6 +40,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 
 public class Formats {
@@ -278,12 +276,8 @@ public class Formats {
         } else if (header == null) {
             throw new UnsupportedFormatException("no content type or format specified");
         } else {
-            ContentType ct = parseHeader(header, klass);
-            if (ct != null) {
-                return ct;
-            }
+            return parseHeader(header, klass);
         }
-        throw new UnsupportedFormatException("Content-Type " + header + " is not available");
     }
 
     public static ContentType parseQueryParam(String queryParam, Class<? extends CwmsDTOBase> klass)
@@ -319,7 +313,8 @@ public class Formats {
      * @return an appropriate standard mimetype for lookup
      * @throws FormattingException if the header can't be identified as a mimetype
      */
-    public static @NotNull ContentType parseHeader(String header, @NotNull Class<? extends CwmsDTOBase> klass) {
+    public static @NotNull ContentType parseHeader(@Nullable String header,
+        @NotNull Class<? extends CwmsDTOBase> klass) {
         Objects.requireNonNull(klass, "Cannot determine content type without a DTO class definition");
         ContentTypeAliasMap aliasMap = ContentTypeAliasMap.forDtoClass(klass);
         //Swap out null content type with */* for flexibility.
@@ -343,10 +338,9 @@ public class Formats {
                 //Only use the ContentType classes initialized in contentTypeList rather than
                 //the client headers itself
                 ContentType type = new ContentType(ct);
-                contentTypeList.stream()
-                    .filter(c -> c.equals(type))
-                    .findFirst()
-                    .ifPresent(contentTypes::add);
+                if(contentTypeList.contains(type)) {
+                    contentTypes.add(type);
+                }
             }
         }
         logger.finest(() -> "have " + contentTypes.size());
