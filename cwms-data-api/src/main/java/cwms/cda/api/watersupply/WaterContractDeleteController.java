@@ -58,7 +58,7 @@ public final class WaterContractDeleteController extends WaterSupplyControllerBa
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = METHOD, description = "Specifies the delete method used.",
+            @OpenApiParam(name = METHOD, description = "Specifies the delete method used. Defaults to DELETE_KEY.",
                     type = DeleteMethod.class),
         },
         pathParams = {
