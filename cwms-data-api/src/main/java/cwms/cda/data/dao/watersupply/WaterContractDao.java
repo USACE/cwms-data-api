@@ -161,7 +161,7 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
             setOffice(c, location.getOfficeId());
             LOCATION_REF_T projectLocationRef =  LocationUtil.getLocationRef(location);
             CWMS_WATER_SUPPLY_PACKAGE.call_DELETE_WATER_USER(DSL.using(c).configuration(), projectLocationRef,
-                    entityName, deleteAction.getRule().toString());
+                    entityName, deleteAction == null ? null : deleteAction.getRule().toString());
         });
     }
 
@@ -172,7 +172,7 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
             String contractName = contract.getContractId().getName();
             WATER_USER_CONTRACT_REF_T waterUserContract = new WATER_USER_CONTRACT_REF_T(waterUserT, contractName);
             CWMS_WATER_SUPPLY_PACKAGE.call_DELETE_CONTRACT(DSL.using(c).configuration(), waterUserContract,
-                    deleteAction.getRule().toString());
+                    deleteAction == null ? null : deleteAction.getRule().toString());
         });
     }
 
