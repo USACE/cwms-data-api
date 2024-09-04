@@ -137,7 +137,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
         int kiloByteLimit = Integer.parseInt(System.getProperty("cda.api.ts.bin.max.length.kB", "64"));
 
         String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+        ContentType contentType = Formats.parseHeader(formatHeader, BinaryTimeSeries.class);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String dateToken = "{date_token}";
             String path = ctx.path();
@@ -200,9 +200,8 @@ public class BinaryTimeSeriesController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, BinaryTimeSeries.class);
             BinaryTimeSeries tts = deserializeBody(ctx, contentType);
             TimeSeriesBinaryDao dao = getDao(dsl);
 
@@ -238,9 +237,8 @@ public class BinaryTimeSeriesController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             boolean maxVersion = true;
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(false);
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, BinaryTimeSeries.class);
             BinaryTimeSeries tts = deserializeBody(ctx, contentType);
             DSLContext dsl = getDslContext(ctx);
 

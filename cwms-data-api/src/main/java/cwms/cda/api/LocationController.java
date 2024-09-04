@@ -265,8 +265,7 @@ public class LocationController implements CrudHandler {
             String units =
                     ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
             String office = ctx.queryParam(OFFICE);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV2;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             ctx.contentType(contentType.toString());
             LocationsDao locationDao = getLocationsDao(dsl);
@@ -307,9 +306,8 @@ public class LocationController implements CrudHandler {
 
             LocationsDao locationsDao = getLocationsDao(dsl);
 
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             locationsDao.storeLocation(locationFromBody);
             ctx.status(HttpServletResponse.SC_OK).json("Created Location");
@@ -344,9 +342,8 @@ public class LocationController implements CrudHandler {
 
             LocationsDao locationsDao = getLocationsDao(dsl);
 
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             //getLocation will throw an error if location does not exist
             Location existingLocation = locationsDao.getLocation(locationId,

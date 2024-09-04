@@ -118,7 +118,7 @@ public class TimeSeriesGroupController implements CrudHandler {
                 ctx.status(HttpCode.NOT_FOUND).json(re);
             } else {
                 String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+                ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
 
                 String result = Formats.format(contentType, grps, TimeSeriesGroup.class);
 
@@ -160,7 +160,7 @@ public class TimeSeriesGroupController implements CrudHandler {
             String categoryId = ctx.queryParam(CATEGORY_ID);
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
 
             TimeSeriesGroup group = null;
             List<TimeSeriesGroup> timeSeriesGroups = dao.getTimeSeriesGroups(office, categoryId,
@@ -216,10 +216,9 @@ public class TimeSeriesGroupController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
             TimeSeriesGroup deserialize = Formats.parseContent(contentType, body, TimeSeriesGroup.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
@@ -251,12 +250,12 @@ public class TimeSeriesGroupController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
             TimeSeriesGroup deserialize = Formats.parseContent(contentType, body, TimeSeriesGroup.class);
-            boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_TS, Boolean.class).getOrDefault(false);
+            boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_TS, Boolean.class)
+                .getOrDefault(false);
             TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
             if (!oldGroupId.equals(deserialize.getId())) {
                 timeSeriesGroupDao.renameTimeSeriesGroup(oldGroupId, deserialize);

@@ -94,8 +94,7 @@ public class VirtualOutletController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
             List<VirtualOutlet> outlets = dao.retrieveVirtualOutletsForProject(office, projectId);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, VirtualOutlet.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, outlets, VirtualOutlet.class);
@@ -132,8 +131,7 @@ public class VirtualOutletController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
             VirtualOutlet outlet = dao.retrieveVirtualOutlet(office, projectId, name);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, VirtualOutlet.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, outlet);

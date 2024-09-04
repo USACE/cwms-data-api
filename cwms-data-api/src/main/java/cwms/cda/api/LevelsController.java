@@ -133,9 +133,8 @@ public class LevelsController implements CrudHandler {
     public void create(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime(CREATE)) {
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, LocationLevel.class);
             LocationLevel level = Formats.parseContent(contentType, ctx.body(), LocationLevel.class);
             level.validate();
 
@@ -403,9 +402,8 @@ public class LevelsController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, LocationLevel.class);
             LocationLevel levelFromBody = Formats.parseContent(contentType, ctx.body(),
                 LocationLevel.class);
             String officeId = levelFromBody.getOfficeId();

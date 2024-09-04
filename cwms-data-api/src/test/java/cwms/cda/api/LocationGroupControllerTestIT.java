@@ -59,7 +59,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
                 "sharedLocAliasId", locationId, 123);
         List<AssignedLocation> assignedLocations = group.getAssignedLocations();
         assignedLocations.add(new AssignedLocation(locationId, officeId, "AliasId", 1, locationId));
-        ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
+        ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
         //Create Category
@@ -139,7 +139,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             "sharedLocAliasId", locationId, 123);
         List<AssignedLocation> assignedLocations = group.getAssignedLocations();
         assignedLocations.add(new AssignedLocation(locationId, officeId, "AliasId", 1, locationId));
-        ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
+        ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
         //Create Category
@@ -257,7 +257,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         registerGroup(group);
         List<AssignedLocation> assignedLocations = group.getAssignedLocations();
         assignedLocations.add(new AssignedLocation(locationId, officeId, "AliasId", 1, locationId));
-        ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
+        ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
         //Create Category
@@ -363,7 +363,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             "sharedLocAliasId", locationId, 123);
         List<AssignedLocation> assignedLocations = group.getAssignedLocations();
         assignedLocations.add(new AssignedLocation(locationId, officeId, "AliasId", 1, locationId));
-        ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
+        ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
         //Create Category

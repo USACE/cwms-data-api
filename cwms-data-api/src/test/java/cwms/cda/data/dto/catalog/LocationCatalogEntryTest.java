@@ -18,7 +18,7 @@ class LocationCatalogEntryTest
 		Catalog cat = new Catalog(null, 1, 10,
 				new ArrayList<CatalogEntry>(){{add(entry);}});
 
-		ContentType contentType = Formats.parseHeader(Formats.JSONV2);
+		ContentType contentType = Formats.parseHeader(Formats.JSONV2, Catalog.class);
 		String json = Formats.format(contentType, cat);
 
 		assertNotNull(json);
@@ -35,7 +35,7 @@ class LocationCatalogEntryTest
 					add(entry);
 				}});
 
-		ContentType contentType = Formats.parseHeader(Formats.XML);
+		ContentType contentType = Formats.parseHeader(Formats.XML, Catalog.class);
 		String xml = Formats.format(contentType, cat);
 
 		assertNotNull(xml);

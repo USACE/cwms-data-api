@@ -85,8 +85,7 @@ public class OutletController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
+            String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Outlet.class);
             Outlet outlet = Formats.parseContent(contentType, ctx.body(), Outlet.class);
             outlet.validate();
@@ -122,8 +121,7 @@ public class OutletController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
             List<Outlet> outlets = dao.retrieveOutletsForProject(office, projectId);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Outlet.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, outlets, Outlet.class);
@@ -159,8 +157,7 @@ public class OutletController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
             Outlet outlet = dao.retrieveOutlet(office, name);
-            String header = ctx.header(Header.ACCEPT);
-            String formatHeader = header != null ? header : Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Outlet.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, outlet);

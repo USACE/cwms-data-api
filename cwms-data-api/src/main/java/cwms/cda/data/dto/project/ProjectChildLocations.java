@@ -49,7 +49,7 @@ import java.util.Map;
 @JsonDeserialize(builder = ProjectChildLocations.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV1, aliases = {Formats.JSON}, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, aliases = {Formats.DEFAULT, Formats.JSON}, formatter = JsonV1.class)
 public class ProjectChildLocations extends CwmsDTOBase {
 
     private final CwmsId projectId;

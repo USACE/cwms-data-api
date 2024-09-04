@@ -53,7 +53,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         String officeId = "SPK";
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_create_read_delete", "IntegrationTesting");
-        ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
+        ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
         String xml = Formats.format(contentType, cat);
         //Create Category
         given()

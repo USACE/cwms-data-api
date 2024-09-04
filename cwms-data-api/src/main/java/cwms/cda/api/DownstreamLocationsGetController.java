@@ -100,7 +100,7 @@ public final class DownstreamLocationsGetController implements Handler {
             StreamLocationDao dao = new StreamLocationDao(dsl);
             List<StreamLocation> downstreamLocations = dao.retrieveDownstreamLocations(office, locationId, allDownstream, sameStreamOnly, stationUnits, stageUnits, areaUnits);
 
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, downstreamLocations, StreamLocation.class);

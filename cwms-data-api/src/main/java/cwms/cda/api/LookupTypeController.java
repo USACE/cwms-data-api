@@ -92,8 +92,8 @@ public final class LookupTypeController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LookupTypeDao dao = new LookupTypeDao(dsl);
             List<LookupType> lookupTypes = dao.retrieveLookupTypes(category, prefix, officeId);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(formatHeader, LookupType.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, lookupTypes, LookupType.class);
             ctx.result(serialized);
@@ -132,9 +132,8 @@ public final class LookupTypeController implements CrudHandler {
         String category = requiredParam(ctx, CATEGORY);
         String prefix = requiredParam(ctx, PREFIX);
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, LookupType.class);
             LookupType lookupType = Formats.parseContent(contentType, ctx.body(), LookupType.class);
             DSLContext dsl = getDslContext(ctx);
             LookupTypeDao dao = new LookupTypeDao(dsl);
@@ -165,9 +164,8 @@ public final class LookupTypeController implements CrudHandler {
         String category = requiredParam(ctx, CATEGORY);
         String prefix = requiredParam(ctx, PREFIX);
         try (Timer.Context ignored = markAndTime(UPDATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, LookupType.class);
             LookupType lookupType = Formats.parseContent(contentType, ctx.body(), LookupType.class);
             DSLContext dsl = getDslContext(ctx);
             LookupTypeDao dao = new LookupTypeDao(dsl);

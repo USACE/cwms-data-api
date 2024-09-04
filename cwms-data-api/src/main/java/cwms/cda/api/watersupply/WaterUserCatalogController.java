@@ -86,7 +86,7 @@ public final class WaterUserCatalogController extends WaterSupplyControllerBase 
             String office = ctx.pathParam(OFFICE);
             String locationId = ctx.pathParam(PROJECT_ID);
             CwmsId projectLocation = CwmsId.buildCwmsId(office, locationId);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
             WaterContractDao contractDao = getContractDao(dsl);

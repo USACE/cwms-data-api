@@ -99,7 +99,7 @@ public class StandardTextController implements CrudHandler {
                 idMask = "*";
             }
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+            ContentType contentType = Formats.parseHeader(formatHeader, StandardTextCatalog.class);
             DSLContext dsl = getDslContext(ctx);
             StandardTextCatalog catalog = getDao(dsl).retreiveStandardTextCatalog(idMask, officeMask);
 
@@ -141,7 +141,7 @@ public class StandardTextController implements CrudHandler {
             StandardTextValue standardTextValue = getDao(dsl).retrieveStandardText(stdTextId, office);
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+            ContentType contentType = Formats.parseHeader(formatHeader, StandardTextValue.class);
             ctx.contentType(contentType.toString());
             String result = Formats.format(contentType, standardTextValue);
             ctx.result(result);
@@ -166,12 +166,11 @@ public class StandardTextController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
+            String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
 
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(false);
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, StandardTextValue.class);
             StandardTextValue tts = Formats.parseContent(contentType, body, StandardTextValue.class);
             DSLContext dsl = getDslContext(ctx);
             getDao(dsl).storeStandardText(tts.getId().getId(), tts.getStandardText(), tts.getId().getOfficeId(),

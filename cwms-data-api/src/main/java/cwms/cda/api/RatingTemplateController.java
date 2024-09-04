@@ -120,7 +120,7 @@ public class RatingTemplateController implements CrudHandler {
         String templateIdMask = ctx.queryParam(TEMPLATE_ID_MASK);
 
         String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+        ContentType contentType = Formats.parseHeader(formatHeader, RatingTemplates.class);
         try (final Timer.Context timeContext = markAndTime(GET_ALL)){
             DSLContext dsl = getDslContext(ctx);
 
@@ -171,7 +171,7 @@ public class RatingTemplateController implements CrudHandler {
     @Override
     public void getOne(Context ctx, String templateId) {
         String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+        ContentType contentType = Formats.parseHeader(formatHeader, RatingTemplate.class);
 
         String office = ctx.queryParam(OFFICE);
 

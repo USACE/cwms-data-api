@@ -69,8 +69,6 @@ public final class ForecastSpecController implements CrudHandler {
             dao.create(forecastSpec);
 
             ctx.status(HttpServletResponse.SC_CREATED);
-        } catch (IOException ex) {
-            throw new IllegalArgumentException("Unable to deserialize forecast spec from content body", ex);
         }
     }
 
@@ -169,7 +167,7 @@ public final class ForecastSpecController implements CrudHandler {
                     sourceEntity);
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            ContentType contentType = Formats.parseHeader(formatHeader, ForecastSpec.class);
             String result = Formats.format(contentType, specs, ForecastSpec.class);
 
             ctx.result(result).contentType(contentType.toString());
@@ -218,7 +216,7 @@ public final class ForecastSpecController implements CrudHandler {
             ForecastSpec spec = dao.getForecastSpec(office, name, designator);
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            ContentType contentType = Formats.parseHeader(formatHeader, ForecastSpec.class);
             String result = Formats.format(contentType, spec);
 
             ctx.result(result).contentType(contentType.toString());
@@ -253,15 +251,12 @@ public final class ForecastSpecController implements CrudHandler {
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
             dao.update(forecastSpec);
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (IOException ex) {
-            throw new IllegalArgumentException("Unable to deserialize forecast spec from content body", ex);
         }
     }
 
-    private ForecastSpec deserializeForecastSpec(Context ctx) throws IOException {
-        String reqContentType = ctx.req.getContentType();
-        String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-        ContentType contentType = Formats.parseHeader(formatHeader);
+    private ForecastSpec deserializeForecastSpec(Context ctx) {
+        String formatHeader = ctx.req.getContentType();
+        ContentType contentType = Formats.parseHeader(formatHeader, ForecastSpec.class);
         return Formats.parseContent(contentType, ctx.body(), ForecastSpec.class);
     }
 
