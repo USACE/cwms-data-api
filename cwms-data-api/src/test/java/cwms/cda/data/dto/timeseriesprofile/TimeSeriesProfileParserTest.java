@@ -18,20 +18,20 @@ final class TimeSeriesProfileParserTest {
     @Test
     void testTimeSeriesProfileColumnarSerializationRoundTrip() {
         TimeSeriesProfileParserColumnar timeSeriesProfileParser = buildTestTimeSeriesProfileParserColumnar();
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParserColumnar.class);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class);
 
         String serialized = Formats.format(contentType, timeSeriesProfileParser);
-        TimeSeriesProfileParserColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParserColumnar.class), serialized, TimeSeriesProfileParserColumnar.class);
+        TimeSeriesProfileParserColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class), serialized, TimeSeriesProfileParserColumnar.class);
         testAssertEquals(timeSeriesProfileParser,  deserialized, "Roundtrip serialization failed");
     }
 
     @Test
     void testTimeSeriesProfileIndexedSerializationRoundTrip() {
         TimeSeriesProfileParser timeSeriesProfileParser = buildTestTimeSeriesProfileParserIndexed();
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParserColumnar.class);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class);
 
         String serialized = Formats.format(contentType, timeSeriesProfileParser);
-        TimeSeriesProfileParserIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParserIndexed.class), serialized, TimeSeriesProfileParserIndexed.class);
+        TimeSeriesProfileParserIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserIndexed.class), serialized, TimeSeriesProfileParserIndexed.class);
         testAssertEquals((TimeSeriesProfileParserIndexed)timeSeriesProfileParser, deserialized, "Roundtrip serialization failed");
     }
     @Test
@@ -40,7 +40,7 @@ final class TimeSeriesProfileParserTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofileparsercolumnar.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        TimeSeriesProfileParserColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParserColumnar.class), serialized, TimeSeriesProfileParserColumnar.class);
+        TimeSeriesProfileParserColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class), serialized, TimeSeriesProfileParserColumnar.class);
         testAssertEquals(timeSeriesProfileParser,  deserialized, "Roundtrip serialization from file failed");
     }
 
@@ -50,7 +50,7 @@ final class TimeSeriesProfileParserTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofileparserindexed.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        TimeSeriesProfileParserIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParserIndexed.class), serialized, TimeSeriesProfileParserIndexed.class);
+        TimeSeriesProfileParserIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserIndexed.class), serialized, TimeSeriesProfileParserIndexed.class);
         testAssertEquals((TimeSeriesProfileParserIndexed) timeSeriesProfileParser, deserialized, "Roundtrip serialization from file failed");
     }
 

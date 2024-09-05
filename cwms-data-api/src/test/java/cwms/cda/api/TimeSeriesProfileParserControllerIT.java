@@ -84,11 +84,11 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
         tsDataColumnar = IOUtils.toString(resourceColumnar, StandardCharsets.UTF_8);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
-        tspParserIndexed = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+        tspParserIndexed = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfileParserIndexed.class), tsDataIndexed, TimeSeriesProfileParserIndexed.class);
-        tspParserColumnar = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+        tspParserColumnar = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfileParserColumnar.class), tsDataColumnar, TimeSeriesProfileParserColumnar.class);
-        tsProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+        tsProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfile.class), tsData, TimeSeriesProfile.class);
         tspModified = new TimeSeriesProfile.Builder()
                 .withDescription(tsProfile.getDescription())
@@ -123,8 +123,8 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
         // Create a Time Series Profile Parser
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tsDataIndexed)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
@@ -141,7 +141,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
         // Retrieve the Time Series Profile Parser
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(LOCATION_ID, tspParserIndexed.getLocationId().getName())
@@ -169,8 +169,8 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
         // Create a Time Series Profile Parser
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tsDataColumnar)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
@@ -187,7 +187,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
         // Retrieve the Time Series Profile Parser
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(LOCATION_ID, tspParserColumnar.getLocationId().getName())
@@ -213,8 +213,8 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
         // Create a Time Series Profile Parser
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tsDataIndexed)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
@@ -231,7 +231,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
         // Delete the Time Series Profile Parser
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(LOCATION_ID, tspParserIndexed.getLocationId().getName())
@@ -248,7 +248,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
         // Attempt to retrieve the Time Series Profile Parser and assert it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(LOCATION_ID, tspParserIndexed.getLocationId().getName())
@@ -268,7 +268,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
         // Delete the Time Series Profile Parser
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(LOCATION_ID, "non existent location")
@@ -297,14 +297,14 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
                 .withTimeZone(tspParserIndexed.getTimeZone())
                 .withParameterInfoList(tspParserIndexed.getParameterInfoList())
                 .build();
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeriesProfileParserIndexed.class);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserIndexed.class);
         String tspDataInd = Formats.format(contentType, tspIndex);
 
         // Create a Time Series Profile Parser
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tspDataInd)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
@@ -320,8 +320,8 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tsDataIndexed)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
@@ -338,7 +338,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
         // Get all Time Series Profile Parsers
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)

@@ -88,8 +88,8 @@ public final class TimeSeriesProfileParserController implements CrudHandler {
         },
         requestBody = @OpenApiRequestBody(
             content = {
-                @OpenApiContent(from = TimeSeriesProfileParserIndexed.class, type = Formats.JSONV2),
-                @OpenApiContent(from = TimeSeriesProfileParserColumnar.class, type = Formats.JSONV2),
+                @OpenApiContent(from = TimeSeriesProfileParserIndexed.class, type = Formats.JSONV1),
+                @OpenApiContent(from = TimeSeriesProfileParserColumnar.class, type = Formats.JSONV1),
             },
             required = true
         ),
@@ -109,11 +109,11 @@ public final class TimeSeriesProfileParserController implements CrudHandler {
             TimeSeriesProfileParserIndexed tspParserIndexed = null;
             TimeSeriesProfileParserDao tspParserDao = new TimeSeriesProfileParserDao(dsl);
             try {
-                tspParserColumnar = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+                tspParserColumnar = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                         TimeSeriesProfileParserColumnar.class), ctx.body(), TimeSeriesProfileParserColumnar.class);
 
             } catch (Exception e) {
-                tspParserIndexed = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+                tspParserIndexed = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                         TimeSeriesProfileParserIndexed.class), ctx.body(), TimeSeriesProfileParserIndexed.class);
             }
             if (tspParserColumnar != null) {
@@ -178,7 +178,7 @@ public final class TimeSeriesProfileParserController implements CrudHandler {
             @OpenApiResponse(status = STATUS_200,
                 description = "A TimeSeriesProfileParser object",
                 content = {
-                    @OpenApiContent(from = TimeSeriesProfileParser.class, type = Formats.JSONV2),
+                    @OpenApiContent(from = TimeSeriesProfileParser.class, type = Formats.JSONV1),
                     @OpenApiContent(from = TimeSeriesProfileParser.class, type = Formats.XMLV2),
                 }),
             @OpenApiResponse(status = STATUS_404, description = "The provided combination of parameters did not"
@@ -225,8 +225,8 @@ public final class TimeSeriesProfileParserController implements CrudHandler {
             @OpenApiResponse(status = STATUS_200,
                 description = "A TimeSeriesProfileParser object",
                 content = {
-                    @OpenApiContent(from = TimeSeriesProfileParserIndexed.class, type = Formats.JSONV2),
-                    @OpenApiContent(from = TimeSeriesProfileParserColumnar.class, type = Formats.JSONV2),
+                    @OpenApiContent(from = TimeSeriesProfileParserIndexed.class, type = Formats.JSONV1),
+                    @OpenApiContent(from = TimeSeriesProfileParserColumnar.class, type = Formats.JSONV1),
                 }),
             @OpenApiResponse(status = STATUS_404, description = "The provided combination of parameters did not"
                 + " find a TimeSeriesProfileParser object"),

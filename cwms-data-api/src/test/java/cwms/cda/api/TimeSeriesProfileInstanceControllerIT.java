@@ -106,13 +106,13 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         tsProfileDataColumnar2 = IOUtils.toString(profileResourceCol2, StandardCharsets.UTF_8);
         tsProfileDataIndexed2 = IOUtils.toString(profileResourceInd2, StandardCharsets.UTF_8);
         tspData = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        tsProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+        tsProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfile.class), tspData, TimeSeriesProfile.class);
-        tspParserIndexed = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+        tspParserIndexed = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfileParserIndexed.class), resourceIndexed, TimeSeriesProfileParserIndexed.class);
-        tspParserColumnar = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+        tspParserColumnar = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfileParserColumnar.class), resourceColumnar, TimeSeriesProfileParserColumnar.class);
-        tspInstance = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+        tspInstance = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfileInstance.class), tsDataInstance, TimeSeriesProfileInstance.class);
         createLocation(tsProfile.getLocationId().getName(), true, OFFICE_ID, "SITE");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -148,8 +148,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
@@ -170,8 +170,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(PARAMETER_ID, tspInstance.getTimeSeriesProfile().getKeyParameter())
@@ -211,8 +211,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
@@ -233,8 +233,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
@@ -273,8 +273,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
@@ -295,8 +295,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Delete instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(PARAMETER_ID, tspParserColumnar.getKeyParameter())
@@ -318,8 +318,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance and assert it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
@@ -350,8 +350,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
@@ -372,8 +372,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Delete instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(PARAMETER_ID, tspParserColumnar.getKeyParameter())
@@ -395,8 +395,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance and assert it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
@@ -424,8 +424,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Delete instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(PARAMETER_ID, tspInstance.getTimeSeriesProfile().getKeyParameter())
@@ -452,8 +452,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
@@ -474,8 +474,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
@@ -496,8 +496,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve all instances
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -525,8 +525,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
@@ -546,8 +546,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
@@ -568,8 +568,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve all instances
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)

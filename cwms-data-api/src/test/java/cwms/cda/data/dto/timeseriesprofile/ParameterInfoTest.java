@@ -15,17 +15,17 @@ class ParameterInfoTest {
     @Test
     void testParameterInfoColumnarRoundTrip() {
         ParameterInfo parameterInfo = buildParameterInfoColumnar();
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2, ParameterInfoColumnar.class);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV1, ParameterInfoColumnar.class);
         String serialized = Formats.format(contentType, parameterInfo);
-        ParameterInfoColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, ParameterInfoColumnar.class), serialized, ParameterInfoColumnar.class);
+        ParameterInfoColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, ParameterInfoColumnar.class), serialized, ParameterInfoColumnar.class);
         testAssertEquals((ParameterInfoColumnar)parameterInfo, deserialized, "Roundtrip serialization failed");
     }
     @Test
     void testParameterInfoIndexedRoundTrip() {
         ParameterInfo parameterInfo = buildParameterInfoIndexed();
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2, ParameterInfoIndexed.class);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV1, ParameterInfoIndexed.class);
         String serialized = Formats.format(contentType, parameterInfo);
-        ParameterInfoIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, ParameterInfoIndexed.class), serialized, ParameterInfoIndexed.class);
+        ParameterInfoIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, ParameterInfoIndexed.class), serialized, ParameterInfoIndexed.class);
         testAssertEquals((ParameterInfoIndexed) parameterInfo, deserialized, "Roundtrip serialization failed");
     }
 
@@ -35,7 +35,7 @@ class ParameterInfoTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/parameterinfocolumnar.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        ParameterInfoColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, ParameterInfoColumnar.class), serialized, ParameterInfoColumnar.class);
+        ParameterInfoColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, ParameterInfoColumnar.class), serialized, ParameterInfoColumnar.class);
         testAssertEquals((ParameterInfoColumnar)parameterInfo, deserialized, "Roundtrip serialization from file failed");
     }
     @Test
@@ -44,7 +44,7 @@ class ParameterInfoTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/parameterinfoindexed.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        ParameterInfoIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, ParameterInfoIndexed.class), serialized, ParameterInfoIndexed.class);
+        ParameterInfoIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, ParameterInfoIndexed.class), serialized, ParameterInfoIndexed.class);
         testAssertEquals((ParameterInfoIndexed)parameterInfo, deserialized, "Roundtrip serialization from file failed");
     }
 

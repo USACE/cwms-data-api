@@ -15,7 +15,6 @@ import cwms.cda.formatters.OfficeFormatV1;
 import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.annotations.FormattableWith;
 import io.javalin.http.BadRequestResponse;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -155,7 +154,9 @@ public class JsonV1 implements OutputFormatter {
                 // If dataType annotated with the class we can return an array of them.
                 // If a class needs to be handled differently an else_if branch can be added above
                 // here and a wrapper obj used to format the return value however is desired.
-                retVal = daoList;
+                // Added toArray due to serialization issues with List for TimeSeriesProfile.
+                // See issue: https://github.com/FasterXML/jackson-databind/issues/2185
+                retVal = daoList.toArray();
             }
 
             if (retVal == null) {

@@ -11,9 +11,9 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.json.JsonV1;
 
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = ParameterInfoIndexed.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)

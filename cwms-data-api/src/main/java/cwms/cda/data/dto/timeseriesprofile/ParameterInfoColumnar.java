@@ -10,10 +10,10 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.json.JsonV1;
 
 
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = ParameterInfoColumnar.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -28,12 +28,14 @@ public final class ParameterInfoColumnar extends ParameterInfo {
         endColumn = builder.endColumn;
     }
 
-    public Integer getStartColumn(){
+    public Integer getStartColumn() {
         return startColumn;
     }
-    public Integer getEndColumn(){
+
+    public Integer getEndColumn() {
         return endColumn;
     }
+
     @Override
     protected void validateInternal(CwmsDTOValidator validator) {
         validator.required(startColumn, "startColumn");
@@ -42,8 +44,7 @@ public final class ParameterInfoColumnar extends ParameterInfo {
 
     @JsonIgnore
     @Override
-    public String getParameterInfoString()
-    {
+    public String getParameterInfoString() {
         return getParameter() +
                 "," +
                 getUnit() +
@@ -56,18 +57,20 @@ public final class ParameterInfoColumnar extends ParameterInfo {
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-    public static final class Builder extends ParameterInfo.Builder{
-       private Integer startColumn;
+    public static final class Builder extends ParameterInfo.Builder {
+        private Integer startColumn;
         private Integer endColumn;
 
-       public ParameterInfoColumnar.Builder withStartColumn(int startColumn){
+        public ParameterInfoColumnar.Builder withStartColumn(int startColumn) {
             this.startColumn = startColumn;
             return this;
         }
-        public ParameterInfoColumnar.Builder withEndColumn(int endColumn){
+
+        public ParameterInfoColumnar.Builder withEndColumn(int endColumn) {
             this.endColumn = endColumn;
             return this;
         }
+
         public ParameterInfo build() {
             return new ParameterInfoColumnar(this);
         }

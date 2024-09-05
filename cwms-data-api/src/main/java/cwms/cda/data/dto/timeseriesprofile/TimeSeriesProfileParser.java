@@ -1,6 +1,5 @@
 package cwms.cda.data.dto.timeseriesprofile;
 
-import java.util.List;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -12,14 +11,16 @@ import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.json.JsonV1;
+import java.util.List;
 
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
+
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonDeserialize(builder = TimeSeriesProfileInstance.Builder.class)
 @JsonSubTypes({@JsonSubTypes.Type(value = TimeSeriesProfileParserIndexed.class, name = "indexed-timeseries-profile-parser"),
-        @JsonSubTypes.Type(value = TimeSeriesProfileParserColumnar.class, name = "columnar-timeseries-profile-parser")
+    @JsonSubTypes.Type(value = TimeSeriesProfileParserColumnar.class, name = "columnar-timeseries-profile-parser")
 })
 
 public  class TimeSeriesProfileParser extends CwmsDTOBase {
@@ -45,7 +46,7 @@ public  class TimeSeriesProfileParser extends CwmsDTOBase {
     protected void validateInternal(CwmsDTOValidator validator) {
         // there must be a key parameter
         validator.required(getKeyParameter(),"keyParameter");
-     }
+    }
 
 
     public CwmsId getLocationId() {
@@ -60,7 +61,7 @@ public  class TimeSeriesProfileParser extends CwmsDTOBase {
         return recordDelimiter;
     }
 
-     public List<ParameterInfo> getParameterInfoList() {
+    public List<ParameterInfo> getParameterInfoList() {
         return parameterInfoList;
     }
 
@@ -93,7 +94,7 @@ public  class TimeSeriesProfileParser extends CwmsDTOBase {
             return this;
         }
 
-          public TimeSeriesProfileParser.Builder withKeyParameter(String keyParameter) {
+        public TimeSeriesProfileParser.Builder withKeyParameter(String keyParameter) {
             this.keyParameter = keyParameter;
             return this;
         }

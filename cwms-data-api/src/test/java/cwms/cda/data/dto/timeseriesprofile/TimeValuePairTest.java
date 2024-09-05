@@ -15,9 +15,9 @@ public class TimeValuePairTest {
     @Test
     void testTimeValuePairRoundTrip() {
         TimeValuePair timeValuePair = buildTestTimeValuePair();
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeValuePair.class);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV1, TimeValuePair.class);
         String serialized = Formats.format(contentType, timeValuePair);
-        TimeValuePair deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeValuePair.class), serialized, TimeValuePair.class);
+        TimeValuePair deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeValuePair.class), serialized, TimeValuePair.class);
         testAssertEquals(timeValuePair, deserialized, "Roundtrip serialization failed");
     }
 
@@ -27,7 +27,7 @@ public class TimeValuePairTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timevaluepair.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        TimeValuePair deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeValuePair.class), serialized, TimeValuePair.class);
+        TimeValuePair deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeValuePair.class), serialized, TimeValuePair.class);
         testAssertEquals(timeValuePair, deserialized, "Roundtrip serialization from file failed");
     }
 

@@ -9,10 +9,10 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.json.JsonV1;
 import java.math.BigInteger;
 
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = TimeSeriesProfileParserColumnar.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -39,7 +39,8 @@ public final class TimeSeriesProfileParserColumnar extends TimeSeriesProfilePars
         }
         return null;
     }
-    public BigInteger getTimeEndColumn(){
+
+    public BigInteger getTimeEndColumn() {
         if (timeEndColumn != null) {
             return BigInteger.valueOf(timeEndColumn);
         }
@@ -48,20 +49,20 @@ public final class TimeSeriesProfileParserColumnar extends TimeSeriesProfilePars
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-    public static final class Builder extends TimeSeriesProfileParser.Builder{
+    public static final class Builder extends TimeSeriesProfileParser.Builder {
         private Integer timeStartColumn = null;
         private Integer timeEndColumn = null;
 
-        public TimeSeriesProfileParserColumnar.Builder withTimeStartColumn(int timeStartColumn)
-        {
+        public TimeSeriesProfileParserColumnar.Builder withTimeStartColumn(int timeStartColumn) {
             this.timeStartColumn = timeStartColumn;
             return this;
         }
-        public TimeSeriesProfileParserColumnar.Builder withTimeEndColumn(int timeEndColumn)
-        {
+
+        public TimeSeriesProfileParserColumnar.Builder withTimeEndColumn(int timeEndColumn) {
             this.timeEndColumn = timeEndColumn;
             return this;
         }
+
         @Override
         public TimeSeriesProfileParserColumnar build() {
             return new TimeSeriesProfileParserColumnar(this);

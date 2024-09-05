@@ -85,7 +85,7 @@ public final class TimeSeriesProfileController implements CrudHandler {
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-            TimeSeriesProfile timeSeriesProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+            TimeSeriesProfile timeSeriesProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                     TimeSeriesProfile.class), ctx.body(), TimeSeriesProfile.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, boolean.class).getOrDefault(true);
             TimeSeriesProfileDao tspDao = new TimeSeriesProfileDao(dsl);
@@ -141,11 +141,11 @@ public final class TimeSeriesProfileController implements CrudHandler {
         tags = {TAG},
         responses = {
             @OpenApiResponse(status = STATUS_200,
-                    description = "A TimeSeriesProfile object",
-                    content = {
-                            @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.JSONV2),
-                            @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.XMLV2),
-                    }),
+                description = "A TimeSeriesProfile object",
+                content = {
+                    @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.JSONV1),
+                    @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.XMLV2),
+                }),
             @OpenApiResponse(status = STATUS_400, description = "Invalid input"),
             @OpenApiResponse(status = STATUS_404, description = "No data matching input parameters found")
         }
@@ -184,11 +184,11 @@ public final class TimeSeriesProfileController implements CrudHandler {
         tags = {TAG},
         responses = {
             @OpenApiResponse(status = STATUS_200,
-                    description = "A TimeSeriesProfileParser object",
-                    content = {
-                            @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.JSONV2),
-                            @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.XMLV2),
-                    }),
+                description = "A TimeSeriesProfileParser object",
+                content = {
+                    @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.JSONV1),
+                    @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.XMLV2),
+                }),
             @OpenApiResponse(status = "400", description = "Invalid input")
         }
     )

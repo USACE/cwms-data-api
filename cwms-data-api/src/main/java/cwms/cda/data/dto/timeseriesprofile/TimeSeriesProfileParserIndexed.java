@@ -9,11 +9,10 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
-
+import cwms.cda.formatters.json.JsonV1;
 import java.math.BigInteger;
 
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = TimeSeriesProfileParserIndexed.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -32,7 +31,7 @@ public class TimeSeriesProfileParserIndexed extends TimeSeriesProfileParser {
     protected void validateInternal(CwmsDTOValidator validator) {
         validator.required(getFieldDelimiter(),"fieldDelimiter");
         validator.required(getTimeField(),"timeField");
-     }
+    }
 
 
     public Character getFieldDelimiter() {
@@ -46,7 +45,7 @@ public class TimeSeriesProfileParserIndexed extends TimeSeriesProfileParser {
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-    public static class Builder extends TimeSeriesProfileParser.Builder{
+    public static class Builder extends TimeSeriesProfileParser.Builder {
         private Character fieldDelimiter = null;
         private Integer timeField = null;
 
@@ -61,6 +60,7 @@ public class TimeSeriesProfileParserIndexed extends TimeSeriesProfileParser {
             this.timeField = field;
             return this;
         }
+
         @Override
         public TimeSeriesProfileParserIndexed build() {
             return new TimeSeriesProfileParserIndexed(this);

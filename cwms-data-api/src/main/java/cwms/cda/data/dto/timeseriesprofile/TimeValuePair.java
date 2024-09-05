@@ -8,11 +8,10 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
-
+import cwms.cda.formatters.json.JsonV1;
 import java.time.Instant;
 
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = TimeValuePair.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -21,22 +20,21 @@ public final class TimeValuePair extends CwmsDTOBase {
     private final double value;
     private final int quality;
 
-    private TimeValuePair(Builder builder)
-    {
+    private TimeValuePair(Builder builder) {
         dateTime = builder.dateTime;
         value = builder.value;
         quality = builder.quality;
-     }
-    public Instant getDateTime()
-    {
+    }
+
+    public Instant getDateTime() {
         return dateTime;
     }
-    public double getValue()
-    {
+
+    public double getValue() {
         return value;
     }
-    public int getQuality()
-    {
+
+    public int getQuality() {
         return quality;
     }
 
@@ -56,10 +54,12 @@ public final class TimeValuePair extends CwmsDTOBase {
             this.value = value;
             return this;
         }
+
         public Builder withQuality(int quality) {
             this.quality = quality;
             return this;
         }
+
         public TimeValuePair build() {
             return new TimeValuePair(this);
         }

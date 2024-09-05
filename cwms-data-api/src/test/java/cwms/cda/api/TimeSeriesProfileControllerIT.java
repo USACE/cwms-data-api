@@ -61,6 +61,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
     private String tsData;
     private String tsData2;
     private TimeSeriesProfile tsProfile;
+    private TimeSeriesProfile tsProfile2;
 
     @BeforeEach
     public void setup() throws Exception {
@@ -68,9 +69,9 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         assertNotNull(resource2);
         tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         tsData2 = IOUtils.toString(resource2, StandardCharsets.UTF_8);
-        tsProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+        tsProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfile.class), tsData, TimeSeriesProfile.class);
-        TimeSeriesProfile tsProfile2 = Formats.parseContent(Formats.parseHeader(Formats.JSONV2,
+        tsProfile2 = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfile.class), tsData2, TimeSeriesProfile.class);
         createLocation(tsProfile.getLocationId().getName(), true, OFFICE_ID, "SITE");
         createLocation(tsProfile2.getLocationId().getName(), true, OFFICE_ID, "SITE");
@@ -79,6 +80,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
     @AfterEach
     public void tearDown() throws Exception {
         cleanupTS(tsProfile.getLocationId().getName(), tsProfile.getKeyParameter());
+        cleanupTS(tsProfile2.getLocationId().getName(), tsProfile2.getKeyParameter());
     }
 
     @Test
@@ -87,8 +89,8 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         // Create a new TimeSeriesProfile
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
@@ -105,8 +107,8 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         // Retrieve the TimeSeriesProfile
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(LOCATION_ID, tsProfile.getLocationId().getName())
@@ -132,8 +134,8 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         // Create a new TimeSeriesProfile
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
@@ -150,8 +152,8 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         // Create a new TimeSeriesProfile
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tsData2)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
@@ -168,8 +170,8 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         // Retrieve all TimeSeriesProfiles
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -189,8 +191,8 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         // Create the Time Series Profile
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
@@ -207,8 +209,8 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         // Delete the Time Series Profile
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -226,8 +228,8 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         // Retrieve the Time Series Profile and assert that it is not found
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(LOCATION_ID, tsProfile.getLocationId().getName())
@@ -247,8 +249,8 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         // Delete the Time Series Profile
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)

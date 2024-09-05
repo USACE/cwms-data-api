@@ -17,9 +17,9 @@ public final class TimeSeriesProfileTest {
     @Test
     void testTimeSeriesProfileSerializationRoundTrip() {
         TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile();
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeriesProfile.class);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV1, TimeSeriesProfile.class);
         String serialized = Formats.format(contentType, timeSeriesProfile);
-        TimeSeriesProfile deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfile.class), serialized, TimeSeriesProfile.class);
+        TimeSeriesProfile deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfile.class), serialized, TimeSeriesProfile.class);
         testAssertEquals(timeSeriesProfile, deserialized, "Roundtrip serialization failed");
     }
 
@@ -29,7 +29,7 @@ public final class TimeSeriesProfileTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofile.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        TimeSeriesProfile deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, TimeSeriesProfile.class), serialized, TimeSeriesProfile.class);
+        TimeSeriesProfile deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfile.class), serialized, TimeSeriesProfile.class);
         testAssertEquals(timeSeriesProfile, deserialized, "Roundtrip serialization from file failed");
     }
 

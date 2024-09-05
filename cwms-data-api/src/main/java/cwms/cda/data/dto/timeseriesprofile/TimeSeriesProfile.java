@@ -1,8 +1,5 @@
 package cwms.cda.data.dto.timeseriesprofile;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -13,10 +10,13 @@ import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.json.JsonV1;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.ArrayList;
+import java.util.List;
 
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = TimeSeriesProfile.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -97,7 +97,7 @@ public final class TimeSeriesProfile extends CwmsDTOBase {
             if (parameterList != null) {
                 this.parameterList.addAll(parameterList);
             }
-             return this;
+            return this;
         }
 
         public TimeSeriesProfile.Builder withReferenceTsId(CwmsId referenceTsId) {
