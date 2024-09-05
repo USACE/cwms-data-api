@@ -26,8 +26,8 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -40,54 +40,45 @@ import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class WaterContractTypeCreateController extends WaterSupplyControllerBase implements Handler {
+public final class WaterContractTypeDeleteController extends WaterSupplyControllerBase implements Handler {
 
-    public WaterContractTypeCreateController(MetricRegistry metrics) {
+    private static final String DISPLAY_VALUE = "display-value";
+
+    public WaterContractTypeDeleteController(MetricRegistry metrics) {
         waterMetrics(metrics);
     }
 
     @OpenApi(
-        requestBody = @OpenApiRequestBody(
-            content = {
-                @OpenApiContent(from = LookupType.class, type = Formats.JSONV1)
-            },
-            required = true),
-        queryParams = {
-            @OpenApiParam(name = FAIL_IF_EXISTS, type = boolean.class, description = "Create will fail if provided"
-                    + "display value already exists. Default: true")
+        pathParams = {
+            @OpenApiParam(name = OFFICE, required = true, description = "The office associated with "
+                + "the contract type to delete"),
+            @OpenApiParam(name = DISPLAY_VALUE, required = true, description = "The location associated with "
+                + "the contract type to delete"),
         },
-        responses = {
-            @OpenApiResponse(status = "204", description = "Contract type successfully stored to CWMS."),
-            @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
-        },
-        description = "Create a new water contract type",
-        method = HttpMethod.POST,
-        path = "/projects/{office}/contract-types",
+        description = "Delete a water contract type",
+        method = HttpMethod.DELETE,
+        path = "/projects/{office}/contract-types/{display-value}",
         tags = {TAG}
     )
 
     @Override
     public void handle(@NotNull Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE)) {
+        try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            String office = ctx.pathParam(OFFICE);
+            String displayValue = ctx.pathParam(DISPLAY_VALUE);
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, LookupType.class);
             ctx.contentType(contentType.toString());
-            LookupType contractType = Formats.parseContent(contentType, ctx.body(), LookupType.class);
-            WaterContractDao contractDao = getContractDao(dsl);
-            contractDao.storeWaterContractType(contractType, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Contract type successfully stored to CWMS.");
+            WaterContractDao dao = new WaterContractDao(dsl);
+            dao.deleteWaterContractType(office, displayValue);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Contract type successfully deleted from CWMS.");
         }
     }
-
 }

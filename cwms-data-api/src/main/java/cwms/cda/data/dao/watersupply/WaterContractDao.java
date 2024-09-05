@@ -30,6 +30,7 @@ import static java.util.stream.Collectors.toList;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
@@ -176,7 +177,17 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
         });
     }
 
-    public void storeWaterContractTypes(LookupType lookupType,
+    public void deleteWaterContractType(String office, String displayValue) {
+        connection(dsl, c -> {
+            setOffice(c, office);
+            LookupTypeDao lookupTypeDao = new LookupTypeDao(DSL.using(c));
+            String category = "AT_WS_CONTRACT_TYPE";
+            String prefix = "WS_CONTRACT_TYPE";
+            lookupTypeDao.deleteLookupType(category, prefix, office, displayValue);
+        });
+    }
+
+    public void storeWaterContractType(LookupType lookupType,
             boolean failIfExists) {
         connection(dsl, c -> {
             setOffice(c, lookupType.getOfficeId());

@@ -155,7 +155,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
                 projectDao.store(project1, true);
                 projectDao.store(project2, true);
                 waterContractDao.storeWaterUser(CONTRACT.getWaterUser(), false);
-                waterContractDao.storeWaterContractTypes(CONTRACT.getContractType(), false);
+                waterContractDao.storeWaterContractType(CONTRACT.getContractType(), false);
                 waterContractDao.storeWaterUser(CONTRACT_NO_PUMP.getWaterUser(), false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
