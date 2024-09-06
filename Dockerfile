@@ -6,9 +6,11 @@ COPY . /builddir/
 RUN  gradle clean prepareDockerBuild --info --no-daemon
 
 FROM alpine:3.20.2 as tomcat_base
-RUN apk update && apk upgrade --no-cache
-RUN apk add openjdk8-jre curl
-RUN apk add --no-cache bash
+RUN apk --no-cache upgrade && \
+    apk --no-cache add \
+        openjdk8-jre \
+        curl \
+        bash
 
 
 RUN mkdir /download && \
