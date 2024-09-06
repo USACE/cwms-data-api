@@ -106,6 +106,7 @@ public class ProjectLockGetOneHandlerIT extends DataApiTestIT {
         // This is a little different.  Returns a 200 if locked, 404 if not.
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
+                .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
                 .accept(Formats.JSON)
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(APPLICATION_ID, appId)
@@ -123,6 +124,7 @@ public class ProjectLockGetOneHandlerIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
             .accept(Formats.JSON)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(APPLICATION_ID, appId)

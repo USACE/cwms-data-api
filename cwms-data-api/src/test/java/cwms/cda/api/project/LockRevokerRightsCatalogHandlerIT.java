@@ -96,6 +96,7 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
             .accept(Formats.JSON)
             .queryParam(OFFICE_MASK, OFFICE)
             .queryParam(PROJECT_MASK, projId)
@@ -119,6 +120,7 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
             .accept(Formats.JSON)
             .queryParam(OFFICE_MASK, OFFICE)
             .queryParam(PROJECT_MASK, projId)
