@@ -32,6 +32,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.sql.Timestamp;
+import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -70,13 +71,13 @@ public class GateChangeDeleteController extends BaseHandler {
         String office = context.pathParam(OFFICE);
         String id = context.pathParam(PROJECT_ID);
         CwmsId projectId = new CwmsId.Builder().withName(id).withOfficeId(office).build();
-        Timestamp startTime = Timestamp.from(requiredZdt(context, BEGIN).toInstant());
-        Timestamp endTime = Timestamp.from(requiredZdt(context, END).toInstant());
+        Instant startTime = requiredInstant(context, BEGIN);
+        Instant endTime = requiredInstant(context, END);
         boolean overrideProtection = context.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class).getOrDefault(false);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = JooqDao.getDslContext(context);
             OutletDao dao = new OutletDao(dsl);
-            dao.deleteOperationalChanges(projectId, startTime.toInstant(), endTime.toInstant(), overrideProtection);
+            dao.deleteOperationalChanges(projectId, startTime, endTime, overrideProtection);
             context.res.setStatus(HttpServletResponse.SC_NO_CONTENT);
         }
     }

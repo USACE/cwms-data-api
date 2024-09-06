@@ -270,7 +270,6 @@ public class OutletDao extends JooqDao<Outlet> {
                     DSL.using(conn).configuration(), locationRef, startTimestamp, endTimestamp, "UTC", unitSystem.getValue(),
                     formatBool(startInclusive), formatBool(endInclusive), rowLimitBig);
 
-            List<GateChange> output = new ArrayList<>();
             if (changeTab == null) {
                 throw new NotFoundException("No changes found for " + projectId.getOfficeId() + "." + projectId.getName()
                 + "\nStart time: " + startTime
@@ -280,8 +279,7 @@ public class OutletDao extends JooqDao<Outlet> {
                 + "\nUnit system: " + unitSystem
                 + "\nRow limit: " + rowLimit);
             }
-            changeTab.stream().map(OutletDao::map).forEach(output::add);
-            return output;
+            return changeTab.stream().map(OutletDao::map).collect(Collectors.toList());
         });
     }
 

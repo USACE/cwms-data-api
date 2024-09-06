@@ -37,6 +37,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -82,7 +83,8 @@ public class GateChangeGetAllController extends BaseHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSONV1)
+                            @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSONV1),
+                            @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSON),
                     })
             },
             description = "Returns matching CWMS gate change data for a Reservoir Project.",
@@ -93,8 +95,8 @@ public class GateChangeGetAllController extends BaseHandler {
         String office = context.pathParam(OFFICE);
         String id = context.pathParam(PROJECT_ID);
         CwmsId projectId = new CwmsId.Builder().withName(id).withOfficeId(office).build();
-        Timestamp startTime = Timestamp.from(requiredZdt(context, BEGIN).toInstant());
-        Timestamp endTime = Timestamp.from(requiredZdt(context, END).toInstant());
+        Instant startTime = requiredInstant(context, BEGIN);
+        Instant endTime = requiredInstant(context, END);
         boolean startInclusive = context.queryParamAsClass(START_TIME_INCLUSIVE, Boolean.class).getOrDefault(true);
         boolean endInclusive = context.queryParamAsClass(END_TIME_INCLUSIVE, Boolean.class).getOrDefault(false);
         UnitSystem unitSystem = context.queryParamAsClass(UNIT_SYSTEM, UnitSystem.class).getOrDefault(UnitSystem.EN);
@@ -103,9 +105,8 @@ public class GateChangeGetAllController extends BaseHandler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = JooqDao.getDslContext(context);
             OutletDao dao = new OutletDao(dsl);
-            List<GateChange> changes = dao.retrieveOperationalChanges(projectId, startTime.toInstant(),
-                                                                      endTime.toInstant(), startInclusive, endInclusive,
-                                                                      unitSystem, pageSize);
+            List<GateChange> changes = dao.retrieveOperationalChanges(projectId, startTime, endTime, startInclusive,
+                                                                      endInclusive, unitSystem, pageSize);
             String formatHeader = context.header(Header.ACCEPT) != null ? context.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, GateChange.class);
             String serialized = Formats.format(contentType, changes, GateChange.class);

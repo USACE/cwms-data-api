@@ -22,8 +22,8 @@ package cwms.cda.api.location.kind;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.location.kind.BaseOutletDaoIT;
 import cwms.cda.data.dao.location.kind.OutletDao;
-import cwms.cda.data.dao.location.kind.ProjectStructureIT;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -53,7 +52,7 @@ import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 
-class GateChangeControllerTestIT extends ProjectStructureIT {
+class GateChangeControllerTestIT extends BaseOutletDaoIT {
 
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OUTLET_KIND = "OUTLET";

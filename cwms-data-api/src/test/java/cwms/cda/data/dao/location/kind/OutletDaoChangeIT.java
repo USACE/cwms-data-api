@@ -45,10 +45,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("integration")
-class OutletDaoChangeIT extends ProjectStructureIT {
+class OutletDaoChangeIT extends BaseOutletDaoIT {
 
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String TAINTER_GATE_RATING_SPEC_ID = PROJECT_1_ID.getName() + ".Opening-TainterGate,Elev;Flow-TainterGate.Standard.Production";
