@@ -56,11 +56,11 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
     private final Double newTotalDischargeOverride;
     private final Double oldTotalDischargeOverride;
     private final String dischargeUnits;
-    private final Double poolElevation;
     private final Double tailwaterElevation;
     private final String elevationUnits;
     private final String notes;
     private final Set<T> settings;
+    private final Double poolElevation;
 
     PhysicalStructureChange(Builder<?,T> builder) {
         this.projectId = builder.projectId;
@@ -70,12 +70,12 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
         this.newTotalDischargeOverride = builder.newTotalDischargeOverride;
         this.oldTotalDischargeOverride = builder.oldTotalDischargeOverride;
         this.dischargeUnits = builder.dischargeUnits;
-        this.poolElevation = builder.poolElevation;
         this.tailwaterElevation = builder.tailwaterElevation;
         this.elevationUnits = builder.elevationUnits;
         this.notes = builder.notes;
         this.changeDate = builder.changeDate;
         this.settings = builder.settings;
+        this.poolElevation = builder.poolElevation;
     }
 
     public CwmsId getProjectId() {
@@ -107,10 +107,6 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
         return dischargeUnits;
     }
 
-    public Double getPoolElevation() {
-        return poolElevation;
-    }
-
     public Double getTailwaterElevation() {
         return tailwaterElevation;
     }
@@ -131,6 +127,10 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
         return settings;
     }
 
+    public Double getPoolElevation() {
+        return poolElevation;
+    }
+
     @Override
     protected void validateInternal(CwmsDTOValidator validator) {
         super.validateInternal(validator);
@@ -146,14 +146,31 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
         private Double newTotalDischargeOverride;
         private Double oldTotalDischargeOverride;
         private String dischargeUnits;
-        private Double poolElevation;
+        Double poolElevation;
         private Double tailwaterElevation;
         private String elevationUnits;
         private String notes;
         private Instant changeDate;
         private final Set<T> settings = new TreeSet<>(comparing(Setting::getLocationId,
-            comparing(CwmsId::getOfficeId).thenComparing(CwmsId::getName)));;
+            comparing(CwmsId::getOfficeId).thenComparing(CwmsId::getName)));
 
+        protected Builder() {
+        }
+
+        Builder(PhysicalStructureChange<T> physicalStructureChange) {
+            this.projectId = physicalStructureChange.projectId;
+            this.dischargeComputationType = physicalStructureChange.dischargeComputationType;
+            this.reasonType = physicalStructureChange.reasonType;
+            this.isProtected = physicalStructureChange.isProtected;
+            this.newTotalDischargeOverride = physicalStructureChange.newTotalDischargeOverride;
+            this.oldTotalDischargeOverride = physicalStructureChange.oldTotalDischargeOverride;
+            this.dischargeUnits = physicalStructureChange.dischargeUnits;
+            this.tailwaterElevation = physicalStructureChange.tailwaterElevation;
+            this.elevationUnits = physicalStructureChange.elevationUnits;
+            this.notes = physicalStructureChange.notes;
+            this.changeDate = physicalStructureChange.changeDate;
+            this.settings.addAll(physicalStructureChange.settings);
+        }
 
         public B withProjectId(CwmsId projectId) {
             this.projectId = projectId;

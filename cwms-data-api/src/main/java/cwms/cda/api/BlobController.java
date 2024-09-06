@@ -183,10 +183,7 @@ public class BlobController implements CrudHandler {
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
-
+            String formatHeader = ctx.req.getContentType();
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
             Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);

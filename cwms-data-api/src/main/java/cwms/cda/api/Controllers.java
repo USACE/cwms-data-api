@@ -114,7 +114,7 @@ public final class Controllers {
     public static final String INTERVAL = "interval";
     public static final String CATEGORY_ID = "category-id";
     public static final String CATEGORY_ID_MASK = "category-id-mask";
-    public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
+    public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-07:00";
     public static final String VERSION_DATE = "version-date";
 
     public static final String CREATE_AS_LRTS = "create-as-lrts";

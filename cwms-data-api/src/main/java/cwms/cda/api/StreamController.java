@@ -121,8 +121,7 @@ public final class StreamController implements CrudHandler {
             StreamDao dao = new StreamDao(dsl);
             String stationUnits = ctx.queryParamAsClass(STATION_UNIT, String.class).getOrDefault("mi");
             List<Stream> streams = dao.retrieveStreams(office, streamId, divertsFromStream, flowsIntoStream, stationUnits);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Stream.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, streams, Stream.class);
@@ -161,8 +160,7 @@ public final class StreamController implements CrudHandler {
             StreamDao dao = new StreamDao(dsl);
             String stationUnits = ctx.queryParamAsClass(STATION_UNIT, String.class).getOrDefault("mi");
             Stream stream = dao.retrieveStream(office, streamId, stationUnits);
-            String header = ctx.header(Header.ACCEPT);
-            String formatHeader = header != null ? header : Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Stream.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, stream);
@@ -192,8 +190,7 @@ public final class StreamController implements CrudHandler {
     @Override
     public void create(Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
+            String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Stream.class);
             Stream stream = Formats.parseContent(contentType, ctx.body(), Stream.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);

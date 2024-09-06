@@ -183,7 +183,7 @@ public class TimeSeriesRecentController implements Handler {
             }
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            ContentType contentType = Formats.parseHeader(formatHeader, RecentValue.class);
 
             String result = Formats.format(contentType, latestValues, RecentValue.class);
 

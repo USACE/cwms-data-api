@@ -57,10 +57,11 @@ class LocationTest
 		Location location = buildTestLocation();
 		assertNotNull(location);
 
-		String serialized = Formats.format(Formats.parseHeader(format), location);
+		String serialized = Formats.format(Formats.parseHeader(format, Location.class), location);
 		assertNotNull(serialized);
 
-		Location deserialized = Formats.parseContent(Formats.parseHeader(format), serialized, Location.class);
+		Location deserialized = Formats.parseContent(Formats.parseHeader(format, Location.class),
+			serialized, Location.class);
 		assertEquals(location, deserialized);
 	}
 

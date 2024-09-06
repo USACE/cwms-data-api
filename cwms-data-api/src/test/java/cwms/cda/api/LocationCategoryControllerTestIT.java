@@ -50,8 +50,9 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
     void test_create_read_delete() throws Exception {
         String officeId = "SPK";
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        LocationCategory cat = new LocationCategory(officeId, LocationCategoryControllerTestIT.class.getSimpleName(), "IntegrationTesting");
-        ContentType contentType = Formats.parseHeaderAndQueryParm(Formats.JSON, null);
+        LocationCategory cat = new LocationCategory(officeId, LocationCategoryControllerTestIT.class.getSimpleName(),
+            "IntegrationTesting");
+        ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
         String xml = Formats.format(contentType, cat);
         registerCategory(cat);
         //Create Category

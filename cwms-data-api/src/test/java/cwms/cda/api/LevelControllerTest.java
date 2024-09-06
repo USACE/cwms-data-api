@@ -48,7 +48,7 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String xml = loadResourceAsString("cwms/cda/api/levels_constant_create.xml");
         assertNotNull(xml);
-        LocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.XML), xml, LocationLevel.class);
+        LocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.XML, LocationLevel.class), xml, LocationLevel.class);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
@@ -78,12 +78,14 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String xml = loadResourceAsString("cwms/cda/api/levels_timeseries_create.xml");
         assertNotNull(xml);
-        LocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.XML), xml, LocationLevel.class);
+        LocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.XML, LocationLevel.class),
+            xml, LocationLevel.class);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
         assertEquals("ft", level.getLevelUnitsId());
-        assertEquals(dateTimeAdapter.unmarshal("2008-12-03T10:15:30+01:00[Z]").toInstant(), level.getLevelDate().toInstant());
+        assertEquals(dateTimeAdapter.unmarshal("2008-12-03T10:15:30+01:00[Z]").toInstant(),
+            level.getLevelDate().toInstant());
         assertEquals("RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST630", level.getSeasonalTimeSeriesId());
     }
 

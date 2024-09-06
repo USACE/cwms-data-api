@@ -66,7 +66,7 @@ class LocationLevelTest
 		ZonedDateTime zdt = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
 		final LocationLevel level = new LocationLevel.Builder("Test", zdt).build();
 
-		ContentType contentType = Formats.parseHeader(Formats.JSONV2);
+		ContentType contentType = Formats.parseHeader(Formats.JSONV2, LocationLevel.class);
 		String jsonStr = Formats.format(contentType, level);
 
 		// If JSONv2 isn't setup correctly it will serialize the level like:

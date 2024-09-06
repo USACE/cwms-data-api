@@ -154,7 +154,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                 // parseHeaderAndQueryParm normally defaults to JSONV1 when the input is */*
                 formatHeader = Formats.JSONV2;
             }
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesIdentifierDescriptors.class);
 
             String result = Formats.format(contentType, descriptors);
 
@@ -203,7 +203,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                 formatHeader = Formats.JSONV2;
             }
 
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesIdentifierDescriptor.class);
 
             Optional<TimeSeriesIdentifierDescriptor> grp = dao.getTimeSeriesIdentifier(office, timeseriesId);
             if (grp.isPresent()) {
@@ -242,11 +242,10 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
+            String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
 
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesIdentifierDescriptor.class);
             TimeSeriesIdentifierDescriptor tsid = Formats.parseContent(contentType, body,
                     TimeSeriesIdentifierDescriptor.class);
 

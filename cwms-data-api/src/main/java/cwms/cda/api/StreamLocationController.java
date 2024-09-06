@@ -121,8 +121,7 @@ public final class StreamLocationController implements CrudHandler {
             String areaUnits = ctx.queryParamAsClass(AREA_UNIT, String.class).getOrDefault("mi2");
             String stageUnits = ctx.queryParamAsClass(STAGE_UNIT, String.class).getOrDefault("ft");
             List<StreamLocation> streamLocations = dao.retrieveStreamLocations(office, streamId, locationId, stationUnits, stageUnits, areaUnits);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, streamLocations, StreamLocation.class);
@@ -168,8 +167,7 @@ public final class StreamLocationController implements CrudHandler {
             String areaUnits = ctx.queryParamAsClass(AREA_UNIT, String.class).getOrDefault("mi2");
             String stageUnits = ctx.queryParamAsClass(STAGE_UNIT, String.class).getOrDefault("ft");
             StreamLocation streamLocation = dao.retrieveStreamLocation(office, streamId, locationId, stationUnits, stageUnits, areaUnits);
-            String header = ctx.header(Header.ACCEPT);
-            String formatHeader = header != null ? header : Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, streamLocation);
@@ -199,8 +197,7 @@ public final class StreamLocationController implements CrudHandler {
     @Override
     public void create(Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
+            String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);
             StreamLocation streamLocation = Formats.parseContent(contentType, ctx.body(), StreamLocation.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
@@ -227,8 +224,7 @@ public final class StreamLocationController implements CrudHandler {
     @Override
     public void update(Context ctx, @NotNull String locationId) {
         try (Timer.Context ignored = markAndTime(METHOD + "update")) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
+            String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);
             StreamLocation streamLocation = Formats.parseContent(contentType, ctx.body(), StreamLocation.class);
             DSLContext dsl = getDslContext(ctx);

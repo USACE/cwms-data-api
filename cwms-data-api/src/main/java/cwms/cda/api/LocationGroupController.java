@@ -113,7 +113,7 @@ public class LocationGroupController implements CrudHandler {
 
             if (!grps.isEmpty()) {
                 String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+                ContentType contentType = Formats.parseHeader(formatHeader, LocationGroup.class);
 
                 String result = Formats.format(contentType, grps, LocationGroup.class);
 
@@ -159,19 +159,20 @@ public class LocationGroupController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             LocationGroupDao cdm = new LocationGroupDao(dsl);
-            String office = ctx.queryParam(OFFICE);
-            String categoryId = ctx.queryParam(CATEGORY_ID);
+            String office = requiredParam(ctx, OFFICE);
+            String categoryId = requiredParam(ctx, CATEGORY_ID);
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
-
             String result;
-            if (Formats.GEOJSON.equals(contentType.getType())) {
+            ContentType contentType;
+            if (formatHeader != null && formatHeader.contains(Formats.GEOJSON)) {
+                contentType = new ContentType(Formats.GEOJSON);
                 FeatureCollection fc = cdm.buildFeatureCollectionForLocationGroup(office,
                         categoryId, groupId, "EN");
                 ObjectMapper mapper = ctx.appAttribute("ObjectMapper");
                 result = mapper.writeValueAsString(fc);
             } else {
+                contentType = Formats.parseHeader(formatHeader, LocationGroup.class);
                 Optional<LocationGroup> grp = cdm.getLocationGroup(office, categoryId, groupId);
                 if (grp.isPresent()) {
                     result = Formats.format(contentType, grp.get());
@@ -212,10 +213,9 @@ public class LocationGroupController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, LocationGroup.class);
             LocationGroup deserialize = Formats.parseContent(contentType, body, LocationGroup.class);
             LocationGroupDao dao = new LocationGroupDao(dsl);
             dao.create(deserialize);
@@ -246,10 +246,9 @@ public class LocationGroupController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, LocationGroup.class);
             LocationGroup deserialize = Formats.parseContent(contentType, body, LocationGroup.class);
             boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS,
                     Boolean.class).getOrDefault(false);
