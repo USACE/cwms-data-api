@@ -582,8 +582,8 @@ public class ApiServlet extends HttpServlet {
     private void addProjectLocksHandlers(String path, RouteRole[] requiredRoles) {
         String pathWithoutResource = path.replace(getResourceId(path), "");
 
-        get(path, new ProjectLockGetOne(metrics));
-        get(pathWithoutResource, new ProjectLockCatalog(metrics));
+        get(path, new ProjectLockGetOne(metrics), requiredRoles);
+        get(pathWithoutResource, new ProjectLockCatalog(metrics), requiredRoles);
         post(pathWithoutResource + "deny", new ProjectLockRevokeDeny(metrics), requiredRoles);
         post(pathWithoutResource, new ProjectLockRequest(metrics), requiredRoles);
         post(pathWithoutResource + "release", new ProjectLockRelease(metrics), requiredRoles);
@@ -592,7 +592,7 @@ public class ApiServlet extends HttpServlet {
 
     private void addProjectLockRightsHandlers(String path, RouteRole[] requiredRoles) {
         String pathWithoutResource = path.replace(getResourceId(path), "");
-        get(pathWithoutResource, new LockRevokerRightsCatalog(metrics));
+        get(pathWithoutResource, new LockRevokerRightsCatalog(metrics), requiredRoles);
         post(pathWithoutResource + "remove-all", new RemoveAllLockRevokerRights(metrics), requiredRoles);
         post(pathWithoutResource + "update", new UpdateLockRevokerRights(metrics), requiredRoles);
 
