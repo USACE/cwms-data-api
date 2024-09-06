@@ -19,6 +19,7 @@ configurations.implementation {
 configurations.all {
     exclude group: 'dom4j'
     exclude group: 'org.apache.xmlbeans'
+    exclude group: 'org.apache.poi'
 }
 
 dependencies {
