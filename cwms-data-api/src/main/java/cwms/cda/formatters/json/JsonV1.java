@@ -154,9 +154,7 @@ public class JsonV1 implements OutputFormatter {
                 // If dataType annotated with the class we can return an array of them.
                 // If a class needs to be handled differently an else_if branch can be added above
                 // here and a wrapper obj used to format the return value however is desired.
-                // Added toArray due to serialization issues with List for TimeSeriesProfile.
-                // See issue: https://github.com/FasterXML/jackson-databind/issues/2185
-                retVal = daoList.toArray();
+                retVal = daoList;
             }
 
             if (retVal == null) {

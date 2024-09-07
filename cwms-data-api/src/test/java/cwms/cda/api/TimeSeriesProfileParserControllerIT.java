@@ -297,6 +297,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
                 .withTimeZone(tspParserIndexed.getTimeZone())
                 .withParameterInfoList(tspParserIndexed.getParameterInfoList())
                 .build();
+        createLocation(tspIndex.getLocationId().getName(), true, OFFICE_ID, "SITE");
         ContentType contentType = Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserIndexed.class);
         String tspDataInd = Formats.format(contentType, tspIndex);
 
@@ -348,7 +349,14 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("size()", is(2))
+            .body("[0].location-id.name", equalTo(tspIndex.getLocationId().getName()))
+            .body("[0].key-parameter", equalTo(tspIndex.getKeyParameter()))
+            .body("[0].time-format", equalTo(tspIndex.getTimeFormat()))
+            .body("[0].time-zone", equalTo(tspIndex.getTimeZone()))
+            .body("[0].parameter-info-list[0].parameter", equalTo(tspIndex.getParameterInfoList().get(0).getParameter()))
+            .body("[0].parameter-info-list[1].parameter", equalTo(tspIndex.getParameterInfoList().get(1).getParameter()))
+            .body("[0].location-id.office-id", equalTo(tspIndex.getLocationId().getOfficeId()))
+            .body("[0].type", equalTo("indexed-timeseries-profile-parser"))
         ;
 
         cleanupParser(tspIndex.getLocationId().getName(), tspIndex.getKeyParameter());

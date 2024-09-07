@@ -46,9 +46,11 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
+import cwms.cda.data.dto.timeseriesprofile.ParserList;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParser;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserColumnar;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
+import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParsers;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -148,7 +150,7 @@ public final class TimeSeriesProfileParserController implements CrudHandler {
                     + " TimeSeriesProfileParser object"),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
-        path = "/timeseries/parser/{id}",
+        path = "/timeseries/parser/{parameter-id}",
         method = HttpMethod.DELETE,
         summary = "Delete a TimeSeriesProfileParser by ID",
         tags = {TAG}
@@ -202,10 +204,14 @@ public final class TimeSeriesProfileParserController implements CrudHandler {
 
             TimeSeriesProfileParserDao tspParserDao = new TimeSeriesProfileParserDao(dsl);
             List<TimeSeriesProfileParser> tspParsers = tspParserDao.catalogTimeSeriesProfileParsers(locationId,
-                    officeIdMask, parameterIdMask);
+                    officeIdMask, parameterIdMask, true);
             String acceptHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileParser.class);
-            String result = Formats.format(contentType, tspParsers, TimeSeriesProfileParser.class);
+            // Added custom List wrapper due to serialization issues with List for TimeSeriesProfileParser Type handling.
+            // Related to Jackson subclassing annotations @JSONTypeInfo and @JSONSubTypes
+            // See issue: https://github.com/FasterXML/jackson-databind/issues/2185
+            ParserList parserList = new ParserList(tspParsers);
+            ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileParsers.class);
+            String result = Formats.format(contentType, parserList, TimeSeriesProfileParsers.class);
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(result);
         }
