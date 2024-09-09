@@ -18,16 +18,14 @@ import cwms.cda.data.dto.Location;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import java.io.IOException;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
-import org.jooq.DSLContext;
-import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
-import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
-
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneId;
-
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import org.jooq.DSLContext;
+import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
+import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 
 public abstract class ProjectStructureIT extends DataApiTestIT {

@@ -22,11 +22,9 @@ package cwms.cda.api.location.kind;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
-import cwms.cda.data.dao.LocationGroupDao;
+import cwms.cda.data.dao.location.kind.BaseOutletDaoIT;
 import cwms.cda.data.dao.location.kind.OutletDao;
-import cwms.cda.data.dao.location.kind.ProjectStructureIT;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationGroup;
@@ -42,14 +40,13 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
-class OutletControllerTestIT extends ProjectStructureIT {
+class OutletControllerTestIT extends BaseOutletDaoIT {
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final CwmsId CONDUIT_GATE_RATING_GROUP = new CwmsId.Builder().withName(
             "Rating-" + PROJECT_1_ID.getName() + "-ConduitGate").withOfficeId(OFFICE_ID).build();
@@ -679,16 +676,6 @@ class OutletControllerTestIT extends ProjectStructureIT {
                 locGroup.getLocGroupAttribute());
         modifiedLocGroup = new LocationGroup(modifiedLocGroup, locGroup.getAssignedLocations());
         return modifiedLocGroup;
-    }
-
-    private static void deleteLocationGroup(DSLContext context, Outlet outlet) {
-        LocationGroupDao locationGroupDao = new LocationGroupDao(context);
-        try {
-            locationGroupDao.delete(outlet.getRatingCategoryId().getName(), outlet.getRatingGroupId().getName(), true, OFFICE_ID);
-        } catch (NotFoundException e) {
-            LOGGER.atFinest().withCause(e).log("No data found for category:" + outlet.getRatingCategoryId().getName()
-                    + ", group-id:" + outlet.getRatingGroupId().getName());
-        }
     }
 
     private static Outlet buildTestOutlet(Location outletLoc, Location projectLoc, CwmsId ratingId, String ratingSpecId) {

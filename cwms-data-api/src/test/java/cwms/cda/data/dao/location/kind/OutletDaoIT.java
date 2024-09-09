@@ -23,7 +23,6 @@ package cwms.cda.data.dao.location.kind;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
-import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
@@ -40,10 +39,11 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag("integration")
-class OutletDaoIT extends ProjectStructureIT {
+class OutletDaoIT extends BaseOutletDaoIT {
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final CwmsId TAINTER_GATE_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_1_ID.getName() + "-TainterGate").withOfficeId(OFFICE_ID).build();
     private static final CwmsId BOX_CULVERT_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_2_ID.getName() + "-BoxCulvert").withOfficeId(OFFICE_ID).build();
@@ -132,7 +132,7 @@ class OutletDaoIT extends ProjectStructureIT {
             //Retrieve for project
             List<Outlet> retrievedOutlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
                                                                           PROJECT_1_ID.getName());
-            doesNotContainOutlet(retrievedOutlets, TAINTER_GATE_2_OUTLET);
+            DTOMatch.assertDoesNotContainDto(retrievedOutlets, TAINTER_GATE_2_OUTLET, this::isOutletSimilar, "Found " + TAINTER_GATE_2_OUTLET.getLocation().getName() + " when it should not be present.");
 
             //Create
             Outlet modifiedOutlet = new Outlet.Builder(TAINTER_GATE_2_OUTLET).withRatingGroupId(
@@ -151,7 +151,7 @@ class OutletDaoIT extends ProjectStructureIT {
 
             List<Outlet> finalOutlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
                                                                       PROJECT_1_ID.getName());
-            containsOutlet(finalOutlets, TAINTER_GATE_2_OUTLET);
+            DTOMatch.assertContainsDto(finalOutlets, TAINTER_GATE_2_OUTLET, this::isOutletSimilar, DTOMatch::assertMatch, "Unable to find " + TAINTER_GATE_2_OUTLET.getLocation().getName() + " when it should exist.");
 
             assertThrows(NotFoundException.class, () -> dao.retrieveOutlet(TAINTER_GATE_3_LOC.getOfficeId(),
                                                                            TAINTER_GATE_3_LOC.getName()));
@@ -167,32 +167,9 @@ class OutletDaoIT extends ProjectStructureIT {
 
             List<Outlet> outlets = dao.retrieveOutletsForProject(PROJECT_1_ID.getOfficeId(),
                                                                  PROJECT_1_ID.getName());
-            containsOutlet(outlets, TAINTER_GATE_1_OUTLET);
-            containsOutlet(outlets, TAINTER_GATE_2_OUTLET);
+            DTOMatch.assertContainsDto(outlets, TAINTER_GATE_1_OUTLET, this::isOutletSimilar, DTOMatch::assertMatch, "Unable to find " + TAINTER_GATE_1_OUTLET.getLocation().getName() + " when it should exist.");
+            DTOMatch.assertContainsDto(outlets, TAINTER_GATE_2_OUTLET, this::isOutletSimilar, DTOMatch::assertMatch, "Unable to find " + TAINTER_GATE_2_OUTLET.getLocation().getName() + " when it should exist.");
         }, CwmsDataApiSetupCallback.getWebUser());
-    }
-
-    private void containsOutlet(List<Outlet> outlets, Outlet expectedOutlet) {
-        String name = expectedOutlet.getLocation().getName();
-        Outlet receivedOutlet = outlets.stream()
-                                       .filter(outlet -> outlet.getLocation()
-                                                               .getName()
-                                                               .equalsIgnoreCase(name))
-                                       .findFirst()
-                                       .orElse(null);
-        assertNotNull(receivedOutlet);
-        DTOMatch.assertMatch(expectedOutlet, receivedOutlet);
-    }
-
-    private void doesNotContainOutlet(List<Outlet> outlets, Outlet expectedOutlet) {
-        String name = expectedOutlet.getLocation().getName();
-        Outlet receivedOutlet = outlets.stream()
-                                       .filter(outlet -> outlet.getLocation()
-                                                               .getName()
-                                                               .equalsIgnoreCase(name))
-                                       .findFirst()
-                                       .orElse(null);
-        assertNull(receivedOutlet);
     }
 
     @Disabled("Disabled due to a DB issue.  See https://jira.hecdev.net/browse/CWDB-296")
@@ -222,6 +199,15 @@ class OutletDaoIT extends ProjectStructureIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
+    private boolean isOutletSimilar(Outlet left, Outlet right) {
+        boolean output = false;
+        if (left != null && right != null) {
+            output = left.getLocation().getName().equalsIgnoreCase(right.getLocation().getName())
+                    && left.getLocation().getOfficeId().equalsIgnoreCase(right.getLocation().getOfficeId());
+        }
+        return output;
+    }
+
     private static Outlet buildTestOutlet(Location outletLoc, Location projectLoc, CwmsId ratingId) {
         return new Outlet.Builder().withProjectId(new CwmsId.Builder().withName(projectLoc.getName())
                                                                       .withOfficeId(projectLoc.getOfficeId())
@@ -229,15 +215,5 @@ class OutletDaoIT extends ProjectStructureIT {
                                    .withLocation(outletLoc)
                                    .withRatingGroupId(ratingId)
                                    .build();
-    }
-
-    private static void deleteLocationGroup(DSLContext context, Outlet outlet) {
-        LocationGroupDao locationGroupDao = new LocationGroupDao(context);
-        try {
-            locationGroupDao.delete(outlet.getRatingCategoryId().getName(), outlet.getRatingGroupId().getName(), true, OFFICE_ID);
-        } catch (NotFoundException e) {
-            LOGGER.atFinest().withCause(e).log("No data found for category:" + outlet.getRatingCategoryId().getName()
-                    + ", group-id:" + outlet.getRatingGroupId().getName());
-        }
     }
 }

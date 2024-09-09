@@ -170,6 +170,7 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
             this.notes = physicalStructureChange.notes;
             this.changeDate = physicalStructureChange.changeDate;
             this.settings.addAll(physicalStructureChange.settings);
+            this.poolElevation = physicalStructureChange.poolElevation;
         }
 
         public B withProjectId(CwmsId projectId) {

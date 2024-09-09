@@ -20,6 +20,7 @@
 
 package cwms.cda.data.dao.location.kind;
 
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
@@ -256,7 +257,7 @@ public class OutletDao extends JooqDao<Outlet> {
     }
 
     public List<GateChange> retrieveOperationalChanges(CwmsId projectId, Instant startTime, Instant endTime,
-                                                       boolean startInclusive, boolean endInclusive, String unitSystem,
+                                                       boolean startInclusive, boolean endInclusive, UnitSystem unitSystem,
                                                        long rowLimit) {
         return connectionResult(dsl, conn -> {
             setOffice(conn, projectId.getOfficeId());
@@ -266,20 +267,19 @@ public class OutletDao extends JooqDao<Outlet> {
             Timestamp endTimestamp = Timestamp.from(endTime);
             BigInteger rowLimitBig = BigInteger.valueOf(rowLimit);
             GATE_CHANGE_TAB_T changeTab = CWMS_OUTLET_PACKAGE.call_RETRIEVE_GATE_CHANGES(
-                    DSL.using(conn).configuration(), locationRef, startTimestamp, endTimestamp, "UTC", unitSystem,
+                    DSL.using(conn).configuration(), locationRef, startTimestamp, endTimestamp, "UTC", unitSystem.getValue(),
                     formatBool(startInclusive), formatBool(endInclusive), rowLimitBig);
 
-            List<GateChange> output = new ArrayList<>();
             if (changeTab == null) {
-                throw new NotFoundException("No operational changes found at " + projectId + " for time " + startTime +
-                                                    " to " + endTime + ".\n" +
-                                                    "Start inclusive: " + startInclusive + "\n" +
-                                                    "End inclusive: " + endInclusive + "\n" +
-                                                    "Unit system: " + unitSystem + "\n" +
-                                                    "Row limit: " + rowLimit);
+                throw new NotFoundException("No changes found for " + projectId.getOfficeId() + "." + projectId.getName()
+                + "\nStart time: " + startTime
+                + "\nEnd time: " + endTime
+                + "\nStart inclusive: " + startInclusive
+                + "\nEnd inclusive: " + endInclusive
+                + "\nUnit system: " + unitSystem
+                + "\nRow limit: " + rowLimit);
             }
-            changeTab.stream().map(OutletDao::map).forEach(output::add);
-            return output;
+            return changeTab.stream().map(OutletDao::map).collect(Collectors.toList());
         });
     }
 

@@ -33,21 +33,20 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.data.dto.location.kind.Outlet;
 import fixtures.CwmsDataApiSetupCallback;
+import java.sql.SQLException;
+import java.util.List;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import java.sql.SQLException;
-import java.util.List;
-
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
-class OutletDaoRatingIT extends ProjectStructureIT {
+class OutletDaoRatingIT extends BaseOutletDaoIT {
     private static final String LOW_FLOW_CURVE_ID = "opening-low flow,elev;flow";
     private static final String SPILLWAY_CURVE_ID = "elev;flow curve";
     private static final String OUTLET_KIND = "OUTLET";

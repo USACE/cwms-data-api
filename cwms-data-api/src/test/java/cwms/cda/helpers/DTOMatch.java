@@ -24,15 +24,13 @@
 
 package cwms.cda.helpers;
 
+import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.location.kind.GateChange;
 import cwms.cda.data.dto.location.kind.GateSetting;
 import cwms.cda.data.dto.location.kind.Setting;
 import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.data.dto.stream.StreamLocationNode;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
@@ -53,9 +51,12 @@ import cwms.cda.data.dto.watersupply.WaterUserContract;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 @SuppressWarnings({"LongLine", "checkstyle:LineLength"})
@@ -353,6 +354,27 @@ public final class DTOMatch {
 
     private static void assertMatch(Double first, Double second, String message) {
         assertMatch(first, second, DEFAULT_DELTA, message);
+    }
+
+    public static <T extends CwmsDTOBase> void assertContainsDto(List<T> values, T expectedDto,
+                                                                 BiPredicate<T, T> identifier,
+                                                                 AssertMatchMethod<T> dtoMatcher,
+                                                                 String message) {
+        T receivedValue = values.stream()
+                                  .filter(dto -> identifier.test(dto, expectedDto))
+                                  .findFirst()
+                                  .orElse(null);
+        assertNotNull(receivedValue, message);
+        dtoMatcher.assertMatch(expectedDto, receivedValue);
+    }
+
+    public static <T extends CwmsDTOBase> void assertDoesNotContainDto(List<T> values, T missingDto,
+                                                                       BiPredicate<T, T> identifier, String message) {
+        T receivedValue = values.stream()
+                                .filter(dto -> identifier.test(dto, missingDto))
+                                .findFirst()
+                                .orElse(null);
+        assertNull(receivedValue, message);
     }
 
 
