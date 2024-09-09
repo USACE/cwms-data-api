@@ -47,5 +47,5 @@ ENV cwms.dataapi.access.openid.timeout "604800"
 ENV cwms.dataapi.access.openid.altAuthUrl "https://identityc-test.cwbi.us/auth/realms/cwbi"
 
 # used to simplify redeploy in certain contexts. Update to match -<marker> in image label
-ENV IMAGE_MARKER="b"
+ENV IMAGE_MARKER="a"
 EXPOSE 7000
