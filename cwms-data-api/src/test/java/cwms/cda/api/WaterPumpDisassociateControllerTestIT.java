@@ -416,7 +416,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
         // Remove pump
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .queryParam(DELETE_ACCOUNTING, DeleteMethod.DELETE_ALL)
+            .queryParam(DELETE_ACCOUNTING, true)
             .queryParam(PUMP_TYPE, PumpType.IN)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
