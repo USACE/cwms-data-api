@@ -136,6 +136,9 @@ public abstract class ProjectStructureIT extends DataApiTestIT {
 		locationsDao.storeLocation(loc);
 	}
 
+	public static void deleteLocation(DSLContext context, Location loc) {
+		deleteLocation(context, loc.getOfficeId(), loc.getName());
+	}
 	public static void deleteLocation(DSLContext context, String officeId, String locId) {
 		LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
 		try {

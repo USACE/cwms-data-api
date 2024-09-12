@@ -22,6 +22,7 @@ package cwms.cda.data.dao.location.kind;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.LocationGroup;
@@ -62,5 +63,16 @@ public class BaseOutletDaoIT extends ProjectStructureIT {
                                realGroup.getOfficeId());
             locGroupDao.create(realGroup);
         }
+    }
+
+    public static void storeOutlet(DSLContext context, Outlet outlet) {
+        OutletDao dao = new OutletDao(context);
+        dao.storeOutlet(outlet, false);
+    }
+
+    public static void deleteOutlet(DSLContext context, Outlet outlet) {
+        OutletDao outletDao = new OutletDao(context);
+        outletDao.deleteOutlet(outlet.getLocation().getOfficeId(), outlet.getLocation().getName(),
+                               DeleteRule.DELETE_ALL);
     }
 }

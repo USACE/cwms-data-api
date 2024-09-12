@@ -35,12 +35,17 @@ import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
 import io.restassured.filter.log.LogDetail;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.servlet.http.HttpServletResponse;
+import mil.army.usace.hec.metadata.constants.NumericalConstants;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
@@ -267,6 +272,96 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
             .ifValidationFails(LogDetail.ALL, true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @Test
+    void stress_test() throws Exception {
+        //Generate 18 outlets, 5 minute data, for 1 year
+        //location: keystone dam
+        //figure out how big the payload is.
+        String locPrefix = PROJECT_1_ID.getName() + "-TG3";
+        Location.Builder locBuilder = new Location.Builder("", OUTLET_KIND, NumericalConstants.UTC_ZONEID, 0., 0.,
+                                                           "NAD83", PROJECT_1_ID.getOfficeId());
+        List<Location> allLocs = IntStream.rangeClosed(1, 18)
+                                          .mapToObj(i -> locPrefix + String.format("%d3", i))
+                                          .map(name -> locBuilder.withName(name).build())
+                                          .collect(Collectors.toList());
+        DSLContext context = getDslContext(OFFICE_ID);
+
+        Outlet.Builder outBuilder = new Outlet.Builder().withRatingGroupId(CONDUIT_GATE_RATING_GROUP)
+                                                        .withProjectId(PROJECT_1_ID);
+        List<Outlet> outlets = allLocs.stream()
+                                      .map(loc -> outBuilder.withLocation(loc).build())
+                                      .collect(Collectors.toList());
+
+
+        allLocs.forEach(loc -> storeLocLogException(context, loc));
+        outlets.forEach(outlet -> storeOutlet(context, outlet));
+
+        int intervalMins = 5;
+
+        ZonedDateTime start = ZonedDateTime.of(2020, 1, 1, 0, 0, 0, 0, NumericalConstants.UTC_ZONEID);
+        ZonedDateTime end = start.plusYears(1).plusMinutes(intervalMins);
+        ZonedDateTime next = start;
+
+        List<Instant> dates = new ArrayList<>();
+
+        while (next.isBefore(end)) {
+            dates.add(next.toInstant());
+            next = next.plusMinutes(intervalMins);
+        }
+
+        GateChange.Builder changeBuilder = new GateChange.Builder()
+                .referenceElevation(100.);
+        List<GateChange> changes = dates.stream()
+                                        .map(date -> buildGateChange(date, changeBuilder, outlets))
+                                        .collect(Collectors.toList());
+        int pageSize = changes.size();
+        OutletDao dao = new OutletDao(context);
+        dao.storeOperationalChanges(changes, true);
+
+        String body = given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .queryParam(BEGIN, start.toInstant().toString())
+            .queryParam(END, end.toInstant().toString())
+            .queryParam(START_TIME_INCLUSIVE, true)
+            .queryParam(END_TIME_INCLUSIVE, true)
+            .queryParam(PAGE_SIZE, pageSize)
+            .get("projects/" + OFFICE_ID + "/" + PROJECT_1_ID.getName() + "/gate-changes")
+        .then()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract()
+            .body()
+            .asString();
+
+        LOGGER.atSevere().log("Output character length: " + body.length() + "\n" +
+                              Charset.defaultCharset().displayName() + " byte length: " + body.getBytes().length);
+
+        outlets.forEach(outlet -> deleteOutlet(context, outlet));
+        allLocs.forEach(loc -> deleteLocation(context, loc));
+    }
+
+    private GateChange buildGateChange(Instant date, GateChange.Builder changeBuilder, List<Outlet> outlets) {
+
+        return changeBuilder.build();
+    }
+
+    private static void storeLocLogException(DSLContext context, Location loc) {
+        try {
+            storeLocation(context, loc);
+        } catch (Exception ex) {
+            LOGGER.atSevere().withCause(ex).log("Unable to store location for " + loc.getName());
+        }
     }
 
     private boolean isSimilar(GateChange left, GateChange right) {
