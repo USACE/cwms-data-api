@@ -197,9 +197,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                     equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
             .body("time-series-profile.key-parameter",
                     equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
-            .body("time-series-profile.parameter-list[0]", equalTo("Depth"))
-            .body("time-series-list[0].values.size()", equalTo(3))
-            .body("time-series-profile.parameter-list[1]", equalTo("Temp-Water"))
+            .body("time-series-profile.parameter-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(3))
         ;
     }
 
@@ -219,7 +218,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .queryParam(OVERRIDE_PROTECTION, true)
             .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
             .queryParam(PROFILE_DATA, tsProfileDataIndexed)
-            .queryParam(VERSION, "Raw")
+            .queryParam(VERSION, "USGS-Raw")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -238,7 +237,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
-            .queryParam(VERSION, "Raw")
+            .queryParam(VERSION, "USGS-Raw")
             .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
             .queryParam(TIMEZONE, "UTC")
             .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
@@ -254,7 +253,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("version", equalTo("Raw"))
+            .body("version", equalTo("USGS-Raw"))
             .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
             .body("time-series-profile.location-id.name",
                     equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
@@ -263,6 +262,70 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .body("time-series-profile.parameter-list[0]", equalTo("Depth"))
             .body("time-series-list[0].values.size()", equalTo(26))
             .body("time-series-profile.parameter-list[1]", equalTo("Temp-Water"))
+        ;
+    }
+
+    @Test
+    void test_create_retrieve_paged_TimeSeriesProfileInstance_Indexed() throws Exception {
+
+        storeParser(tspParserIndexed, null);
+
+        // Create instance
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV1)
+                .contentType(Formats.JSONV1)
+                .body(tspData)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(METHOD, StoreRule.REPLACE_ALL)
+                .queryParam(OVERRIDE_PROTECTION, true)
+                .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+                .queryParam(PROFILE_DATA, tsProfileDataIndexed)
+                .queryParam(VERSION, "Raw")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/instance")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Retrieve instance
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV1)
+                .contentType(Formats.JSONV1)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(OFFICE, OFFICE_ID)
+                .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
+                .queryParam(VERSION, "Raw")
+                .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+                .queryParam(TIMEZONE, "UTC")
+                .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
+                .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
+                .queryParam(START_INCLUSIVE, true)
+                .queryParam(END_INCLUSIVE, true)
+                .queryParam(UNIT, "m,F")
+                .queryParam(PAGE, 1)
+                .queryParam(PAGE_SIZE, 10)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("version", equalTo("Raw"))
+                .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+                .body("time-series-profile.location-id.name",
+                        equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
+                .body("time-series-profile.key-parameter",
+                        equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
+                .body("time-series-profile.parameter-list.size()", equalTo(1))
+                .body("time-series-list.size()", equalTo(10))
         ;
     }
 
@@ -511,7 +574,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .body("[0].version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
             .body("[0].time-series-profile.key-parameter", equalTo("Depth"))
             .body("[0].time-series-profile.parameter-list.size()", is(0))
-            .body("[1].version", equalTo("VERSION"))
+            .body("[1].version", equalTo("DSS-Obs"))
             .body("[1].version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
             .body("[1].time-series-profile.key-parameter", equalTo("Depth"))
             .body("[1].time-series-profile.parameter-list.size()", is(0))

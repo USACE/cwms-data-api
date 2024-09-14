@@ -25,9 +25,9 @@ public final class TimeSeriesProfile extends CwmsDTOBase {
     private final CwmsId locationId;
     @Schema(description = "Description")
     private final String description;
-    @Schema(description = "Parameter List")
+    @Schema(description = "Dependent Parameters")
     private final List<String> parameterList;
-    @Schema(description = "Key Parameter")
+    @Schema(description = "Independent Parameter")
     private final String keyParameter;
     @Schema(description = "Reference TS")
     private final CwmsId referenceTsId;

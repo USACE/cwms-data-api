@@ -15,42 +15,53 @@
       "name": "SWAN.Elev.Inst.1Hour.0.DSS-Obs"
     }
   },
-  "time-series-list": [
+  "parameter-columns": [
     {
-      "parameter": "Temp-Water",
-      "unit": "F",
-      "time-zone": "PST",
-      "values": [
-        {
-          "date-time": 1612869582120,
-          "value": 1.0,
-          "quality": 0
-        },
-        {
-          "date-time": 1612869582220,
-          "value": 3.0,
-          "quality": 0
-        }
-      ]
+      "parameter": "Temp",
+      "ordinal": 1,
+      "unit": "F"
     },
     {
       "parameter": "Depth",
-      "unit": "ft",
-      "time-zone": "PST",
-      "values": [
-        {
-          "date-time": 1612869582120,
-          "value": 1.0,
-          "quality": 0
-        },
-        {
-          "date-time": 1612869582220,
-          "value": 3.0,
-          "quality": 0
-        }
-      ]
+      "ordinal": 2,
+      "unit": "m"
     }
   ],
+  "data-columns": [
+    {
+      "name": "value",
+      "ordinal": 1,
+      "datatype": "java.lang.Double"
+    },
+    {
+      "name": "quality",
+      "ordinal": 2,
+      "datatype": "java.lang.Integer"
+    }
+  ],
+  "time-series-list": {
+      "1612869582120": [
+        [86.5, 0],
+        [98.6, 0]
+      ],
+      "1612869682120": [
+        [86.999, 0],
+        [98.6, 0]
+      ],
+      "1612870682120": [
+        [],
+        [98.6, 0]
+      ]
+  },
+  "location-time-zone": "PST",
+  "version": "DSS-Obs",
+  "version-date": 1594786000000,
   "first-date": 1594296000000,
-  "last-date": 1752062400000
+  "last-date": 1752062400000,
+  "page-first-date": 1594296000000,
+  "page-last-date": 1752062400000,
+  "page": 1,
+  "page-size": 50,
+  "total": 300,
+  "cursor": "cursorData"
 }

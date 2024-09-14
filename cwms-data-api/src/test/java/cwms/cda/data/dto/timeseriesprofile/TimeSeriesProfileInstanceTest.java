@@ -11,11 +11,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TimeSeriesProfileInstanceTest {
     private static final Map<String, String> PARAMETER_UNIT_MAP = new HashMap<>();
@@ -45,34 +46,74 @@ public class TimeSeriesProfileInstanceTest {
 
     private TimeSeriesProfileInstance buildTestTimeSeriesProfileInstance() {
         TimeSeriesProfile timeSeriesProfile = TimeSeriesProfileTest.buildTestTimeSeriesProfile();
-        List<ProfileTimeSeries> timeSeriesList = buildTimeSeriesList(timeSeriesProfile.getParameterList());
+        List<ParameterColumnInfo> parameterColumnInfoList = buildTimeSeriesList(timeSeriesProfile.getParameterList());
+        List<DataColumnInfo> dataColumnInfoList = buildDataColumnInfoList();
+        Map<Long, List<TimeSeriesData>> timeSeriesList = buildTimeSeriesList();
         return new TimeSeriesProfileInstance.Builder()
                 .withTimeSeriesProfile(timeSeriesProfile)
+                .withParameterColumns(parameterColumnInfoList)
+                .withCursor("cursor")
+                .withDataColumns(dataColumnInfoList)
+                .withPage(1)
+                .withPageSize(10)
+                .withTotal(100)
+                .withVersion("1.0")
+                .withVersionDate(Instant.parse("2020-07-15T04:06:40.00Z"))
+                .withLocationTimeZone("PST")
+                .withPageFirstDate(Instant.parse("2020-07-09T12:00:00.00Z"))
+                .withPageLastDate(Instant.parse("2025-07-09T12:00:00.00Z"))
                 .withTimeSeriesList(timeSeriesList)
                 .withFirstDate(Instant.parse("2020-07-09T12:00:00.00Z"))
                 .withLastDate(Instant.parse("2025-07-09T12:00:00.00Z"))
                 .build();
     }
 
-    private List<ProfileTimeSeries> buildTimeSeriesList(List<String> parameterList) {
-        List<ProfileTimeSeries> timeSeriesList = new ArrayList<>();
-        for(String parameter : parameterList)
-        {
-            ProfileTimeSeries profileTimeSeries = new ProfileTimeSeries.Builder()
-                    .withParameter(parameter)
-                    .withUnit(PARAMETER_UNIT_MAP.get(parameter))
-                    .withTimeZone("PST")
-                    .withValues(buildTimeValueList())
-                    .build();
-            timeSeriesList.add(profileTimeSeries);
-        }
+    private List<DataColumnInfo> buildDataColumnInfoList() {
+        List<DataColumnInfo> dataColumnInfoList = new ArrayList<>();
+        dataColumnInfoList.add(new DataColumnInfo.Builder().withName("value").withOrdinal(1).withDataType("java.lang.Double").build());
+        dataColumnInfoList.add(new DataColumnInfo.Builder().withName("quality").withOrdinal(2).withDataType("java.lang.Integer").build());
+        return dataColumnInfoList;
+    }
+
+    private Map<Long, List<TimeSeriesData>> buildTimeSeriesList() {
+        Map<Long, List<TimeSeriesData>> timeSeriesList = new TreeMap<>();
+        timeSeriesList.put(Instant.parse("2021-02-09T11:19:42.12Z").toEpochMilli(), buildTimeValueList(1));
+        timeSeriesList.put(Instant.parse("2021-02-09T11:21:22.12Z").toEpochMilli(), buildTimeValueList(2));
+        timeSeriesList.put(Instant.parse("2021-02-09T11:38:02.12Z").toEpochMilli(), buildTimeValueList(3));
         return timeSeriesList;
     }
 
-    private List<TimeValuePair> buildTimeValueList() {
-        List<TimeValuePair> timeValueList = new ArrayList<>();
-        timeValueList.add( new TimeValuePair.Builder().withValue(1.0).withDateTime(Instant.parse("2021-02-09T11:19:42.12Z")).build());
-        timeValueList.add( new TimeValuePair.Builder().withValue(3.0).withDateTime(Instant.parse("2021-02-09T11:19:42.22Z")).build());
+    private List<ParameterColumnInfo> buildTimeSeriesList(List<String> parameterList) {
+        List<ParameterColumnInfo> parameterColumnInfoList = new ArrayList<>();
+        int count = 0;
+        for(String parameter : parameterList)
+        {
+            ParameterColumnInfo columnInfo = new ParameterColumnInfo.Builder()
+                    .withParameter(parameter)
+                    .withOrdinal(count)
+                    .withUnit(PARAMETER_UNIT_MAP.get(parameter)).build();
+            parameterColumnInfoList.add(columnInfo);
+            count++;
+        }
+        return parameterColumnInfoList;
+    }
+
+    private List<TimeSeriesData> buildTimeValueList(int i) {
+        List<TimeSeriesData> timeValueList = new ArrayList<>();
+        switch(i){
+            case 1:
+                timeValueList.add(new TimeSeriesData(86.5, 0));
+                timeValueList.add(new TimeSeriesData(98.6, 0));
+                break;
+            case 2:
+                timeValueList.add(new TimeSeriesData(86.999, 0));
+                timeValueList.add(new TimeSeriesData(98.6, 0));
+                break;
+            default:
+                timeValueList.add(null);
+                timeValueList.add(new TimeSeriesData(98.6, 0));
+                break;
+        }
         return timeValueList;
     }
 
@@ -83,26 +124,36 @@ public class TimeSeriesProfileInstanceTest {
         assertEquals(expected.getLastDate(), actual.getLastDate());
     }
 
-    private void testAssertEquals(List<ProfileTimeSeries> expected, List<ProfileTimeSeries> actual, String message) {
+    private void testAssertEquals(Map<Long, List<TimeSeriesData>> expected, Map<Long, List<TimeSeriesData>> actual, String message) {
         assertEquals(expected.size(), actual.size(), message);
-        for (int i = 0; i < expected.size(); i++) {
-            testAssertEquals(expected.get(i), actual.get(i), message);
+        Iterator<Long> expectedIterator = expected.keySet().iterator();
+        Iterator<Long> actualIterator = actual.keySet().iterator();
+        while(expectedIterator.hasNext())
+        {
+            Long expectedKey = expectedIterator.next();
+            Long actualKey = actualIterator.next();
+            assertEquals(expectedKey, actualKey);
+            testAssertEquals(expected.get(expectedKey), actual.get(actualKey), message);
         }
     }
 
-    private void testAssertEquals(ProfileTimeSeries expected, ProfileTimeSeries actual, String message) {
-        assertEquals(expected.getTimeZone(), actual.getTimeZone(), message);
-        assertEquals(expected.getParameter(), actual.getParameter(), message);
-        assertEquals(expected.getUnit(),actual.getUnit(), message);
-        testAssertEquals(expected.getValues(), actual.getValues());
-    }
-
-    private void testAssertEquals(List<TimeValuePair> expected, List<TimeValuePair> actual) {
-        assertEquals(expected.size(), actual.size());
-        for(int i=0;i<expected.size();i++)
-        {
-            assertEquals(expected.get(i).getDateTime(), actual.get(i).getDateTime());
-            assertEquals(expected.get(i).getValue(), actual.get(i).getValue());
+    private void testAssertEquals(List<TimeSeriesData> expected, List<TimeSeriesData> actual, String message) {
+        assertEquals(expected.size(), actual.size(), message);
+        for (TimeSeriesData data : expected) {
+            boolean found = false;
+            for (TimeSeriesData actualData : actual) {
+                if (data == null && actualData == null) {
+                    found = true;
+                    break;
+                }
+                if (data != null && actualData != null && data.getValue() == actualData.getValue() && data.getQuality() == actualData.getQuality()) {
+                        found = true;
+                        break;
+                    }
+            }
+            if (!found) {
+                fail("Expected timeseries value data not found in actual data");
+            }
         }
     }
 }
