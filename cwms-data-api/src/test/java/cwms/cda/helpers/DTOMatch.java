@@ -30,6 +30,10 @@ import cwms.cda.data.dto.location.kind.GateSetting;
 import cwms.cda.data.dto.location.kind.Setting;
 import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.location.kind.VirtualOutlet;
+import cwms.cda.data.dto.measurement.Measurement;
+import cwms.cda.data.dto.measurement.StreamflowMeasurement;
+import cwms.cda.data.dto.measurement.SupplementalStreamflowMeasurement;
+import cwms.cda.data.dto.measurement.UsgsMeasurement;
 import cwms.cda.data.dto.stream.StreamLocationNode;
 
 import cwms.cda.data.dto.CwmsId;
@@ -375,6 +379,70 @@ public final class DTOMatch {
                                 .findFirst()
                                 .orElse(null);
         assertNull(receivedValue, message);
+    }
+
+    public static void assertMatch(Measurement first, Measurement second) {
+        //based on Measurement DTO
+        assertAll(
+                () -> assertMatch(first.getId(), second.getId()),
+                () -> assertEquals(first.getAgency(), second.getAgency(), "Agency does not match"),
+                () -> assertEquals(first.getHeightUnit(), second.getHeightUnit(), "Height unit does not match"),
+                () -> assertEquals(first.getFlowUnit(), second.getFlowUnit(), "Flow unit does not match"),
+                () -> assertEquals(first.getTempUnit(), second.getTempUnit(), "Temperature unit does not match"),
+                () -> assertEquals(first.getVelocityUnit(), second.getVelocityUnit(), "Velocity unit does not match"),
+                () -> assertEquals(first.getAreaUnit(), second.getAreaUnit(), "Area unit does not match"),
+                () -> assertEquals(first.isUsed(), second.isUsed(), "Used status does not match"),
+                () -> assertEquals(first.getAgency(), second.getAgency(), "Agency does not match"),
+                () -> assertEquals(first.getParty(), second.getParty(), "Party does not match"),
+                () -> assertEquals(first.getWmComments(), second.getWmComments(), "WM Comments do not match"),
+                () -> assertEquals(first.getInstant(), second.getInstant(), "Instant does not match"),
+                () -> assertEquals(first.getNumber(), second.getNumber(), "Number does not match"),
+                () -> assertMatch(first.getStreamflowMeasurement(), second.getStreamflowMeasurement()),
+                () -> assertMatch(first.getSupplementalStreamflowMeasurement(), second.getSupplementalStreamflowMeasurement()),
+                () -> assertMatch(first.getUsgsMeasurement(), second.getUsgsMeasurement())
+        );
+    }
+
+    public static void assertMatch(StreamflowMeasurement first, StreamflowMeasurement second) {
+        assertAll(
+                () -> assertEquals(first.getGageHeight(), second.getGageHeight(), "Gage height does not match"),
+                () -> assertEquals(first.getFlow(), second.getFlow(), "Flow does not match"),
+                () -> assertEquals(first.getQuality(), second.getQuality(), "Quality does not match")
+        );
+    }
+
+    public static void assertMatch(SupplementalStreamflowMeasurement first, SupplementalStreamflowMeasurement second) {
+        assertAll(
+                () -> assertEquals(first.getChannelFlow(), second.getChannelFlow(), "Channel flow does not match"),
+                () -> assertEquals(first.getOverbankFlow(), second.getOverbankFlow(), "Overbank flow does not match"),
+                () -> assertEquals(first.getOverbankMaxDepth(), second.getOverbankMaxDepth(), "Overbank max depth does not match"),
+                () -> assertEquals(first.getChannelMaxDepth(), second.getChannelMaxDepth(), "Channel max depth does not match"),
+                () -> assertEquals(first.getAvgVelocity(), second.getAvgVelocity(), "Average velocity does not match"),
+                () -> assertEquals(first.getSurfaceVelocity(), second.getSurfaceVelocity(), "Surface velocity does not match"),
+                () -> assertEquals(first.getMaxVelocity(), second.getMaxVelocity(), "Max velocity does not match"),
+                () -> assertEquals(first.getEffectiveFlowArea(), second.getEffectiveFlowArea(), "Effective flow area does not match"),
+                () -> assertEquals(first.getCrossSectionalArea(), second.getCrossSectionalArea(), "Cross sectional area does not match"),
+                () -> assertEquals(first.getMeanGage(), second.getMeanGage(), "Mean gage does not match"),
+                () -> assertEquals(first.getTopWidth(), second.getTopWidth(), "Top width does not match"),
+                () -> assertEquals(first.getMainChannelArea(), second.getMainChannelArea(), "Main channel area does not match"),
+                () -> assertEquals(first.getOverbankArea(), second.getOverbankArea(), "Overbank area does not match")
+        );
+    }
+
+    public static void assertMatch(UsgsMeasurement first, UsgsMeasurement second)
+    {
+        assertAll(
+                () -> assertEquals(first.getRemarks(), second.getRemarks(), "Remarks do not match"),
+                () -> assertEquals(first.getCurrentRating(), second.getCurrentRating(), "Current rating does not match"),
+                () -> assertEquals(first.getControlCondition(), second.getControlCondition(), "Control condition does not match"),
+                () -> assertEquals(first.getShiftUsed(), second.getShiftUsed(), "Shift used does not match"),
+                () -> assertEquals(first.getPercentDifference(), second.getPercentDifference(), "Percent difference does not match"),
+                () -> assertEquals(first.getFlowAdjustment(), second.getFlowAdjustment(), "Flow adjustment does not match"),
+                () -> assertEquals(first.getDeltaHeight(), second.getDeltaHeight(), "Delta height does not match"),
+                () -> assertEquals(first.getDeltaTime(), second.getDeltaTime(), "Delta time does not match"),
+                () -> assertEquals(first.getAirTemp(), second.getAirTemp(), "Air temperature does not match"),
+                () -> assertEquals(first.getWaterTemp(), second.getWaterTemp(), "Water temperature does not match")
+        );
     }
 
 

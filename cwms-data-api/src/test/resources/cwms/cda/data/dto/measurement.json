@@ -1,0 +1,49 @@
+{
+  "height-unit": "ft",
+  "flow-unit": "cfs",
+  "temp-unit": "F",
+  "velocity-unit": "ft/s",
+  "area-unit": "sq ft",
+  "used": true,
+  "agency": "USGS",
+  "party": "Survey Party",
+  "wm-comments": "Measurement made during normal flow conditions.",
+  "instant": "2024-09-16T00:00:00Z",
+  "number": "123456",
+  "id": {
+    "name": "Location123",
+    "office-id": "SPK"
+  },
+  "streamflow-measurement": {
+    "gage-height": 5.5,
+    "flow": 250.0,
+    "quality": "Good"
+  },
+  "supplemental-streamflow-measurement": {
+    "channel-flow": 300.0,
+    "overbank-flow": 50.0,
+    "overbank-max-depth": 5.0,
+    "channel-max-depth": 10.0,
+    "avg-velocity": 1.5,
+    "surface-velocity": 2.0,
+    "max-velocity": 3.0,
+    "effective-flow-area": 200.0,
+    "cross-sectional-area": 250.0,
+    "mean-gage": 20.0,
+    "top-width": 30.0,
+    "main-channel-area": 150.0,
+    "overbank-area": 80.0
+  },
+  "usgs-measurement": {
+    "remarks": "Remarks",
+    "current-rating": "Rating",
+    "control-condition": "Condition",
+    "flow-adjustment": "Adjustment",
+    "shift-used": 0.1,
+    "percent-difference": 5.0,
+    "delta-height": 0.05,
+    "delta-time": 10.0,
+    "air-temp": 20.0,
+    "water-temp": 15.0
+  }
+}
