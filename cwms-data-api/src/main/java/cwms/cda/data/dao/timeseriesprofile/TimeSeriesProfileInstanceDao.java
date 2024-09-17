@@ -2,18 +2,22 @@ package cwms.cda.data.dao.timeseriesprofile;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.timeseriesprofile.DataColumnInfo;
 import cwms.cda.data.dto.timeseriesprofile.ParameterColumnInfo;
-import cwms.cda.data.dto.timeseriesprofile.TimeSeriesData;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileInstance;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
+import org.jooq.Record1;
+import org.jooq.Record7;
 import org.jooq.Result;
+import org.jooq.SelectConditionStep;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
@@ -36,37 +40,40 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Logger;
+
+import static org.jooq.impl.DSL.*;
 
 
-public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInstance>
-{
+public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInstance> {
+	private static final Logger logger = Logger.getLogger(TimeSeriesProfileInstanceDao.class.getName());
+	private static final AV_TS_PROFILE_INST_TSV2 cwmsTsInstView = AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2;
+
 	public TimeSeriesProfileInstanceDao(DSLContext dsl)
 	{
 		super(dsl);
 	}
 
 	public void storeTimeSeriesProfileInstance(TimeSeriesProfile timeSeriesProfile, String profileData, Instant versionDate,
-			String versionId, String storeRule, boolean overrideProtection)
-	{
+			String versionId, String storeRule, boolean overrideProtection) {
 		connection(dsl, conn -> {
 			setOffice(conn, timeSeriesProfile.getLocationId().getOfficeId());
-			CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_INSTANCE__2(DSL.using(conn).configuration(),
+			CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_INSTANCE__2(using(conn).configuration(),
 					timeSeriesProfile.getLocationId().getName(),
 					timeSeriesProfile.getKeyParameter(),
 					profileData,
 					versionId,
 					storeRule,
 					overrideProtection?"T":"F",
-					versionDate!=null?Timestamp.from(versionDate):null,
+					versionDate != null ? Timestamp.from(versionDate) : null,
 					timeSeriesProfile.getLocationId().getOfficeId());
 		});
 	}
 
-	public void storeTimeSeriesProfileInstance(TimeSeriesProfileInstance timeseriesProfileInstance, String versionId, Instant versionInstant, String storeRule,String overrideProtection)
-	{
+	public void storeTimeSeriesProfileInstance(TimeSeriesProfileInstance timeseriesProfileInstance, String versionId, Instant versionInstant, String storeRule,String overrideProtection) {
 		connection(dsl, conn -> {
 			setOffice(conn, timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId());
-			BigDecimal locationCodeId = CWMS_LOC_PACKAGE.call_GET_LOCATION_CODE(DSL.using(conn).configuration(),
+			BigDecimal locationCodeId = CWMS_LOC_PACKAGE.call_GET_LOCATION_CODE(using(conn).configuration(),
 					timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId(),
 					timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getName());
 
@@ -74,7 +81,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			Map<String, BigInteger> parameterIdToCode = new HashMap<>();
 
 			String parameter = timeseriesProfileInstance.getTimeSeriesProfile().getKeyParameter();
-			BigDecimal parameterCodeDec = CWMS_UTIL_PACKAGE.call_GET_PARAMETER_CODE(DSL.using(conn).configuration(), parameter,
+			BigDecimal parameterCodeDec = CWMS_UTIL_PACKAGE.call_GET_PARAMETER_CODE(using(conn).configuration(), parameter,
 					timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId());
 			parameterIdToCode.put(parameter, parameterCodeDec.toBigInteger());
 
@@ -82,13 +89,13 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			for(String param : dependentParameters)
 			{
 				parameter = param;
-				parameterCodeDec = CWMS_UTIL_PACKAGE.call_GET_PARAMETER_CODE(DSL.using(conn).configuration(), parameter,
+				parameterCodeDec = CWMS_UTIL_PACKAGE.call_GET_PARAMETER_CODE(using(conn).configuration(), parameter,
 						timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId());
 				parameterIdToCode.put(parameter, parameterCodeDec.toBigInteger());
 			}
 
 			TS_PROF_DATA_T tsProfileData = new TS_PROF_DATA_T();
-			tsProfileData.attach(DSL.using(conn).configuration());
+			tsProfileData.attach(using(conn).configuration());
 
 			TS_PROF_DATA_TAB_T records = new TS_PROF_DATA_TAB_T();
 
@@ -135,7 +142,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 
 
 
-				CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_INSTANCE(DSL.using(conn).configuration(),
+				CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_INSTANCE(using(conn).configuration(),
 						tsProfileData,
 						versionId,
 						storeRule,
@@ -156,7 +163,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.KEY_PARAMETER_ID, parameterIdMask));
 		whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.VERSION_ID, versionMask));
 
-		@NotNull Result<Record> timeSeriesProfileInstanceResults =  dsl.select(DSL.asterisk()).from(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST)
+		@NotNull Result<Record> timeSeriesProfileInstanceResults =  dsl.select(asterisk()).from(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST)
 				.where(whereCondition)
 				.fetch();
 		for (Record result : timeSeriesProfileInstanceResults) {
@@ -194,61 +201,132 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		String next,
 		Instant versionDate,
 		String maxVersion,
-		int page,
-		int pageSize,
-		boolean getTotal)
+		String page,
+		int pageSize)
 	{
-		Condition whereCondition = AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.KEY_PARAMETER_ID.eq(keyParameter)
-				.and(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.LOCATION_ID.eq(location.getName())
-				.and(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.OFFICE_ID.eq(location.getOfficeId()))
-				.and(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.VERSION_ID.eq(version))
-				.and(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.VERSION_DATE.eq(Timestamp.from(versionDate)))
-				.and((AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.UNIT_ID.eq(unit.split(",")[0]))
-					.or(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.UNIT_ID.eq(unit.split(",")[1]))));
+		Integer total = null;
+		String cursor = null;
+		Timestamp tsCursor = null;
 
+		Condition whereCondition = cwmsTsInstView.KEY_PARAMETER_ID.eq(keyParameter)
+				.and(cwmsTsInstView.LOCATION_ID.eq(location.getName())
+				.and(cwmsTsInstView.OFFICE_ID.eq(location.getOfficeId()))
+				.and(cwmsTsInstView.VERSION_ID.eq(version))
+				.and(cwmsTsInstView.VERSION_DATE.eq(Timestamp.from(versionDate))));
+//				.and((AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.UNIT_ID.eq(firstUnit))
+//					.or(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.UNIT_ID.eq(secondUnit))));
 		if(OracleTypeMap.parseBool(startInclusive) && OracleTypeMap.parseBool(endInclusive)){
 			whereCondition = whereCondition
-							.and(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.LAST_DATE_TIME.le(Timestamp.from(endTime)))
-							.and(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.FIRST_DATE_TIME.ge(Timestamp.from(startTime)));
+					.and(cwmsTsInstView.LAST_DATE_TIME.le(Timestamp.from(endTime)))
+					.and(cwmsTsInstView.FIRST_DATE_TIME.ge(Timestamp.from(startTime)));
 		} else if (!OracleTypeMap.parseBool(startInclusive) && (OracleTypeMap.parseBool(endInclusive))) {
 			whereCondition = whereCondition
-							.and(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.LAST_DATE_TIME.eq(Timestamp.from(endTime)))
-							.and(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)));
+					.and(cwmsTsInstView.LAST_DATE_TIME.eq(Timestamp.from(endTime)))
+					.and(cwmsTsInstView.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)));
 		} else if (OracleTypeMap.parseBool(startInclusive) && !OracleTypeMap.parseBool(endInclusive)) {
 			whereCondition = whereCondition
-							.and(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.FIRST_DATE_TIME.eq(Timestamp.from(startTime)))
-							.and(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
+					.and(cwmsTsInstView.FIRST_DATE_TIME.eq(Timestamp.from(startTime)))
+					.and(cwmsTsInstView.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
 		} else {
 			whereCondition = whereCondition
-							.and(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
-							.and(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
+					.and(cwmsTsInstView.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
+					.and(cwmsTsInstView.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
 		}
 		Condition finalWhereCondition = whereCondition;
+
+		if (page != null && !page.isEmpty()) {
+			final String[] parts = CwmsDTOPaginated.decodeCursor(page);
+
+			logger.fine("Decoded cursor");
+			logger.finest(() -> {
+				StringBuilder sb = new StringBuilder();
+				for (String part : parts) {
+					sb.append(part).append("\n");
+				}
+				return sb.toString();
+			});
+
+			if (parts.length > 1) {
+				cursor = parts[0];
+				tsCursor = Timestamp.from(Instant.ofEpochMilli(Long.parseLong(parts[0])));
+
+				if (parts.length > 2) {
+					total = Integer.parseInt(parts[1]);
+				}
+
+				pageSize = Integer.parseInt(parts[parts.length - 1]);
+			}
+		}
+
+		// Give the date time column a name
+		Field<Timestamp> dateTimeCol = field("DATE_TIME", Timestamp.class).as("DATE_TIME");
+
+		final String recordCursor = cursor;
+		final int recordPageSize = pageSize;
+
+
+		if (total == null) {
+			SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
+					.from(cwmsTsInstView)
+					.where(finalWhereCondition);
+			total = count.fetchOne().value1();
+		}
+		Result<Record7<Double, Long, Timestamp, Long, Long, String, String>> result = null;
+		if (pageSize != 0) {
+			if(pageSize > 0) {
+				result = dsl.select(cwmsTsInstView.VALUE,
+								cwmsTsInstView.QUALITY_CODE,
+								cwmsTsInstView.DATE_TIME,
+								cwmsTsInstView.LOCATION_CODE,
+								cwmsTsInstView.KEY_PARAMETER_CODE,
+								cwmsTsInstView.PARAMETER_ID,
+								cwmsTsInstView.UNIT_ID)
+						.from(cwmsTsInstView)
+						.where(finalWhereCondition).and(dateTimeCol.greaterOrEqual(CWMS_UTIL_PACKAGE
+								.call_TO_TIMESTAMP__2(nvl(val(tsCursor == null ? null
+												: tsCursor.toInstant().toEpochMilli()),
+										val(startTime.toEpochMilli())))))
+						.and(dateTimeCol.lessThan(CWMS_UTIL_PACKAGE
+								.call_TO_TIMESTAMP__2(val(endTime.toEpochMilli()))))
+						.orderBy(cwmsTsInstView.DATE_TIME,
+								cwmsTsInstView.VALUE,
+								cwmsTsInstView.UNIT_ID)
+						.limit(val(pageSize + 1))
+						.fetch();
+			} else {
+				result = dsl.select(cwmsTsInstView.VALUE,
+								cwmsTsInstView.QUALITY_CODE,
+								cwmsTsInstView.DATE_TIME,
+								cwmsTsInstView.LOCATION_CODE,
+								cwmsTsInstView.KEY_PARAMETER_CODE,
+								cwmsTsInstView.PARAMETER_ID,
+								cwmsTsInstView.UNIT_ID)
+						.from(cwmsTsInstView)
+						.where(finalWhereCondition).and(dateTimeCol.greaterOrEqual(CWMS_UTIL_PACKAGE
+								.call_TO_TIMESTAMP__2(nvl(val(tsCursor == null ? null
+												: tsCursor.toInstant().toEpochMilli()),
+										val(startTime.toEpochMilli())))))
+						.and(dateTimeCol.lessThan(CWMS_UTIL_PACKAGE
+								.call_TO_TIMESTAMP__2(val(endTime.toEpochMilli()))))
+						.orderBy(cwmsTsInstView.DATE_TIME,
+								cwmsTsInstView.VALUE,
+								cwmsTsInstView.UNIT_ID)
+						.fetch();
+			}
+			Result<?> lastRecord = result;
+			logger.fine(lastRecord::toString);
+		}
+
+		if (result == null || result.isEmpty()) {
+			throw new NotFoundException("No time series profile data found for the given parameters");
+		}
+
+		Result<?> finalResult = result;
+		int totalRecords = total;
 
 		return connectionResult(dsl, conn -> {
 			setOffice(conn, location.getOfficeId());
 			TS_PROF_DATA_T timeSeriesProfileData;
-			if (getTotal) {
-				Result<Record> result = dsl.select(DSL.asterisk())
-					.from(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2)
-					.where(finalWhereCondition)
-					.fetch();
-
-				return new TimeSeriesProfileInstance.Builder()
-						.withTotal(result.size())
-						.build();
-			}
-			Result<Record> result = dsl.select(DSL.asterisk())
-				.from(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2)
-				.where(finalWhereCondition)
-				.orderBy(AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2.KEY_PARAMETER_ID)
-				.limit(pageSize)
-				.offset(pageSize * (page - 1))
-				.fetch();
-			if (result.isEmpty()) {
-				throw new NotFoundException("No time series profile data found for the given parameters");
-			}
-
 			BigInteger locationCode = null;
 			BigInteger keyParameterCode = null;
 			STR_TAB_T units = new STR_TAB_T(unit.split(","));
@@ -257,7 +335,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			Map<String, String> unitParamMap = new TreeMap<>();
 
 			boolean parentData = false;
-			for (Record resultRecord : result) {
+			for (Record resultRecord : finalResult) {
 				if (!parentData)
 				{
 					locationCode = resultRecord.get("LOCATION_CODE", BigInteger.class);
@@ -277,7 +355,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 					timeValuePairMap.put(dateTime, existingParameters);
 				} else {
 					PVQ_TAB_T parameters = new PVQ_TAB_T(new PVQ_T(keyParameterCode, resultRecord.get("VALUE", Double.class),
-						resultRecord.get("QUALITY_CODE", BigInteger.class)));
+							resultRecord.get("QUALITY_CODE", BigInteger.class)));
 					timeValuePairMap.put(dateTime, parameters);
 				}
 			}
@@ -288,10 +366,19 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			}
 			timeSeriesProfileData = new TS_PROF_DATA_T(locationCode, keyParameterCode, timeZone, units, records);
 
-			return map(DSL.using(conn).configuration(), location.getOfficeId(), timeSeriesProfileData, version,
-					versionDate, startTime, endTime, unitParamMap, page, pageSize);
+			TimeSeriesProfileInstance returnInstance = map(DSL.using(conn).configuration(), location.getOfficeId(), timeSeriesProfileData, version,
+					versionDate, startTime, endTime, unitParamMap, recordCursor, recordPageSize, totalRecords);
+
+			for (Map.Entry<Timestamp, PVQ_TAB_T> entry : timeValuePairMap.entrySet()) {
+				for (PVQ_T pvq : entry.getValue()) {
+					returnInstance.addValue(entry.getKey(), pvq.getVALUE(), pvq.getQUALITY_CODE().intValue());
+				}
+			}
+
+			return returnInstance;
 		});
 	}
+
 	public void deleteTimeSeriesProfileInstance(CwmsId location, String keyParameter,
 			String version, Instant firstDate, String timeZone,boolean overrideProtection, Instant versionDate)
 	{
@@ -304,7 +391,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			}
 
 				CWMS_TS_PROFILE_PACKAGE.call_DELETE_TS_PROFILE_INSTANCE(
-						DSL.using(conn).configuration(),
+						using(conn).configuration(),
 						location.getName(),
 						keyParameter,
 						version,
@@ -321,9 +408,8 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 
 	private TimeSeriesProfileInstance map(@NotNull Configuration configuration, String officeId,
 			TS_PROF_DATA_T timeSeriesProfileData, String version, Instant versionDate, Instant startTime,
-			Instant endTime, Map<String, String> unitParamMap, int page, int pageSize)  {
+			Instant endTime, Map<String, String> unitParamMap, String page, int pageSize, int total)  {
 		String timeZone = timeSeriesProfileData.getTIME_ZONE();
-//		STR_TAB_T units = timeSeriesProfileData.getUNITS();
 		TS_PROF_DATA_TAB_T records = timeSeriesProfileData.getRECORDS();
 		BigInteger locationCode = timeSeriesProfileData.getLOCATION_CODE();
 		String location = CWMS_UTIL_PACKAGE.call_GET_LOCATION_ID(configuration, locationCode, officeId);
@@ -343,23 +429,28 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 				.build();
 		dataColumnInfoList.add(valueDataColumnInfo);
 		dataColumnInfoList.add(qualityDataColumnInfo);
-        Map<Long, List<TimeSeriesData>> timeSeriesList = new TreeMap<>();
+//        Map<Long, List<TimeSeriesData>> timeSeriesList = new TreeMap<>();
 
-		for(TS_PROF_DATA_REC_T dataRecord : records)
-		{
-			List<TimeSeriesData> timeSeriesDataList = new ArrayList<>();
-			Instant dateTime = dataRecord.get(0, Instant.class);
-			timeList.add(dateTime);
-			PVQ_TAB_T parameters = dataRecord.getPARAMETERS();
-			for(PVQ_T parameter : parameters)
-			{
-				TimeSeriesData qualityValuePair
-						= new TimeSeriesData(parameter.getVALUE(), parameter.getQUALITY_CODE().intValue());
-				timeSeriesDataList.add(qualityValuePair);
-			}
+//		for(TS_PROF_DATA_REC_T dataRecord : records)
+//		{
+//			List<TimeSeriesData> timeSeriesDataList = new ArrayList<>();
+//			Instant dateTime = dataRecord.get(0, Instant.class);
+//			timeList.add(dateTime);
+//			PVQ_TAB_T parameters = dataRecord.getPARAMETERS();
+//			for(PVQ_T parameter : parameters)
+//			{
+//				TimeSeriesData qualityValuePair
+//						= new TimeSeriesData(parameter.getVALUE(), parameter.getQUALITY_CODE().intValue());
+//				timeSeriesDataList.add(qualityValuePair);
+//			}
+//
+//
+//			timeSeriesList.put(dateTime.toEpochMilli(), timeSeriesDataList);
+//		}
 
-
-			timeSeriesList.put(dateTime.toEpochMilli(), timeSeriesDataList);
+		for (TS_PROF_DATA_REC_T dataRecord : records) {
+			Timestamp dateTime = dataRecord.getDATE_TIME();
+			timeList.add(dateTime.toInstant());
 		}
 
 		List<ParameterColumnInfo> parameterColumnInfoList = new ArrayList<>();
@@ -387,14 +478,15 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 				.build();
 		return new TimeSeriesProfileInstance.Builder()
 				.withTimeSeriesProfile(timeSeriesProfile)
-				.withTimeSeriesList(timeSeriesList)
+//				.withTimeSeriesList(timeSeriesList)
+				.withTimeSeriesList(new TreeMap<>())
 				.withVersion(version)
 				.withFirstDate(startTime)
 				.withLastDate(endTime)
 				.withLocationTimeZone(timeZone)
 				.withPage(page)
 				.withPageSize(pageSize)
-//				.withCursor(cursor)
+				.withTotal(total)
 				.withDataColumns(dataColumnInfoList)
 				.withParameterColumns(parameterColumnInfoList)
 				.withPageFirstDate(timeList.stream().min(Instant::compareTo).orElse(null))

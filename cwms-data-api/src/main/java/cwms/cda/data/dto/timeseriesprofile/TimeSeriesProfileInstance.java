@@ -7,12 +7,14 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.errors.RequiredFieldException;
-import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -20,11 +22,11 @@ import java.util.Map;
 @JsonDeserialize(builder = TimeSeriesProfileInstance.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class TimeSeriesProfileInstance extends CwmsDTOBase {
+public final class TimeSeriesProfileInstance extends CwmsDTOPaginated {
     private final TimeSeriesProfile timeSeriesProfile;
     private final List<ParameterColumnInfo> parameterColumns;
     private final List<DataColumnInfo> dataColumns;
-    @JsonFormat(shape= JsonFormat.Shape.ARRAY)
+    @JsonFormat(shape = JsonFormat.Shape.ARRAY)
     private final Map<Long, List<TimeSeriesData>> timeSeriesList;
     private final String locationTimeZone;
     private final String version;
@@ -33,12 +35,9 @@ public final class TimeSeriesProfileInstance extends CwmsDTOBase {
     private final Instant lastDate;
     private final Instant pageFirstDate;
     private final Instant pageLastDate;
-    private final int page;
-    private final int pageSize;
-    private final int total;
-    private final String cursor;
 
     private TimeSeriesProfileInstance(Builder builder) {
+        super(builder.page, builder.pageSize, builder.total);
         timeSeriesList = builder.timeSeriesList;
         parameterColumns = builder.parameterColumns;
         dataColumns = builder.dataColumns;
@@ -50,10 +49,6 @@ public final class TimeSeriesProfileInstance extends CwmsDTOBase {
         lastDate = builder.lastDate;
         pageFirstDate = builder.pageFirstDate;
         pageLastDate = builder.pageLastDate;
-        page = builder.page;
-        pageSize = builder.pageSize;
-        total = builder.total;
-        cursor = builder.cursor;
     }
 
     public TimeSeriesProfile getTimeSeriesProfile() {
@@ -100,22 +95,6 @@ public final class TimeSeriesProfileInstance extends CwmsDTOBase {
         return pageLastDate;
     }
 
-    public int getPage() {
-        return page;
-    }
-
-    public int getPageSize() {
-        return pageSize;
-    }
-
-    public int getTotal() {
-        return total;
-    }
-
-    public String getCursor() {
-        return cursor;
-    }
-
     @Override
     protected void validateInternal(CwmsDTOValidator validator) {
         if (timeSeriesProfile == null) {
@@ -137,10 +116,9 @@ public final class TimeSeriesProfileInstance extends CwmsDTOBase {
         private String locationTimeZone;
         private Instant pageFirstDate;
         private Instant pageLastDate;
-        private int page;
+        private String page;
         private int pageSize;
         private int total;
-        private String cursor;
 
         public TimeSeriesProfileInstance.Builder withTimeSeriesProfile(TimeSeriesProfile timeSeriesProfile) {
             this.timeSeriesProfile = timeSeriesProfile;
@@ -197,7 +175,7 @@ public final class TimeSeriesProfileInstance extends CwmsDTOBase {
             return this;
         }
 
-        public TimeSeriesProfileInstance.Builder withPage(int page) {
+        public TimeSeriesProfileInstance.Builder withPage(String page) {
             this.page = page;
             return this;
         }
@@ -212,13 +190,32 @@ public final class TimeSeriesProfileInstance extends CwmsDTOBase {
             return this;
         }
 
-        public TimeSeriesProfileInstance.Builder withCursor(String cursor) {
-            this.cursor = cursor;
-            return this;
-        }
-
         public TimeSeriesProfileInstance build() {
             return new TimeSeriesProfileInstance(this);
         }
+    }
+
+    public void addValue(Timestamp dateTime, Double value, int qualityCode) {
+        // Set the current page, if not set
+        if ((page == null || page.isEmpty()) && (timeSeriesList == null || timeSeriesList.isEmpty())) {
+            page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
+        }
+        if (pageSize > 0 && mapSize(timeSeriesList) == pageSize) {
+            nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
+        } else {
+            timeSeriesList.computeIfAbsent(dateTime.getTime(), k -> new ArrayList<>());
+            timeSeriesList.get(dateTime.getTime()).add(new TimeSeriesData(value, qualityCode));
+        }
+    }
+
+    private static int mapSize(Map<Long, List<TimeSeriesData>> map) {
+        int size = 0;
+        if (map == null) {
+            return size;
+        }
+        for (List<TimeSeriesData> list : map.values()) {
+            size += list.size();
+        }
+        return size;
     }
 }

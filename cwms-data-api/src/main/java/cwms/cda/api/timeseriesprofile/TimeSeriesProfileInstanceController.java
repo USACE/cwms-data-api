@@ -243,8 +243,8 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
                 + " time series profile instance. Default is the year 1800"),
             @OpenApiParam(name = END, type = Instant.class, description = "The end of the"
                 + " time series profile instance. Default is the year 3000"),
-            @OpenApiParam(name = PAGE, type = Integer.class, description = "The page of the"
-                + " time series profile instance. Default is 1"),
+            @OpenApiParam(name = PAGE, description = "The page of the"
+                + " time series profile instance."),
             @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "The page size of the"
                 + " time series profile instance. Default is 500"),
         },
@@ -291,12 +291,12 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
                     .getOrDefault(String.valueOf(Instant.now().toEpochMilli()))));
             String maxVersion = OracleTypeMap.formatBool(ctx.queryParamAsClass(MAX_VERSION, boolean.class)
                     .getOrDefault(false));
-            int page = ctx.queryParamAsClass(PAGE, Integer.class).getOrDefault(1);
+            String page = ctx.queryParam(PAGE);
             int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(500);
             CwmsId tspIdentifier = new CwmsId.Builder().withOfficeId(officeId).withName(timeSeriesId).build();
             TimeSeriesProfileInstance returnedInstance = tspInstanceDao.retrieveTimeSeriesProfileInstance(tspIdentifier,
                     keyParameter, version, unit, startTime, endTime, timeZone, startInclusive, endInclusive,
-                    previous, next, versionDate, maxVersion, page, pageSize, false);
+                    previous, next, versionDate, maxVersion, page, pageSize);
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileInstance.class);
             String result = Formats.format(contentType, returnedInstance);

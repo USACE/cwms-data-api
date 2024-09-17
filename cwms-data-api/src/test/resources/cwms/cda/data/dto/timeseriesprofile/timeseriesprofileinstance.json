@@ -60,8 +60,7 @@
   "last-date": 1752062400000,
   "page-first-date": 1594296000000,
   "page-last-date": 1752062400000,
-  "page": 1,
+  "page": "",
   "page-size": 50,
-  "total": 300,
-  "cursor": "cursorData"
+  "total": 300
 }

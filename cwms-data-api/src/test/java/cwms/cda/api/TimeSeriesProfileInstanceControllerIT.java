@@ -51,6 +51,9 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
+
+import io.restassured.response.ExtractableResponse;
+import io.restassured.response.Response;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
@@ -260,7 +263,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .body("time-series-profile.key-parameter",
                     equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
             .body("time-series-profile.parameter-list[0]", equalTo("Depth"))
-            .body("time-series-list[0].values.size()", equalTo(26))
+            .body("time-series-list.size()", equalTo(26))
             .body("time-series-profile.parameter-list[1]", equalTo("Temp-Water"))
         ;
     }
@@ -293,6 +296,43 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         ;
 
         // Retrieve instance
+        ExtractableResponse<Response> extractableResponse = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV1)
+                .contentType(Formats.JSONV1)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(OFFICE, OFFICE_ID)
+                .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
+                .queryParam(VERSION, "Raw")
+                .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+                .queryParam(TIMEZONE, "UTC")
+                .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
+                .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
+                .queryParam(START_INCLUSIVE, true)
+                .queryParam(END_INCLUSIVE, true)
+                .queryParam(UNIT, "m,F")
+                .queryParam(PAGE_SIZE, 10)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("version", equalTo("Raw"))
+                .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+                .body("time-series-profile.location-id.name",
+                        equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
+                .body("time-series-profile.key-parameter",
+                        equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
+                .body("time-series-profile.parameter-list.size()", equalTo(1))
+                .body("time-series-list.size()", equalTo(10)).extract()
+        ;
+
+        String cursor = extractableResponse.path("next-page");
+        assertNotNull(cursor);
+
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV1)
@@ -308,7 +348,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                 .queryParam(START_INCLUSIVE, true)
                 .queryParam(END_INCLUSIVE, true)
                 .queryParam(UNIT, "m,F")
-                .queryParam(PAGE, 1)
+                .queryParam(PAGE, cursor)
                 .queryParam(PAGE_SIZE, 10)
                 .when()
                 .redirects().follow(true)
@@ -326,7 +366,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                         equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
                 .body("time-series-profile.parameter-list.size()", equalTo(1))
                 .body("time-series-list.size()", equalTo(10))
-        ;
+                ;
     }
 
     @Test
