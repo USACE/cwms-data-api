@@ -58,6 +58,9 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             String[] parameterArray = {"Depth", "Pres"};
             int[] parameterIndexArray = {7, 8};
             String[] parameterUnitArray = {"m", "kPa"};
+            List<String> unitList = new ArrayList<>();
+            unitList.add("m");
+            unitList.add("kPa");
             Instant versionDate = Instant.parse("2024-07-09T12:00:00.00Z");
             Instant startTime = Instant.parse("2018-07-09T19:06:20.00Z");
             Instant endTime = Instant.parse("2025-07-09T19:06:20.00Z");
@@ -102,7 +105,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
 
             try {
                 // retrieve the time series profile instance we just stored
-                TimeSeriesProfileInstance timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, parameterUnitArray,
+                TimeSeriesProfileInstance timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
                         startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion, null, 1000);
                 // cleanup: delete the instance
                 profileDao.deleteTimeSeriesProfile(timeSeriesProfileInstance.getTimeSeriesProfile().getLocationId().getName(), timeSeriesProfileInstance.getTimeSeriesProfile().getKeyParameter(),
@@ -135,6 +138,9 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             String[] parameterArray = {"Depth", "Pres"};
             int[][] parameterStartEndArray = {{21, 23}, {25, 27}};
             String[] parameterUnitArray = {"m", "kPa"};
+            List<String> unitList = new ArrayList<>();
+            unitList.add("m");
+            unitList.add("kPa");
             Instant versionDate = Instant.parse("2024-07-09T12:00:00.00Z");
             Instant startTime = Instant.parse("2018-07-09T19:06:20.00Z");
             Instant endTime = Instant.parse("2025-07-09T19:06:20.00Z");
@@ -177,7 +183,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
 
             try {
                 // retrieve the time series profile instance we just stored
-                TimeSeriesProfileInstance timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, parameterUnitArray,
+                TimeSeriesProfileInstance timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
                         startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion, null, 1000);
                 // cleanup: delete the instance
                 profileDao.deleteTimeSeriesProfile(timeSeriesProfileInstance.getTimeSeriesProfile().getLocationId().getName(), timeSeriesProfileInstance.getTimeSeriesProfile().getKeyParameter(),
@@ -212,6 +218,9 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             String[] parameterArray = {"Depth", "Pres"};
             int[][] parameterStartEndArray = {{21, 23}, {25, 27}};
             String[] parameterUnitArray = {"m", "kPa"};
+            List<String> unitList = new ArrayList<>();
+            unitList.add("m");
+            unitList.add("kPa");
             Instant versionDate = Instant.parse("2024-07-09T12:00:00.00Z");
             Instant startTime = Instant.parse("2018-07-09T19:06:20.00Z");
             Instant endTime = Instant.parse("2025-07-09T19:06:20.00Z");
@@ -254,18 +263,27 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
 
             try {
                 // get total number of pages
-                TimeSeriesProfileInstance controlInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, parameterUnitArray,
+                TimeSeriesProfileInstance controlInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
                         startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion,
                         null, 1000);
 
                 int total = controlInstance.getTotal();
 
                 // retrieve the time series profile instance we just stored
-                TimeSeriesProfileInstance timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, parameterUnitArray,
+                TimeSeriesProfileInstance timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
                         startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion, null, total / 2);
 
-                TimeSeriesProfileInstance timeSeriesProfileInstance1 = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, parameterUnitArray,
+                TimeSeriesProfileInstance timeSeriesProfileInstance1 = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
                         startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion, timeSeriesProfileInstance.getNextPage(), total / 2);
+
+                TimeSeriesProfileInstance timeSeriesProfileInstance2 = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
+                        startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion, null, 1);
+
+                TimeSeriesProfileInstance timeSeriesProfileInstance3 = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
+                        startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion, timeSeriesProfileInstance2.getNextPage(), 1);
+
+                TimeSeriesProfileInstance timeSeriesProfileInstance4 = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
+                        startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion, timeSeriesProfileInstance3.getNextPage(), 2);
 
                 // cleanup: delete the instance
                 profileDao.deleteTimeSeriesProfile(timeSeriesProfileInstance.getTimeSeriesProfile().getLocationId().getName(), timeSeriesProfileInstance.getTimeSeriesProfile().getKeyParameter(),
@@ -310,7 +328,37 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                         () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().get(1568035040000L).size(),
                                 "Second instance timeseries list does not match in size"),
                         () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().size(),
-                                "Second instance timeseries list does not match expected size.")
+                                "Second instance timeseries list does not match expected size."),
+                        () -> assertEquals(parameterArray.length, timeSeriesProfileInstance2.getParameterColumns().size(),
+                                "Third instance timeseries list does not match in size"),
+                        () -> assertEquals(1, timeSeriesProfileInstance2.getTimeSeriesList().size(),
+                                "Third instance timeseries list does not match in size"),
+                        () -> assertEquals("Depth", timeSeriesProfileInstance2.getParameterColumns().get(0).getParameter(),
+                                "Third instance parameter does not match"),
+                        () -> assertEquals("m", timeSeriesProfileInstance2.getParameterColumns().get(0).getUnit(),
+                                "Third instance unit does not match"),
+                        () -> assertEquals(1, timeSeriesProfileInstance2.getTimeSeriesList().get(1568033347000L).size(),
+                                "Third instance timeseries list does not match in size"),
+                        () -> assertEquals(parameterArray.length, timeSeriesProfileInstance3.getParameterColumns().size(),
+                                "Fourth instance timeseries list does not match in size"),
+                        () -> assertEquals(1, timeSeriesProfileInstance3.getTimeSeriesList().size(),
+                                "Fourth instance timeseries list does not match in size"),
+                        () -> assertEquals("Depth", timeSeriesProfileInstance3.getParameterColumns().get(0).getParameter(),
+                                "Fourth instance parameter does not match"),
+                        () -> assertEquals("m", timeSeriesProfileInstance3.getParameterColumns().get(0).getUnit(),
+                                "Fourth instance unit does not match"),
+                        () -> assertEquals(1, timeSeriesProfileInstance3.getTimeSeriesList().get(1568033347000L).size(),
+                                "Fourth instance timeseries list does not match in size"),
+                        () -> assertEquals(parameterArray.length, timeSeriesProfileInstance4.getParameterColumns().size(),
+                                "Fifth instance timeseries list does not match in size"),
+                        () -> assertEquals(1, timeSeriesProfileInstance4.getTimeSeriesList().size(),
+                                "Fifth instance timeseries list does not match in size"),
+                        () -> assertEquals("Depth", timeSeriesProfileInstance4.getParameterColumns().get(0).getParameter(),
+                                "Fifth instance parameter does not match"),
+                        () -> assertEquals("m", timeSeriesProfileInstance4.getParameterColumns().get(0).getUnit(),
+                                "Fifth instance unit does not match"),
+                        () -> assertEquals(2, timeSeriesProfileInstance4.getTimeSeriesList().get(1568033359000L).size(),
+                                "Fifth instance timeseries list does not match in size")
                 );
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -379,7 +427,9 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         }
         String[] keyParameter = {"Depth", "m"};
         String[] parameter1 = {"Pres", "psi"};
-        String[] parameterUnitArray = {"m", "bar"};
+        List<String> unitList = new ArrayList<>();
+        unitList.add("m");
+        unitList.add("bar");
         Instant startTime = Instant.parse("2024-07-09T19:00:11.00Z");
         Instant endTime = Instant.parse("2025-01-01T19:00:22.00Z");
         String timeZone = "UTC";
@@ -404,7 +454,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                     .build();
             // test the retrieveTimeSeriesProfileInstance method
             TimeSeriesProfileInstance result = timeSeriesProfileInstanceDao.retrieveTimeSeriesProfileInstance(location, keyParameter[0], versionID,
-                    parameterUnitArray, startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate,
+                    unitList, startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate,
                     maxVersion, null, 1000);
 
             assert result != null;
@@ -434,7 +484,9 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         }
         String[] keyParameter = {"Depth", "m"};
         String[] parameter1 = {"Pres", "psi"};
-        String[] parameterUnitArray = {"m", "kPa"};
+        List<String> unitList = new ArrayList<>();
+        unitList.add("m");
+        unitList.add("kPa");
         String version = "VERSION";
         String timeZone = "UTC";
         Instant startTime = Instant.parse("2018-07-09T19:06:20.00Z");
@@ -459,7 +511,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             // retrieve the instance make sure it exists
             TimeSeriesProfileInstance timeSeriesProfileInstance;
             try {
-                timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, keyParameter[0], version, parameterUnitArray,
+                timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, keyParameter[0], version, unitList,
                         startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion,
                         null, 1000);
             } catch (SQLException e) {
@@ -479,7 +531,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
 
             // check if instance was deleted
             try {
-                timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, keyParameter[0], version, parameterUnitArray,
+                timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, keyParameter[0], version, unitList,
                         startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion,
                 null, 1000);
             } catch (SQLException e) {
@@ -502,6 +554,9 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         }
         String[] parameterArray = {"Depth", "Pres"};
         String[] parameterUnitArray = {"m", "kPa"};
+        List<String> unitList = new ArrayList<>();
+        unitList.add("m");
+        unitList.add("kPa");
         int[] parameterIndexArray = {5, 6};
         String[] keyParameter = {parameterArray[0], parameterUnitArray[0]};
         String[] parameter1 = {parameterArray[1], parameterUnitArray[1]};
@@ -547,7 +602,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             timeSeriesProfileInstanceDao.storeTimeSeriesProfileInstance(timeseriesProfileInstance, versionId, versionDate, storeRule, null);
              // check is the timeseries profile instance can be retrieved
             try {
-                timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, keyParameter[0], versionId, parameterUnitArray,
+                timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, keyParameter[0], versionId, unitList,
                         startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion, null, 1000);
             }
             catch (SQLException e)
@@ -574,7 +629,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    private TimeSeriesProfileInstance retrieveTimeSeriesProfileInstance(String officeId, String locationName, String keyParameter, String version, String[] unit,
+    private TimeSeriesProfileInstance retrieveTimeSeriesProfileInstance(String officeId, String locationName, String keyParameter, String version, List<String> unit,
             Instant startTime, Instant endTime, String timeZone, boolean startInclusive, boolean endInclusive, boolean previous, boolean next,
             Instant versionDate, boolean maxVersion, String page, int pageSize) throws SQLException {
         final TimeSeriesProfileInstance[] result = {null};

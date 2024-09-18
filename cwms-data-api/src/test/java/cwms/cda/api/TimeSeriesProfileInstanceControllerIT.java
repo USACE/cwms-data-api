@@ -50,6 +50,8 @@ import io.restassured.filter.log.LogDetail;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import io.restassured.response.ExtractableResponse;
@@ -92,9 +94,12 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
     private String tsProfileDataColumnar2;
     private String tsProfileDataIndexed2;
     private String tspData;
+    private List<String> units = new ArrayList<>();
 
     @BeforeEach
     public void setup() throws Exception {
+        units.add("m");
+        units.add("F");
         assertNotNull(resource);
         assertNotNull(resourceIndexed);
         assertNotNull(resourceInstance);
@@ -131,15 +136,23 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext dsl = dslContext(c, OFFICE_ID);
-            cleanupInstance(dsl, tspInstance.getTimeSeriesProfile().getLocationId(),
-                    tspInstance.getTimeSeriesProfile().getKeyParameter(), tspInstance.getVersion(),
-                    tspInstance.getFirstDate(), "UTC",
-                    false, tspInstance.getVersionDate());
-            cleanupParser(dsl, tspParserIndexed.getLocationId().getName(),
-                    tspParserIndexed.getKeyParameter());
-            cleanupParser(dsl, tspParserColumnar.getLocationId().getName(),
-                    tspParserColumnar.getKeyParameter());
-            cleanupTS(dsl, tsProfile.getLocationId().getName(), tsProfile.getKeyParameter());
+            if (tspInstance != null) {
+                cleanupInstance(dsl, tspInstance.getTimeSeriesProfile().getLocationId(),
+                        tspInstance.getTimeSeriesProfile().getKeyParameter(), tspInstance.getVersion(),
+                        tspInstance.getFirstDate(), "UTC",
+                        false, tspInstance.getVersionDate());
+            }
+            if (tspParserIndexed != null) {
+                cleanupParser(dsl, tspParserIndexed.getLocationId().getName(),
+                        tspParserIndexed.getKeyParameter());
+            }
+            if (tspParserColumnar != null) {
+                cleanupParser(dsl, tspParserColumnar.getLocationId().getName(),
+                        tspParserColumnar.getKeyParameter());
+            }
+            if (tsProfile != null) {
+                cleanupTS(dsl, tsProfile.getLocationId().getName(), tsProfile.getKeyParameter());
+            }
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -185,7 +198,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
             .queryParam(START_INCLUSIVE, true)
             .queryParam(END_INCLUSIVE, true)
-            .queryParam(UNIT, "m,F")
+            .queryParam(UNIT, units)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -247,7 +260,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
             .queryParam(START_INCLUSIVE, true)
             .queryParam(END_INCLUSIVE, true)
-            .queryParam(UNIT, "m,F")
+            .queryParam(UNIT, units)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -275,98 +288,104 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
 
         // Create instance
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
-                .contentType(Formats.JSONV1)
-                .body(tspData)
-                .header(AUTH_HEADER, user.toHeaderValue())
-                .queryParam(METHOD, StoreRule.REPLACE_ALL)
-                .queryParam(OVERRIDE_PROTECTION, true)
-                .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
-                .queryParam(PROFILE_DATA, tsProfileDataIndexed)
-                .queryParam(VERSION, "Raw")
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/instance")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .body(tspData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(METHOD, StoreRule.REPLACE_ALL)
+            .queryParam(OVERRIDE_PROTECTION, true)
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(PROFILE_DATA, tsProfileDataIndexed)
+            .queryParam(VERSION, "Raw")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/instance")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
 
         // Retrieve instance
         ExtractableResponse<Response> extractableResponse = given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
-                .contentType(Formats.JSONV1)
-                .header(AUTH_HEADER, user.toHeaderValue())
-                .queryParam(OFFICE, OFFICE_ID)
-                .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
-                .queryParam(VERSION, "Raw")
-                .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
-                .queryParam(TIMEZONE, "UTC")
-                .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
-                .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
-                .queryParam(START_INCLUSIVE, true)
-                .queryParam(END_INCLUSIVE, true)
-                .queryParam(UNIT, "m,F")
-                .queryParam(PAGE_SIZE, 10)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body("version", equalTo("Raw"))
-                .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
-                .body("time-series-profile.location-id.name",
-                        equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
-                .body("time-series-profile.key-parameter",
-                        equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
-                .body("time-series-profile.parameter-list.size()", equalTo(1))
-                .body("time-series-list.size()", equalTo(10)).extract()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
+            .queryParam(VERSION, "Raw")
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(START_INCLUSIVE, true)
+            .queryParam(END_INCLUSIVE, true)
+            .queryParam(UNIT, units)
+            .queryParam(PAGE_SIZE, 10)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("version", equalTo("Raw"))
+            .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("time-series-profile.location-id.name",
+                    equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
+            .body("time-series-profile.key-parameter",
+                    equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
+            .body("time-series-profile.parameter-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(5))
+            .body("time-series-list[\"1568033682000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033337000\"].size()", equalTo(2))
+            .extract()
         ;
 
         String cursor = extractableResponse.path("next-page");
         assertNotNull(cursor);
 
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
-                .contentType(Formats.JSONV1)
-                .header(AUTH_HEADER, user.toHeaderValue())
-                .queryParam(OFFICE, OFFICE_ID)
-                .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
-                .queryParam(VERSION, "Raw")
-                .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
-                .queryParam(TIMEZONE, "UTC")
-                .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
-                .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
-                .queryParam(START_INCLUSIVE, true)
-                .queryParam(END_INCLUSIVE, true)
-                .queryParam(UNIT, "m,F")
-                .queryParam(PAGE, cursor)
-                .queryParam(PAGE_SIZE, 10)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body("version", equalTo("Raw"))
-                .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
-                .body("time-series-profile.location-id.name",
-                        equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
-                .body("time-series-profile.key-parameter",
-                        equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
-                .body("time-series-profile.parameter-list.size()", equalTo(1))
-                .body("time-series-list.size()", equalTo(10))
-                ;
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
+            .queryParam(VERSION, "Raw")
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(START_INCLUSIVE, true)
+            .queryParam(END_INCLUSIVE, true)
+            .queryParam(UNIT, units)
+            .queryParam(PAGE, cursor)
+            .queryParam(PAGE_SIZE, 10)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("version", equalTo("Raw"))
+            .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("time-series-profile.location-id.name",
+                    equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
+            .body("time-series-profile.key-parameter",
+                    equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
+            .body("time-series-profile.parameter-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(5))
+            .body("time-series-list[\"1568033937000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033750000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033787000\"].size()", equalTo(2))
+        ;
     }
 
     @Test
@@ -433,7 +452,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
             .queryParam(START_INCLUSIVE, true)
             .queryParam(END_INCLUSIVE, true)
-            .queryParam(UNIT, "m,F")
+            .queryParam(UNIT, units)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -510,7 +529,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
             .queryParam(START_INCLUSIVE, true)
             .queryParam(END_INCLUSIVE, true)
-            .queryParam(UNIT, "m,F")
+            .queryParam(UNIT, units)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

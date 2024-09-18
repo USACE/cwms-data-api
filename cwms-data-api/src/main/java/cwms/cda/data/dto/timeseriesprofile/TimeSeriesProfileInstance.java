@@ -198,12 +198,15 @@ public final class TimeSeriesProfileInstance extends CwmsDTOPaginated {
     public void addValue(Timestamp dateTime, Double value, int qualityCode, String parameter, Timestamp prevDateTime) {
         // Set the current page, if not set
         if ((page == null || page.isEmpty()) && (timeSeriesList == null || timeSeriesList.isEmpty())) {
-            page = encodeCursor(delimiter, String.format("%d", dateTime.getTime()), parameter, pageSize, total);
+            page = encodeCursor(delimiter, String.format("%d", dateTime.getTime()), parameter, total);
         }
+        // if the current item will be on a new page, set the next page to the item before it
         if (pageSize > 0 && mapSize(timeSeriesList) == pageSize) {
             nextPage = encodeCursor(delimiter, String.format("%d", prevDateTime.toInstant().toEpochMilli()),
-                    parameter, pageSize, total);
+                    parameter, total);
         } else {
+            // add the value to the time series list
+            assert timeSeriesList != null;
             timeSeriesList.computeIfAbsent(dateTime.getTime(), k -> new ArrayList<>());
             timeSeriesList.get(dateTime.getTime()).add(new TimeSeriesData(value, qualityCode));
         }

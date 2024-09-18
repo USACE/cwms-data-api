@@ -1,6 +1,10 @@
 package cwms.cda.data.dao.timeseriesprofile;
 
-import static org.jooq.impl.DSL.*;
+import static org.jooq.impl.DSL.asterisk;
+import static org.jooq.impl.DSL.count;
+import static org.jooq.impl.DSL.field;
+import static org.jooq.impl.DSL.using;
+import static org.jooq.impl.DSL.val;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
@@ -45,8 +49,6 @@ import usace.cwms.db.jooq.codegen.udt.records.TS_PROF_DATA_T;
 import usace.cwms.db.jooq.codegen.udt.records.TS_PROF_DATA_TAB_T;
 
 
-
-
 public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInstance> {
 	private static final Logger logger = Logger.getLogger(TimeSeriesProfileInstanceDao.class.getName());
 	private static final AV_TS_PROFILE_INST_TSV2 cwmsTsInstView = AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2;
@@ -60,14 +62,14 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		connection(dsl, conn -> {
 			setOffice(conn, timeSeriesProfile.getLocationId().getOfficeId());
 			CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_INSTANCE__2(using(conn).configuration(),
-					timeSeriesProfile.getLocationId().getName(),
-					timeSeriesProfile.getKeyParameter(),
-					profileData,
-					versionId,
-					storeRule,
-					overrideProtection ? "T" : "F",
-					versionDate != null ? Timestamp.from(versionDate) : null,
-					timeSeriesProfile.getLocationId().getOfficeId());
+				timeSeriesProfile.getLocationId().getName(),
+				timeSeriesProfile.getKeyParameter(),
+				profileData,
+				versionId,
+				storeRule,
+				overrideProtection ? "T" : "F",
+				versionDate != null ? Timestamp.from(versionDate) : null,
+				timeSeriesProfile.getLocationId().getOfficeId());
 		});
 	}
 
@@ -76,8 +78,8 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		connection(dsl, conn -> {
 			setOffice(conn, timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId());
 			BigDecimal locationCodeId = CWMS_LOC_PACKAGE.call_GET_LOCATION_CODE(using(conn).configuration(),
-					timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId(),
-					timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getName());
+				timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId(),
+				timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getName());
 
 
 			Map<String, BigInteger> parameterIdToCode = new HashMap<>();
@@ -133,7 +135,8 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			tsProfileData.setRECORDS(records);
 			tsProfileData.setLOCATION_CODE(locationCodeId.toBigInteger());
 			tsProfileData.setTIME_ZONE("UTC");
-			tsProfileData.setKEY_PARAMETER(parameterIdToCode.get(timeseriesProfileInstance.getTimeSeriesProfile().getKeyParameter()));
+			tsProfileData.setKEY_PARAMETER(parameterIdToCode.get(timeseriesProfileInstance
+					.getTimeSeriesProfile().getKeyParameter()));
 			tsProfileData.setUNITS(units);
 
 			Timestamp versionTimeStamp =  Timestamp.from(versionInstant);
@@ -150,16 +153,22 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 	}
 
 
-	public List<TimeSeriesProfileInstance> catalogTimeSeriesProfileInstances( String officeIdMask, String locationIdMask, String parameterIdMask, String versionMask)
+	public List<TimeSeriesProfileInstance> catalogTimeSeriesProfileInstances( String officeIdMask,
+			String locationIdMask, String parameterIdMask, String versionMask)
 	{
 		List<TimeSeriesProfileInstance> timeSeriesProfileInstanceList = new ArrayList<>();
 
-		Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.LOCATION_ID, locationIdMask);
-		whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.OFFICE_ID, officeIdMask));
-		whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.KEY_PARAMETER_ID, parameterIdMask));
-		whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.VERSION_ID, versionMask));
+		Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(
+				AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.LOCATION_ID, locationIdMask);
+		whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(
+				AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.OFFICE_ID, officeIdMask));
+		whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(
+				AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.KEY_PARAMETER_ID, parameterIdMask));
+		whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(
+				AV_TS_PROFILE_INST.AV_TS_PROFILE_INST.VERSION_ID, versionMask));
 
-		@NotNull Result<Record> timeSeriesProfileInstanceResults =  dsl.select(asterisk()).from(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST)
+		@NotNull Result<Record> timeSeriesProfileInstanceResults =  dsl.select(asterisk())
+				.from(AV_TS_PROFILE_INST.AV_TS_PROFILE_INST)
 				.where(whereCondition)
 				.fetch();
 		for (Record result : timeSeriesProfileInstanceResults) {
@@ -187,7 +196,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 
 	public TimeSeriesProfileInstance retrieveTimeSeriesProfileInstance(CwmsId location, String keyParameter,
 		String version,
-		String[] unit,
+		List<String> unit,
 		Instant startTime,
 		Instant endTime,
 		String timeZone,
@@ -205,6 +214,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		Timestamp tsCursor = null;
 		String parameterId = null;
 
+		// Decode the cursor
 		if (page != null && !page.isEmpty()) {
 			final String[] parts = CwmsDTOPaginated.decodeCursor(page);
 
@@ -225,55 +235,58 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 					parameterId = parts[1];
 					total = Integer.parseInt(parts[2]);
 				}
-
-				pageSize = Integer.parseInt(parts[parts.length - 1]);
 			}
 		}
 
+		// Build the where condition
 		Condition whereCondition = cwmsTsInstView.KEY_PARAMETER_ID.eq(keyParameter)
-				.and(cwmsTsInstView.LOCATION_ID.eq(location.getName())
-				.and(cwmsTsInstView.OFFICE_ID.eq(location.getOfficeId()))
-				.and(cwmsTsInstView.VERSION_ID.eq(version))
-				.and(cwmsTsInstView.VERSION_DATE.eq(Timestamp.from(versionDate))));
+			.and(cwmsTsInstView.LOCATION_ID.eq(location.getName())
+			.and(cwmsTsInstView.OFFICE_ID.eq(location.getOfficeId()))
+			.and(cwmsTsInstView.VERSION_ID.eq(version))
+			.and(cwmsTsInstView.VERSION_DATE.eq(Timestamp.from(versionDate))));
 
-        Condition unitCondition = cwmsTsInstView.UNIT_ID.eq(unit[0]);
-        for(int i = 1; i < unit.length; i++) {
-            unitCondition = unitCondition.or(cwmsTsInstView.UNIT_ID.eq(unit[i]));
+		// Add the unit conditions
+        Condition unitCondition = cwmsTsInstView.UNIT_ID.eq(unit.get(0));
+        for(int i = 1; i < unit.size(); i++) {
+            unitCondition = unitCondition.or(cwmsTsInstView.UNIT_ID.eq(unit.get(i)));
         }
         whereCondition = whereCondition.and(unitCondition);
 
+		// Add the time windows conditions depending on the inclusive flags
         if(OracleTypeMap.parseBool(startInclusive) && OracleTypeMap.parseBool(endInclusive)){
 			whereCondition = whereCondition
-					.and(cwmsTsInstView.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
-					.and(cwmsTsInstView.LAST_DATE_TIME.le(Timestamp.from(endTime)));
+				.and(cwmsTsInstView.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
+				.and(cwmsTsInstView.LAST_DATE_TIME.le(Timestamp.from(endTime)));
 		} else if (!OracleTypeMap.parseBool(startInclusive) && (OracleTypeMap.parseBool(endInclusive))) {
 			whereCondition = whereCondition
-					.and(cwmsTsInstView.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
-					.and(cwmsTsInstView.LAST_DATE_TIME.le(Timestamp.from(endTime)));
+				.and(cwmsTsInstView.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
+				.and(cwmsTsInstView.LAST_DATE_TIME.le(Timestamp.from(endTime)));
 		} else if (OracleTypeMap.parseBool(startInclusive) && !OracleTypeMap.parseBool(endInclusive)) {
 			whereCondition = whereCondition
-					.and(cwmsTsInstView.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
-					.and(cwmsTsInstView.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
+				.and(cwmsTsInstView.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
+				.and(cwmsTsInstView.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
 		} else {
 			whereCondition = whereCondition
-					.and(cwmsTsInstView.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
-					.and(cwmsTsInstView.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
+				.and(cwmsTsInstView.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
+				.and(cwmsTsInstView.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
 		}
 		Condition finalWhereCondition = whereCondition;
 
 		// Give the date time column a name
 		Field<Timestamp> dateTimeCol = field("DATE_TIME", Timestamp.class).as("DATE_TIME");
 
+		// set semi-final variables for lambda
 		final String recordCursor = cursor;
 		final int recordPageSize = pageSize;
 
-
+		// Get the total number of records if not already set
 		if (total == null) {
 			SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
 					.from(cwmsTsInstView)
 					.where(finalWhereCondition);
 			total = count.fetchOne().value1();
 		}
+
 		Result<Record7<Double, Long, Timestamp, Long, Long, String, String>> result = null;
 		SelectSeekStep1<Record7<Double, Long, Timestamp, Long, Long, String, String>, Timestamp> resultQuery = null;
 		SelectConditionStep<Record7<Double, Long, Timestamp, Long, Long, String, String>> resultCondQuery = null;
@@ -289,6 +302,10 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 					.from(cwmsTsInstView)
 					.where(finalWhereCondition);
 
+			// If there is a cursor, use it with the JOOQ seek method
+			// Needs the parameter and cursor of the record before the first one on the next page
+			// 		to correctly split the data into pages
+			// Searches for matching records based on the cursor to start the next page's results
 			if (tsCursor == null) {
 				resultQuery = resultCondQuery.and(dateTimeCol.greaterOrEqual(CWMS_UTIL_PACKAGE
 								.call_TO_TIMESTAMP__2(val(startTime.toEpochMilli()))))
@@ -304,9 +321,10 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 								.call_TO_TIMESTAMP__2(val(endTime.toEpochMilli()))))
 						.orderBy(cwmsTsInstView.DATE_TIME, cwmsTsInstView.PARAMETER_ID)
 						.seek(tsCursor, parameterId);
-
 			}
 
+			// Get the results
+			// if the page number is set, limit the results to the page size (plus one for setting the next page)
 			if (pageSize > 0) {
 				if (tsCursor == null) {
 					result = resultQuery.limit(pageSize + 1).fetch();
@@ -324,10 +342,12 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			logger.fine(lastRecord::toString);
 		}
 
+		// Throw 404 if no results
 		if (result == null || result.isEmpty()) {
 			throw new NotFoundException("No time series profile data found for the given parameters");
 		}
 
+		// map the results to a TimeSeriesProfileInstance
 		Result<?> finalResult = result;
 		int totalRecords = total;
 		TS_PROF_DATA_T timeSeriesProfileData;
@@ -339,6 +359,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		Map<Timestamp, Map<Double, String>> parameterTimeMap = new TreeMap<>();
 		Map<String, String> unitParamMap = new TreeMap<>();
 
+		// boolean to keep track of data that is consistent across all records
 		boolean parentData = false;
 		for (Record resultRecord : finalResult) {
 			if (!parentData) {
@@ -346,9 +367,14 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 				keyParameterCode = resultRecord.get("KEY_PARAMETER_CODE", BigInteger.class);
 				parentData = true;
 			}
+
+			// map the unit to the parameter
 			if (unitParamMap.get(resultRecord.get("PARAMETER_ID", String.class)) == null) {
-				unitParamMap.put(resultRecord.get("PARAMETER_ID", String.class), resultRecord.get("UNIT_ID", String.class));
+				unitParamMap.put(resultRecord.get("PARAMETER_ID", String.class),
+						resultRecord.get("UNIT_ID", String.class));
 			}
+
+			// map the parameter, TVQ data
 			Timestamp dateTime = resultRecord.get("DATE_TIME", Timestamp.class);
 			if (timeValuePairMap.get(dateTime) != null) {
 				PVQ_TAB_T existingParameters = timeValuePairMap.get(dateTime);
@@ -356,17 +382,21 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 						resultRecord.get("QUALITY_CODE", BigInteger.class)));
 				timeValuePairMap.put(dateTime, existingParameters);
 				Map<Double, String> existingParameterList = parameterTimeMap.get(dateTime);
-				existingParameterList.put(resultRecord.get("VALUE", Double.class), resultRecord.get("PARAMETER_ID", String.class));
+				existingParameterList.put(resultRecord.get("VALUE", Double.class),
+						resultRecord.get("PARAMETER_ID", String.class));
 				parameterTimeMap.put(dateTime, existingParameterList);
 			} else {
-				PVQ_TAB_T parameters = new PVQ_TAB_T(new PVQ_T(keyParameterCode, resultRecord.get("VALUE", Double.class),
+				PVQ_TAB_T parameters = new PVQ_TAB_T(new PVQ_T(keyParameterCode,
+						resultRecord.get("VALUE", Double.class),
 						resultRecord.get("QUALITY_CODE", BigInteger.class)));
 				timeValuePairMap.put(dateTime, parameters);
 				Map<Double, String> parameterList = new TreeMap<>();
-				parameterList.put(resultRecord.get("VALUE", Double.class), resultRecord.get("PARAMETER_ID", String.class));
+				parameterList.put(resultRecord.get("VALUE", Double.class),
+						resultRecord.get("PARAMETER_ID", String.class));
 				parameterTimeMap.put(dateTime, parameterList);
 			}
 		}
+		// map the value/quality data to the timestamp
 		int index = 0;
 		for (Map.Entry<Timestamp, PVQ_TAB_T> entry : timeValuePairMap.entrySet()) {
 			records.add(index, new TS_PROF_DATA_REC_T(entry.getKey(), entry.getValue()));
@@ -374,15 +404,21 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		}
 		timeSeriesProfileData = new TS_PROF_DATA_T(locationCode, keyParameterCode, timeZone, units, records);
 
-		TimeSeriesProfileInstance returnInstance = map(location.getOfficeId(), location.getName(), keyParameter, timeSeriesProfileData, version,
-				versionDate, startTime, endTime, unitParamMap, recordCursor, recordPageSize, totalRecords);
+		// map the TimeSeriesProfileInstance without the value/quality data
+		TimeSeriesProfileInstance returnInstance = map(location.getOfficeId(), location.getName(), keyParameter,
+				timeSeriesProfileData, version, versionDate, startTime, endTime, unitParamMap, recordCursor,
+				recordPageSize, totalRecords);
 
+		// map the TVQ data to the TimeSeriesProfileInstance
+		// needs previous parameter and cursor to be set to correctly split the data into pages
+		// adds page, nextpage data to the TimeSeriesProfileInstance
 		String previousParameter = null;
 		Timestamp previousCursor = Timestamp.from(startTime);
 		for (Map.Entry<Timestamp, PVQ_TAB_T> entry : timeValuePairMap.entrySet()) {
 			for (PVQ_T pvq : entry.getValue()) {
 				Timestamp dateTime = entry.getKey();
-				returnInstance.addValue(dateTime, pvq.getVALUE(), pvq.getQUALITY_CODE().intValue(), previousParameter, previousCursor);
+				returnInstance.addValue(dateTime, pvq.getVALUE(), pvq.getQUALITY_CODE().intValue(),
+						previousParameter, previousCursor);
 				previousCursor = dateTime;
 				previousParameter = parameterTimeMap.get(dateTime).get(pvq.getVALUE());
 			}
