@@ -429,8 +429,7 @@ public final class DTOMatch {
         );
     }
 
-    public static void assertMatch(UsgsMeasurement first, UsgsMeasurement second)
-    {
+    public static void assertMatch(UsgsMeasurement first, UsgsMeasurement second) {
         assertAll(
                 () -> assertEquals(first.getRemarks(), second.getRemarks(), "Remarks do not match"),
                 () -> assertEquals(first.getCurrentRating(), second.getCurrentRating(), "Current rating does not match"),

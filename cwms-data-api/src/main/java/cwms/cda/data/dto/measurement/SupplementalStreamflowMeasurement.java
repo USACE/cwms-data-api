@@ -1,3 +1,26 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package cwms.cda.data.dto.measurement;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -13,8 +36,7 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = SupplementalStreamflowMeasurement.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class SupplementalStreamflowMeasurement extends CwmsDTOBase
-{
+public final class SupplementalStreamflowMeasurement extends CwmsDTOBase {
 
     private final Double channelFlow;
     private final Double overbankFlow;
@@ -30,8 +52,7 @@ public final class SupplementalStreamflowMeasurement extends CwmsDTOBase
     private final Double mainChannelArea;
     private final Double overbankArea;
 
-    private SupplementalStreamflowMeasurement(Builder builder)
-    {
+    private SupplementalStreamflowMeasurement(Builder builder) {
         this.channelFlow = builder.channelFlow;
         this.overbankFlow = builder.overbankFlow;
         this.overbankMaxDepth = builder.overbankMaxDepth;
@@ -47,73 +68,59 @@ public final class SupplementalStreamflowMeasurement extends CwmsDTOBase
         this.overbankArea = builder.overbankArea;
     }
 
-    public Double getChannelFlow()
-    {
+    public Double getChannelFlow() {
         return channelFlow;
     }
 
-    public Double getOverbankFlow()
-    {
+    public Double getOverbankFlow() {
         return overbankFlow;
     }
 
-    public Double getOverbankMaxDepth()
-    {
+    public Double getOverbankMaxDepth() {
         return overbankMaxDepth;
     }
 
-    public Double getChannelMaxDepth()
-    {
+    public Double getChannelMaxDepth() {
         return channelMaxDepth;
     }
 
-    public Double getAvgVelocity()
-    {
+    public Double getAvgVelocity() {
         return avgVelocity;
     }
 
-    public Double getSurfaceVelocity()
-    {
+    public Double getSurfaceVelocity() {
         return surfaceVelocity;
     }
 
-    public Double getMaxVelocity()
-    {
+    public Double getMaxVelocity() {
         return maxVelocity;
     }
 
-    public Double getEffectiveFlowArea()
-    {
+    public Double getEffectiveFlowArea() {
         return effectiveFlowArea;
     }
 
-    public Double getCrossSectionalArea()
-    {
+    public Double getCrossSectionalArea() {
         return crossSectionalArea;
     }
 
-    public Double getMeanGage()
-    {
+    public Double getMeanGage() {
         return meanGage;
     }
 
-    public Double getTopWidth()
-    {
+    public Double getTopWidth() {
         return topWidth;
     }
 
-    public Double getMainChannelArea()
-    {
+    public Double getMainChannelArea() {
         return mainChannelArea;
     }
 
-    public Double getOverbankArea()
-    {
+    public Double getOverbankArea() {
         return overbankArea;
     }
 
-    public static final class Builder
-    {
+    public static final class Builder {
         private Double channelFlow;
         private Double overbankFlow;
         private Double overbankMaxDepth;
@@ -128,86 +135,72 @@ public final class SupplementalStreamflowMeasurement extends CwmsDTOBase
         private Double mainChannelArea;
         private Double overbankArea;
 
-        public Builder withChannelFlow(Double channelFlow)
-        {
+        public Builder withChannelFlow(Double channelFlow) {
             this.channelFlow = channelFlow;
             return this;
         }
 
-        public Builder withOverbankFlow(Double overbankFlow)
-        {
+        public Builder withOverbankFlow(Double overbankFlow) {
             this.overbankFlow = overbankFlow;
             return this;
         }
 
-        public Builder withOverbankMaxDepth(Double overbankMaxDepth)
-        {
+        public Builder withOverbankMaxDepth(Double overbankMaxDepth) {
             this.overbankMaxDepth = overbankMaxDepth;
             return this;
         }
 
-        public Builder withChannelMaxDepth(Double channelMaxDepth)
-        {
+        public Builder withChannelMaxDepth(Double channelMaxDepth) {
             this.channelMaxDepth = channelMaxDepth;
             return this;
         }
 
-        public Builder withAvgVelocity(Double avgVelocity)
-        {
+        public Builder withAvgVelocity(Double avgVelocity) {
             this.avgVelocity = avgVelocity;
             return this;
         }
 
-        public Builder withSurfaceVelocity(Double surfaceVelocity)
-        {
+        public Builder withSurfaceVelocity(Double surfaceVelocity) {
             this.surfaceVelocity = surfaceVelocity;
             return this;
         }
 
-        public Builder withMaxVelocity(Double maxVelocity)
-        {
+        public Builder withMaxVelocity(Double maxVelocity) {
             this.maxVelocity = maxVelocity;
             return this;
         }
 
-        public Builder withEffectiveFlowArea(Double effectiveFlowArea)
-        {
+        public Builder withEffectiveFlowArea(Double effectiveFlowArea) {
             this.effectiveFlowArea = effectiveFlowArea;
             return this;
         }
 
-        public Builder withCrossSectionalArea(Double crossSectionalArea)
-        {
+        public Builder withCrossSectionalArea(Double crossSectionalArea) {
             this.crossSectionalArea = crossSectionalArea;
             return this;
         }
 
-        public Builder withMeanGage(Double meanGage)
-        {
+        public Builder withMeanGage(Double meanGage) {
             this.meanGage = meanGage;
             return this;
         }
 
-        public Builder withTopWidth(Double topWidth)
-        {
+        public Builder withTopWidth(Double topWidth) {
             this.topWidth = topWidth;
             return this;
         }
 
-        public Builder withMainChannelArea(Double mainChannelArea)
-        {
+        public Builder withMainChannelArea(Double mainChannelArea) {
             this.mainChannelArea = mainChannelArea;
             return this;
         }
 
-        public Builder withOverbankArea(Double overbankArea)
-        {
+        public Builder withOverbankArea(Double overbankArea) {
             this.overbankArea = overbankArea;
             return this;
         }
 
-        public SupplementalStreamflowMeasurement build()
-        {
+        public SupplementalStreamflowMeasurement build() {
             return new SupplementalStreamflowMeasurement(this);
         }
     }

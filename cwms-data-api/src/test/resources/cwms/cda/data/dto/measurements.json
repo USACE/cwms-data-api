@@ -1,0 +1,100 @@
+[
+  {
+    "height-unit": "ft",
+    "flow-unit": "cfs",
+    "temp-unit": "F",
+    "velocity-unit": "ft/s",
+    "area-unit": "sq ft",
+    "used": true,
+    "agency": "USGS",
+    "party": "Survey Party",
+    "wm-comments": "Measurement made during normal flow conditions.",
+    "instant": "2024-09-16T00:00:00Z",
+    "number": "123456",
+    "id": {
+      "name": "Location123",
+      "office-id": "SPK"
+    },
+    "streamflow-measurement": {
+      "gage-height": 5.5,
+      "flow": 250.0,
+      "quality": "Good"
+    },
+    "supplemental-streamflow-measurement": {
+      "channel-flow": 300.0,
+      "overbank-flow": 50.0,
+      "overbank-max-depth": 5.0,
+      "channel-max-depth": 10.0,
+      "avg-velocity": 1.5,
+      "surface-velocity": 2.0,
+      "max-velocity": 3.0,
+      "effective-flow-area": 200.0,
+      "cross-sectional-area": 250.0,
+      "mean-gage": 20.0,
+      "top-width": 30.0,
+      "main-channel-area": 150.0,
+      "overbank-area": 80.0
+    },
+    "usgs-measurement": {
+      "remarks": "Remarks",
+      "current-rating": "Rating",
+      "control-condition": "Condition",
+      "flow-adjustment": "Adjustment",
+      "shift-used": 0.1,
+      "percent-difference": 5.0,
+      "delta-height": 0.05,
+      "delta-time": 10.0,
+      "air-temp": 20.0,
+      "water-temp": 15.0
+    }
+  },
+  {
+    "height-unit": "ft",
+    "flow-unit": "cfs",
+    "temp-unit": "F",
+    "velocity-unit": "ft/s",
+    "area-unit": "sq ft",
+    "used": false,
+    "agency": "USGS",
+    "party": "Second Survey Party",
+    "wm-comments": "Measurement made after recent rainfall.",
+    "instant": "2024-09-17T12:00:00Z",
+    "number": "654321",
+    "id": {
+      "name": "Location456",
+      "office-id": "SPK"
+    },
+    "streamflow-measurement": {
+      "gage-height": 6.0,
+      "flow": 275.0,
+      "quality": "Fair"
+    },
+    "supplemental-streamflow-measurement": {
+      "channel-flow": 320.0,
+      "overbank-flow": 45.0,
+      "overbank-max-depth": 4.5,
+      "channel-max-depth": 9.5,
+      "avg-velocity": 1.8,
+      "surface-velocity": 2.5,
+      "max-velocity": 3.5,
+      "effective-flow-area": 220.0,
+      "cross-sectional-area": 260.0,
+      "mean-gage": 21.0,
+      "top-width": 32.0,
+      "main-channel-area": 160.0,
+      "overbank-area": 85.0
+    },
+    "usgs-measurement": {
+      "remarks": "Post-rain conditions.",
+      "current-rating": "Updated Rating",
+      "control-condition": "Adjusted Condition",
+      "flow-adjustment": "Flow Adjustment Applied",
+      "shift-used": 0.15,
+      "percent-difference": 4.5,
+      "delta-height": 0.1,
+      "delta-time": 15.0,
+      "air-temp": 18.0,
+      "water-temp": 16.0
+    }
+  }
+]

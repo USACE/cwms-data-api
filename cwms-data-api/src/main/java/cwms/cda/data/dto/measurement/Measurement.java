@@ -1,3 +1,26 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package cwms.cda.data.dto.measurement;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -17,8 +40,7 @@ import java.time.Instant;
 @JsonDeserialize(builder = Measurement.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class Measurement extends CwmsDTOBase
-{
+public final class Measurement extends CwmsDTOBase {
     private final String heightUnit;
     private final String flowUnit;
     private final String tempUnit;
@@ -38,8 +60,7 @@ public final class Measurement extends CwmsDTOBase
     private final SupplementalStreamflowMeasurement supplementalStreamflowMeasurement;
     private final UsgsMeasurement usgsMeasurement;
 
-    private Measurement(Builder builder)
-    {
+    private Measurement(Builder builder) {
         this.heightUnit = builder.heightUnit;
         this.flowUnit = builder.flowUnit;
         this.tempUnit = builder.tempUnit;
@@ -57,95 +78,77 @@ public final class Measurement extends CwmsDTOBase
         this.instant = builder.instant;
     }
 
-    public String getHeightUnit()
-    {
+    public String getHeightUnit() {
         return heightUnit;
     }
 
-    public String getFlowUnit()
-    {
+    public String getFlowUnit() {
         return flowUnit;
     }
 
-    public String getTempUnit()
-    {
+    public String getTempUnit() {
         return tempUnit;
     }
 
-    public String getVelocityUnit()
-    {
+    public String getVelocityUnit() {
         return velocityUnit;
     }
 
-    public String getAreaUnit()
-    {
+    public String getAreaUnit() {
         return areaUnit;
     }
 
-    public boolean isUsed()
-    {
+    public boolean isUsed() {
         return used;
     }
 
-    public String getAgency()
-    {
+    public String getAgency() {
         return agency;
     }
 
-    public String getParty()
-    {
+    public String getParty() {
         return party;
     }
 
-    public String getWmComments()
-    {
+    public String getWmComments() {
         return wmComments;
     }
 
     @JsonIgnore
-    public String getOfficeId()
-    {
+    public String getOfficeId() {
         return id.getOfficeId();
     }
 
     @JsonIgnore
-    public String getLocationId()
-    {
+    public String getLocationId() {
         return id.getName();
     }
 
-    public CwmsId getId()
-    {
+    public CwmsId getId() {
         return id;
     }
 
-    public Instant getInstant()
-    {
+    public Instant getInstant() {
         return instant;
     }
 
-    public String getNumber()
-    {
+    public String getNumber() {
         return number;
     }
 
-    public StreamflowMeasurement getStreamflowMeasurement()
-    {
+    public StreamflowMeasurement getStreamflowMeasurement() {
         return streamflowMeasurement;
     }
 
-    public SupplementalStreamflowMeasurement getSupplementalStreamflowMeasurement()
-    {
+    public SupplementalStreamflowMeasurement getSupplementalStreamflowMeasurement() {
         return supplementalStreamflowMeasurement;
     }
 
-    public UsgsMeasurement getUsgsMeasurement()
-    {
+    public UsgsMeasurement getUsgsMeasurement() {
         return usgsMeasurement;
     }
 
-    public static final class Builder
-    {
+    public static final class Builder {
         private String heightUnit;
         private String flowUnit;
         private String tempUnit;
@@ -162,98 +165,82 @@ public final class Measurement extends CwmsDTOBase
         private String number;
         private CwmsId id;
 
-        public Builder withHeightUnit(String heightUnit)
-        {
+        public Builder withHeightUnit(String heightUnit) {
             this.heightUnit = heightUnit;
             return this;
         }
 
-        public Builder withFlowUnit(String flowUnit)
-        {
+        public Builder withFlowUnit(String flowUnit) {
             this.flowUnit = flowUnit;
             return this;
         }
 
-        public Builder withTempUnit(String tempUnit)
-        {
+        public Builder withTempUnit(String tempUnit) {
             this.tempUnit = tempUnit;
             return this;
         }
 
-        public Builder withVelocityUnit(String velocityUnit)
-        {
+        public Builder withVelocityUnit(String velocityUnit) {
             this.velocityUnit = velocityUnit;
             return this;
         }
 
-        public Builder withAreaUnit(String areaUnit)
-        {
+        public Builder withAreaUnit(String areaUnit) {
             this.areaUnit = areaUnit;
             return this;
         }
 
-        public Builder withUsed(boolean used)
-        {
+        public Builder withUsed(boolean used) {
             this.used = used;
             return this;
         }
 
-        public Builder withAgency(String agency)
-        {
+        public Builder withAgency(String agency) {
             this.agency = agency;
             return this;
         }
 
-        public Builder withParty(String party)
-        {
+        public Builder withParty(String party) {
             this.party = party;
             return this;
         }
 
-        public Builder withWmComments(String wmComments)
-        {
+        public Builder withWmComments(String wmComments) {
             this.wmComments = wmComments;
             return this;
         }
 
-        public Builder withStreamflowMeasurement(StreamflowMeasurement streamflowMeasurement)
-        {
+        public Builder withStreamflowMeasurement(StreamflowMeasurement streamflowMeasurement) {
             this.streamflowMeasurement = streamflowMeasurement;
             return this;
         }
 
-        public Builder withSupplementalStreamflowMeasurement(SupplementalStreamflowMeasurement supplementalStreamflowMeasurement)
-        {
+        public Builder withSupplementalStreamflowMeasurement(SupplementalStreamflowMeasurement supplementalStreamflowMeasurement) {
             this.supplementalStreamflowMeasurement = supplementalStreamflowMeasurement;
             return this;
         }
 
-        public Builder withUsgsMeasurement(UsgsMeasurement usgsMeasurement)
-        {
+        public Builder withUsgsMeasurement(UsgsMeasurement usgsMeasurement) {
             this.usgsMeasurement = usgsMeasurement;
             return this;
         }
 
-        public Builder withId(CwmsId id)
-        {
+        public Builder withId(CwmsId id) {
             this.id = id;
             return this;
         }
 
-        public Builder withNumber(String number)
-        {
+        public Builder withNumber(String number) {
             this.number = number;
             return this;
         }
 
-        public Builder withInstant(Instant instant)
-        {
+        public Builder withInstant(Instant instant) {
             this.instant = instant;
             return this;
         }
 
-        public Measurement build()
-        {
+        public Measurement build() {
             return new Measurement(this);
         }
     }
