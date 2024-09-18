@@ -33,6 +33,8 @@ import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
+import io.restassured.response.ExtractableResponse;
+import io.restassured.response.Response;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
@@ -125,6 +127,102 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .body("location-id.office-id", is(tsProfile.getLocationId().getOfficeId()))
             .body("description", is(tsProfile.getDescription()))
             .body("parameter-list[0]", equalTo(tsProfile.getKeyParameter()))
+        ;
+    }
+
+    @Test
+    void test_get_all_TimeSeriesProfilePaginated() {
+        // Create a new TimeSeriesProfile
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .body(tsData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/profile/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Create a new TimeSeriesProfile
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .body(tsData2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/profile/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Retrieve all TimeSeriesProfiles
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/profile/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("profile-list.size()", is(2))
+        ;
+
+        // Retrieve TimeSeriesProfiles with pagination, page 1
+        ExtractableResponse<Response> response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(PAGE_SIZE, 1)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/profile/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("profile-list.size()", is(1)).extract()
+        ;
+
+        String nextPageCursor = response.path("next-page");
+        assert nextPageCursor != null;
+
+        // Retrieve TimeSeriesProfiles with pagination, page 2
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(PAGE_SIZE, 1)
+            .queryParam(PAGE, nextPageCursor)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/profile/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("profile-list.size()", is(1))
         ;
     }
 

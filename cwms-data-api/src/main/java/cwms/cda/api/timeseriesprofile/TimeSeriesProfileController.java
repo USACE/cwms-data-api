@@ -26,7 +26,23 @@
 
 package cwms.cda.api.timeseriesprofile;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.LOCATION_ID;
+import static cwms.cda.api.Controllers.LOCATION_MASK;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.OFFICE_MASK;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -34,6 +50,7 @@ import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
+import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileList;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -45,12 +62,9 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-
-
 
 
 public final class TimeSeriesProfileController implements CrudHandler {
@@ -133,7 +147,9 @@ public final class TimeSeriesProfileController implements CrudHandler {
             @OpenApiParam(name = LOCATION_MASK, description = "The location mask for the time series profile. "
                     + "Default is *"),
             @OpenApiParam(name = PARAMETER_ID_MASK, description = "The key parameter mask for the time series "
-                    + "profile. Default is *")
+                    + "profile. Default is *"),
+            @OpenApiParam(name = PAGE, description = "The page cursor. Default is null"),
+            @OpenApiParam(name = PAGE_SIZE, description = "The page size. Default is 1000")
         },
         path = "/timeseries/profile",
         method = HttpMethod.GET,
@@ -158,11 +174,13 @@ public final class TimeSeriesProfileController implements CrudHandler {
             String officeMask = ctx.queryParamAsClass(OFFICE_MASK, String.class).getOrDefault("*");
             String locationMask = ctx.queryParamAsClass(LOCATION_MASK, String.class).getOrDefault("*");
             String parameterIdMask = ctx.queryParamAsClass(PARAMETER_ID_MASK, String.class).getOrDefault("*");
-            List<TimeSeriesProfile> retrievedProfiles = tspDao.catalogTimeSeriesProfiles(locationMask,
-                    parameterIdMask, officeMask);
+            String cursor = ctx.queryParam(PAGE);
+            int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(1000);
+            TimeSeriesProfileList retrievedProfiles = tspDao.catalogTimeSeriesProfiles(locationMask,
+                    parameterIdMask, officeMask, cursor, pageSize);
             String acceptHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfile.class);
-            String results = Formats.format(contentType, retrievedProfiles, TimeSeriesProfile.class);
+            ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileList.class);
+            String results = Formats.format(contentType, retrievedProfiles);
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(results);
         }
