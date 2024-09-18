@@ -195,13 +195,14 @@ public final class TimeSeriesProfileInstance extends CwmsDTOPaginated {
         }
     }
 
-    public void addValue(Timestamp dateTime, Double value, int qualityCode) {
+    public void addValue(Timestamp dateTime, Double value, int qualityCode, String parameter, Timestamp prevDateTime) {
         // Set the current page, if not set
         if ((page == null || page.isEmpty()) && (timeSeriesList == null || timeSeriesList.isEmpty())) {
-            page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
+            page = encodeCursor(delimiter, String.format("%d", dateTime.getTime()), parameter, pageSize, total);
         }
         if (pageSize > 0 && mapSize(timeSeriesList) == pageSize) {
-            nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
+            nextPage = encodeCursor(delimiter, String.format("%d", prevDateTime.toInstant().toEpochMilli()),
+                    parameter, pageSize, total);
         } else {
             timeSeriesList.computeIfAbsent(dateTime.getTime(), k -> new ArrayList<>());
             timeSeriesList.get(dateTime.getTime()).add(new TimeSeriesData(value, qualityCode));

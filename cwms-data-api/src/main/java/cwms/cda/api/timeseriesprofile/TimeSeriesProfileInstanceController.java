@@ -32,6 +32,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
+import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileInstanceDao;
 import cwms.cda.data.dto.CwmsId;
@@ -228,7 +229,7 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
             @OpenApiParam(name = VERSION_DATE, type = Instant.class, description = "The version date of the"
                 + " time series profile instance. Default is current time"),
             @OpenApiParam(name = UNIT, description = "The unit of the"
-                + " time series profile instance.", required = true),
+                + " time series profile instance.", required = true, type = String[].class),
             @OpenApiParam(name = START_INCLUSIVE, type = Boolean.class, description = "The start inclusive of the"
                 + " time series profile instance. Default is true"),
             @OpenApiParam(name = END_INCLUSIVE, type = Boolean.class, description = "The end inclusive of the"
@@ -274,7 +275,10 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
             String officeId = requiredParam(ctx, OFFICE);
             String keyParameter = requiredParam(ctx, PARAMETER_ID);
             String version = requiredParam(ctx, VERSION);
-            String unit = requiredParam(ctx, UNIT);
+            String[] unit = ctx.queryParamAsClass(UNIT, String[].class).get();
+            if (unit.length == 0) {
+                throw new RequiredQueryParameterException(UNIT);
+            }
             Instant startTime = Instant.ofEpochMilli(Long.parseLong(ctx.queryParamAsClass(START, String.class)
                     .getOrDefault(String.valueOf(Instant.now().toEpochMilli()))));
             Instant endTime = Instant.ofEpochMilli(Long.parseLong(ctx.queryParamAsClass(END, String.class)
