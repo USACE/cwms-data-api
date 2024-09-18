@@ -48,7 +48,7 @@ final class MeasurementTest {
     @Test
     void createMeasurement_allFieldsProvided_success() {
         CwmsId cwmsId = new CwmsId.Builder()
-                .withName("Location123")
+                .withName("Buckhorn")
                 .withOfficeId("SPK")
                 .build();
 
@@ -140,7 +140,7 @@ final class MeasurementTest {
             Measurement item = new Measurement.Builder()
                     .withHeightUnit("ft")
                     .withFlowUnit("cfs")
-                    .withId(new CwmsId.Builder().withName("Location123").withOfficeId("SPK").build())
+                    .withId(new CwmsId.Builder().withName("Buckhorn").withOfficeId("SPK").build())
                     .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
                     .build();
 
@@ -151,7 +151,7 @@ final class MeasurementTest {
     @Test
     void createMeasurement_serialize_roundtrip() {
         CwmsId cwmsId = new CwmsId.Builder()
-                .withName("Location123")
+                .withName("Buckhorn")
                 .withOfficeId("SPK")
                 .build();
 
@@ -218,7 +218,7 @@ final class MeasurementTest {
     @Test
     void createMeasurement_deserialize() throws Exception {
         CwmsId cwmsId = new CwmsId.Builder()
-                .withName("Location123")
+                .withName("Buckhorn")
                 .withOfficeId("SPK")
                 .build();
 
@@ -287,7 +287,7 @@ final class MeasurementTest {
     @Test
     void createMeasurement_deserialize_multiple() throws Exception {
         CwmsId cwmsId1 = new CwmsId.Builder()
-                .withName("Location123")
+                .withName("Buckhorn")
                 .withOfficeId("SPK")
                 .build();
 
@@ -346,7 +346,7 @@ final class MeasurementTest {
 
         // Second Measurement (updated)
         CwmsId cwmsId2 = new CwmsId.Builder()
-                .withName("Location456")
+                .withName("Walnut_CK")
                 .withOfficeId("SPK")
                 .build();
 
@@ -420,7 +420,7 @@ final class MeasurementTest {
     void testRoundTripMultiple()
     {
         CwmsId cwmsId1 = new CwmsId.Builder()
-                .withName("Location123")
+                .withName("Buckhorn")
                 .withOfficeId("SPK")
                 .build();
 
@@ -479,7 +479,7 @@ final class MeasurementTest {
 
         // Second Measurement (updated)
         CwmsId cwmsId2 = new CwmsId.Builder()
-                .withName("Location456")
+                .withName("Walnut_CK")
                 .withOfficeId("SPK")
                 .build();
 

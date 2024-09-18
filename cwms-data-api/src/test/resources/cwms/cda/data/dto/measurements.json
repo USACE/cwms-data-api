@@ -12,7 +12,7 @@
     "instant": "2024-09-16T00:00:00Z",
     "number": "123456",
     "id": {
-      "name": "Location123",
+      "name": "Buckhorn",
       "office-id": "SPK"
     },
     "streamflow-measurement": {
@@ -61,7 +61,7 @@
     "instant": "2024-09-17T12:00:00Z",
     "number": "654321",
     "id": {
-      "name": "Location456",
+      "name": "Walnut_CK",
       "office-id": "SPK"
     },
     "streamflow-measurement": {
