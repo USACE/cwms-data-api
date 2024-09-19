@@ -159,8 +159,8 @@ public final class TimeSeriesProfileController implements CrudHandler {
             @OpenApiResponse(status = STATUS_200,
                 description = "A TimeSeriesProfile object",
                 content = {
-                    @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.JSONV1),
-                    @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.XMLV2),
+                    @OpenApiContent(from = TimeSeriesProfileList.class, type = Formats.JSONV1),
+                    @OpenApiContent(from = TimeSeriesProfileList.class, type = Formats.XMLV2),
                 }),
             @OpenApiResponse(status = STATUS_400, description = "Invalid input"),
             @OpenApiResponse(status = STATUS_404, description = "No data matching input parameters found")

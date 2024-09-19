@@ -12,6 +12,7 @@ import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;

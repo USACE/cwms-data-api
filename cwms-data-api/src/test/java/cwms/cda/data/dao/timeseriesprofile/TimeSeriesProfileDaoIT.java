@@ -190,13 +190,14 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
             TimeSeriesProfileList timeSeriesProfileListBefore =
                     timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*", null, -1);
 
-            timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfile.getLocationId().getName(), timeSeriesProfile.getKeyParameter(),
-                    timeSeriesProfile.getLocationId().getOfficeId());
+            timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfile.getLocationId().getName(),
+                    timeSeriesProfile.getKeyParameter(), timeSeriesProfile.getLocationId().getOfficeId());
 
             TimeSeriesProfileList timeSeriesProfileListAfter =
                     timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*", null, -1);
 
-            assertEquals(timeSeriesProfileListBefore.getProfileList().size() - 1, timeSeriesProfileListAfter.getProfileList().size());
+            assertEquals(timeSeriesProfileListBefore.getProfileList().size() - 1,
+                    timeSeriesProfileListAfter.getProfileList().size());
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
