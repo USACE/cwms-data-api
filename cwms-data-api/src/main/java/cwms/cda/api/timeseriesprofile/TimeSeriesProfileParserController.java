@@ -46,7 +46,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
-import cwms.cda.data.dto.timeseriesprofile.ParserList;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParser;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserColumnar;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
@@ -180,8 +179,7 @@ public final class TimeSeriesProfileParserController implements CrudHandler {
             @OpenApiResponse(status = STATUS_200,
                 description = "A TimeSeriesProfileParser object",
                 content = {
-                    @OpenApiContent(from = TimeSeriesProfileParser.class, type = Formats.JSONV1),
-                    @OpenApiContent(from = TimeSeriesProfileParser.class, type = Formats.XMLV2),
+                    @OpenApiContent(from = TimeSeriesProfileParsers.class, type = Formats.JSONV1),
                 }),
             @OpenApiResponse(status = STATUS_404, description = "The provided combination of parameters did not"
                     + " find a TimeSeriesProfileParser object"),
@@ -209,9 +207,9 @@ public final class TimeSeriesProfileParserController implements CrudHandler {
             // Added custom List wrapper due to serialization issues with List for TimeSeriesProfileParser Type handling.
             // Related to Jackson subclassing annotations @JSONTypeInfo and @JSONSubTypes
             // See issue: https://github.com/FasterXML/jackson-databind/issues/2185
-            ParserList parserList = new ParserList(tspParsers);
+            TimeSeriesProfileParsers parserList = new TimeSeriesProfileParsers(tspParsers);
             ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileParsers.class);
-            String result = Formats.format(contentType, parserList, TimeSeriesProfileParsers.class);
+            String result = Formats.format(contentType, parserList.getParsers(), TimeSeriesProfileParsers.class);
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(result);
         }
@@ -231,8 +229,7 @@ public final class TimeSeriesProfileParserController implements CrudHandler {
             @OpenApiResponse(status = STATUS_200,
                 description = "A TimeSeriesProfileParser object",
                 content = {
-                    @OpenApiContent(from = TimeSeriesProfileParserIndexed.class, type = Formats.JSONV1),
-                    @OpenApiContent(from = TimeSeriesProfileParserColumnar.class, type = Formats.JSONV1),
+                    @OpenApiContent(from = TimeSeriesProfileParser.class, type = Formats.JSONV1),
                 }),
             @OpenApiResponse(status = STATUS_404, description = "The provided combination of parameters did not"
                 + " find a TimeSeriesProfileParser object"),
