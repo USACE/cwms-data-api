@@ -88,6 +88,7 @@ public final class Controllers {
     public static final String DATE = "date";
     public static final String LEVEL_ID = "level-id";
     public static final String LEVEL_ID_MASK = "level-id-mask";
+    public static final String LOCATION_MASK = "location-mask";
     public static final String NAME = "name";
     public static final String CASCADE_DELETE = "cascade-delete";
     public static final String DATUM = "datum";
