@@ -87,7 +87,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .leftOuterJoin(specView)
                 .on(specView.TEMPLATE_CODE.eq(tempView.TEMPLATE_CODE))
                 .where(condition)
-                .fetchSize(FETCH_SIZE);
+                .fetchSize(DEFAULT_FETCH_SIZE);
 
         logger.fine(() -> query.getSQL(ParamType.INLINED));
 
@@ -144,7 +144,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .leftOuterJoin(specView).on(
                         specView.TEMPLATE_CODE.eq(tempView.TEMPLATE_CODE))
                 .where(condition)
-                .fetchSize(FETCH_SIZE);
+                .fetchSize(DEFAULT_FETCH_SIZE);
 
         logger.fine(() -> query.getSQL(ParamType.INLINED));
 
