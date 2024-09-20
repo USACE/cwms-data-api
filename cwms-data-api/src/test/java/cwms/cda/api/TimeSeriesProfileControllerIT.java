@@ -200,7 +200,8 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("profile-list.size()", is(1)).extract()
+            .body("profile-list.size()", is(1))
+            .body("next-page", is(notNullValue())).extract()
         ;
 
         String nextPageCursor = response.path("next-page");
@@ -279,7 +280,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("size()", is(2))
+            .body("profile-list.size()", is(2))
         ;
     }
 
