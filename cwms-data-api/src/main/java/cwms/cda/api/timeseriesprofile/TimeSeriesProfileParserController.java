@@ -49,6 +49,7 @@ import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParser;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserColumnar;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
+import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserList;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParsers;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -207,9 +208,9 @@ public final class TimeSeriesProfileParserController implements CrudHandler {
             // Added custom List wrapper due to serialization issues with List for TimeSeriesProfileParser Type handling.
             // Related to Jackson subclassing annotations @JSONTypeInfo and @JSONSubTypes
             // See issue: https://github.com/FasterXML/jackson-databind/issues/2185
-            TimeSeriesProfileParsers parserList = new TimeSeriesProfileParsers(tspParsers);
+            TimeSeriesProfileParserList parserList = new TimeSeriesProfileParserList(tspParsers);
             ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileParsers.class);
-            String result = Formats.format(contentType, parserList.getParsers(), TimeSeriesProfileParsers.class);
+            String result = Formats.format(contentType, parserList, TimeSeriesProfileParsers.class);
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(result);
         }

@@ -249,7 +249,7 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
                     + " time series profile instance. Default is UTC"),
             @OpenApiParam(name = VERSION_DATE, type = Instant.class, description = "The version date of the"
                 + " time series profile instance. Default is current time"),
-            @OpenApiParam(name = UNIT, description = "The unit of the"
+            @OpenApiParam(name = UNIT, description = "The units of the"
                 + " time series profile instance.", required = true, type = List.class),
             @OpenApiParam(name = START_INCLUSIVE, type = Boolean.class, description = "The start inclusive of the"
                 + " time series profile instance. Default is true"),
