@@ -309,7 +309,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			if (tsCursor == null) {
 				resultQuery = resultCondQuery.and(dateTimeCol.greaterOrEqual(CWMS_UTIL_PACKAGE
 								.call_TO_TIMESTAMP__2(val(startTime.toEpochMilli()))))
-						.and(dateTimeCol.lessThan(CWMS_UTIL_PACKAGE
+						.and(dateTimeCol.lessOrEqual(CWMS_UTIL_PACKAGE
 								.call_TO_TIMESTAMP__2(val(endTime.toEpochMilli()))))
 						.orderBy(cwmsTsInstView.DATE_TIME);
 
@@ -317,7 +317,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 				resultQuery2 = resultCondQuery
 						.and(dateTimeCol.greaterOrEqual(CWMS_UTIL_PACKAGE
 								.call_TO_TIMESTAMP__2(val(tsCursor.toInstant().toEpochMilli()))))
-						.and(dateTimeCol.lessThan(CWMS_UTIL_PACKAGE
+						.and(dateTimeCol.lessOrEqual(CWMS_UTIL_PACKAGE
 								.call_TO_TIMESTAMP__2(val(endTime.toEpochMilli()))))
 						.orderBy(cwmsTsInstView.DATE_TIME, cwmsTsInstView.PARAMETER_ID)
 						.seek(tsCursor, parameterId);

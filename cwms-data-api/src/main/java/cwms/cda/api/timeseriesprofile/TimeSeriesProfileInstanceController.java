@@ -71,6 +71,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -250,7 +251,7 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
             @OpenApiParam(name = VERSION_DATE, type = Instant.class, description = "The version date of the"
                 + " time series profile instance. Default is current time"),
             @OpenApiParam(name = UNIT, description = "The units of the"
-                + " time series profile instance.", required = true, type = List.class),
+                + " time series profile instance. Provided as a list separated by ','", required = true, type = List.class),
             @OpenApiParam(name = START_INCLUSIVE, type = Boolean.class, description = "The start inclusive of the"
                 + " time series profile instance. Default is true"),
             @OpenApiParam(name = END_INCLUSIVE, type = Boolean.class, description = "The end inclusive of the"
@@ -296,7 +297,7 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
             String officeId = requiredParam(ctx, OFFICE);
             String keyParameter = requiredParam(ctx, PARAMETER_ID);
             String version = requiredParam(ctx, VERSION);
-            List<String> unit = ctx.queryParams(UNIT);
+            List<String> unit = ctx.queryParam(UNIT) != null ? Arrays.asList(ctx.queryParam(UNIT).split(",")) : null;
             if (unit.isEmpty()) {
                 throw new RequiredQueryParameterException(UNIT);
             }
