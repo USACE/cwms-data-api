@@ -51,7 +51,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.BiPredicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,7 +59,7 @@ import java.util.logging.Logger;
 class WaterContractTypeControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SWT";
     private static final LookupType CONTRACT_TYPE;
-    public static final Logger logger =
+    public static final Logger LOGGER =
             Logger.getLogger(WaterContractTypeControllerTestIT.class.getName());
     static {
         CONTRACT_TYPE = new LookupType.Builder().withActive(true).withOfficeId(OFFICE_ID)
@@ -195,9 +194,8 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .extract().body().as(LookupType[].class))
         ;
-        BiPredicate<LookupType, LookupType> match = (i, s) -> i.getDisplayValue().equals(s.getDisplayValue());
         DTOMatch.assertDoesNotContainDto(results, CONTRACT_TYPE,
-               match, "Contract Type not deleted");
+                (i, s) -> i.getDisplayValue().equalsIgnoreCase(s.getDisplayValue()), "Contract Type not deleted");
     }
 
     private void cleanupType() throws SQLException {
@@ -210,7 +208,7 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
                 lookupTypeDao.deleteLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE",
                         CONTRACT_TYPE.getOfficeId(), CONTRACT_TYPE.getDisplayValue());
             } catch (NotFoundException e) {
-                logger.log(Level.INFO, format("Cleanup failed to delete lookup type: %s", e.getMessage()));
+                LOGGER.log(Level.CONFIG, format("Cleanup failed to delete lookup type: %s", e.getMessage()));
             }
         }, CwmsDataApiSetupCallback.getWebUser());
     }

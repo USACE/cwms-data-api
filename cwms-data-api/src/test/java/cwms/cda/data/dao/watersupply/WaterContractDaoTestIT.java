@@ -148,7 +148,6 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             WaterContractDao dao = new WaterContractDao(ctx);
             dao.storeWaterContractType(contractType, false);
             List<LookupType> retrievedType = dao.getAllWaterContractTypes(OFFICE_ID);
-            assertTrue(retrievedType.stream().anyMatch(t -> typeMatches(t, contractType)));
             DTOMatch.assertContainsDto(retrievedType, contractType, WaterContractDaoTestIT::typeMatches,
                     DTOMatch::assertMatch, "Contract Type not stored");
             dao.deleteWaterContractType(contractType.getOfficeId(), contractType.getDisplayValue());
