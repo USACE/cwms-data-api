@@ -29,15 +29,16 @@ package cwms.cda.api;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
+import static java.lang.String.format;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
+import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
@@ -50,12 +51,17 @@ import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiPredicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 @Tag("integration")
 class WaterContractTypeControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SWT";
     private static final LookupType CONTRACT_TYPE;
+    public static final Logger logger =
+            Logger.getLogger(WaterContractTypeControllerTestIT.class.getName());
     static {
         CONTRACT_TYPE = new LookupType.Builder().withActive(true).withOfficeId(OFFICE_ID)
                 .withDisplayValue("TEST Contract Type").withTooltip("TEST LOOKUP").build();
@@ -187,9 +193,11 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("size()", is(0)).extract().body().as(LookupType[].class))
+            .extract().body().as(LookupType[].class))
         ;
-        assertFalse(results.stream().anyMatch(r -> r.getDisplayValue().equals(CONTRACT_TYPE.getDisplayValue())));
+        BiPredicate<LookupType, LookupType> match = (i, s) -> i.getDisplayValue().equals(s.getDisplayValue());
+        DTOMatch.assertDoesNotContainDto(results, CONTRACT_TYPE,
+               match, "Contract Type not deleted");
     }
 
     private void cleanupType() throws SQLException {
@@ -202,7 +210,7 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
                 lookupTypeDao.deleteLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE",
                         CONTRACT_TYPE.getOfficeId(), CONTRACT_TYPE.getDisplayValue());
             } catch (NotFoundException e) {
-                // ignore
+                logger.log(Level.INFO, format("Cleanup failed to delete lookup type: %s", e.getMessage()));
             }
         }, CwmsDataApiSetupCallback.getWebUser());
     }
