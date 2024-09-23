@@ -161,7 +161,7 @@ class GateChangeStressTest extends BaseOutletDaoIT {
     }
 
     @Test
-    void stress_test() {
+    void scaling_test() {
         //Generate 18 outlets, 5 minute data, for 1 year
         //location: keystone dam
         //figure out how big the payload is.
