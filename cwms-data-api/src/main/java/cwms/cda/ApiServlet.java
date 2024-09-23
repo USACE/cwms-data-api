@@ -127,6 +127,7 @@ import cwms.cda.api.watersupply.WaterContractCreateController;
 import cwms.cda.api.watersupply.WaterContractDeleteController;
 import cwms.cda.api.watersupply.WaterContractTypeCatalogController;
 import cwms.cda.api.watersupply.WaterContractTypeCreateController;
+import cwms.cda.api.watersupply.WaterContractTypeDeleteController;
 import cwms.cda.api.watersupply.WaterContractUpdateController;
 import cwms.cda.api.watersupply.WaterPumpDisassociateController;
 import cwms.cda.api.watersupply.WaterUserCatalogController;
@@ -627,6 +628,7 @@ public class ApiServlet extends HttpServlet {
     private void addWaterContractTypeHandlers(String path, RouteRole[] requiredRoles) {
         post(path, new WaterContractTypeCreateController(metrics), requiredRoles);
         get(path, new WaterContractTypeCatalogController(metrics));
+        delete(path + "/{display-value}", new WaterContractTypeDeleteController(metrics), requiredRoles);
     }
 
     /**
