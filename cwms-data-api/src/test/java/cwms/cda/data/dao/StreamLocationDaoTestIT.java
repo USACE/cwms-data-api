@@ -74,7 +74,7 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
         }
     }
 
-    private static void createAndStoreTestStream(String testLoc) throws SQLException {
+    static void createAndStoreTestStream(String testLoc) throws SQLException {
         createLocation(testLoc, true, OFFICE_ID, "STREAM");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         String webUser = CwmsDataApiSetupCallback.getWebUser();
@@ -245,7 +245,7 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
         }, webUser);
     }
 
-    private static StreamLocation buildTestStreamLocation(String streamId, String locationId, double station, Bank bank) {
+    static StreamLocation buildTestStreamLocation(String streamId, String locationId, double station, Bank bank) {
         StreamLocationNode streamLocationNode = new StreamLocationNode.Builder()
                 .withId(new CwmsId.Builder()
                         .withName(locationId)

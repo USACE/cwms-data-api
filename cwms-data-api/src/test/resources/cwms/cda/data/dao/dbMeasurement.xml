@@ -1,0 +1,40 @@
+<measurement area-unit="ft2" velocity-unit="fps" flow-unit="cfs" used="true" temp-unit="F" height-unit="ft" office-id="SPK">
+    <number>12345</number>
+    <date>2024-01-01T00:00:00Z</date>
+    <location>Walnut_Ck</location>
+    <party>SomeParty</party>
+    <wm-comments>Test comment</wm-comments>
+    <agency>USGS</agency>
+    <stream-flow-measurement>
+        <gage-height>2.0</gage-height>
+        <flow>100.0</flow>
+        <quality>good</quality>
+    </stream-flow-measurement>
+    <usgs-measurement>
+        <remarks>Some remarks</remarks>
+        <current-rating>1</current-rating>
+        <control-condition>UNSPECIFIED</control-condition>
+        <shift-used>11.0</shift-used>
+        <percent-difference>10.0</percent-difference>
+        <flow-adjustment>UNKNOWN</flow-adjustment>
+        <delta-height>0.5</delta-height>
+        <delta-time>60.0</delta-time>
+        <air-temp>25.0</air-temp>
+        <water-temp>15.0</water-temp>
+    </usgs-measurement>
+    <supplemental-stream-flow-measurement>
+        <channel-flow>100.0</channel-flow>
+        <overbank-flow>50.0</overbank-flow>
+        <overbank-max-depth>2.0</overbank-max-depth>
+        <channel-max-depth>5.0</channel-max-depth>
+        <avg-velocity>1.5</avg-velocity>
+        <surface-velocity>1.0</surface-velocity>
+        <max-velocity>2.0</max-velocity>
+        <effective-flow-area>75.0</effective-flow-area>
+        <cross-sectional-area>60.0</cross-sectional-area>
+        <mean-gage>3.0</mean-gage>
+        <top-width>10.0</top-width>
+        <main-channel-area>150.0</main-channel-area>
+        <overbank-area>200.0</overbank-area>
+    </supplemental-stream-flow-measurement>
+</measurement>
