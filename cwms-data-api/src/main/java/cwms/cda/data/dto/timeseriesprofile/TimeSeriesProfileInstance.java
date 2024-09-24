@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.CwmsDTOValidator;
@@ -27,6 +28,7 @@ public final class TimeSeriesProfileInstance extends CwmsDTOPaginated {
     private final List<ParameterColumnInfo> parameterColumns;
     private final List<DataColumnInfo> dataColumns;
     @JsonFormat(shape = JsonFormat.Shape.ARRAY)
+    @JsonSerialize(using = TimeSeriesDataSerializer.class)
     private final Map<Long, List<TimeSeriesData>> timeSeriesList;
     private final String locationTimeZone;
     private final String version;
@@ -210,6 +212,10 @@ public final class TimeSeriesProfileInstance extends CwmsDTOPaginated {
             timeSeriesList.computeIfAbsent(dateTime.getTime(), k -> new ArrayList<>());
             timeSeriesList.get(dateTime.getTime()).add(new TimeSeriesData(value, qualityCode));
         }
+    }
+
+    public void addNullValue(Timestamp dateTime, int index) {
+        timeSeriesList.get(dateTime.getTime()).add(index, null);
     }
 
     private static int mapSize(Map<Long, List<TimeSeriesData>> map) {

@@ -71,12 +71,10 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import usace.cwms.db.dao.util.OracleTypeMap;
 
 
 public final class TimeSeriesProfileInstanceController implements CrudHandler {
@@ -249,19 +247,20 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
             @OpenApiParam(name = TIMEZONE, description = "The timezone of the"
                     + " time series profile instance. Default is UTC"),
             @OpenApiParam(name = VERSION_DATE, type = Instant.class, description = "The version date of the"
-                + " time series profile instance. Default is current time"),
+                + " time series profile instance. Default is the min or max version date, depending on the maxVersion"),
             @OpenApiParam(name = UNIT, description = "The units of the"
                 + " time series profile instance. Provided as a list separated by ','", required = true, type = List.class),
             @OpenApiParam(name = START_INCLUSIVE, type = Boolean.class, description = "The start inclusive of the"
                 + " time series profile instance. Default is true"),
             @OpenApiParam(name = END_INCLUSIVE, type = Boolean.class, description = "The end inclusive of the"
                 + " time series profile instance. Default is true"),
-            @OpenApiParam(name = PREVIOUS, type = boolean.class, description = "The previous of the"
-                + " time series profile instance. Default is false"),
-            @OpenApiParam(name = NEXT, type = boolean.class, description = "The next of the"
-                + " time series profile instance. Default is false"),
-            @OpenApiParam(name = MAX_VERSION, type = boolean.class, description = "Whether the provided version"
-                + " is the max version of the time series profile instance. Default is false"),
+            @OpenApiParam(name = PREVIOUS, type = boolean.class, description = "Whether to include the previous "
+                + " time window of the time series profile instance. Default is false"),
+            @OpenApiParam(name = NEXT, type = boolean.class, description = "Whether to include the next time window "
+                    + "of the time series profile instance. Default is false"),
+            @OpenApiParam(name = MAX_VERSION, type = boolean.class, description = "Whether to use the max version"
+                + " date of the time series profile instance. Default is false. If no version date is provided, and"
+                    + " maxVersion is false, the min version date will be used."),
             @OpenApiParam(name = START, type = Instant.class, description = "The start of the"
                 + " time series profile instance. Default is the year 1800"),
             @OpenApiParam(name = END, type = Instant.class, description = "The end of the"
@@ -297,7 +296,7 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
             String officeId = requiredParam(ctx, OFFICE);
             String keyParameter = requiredParam(ctx, PARAMETER_ID);
             String version = requiredParam(ctx, VERSION);
-            List<String> unit = ctx.queryParam(UNIT) != null ? Arrays.asList(ctx.queryParam(UNIT).split(",")) : null;
+            List<String> unit = ctx.queryParams(UNIT);
             if (unit.isEmpty()) {
                 throw new RequiredQueryParameterException(UNIT);
             }
@@ -306,17 +305,17 @@ public final class TimeSeriesProfileInstanceController implements CrudHandler {
             Instant endTime = Instant.ofEpochMilli(Long.parseLong(ctx.queryParamAsClass(END, String.class)
                     .getOrDefault(String.valueOf(Instant.now().toEpochMilli()))));
             String timeZone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-            String startInclusive = OracleTypeMap.formatBool(ctx.queryParamAsClass(START_INCLUSIVE, boolean.class)
-                    .getOrDefault(true));
-            String endInclusive = OracleTypeMap.formatBool(ctx.queryParamAsClass(END_INCLUSIVE, boolean.class)
-                    .getOrDefault(true));
-            String previous = OracleTypeMap.formatBool(ctx.queryParamAsClass(PREVIOUS, boolean.class)
-                    .getOrDefault(false));
-            String next = OracleTypeMap.formatBool(ctx.queryParamAsClass(NEXT, boolean.class).getOrDefault(false));
-            Instant versionDate = Instant.ofEpochMilli(Long.parseLong(ctx.queryParamAsClass(VERSION_DATE, String.class)
-                    .getOrDefault(String.valueOf(Instant.now().toEpochMilli()))));
-            String maxVersion = OracleTypeMap.formatBool(ctx.queryParamAsClass(MAX_VERSION, boolean.class)
-                    .getOrDefault(false));
+            boolean startInclusive = ctx.queryParamAsClass(START_INCLUSIVE, boolean.class)
+                    .getOrDefault(true);
+            boolean endInclusive = ctx.queryParamAsClass(END_INCLUSIVE, boolean.class)
+                    .getOrDefault(true);
+            boolean previous = ctx.queryParamAsClass(PREVIOUS, boolean.class).getOrDefault(false);
+            boolean next = ctx.queryParamAsClass(NEXT, boolean.class).getOrDefault(false);
+            Instant versionDate = ctx.queryParamAsClass(VERSION_DATE, String.class).getOrDefault(null) == null
+                    ? null : Instant.ofEpochMilli(Long.parseLong(ctx.queryParamAsClass(VERSION_DATE, String.class)
+                    .getOrDefault(null)));
+            boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, boolean.class)
+                    .getOrDefault(false);
             String page = ctx.queryParam(PAGE);
             int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(500);
             CwmsId tspIdentifier = new CwmsId.Builder().withOfficeId(officeId).withName(timeSeriesId).build();

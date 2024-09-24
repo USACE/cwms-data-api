@@ -52,6 +52,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 
 import io.restassured.response.ExtractableResponse;
@@ -67,6 +69,8 @@ import org.junit.jupiter.api.Test;
 
 @Tag("integration")
 final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
+    public static final Logger LOGGER =
+            Logger.getLogger(TimeSeriesProfileInstanceControllerIT.class.getName());
     private static final String OFFICE_ID = "SPK";
     private static final TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     private final InputStream resource = this.getClass()
@@ -89,6 +93,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
     private TimeSeriesProfileParserIndexed tspParserIndexed;
     private TimeSeriesProfileParserColumnar tspParserColumnar;
     private TimeSeriesProfileInstance tspInstance;
+    private TimeSeriesProfileInstance tspInstance2;
     private String tsProfileDataColumnar;
     private String tsProfileDataIndexed;
     private String tsProfileDataColumnar2;
@@ -122,6 +127,15 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                 TimeSeriesProfileParserColumnar.class), resourceColumnar, TimeSeriesProfileParserColumnar.class);
         tspInstance = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfileInstance.class), tsDataInstance, TimeSeriesProfileInstance.class);
+        tspInstance2 = new TimeSeriesProfileInstance.Builder().withTimeSeriesProfile(tsProfile)
+                .withVersion(tspInstance.getVersion()).withVersionDate(Instant.parse("2023-07-09T12:00:00.00Z"))
+                .withParameterColumns(tspInstance.getParameterColumns())
+                .withDataColumns(tspInstance.getDataColumns())
+                .withLocationTimeZone("UTC")
+                .withPageSize(tspInstance.getPageSize())
+                .withFirstDate(tspInstance.getFirstDate())
+                .withLastDate(tspInstance.getLastDate())
+                .build();
         createLocation(tsProfile.getLocationId().getName(), true, OFFICE_ID, "SITE");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
@@ -141,6 +155,12 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                         tspInstance.getTimeSeriesProfile().getKeyParameter(), tspInstance.getVersion(),
                         tspInstance.getFirstDate(), "UTC",
                         false, tspInstance.getVersionDate());
+            }
+            if (tspInstance2 != null) {
+                cleanupInstance(dsl, tspInstance2.getTimeSeriesProfile().getLocationId(),
+                        tspInstance2.getTimeSeriesProfile().getKeyParameter(), tspInstance2.getVersion(),
+                        tspInstance2.getFirstDate(), "UTC",
+                        false, tspInstance2.getVersionDate());
             }
             if (tspParserIndexed != null) {
                 cleanupParser(dsl, tspParserIndexed.getLocationId().getName(),
@@ -382,6 +402,443 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                     equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
             .body("time-series-profile.parameter-list.size()", equalTo(2))
             .body("time-series-list.size()", equalTo(5))
+            .body("time-series-list[\"1568033937000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033750000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033787000\"].size()", equalTo(2))
+        ;
+    }
+
+    @Test
+    void test_create_retrieve_paged_TimeSeriesProfileInstance_Columnar() throws Exception {
+
+        storeParser(null, tspParserColumnar);
+
+        // Create instance
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .body(tspData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(METHOD, StoreRule.REPLACE_ALL)
+            .queryParam(OVERRIDE_PROTECTION, false)
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(PROFILE_DATA, tsProfileDataColumnar)
+            .queryParam(VERSION, "TEST-raw")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/instance")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Retrieve instance
+        ExtractableResponse<Response> extractableResponse = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PARAMETER_ID, tspParserColumnar.getKeyParameter())
+            .queryParam(VERSION, "TEST-raw")
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(START_INCLUSIVE, true)
+            .queryParam(END_INCLUSIVE, true)
+            .queryParam(UNIT, units)
+            .queryParam(PAGE_SIZE, 3)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("version", equalTo("TEST-raw"))
+            .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("time-series-profile.location-id.name",
+                    equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
+            .body("time-series-profile.key-parameter",
+                    equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
+            .body("time-series-profile.parameter-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(2))
+            .body("time-series-list[\"1568033347000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033359000\"].size()", equalTo(2))
+            .extract()
+        ;
+
+        String cursor = extractableResponse.path("next-page");
+        assertNotNull(cursor);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PARAMETER_ID, tspParserColumnar.getKeyParameter())
+            .queryParam(VERSION, "TEST-raw")
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(START_INCLUSIVE, true)
+            .queryParam(END_INCLUSIVE, true)
+            .queryParam(UNIT, units)
+            .queryParam(PAGE, cursor)
+            .queryParam(PAGE_SIZE, 3)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("version", equalTo("TEST-raw"))
+            .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("time-series-profile.location-id.name",
+                    equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
+            .body("time-series-profile.key-parameter",
+                    equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
+            .body("time-series-profile.parameter-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(2))
+            .body("time-series-list[\"1568035040000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033359000\"].size()", equalTo(2))
+        ;
+    }
+
+    @Test
+    void test_retrieve_TimeSeriesProfileInstance_Columnar_maxVersion() throws Exception {
+        storeParser(null, tspParserColumnar);
+
+        // Create instance
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .body(tspData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(METHOD, StoreRule.REPLACE_ALL)
+            .queryParam(OVERRIDE_PROTECTION, false)
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(PROFILE_DATA, tsProfileDataColumnar)
+            .queryParam(VERSION, "OBS")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/instance")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Create instance with different version date
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .body(tspData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(METHOD, StoreRule.REPLACE_ALL)
+            .queryParam(OVERRIDE_PROTECTION, false)
+            .queryParam(VERSION_DATE, Instant.parse("2023-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(PROFILE_DATA, tsProfileDataColumnar2)
+            .queryParam(VERSION, "OBS")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/instance")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Retrieve instance with max version set and provided version date (throws error)
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PARAMETER_ID, tspParserColumnar.getKeyParameter())
+            .queryParam(VERSION, "OBS")
+            .queryParam(VERSION_DATE, Instant.parse("2023-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(START_INCLUSIVE, true)
+            .queryParam(END_INCLUSIVE, true)
+            .queryParam(MAX_VERSION, true)
+            .queryParam(UNIT, units)
+            .queryParam(PAGE_SIZE, 3)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+        ;
+
+        // retrieve with no max version (should return the specified version)
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PARAMETER_ID, tspParserColumnar.getKeyParameter())
+            .queryParam(VERSION, "OBS")
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(START_INCLUSIVE, true)
+            .queryParam(END_INCLUSIVE, true)
+            .queryParam(UNIT, units)
+            .queryParam(MAX_VERSION, false)
+            .queryParam(PAGE_SIZE, 3)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("version", equalTo("OBS"))
+            .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("time-series-profile.location-id.name",
+                    equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
+            .body("time-series-profile.key-parameter",
+                    equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
+            .body("time-series-profile.parameter-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(2))
+            .body("time-series-list[\"1568033347000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033359000\"].size()", equalTo(2))
+        ;
+
+        // retrieve with max version (should return the max version)
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PARAMETER_ID, tspParserColumnar.getKeyParameter())
+            .queryParam(VERSION, "OBS")
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(START_INCLUSIVE, true)
+            .queryParam(END_INCLUSIVE, true)
+            .queryParam(UNIT, units)
+            .queryParam(MAX_VERSION, true)
+            .queryParam(PAGE_SIZE, 3)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("version", equalTo("OBS"))
+            .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("time-series-profile.location-id.name",
+                    equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
+            .body("time-series-profile.key-parameter",
+                    equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
+            .body("time-series-profile.parameter-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(2))
+            .body("time-series-list[\"1568033347000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033359000\"].size()", equalTo(2))
+        ;
+
+        // retrieve with no max version (should return the min version)
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PARAMETER_ID, tspParserColumnar.getKeyParameter())
+            .queryParam(VERSION, "OBS")
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, Instant.parse("2018-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(END, Instant.parse("2025-07-09T19:06:20.00Z").toEpochMilli())
+            .queryParam(START_INCLUSIVE, true)
+            .queryParam(END_INCLUSIVE, true)
+            .queryParam(UNIT, units)
+            .queryParam(MAX_VERSION, false)
+            .queryParam(PAGE_SIZE, 3)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("version", equalTo("OBS"))
+            .body("version-date", equalTo(Instant.parse("2023-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("time-series-profile.location-id.name",
+                    equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
+            .body("time-series-profile.key-parameter",
+                    equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
+            .body("time-series-profile.parameter-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(2))
+            .body("time-series-list[\"1599659347000\"].size()", equalTo(2))
+            .body("time-series-list[\"1599659359000\"].size()", equalTo(2))
+        ;
+    }
+
+    // This test needs the functionality to be confirmed - unsure if this is how it should work
+    @Test
+    void test_previous_next_TimeSeriesProfileInstance_Indexed() throws Exception {
+        storeParser(tspParserIndexed, null);
+
+        // Create instance
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .body(tspData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(METHOD, StoreRule.REPLACE_ALL)
+            .queryParam(OVERRIDE_PROTECTION, true)
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(PROFILE_DATA, tsProfileDataIndexed)
+            .queryParam(VERSION, "USGS-Obs")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/instance")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Retrieve instance with next and previous set (should return values from the next and previous time windows)
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
+            .queryParam(VERSION, "USGS-Obs")
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, Instant.parse("2019-09-09T12:45:00.00Z").toEpochMilli())
+            .queryParam(END, Instant.parse("2019-09-09T14:45:00.00Z").toEpochMilli())
+            .queryParam(START_INCLUSIVE, true)
+            .queryParam(PREVIOUS, true)
+            .queryParam(NEXT, true)
+            .queryParam(END_INCLUSIVE, true)
+            .queryParam(UNIT, units)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("version", equalTo("USGS-Obs"))
+            .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("time-series-profile.location-id.name",
+                    equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
+            .body("time-series-profile.key-parameter",
+                    equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
+            .body("time-series-profile.parameter-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(26))
+            .body("time-series-list[\"1568033682000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033337000\"].size()", equalTo(2))
+        ;
+
+        // Retrieve instance with next set to true
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
+            .queryParam(VERSION, "USGS-Obs")
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, Instant.parse("2019-09-09T12:45:00.00Z").toEpochMilli())
+            .queryParam(END, Instant.parse("2019-09-09T14:45:00.00Z").toEpochMilli())
+            .queryParam(START_INCLUSIVE, true)
+            .queryParam(END_INCLUSIVE, true)
+            .queryParam(NEXT, true)
+            .queryParam(UNIT, units)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("version", equalTo("USGS-Obs"))
+            .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("time-series-profile.location-id.name",
+                    equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
+            .body("time-series-profile.key-parameter",
+                    equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
+            .body("time-series-profile.parameter-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(26))
+            .body("time-series-list[\"1568033937000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033750000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033787000\"].size()", equalTo(2))
+        ;
+
+        // Retrieve instance with both next and previous set to false (should return the first page)
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PARAMETER_ID, tspParserIndexed.getKeyParameter())
+            .queryParam(VERSION, "USGS-Obs")
+            .queryParam(VERSION_DATE, Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli())
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, Instant.parse("2019-09-09T12:45:00.00Z").toEpochMilli())
+            .queryParam(END, Instant.parse("2019-09-09T14:45:00.00Z").toEpochMilli())
+            .queryParam(START_INCLUSIVE, true)
+            .queryParam(END_INCLUSIVE, true)
+            .queryParam(PREVIOUS, true)
+            .queryParam(UNIT, units)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("version", equalTo("USGS-Obs"))
+            .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("time-series-profile.location-id.name",
+                    equalTo(tspInstance.getTimeSeriesProfile().getLocationId().getName()))
+            .body("time-series-profile.key-parameter",
+                    equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
+            .body("time-series-profile.parameter-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(26))
             .body("time-series-list[\"1568033937000\"].size()", equalTo(2))
             .body("time-series-list[\"1568033750000\"].size()", equalTo(2))
             .body("time-series-list[\"1568033787000\"].size()", equalTo(2))
@@ -719,7 +1176,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             TimeSeriesProfileParserDao dao = new TimeSeriesProfileParserDao(dsl);
             dao.deleteTimeSeriesProfileParser(locationId, parameterId, OFFICE_ID);
         } catch (NotFoundException e) {
-            // Ignore
+            LOGGER.log(Level.CONFIG, "Cleanup failed for parser - no matching parser found in DB", e);
         }
     }
 
@@ -728,7 +1185,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             TimeSeriesProfileDao dao = new TimeSeriesProfileDao(dsl);
             dao.deleteTimeSeriesProfile(locationId, keyParameter, OFFICE_ID);
         } catch (NotFoundException e) {
-            // Ignore
+            LOGGER.log(Level.CONFIG, "Cleanup failed for Timeseries - no matching TS found in DB", e);
         }
     }
 
@@ -739,7 +1196,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             dao.deleteTimeSeriesProfileInstance(locationId, keyParameter, version, firstDate, timeZone,
                     overrideProt, versionDate);
         } catch (NotFoundException e) {
-            // Ignore
+            LOGGER.log(Level.CONFIG, "Cleanup failed for instance - no matching instance found in DB", e);
         }
     }
 

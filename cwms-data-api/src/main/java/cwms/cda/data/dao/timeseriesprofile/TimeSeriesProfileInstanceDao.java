@@ -3,6 +3,8 @@ package cwms.cda.data.dao.timeseriesprofile;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.field;
+import static org.jooq.impl.DSL.max;
+import static org.jooq.impl.DSL.min;
 import static org.jooq.impl.DSL.using;
 import static org.jooq.impl.DSL.val;
 
@@ -12,6 +14,7 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.timeseriesprofile.DataColumnInfo;
 import cwms.cda.data.dto.timeseriesprofile.ParameterColumnInfo;
+import cwms.cda.data.dto.timeseriesprofile.TimeSeriesData;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileInstance;
 import java.math.BigDecimal;
@@ -35,7 +38,6 @@ import org.jooq.Result;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectSeekLimitStep;
 import org.jooq.SelectSeekStep1;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PROFILE_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
@@ -153,7 +155,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 	}
 
 
-	public List<TimeSeriesProfileInstance> catalogTimeSeriesProfileInstances( String officeIdMask,
+	public List<TimeSeriesProfileInstance> catalogTimeSeriesProfileInstances(String officeIdMask,
 			String locationIdMask, String parameterIdMask, String versionMask)
 	{
 		List<TimeSeriesProfileInstance> timeSeriesProfileInstanceList = new ArrayList<>();
@@ -200,12 +202,12 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		Instant startTime,
 		Instant endTime,
 		String timeZone,
-		String startInclusive,
-		String endInclusive,
-		String previous,
-		String next,
+		boolean startInclusive,
+		boolean endInclusive,
+		boolean previous,
+		boolean next,
 		Instant versionDate,
-		String maxVersion,
+		boolean maxVersion,
 		String page,
 		int pageSize)
 	{
@@ -213,6 +215,10 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		String cursor = null;
 		Timestamp tsCursor = null;
 		String parameterId = null;
+
+		if (versionDate != null && maxVersion) {
+			throw new IllegalArgumentException("Cannot specify both version date and max version");
+		}
 
 		// Decode the cursor
 		if (page != null && !page.isEmpty()) {
@@ -238,30 +244,72 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			}
 		}
 
-		// Build the where condition
-		Condition whereCondition = cwmsTsInstView.KEY_PARAMETER_ID.eq(keyParameter)
-			.and(cwmsTsInstView.LOCATION_ID.eq(location.getName())
-			.and(cwmsTsInstView.OFFICE_ID.eq(location.getOfficeId()))
-			.and(cwmsTsInstView.VERSION_ID.eq(version))
-			.and(cwmsTsInstView.VERSION_DATE.eq(Timestamp.from(versionDate))));
+		Condition whereCondition;
+		if (!maxVersion && versionDate != null) {
+			// Build the where condition
+			whereCondition = cwmsTsInstView.KEY_PARAMETER_ID.eq(keyParameter)
+					.and(cwmsTsInstView.LOCATION_ID.eq(location.getName())
+							.and(cwmsTsInstView.OFFICE_ID.eq(location.getOfficeId()))
+							.and(cwmsTsInstView.VERSION_ID.eq(version))
+							.and(cwmsTsInstView.VERSION_DATE.eq(Timestamp.from(versionDate))));
+		}
+		else  {
+			whereCondition = cwmsTsInstView.KEY_PARAMETER_ID.eq(keyParameter)
+					.and(cwmsTsInstView.LOCATION_ID.eq(location.getName())
+							.and(cwmsTsInstView.OFFICE_ID.eq(location.getOfficeId()))
+							.and(cwmsTsInstView.VERSION_ID.eq(version)));
+		}
 
 		// Add the unit conditions
         Condition unitCondition = cwmsTsInstView.UNIT_ID.eq(unit.get(0));
-        for(int i = 1; i < unit.size(); i++) {
+        for (int i = 1; i < unit.size(); i++) {
             unitCondition = unitCondition.or(cwmsTsInstView.UNIT_ID.eq(unit.get(i)));
         }
         whereCondition = whereCondition.and(unitCondition);
 
+		// give the date time columns a name
+		Field<Timestamp> endTimeCol = field("LAST_DATE_TIME", Timestamp.class).as("LAST_DATE_TIME");
+		Field<Timestamp> startTimeCol = field("FIRST_DATE_TIME", Timestamp.class).as("FIRST_DATE_TIME");
+		Field<Timestamp> dateTimeCol = field("DATE_TIME", Timestamp.class).as("DATE_TIME");
+
+		// handle previous flag
+		if (previous) {
+			Timestamp previousDateTime = null;
+			SelectConditionStep<Record1<Timestamp>> prev = dsl.select(max(cwmsTsInstView.DATE_TIME))
+					.from(cwmsTsInstView)
+					.where(whereCondition.and(dateTimeCol.lessThan(Timestamp.from(startTime)))
+							.and(endTimeCol.greaterThan(Timestamp.from(startTime))));
+			previousDateTime = prev.fetchOne().value1();
+			if (previousDateTime != null) {
+				startTime = previousDateTime.toInstant();
+				startInclusive = true;
+			}
+		}
+
+		// handle next flag
+		if (next) {
+			Timestamp nextDateTime = null;
+			SelectConditionStep<Record1<Timestamp>> nex = dsl.select(min(cwmsTsInstView.DATE_TIME))
+					.from(cwmsTsInstView)
+					.where(whereCondition.and(dateTimeCol.greaterThan(Timestamp.from(endTime)))
+							.and(startTimeCol.le(Timestamp.from(endTime))));
+			nextDateTime = nex.fetchOne().value1();
+			if (nextDateTime != null) {
+				endTime = nextDateTime.toInstant();
+				endInclusive = true;
+			}
+		}
+
 		// Add the time windows conditions depending on the inclusive flags
-        if(OracleTypeMap.parseBool(startInclusive) && OracleTypeMap.parseBool(endInclusive)){
+        if (startInclusive && endInclusive){
 			whereCondition = whereCondition
 				.and(cwmsTsInstView.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
 				.and(cwmsTsInstView.LAST_DATE_TIME.le(Timestamp.from(endTime)));
-		} else if (!OracleTypeMap.parseBool(startInclusive) && (OracleTypeMap.parseBool(endInclusive))) {
+		} else if (!startInclusive && endInclusive) {
 			whereCondition = whereCondition
 				.and(cwmsTsInstView.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
 				.and(cwmsTsInstView.LAST_DATE_TIME.le(Timestamp.from(endTime)));
-		} else if (OracleTypeMap.parseBool(startInclusive) && !OracleTypeMap.parseBool(endInclusive)) {
+		} else if (startInclusive) {
 			whereCondition = whereCondition
 				.and(cwmsTsInstView.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
 				.and(cwmsTsInstView.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
@@ -271,9 +319,6 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 				.and(cwmsTsInstView.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
 		}
 		Condition finalWhereCondition = whereCondition;
-
-		// Give the date time column a name
-		Field<Timestamp> dateTimeCol = field("DATE_TIME", Timestamp.class).as("DATE_TIME");
 
 		// set semi-final variables for lambda
 		final String recordCursor = cursor;
@@ -287,20 +332,59 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			total = count.fetchOne().value1();
 		}
 
+		// Get the max version date if needed
+		Timestamp maxVersionDate = null;
+		if (maxVersion) {
+			SelectConditionStep<Record1<Timestamp>> maxVer = dsl.select(max(cwmsTsInstView.VERSION_DATE))
+					.from(cwmsTsInstView)
+					.where(finalWhereCondition);
+			maxVersionDate = maxVer.fetchOne().value1();
+		}
+		Timestamp minVersionDate = null;
+		if (!maxVersion && versionDate == null) {
+			SelectConditionStep<Record1<Timestamp>> minVer = dsl.select(min(cwmsTsInstView.VERSION_DATE))
+					.from(cwmsTsInstView)
+					.where(finalWhereCondition);
+			minVersionDate = minVer.fetchOne().value1();
+		}
+
+		// generate and run query to get the time series profile data
 		Result<Record7<Double, Long, Timestamp, Long, Long, String, String>> result = null;
 		SelectSeekStep1<Record7<Double, Long, Timestamp, Long, Long, String, String>, Timestamp> resultQuery = null;
 		SelectConditionStep<Record7<Double, Long, Timestamp, Long, Long, String, String>> resultCondQuery = null;
 		SelectSeekLimitStep<Record7<Double, Long, Timestamp, Long, Long, String, String>> resultQuery2 = null;
 		if (pageSize != 0) {
-			resultCondQuery = dsl.select(cwmsTsInstView.VALUE,
-							cwmsTsInstView.QUALITY_CODE,
-							cwmsTsInstView.DATE_TIME,
-							cwmsTsInstView.LOCATION_CODE,
-							cwmsTsInstView.KEY_PARAMETER_CODE,
-							cwmsTsInstView.PARAMETER_ID,
-							cwmsTsInstView.UNIT_ID)
-					.from(cwmsTsInstView)
-					.where(finalWhereCondition);
+			if (maxVersion) {
+				resultCondQuery = dsl.select(cwmsTsInstView.VALUE,
+								cwmsTsInstView.QUALITY_CODE,
+								cwmsTsInstView.DATE_TIME,
+								cwmsTsInstView.LOCATION_CODE,
+								cwmsTsInstView.KEY_PARAMETER_CODE,
+								cwmsTsInstView.PARAMETER_ID,
+								cwmsTsInstView.UNIT_ID)
+						.from(cwmsTsInstView)
+						.where(finalWhereCondition.and(cwmsTsInstView.VERSION_DATE.eq(maxVersionDate)));
+			} else if (versionDate == null) {
+				resultCondQuery = dsl.select(cwmsTsInstView.VALUE,
+								cwmsTsInstView.QUALITY_CODE,
+								cwmsTsInstView.DATE_TIME,
+								cwmsTsInstView.LOCATION_CODE,
+								cwmsTsInstView.KEY_PARAMETER_CODE,
+								cwmsTsInstView.PARAMETER_ID,
+								cwmsTsInstView.UNIT_ID)
+						.from(cwmsTsInstView)
+						.where(finalWhereCondition.and(cwmsTsInstView.VERSION_DATE.eq(minVersionDate)));
+			} else {
+				resultCondQuery = dsl.select(cwmsTsInstView.VALUE,
+								cwmsTsInstView.QUALITY_CODE,
+								cwmsTsInstView.DATE_TIME,
+								cwmsTsInstView.LOCATION_CODE,
+								cwmsTsInstView.KEY_PARAMETER_CODE,
+								cwmsTsInstView.PARAMETER_ID,
+								cwmsTsInstView.UNIT_ID)
+						.from(cwmsTsInstView)
+						.where(finalWhereCondition);
+			}
 
 			// If there is a cursor, use it with the JOOQ seek method
 			// Needs the parameter and cursor of the record before the first one on the next page
@@ -385,6 +469,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 				existingParameterList.put(resultRecord.get("VALUE", Double.class),
 						resultRecord.get("PARAMETER_ID", String.class));
 				parameterTimeMap.put(dateTime, existingParameterList);
+
 			} else {
 				PVQ_TAB_T parameters = new PVQ_TAB_T(new PVQ_T(keyParameterCode,
 						resultRecord.get("VALUE", Double.class),
@@ -404,10 +489,18 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		}
 		timeSeriesProfileData = new TS_PROF_DATA_T(locationCode, keyParameterCode, timeZone, units, records);
 
+		if (minVersionDate != null) {
+			versionDate = minVersionDate.toInstant();
+		} else if (maxVersionDate != null) {
+			versionDate = maxVersionDate.toInstant();
+		}
+
 		// map the TimeSeriesProfileInstance without the value/quality data
 		TimeSeriesProfileInstance returnInstance = map(location.getOfficeId(), location.getName(), keyParameter,
 				timeSeriesProfileData, version, versionDate, startTime, endTime, unitParamMap, recordCursor,
 				recordPageSize, totalRecords);
+
+		List<ParameterColumnInfo> paramlist = returnInstance.getParameterColumns();
 
 		// map the TVQ data to the TimeSeriesProfileInstance
 		// needs previous parameter and cursor to be set to correctly split the data into pages
@@ -424,6 +517,25 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 			}
 		}
 
+		// add null values to the TimeSeriesProfileInstance value list if the data is missing for the associated parameter
+		for (Map.Entry<Long, List<TimeSeriesData>> entry : returnInstance.getTimeSeriesList().entrySet()) {
+			if (entry.getValue().size() < paramlist.size()) {
+				for (int i = 0; i < paramlist.size(); i++) {
+					Timestamp dateTime = Timestamp.from(Instant.ofEpochMilli(entry.getKey()));
+					try {
+						entry.getValue().get(i);
+					} catch (IndexOutOfBoundsException e) {
+						returnInstance.addNullValue(dateTime, i);
+						continue;
+					}
+					if (parameterTimeMap.get(dateTime).get(entry.getValue().get(i).getValue()) == null
+							|| !parameterTimeMap.get(dateTime).get(entry.getValue().get(i).getValue())
+							.equalsIgnoreCase(paramlist.get(i).getParameter())) {
+						returnInstance.addNullValue(dateTime, i);
+					}
+				}
+			}
+		}
 		return returnInstance;
 	}
 

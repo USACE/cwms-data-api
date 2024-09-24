@@ -42,6 +42,10 @@ public class TimeSeriesProfileInstanceTest {
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         TimeSeriesProfileInstance deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileInstance.class), serialized, TimeSeriesProfileInstance.class);
         testAssertEquals(timeSeriesProfileInstance, deserialized, "Roundtrip serialization from file failed");
+        assertEquals(3, timeSeriesProfileInstance.getTimeSeriesList().size());
+        assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().get(Instant.ofEpochMilli(1612869582120L).toEpochMilli()).size());
+        assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().get(Instant.ofEpochMilli(1612869682120L).toEpochMilli()).size());
+        assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().get(Instant.ofEpochMilli(1612870682120L).toEpochMilli()).size());
     }
 
     private TimeSeriesProfileInstance buildTestTimeSeriesProfileInstance() {

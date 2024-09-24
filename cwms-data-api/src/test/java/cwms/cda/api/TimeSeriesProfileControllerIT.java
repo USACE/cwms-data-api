@@ -228,6 +228,63 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
     }
 
     @Test
+    void test_get_all_TimeSeriesProfilePaginated_minimum() {
+        // Create a new TimeSeriesProfile
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV1)
+                .contentType(Formats.JSONV1)
+                .body(tsData)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(FAIL_IF_EXISTS, false)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/profile/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Retrieve all TimeSeriesProfiles
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV1)
+                .contentType(Formats.JSONV1)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/profile/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("profile-list.size()", is(1))
+        ;
+
+        // Retrieve TimeSeriesProfiles with pagination, page 1, assert that next-page is null
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV1)
+                .contentType(Formats.JSONV1)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(PAGE_SIZE, 1)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/profile/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("profile-list.size()", is(1))
+                .body("next-page", is(nullValue()))
+                ;
+    }
+
+    @Test
     void test_get_all_TimeSeriesProfile() {
 
         // Create a new TimeSeriesProfile

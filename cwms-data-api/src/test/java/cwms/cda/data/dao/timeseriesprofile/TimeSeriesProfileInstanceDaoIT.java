@@ -77,7 +77,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             boolean endInclusive = true;
             boolean previous = true;
             boolean next = true;
-            boolean maxVersion = true;
+            boolean maxVersion = false;
             char fieldDelimiter = ',';
             char recordDelimiter = '\n';
             int timeField = 1;
@@ -157,7 +157,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             boolean endInclusive = true;
             boolean previous = true;
             boolean next = true;
-            boolean maxVersion = true;
+            boolean maxVersion = false;
             char recordDelimiter = '\n';
             int[] timeStartEnd = {1, 19};
 
@@ -237,7 +237,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             boolean endInclusive = true;
             boolean previous = true;
             boolean next = true;
-            boolean maxVersion = true;
+            boolean maxVersion = false;
             char recordDelimiter = '\n';
             int[] timeStartEnd = {1, 19};
 
@@ -305,7 +305,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                                 "Second instance units do not match"),
                         () -> assertThrows(IndexOutOfBoundsException.class, () -> timeSeriesProfileInstance.getParameterColumns().get(2),
                                 "Parameter column size too large"),
-                        () -> assertEquals(1, timeSeriesProfileInstance.getTimeSeriesList().get(1568033359000L).size(),
+                        () -> assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().get(1568033359000L).size(),
                                 "First instance timeseries list does not match in size"),
                         () -> assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).size(),
                                 "Second instance timeseries list does not match in size"),
@@ -323,7 +323,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                                 "First unit does not match"),
                         () -> assertThrows(IndexOutOfBoundsException.class, () -> timeSeriesProfileInstance1.getParameterColumns().get(2),
                                 "Second instance parameter column size too large"),
-                        () -> assertEquals(1, timeSeriesProfileInstance1.getTimeSeriesList().get(1568033359000L).size(),
+                        () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().get(1568033359000L).size(),
                                 "Second instance timeseries list does not match in size"),
                         () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().get(1568035040000L).size(),
                                 "Second instance timeseries list does not match in size"),
@@ -337,7 +337,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                                 "Third instance parameter does not match"),
                         () -> assertEquals("m", timeSeriesProfileInstance2.getParameterColumns().get(0).getUnit(),
                                 "Third instance unit does not match"),
-                        () -> assertEquals(1, timeSeriesProfileInstance2.getTimeSeriesList().get(1568033347000L).size(),
+                        () -> assertEquals(2, timeSeriesProfileInstance2.getTimeSeriesList().get(1568033347000L).size(),
                                 "Third instance timeseries list does not match in size"),
                         () -> assertEquals(parameterArray.length, timeSeriesProfileInstance3.getParameterColumns().size(),
                                 "Fourth instance timeseries list does not match in size"),
@@ -347,7 +347,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                                 "Fourth instance parameter does not match"),
                         () -> assertEquals("m", timeSeriesProfileInstance3.getParameterColumns().get(0).getUnit(),
                                 "Fourth instance unit does not match"),
-                        () -> assertEquals(1, timeSeriesProfileInstance3.getTimeSeriesList().get(1568033347000L).size(),
+                        () -> assertEquals(2, timeSeriesProfileInstance3.getTimeSeriesList().get(1568033347000L).size(),
                                 "Fourth instance timeseries list does not match in size"),
                         () -> assertEquals(parameterArray.length, timeSeriesProfileInstance4.getParameterColumns().size(),
                                 "Fifth instance timeseries list does not match in size"),
@@ -433,11 +433,11 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         Instant startTime = Instant.parse("2024-07-09T19:00:11.00Z");
         Instant endTime = Instant.parse("2025-01-01T19:00:22.00Z");
         String timeZone = "UTC";
-        String startInclusive = "T";
-        String endInclusive = "T";
-        String previous = "T";
-        String next = "T";
-        String maxVersion = "T";
+        boolean startInclusive = true;
+        boolean endInclusive = true;
+        boolean previous = true;
+        boolean next = true;
+        boolean maxVersion = false;
         Instant[] dateTimeArray = {Instant.parse("2024-07-09T19:00:11.00Z"), Instant.parse("2024-07-09T20:00:22.00Z")};
         double[] valueArray = {1, 4};
         Instant versionDate = Instant.parse("2024-07-09T12:00:00.00Z");
@@ -496,7 +496,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         boolean endInclusive = true;
         boolean previous = true;
         boolean next = true;
-        boolean maxVersion = true;
+        boolean maxVersion = false;
         Instant firstDate = Instant.parse("2024-07-09T19:00:11.00Z");
         Instant[] dateTimeArray = {Instant.parse("2024-07-09T19:00:11.00Z"), Instant.parse("2024-07-09T20:00:22.00Z")};
         double[] valueArray = {3, 5};
@@ -569,7 +569,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         boolean endInclusive = true;
         boolean previous = true;
         boolean next = true;
-        boolean maxVersion = true;
+        boolean maxVersion = false;
         Instant[] dateTimeArray = {Instant.parse("2024-07-09T19:00:11.00Z"), Instant.parse("2024-07-09T20:00:22.00Z")};
         double[] valueArray = {1.0, 5.0};
         char fieldDelimiter = ',';
@@ -643,8 +643,8 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                     .build();
             try {
                 result[0] = timeSeriesProfileInstanceDao.retrieveTimeSeriesProfileInstance(location, keyParameter, version,
-                        unit, startTime, endTime, timeZone, startInclusive ? "T" : "F", endInclusive ? "T" : "F", previous ? "T" : "F", next ? "T" : "F", versionDate,
-                        maxVersion ? "T" : "F", page, pageSize);
+                        unit, startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate,
+                        maxVersion, page, pageSize);
             }
             catch(cwms.cda.api.errors.NotFoundException ex)
             {
