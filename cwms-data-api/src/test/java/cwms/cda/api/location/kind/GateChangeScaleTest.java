@@ -22,7 +22,6 @@ package cwms.cda.api.location.kind;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
-import cwms.cda.api.enums.Unit;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.LocationsDaoImpl;
@@ -64,7 +63,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
-class GateChangeStressTest extends BaseOutletDaoIT {
+class GateChangeScaleTest extends BaseOutletDaoIT {
 
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final CwmsId PROJECT_ID = new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("PROJECT3").build();
