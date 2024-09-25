@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -110,22 +112,7 @@ final class MeasurementDaoTest {
         Measurement meas = buildTestMeasurement();
 
         MeasurementDao.MeasurementXmlDto xmlDto = MeasurementDao.convertMeasurementToXmlDto(meas);
-        assertEquals(meas.getNumber(), xmlDto.getNumber());
-        assertEquals(meas.getAgency(), xmlDto.getAgency());
-        assertEquals(meas.getParty(), xmlDto.getParty());
-        assertEquals(meas.getInstant(), xmlDto.getInstant());
-        assertEquals(meas.getWmComments(), xmlDto.getWmComments());
-        assertEquals(meas.getAreaUnit(), xmlDto.getAreaUnit());
-        assertEquals(meas.getFlowUnit(), xmlDto.getFlowUnit());
-        assertEquals(meas.getHeightUnit(), xmlDto.getHeightUnit());
-        assertEquals(meas.getVelocityUnit(), xmlDto.getVelocityUnit());
-        assertEquals(meas.getTempUnit(), xmlDto.getTempUnit());
-        assertEquals(meas.isUsed(), xmlDto.isUsed());
-        assertEquals(meas.getLocationId(), xmlDto.getLocationId());
-        assertEquals(meas.getOfficeId(), xmlDto.getOfficeId());
-        DTOMatch.assertMatch(meas.getStreamflowMeasurement(), xmlDto.getStreamflowMeasurement());
-        DTOMatch.assertMatch(meas.getUsgsMeasurement(), xmlDto.getUsgsMeasurement());
-        DTOMatch.assertMatch(meas.getSupplementalStreamflowMeasurement(), xmlDto.getSupplementalStreamflowMeasurement());
+        assertMatch(meas, xmlDto);
     }
 
     @Test
@@ -142,21 +129,40 @@ final class MeasurementDaoTest {
         assertFalse(xml.isEmpty());
         MeasurementDao.MeasurementXmlDto actualXmlDto = MeasurementDao.XML_MAPPER.readValue(xml, MeasurementDao.MeasurementXmlDto.class);
 
-        assertEquals(expectedXmlDto.getAgency(), actualXmlDto.getAgency());
-        assertEquals(expectedXmlDto.getAreaUnit(), actualXmlDto.getAreaUnit());
-        assertEquals(expectedXmlDto.getFlowUnit(), actualXmlDto.getFlowUnit());
-        assertEquals(expectedXmlDto.getHeightUnit(), actualXmlDto.getHeightUnit());
-        assertEquals(expectedXmlDto.getTempUnit(), actualXmlDto.getTempUnit());
-        assertEquals(expectedXmlDto.getInstant(), actualXmlDto.getInstant());
-        assertEquals(expectedXmlDto.getNumber(), actualXmlDto.getNumber());
-        assertEquals(expectedXmlDto.getParty(), actualXmlDto.getParty());
-        assertEquals(expectedXmlDto.getVelocityUnit(), actualXmlDto.getVelocityUnit());
-        assertEquals(expectedXmlDto.getWmComments(), actualXmlDto.getWmComments());
-        assertEquals(expectedXmlDto.getLocationId(), actualXmlDto.getLocationId());
-        assertEquals(expectedXmlDto.getOfficeId(), actualXmlDto.getOfficeId());
-        DTOMatch.assertMatch(expectedXmlDto.getStreamflowMeasurement(), actualXmlDto.getStreamflowMeasurement());
-        DTOMatch.assertMatch(expectedXmlDto.getUsgsMeasurement(), actualXmlDto.getUsgsMeasurement());
-        DTOMatch.assertMatch(expectedXmlDto.getSupplementalStreamflowMeasurement(), actualXmlDto.getSupplementalStreamflowMeasurement());
+        assertMatch(expectedXmlDto, actualXmlDto);
+    }
+
+    @Test
+    void testConvertToMeasurementsXmlDto() {
+        Measurement meas1 = buildTestMeasurement();
+        Measurement meas2 = buildMeasurement2();
+        List<Measurement> measurements = new ArrayList<>();
+        measurements.add(meas1);
+        measurements.add(meas2);
+        MeasurementDao.MeasurementsXmlDto xmlDto = MeasurementDao.convertMeasurementsToXmlDto(measurements);
+        assertEquals(2, xmlDto.getMeasurements().size());
+        assertMatch(meas1, xmlDto.getMeasurements().get(0));
+        assertMatch(meas2, xmlDto.getMeasurements().get(1));
+    }
+
+    @Test
+    void testToDbXmlMultiple() throws Exception {
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dao/dbMeasurements.xml");
+        assertNotNull(resource);
+        String expectedXml = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        MeasurementDao.MeasurementsXmlDto expectedXmlDto = MeasurementDao.XML_MAPPER.readValue(expectedXml, MeasurementDao.MeasurementsXmlDto.class);
+
+        Measurement meas = buildTestMeasurement();
+        Measurement meas2 = buildMeasurement2();
+        List<Measurement> measurements = new ArrayList<>();
+        measurements.add(meas);
+        measurements.add(meas2);
+        String xml = MeasurementDao.toDbXml(measurements);
+        assertNotNull(xml);
+        assertFalse(xml.isEmpty());
+        MeasurementDao.MeasurementsXmlDto actualXmlDto = MeasurementDao.XML_MAPPER.readValue(xml, MeasurementDao.MeasurementsXmlDto.class);
+
+        assertMatch(expectedXmlDto, actualXmlDto);
     }
 
     private Measurement buildTestMeasurement() {
@@ -211,6 +217,58 @@ final class MeasurementDaoTest {
                 .build();
     }
 
+    private Measurement buildMeasurement2() {
+        return new Measurement.Builder()
+                .withNumber("123456")
+                .withAgency("USGS")
+                .withParty("SomeParty2")
+                .withInstant(Instant.parse("2024-02-01T00:00:00Z"))
+                .withWmComments("Test comment2")
+                .withAreaUnit("ft2")
+                .withFlowUnit("cfs")
+                .withHeightUnit("ft")
+                .withVelocityUnit("fps")
+                .withTempUnit("F")
+                .withUsed(true)
+                .withId(new CwmsId.Builder()
+                        .withName("Walnut_Ck")
+                        .withOfficeId("SPK")
+                        .build())
+                .withStreamflowMeasurement(new StreamflowMeasurement.Builder()
+                        .withFlow(200.0)
+                        .withGageHeight(2.4)
+                        .withQuality("G")
+                        .build())
+                .withUsgsMeasurement(new UsgsMeasurement.Builder()
+                        .withAirTemp(35.0)
+                        .withCurrentRating("2")
+                        .withControlCondition("UNSPECIFIED")
+                        .withFlowAdjustment("OTHR")
+                        .withDeltaHeight(0.6)
+                        .withDeltaTime(70.0)
+                        .withPercentDifference(11.0)
+                        .withRemarks("Some remarks2")
+                        .withShiftUsed(12.0)
+                        .withWaterTemp(16.0)
+                        .build())
+                .withSupplementalStreamflowMeasurement(new SupplementalStreamflowMeasurement.Builder()
+                        .withAvgVelocity(1.6)
+                        .withChannelFlow(101.0)
+                        .withMeanGage(3.1)
+                        .withMaxVelocity(2.1)
+                        .withOverbankFlow(51.0)
+                        .withOverbankArea(200.1)
+                        .withTopWidth(10.1)
+                        .withSurfaceVelocity(1.1)
+                        .withChannelMaxDepth(5.1)
+                        .withMainChannelArea(150.1)
+                        .withOverbankMaxDepth(2.1)
+                        .withEffectiveFlowArea(75.1)
+                        .withCrossSectionalArea(60.1)
+                        .build())
+                .build();
+    }
+
     private LOCATION_REF_T mockLocation() {
         LOCATION_REF_T location = new LOCATION_REF_T();
         location.setBASE_LOCATION_ID("Walnut_Ck");
@@ -235,5 +293,49 @@ final class MeasurementDaoTest {
         supplemental.setEFFECTIVE_FLOW_AREA(75.0);
         supplemental.setCROSS_SECTIONAL_AREA(60.0);
         return supplemental;
+    }
+
+    private static void assertMatch(Measurement meas, MeasurementDao.MeasurementXmlDto xmlDto) {
+        assertEquals(meas.getNumber(), xmlDto.getNumber());
+        assertEquals(meas.getAgency(), xmlDto.getAgency());
+        assertEquals(meas.getParty(), xmlDto.getParty());
+        assertEquals(meas.getInstant(), xmlDto.getInstant());
+        assertEquals(meas.getWmComments(), xmlDto.getWmComments());
+        assertEquals(meas.getAreaUnit(), xmlDto.getAreaUnit());
+        assertEquals(meas.getFlowUnit(), xmlDto.getFlowUnit());
+        assertEquals(meas.getHeightUnit(), xmlDto.getHeightUnit());
+        assertEquals(meas.getVelocityUnit(), xmlDto.getVelocityUnit());
+        assertEquals(meas.getTempUnit(), xmlDto.getTempUnit());
+        assertEquals(meas.isUsed(), xmlDto.isUsed());
+        assertEquals(meas.getLocationId(), xmlDto.getLocationId());
+        assertEquals(meas.getOfficeId(), xmlDto.getOfficeId());
+        DTOMatch.assertMatch(meas.getStreamflowMeasurement(), xmlDto.getStreamflowMeasurement());
+        DTOMatch.assertMatch(meas.getUsgsMeasurement(), xmlDto.getUsgsMeasurement());
+        DTOMatch.assertMatch(meas.getSupplementalStreamflowMeasurement(), xmlDto.getSupplementalStreamflowMeasurement());
+    }
+
+    private static void assertMatch(MeasurementDao.MeasurementXmlDto expectedXmlDto, MeasurementDao.MeasurementXmlDto actualXmlDto) {
+        assertEquals(expectedXmlDto.getAgency(), actualXmlDto.getAgency());
+        assertEquals(expectedXmlDto.getAreaUnit(), actualXmlDto.getAreaUnit());
+        assertEquals(expectedXmlDto.getFlowUnit(), actualXmlDto.getFlowUnit());
+        assertEquals(expectedXmlDto.getHeightUnit(), actualXmlDto.getHeightUnit());
+        assertEquals(expectedXmlDto.getTempUnit(), actualXmlDto.getTempUnit());
+        assertEquals(expectedXmlDto.getInstant(), actualXmlDto.getInstant());
+        assertEquals(expectedXmlDto.getNumber(), actualXmlDto.getNumber());
+        assertEquals(expectedXmlDto.getParty(), actualXmlDto.getParty());
+        assertEquals(expectedXmlDto.getVelocityUnit(), actualXmlDto.getVelocityUnit());
+        assertEquals(expectedXmlDto.getWmComments(), actualXmlDto.getWmComments());
+        assertEquals(expectedXmlDto.getLocationId(), actualXmlDto.getLocationId());
+        assertEquals(expectedXmlDto.getOfficeId(), actualXmlDto.getOfficeId());
+        DTOMatch.assertMatch(expectedXmlDto.getStreamflowMeasurement(), actualXmlDto.getStreamflowMeasurement());
+        DTOMatch.assertMatch(expectedXmlDto.getUsgsMeasurement(), actualXmlDto.getUsgsMeasurement());
+        DTOMatch.assertMatch(expectedXmlDto.getSupplementalStreamflowMeasurement(), actualXmlDto.getSupplementalStreamflowMeasurement());
+    }
+
+    private static void assertMatch(MeasurementDao.MeasurementsXmlDto expectedXmlDto, MeasurementDao.MeasurementsXmlDto actualXmlDto) {
+        assertEquals(expectedXmlDto.getMeasurements().size(), actualXmlDto.getMeasurements().size());
+        for (int i = 0; i < expectedXmlDto.getMeasurements().size(); i++) {
+            assertMatch(expectedXmlDto.getMeasurements().get(i), actualXmlDto.getMeasurements().get(i));
+        }
     }
 }

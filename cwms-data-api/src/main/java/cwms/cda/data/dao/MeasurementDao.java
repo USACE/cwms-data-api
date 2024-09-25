@@ -23,6 +23,7 @@
  */
 package cwms.cda.data.dao;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -38,7 +39,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.measurement.Measurement;
@@ -51,6 +54,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 import mil.army.usace.hec.metadata.location.LocationTemplate;
@@ -112,6 +116,23 @@ public final class MeasurementDao extends JooqDao<Measurement> {
     }
 
     /**
+     * Store a list of measurements
+     * @param measurements - the measurements to store
+     * @param failIfExists - if true, fail if a measurement already exists
+     */
+    public void storeMeasurements(List<Measurement> measurements, boolean failIfExists) {
+        connection(dsl, conn -> {
+            if(!measurements.isEmpty()) {
+                Measurement measurement = measurements.get(0);
+                setOffice(conn, measurement.getOfficeId());
+                String failIfExistsStr = formatBool(failIfExists);
+                String xml = toDbXml(measurements);
+                CWMS_STREAM_PACKAGE.call_STORE_MEAS_XML(DSL.using(conn).configuration(), xml, failIfExistsStr);
+            }
+        });
+    }
+
+    /**
      * Delete a measurement
      *
      * @param officeId   - the office id
@@ -129,6 +150,11 @@ public final class MeasurementDao extends JooqDao<Measurement> {
             CWMS_STREAM_PACKAGE.call_DELETE_STREAMFLOW_MEAS(DSL.using(conn).configuration(), locationId, unitSystem, minTimestamp, maxTimestamp,
                     minHeight, maxHeight, minFlow, maxFlow, minNum, maxNum, agencies, qualities, timeZoneId, officeId);
         });
+    }
+
+    static String toDbXml(List<Measurement> measurements) throws JsonProcessingException {
+        MeasurementsXmlDto xmlDto = convertMeasurementsToXmlDto(measurements);
+            return XML_MAPPER.writeValueAsString(xmlDto);
     }
 
     static String toDbXml(Measurement measurement) throws JsonProcessingException {
@@ -187,6 +213,14 @@ public final class MeasurementDao extends JooqDao<Measurement> {
                         .withEffectiveFlowArea(record.getSUPP_STREAMFLOW_MEAS().getEFFECTIVE_FLOW_AREA())
                         .withCrossSectionalArea(record.getSUPP_STREAMFLOW_MEAS().getCROSS_SECTIONAL_AREA())
                         .build())
+                .build();
+    }
+
+    static MeasurementsXmlDto convertMeasurementsToXmlDto(List<Measurement> measurements) {
+        return new MeasurementsXmlDto.Builder()
+                .withMeasurements(measurements.stream()
+                        .map(MeasurementDao::convertMeasurementToXmlDto)
+                        .collect(toList()))
                 .build();
     }
 
@@ -254,232 +288,266 @@ public final class MeasurementDao extends JooqDao<Measurement> {
         }
     }
 
+    @JacksonXmlRootElement(localName = "measurements")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonDeserialize(builder = MeasurementsXmlDto.Builder.class)
+    static class MeasurementsXmlDto {
+
+        @JacksonXmlElementWrapper(useWrapping = false)
+        @JacksonXmlProperty(localName = "measurement")
+        private final List<MeasurementXmlDto> measurements;
+
+        private MeasurementsXmlDto(Builder builder) {
+            this.measurements = builder.measurements;
+        }
+
+        public List<MeasurementXmlDto> getMeasurements() {
+            return measurements;
+        }
+        static class Builder {
+            @JacksonXmlElementWrapper(useWrapping = false) // Disable wrapping for the collection
+            @JacksonXmlProperty(localName = "measurement")
+            private List<MeasurementXmlDto> measurements = new ArrayList<>();
+
+            Builder withMeasurements(List<MeasurementXmlDto> measurements) {
+                this.measurements = measurements;
+                return this;
+            }
+
+            @JsonCreator
+            MeasurementsXmlDto build() {
+                return new MeasurementsXmlDto(this);
+            }
+        }
+    }
+
+
     @JsonRootName(value = "measurement")
     @JsonDeserialize(builder = MeasurementXmlDto.Builder.class)
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     static final class MeasurementXmlDto {
 
-        private final String _heightUnit;
+        private final String heightUnit;
 
-        private final String _flowUnit;
+        private final String flowUnit;
 
-        private final String _tempUnit;
+        private final String tempUnit;
 
-        private final String _velocityUnit;
+        private final String velocityUnit;
 
-        private final String _areaUnit;
+        private final String areaUnit;
 
-        private final boolean _used;
-        private final String _agency;
-        private final String _party;
-        private final String _wmComments;
-        private final StreamflowMeasurement _streamflowMeasurement;
-        private final SupplementalStreamflowMeasurement _supplementalStreamflowMeasurement;
-        private final UsgsMeasurement _usgsMeasurement;
-        private final String _locationId;
-        private final String _officeId;
-        private final String _number;
-        private final Instant _instant;
+        private final boolean used;
+        private final String agency;
+        private final String party;
+        private final String wmComments;
+        private final StreamflowMeasurement streamflowMeasurement;
+        private final SupplementalStreamflowMeasurement supplementalStreamflowMeasurement;
+        private final UsgsMeasurement usgsMeasurement;
+        private final String locationId;
+        private final String officeId;
+        private final String number;
+        private final Instant instant;
 
         private MeasurementXmlDto(Builder builder) {
-            this._heightUnit = builder._heightUnit;
-            this._flowUnit = builder._flowUnit;
-            this._tempUnit = builder._tempUnit;
-            this._velocityUnit = builder._velocityUnit;
-            this._areaUnit = builder._areaUnit;
-            this._used = builder._used;
-            this._agency = builder._agency;
-            this._party = builder._party;
-            this._wmComments = builder._wmComments;
-            this._locationId = builder._locationId;
-            this._officeId = builder._officeId;
-            this._number = builder._number;
-            this._instant = builder._instant;
-            this._streamflowMeasurement = builder._streamflowMeasurement;
-            this._supplementalStreamflowMeasurement = builder._supplementalStreamflowMeasurement;
-            this._usgsMeasurement = builder._usgsMeasurement;
+            this.heightUnit = builder.heightUnit;
+            this.flowUnit = builder.flowUnit;
+            this.tempUnit = builder.tempUnit;
+            this.velocityUnit = builder.velocityUnit;
+            this.areaUnit = builder.areaUnit;
+            this.used = builder.used;
+            this.agency = builder.agency;
+            this.party = builder.party;
+            this.wmComments = builder.wmComments;
+            this.locationId = builder.locationId;
+            this.officeId = builder.officeId;
+            this.number = builder.number;
+            this.instant = builder.instant;
+            this.streamflowMeasurement = builder.streamflowMeasurement;
+            this.supplementalStreamflowMeasurement = builder.supplementalStreamflowMeasurement;
+            this.usgsMeasurement = builder.usgsMeasurement;
         }
 
         @JacksonXmlProperty(isAttribute = true)
         public String getHeightUnit() {
-            return _heightUnit;
+            return heightUnit;
         }
 
         @JacksonXmlProperty(isAttribute = true)
         public String getFlowUnit() {
-            return _flowUnit;
+            return flowUnit;
         }
 
         @JacksonXmlProperty(isAttribute = true)
         public String getTempUnit() {
-            return _tempUnit;
+            return tempUnit;
         }
 
         @JacksonXmlProperty(isAttribute = true)
         public String getVelocityUnit() {
-            return _velocityUnit;
+            return velocityUnit;
         }
 
         @JacksonXmlProperty(isAttribute = true)
         public String getAreaUnit() {
-            return _areaUnit;
+            return areaUnit;
         }
 
         @JacksonXmlProperty(isAttribute = true)
         public boolean isUsed() {
-            return _used;
+            return used;
         }
 
         @JacksonXmlProperty(isAttribute = true)
         public String getOfficeId() {
-            return _officeId;
+            return officeId;
         }
 
         public String getAgency() {
-            return _agency;
+            return agency;
         }
 
         public String getParty() {
-            return _party;
+            return party;
         }
 
         public String getWmComments() {
-            return _wmComments;
+            return wmComments;
         }
 
         @JsonProperty("location")
         public String getLocationId() {
-            return _locationId;
+            return locationId;
         }
 
         @JsonProperty("date")
         public Instant getInstant() {
-            return _instant;
+            return instant;
         }
 
         public String getNumber() {
-            return _number;
+            return number;
         }
 
         @JsonProperty("stream-flow-measurement")
         public StreamflowMeasurement getStreamflowMeasurement() {
-            return _streamflowMeasurement;
+            return streamflowMeasurement;
         }
 
         @JsonProperty("supplemental-stream-flow-measurement")
         public SupplementalStreamflowMeasurement getSupplementalStreamflowMeasurement() {
-            return _supplementalStreamflowMeasurement;
+            return supplementalStreamflowMeasurement;
         }
 
         public UsgsMeasurement getUsgsMeasurement() {
-            return _usgsMeasurement;
+            return usgsMeasurement;
         }
 
         @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
         static final class Builder {
-            private String _heightUnit;
-            private String _flowUnit;
-            private String _tempUnit;
-            private String _velocityUnit;
-            private String _areaUnit;
-            private boolean _used;
-            private String _agency;
-            private String _party;
-            private String _wmComments;
-            private StreamflowMeasurement _streamflowMeasurement;
-            private SupplementalStreamflowMeasurement _supplementalStreamflowMeasurement;
-            private UsgsMeasurement _usgsMeasurement;
-            private String _officeId;
-            private String _locationId;
-            private Instant _instant;
-            private String _number;
+            private String heightUnit;
+            private String flowUnit;
+            private String tempUnit;
+            private String velocityUnit;
+            private String areaUnit;
+            private boolean used;
+            private String agency;
+            private String party;
+            private String wmComments;
+            private StreamflowMeasurement streamflowMeasurement;
+            private SupplementalStreamflowMeasurement supplementalStreamflowMeasurement;
+            private UsgsMeasurement usgsMeasurement;
+            private String officeId;
+            private String locationId;
+            private Instant instant;
+            private String number;
 
-            private Builder withHeightUnit(String heightUnit) {
-                this._heightUnit = heightUnit;
+            Builder withHeightUnit(String heightUnit) {
+                this.heightUnit = heightUnit;
                 return this;
             }
 
-            private Builder withFlowUnit(String flowUnit) {
-                this._flowUnit = flowUnit;
+            Builder withFlowUnit(String flowUnit) {
+                this.flowUnit = flowUnit;
                 return this;
             }
 
-            private Builder withTempUnit(String tempUnit) {
-                this._tempUnit = tempUnit;
+            Builder withTempUnit(String tempUnit) {
+                this.tempUnit = tempUnit;
                 return this;
             }
 
-            private Builder withVelocityUnit(String velocityUnit) {
-                this._velocityUnit = velocityUnit;
+            Builder withVelocityUnit(String velocityUnit) {
+                this.velocityUnit = velocityUnit;
                 return this;
             }
 
-            private Builder withAreaUnit(String areaUnit) {
-                this._areaUnit = areaUnit;
+            Builder withAreaUnit(String areaUnit) {
+                this.areaUnit = areaUnit;
                 return this;
             }
 
-            private Builder withUsed(boolean used) {
-                this._used = used;
+            Builder withUsed(boolean used) {
+                this.used = used;
                 return this;
             }
 
-            private Builder withAgency(String agency) {
-                this._agency = agency;
+            Builder withAgency(String agency) {
+                this.agency = agency;
                 return this;
             }
 
-            private Builder withParty(String party) {
-                this._party = party;
+            Builder withParty(String party) {
+                this.party = party;
                 return this;
             }
 
-            private Builder withWmComments(String wmComments) {
-                this._wmComments = wmComments;
+            Builder withWmComments(String wmComments) {
+                this.wmComments = wmComments;
                 return this;
             }
 
             @JsonProperty("stream-flow-measurement")
-            private Builder withStreamflowMeasurement(StreamflowMeasurement streamflowMeasurement) {
-                this._streamflowMeasurement = streamflowMeasurement;
+            Builder withStreamflowMeasurement(StreamflowMeasurement streamflowMeasurement) {
+                this.streamflowMeasurement = streamflowMeasurement;
                 return this;
             }
 
             @JsonProperty("supplemental-stream-flow-measurement")
-            private Builder withSupplementalStreamflowMeasurement(SupplementalStreamflowMeasurement supplementalStreamflowMeasurement) {
-                this._supplementalStreamflowMeasurement = supplementalStreamflowMeasurement;
+            Builder withSupplementalStreamflowMeasurement(SupplementalStreamflowMeasurement supplementalStreamflowMeasurement) {
+                this.supplementalStreamflowMeasurement = supplementalStreamflowMeasurement;
                 return this;
             }
 
-            private Builder withUsgsMeasurement(UsgsMeasurement usgsMeasurement) {
-                this._usgsMeasurement = usgsMeasurement;
+            Builder withUsgsMeasurement(UsgsMeasurement usgsMeasurement) {
+                this.usgsMeasurement = usgsMeasurement;
                 return this;
             }
 
-            private Builder withOfficeId(String officeId) {
-                _officeId = officeId;
+            Builder withOfficeId(String officeId) {
+                this.officeId = officeId;
                 return this;
             }
 
             @JsonProperty("location")
-            private Builder withLocationId(String locationId) {
-                _locationId = locationId;
+            Builder withLocationId(String locationId) {
+                this.locationId = locationId;
                 return this;
             }
 
-            private Builder withNumber(String number) {
-                 _number = number;
+            Builder withNumber(String number) {
+                this.number = number;
                 return this;
             }
 
             @JsonProperty("date")
-            private Builder withInstant(Instant instant) {
-                _instant = instant;
+            Builder withInstant(Instant instant) {
+                this.instant = instant;
                 return this;
             }
 
-            private MeasurementXmlDto build() {
+            MeasurementXmlDto build() {
                 return new MeasurementXmlDto(this);
             }
         }
