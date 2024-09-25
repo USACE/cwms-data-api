@@ -366,6 +366,270 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
+    @Test
+    void testRetrieveMappingwithExtraParameters() throws SQLException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            String officeId = "SPK";
+            String locationName = "Glensboro";
+            try {
+                createLocation(locationName, true, officeId, "SITE");
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+            String versionId = "VERSION";
+            String[] parameterArray = {"Depth", "Pres", "Temp-Water"};
+            int[][] parameterStartEndArray = {{21, 23}, {25, 27}, {29, 31}};
+            String[] parameterUnitArray = {"m", "kPa", "F"};
+            List<String> unitList = new ArrayList<>();
+            unitList.add("m");
+            unitList.add("kPa");
+            unitList.add("F");
+            Instant versionDate = Instant.parse("2024-07-09T12:00:00.00Z");
+            Instant startTime = Instant.parse("2018-07-09T19:06:20.00Z");
+            Instant endTime = Instant.parse("2025-07-09T19:06:20.00Z");
+            String profileData;
+            InputStream resource = this.getClass()
+                    .getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeSeriesProfileDataColumnarMappingTest.txt");
+            assertNotNull(resource);
+            try {
+                profileData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            String timeZone = "UTC";
+            boolean startInclusive = true;
+            boolean endInclusive = true;
+            boolean previous = true;
+            boolean next = true;
+            boolean maxVersion = false;
+            char recordDelimiter = '\n';
+            int[] timeStartEnd = {1, 19};
+
+            String timeFormat = "MM/DD/YYYY,HH24:MI:SS";
+
+            DSLContext context = getDslContext(c, databaseLink.getOfficeId());
+
+            // store a time series profile
+            TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile(officeId, locationName, parameterArray[0], parameterArray[1], parameterArray[2]);
+            TimeSeriesProfileDao profileDao = new TimeSeriesProfileDao(context);
+            profileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
+
+            // store a time series parser
+            TimeSeriesProfileParserColumnar parser = buildTestTimeSeriesProfileParserColumnar(officeId, locationName, parameterArray, parameterStartEndArray, parameterUnitArray, recordDelimiter,
+                    timeFormat, timeZone, timeStartEnd);
+            TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
+            timeSeriesProfileParserDao.storeTimeSeriesProfileParser(parser, false);
+
+            // create a time series profile instance and test storeTimeSeriesProfileInstance
+            TimeSeriesProfileInstanceDao timeSeriesProfileInstanceDao = new TimeSeriesProfileInstanceDao(context);
+            String storeRule = StoreRule.REPLACE_ALL.toString();
+            timeSeriesProfileInstanceDao.storeTimeSeriesProfileInstance(timeSeriesProfile, profileData, versionDate, versionId, storeRule, false);
+
+            try {
+                // get total number of pages
+                TimeSeriesProfileInstance controlInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
+                        startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion,
+                        null, 1000);
+
+                int total = controlInstance.getTotal();
+
+                // retrieve the time series profile instance we just stored
+                TimeSeriesProfileInstance timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
+                        startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion, null, total / 2);
+
+                TimeSeriesProfileInstance timeSeriesProfileInstance1 = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
+                        startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion, timeSeriesProfileInstance.getNextPage(), total / 2);
+
+                // cleanup: delete the instance
+                profileDao.deleteTimeSeriesProfile(timeSeriesProfileInstance.getTimeSeriesProfile().getLocationId().getName(), timeSeriesProfileInstance.getTimeSeriesProfile().getKeyParameter(),
+                        timeSeriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId());
+
+                // check if the instance parameters are the same size as the timeseries parameters we stored
+                assertAll(
+                    () -> assertEquals(111.0, Math.round(timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).get(0).getValue())),
+                    () -> assertEquals(111.0, Math.round(timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).get(1).getValue())),
+                    () -> assertEquals(222.0, Math.round(timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).get(2).getValue())),
+                    () -> assertEquals(parameterArray.length, timeSeriesProfileInstance.getParameterColumns().size(),
+                            "First instance parameter count does not match"),
+                    () -> assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().size(),
+                            "Size of timeseries list does not match"),
+                    () -> assertEquals("Depth", timeSeriesProfileInstance.getParameterColumns().get(0).getParameter(),
+                            "First instance parameter does not match"),
+                    () -> assertEquals("m", timeSeriesProfileInstance.getParameterColumns().get(0).getUnit(),
+                            "First unit does not match"),
+                    () -> assertEquals("Pres", timeSeriesProfileInstance.getParameterColumns().get(1).getParameter(),
+                            "First instance count of parameters does not match"),
+                    () -> assertEquals("kPa", timeSeriesProfileInstance.getParameterColumns().get(1).getUnit(),
+                            "First instance units do not match"),
+                    () -> assertEquals("Temp-Water", timeSeriesProfileInstance.getParameterColumns().get(2).getParameter()),
+                    () -> assertEquals("F", timeSeriesProfileInstance.getParameterColumns().get(2).getUnit(),
+                            "First instance units do not match"),
+                    () -> assertThrows(IndexOutOfBoundsException.class, () -> timeSeriesProfileInstance.getParameterColumns().get(3),
+                            "Parameter column size too large"),
+                    () -> assertEquals(3, timeSeriesProfileInstance.getTimeSeriesList().get(1568033359000L).size(),
+                            "First instance timeseries list does not match in size"),
+                    () -> assertEquals(3, timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).size(),
+                            "Second instance timeseries list does not match in size"),
+                    () -> assertEquals(parameterArray.length, timeSeriesProfileInstance1.getParameterColumns().size(),
+                            "Second instance timeseries list does not match in size"),
+                    () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().size(),
+                            "Second instance timeseries list does not match in size"),
+                    () -> assertEquals("Pres", timeSeriesProfileInstance1.getParameterColumns().get(1).getParameter(),
+                            "Second instance count of parameters does not match"),
+                    () -> assertEquals("kPa", timeSeriesProfileInstance1.getParameterColumns().get(1).getUnit(),
+                            "Second instance units do not match"),
+                    () -> assertEquals("Depth", timeSeriesProfileInstance1.getParameterColumns().get(0).getParameter(),
+                            "First instance parameter does not match"),
+                    () -> assertEquals("m", timeSeriesProfileInstance1.getParameterColumns().get(0).getUnit(),
+                            "First unit does not match"),
+                    () -> assertThrows(IndexOutOfBoundsException.class, () -> timeSeriesProfileInstance1.getParameterColumns().get(3),
+                            "Second instance parameter column size too large"),
+                    () -> assertEquals(3, timeSeriesProfileInstance1.getTimeSeriesList().get(1568033359000L).size(),
+                            "Second instance timeseries list does not match in size"),
+                    () -> assertEquals(3, timeSeriesProfileInstance1.getTimeSeriesList().get(1568035040000L).size(),
+                            "Second instance timeseries list does not match in size"),
+                    () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().size(),
+                            "Second instance timeseries list does not match expected size.")
+                );
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }, CwmsDataApiSetupCallback.getWebUser());
+    }
+
+    @Test
+    void testRetrieveInstanceWithParametersOutOfOrder() throws SQLException {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            String officeId = "SPK";
+            String locationName = "Glensboro";
+            try {
+                createLocation(locationName, true, officeId, "SITE");
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+            String versionId = "VERSION";
+            String[] parameterArray = {"Depth", "Temp-Water", "Pres"};
+            int[][] parameterStartEndArray = {{21, 23}, {25, 27}, {29, 31}};
+            String[] parameterUnitArray = {"m", "F", "kPa"};
+            List<String> unitList = new ArrayList<>();
+            unitList.add("m");
+            unitList.add("F");
+            unitList.add("kPa");
+            Instant versionDate = Instant.parse("2024-07-09T12:00:00.00Z");
+            Instant startTime = Instant.parse("2018-07-09T19:06:20.00Z");
+            Instant endTime = Instant.parse("2025-07-09T19:06:20.00Z");
+            String profileData;
+            InputStream resource = this.getClass()
+                    .getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeSeriesProfileDataColumnarMappingTest.txt");
+            assertNotNull(resource);
+            try {
+                profileData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            String timeZone = "UTC";
+            boolean startInclusive = true;
+            boolean endInclusive = true;
+            boolean previous = true;
+            boolean next = true;
+            boolean maxVersion = false;
+            char recordDelimiter = '\n';
+            int[] timeStartEnd = {1, 19};
+
+            String timeFormat = "MM/DD/YYYY,HH24:MI:SS";
+
+            DSLContext context = getDslContext(c, databaseLink.getOfficeId());
+
+            // store a time series profile
+            TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile(officeId, locationName, parameterArray[0], parameterArray[1], parameterArray[2]);
+            TimeSeriesProfileDao profileDao = new TimeSeriesProfileDao(context);
+            profileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
+
+            // store a time series parser
+            TimeSeriesProfileParserColumnar parser = buildTestTimeSeriesProfileParserColumnar(officeId, locationName, parameterArray, parameterStartEndArray, parameterUnitArray, recordDelimiter,
+                    timeFormat, timeZone, timeStartEnd);
+            TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
+            timeSeriesProfileParserDao.storeTimeSeriesProfileParser(parser, false);
+
+            // create a time series profile instance and test storeTimeSeriesProfileInstance
+            TimeSeriesProfileInstanceDao timeSeriesProfileInstanceDao = new TimeSeriesProfileInstanceDao(context);
+            String storeRule = StoreRule.REPLACE_ALL.toString();
+            timeSeriesProfileInstanceDao.storeTimeSeriesProfileInstance(timeSeriesProfile, profileData, versionDate, versionId, storeRule, false);
+
+            try {
+                // get total number of pages
+                TimeSeriesProfileInstance controlInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
+                        startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion,
+                        null, 1000);
+
+                int total = controlInstance.getTotal();
+
+                // retrieve the time series profile instance we just stored
+                TimeSeriesProfileInstance timeSeriesProfileInstance = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
+                        startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion, null, total / 2);
+
+                TimeSeriesProfileInstance timeSeriesProfileInstance1 = retrieveTimeSeriesProfileInstance(officeId, locationName, parameterArray[0], versionId, unitList,
+                        startTime, endTime, timeZone, startInclusive, endInclusive, previous, next, versionDate, maxVersion, timeSeriesProfileInstance.getNextPage(), total / 2);
+
+                // cleanup: delete the instance
+                profileDao.deleteTimeSeriesProfile(timeSeriesProfileInstance.getTimeSeriesProfile().getLocationId().getName(), timeSeriesProfileInstance.getTimeSeriesProfile().getKeyParameter(),
+                        timeSeriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId());
+
+                // check if the instance parameters are the same size as the timeseries parameters we stored
+                assertAll(
+                    () -> assertEquals(111.0, Math.round(timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).get(0).getValue())),
+                    () -> assertEquals(111.0, Math.round(timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).get(2).getValue())),
+                    () -> assertEquals(222.0, Math.round(timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).get(1).getValue())),
+                    () -> assertEquals(parameterArray.length, timeSeriesProfileInstance.getParameterColumns().size(),
+                            "First instance parameter count does not match"),
+                    () -> assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().size(),
+                            "Size of timeseries list does not match"),
+                    () -> assertEquals("Depth", timeSeriesProfileInstance.getParameterColumns().get(0).getParameter(),
+                            "First instance parameter does not match"),
+                    () -> assertEquals("m", timeSeriesProfileInstance.getParameterColumns().get(0).getUnit(),
+                            "First unit does not match"),
+                    () -> assertEquals("Pres", timeSeriesProfileInstance.getParameterColumns().get(1).getParameter(),
+                            "First instance count of parameters does not match"),
+                    () -> assertEquals("kPa", timeSeriesProfileInstance.getParameterColumns().get(1).getUnit(),
+                            "First instance units do not match"),
+                    () -> assertEquals("Temp-Water", timeSeriesProfileInstance.getParameterColumns().get(2).getParameter()),
+                    () -> assertEquals("F", timeSeriesProfileInstance.getParameterColumns().get(2).getUnit(),
+                            "First instance units do not match"),
+                    () -> assertThrows(IndexOutOfBoundsException.class, () -> timeSeriesProfileInstance.getParameterColumns().get(3),
+                            "Parameter column size too large"),
+                    () -> assertEquals(3, timeSeriesProfileInstance.getTimeSeriesList().get(1568033359000L).size(),
+                            "First instance timeseries list does not match in size"),
+                    () -> assertEquals(3, timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).size(),
+                            "Second instance timeseries list does not match in size"),
+                    () -> assertEquals(parameterArray.length, timeSeriesProfileInstance1.getParameterColumns().size(),
+                            "Second instance timeseries list does not match in size"),
+                    () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().size(),
+                            "Second instance timeseries list does not match in size"),
+                    () -> assertEquals("Pres", timeSeriesProfileInstance1.getParameterColumns().get(1).getParameter(),
+                            "Second instance count of parameters does not match"),
+                    () -> assertEquals("kPa", timeSeriesProfileInstance1.getParameterColumns().get(1).getUnit(),
+                            "Second instance units do not match"),
+                    () -> assertEquals("Depth", timeSeriesProfileInstance1.getParameterColumns().get(0).getParameter(),
+                            "First instance parameter does not match"),
+                    () -> assertEquals("m", timeSeriesProfileInstance1.getParameterColumns().get(0).getUnit(),
+                            "First unit does not match"),
+                    () -> assertThrows(IndexOutOfBoundsException.class, () -> timeSeriesProfileInstance1.getParameterColumns().get(3),
+                            "Second instance parameter column size too large"),
+                    () -> assertEquals(3, timeSeriesProfileInstance1.getTimeSeriesList().get(1568033359000L).size(),
+                            "Second instance timeseries list does not match in size"),
+                    () -> assertEquals(3, timeSeriesProfileInstance1.getTimeSeriesList().get(1568035040000L).size(),
+                            "Second instance timeseries list does not match in size"),
+                    () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().size(),
+                            "Second instance timeseries list does not match expected size.")
+                );
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }, CwmsDataApiSetupCallback.getWebUser());
+    }
+
 
     @Test
     void testCatalogTimeSeriesProfileInstances() throws SQLException {
@@ -742,6 +1006,16 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                 .withTimeSeriesList(timeSeriesList)
                 .withVersion(version)
                 .withVersionDate(versionInstant)
+                .build();
+    }
+
+    private static TimeSeriesProfile buildTestTimeSeriesProfile(String officeId, String locationName, String keyParameter, String parameter1, String parameter2) {
+        CwmsId locationId = new CwmsId.Builder().withOfficeId(officeId).withName(locationName).build();
+        return new TimeSeriesProfile.Builder()
+                .withLocationId(locationId)
+                .withKeyParameter(keyParameter)
+                .withParameterList(Arrays.asList(keyParameter, parameter1, parameter2))
+                .withDescription("description")
                 .build();
     }
 

@@ -50,8 +50,6 @@ import io.restassured.filter.log.LogDetail;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -99,12 +97,10 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
     private String tsProfileDataColumnar2;
     private String tsProfileDataIndexed2;
     private String tspData;
-    private List<String> units = new ArrayList<>();
+    private final String units = "m,F";
 
     @BeforeEach
     public void setup() throws Exception {
-        units.add("m");
-        units.add("F");
         assertNotNull(resource);
         assertNotNull(resourceIndexed);
         assertNotNull(resourceInstance);

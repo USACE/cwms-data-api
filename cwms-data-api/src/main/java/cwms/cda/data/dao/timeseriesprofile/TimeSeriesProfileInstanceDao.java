@@ -439,8 +439,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		BigInteger keyParameterCode = null;
 		STR_TAB_T units = new STR_TAB_T(unit);
 		TS_PROF_DATA_TAB_T records = new TS_PROF_DATA_TAB_T();
-		Map<Timestamp, PVQ_TAB_T> timeValuePairMap = new TreeMap<>();
-		Map<Timestamp, Map<Double, String>> parameterTimeMap = new TreeMap<>();
+		Map<Timestamp, Map<String, PVQ_T>> timeValuePairMap = new TreeMap<>();
 		Map<String, String> unitParamMap = new TreeMap<>();
 
 		// boolean to keep track of data that is consistent across all records
@@ -460,33 +459,29 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 
 			// map the parameter, TVQ data
 			Timestamp dateTime = resultRecord.get("DATE_TIME", Timestamp.class);
-			if (timeValuePairMap.get(dateTime) != null) {
-				PVQ_TAB_T existingParameters = timeValuePairMap.get(dateTime);
-				existingParameters.add(new PVQ_T(keyParameterCode, resultRecord.get("VALUE", Double.class),
-						resultRecord.get("QUALITY_CODE", BigInteger.class)));
-				timeValuePairMap.put(dateTime, existingParameters);
-				Map<Double, String> existingParameterList = parameterTimeMap.get(dateTime);
-				existingParameterList.put(resultRecord.get("VALUE", Double.class),
-						resultRecord.get("PARAMETER_ID", String.class));
-				parameterTimeMap.put(dateTime, existingParameterList);
-
+			Map<String, PVQ_T> dataMap;
+			if (timeValuePairMap.get(dateTime) == null) {
+				dataMap = new TreeMap<>();
 			} else {
-				PVQ_TAB_T parameters = new PVQ_TAB_T(new PVQ_T(keyParameterCode,
-						resultRecord.get("VALUE", Double.class),
-						resultRecord.get("QUALITY_CODE", BigInteger.class)));
-				timeValuePairMap.put(dateTime, parameters);
-				Map<Double, String> parameterList = new TreeMap<>();
-				parameterList.put(resultRecord.get("VALUE", Double.class),
-						resultRecord.get("PARAMETER_ID", String.class));
-				parameterTimeMap.put(dateTime, parameterList);
+				dataMap = timeValuePairMap.get(dateTime);
 			}
+			dataMap.put(resultRecord.get("PARAMETER_ID", String.class), new PVQ_T(keyParameterCode,
+					resultRecord.get("VALUE", Double.class),
+					resultRecord.get("QUALITY_CODE", BigInteger.class)));
+			timeValuePairMap.put(dateTime, dataMap);
 		}
+
 		// map the value/quality data to the timestamp
 		int index = 0;
-		for (Map.Entry<Timestamp, PVQ_TAB_T> entry : timeValuePairMap.entrySet()) {
-			records.add(index, new TS_PROF_DATA_REC_T(entry.getKey(), entry.getValue()));
+		for (Map.Entry<Timestamp, Map<String, PVQ_T>> entry : timeValuePairMap.entrySet()) {
+			PVQ_TAB_T parameters = new PVQ_TAB_T();
+			for (Map.Entry<String, PVQ_T> value : entry.getValue().entrySet()) {
+				parameters.add(value.getValue());
+			}
+			records.add(index, new TS_PROF_DATA_REC_T(entry.getKey(), parameters));
 			index++;
 		}
+
 		timeSeriesProfileData = new TS_PROF_DATA_T(locationCode, keyParameterCode, timeZone, units, records);
 
 		if (minVersionDate != null) {
@@ -507,13 +502,13 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 		// adds page, nextpage data to the TimeSeriesProfileInstance
 		String previousParameter = null;
 		Timestamp previousCursor = Timestamp.from(startTime);
-		for (Map.Entry<Timestamp, PVQ_TAB_T> entry : timeValuePairMap.entrySet()) {
-			for (PVQ_T pvq : entry.getValue()) {
+		for (Map.Entry<Timestamp, Map<String, PVQ_T>> entry : timeValuePairMap.entrySet()) {
+			for (Map.Entry<String, PVQ_T> dataValue : entry.getValue().entrySet()) {
 				Timestamp dateTime = entry.getKey();
-				returnInstance.addValue(dateTime, pvq.getVALUE(), pvq.getQUALITY_CODE().intValue(),
+				returnInstance.addValue(dateTime, dataValue.getValue().getVALUE(), dataValue.getValue().getQUALITY_CODE().intValue(),
 						previousParameter, previousCursor);
 				previousCursor = dateTime;
-				previousParameter = parameterTimeMap.get(dateTime).get(pvq.getVALUE());
+				previousParameter = dataValue.getKey();
 			}
 		}
 
@@ -528,14 +523,14 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 						returnInstance.addNullValue(dateTime, i);
 						continue;
 					}
-					if (parameterTimeMap.get(dateTime).get(entry.getValue().get(i).getValue()) == null
-							|| !parameterTimeMap.get(dateTime).get(entry.getValue().get(i).getValue())
-							.equalsIgnoreCase(paramlist.get(i).getParameter())) {
+					if (timeValuePairMap.get(dateTime) == null
+							|| !timeValuePairMap.get(dateTime).containsKey(paramlist.get(i).getParameter())) {
 						returnInstance.addNullValue(dateTime, i);
 					}
 				}
 			}
 		}
+
 		return returnInstance;
 	}
 
