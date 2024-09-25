@@ -122,8 +122,8 @@ public final class MeasurementDao extends JooqDao<Measurement> {
                                    String agencies, String qualities) {
         connection(dsl, conn -> {
             setOffice(conn, officeId);
-            Timestamp minTimestamp = minDateMask == null ? null : Timestamp.from(maxDateMask);
-            Timestamp maxTimestamp = minDateMask == null ? null : Timestamp.from(maxDateMask);
+            Timestamp minTimestamp = OracleTypeMap.buildTimestamp(minDateMask == null ? null : Date.from(minDateMask));
+            Timestamp maxTimestamp = OracleTypeMap.buildTimestamp(maxDateMask == null ? null : Date.from(maxDateMask));
             TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
             String timeZoneId = timeZone.getID();
             CWMS_STREAM_PACKAGE.call_DELETE_STREAMFLOW_MEAS(DSL.using(conn).configuration(), locationId, unitSystem, minTimestamp, maxTimestamp,
