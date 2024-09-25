@@ -106,13 +106,15 @@ final class MeasurementDaoTestIT extends DataApiTestIT {
                 measurementDao.storeMeasurement(meas1B, false);
                 measurementDao.storeMeasurement(meas2, false);
 
-                List<Measurement> measurements = measurementDao.retrieveMeasurements(OFFICE_ID, streamLocId, null, null, UnitSystem.EN.getValue());
+                List<Measurement> measurements = measurementDao.retrieveMeasurements(OFFICE_ID, streamLocId, null, null, UnitSystem.EN.getValue(),
+                        null, null, null, null, null, null, null, null);
                 assertEquals(2, measurements.size());
 
                 DTOMatch.assertMatch(meas1, measurements.get(0));
                 DTOMatch.assertMatch(meas1B, measurements.get(1));
 
-                List<Measurement> measurementsAll = measurementDao.retrieveMeasurements(OFFICE_ID, null, null, null, UnitSystem.EN.getValue());
+                List<Measurement> measurementsAll = measurementDao.retrieveMeasurements(OFFICE_ID, null, null, null, UnitSystem.EN.getValue(),
+                        null, null, null, null, null, null, null, null);
                 List<Measurement> meas1List = measurementsAll.stream()
                         .filter(m -> m.getLocationId().equals(streamLocId))
                         .collect(Collectors.toList());
@@ -128,14 +130,14 @@ final class MeasurementDaoTestIT extends DataApiTestIT {
                 DTOMatch.assertMatch(meas2, meas2Found);
 
                 //delete measurements
-                measurementDao.deleteMeasurements(meas1.getId().getOfficeId(), meas1.getId().getName());
-                measurementDao.deleteMeasurements(meas2.getId().getOfficeId(), meas2.getId().getName());
+                measurementDao.deleteMeasurements(meas1.getId().getOfficeId(), meas1.getId().getName(), null, null, null, null, null, null, null, null, null, null, null);
+                measurementDao.deleteMeasurements(meas2.getId().getOfficeId(), meas2.getId().getName(), null, null, null, null, null, null, null, null, null, null, null);
 
                 List<Measurement> meas1PostDeleteList = measurementDao.retrieveMeasurements(meas1.getId().getOfficeId(), meas1.getId().getName(),
-                        null, null, UnitSystem.EN.getValue());
+                        null, null, UnitSystem.EN.getValue(), null, null, null, null, null, null, null, null);
                 assertTrue(meas1PostDeleteList.isEmpty());
                 List<Measurement> meas2PostDeleteList = measurementDao.retrieveMeasurements(meas2.getId().getOfficeId(), meas2.getId().getName(),
-                        null, null, UnitSystem.EN.getValue());
+                        null, null, UnitSystem.EN.getValue(), null, null, null, null, null, null, null, null);
                 assertTrue(meas2PostDeleteList.isEmpty());
             } finally {
                 //delete stream locations

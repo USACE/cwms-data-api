@@ -80,17 +80,11 @@ public final class MeasurementDao extends JooqDao<Measurement> {
      * @param unitSystem - the unit system to use for the returned data
      * @return a list of measurements
      */
-    public List<Measurement> retrieveMeasurements(String officeId, String locationId, Instant minDateMask, Instant maxDateMask, String unitSystem) {
+    public List<Measurement> retrieveMeasurements(String officeId, String locationId, Instant minDateMask, Instant maxDateMask, String unitSystem,
+                                                  Number minHeight, Number maxHeight, Number minFlow, Number maxFlow, String minNum, String maxNum,
+                                                  String agencies, String qualities) {
         return connectionResult(dsl, conn -> {
             setOffice(conn, officeId);
-            Number minHeight = null;
-            Number maxHeight = null;
-            Number minFlow = null;
-            Number maxFlow = null;
-            String minNum = null;
-            String maxNum = null;
-            String agencies = null;
-            String qualities = null;
             Timestamp minTimestamp = OracleTypeMap.buildTimestamp(minDateMask == null ? null : Date.from(minDateMask));
             Timestamp maxTimestamp = OracleTypeMap.buildTimestamp(maxDateMask == null ? null : Date.from(maxDateMask));
             TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
@@ -123,20 +117,13 @@ public final class MeasurementDao extends JooqDao<Measurement> {
      * @param officeId   - the office id
      * @param locationId - the location id of the measurement to delete
      */
-    public void deleteMeasurements(String officeId, String locationId) {
+    public void deleteMeasurements(String officeId, String locationId, Instant minDateMask, Instant maxDateMask, String unitSystem,
+                                   Number minHeight, Number maxHeight, Number minFlow, Number maxFlow, String minNum, String maxNum,
+                                   String agencies, String qualities) {
         connection(dsl, conn -> {
             setOffice(conn, officeId);
-            Number minHeight = null;
-            Number maxHeight = null;
-            Number minFlow = null;
-            Number maxFlow = null;
-            String minNum = null;
-            String maxNum = null;
-            String agencies = null;
-            String qualities = null;
-            Timestamp minTimestamp = null;
-            Timestamp maxTimestamp = null;
-            String unitSystem = null;
+            Timestamp minTimestamp = minDateMask == null ? null : Timestamp.from(maxDateMask);
+            Timestamp maxTimestamp = minDateMask == null ? null : Timestamp.from(maxDateMask);
             TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
             String timeZoneId = timeZone.getID();
             CWMS_STREAM_PACKAGE.call_DELETE_STREAMFLOW_MEAS(DSL.using(conn).configuration(), locationId, unitSystem, minTimestamp, maxTimestamp,

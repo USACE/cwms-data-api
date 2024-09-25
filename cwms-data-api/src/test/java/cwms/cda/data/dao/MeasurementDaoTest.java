@@ -23,6 +23,7 @@ import usace.cwms.db.jooq.codegen.udt.records.STREAMFLOW_MEAS2_T;
 import usace.cwms.db.jooq.codegen.udt.records.SUPP_STREAMFLOW_MEAS_T;
 
 final class MeasurementDaoTest {
+    private static final double DELTA = 0.0001;
     @Test
     void testFromJooqMeasurementRecord() {
         Instant instant = Instant.parse("2024-01-01T00:00:00Z");
@@ -70,37 +71,37 @@ final class MeasurementDaoTest {
         assertTrue(measurement.isUsed());
 
         //Assertions for Streamflow meas fields
-        assertEquals(100.0, measurement.getStreamflowMeasurement().getFlow());
-        assertEquals(2.0, measurement.getStreamflowMeasurement().getGageHeight());
+        assertEquals(100.0, measurement.getStreamflowMeasurement().getFlow(), DELTA);
+        assertEquals(2.0, measurement.getStreamflowMeasurement().getGageHeight(), DELTA);
         assertEquals("good", measurement.getStreamflowMeasurement().getQuality());
 
         // Assertions for UsgsMeasurement fields
-        assertEquals(25.0, measurement.getUsgsMeasurement().getAirTemp());
+        assertEquals(25.0, measurement.getUsgsMeasurement().getAirTemp(), DELTA);
         assertEquals("1", measurement.getUsgsMeasurement().getCurrentRating());
         assertEquals("UNSPECIFIED", measurement.getUsgsMeasurement().getControlCondition());
         assertEquals("UNKNOWN", measurement.getUsgsMeasurement().getFlowAdjustment());
-        assertEquals(0.5, measurement.getUsgsMeasurement().getDeltaHeight());
+        assertEquals(0.5, measurement.getUsgsMeasurement().getDeltaHeight(), DELTA);
         assertEquals(60.0, measurement.getUsgsMeasurement().getDeltaTime());
-        assertEquals(10.0, measurement.getUsgsMeasurement().getPercentDifference());
+        assertEquals(10.0, measurement.getUsgsMeasurement().getPercentDifference(), DELTA);
         assertEquals("Some remarks", measurement.getUsgsMeasurement().getRemarks());
-        assertEquals(11.0, measurement.getUsgsMeasurement().getShiftUsed());
-        assertEquals(15.0, measurement.getUsgsMeasurement().getWaterTemp());
+        assertEquals(11.0, measurement.getUsgsMeasurement().getShiftUsed(), DELTA);
+        assertEquals(15.0, measurement.getUsgsMeasurement().getWaterTemp(), DELTA);
 
         // Assertions for SupplementalStreamflowMeasurement fields
         assertNotNull(measurement.getSupplementalStreamflowMeasurement());
-        assertEquals(1.5, measurement.getSupplementalStreamflowMeasurement().getAvgVelocity());
-        assertEquals(100.0, measurement.getSupplementalStreamflowMeasurement().getChannelFlow());
-        assertEquals(3.0, measurement.getSupplementalStreamflowMeasurement().getMeanGage());
-        assertEquals(2.0, measurement.getSupplementalStreamflowMeasurement().getMaxVelocity());
-        assertEquals(50.0, measurement.getSupplementalStreamflowMeasurement().getOverbankFlow());
-        assertEquals(200.0, measurement.getSupplementalStreamflowMeasurement().getOverbankArea());
-        assertEquals(10.0, measurement.getSupplementalStreamflowMeasurement().getTopWidth());
-        assertEquals(1.0, measurement.getSupplementalStreamflowMeasurement().getSurfaceVelocity());
-        assertEquals(5.0, measurement.getSupplementalStreamflowMeasurement().getChannelMaxDepth());
-        assertEquals(150.0, measurement.getSupplementalStreamflowMeasurement().getMainChannelArea());
-        assertEquals(2.0, measurement.getSupplementalStreamflowMeasurement().getOverbankMaxDepth());
-        assertEquals(75.0, measurement.getSupplementalStreamflowMeasurement().getEffectiveFlowArea());
-        assertEquals(60.0, measurement.getSupplementalStreamflowMeasurement().getCrossSectionalArea());
+        assertEquals(1.5, measurement.getSupplementalStreamflowMeasurement().getAvgVelocity(), DELTA);
+        assertEquals(100.0, measurement.getSupplementalStreamflowMeasurement().getChannelFlow(), DELTA);
+        assertEquals(3.0, measurement.getSupplementalStreamflowMeasurement().getMeanGage(), DELTA);
+        assertEquals(2.0, measurement.getSupplementalStreamflowMeasurement().getMaxVelocity(), DELTA);
+        assertEquals(50.0, measurement.getSupplementalStreamflowMeasurement().getOverbankFlow(), DELTA);
+        assertEquals(200.0, measurement.getSupplementalStreamflowMeasurement().getOverbankArea(), DELTA);
+        assertEquals(10.0, measurement.getSupplementalStreamflowMeasurement().getTopWidth(), DELTA);
+        assertEquals(1.0, measurement.getSupplementalStreamflowMeasurement().getSurfaceVelocity(), DELTA);
+        assertEquals(5.0, measurement.getSupplementalStreamflowMeasurement().getChannelMaxDepth(), DELTA);
+        assertEquals(150.0, measurement.getSupplementalStreamflowMeasurement().getMainChannelArea(), DELTA);
+        assertEquals(2.0, measurement.getSupplementalStreamflowMeasurement().getOverbankMaxDepth(), DELTA);
+        assertEquals(75.0, measurement.getSupplementalStreamflowMeasurement().getEffectiveFlowArea(), DELTA);
+        assertEquals(60.0, measurement.getSupplementalStreamflowMeasurement().getCrossSectionalArea(), DELTA);
     }
 
     @Test
