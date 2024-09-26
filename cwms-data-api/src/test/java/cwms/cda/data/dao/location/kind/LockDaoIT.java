@@ -103,7 +103,7 @@ final class LockDaoIT extends ProjectStructureIT {
                 lockDao.storeLock(lock, false);
                 String lockId = lock.getLocation().getName();
                 String lockOfficeId = lock.getLocation().getOfficeId();
-                CwmsId cwmsId = CwmsId.create(lockOfficeId, lockId);
+                CwmsId cwmsId = CwmsId.buildCwmsId(lockOfficeId, lockId);
                 Lock retrievedLock = lockDao.retrieveLock(cwmsId);
                 DTOMatch.assertMatch(lock, retrievedLock);
                 lockDao.deleteLock(cwmsId, DeleteRule.DELETE_ALL);
@@ -126,7 +126,7 @@ final class LockDaoIT extends ProjectStructureIT {
                 lockDao.storeLock(lock2, false);
                 String lockId = lock2.getLocation().getName();
                 String lockOfficeId = lock2.getLocation().getOfficeId();
-                CwmsId projectId = CwmsId.create(lock1.getProjectId().getOfficeId(), lock1.getProjectId().getName());
+                CwmsId projectId = CwmsId.buildCwmsId(lock1.getProjectId().getOfficeId(), lock1.getProjectId().getName());
                 List<CwmsId> retrievedLock = lockDao.retrieveLockIds(projectId);
                 assertEquals(2, retrievedLock.size());
                 assertTrue(retrievedLock.stream()
@@ -135,7 +135,7 @@ final class LockDaoIT extends ProjectStructureIT {
                     .anyMatch(e -> e.getName().equalsIgnoreCase(lock2.getLocation().getName())));
                 assertFalse(retrievedLock.stream()
                     .anyMatch(e -> e.getName().equalsIgnoreCase(lock3.getLocation().getName())));
-                CwmsId cwmsId = CwmsId.create(lockOfficeId, lockId);
+                CwmsId cwmsId = CwmsId.buildCwmsId(lockOfficeId, lockId);
                 lockDao.deleteLock(cwmsId, DeleteRule.DELETE_ALL);
                 assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId));
             },
@@ -153,10 +153,10 @@ final class LockDaoIT extends ProjectStructureIT {
                 String originalId = lock.getLocation().getName();
                 String office = lock.getLocation().getOfficeId();
                 String newId = lock.getLocation().getName() + "New";
-                CwmsId cwmsId = CwmsId.create(office, originalId);
+                CwmsId cwmsId = CwmsId.buildCwmsId(office, originalId);
                 lockDao.renameLock(cwmsId, newId);
                 assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId));
-                CwmsId newCwmsId = CwmsId.create(office, newId);
+                CwmsId newCwmsId = CwmsId.buildCwmsId(office, newId);
                 Lock retrievedLock = lockDao.retrieveLock(newCwmsId);
                 assertEquals(newId, retrievedLock.getLocation().getName());
                 lockDao.deleteLock(newCwmsId, DeleteRule.DELETE_ALL);
