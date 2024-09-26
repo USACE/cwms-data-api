@@ -11,9 +11,9 @@ flogger = "0.7.4"
 google-findbugs = "3.0.2"
 error_prone_annotations = "2.15.0"
 cwms-ratings = "2.0.2"
-javalin = "4.6.7"
+javalin = "4.6.8"
 tomcat = "9.0.93"
-swagger-core = "2.2.2"
+swagger-core = "2.2.23"
 swagger-ui = "5.9.0"
 jackson = "2.17.1"
 geojson-jackson = "1.14"
@@ -34,6 +34,10 @@ hamcrest = "1.3"
 apache-commons-csv = "1.9.0"
 google-auto-service = "1.0-rc6"
 freemarker = "2.3.32"
+
+#Overrides
+classgraph = { strictly = '4.8.176' }
+swagger-parser = { strictly = '2.1.22' }
 
 [libraries]
 
@@ -117,6 +121,10 @@ tomcat-jdbc = { module = "org.apache.tomcat:tomcat-jdbc", version.ref = "tomcat"
 # webjars
 swagger-ui = { module ="org.webjars:swagger-ui", version.ref = "swagger-ui" }
 
+# Overrides
+io-github-classgraph = { module = "io.github.classgraph:classgraph", version.ref = "classgraph"}
+io-swagger-parser = { module = "io.swagger.parser.v3:swagger-parser", version.ref = "swagger-parser" }
+
 [bundles]
 junit = ["junit-jupiter-api", "junit-jupiter-params", "junit-jupiter-engine"]
 tomcat-embedded = [ "tomcat-embedded-core", "tomcat-embedded-jasper" ]
@@ -124,3 +132,4 @@ tomcat-support = [ "tomcat-juli", "tomcat-jdbc" ]
 testcontainers = [ "testcontainers-base", "testcontainers-database-commons", "testcontainers-jdbc", "testcontainers-junit-jupiter", "testcontainers-cwms"]
 metrics = ["metrics-core", "metrics-servlets", "metrics-prometheus-client", "metrics-prometheus-servlets" ]
 jackson = ["jackson-core", "jackson-dataformat-csv", "jackson-dataformat-xml", "jackson-datatype-jsr310" ]
+overrides = ["io-github.classgraph", "io-swagger-parser"]
