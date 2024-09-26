@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -43,11 +44,31 @@ public class Lock extends CwmsDTOBase {
     private final CwmsId projectId;
     @JsonProperty(required = true)
     private final Location location;
-    //TODO fill out the rest of the properties - subject to change based on https://jira.hecdev.net/browse/CTO-147
+    @JsonProperty(required = true)
+    private final LookupType chamberLocationDescription;
+    private final double lockWidth;
+    private final double lockLength;
+    private final double normalLockLift;
+    private final double volumePerLockage;
+    private final double minimumDraft;
+    private final CwmsId highWaterUpperPoolLocationLevel;
+    private final CwmsId lowWaterLowerPoolLocationLevel;
+    private final CwmsId highWaterLowerPoolLocationLevel;
+    private final CwmsId lowWaterUpperPoolLocationLevel;
 
     private Lock(Builder builder) {
         this.location = builder.location;
         this.projectId = builder.projectId;
+        this.chamberLocationDescription = builder.locationDescription;
+        this.lockWidth = builder.lockWidth;
+        this.lockLength = builder.lockLength;
+        this.normalLockLift = builder.normalLockLift;
+        this.volumePerLockage = builder.volumePerLockage;
+        this.minimumDraft = builder.minimumDraft;
+        this.highWaterUpperPoolLocationLevel = builder.highWaterUpperPoolLocationLevel;
+        this.lowWaterLowerPoolLocationLevel = builder.lowWaterLowerPoolLocationLevel;
+        this.highWaterLowerPoolLocationLevel = builder.highWaterLowerPoolLocationLevel;
+        this.lowWaterUpperPoolLocationLevel = builder.lowWaterUpperPoolLocationLevel;
     }
 
     public final CwmsId getProjectId() {
@@ -58,9 +79,59 @@ public class Lock extends CwmsDTOBase {
         return location;
     }
 
+    public final LookupType getChamberLocationDescription() {
+        return chamberLocationDescription;
+    }
+
+    public final double getLockWidth() {
+        return lockWidth;
+    }
+
+    public final double getLockLength() {
+        return lockLength;
+    }
+
+    public final double getNormalLockLift() {
+        return normalLockLift;
+    }
+
+    public final double getVolumePerLockage() {
+        return volumePerLockage;
+    }
+
+    public final double getMinimumDraft() {
+        return minimumDraft;
+    }
+
+    public final CwmsId getHighWaterUpperPoolLocationLevel() {
+        return highWaterUpperPoolLocationLevel;
+    }
+
+    public final CwmsId getLowWaterLowerPoolLocationLevel() {
+        return lowWaterLowerPoolLocationLevel;
+    }
+
+    public final CwmsId getHighWaterLowerPoolLocationLevel() {
+        return highWaterLowerPoolLocationLevel;
+    }
+
+    public final CwmsId getLowWaterUpperPoolLocationLevel() {
+        return lowWaterUpperPoolLocationLevel;
+    }
+
     public static final class Builder {
         private Location location;
         private CwmsId projectId;
+        private LookupType locationDescription;
+        private double lockWidth;
+        private double lockLength;
+        private double normalLockLift;
+        private double volumePerLockage;
+        private double minimumDraft;
+        private CwmsId highWaterUpperPoolLocationLevel;
+        private CwmsId lowWaterLowerPoolLocationLevel;
+        private CwmsId highWaterLowerPoolLocationLevel;
+        private CwmsId lowWaterUpperPoolLocationLevel;
 
         public Lock.Builder withLocation(Location location) {
             this.location = location;
@@ -69,6 +140,56 @@ public class Lock extends CwmsDTOBase {
 
         public Lock.Builder withProjectId(CwmsId projectId) {
             this.projectId = projectId;
+            return this;
+        }
+
+        public Lock.Builder withLocationDescription(LookupType locationDescription) {
+            this.locationDescription = locationDescription;
+            return this;
+        }
+
+        public Lock.Builder withLockWidth(double lockWidth) {
+            this.lockWidth = lockWidth;
+            return this;
+        }
+
+        public Lock.Builder withLockLength(double lockLength) {
+            this.lockLength = lockLength;
+            return this;
+        }
+
+        public Lock.Builder withNormalLockLift(double normalLockLift) {
+            this.normalLockLift = normalLockLift;
+            return this;
+        }
+
+        public Lock.Builder withVolumePerLockage(double volumePerLockage) {
+            this.volumePerLockage = volumePerLockage;
+            return this;
+        }
+
+        public Lock.Builder withMinimumDraft(double minimumDraft) {
+            this.minimumDraft = minimumDraft;
+            return this;
+        }
+
+        public Lock.Builder withHighWaterUpperPoolLocationLevel(CwmsId highWaterUpperPoolLocationLevel) {
+            this.highWaterUpperPoolLocationLevel = highWaterUpperPoolLocationLevel;
+            return this;
+        }
+
+        public Lock.Builder withLowWaterLowerPoolLocationLevel(CwmsId lowWaterLowerPoolLocationLevel) {
+            this.lowWaterLowerPoolLocationLevel = lowWaterLowerPoolLocationLevel;
+            return this;
+        }
+
+        public Lock.Builder withHighWaterLowerPoolLocationLevel(CwmsId highWaterLowerPoolLocationLevel) {
+            this.highWaterLowerPoolLocationLevel = highWaterLowerPoolLocationLevel;
+            return this;
+        }
+
+        public Lock.Builder withLowWaterUpperPoolLocationLevel(CwmsId lowWaterUpperPoolLocationLevel) {
+            this.lowWaterUpperPoolLocationLevel = lowWaterUpperPoolLocationLevel;
             return this;
         }
 

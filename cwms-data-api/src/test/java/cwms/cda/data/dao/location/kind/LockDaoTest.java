@@ -52,15 +52,15 @@ final class LockDaoTest {
         Field<String> officeField = DSL.field("DB_OFFICE_ID", String.class);
         Field<String> baseLocField = DSL.field("BASE_LOCATION_ID", String.class);
         Field<String> subLocField = DSL.field("SUB_LOCATION_ID", String.class);
-        Record3<String, String, String> record = DSL.using(SQLDialect.ORACLE18C)
+        Record3<String, String, String> lockRecord = DSL.using(SQLDialect.ORACLE18C)
             .newRecord(officeField,
                 baseLocField,
                 subLocField);
-        record.setValue(officeField, "SPK");
-        record.setValue(baseLocField, "BASE");
-        record.setValue(subLocField, "SUB");
-        CwmsId expected = CwmsId.create("SPK", "BASE-SUB");
-        CwmsId cwmsId = LockDao.map(record);
+        lockRecord.setValue(officeField, "SPK");
+        lockRecord.setValue(baseLocField, "BASE");
+        lockRecord.setValue(subLocField, "SUB");
+        CwmsId expected = CwmsId.buildCwmsId("SPK", "BASE-SUB");
+        CwmsId cwmsId = LockDao.map(lockRecord);
         DTOMatch.assertMatch(expected, cwmsId);
     }
 
@@ -71,7 +71,27 @@ final class LockDaoTest {
                 .withName("PROJECT")
                 .withOfficeId("LRD")
                 .build())
-            //TODO fill out the rest - subject to change based on https://jira.hecdev.net/browse/CTO-147
+                .withLockLength(100.0)
+                .withLockWidth(100.0)
+                .withNormalLockLift(10.0)
+                .withVolumePerLockage(100.0)
+                .withMinimumDraft(5.0)
+                .withHighWaterUpperPoolLocationLevel(new CwmsId.Builder()
+                    .withName("HIGH_WATER_UPPER")
+                    .withOfficeId("SPK")
+                    .build())
+                .withLowWaterLowerPoolLocationLevel(new CwmsId.Builder()
+                    .withName("LOW_WATER_LOWER")
+                    .withOfficeId("SPK")
+                    .build())
+                .withHighWaterLowerPoolLocationLevel(new CwmsId.Builder()
+                    .withName("HIGH_WATER_LOWER")
+                    .withOfficeId("SPK")
+                    .build())
+                .withLowWaterUpperPoolLocationLevel(new CwmsId.Builder()
+                    .withName("LOW_WATER_UPPER")
+                    .withOfficeId("SPK")
+                    .build())
             .build();
     }
 

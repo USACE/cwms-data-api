@@ -75,14 +75,18 @@ public final class LockDao extends JooqDao<Lock> {
         String officeId = r.getValue("DB_OFFICE_ID", String.class);
         String baseLocationId = r.getValue("BASE_LOCATION_ID", String.class);
         String subLocationId = r.getValue("SUB_LOCATION_ID", String.class);
-        return CwmsId.create(officeId, baseLocationId + "-" + subLocationId);
+        return CwmsId.buildCwmsId(officeId, baseLocationId + "-" + subLocationId);
     }
 
     static LOCK_OBJ_T map(Lock lock) {
         LOCK_OBJ_T retval = new LOCK_OBJ_T();
         retval.setLOCK_LOCATION(LocationUtil.getLocation(lock.getLocation()));
         retval.setPROJECT_LOCATION_REF(LocationUtil.getLocationRef(lock.getProjectId()));
-        //TODO fill out the rest - subject to change based on https://jira.hecdev.net/browse/CTO-147
+        retval.setLOCK_WIDTH(lock.getLockWidth());
+        retval.setLOCK_LENGTH(lock.getLockLength());
+        retval.setNORMAL_LOCK_LIFT(lock.getNormalLockLift());
+        retval.setVOLUME_PER_LOCKAGE(lock.getVolumePerLockage());
+        retval.setMINIMUM_DRAFT(lock.getMinimumDraft());
         return retval;
     }
 
@@ -90,7 +94,11 @@ public final class LockDao extends JooqDao<Lock> {
         return new Lock.Builder()
             .withLocation(LocationUtil.getLocation(lock.getLOCK_LOCATION()))
             .withProjectId(LocationUtil.getLocationIdentifier(lock.getPROJECT_LOCATION_REF()))
-            //TODO fill out the rest - subject to change based on https://jira.hecdev.net/browse/CTO-147
+            .withLockLength(lock.getLOCK_LENGTH())
+            .withLockWidth(lock.getLOCK_WIDTH())
+            .withNormalLockLift(lock.getNORMAL_LOCK_LIFT())
+            .withVolumePerLockage(lock.getVOLUME_PER_LOCKAGE())
+            .withMinimumDraft(lock.getMINIMUM_DRAFT())
             .build();
     }
 

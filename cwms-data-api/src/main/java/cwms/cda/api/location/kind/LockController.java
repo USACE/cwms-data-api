@@ -106,7 +106,7 @@ public final class LockController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = ctx.queryParam(OFFICE);
             String projectId = ctx.queryParam(PROJECT_ID);
-            CwmsId project = CwmsId.create(office, projectId);
+            CwmsId project = CwmsId.buildCwmsId(office, projectId);
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
             List<CwmsId> locks = dao.retrieveLockIds(project);
@@ -146,7 +146,7 @@ public final class LockController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
-            Lock lock = dao.retrieveLock(CwmsId.create(office, name));
+            Lock lock = dao.retrieveLock(CwmsId.buildCwmsId(office, name));
             String header = ctx.header(Header.ACCEPT);
             String formatHeader = header != null ? header : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, Lock.class);
@@ -215,7 +215,7 @@ public final class LockController implements CrudHandler {
             String newName = requiredParam(ctx, NAME);
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
-            dao.renameLock(CwmsId.create(office, name), newName);
+            dao.renameLock(CwmsId.buildCwmsId(office, name), newName);
             ctx.status(HttpServletResponse.SC_OK).json("Renamed Lock");
         }
     }
@@ -249,7 +249,7 @@ public final class LockController implements CrudHandler {
                 .getOrDefault(JooqDao.DeleteMethod.DELETE_KEY);
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
-            dao.deleteLock(CwmsId.create(office, name), deleteMethod.getRule());
+            dao.deleteLock(CwmsId.buildCwmsId(office, name), deleteMethod.getRule());
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json(name + " Deleted");
         }
     }
