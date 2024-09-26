@@ -51,7 +51,7 @@ jobs:
           java-package: jdk
       - name: Download all workflow run artifacts from build
         id: artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.8
         with:
           path: ./
       - name: get version
@@ -59,37 +59,15 @@ jobs:
         run: .github/workflows/get_version.sh
       - name: show version
         run: echo ${VERSION}
-      - name: tag repo
-        uses: actions/github-script@v3
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            github.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: "refs/tags/${{env.VERSION}}",
-              sha: context.sha
-            })
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2.0.8
         with:
+          files: warfile/${{ needs.build.outputs.thewar}}
           tag_name: ${{env.VERSION}}
-          release_name: Release ${{env.VERSION}}
-      - name: Upload Tomcat War
-        id: upload-war
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: warfile/${{ needs.build.outputs.thewar}}
-          asset_name: ${{ env.WAR_FILE_NAME}}
-          asset_content_type: application/x-webarchive
+          generate_release_notes: true
       - name: Login to Alt Registry
-        uses: docker/login-action@v2.0.0
+        uses: docker/login-action@v3.3.0
         id: login-alt
         with:
           registry: ${{ secrets.ALT_REGISTRY }}
