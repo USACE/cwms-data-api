@@ -21,8 +21,9 @@ jobs:
       - name: setup java
         uses: actions/setup-java@v4.4.0
         with:
+          distribution: 'temurin'
           java-version: '8'
-          java-package: jdk
+          cache: 'gradle'
       - name: build and test
         id: thebuild
         run: ./gradlew build --info --init-script init.gradle
@@ -47,8 +48,9 @@ jobs:
       - name: setup java
         uses: actions/setup-java@v4.4.0
         with:
+          distribution: 'temurin'
           java-version: '8'
-          java-package: jdk
+          cache: 'gradle'
       - name: Download all workflow run artifacts from build
         id: artifacts
         uses: actions/download-artifact@v4.1.8
