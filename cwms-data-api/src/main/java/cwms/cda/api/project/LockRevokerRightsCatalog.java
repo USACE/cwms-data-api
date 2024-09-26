@@ -49,6 +49,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -84,6 +86,9 @@ public class LockRevokerRightsCatalog implements Handler {
                         "Specifies the "
                                 + "application mask to be used to filter the lock revoker rights. "
                                 + "Defaults to '*'"),
+            },
+            security = {
+                @OpenApiSecurity(name = "gets overridden allows lock icon.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {

@@ -817,7 +817,7 @@ public class ApiServlet extends HttpServlet {
     private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
         /* clear the lock icon from the GET handlers to reduce user confusion */
         logger.atFinest().log("setting security constraints for " + key);
-        if (key.contains("/auth/")) {
+        if ((path.getGet() != null && path.getGet().getSecurity() != null)) {
             setSecurity(path.getGet(), secReqs);
         } else {
             setSecurity(path.getGet(), new ArrayList<>());
