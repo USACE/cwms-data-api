@@ -153,6 +153,9 @@ dependencies {
         transitive = false
     }
 
+
+    // override versions
+    implementation(libs.bundles.overrides)
 }
 
 task extractWebJars(type: Copy) {
