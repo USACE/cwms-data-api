@@ -579,7 +579,7 @@ public class ApiServlet extends HttpServlet {
         cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
                 new ProjectController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/properties/{%s}", Controllers.NAME),
-                new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
+                new PropertyController(metrics), true, requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
 
@@ -646,7 +646,28 @@ public class ApiServlet extends HttpServlet {
      */
     public static void cdaCrudCache(@NotNull String path, @NotNull CrudHandler crudHandler,
                                     @NotNull RouteRole[] roles, long duration, TimeUnit timeUnit) {
-        cdaCrud(path, crudHandler, roles);
+        cdaCrudCache(path, crudHandler, false, roles, duration, timeUnit);
+    }
+
+    /**
+     * This method delegates to the cdaCrud method but also adds an after filter for the specified
+     * path.  If the request was a GET request and the response does not already include
+     * Cache-Control then the filter will add the Cache-Control max-age header with the specified
+     * number of seconds.
+     * Controllers can include their own Cache-Control headers via:
+     *  "ctx.header(Header.CACHE_CONTROL, " public, max-age=" + 60);"
+     * This method lets the ApiServlet configure a default max-age for controllers that don't or
+     * forget to set their own.
+     * @param path where to register the routes.
+     * @param crudHandler the handler requests should be forwarded to.
+     * @param getRequriesAuth if the get handlers should have an authoriation check
+     * @param roles the required these roles are present to access post, patch
+     * @param duration the number of TimeUnit to cache GET responses.
+     * @param timeUnit the TimeUnit to use for duration.
+     */
+    public static void cdaCrudCache(@NotNull String path, @NotNull CrudHandler crudHandler, boolean getRequiresAuth,
+                                    @NotNull RouteRole[] roles, long duration, TimeUnit timeUnit) {
+        cdaCrud(path, crudHandler, getRequiresAuth, roles);
 
         // path like /offices/{office} will match /offices/SWT getOne style url
         addCacheControl(path, duration, timeUnit);
@@ -669,7 +690,6 @@ public class ApiServlet extends HttpServlet {
             });
         }
     }
-
     /**
      * This method is very similar to the ApiBuilder.crud method but the specified roles
      * are only required for the post, patch and delete methods.  getOne and getAll are always
@@ -681,23 +701,40 @@ public class ApiServlet extends HttpServlet {
      */
     public static void cdaCrud(@NotNull String path, @NotNull CrudHandler crudHandler,
                                  @NotNull RouteRole... roles) {
+        cdaCrud(path, crudHandler, false, roles);
+    }
+
+    /**
+     * This method is very similar to the ApiBuilder.crud method but the specified roles
+     * are only required for the post, patch and delete methods.  getOne and getAll are always
+     * allowed.
+     * @param path where to register the routes.
+     * @param crudHandler the handler requests should be forwarded to.
+     * @param getRequiresAuth If all operations on this handler should have an authorization check
+     * @param roles the accessmanager will require these roles are present to access post, patch
+     *             and delete methods
+     */
+    public static void cdaCrud(@NotNull String path, @NotNull CrudHandler crudHandler,  boolean getRequiresAuth,
+                                 @NotNull RouteRole... roles) {
         String fullPath = prefixPath(path);
         String resourceId = getResourceId(fullPath);
 
         //noinspection KotlinInternalInJava
-        Map<CrudFunction, Handler> crudFunctions =
-                CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);
+        Map<CrudFunction, Handler> crudFunctions = CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);
 
         Javalin instance = staticInstance();
         // getOne and getAll are assumed not to need authorization
-        instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
         String pathWithoutResource = fullPath.replace(resourceId, "");
-        instance.get(pathWithoutResource,
-                crudFunctions.get(CrudFunction.GET_ALL));
+        if (getRequiresAuth) {
+            instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE), roles);
+            instance.get(pathWithoutResource, crudFunctions.get(CrudFunction.GET_ALL), roles);
+        } else {
+            instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
+            instance.get(pathWithoutResource, crudFunctions.get(CrudFunction.GET_ALL));
+        }
 
         // create, update and delete need authorization.
-        instance.post(pathWithoutResource,
-                crudFunctions.get(CrudFunction.CREATE), roles);
+        instance.post(pathWithoutResource, crudFunctions.get(CrudFunction.CREATE), roles);
         instance.patch(fullPath, crudFunctions.get(CrudFunction.UPDATE), roles);
         instance.delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
     }
