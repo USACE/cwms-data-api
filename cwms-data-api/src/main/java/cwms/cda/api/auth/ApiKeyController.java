@@ -42,6 +42,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -120,6 +122,9 @@ public class ApiKeyController implements CrudHandler {
                     },
                     status = STATUS_201
         ),
+        security = {
+                @OpenApiSecurity(name = "gets overridden allows lock icon.")
+            },
         description = "View all keys for the current user",
         tags = {"Authorization"}
     )
@@ -145,6 +150,9 @@ public class ApiKeyController implements CrudHandler {
                     },
                     status = STATUS_201
         ),
+        security = {
+            @OpenApiSecurity(name = "gets overridden allows lock icon.")
+        },
         description = "View specific key",
         tags = {"Authorization"}
     )

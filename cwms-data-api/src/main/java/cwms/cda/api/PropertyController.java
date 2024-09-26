@@ -40,6 +40,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+
 import org.jooq.DSLContext;
 
 import javax.servlet.http.HttpServletResponse;
@@ -81,6 +83,9 @@ public final class PropertyController implements CrudHandler {
                         @OpenApiContent(isArray = true, type = Formats.JSON, from = Property.class)
                 })
             },
+            security = {
+                @OpenApiSecurity(name = "gets overridden allows lock icon.")
+            },
             description = "Returns matching CWMS Property Data.",
             tags = {TAG}
     )
@@ -121,6 +126,9 @@ public final class PropertyController implements CrudHandler {
                         content = {
                                 @OpenApiContent(type = Formats.JSON, from = Property.class)
                         })
+            },
+            security = {
+                @OpenApiSecurity(name = "gets overridden allows lock icon.")
             },
             description = "Returns CWMS Property Data",
             tags = {TAG}
