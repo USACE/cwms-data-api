@@ -446,14 +446,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Boolean cachedValue = isVersionedCache.getIfPresent(cacheKey);
         if (cachedValue == null) {
-            cachedValue = connectionResult(dsl, connection -> {
-                Configuration configuration = getDslContext(connection, office).configuration();
-                boolean isVersioned =
-                        parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(configuration,
-                                tsId, office));
-                isVersionedCache.put(cacheKey, isVersioned);
-                return isVersioned;
-            });
+            cachedValue = parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(dsl.configuration(), tsId, office));
+            isVersionedCache.put(cacheKey, cachedValue);
         }
         return cachedValue;
     }
