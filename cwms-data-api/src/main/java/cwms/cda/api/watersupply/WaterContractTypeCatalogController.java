@@ -44,6 +44,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -69,6 +71,9 @@ public final class WaterContractTypeCatalogController extends WaterSupplyControl
             @OpenApiResponse(status = "404", description = "The provided combination of parameters"
                     + " did not find any contracts."),
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
+        },
+        security = {
+            @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
         description = "Get all water contract types",
         path = "/projects/contracts/{office}/contract-types",

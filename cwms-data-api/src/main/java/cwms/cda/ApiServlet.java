@@ -609,16 +609,16 @@ public class ApiServlet extends HttpServlet {
 
 
     private void addWaterUserHandlers(String path, RouteRole[] requiredRoles) {
-        get(path + format("/{%s}", WATER_USER), new WaterUserController(metrics));
-        get(path, new WaterUserCatalogController(metrics));
+        get(path + format("/{%s}", WATER_USER), new WaterUserController(metrics), requiredRoles);
+        get(path, new WaterUserCatalogController(metrics), requiredRoles);
         post(path, new WaterUserCreateController(metrics), requiredRoles);
         patch(path + format("/{%s}", WATER_USER), new WaterUserUpdateController(metrics), requiredRoles);
         delete(path + format("/{%s}", WATER_USER), new WaterUserDeleteController(metrics), requiredRoles);
     }
 
     private void addWaterContractHandlers(String path, RouteRole[] requiredRoles) {
-        get(path + format("/{%s}", CONTRACT_NAME), new WaterContractController(metrics));
-        get(path, new WaterContractCatalogController(metrics));
+        get(path + format("/{%s}", CONTRACT_NAME), new WaterContractController(metrics), requiredRoles);
+        get(path, new WaterContractCatalogController(metrics), requiredRoles);
         post(path, new WaterContractCreateController(metrics), requiredRoles);
         patch(path + format("/{%s}", CONTRACT_NAME), new WaterContractUpdateController(metrics), requiredRoles);
         delete(path + format("/{%s}", CONTRACT_NAME), new WaterContractDeleteController(metrics), requiredRoles);
@@ -626,7 +626,7 @@ public class ApiServlet extends HttpServlet {
 
     private void addWaterContractTypeHandlers(String path, RouteRole[] requiredRoles) {
         post(path, new WaterContractTypeCreateController(metrics), requiredRoles);
-        get(path, new WaterContractTypeCatalogController(metrics));
+        get(path, new WaterContractTypeCatalogController(metrics), requiredRoles);
     }
 
     /**
