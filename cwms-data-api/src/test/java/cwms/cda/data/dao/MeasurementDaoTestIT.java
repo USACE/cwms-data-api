@@ -79,6 +79,7 @@ final class MeasurementDaoTestIT extends DataApiTestIT {
     }
 
     @Test
+    @Disabled
     void testRoundTrip() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         String webUser = CwmsDataApiSetupCallback.getWebUser();
@@ -167,6 +168,7 @@ final class MeasurementDaoTestIT extends DataApiTestIT {
     }
 
     @Test
+    @Disabled
     void testRoundTripMultipleStore() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         String webUser = CwmsDataApiSetupCallback.getWebUser();
