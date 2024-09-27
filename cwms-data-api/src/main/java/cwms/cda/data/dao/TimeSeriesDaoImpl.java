@@ -959,16 +959,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     @NotNull
     private RecentValue buildRecentValue(AV_TSV_DQU tsvView, Record jrecord, String tsColumnName) {
 
-        TsvDqu tsv = buildTsvDqu(tsvView, jrecord);
+        TsvDqu tsv = buildTsvDqu(tsvView, jrecord, tsColumnName);
         String tsId = jrecord.getValue(tsColumnName, String.class);
         return new RecentValue(tsId, tsv);
     }
 
     @NotNull
-    private TsvDqu buildTsvDqu(AV_TSV_DQU tsvView, Record jrecord) {
+    private TsvDqu buildTsvDqu(AV_TSV_DQU tsvView, Record jrecord, String tsColumnName) {
         return new TsvDqu.Builder()
                 .withOfficeId(jrecord.getValue(tsvView.OFFICE_ID))
-                .withCwmsTsId(jrecord.getValue(tsvView.CWMS_TS_ID))
+                .withCwmsTsId(jrecord.getValue(tsvView.CWMS_TS_ID.as(tsColumnName)))
                 .withUnitId(jrecord.getValue(tsvView.UNIT_ID))
                 .withDateTime(jrecord.getValue(tsvView.DATE_TIME))
                 .withVersionDate(jrecord.getValue(tsvView.VERSION_DATE))
