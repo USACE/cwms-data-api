@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 @Tag("integration")
 final class MeasurementDaoTestIT extends DataApiTestIT {
 
-    private static final String OFFICE_ID = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
+    private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
     private static final List<String> STREAM_LOC_IDS = new ArrayList<>();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
 
@@ -49,7 +49,7 @@ final class MeasurementDaoTestIT extends DataApiTestIT {
                 //ignore if already exists
             }
             try {
-                StreamLocationDaoTestIT.createAndStoreTestStream("TEST_STREAM_123");
+                StreamLocationDaoTestIT.createAndStoreTestStream("TEST_STREAM_123", OFFICE_ID);
             } catch (Exception e) {
                 //ignore if already exists
             }
@@ -88,9 +88,9 @@ final class MeasurementDaoTestIT extends DataApiTestIT {
             StreamLocationDao streamLocationDao = new StreamLocationDao(context);
             //build stream locations
             String streamLocId = STREAM_LOC_IDS.get(0);
-            StreamLocation streamLocation = StreamLocationDaoTestIT.buildTestStreamLocation("TEST_STREAM_123", streamLocId, 10.0, Bank.LEFT);
+            StreamLocation streamLocation = StreamLocationDaoTestIT.buildTestStreamLocation("TEST_STREAM_123", streamLocId, OFFICE_ID, 10.0, Bank.LEFT);
             String streamLocId2 = STREAM_LOC_IDS.get(1);
-            StreamLocation streamLocation2 = StreamLocationDaoTestIT.buildTestStreamLocation("TEST_STREAM_123", streamLocId2, 11.0, Bank.RIGHT);
+            StreamLocation streamLocation2 = StreamLocationDaoTestIT.buildTestStreamLocation("TEST_STREAM_123", streamLocId2, OFFICE_ID, 11.0, Bank.RIGHT);
 
             try {
                 //store stream locations
@@ -177,9 +177,9 @@ final class MeasurementDaoTestIT extends DataApiTestIT {
             StreamLocationDao streamLocationDao = new StreamLocationDao(context);
             //build stream locations
             String streamLocId = STREAM_LOC_IDS.get(0);
-            StreamLocation streamLocation = StreamLocationDaoTestIT.buildTestStreamLocation("TEST_STREAM_123", streamLocId, 10.0, Bank.LEFT);
+            StreamLocation streamLocation = StreamLocationDaoTestIT.buildTestStreamLocation("TEST_STREAM_123", streamLocId, OFFICE_ID,10.0, Bank.LEFT);
             String streamLocId2 = STREAM_LOC_IDS.get(1);
-            StreamLocation streamLocation2 = StreamLocationDaoTestIT.buildTestStreamLocation("TEST_STREAM_123", streamLocId2, 11.0, Bank.RIGHT);
+            StreamLocation streamLocation2 = StreamLocationDaoTestIT.buildTestStreamLocation("TEST_STREAM_123", streamLocId2, OFFICE_ID,11.0, Bank.RIGHT);
 
             try {
                 //store stream locations
