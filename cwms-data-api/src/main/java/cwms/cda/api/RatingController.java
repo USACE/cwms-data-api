@@ -25,32 +25,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.AT;
-import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DATE_FORMAT;
-import static cwms.cda.api.Controllers.DATUM;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.EXAMPLE_DATE;
-import static cwms.cda.api.Controllers.FORMAT;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.METHOD;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.RATING_ID;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.STORE_TEMPLATE;
-import static cwms.cda.api.Controllers.TIMEZONE;
-import static cwms.cda.api.Controllers.UNIT;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -95,6 +70,7 @@ import org.jooq.DSLContext;
 public class RatingController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingController.class.getName());
     private static final String TAG = "Ratings";
+    private static final String ENABLE = "enable";
 
     private final MetricRegistry metrics;
 
@@ -339,6 +315,14 @@ public class RatingController implements CrudHandler {
                         + "otherwise specified), as well as the time zone of any times in the"
                         + " response. If this field is not specified, the default time zone "
                         + "of UTC shall be used."),
+                @OpenApiParam(name = DATE, description = "Specifies the "
+                        + "date to find the closest match to for retrieving a specific rating curve. Uses a time window"
+                        + " of 24 hours before and after the specified date. The format for this field is ISO 8601 extended,"
+                        + " The enable flag must be set for this parameter to be used. If the date is not specified,"
+                        + " the rating curve closest the current time will be used."),
+                    @OpenApiParam(name = ENABLE, description = "Specifies whether the date parameter is enabled. " +
+                        "If this parameter is not set, the date parameter will not be used, even if a value is provided."
+                            + " Default is `false`."),
                 @OpenApiParam(name = METHOD, description = "Specifies "
                         + "the retrieval method used.  If no method is provided EAGER will be used.",
                         type = RatingSet.DatabaseLoadMethod.class),
@@ -356,6 +340,14 @@ public class RatingController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             String officeId = ctx.queryParam(OFFICE);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+            boolean enable = ctx.queryParamAsClass(ENABLE, Boolean.class).getOrDefault(false);
+            Instant date = null;
+            String specificDate = ctx.queryParam(DATE);
+            if (specificDate != null && enable) {
+                date = DateUtils.parseUserDate(specificDate, timezone).toInstant();
+            } else if (enable) {
+                date = Instant.now();
+            }
 
             Instant beginInstant = null;
             String begin = ctx.queryParam(BEGIN);
@@ -373,7 +365,7 @@ public class RatingController implements CrudHandler {
                     RatingSet.DatabaseLoadMethod.class)
                     .getOrDefault(RatingSet.DatabaseLoadMethod.EAGER);
 
-            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant);
+            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant, date);
             if (body != null) {
                 ctx.result(body);
                 ctx.status(HttpCode.OK);
@@ -385,7 +377,7 @@ public class RatingController implements CrudHandler {
     @Nullable
     private String getRatingSetString(Context ctx, RatingSet.DatabaseLoadMethod method,
                                       String officeId, String rating, Instant begin,
-                                      Instant end) {
+                                      Instant end, Instant date) {
         String retval = null;
 
         try (final Timer.Context ignored = markAndTime("getRatingSetString")) {
@@ -398,7 +390,7 @@ public class RatingController implements CrudHandler {
             if (isJson || isXml) {
                 ctx.contentType(contentType.toString());
                 try {
-                    RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end);
+                    RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end, date);
                     if (ratingSet != null) {
                         if (isJson) {
                             retval = JsonRatingUtils.toJson(ratingSet);
@@ -437,13 +429,13 @@ public class RatingController implements CrudHandler {
 
     private RatingSet getRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
                                    String officeId, String rating, Instant begin,
-                                   Instant end) throws IOException, RatingException {
+                                   Instant end, Instant date) throws IOException, RatingException {
         RatingSet ratingSet;
         try (final Timer.Context ignored = markAndTime("getRatingSet")) {
             DSLContext dsl = getDslContext(ctx);
 
             RatingDao ratingDao = getRatingDao(dsl);
-            ratingSet = ratingDao.retrieve(method, officeId, rating, begin, end);
+            ratingSet = ratingDao.retrieve(method, officeId, rating, begin, end, date);
         }
 
         return ratingSet;

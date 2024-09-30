@@ -32,8 +32,10 @@ import hec.data.cwmsRating.RatingSet;
 import mil.army.usace.hec.cwms.rating.io.jdbc.ConnectionProvider;
 import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
 import org.jooq.DSLContext;
+import org.jooq.Result;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.AV_RATING_LOCAL;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -85,8 +87,9 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
     @Override
     public RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId,
-                              String specificationId, Instant startZdt, Instant endZdt
+                              String specificationId, Instant startZdt, Instant endZdt, Instant date
     ) throws IOException, RatingException {
+        AV_RATING_LOCAL view = AV_RATING_LOCAL.AV_RATING_LOCAL;
 
         final RatingSet[] retval = new RatingSet[1];
         try {
@@ -110,9 +113,39 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
             RatingSet.DatabaseLoadMethod finalMethod = method;
 
-            connection(dsl, c -> retval[0] =
-                    RatingJdbcFactory.ratingSet(finalMethod, new RatingConnectionProvider(c), officeId,
-                        specificationId, start, end, false));
+            if (date != null) {
+
+                String ratingId = null;
+                Long difference = null;
+                Instant startInstant = null;
+                Result<?> results = connectionResult(dsl, c ->
+                    dsl.select(view.RATING_ID, view.EFFECTIVE_DATE, view.RATING_CODE).from(view)
+                            .where(view.OFFICE_ID.eq(officeId)
+                                    .and(view.RATING_ID.eq(specificationId))
+                            ).fetch()
+                );
+                for (int i = 0; i < results.size(); i++) {
+                    Timestamp effectiveDate = results.getValue(i, view.EFFECTIVE_DATE);
+                    if (difference == null || effectiveDate.toInstant().toEpochMilli() - date.toEpochMilli() < difference) {
+                        difference = effectiveDate.toInstant().toEpochMilli() - date.toEpochMilli();
+                        ratingId = results.getValue(i, view.RATING_ID);
+                        startInstant = effectiveDate.toInstant();
+                    }
+                }
+                if (ratingId == null) {
+                    return null;
+                }
+                final Instant finalStartInstant = startInstant;
+                final String ratingIdFinal = ratingId;
+                connection(dsl, c -> retval[0] =
+                        RatingJdbcFactory.ratingSet(finalMethod, new RatingConnectionProvider(c), officeId,
+                                ratingIdFinal, finalStartInstant.toEpochMilli(),
+                                null, false));
+            } else {
+                connection(dsl, c -> retval[0] =
+                        RatingJdbcFactory.ratingSet(finalMethod, new RatingConnectionProvider(c), officeId,
+                                specificationId, start, end, false));
+            }
 
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();

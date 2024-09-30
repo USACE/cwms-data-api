@@ -22,16 +22,12 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import javax.servlet.http.HttpServletResponse;
 
-import java.util.Arrays;
-
-import static cwms.cda.api.Controllers.FORMAT;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.STORE_TEMPLATE;
+import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
-public class RatingsControllerTestIT extends DataApiTestIT
+class RatingsControllerTestIT extends DataApiTestIT
 {
 	private static final String EXISTING_LOC = "RatingsControllerTestIT";
 	private static final String EXISTING_SPEC = EXISTING_LOC + ".Stage;Flow.COE.Production";
@@ -155,6 +151,41 @@ public class RatingsControllerTestIT extends DataApiTestIT
 			.get("/ratings/" + EXISTING_SPEC)
 		.then()
 			.assertThat()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.statusCode(is(HttpServletResponse.SC_OK))
+			.contentType(is(test._expectedContentType));
+	}
+
+	@ParameterizedTest
+	@EnumSource(GetOneTest.class)
+	void test_get_one_match_date(GetOneTest test) {
+		given()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.accept(test._accept)
+			.queryParam(OFFICE, SPK)
+			.queryParam(DATE, "2021-01-01T00:00:00Z")
+			.queryParam("enable", true)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("/ratings/" + EXISTING_SPEC)
+		.then()
+		.assertThat()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.statusCode(is(HttpServletResponse.SC_OK))
+			.contentType(is(test._expectedContentType));
+
+		given()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.accept(test._accept)
+			.queryParam(OFFICE, SPK)
+			.queryParam("enable", true)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("/ratings/" + EXISTING_SPEC)
+		.then()
+		.assertThat()
 			.log().ifValidationFails(LogDetail.ALL,true)
 			.statusCode(is(HttpServletResponse.SC_OK))
 			.contentType(is(test._expectedContentType));
