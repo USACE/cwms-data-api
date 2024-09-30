@@ -35,6 +35,7 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import org.jooq.DSLContext;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -44,6 +45,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -59,6 +61,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class LevelsControllerTestIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
+    private final List<LocationLevel> levelList = new ArrayList<>();
+
+    @AfterEach
+    void cleanup() throws Exception {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            for (LocationLevel level : levelList) {
+                dao.deleteLocationLevel(level.getLocationLevelId(), level.getLevelDate(), level.getOfficeId(), false);
+            }
+        });
+    }
 
     @Test
     void test_location_level() throws Exception {
@@ -70,11 +84,12 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .withConstantValue(1.0)
                 .withLevelUnitsId("ac-ft")
                 .build();
-            CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-                DSLContext dsl = dslContext(c, OFFICE);
-                LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
-                dao.storeLocationLevel(level);
-            });
+        levelList.add(level);
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level);
+        });
 
         //Read level without unit
         given()
@@ -116,7 +131,110 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .body("constant-value",equalTo(1.0F));
     }
 
+    @Test
+    void test_retrieve_time_window() throws Exception {
+        createLocation("level_get_all_loc_1", true, OFFICE);
+        String levelId = "level_get_all_loc_1.Flow.Ave.1Day.Regulating";
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            LocationLevel level = new LocationLevel.Builder(levelId, time)
+                    .withOfficeId(OFFICE)
+                    .withConstantValue(1.0)
+                    .withLevelUnitsId("cms")
+                    .build();
+            levelList.add(level);
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level);
+        });
 
+        String locId2 = "level_get_all_loc_2";
+        String levelId2 = locId2 + ".Stor.Ave.1Day.Regulating";
+        createLocation(locId2, true, OFFICE);
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+
+            LocationLevel level = new LocationLevel.Builder(levelId2, time)
+                    .withOfficeId(OFFICE)
+                    .withConstantValue(2.0)
+                    .withLevelUnitsId("ac-ft")
+                    .build();
+            levelList.add(level);
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level);
+        });
+
+        //Read level with begin
+        ExtractableResponse<Response> response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LEVEL_ID_MASK, "level_get_all_loc_*")
+            .queryParam(BEGIN, "2020-06-01T00:00:00Z")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
+
+        assertThat(response.path("levels.size()"),is(2));
+        assertEquals(OFFICE, response.path("levels[0].office-id"));
+        assertEquals(levelId, response.path("levels[0].location-level-id"));
+        assertEquals("Regulating", response.path("levels[0].specified-level-id"));
+        assertEquals("Ave", response.path("levels[0].parameter-type-id"));
+        assertEquals("Flow", response.path("levels[0].parameter-id"));
+        assertEquals("cms", response.path("levels[0].level-units-id"));
+        assertEquals("2023-06-01T07:00:00Z", response.path("levels[0].level-date"));
+        assertEquals("1Day", response.path("levels[0].duration-id"));
+        assertEquals(OFFICE, response.path("levels[1].office-id"));
+        assertEquals(levelId2, response.path("levels[1].location-level-id"));
+        assertEquals("Regulating", response.path("levels[1].specified-level-id"));
+        assertEquals("Ave", response.path("levels[1].parameter-type-id"));
+        assertEquals("Stor", response.path("levels[1].parameter-id"));
+        assertEquals("m3", response.path("levels[1].level-units-id"));
+        assertEquals("2023-06-01T07:00:00Z", response.path("levels[1].level-date"));
+        assertEquals("1Day", response.path("levels[1].duration-id"));
+
+        //Read level without begin and end
+        response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LEVEL_ID_MASK, "level_get_all_loc_*")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
+
+        assertThat(response.path("levels.size()"),is(2));
+        assertEquals(OFFICE, response.path("levels[0].office-id"));
+        assertEquals(levelId, response.path("levels[0].location-level-id"));
+        assertEquals("Regulating", response.path("levels[0].specified-level-id"));
+        assertEquals("Ave", response.path("levels[0].parameter-type-id"));
+        assertEquals("Flow", response.path("levels[0].parameter-id"));
+        assertEquals("cms", response.path("levels[0].level-units-id"));
+        assertEquals("2023-06-01T07:00:00Z", response.path("levels[0].level-date"));
+        assertEquals("1Day", response.path("levels[0].duration-id"));
+        assertEquals(OFFICE, response.path("levels[1].office-id"));
+        assertEquals(levelId2, response.path("levels[1].location-level-id"));
+        assertEquals("Regulating", response.path("levels[1].specified-level-id"));
+        assertEquals("Ave", response.path("levels[1].parameter-type-id"));
+        assertEquals("Stor", response.path("levels[1].parameter-id"));
+        assertEquals("m3", response.path("levels[1].level-units-id"));
+        assertEquals("2023-06-01T07:00:00Z", response.path("levels[1].level-date"));
+        assertEquals("1Day", response.path("levels[1].duration-id"));
+    }
 
     @Test
     void test_level_as_timeseries() throws Exception {
@@ -132,6 +250,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                     .withConstantValue((double) i)
                     .withLevelUnitsId("cfs")
                     .build();
+            levelList.add(level);
             levels.put(level.getLevelDate().toInstant(), level);
             CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
                 DSLContext dsl = dslContext(c, OFFICE);
@@ -147,7 +266,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
-                .queryParam("office", OFFICE)
+                .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(BEGIN, time.toInstant().toString())
                 .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
                 .queryParam(INTERVAL, "1Hour")
@@ -194,6 +313,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                     .withConstantValue(1.0)
                     .withLevelUnitsId("ac-ft")
                     .build();
+            levelList.add(level);
             DSLContext dsl = dslContext(c, OFFICE);
             LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
             dao.storeLocationLevel(level);
@@ -209,6 +329,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                     .withConstantValue(2.0)
                     .withLevelUnitsId("ac-ft")
                     .build();
+            levelList.add(level);
             DSLContext dsl = dslContext(c, OFFICE);
             LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
             dao.storeLocationLevel(level);
@@ -224,7 +345,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
-                .queryParam("office", OFFICE)
+                .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(LEVEL_ID_MASK, "level_get_all.*")
                 .queryParam(BEGIN, startStr)
                 .queryParam(END, endStr)
@@ -266,7 +387,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
-                .queryParam("office", OFFICE)
+                .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(UNIT, "SI")
                 .queryParam(LEVEL_ID_MASK, "level_get_all.*")
                 .queryParam(BEGIN, startStr)
@@ -308,7 +429,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
-                .queryParam("office", OFFICE)
+                .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(UNIT, "EN")
                 .queryParam(LEVEL_ID_MASK, "level_get_all.*")
                 .queryParam(BEGIN, startStr)
@@ -347,12 +468,12 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @EnumSource(GetAllTestNewAliases.class)
-    void test_get_all_aliases_new(GetAllTestNewAliases test) throws Exception
+    void test_get_all_aliases_new(GetAllTestNewAliases test)
     {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(test._accept)
-                .queryParam("office", OFFICE)
+                .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(LEVEL_ID_MASK, "level_get_all.*")
             .when()
                 .redirects().follow(true)
@@ -367,12 +488,12 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @EnumSource(GetAllTestLegacy.class)
-    void test_get_all_aliases_legacy(GetAllTestLegacy test) throws Exception
+    void test_get_all_aliases_legacy(GetAllTestLegacy test)
     {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(FORMAT, test._format)
-            .queryParam("office", OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(LEVEL_ID_MASK, "level_get_all.*")
         .when()
             .redirects()

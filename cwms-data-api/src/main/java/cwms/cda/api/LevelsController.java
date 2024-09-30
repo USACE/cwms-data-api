@@ -67,7 +67,6 @@ import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.LocationLevelsDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.LocationLevel;
@@ -220,8 +219,8 @@ public class LevelsController implements CrudHandler {
                         + "specified or default units above the NGVD-29 datum."),
                 @OpenApiParam(name = BEGIN, description = "Specifies the start of the time "
                         + "window for data to be included in the response. If this field is "
-                        + "not specified, any required time window begins 24 hours prior to "
-                        + "the specified or default end time."),
+                        + "not specified, any required time window begins 1/1/1900 at "
+                        + "the specified or default timezone."),
                 @OpenApiParam(name = END, description = "Specifies the end of the time "
                         + "window for data to be included in the response. If this field is "
                         + "not specified, any required time window ends at the current time"),
@@ -295,7 +294,7 @@ public class LevelsController implements CrudHandler {
                 if (begin != null) {
                     beginZdt = DateUtils.parseUserDate(begin, timezone);
                 } else {
-                    beginZdt = endZdt.minusHours(24);
+                    beginZdt = ZonedDateTime.of(1900, 1, 1, 0, 0, 0, 0, tz);
                 }
 
                 LocationLevels levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
