@@ -492,7 +492,7 @@ public class ApiServlet extends HttpServlet {
 
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",
+        cdaCrudCache("/timeseries/identifier-descriptor/{name}",
                 new TimeSeriesIdentifierDescriptorController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/group/{group-id}",
                 new TimeSeriesGroupController(metrics), requiredRoles,5, TimeUnit.MINUTES);
