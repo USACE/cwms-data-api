@@ -67,22 +67,22 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
                 //ignore if already exists
             }
             try {
-                createAndStoreTestStream("TEST_STREAM_123");
+                createAndStoreTestStream("TEST_STREAM_123", OFFICE_ID);
             } catch (Exception e) {
                 //ignore if already exists
             }
         }
     }
 
-    private static void createAndStoreTestStream(String testLoc) throws SQLException {
-        createLocation(testLoc, true, OFFICE_ID, "STREAM");
+    static void createAndStoreTestStream(String testLoc, String officeId) throws SQLException {
+        createLocation(testLoc, true, officeId, "STREAM");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         String webUser = CwmsDataApiSetupCallback.getWebUser();
         db.connection(c-> {
-            StreamDao streamDao = new StreamDao(getDslContext(c, OFFICE_ID));
+            StreamDao streamDao = new StreamDao(getDslContext(c, officeId));
             Stream streamToStore = new Stream.Builder()
                     .withId(new CwmsId.Builder()
-                            .withOfficeId(OFFICE_ID)
+                            .withOfficeId(officeId)
                             .withName(testLoc)
                             .build())
                     .withLength(100.0)
@@ -126,9 +126,9 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
             StreamLocationDao streamLocationDao = new StreamLocationDao(context);
             //build stream locations
             String streamLocId = STREAM_LOC_IDS.get(0);
-            StreamLocation streamLocation = buildTestStreamLocation("TEST_STREAM_123", streamLocId, 10.0, Bank.LEFT);
+            StreamLocation streamLocation = buildTestStreamLocation("TEST_STREAM_123", streamLocId, OFFICE_ID, 10.0, Bank.LEFT);
             String streamLocId2 = STREAM_LOC_IDS.get(1);
-            StreamLocation streamLocation2 = buildTestStreamLocation("TEST_STREAM_123", streamLocId2, 11.0, Bank.RIGHT);
+            StreamLocation streamLocation2 = buildTestStreamLocation("TEST_STREAM_123", streamLocId2, OFFICE_ID, 11.0, Bank.RIGHT);
 
             //store stream locations
             streamLocationDao.storeStreamLocation(streamLocation, false);
@@ -245,16 +245,16 @@ final class StreamLocationDaoTestIT extends DataApiTestIT {
         }, webUser);
     }
 
-    private static StreamLocation buildTestStreamLocation(String streamId, String locationId, double station, Bank bank) {
+    static StreamLocation buildTestStreamLocation(String streamId, String locationId, String officeId, double station, Bank bank) {
         StreamLocationNode streamLocationNode = new StreamLocationNode.Builder()
                 .withId(new CwmsId.Builder()
                         .withName(locationId)
-                        .withOfficeId(OFFICE_ID)
+                        .withOfficeId(officeId)
                         .build())
                 .withStreamNode(new StreamNode.Builder()
                         .withStreamId(new CwmsId.Builder()
                                 .withName(streamId)
-                                .withOfficeId(OFFICE_ID)
+                                .withOfficeId(officeId)
                                 .build())
                         .withStation(station)
                         .withBank(bank)
