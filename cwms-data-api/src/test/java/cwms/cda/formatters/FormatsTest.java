@@ -145,6 +145,15 @@ class FormatsTest {
 
     }
 
+    
+    @ParameterizedTest
+    @EnumSource(ParseQueryOrParamTest.class)
+    void test_header_or_query_parm(ParseQueryOrParamTest test) throws Exception {
+        ContentType ct = Formats.parseQueryOrHeaderParam(test.header, test.query, test.dto);
+        System.out.println(ct.toString());
+        assertTrue(ContentType.equivalent(ct.toString(), test.type), "In correct content type returned.");
+    }
+
     @EnumSource(ParseQueryParamTest.class)
     @ParameterizedTest
     void testParseQueryParam(ParseQueryParamTest test) {
@@ -250,4 +259,27 @@ class FormatsTest {
         }
     }
 
+
+    enum ParseQueryOrParamTest {
+        BOTH(Formats.XML, Formats.CSV_LEGACY, Office.class, Formats.CSV),
+        HEADER(Formats.JSON, null, Office.class, Formats.JSONV2),
+        QUERY(null, Formats.TAB_LEGACY, Office.class, Formats.TAB)
+        ;
+
+        final String header;
+        final String query;
+        final Class<? extends CwmsDTOBase> dto;
+        final String type;
+        
+
+        ParseQueryOrParamTest(String header, String query, Class<? extends CwmsDTOBase> dto, String type)
+        {
+            this.header = header;
+            this.query = query;
+            this.dto = dto;
+            this.type = type;
+        }
+        
+
+    }
 }
