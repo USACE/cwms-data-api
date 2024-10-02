@@ -89,6 +89,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -294,7 +295,8 @@ public class LevelsController implements CrudHandler {
                 if (begin != null) {
                     beginZdt = DateUtils.parseUserDate(begin, timezone);
                 } else {
-                    beginZdt = ZonedDateTime.of(1900, 1, 1, 0, 0, 0, 0, tz);
+                    // uses earliest supported time in CWMS
+                    beginZdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(-999999999L), tz);
                 }
 
                 LocationLevels levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
