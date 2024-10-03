@@ -19,7 +19,7 @@ updates:
     schedule:
       interval: "weekly"
     groups:
-      alldependencies:
+      github-action-dependencies:
         patterns:
           - "*"
         update-types:
