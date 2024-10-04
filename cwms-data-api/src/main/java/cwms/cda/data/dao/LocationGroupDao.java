@@ -478,15 +478,15 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @param group The location group to create.
      */
     public void create(LocationGroup group) {
-        String office = group.getOfficeId();
+        String office =  group.getOfficeId();
         String categoryId = group.getLocationCategory().getId();
 
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
             CWMS_LOC_PACKAGE.call_CREATE_LOC_GROUP2(dslContext.configuration(), categoryId,
-                    group.getId(), group.getDescription(), office, group.getSharedLocAliasId(),
+                    group.getId(), group.getDescription(), group.getOfficeId(), group.getSharedLocAliasId(),
                     group.getSharedRefLocationId());
-            assignLocs(group);
+            assignLocs(group, office);
         });
     }
 
@@ -512,8 +512,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         });
     }
 
-    public void unassignAllLocs(LocationGroup group) {
-        String office = group.getOfficeId();
+    public void unassignAllLocs(LocationGroup group, String office) {
         LocationCategory cat = group.getLocationCategory();
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
@@ -522,7 +521,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         });
     }
 
-    public void assignLocs(LocationGroup group) {
+    public void assignLocs(LocationGroup group, String office) {
         List<AssignedLocation> assignedLocations = group.getAssignedLocations();
         if (assignedLocations != null) {
             List<LOC_ALIAS_TYPE3> collect = assignedLocations.stream()
@@ -530,7 +529,6 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                 .collect(toList());
             LOC_ALIAS_ARRAY3 assignedLocs = new LOC_ALIAS_ARRAY3(collect);
 
-            String office = group.getOfficeId();
             LocationCategory cat = group.getLocationCategory();
             connection(dsl, conn -> {
                 DSLContext dslContext = getDslContext(conn, office);

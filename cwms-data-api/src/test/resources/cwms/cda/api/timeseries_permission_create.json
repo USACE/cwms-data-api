@@ -1,0 +1,50 @@
+{
+  "begin": "2021-06-21T08:00:00-0700[PST8PDT]",
+  "end": "2021-06-21T09:00:00-0700[PST8PDT]",
+  "interval": "PT15M",
+  "name": "ZACK2.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST",
+  "office-id": "SPK",
+  "units": "m",
+  "page-size": 1000,
+  "total": 4,
+  "page": null,
+  "value-columns": [
+    {
+      "name": "date-time",
+      "ordinal": 1,
+      "datatype": "java.sql.Timestamp"
+    },
+    {
+      "name": "value",
+      "ordinal": 2,
+      "datatype": "java.lang.Double"
+    },
+    {
+      "name": "quality-code",
+      "ordinal": 3,
+      "datatype": "int"
+    }
+  ],
+  "values": [
+    [
+      1624287600000,
+      0.0,
+      0
+    ],
+    [
+      1624288500000,
+      1.0,
+      0
+    ],
+    [
+      1624289400000,
+      2.0,
+      0
+    ],
+    [
+      1624290300000,
+      3.0,
+      0
+    ]
+  ]
+}

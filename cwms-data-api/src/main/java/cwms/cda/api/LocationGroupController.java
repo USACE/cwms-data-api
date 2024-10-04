@@ -235,31 +235,32 @@ public class LocationGroupController implements CrudHandler {
                 + "unassign all existing locations before assigning new locations specified in the content body "
                 + "Default: false"),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                + "owning office of the location group to be updated"),
+                + "user office making the request"),
         },
         method = HttpMethod.PATCH,
         tags = {TAG}
     )
     @Override
-    public void update(@NotNull Context ctx, String oldGroupId) {
+    public void update(@NotNull Context ctx, @NotNull String oldGroupId) {
 
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-
+            final String CWMS_OFFICE = "CWMS";
             String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
+            String office = requiredParam(ctx, OFFICE);
             ContentType contentType = Formats.parseHeader(formatHeader, LocationGroup.class);
             LocationGroup deserialize = Formats.parseContent(contentType, body, LocationGroup.class);
             boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS,
                     Boolean.class).getOrDefault(false);
             LocationGroupDao locationGroupDao = new LocationGroupDao(dsl);
-            if (!oldGroupId.equals(deserialize.getId())) {
+            if (!office.equalsIgnoreCase(CWMS_OFFICE) && !oldGroupId.equals(deserialize.getId())) {
                 locationGroupDao.renameLocationGroup(oldGroupId, deserialize);
             }
             if (replaceAssignedLocs) {
-                locationGroupDao.unassignAllLocs(deserialize);
+                locationGroupDao.unassignAllLocs(deserialize, office);
             }
-            locationGroupDao.assignLocs(deserialize);
+            locationGroupDao.assignLocs(deserialize, office);
             ctx.status(HttpServletResponse.SC_OK);
         }
     }
