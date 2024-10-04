@@ -207,7 +207,7 @@ final class TurbineDaoIT extends DataApiTestIT {
             Turbine retrievedTurbine = turbineDao.retrieveTurbine(newId, office);
             assertEquals(newId, retrievedTurbine.getLocation().getName());
             turbineDao.deleteTurbine(newId, office, DeleteRule.DELETE_ALL);
-        });
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
@@ -241,8 +241,7 @@ final class TurbineDaoIT extends DataApiTestIT {
             turbineDao.deleteTurbine(TURBINE_LOC1.getName(), TURBINE_LOC1.getOfficeId(), DeleteRule.DELETE_ALL);
             turbineDao.deleteTurbine(TURBINE_LOC2.getName(), TURBINE_LOC2.getOfficeId(), DeleteRule.DELETE_ALL);
             turbineDao.deleteTurbine(TURBINE_LOC3.getName(), TURBINE_LOC3.getOfficeId(), DeleteRule.DELETE_ALL);
-        });
-
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     private static Location buildProjectLocation(String projectId) {

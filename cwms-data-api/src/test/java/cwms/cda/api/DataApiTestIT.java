@@ -29,6 +29,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.IntegrationTestNameGenerator;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
 import java.io.File;
@@ -64,6 +65,7 @@ import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
@@ -71,6 +73,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
  * Helper class to manage cycling tests multiple times against a database.
  * NOTE: Not thread safe, do not run parallel tests. That may be future work though.
  */
+@DisplayNameGeneration(IntegrationTestNameGenerator.class)
 @Tag("integration")
 @ExtendWith(CwmsDataApiSetupCallback.class)
 public class DataApiTestIT {
