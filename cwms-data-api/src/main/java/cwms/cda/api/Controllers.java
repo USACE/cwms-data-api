@@ -197,6 +197,8 @@ public final class Controllers {
     public static final String ALLOW = "allow";
     public static final String SOURCE_ID = "source-id";
 
+    public static final String CWMS_OFFICE = "CWMS";
+
     private static final String DEPRECATED_HEADER = "CWMS-DATA-Format-Deprecated";
     private static final String DEPRECATED_TAB = "2024-11-01 TAB is not used often.";
     private static final String DEPRECATED_CSV = "2024-11-01 CSV is not used often.";

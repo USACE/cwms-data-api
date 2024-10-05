@@ -228,7 +228,8 @@ public class TimeSeriesGroupController implements CrudHandler {
     }
 
     @OpenApi(
-        description = "Update existing TimeSeriesGroup",
+        description = "Update existing TimeSeriesGroup. Allows for renaming of the group, "
+            + "assigning new time series, and unassigning all time series from the group.",
         requestBody = @OpenApiRequestBody(
             content = {
                 @OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON)
@@ -238,8 +239,9 @@ public class TimeSeriesGroupController implements CrudHandler {
             @OpenApiParam(name = REPLACE_ASSIGNED_TS, type = Boolean.class, description = "Specifies whether to "
                 + "unassign all existing time series before assigning new time series specified in the content body "
                 + "Default: false"),
-            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                + "user office making the request"),
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                    + "office of the user making the request. This is the office that the timeseries, group, and category "
+                    + "belong to. If the group and/or category belong to the CWMS office, this only identifies the timeseries."),
         },
         method = HttpMethod.PATCH,
         tags = {TAG}

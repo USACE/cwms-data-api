@@ -224,7 +224,8 @@ public class LocationGroupController implements CrudHandler {
     }
 
     @OpenApi(
-        description = "Update existing LocationGroup",
+        description = "Update existing LocationGroup. Allows for renaming group, assigning new locations, "
+            + "and unassigning all locations from the group.",
         requestBody = @OpenApiRequestBody(
             content = {
                 @OpenApiContent(from = LocationGroup.class, type = Formats.JSON)
@@ -235,7 +236,8 @@ public class LocationGroupController implements CrudHandler {
                 + "unassign all existing locations before assigning new locations specified in the content body "
                 + "Default: false"),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                + "user office making the request"),
+                + "office of the user making the request. This is the office that the location, group, and category "
+                + "belong to. If the group and/or category belong to the CWMS office, this only identifies the location."),
         },
         method = HttpMethod.PATCH,
         tags = {TAG}
@@ -245,7 +247,6 @@ public class LocationGroupController implements CrudHandler {
 
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-            final String CWMS_OFFICE = "CWMS";
             String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
             String office = requiredParam(ctx, OFFICE);

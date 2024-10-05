@@ -60,8 +60,9 @@ import static org.hamcrest.Matchers.*;
 @Tag("integration")
 class LocationGroupControllerTestIT extends DataApiTestIT {
     private static final Logger LOGGER = Logger.getLogger(LocationGroupControllerTestIT.class.getName());
-    private List<LocationGroup> groups = new ArrayList<>();
-    private List<LocationCategory> categories = new ArrayList<>();
+    private List<LocationGroup> groupsToCleanup = new ArrayList<>();
+    private List<LocationCategory> categoriesToCleanup = new ArrayList<>();
+    TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
     @AfterEach
     void tearDown() throws Exception {
@@ -72,17 +73,17 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), "SPK");
             LocationCategoryDao locationCategoryDao = new LocationCategoryDao(DSL.using(configuration));
             LocationGroupDao locationGroupDao = new LocationGroupDao(DSL.using(configuration));
-            for (LocationGroup group : groups) {
+            for (LocationGroup group : groupsToCleanup) {
                 try {
                     locationGroupDao.unassignAllLocs(group, "SPK");
-                    if (!group.getOfficeId().equalsIgnoreCase("CWMS") || !group.getId().equalsIgnoreCase("Default")) {
+                    if (!group.getOfficeId().equalsIgnoreCase(CWMS_OFFICE) || !group.getId().equalsIgnoreCase("Default")) {
                         locationGroupDao.delete(group.getLocationCategory().getId(), group.getId(), true, group.getOfficeId());
                     }
                 } catch (NotFoundException e) {
                     LOGGER.log(Level.CONFIG, String.format("Failed to delete location group: %s", group.getId()), e);
                 }
             }
-            for (LocationCategory category : categories) {
+            for (LocationCategory category : categoriesToCleanup) {
                 try {
                     locationCategoryDao.delete(category.getId(), true, category.getOfficeId());
                 } catch (NotFoundException e) {
@@ -94,10 +95,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_getall() throws Exception {
-        String officeId = "SPK";
         String locationId = "LocationGroupTest";
+        String officeId = user.getOperatingOffice();
         createLocation(locationId, true, officeId);
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         AssignedLocation assignLoc = new AssignedLocation(locationId, officeId, "AliasId", 1, locationId);
         LocationCategory cat = new LocationCategory(officeId, "TestCategory", "IntegrationTesting");
         LocationGroup group = new LocationGroup(new LocationGroup(cat, officeId, LocationGroupControllerTestIT.class.getSimpleName(), "IntegrationTesting",
@@ -105,8 +105,8 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
-        groups.add(group);
-        categories.add(cat);
+        groupsToCleanup.add(group);
+        categoriesToCleanup.add(cat);
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -175,10 +175,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_create_read_delete() throws Exception {
-        String officeId = "SPK";
+        String officeId = user.getOperatingOffice();
         String locationId = "LocationGroupTest";
         createLocation(locationId, true, officeId);
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         LocationCategory cat = new LocationCategory(officeId, "TestCategory2", "IntegrationTesting");
         AssignedLocation assignLoc = new AssignedLocation(locationId, officeId, "AliasId", 1, locationId);
         LocationGroup group = new LocationGroup(new LocationGroup(cat, officeId, LocationGroupControllerTestIT.class.getSimpleName(), "IntegrationTesting",
@@ -186,8 +185,8 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
-        groups.add(group);
-        categories.add(cat);
+        groupsToCleanup.add(group);
+        categoriesToCleanup.add(cat);
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -293,16 +292,15 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_rename_group() throws Exception {
-        String officeId = "SPK";
+        String officeId = user.getOperatingOffice();
         String locationId = "LocationGroupTest";
         createLocation(locationId, true, officeId);
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         AssignedLocation assignLoc = new AssignedLocation(locationId, officeId, "AliasId", 1, locationId);
         LocationCategory cat = new LocationCategory(officeId, "test_rename_group", "IntegrationTesting");
         LocationGroup group = new LocationGroup(new LocationGroup(cat, officeId, "test_rename_group", "IntegrationTesting",
             "sharedLocAliasId", locationId, 123), Collections.singletonList(assignLoc));
-        groups.add(group);
-        categories.add(cat);
+        groupsToCleanup.add(group);
+        categoriesToCleanup.add(cat);
         ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
@@ -338,7 +336,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED));
         LocationGroup newGroup = new LocationGroup(cat, officeId, "test_rename_group_new", "IntegrationTesting",
             "sharedLocAliasId", locationId, 123);
-        groups.add(newGroup);
+        groupsToCleanup.add(newGroup);
         String newGroupXml = Formats.format(contentType, newGroup);
         //Rename Group
         given()
@@ -398,12 +396,11 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_add_assigned_locs() throws Exception {
-        String officeId = "SPK";
+        String officeId = user.getOperatingOffice();
         String locationId = "LocationGroupTest";
         createLocation(locationId, true, officeId);
         String locationId2 = "LocationGroupTest2";
         createLocation(locationId2, true, officeId);
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         AssignedLocation assignLoc = new AssignedLocation(locationId, officeId, "AliasId", 1, locationId);
         LocationCategory cat = new LocationCategory(officeId, "test_add_assigned_locs", "IntegrationTesting");
         LocationGroup group = new LocationGroup(new LocationGroup(cat, officeId, "test_add_assigned_locs", "IntegrationTesting",
@@ -412,8 +409,8 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
-        groups.add(group);
-        categories.add(cat);
+        groupsToCleanup.add(group);
+        categoriesToCleanup.add(cat);
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -447,7 +444,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         assignedLocations.clear();
         assignedLocations.add(new AssignedLocation(locationId2, officeId, "AliasId2", 2, locationId2));
         LocationGroup newGroup = new LocationGroup(group, assignedLocations);
-        groups.add(newGroup);
+        groupsToCleanup.add(newGroup);
         String newGroupJson = Formats.format(contentType, newGroup);
         //Add Assigned Locs
         given()
@@ -508,10 +505,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_district_permissions() throws Exception {
-        String officeId = "SPK";
+        String officeId = user.getOperatingOffice();
         String locationId = "LocationGroupTest";
         createLocation(locationId, true, officeId);
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         LocationCategory cat = new LocationCategory(officeId, "test_CWMS_permissions", "Loc Group Integration Testing");
 
@@ -520,9 +516,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             null, locationId, null);
         LocationGroup newLocGroup = new LocationGroup(new LocationGroup(cat, officeId, "test_new_CWMS_permissions", "Second Loc Group IT",
             null, locationId, null), Collections.singletonList(assignLoc));
-        groups.add(group);
-        categories.add(cat);
-        groups.add(newLocGroup);
+        groupsToCleanup.add(group);
+        categoriesToCleanup.add(cat);
+        groupsToCleanup.add(newLocGroup);
 
         String catJson = Formats.format(new ContentType(Formats.JSON), cat);
         String groupJson = Formats.format(new ContentType(Formats.JSON), group);
@@ -604,19 +600,18 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_CWMS_permissions() throws Exception {
-        String officeId = "SPK";
-        String cwmsOfficeId = "CWMS";
+        String officeId = user.getOperatingOffice();
         String locationId = "LocationGroupTest";
         createLocation(locationId, true, officeId);
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        LocationCategory cat = new LocationCategory(cwmsOfficeId, "Default", "Default");
+
+        LocationCategory cat = new LocationCategory(CWMS_OFFICE, "Default", "Default");
 
         AssignedLocation assignLoc = new AssignedLocation(locationId, officeId, null, null,  null);
-        LocationGroup group = new LocationGroup(cat, cwmsOfficeId, "Default", "All Locations",
+        LocationGroup group = new LocationGroup(cat, CWMS_OFFICE, "Default", "All Locations",
                 null, null, null);
         LocationGroup newLocGroup = new LocationGroup(group, Collections.singletonList(assignLoc));
 
-        groups.add(group);
+        groupsToCleanup.add(group);
 
         String newGroupJson = Formats.format(new ContentType(Formats.JSON), newLocGroup);
         String groupJson = Formats.format(new ContentType(Formats.JSON), group);
@@ -626,7 +621,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
-            .queryParam(OFFICE, cwmsOfficeId)
+            .queryParam(OFFICE, CWMS_OFFICE)
             .queryParam(CATEGORY_ID, cat.getId())
         .when()
             .redirects().follow(true)
@@ -661,7 +656,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
-            .queryParam(OFFICE, cwmsOfficeId)
+            .queryParam(OFFICE, CWMS_OFFICE)
             .queryParam(CATEGORY_ID, cat.getId())
         .when()
             .redirects().follow(true)
@@ -701,7 +696,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
-            .queryParam(OFFICE, cwmsOfficeId)
+            .queryParam(OFFICE, CWMS_OFFICE)
             .queryParam(CATEGORY_ID, cat.getId())
         .when()
             .redirects().follow(true)
@@ -716,20 +711,18 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_CWMS_permissions_with_replacement() throws Exception {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String officeId = user.getOperatingOffice();
-        String cwmsOfficeId = "CWMS";
         String locationId = "LocationGroupTest";
         createLocation(locationId, true, officeId);
 
-        LocationCategory cat = new LocationCategory(cwmsOfficeId, "Default", "Default");
+        LocationCategory cat = new LocationCategory(CWMS_OFFICE, "Default", "Default");
 
         AssignedLocation assignLoc = new AssignedLocation(locationId, officeId, null, null, null);
-        LocationGroup group = new LocationGroup(cat, cwmsOfficeId, "Default", "All Locations",
+        LocationGroup group = new LocationGroup(cat, CWMS_OFFICE, "Default", "All Locations",
                 null, null, null);
         LocationGroup newLocGroup = new LocationGroup(group, Collections.singletonList(assignLoc));
 
-        groups.add(group);
+        groupsToCleanup.add(group);
 
         String newGroupJson = Formats.format(new ContentType(Formats.JSON), newLocGroup);
         String groupJson = Formats.format(new ContentType(Formats.JSON), group);
@@ -739,7 +732,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
-            .queryParam(OFFICE, cwmsOfficeId)
+            .queryParam(OFFICE, CWMS_OFFICE)
             .queryParam(CATEGORY_ID, cat.getId())
         .when()
             .redirects().follow(true)
@@ -774,7 +767,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
-            .queryParam(OFFICE, cwmsOfficeId)
+            .queryParam(OFFICE, CWMS_OFFICE)
             .queryParam(CATEGORY_ID, cat.getId())
         .when()
             .redirects().follow(true)
@@ -814,7 +807,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
-            .queryParam(OFFICE, cwmsOfficeId)
+            .queryParam(OFFICE, CWMS_OFFICE)
             .queryParam(CATEGORY_ID, cat.getId())
         .when()
             .redirects().follow(true)

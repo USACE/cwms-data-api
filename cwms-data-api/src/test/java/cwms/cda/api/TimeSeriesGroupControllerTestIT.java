@@ -79,11 +79,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("integration")
 class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
-    public static final String CWMS_OFFICE = "CWMS";
-    private List<TimeSeriesCategory> categories = new ArrayList<>();
-    private List<TimeSeriesGroup> groups = new ArrayList<>();
-    private List<TimeSeries> timeSeries = new ArrayList<>();
+    private List<TimeSeriesCategory> categoriesToCleanup = new ArrayList<>();
+    private List<TimeSeriesGroup> groupsToCleanup = new ArrayList<>();
+    private List<TimeSeries> timeSeriesToCleanup = new ArrayList<>();
     private static final Logger LOGGER = Logger.getLogger(TimeSeriesGroupControllerTestIT.class.getName());
+    TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
     @BeforeAll
     public static void load_data() throws Exception {
@@ -115,7 +115,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             TimeSeriesCategoryDao categoryDao = new TimeSeriesCategoryDao(configuration.dsl());
             TimeSeriesDaoImpl timeSeriesDao = new TimeSeriesDaoImpl(configuration.dsl());
 
-            for (TimeSeriesGroup group : groups) {
+            for (TimeSeriesGroup group : groupsToCleanup) {
                 try {
                    groupDao.unassignAllTs(group, "SPK");
                     if (!group.getOfficeId().equalsIgnoreCase(CWMS_OFFICE)) {
@@ -125,14 +125,14 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                     LOGGER.log(Level.CONFIG, "Group not found", e);
                 }
             }
-            for (TimeSeriesCategory category : categories) {
+            for (TimeSeriesCategory category : categoriesToCleanup) {
                 try {
                     categoryDao.delete(category.getId(), true, category.getOfficeId());
                 } catch (NotFoundException e) {
                     LOGGER.log(Level.CONFIG, "Category not found", e);
                 }
             }
-            for (TimeSeries ts : timeSeries) {
+            for (TimeSeries ts : timeSeriesToCleanup) {
                 try {
                     timeSeriesDao.delete(ts.getOfficeId(), ts.getName(), new TimeSeriesDaoImpl.DeleteOptions.Builder()
                             .withStartTimeInclusive(true).withEndTimeInclusive(true).withMaxVersion(false)
@@ -141,9 +141,9 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                     LOGGER.log(Level.CONFIG, "Time Series not found", e);
                 }
             }
-            groups.clear();
-            categories.clear();
-            timeSeries.clear();
+            groupsToCleanup.clear();
+            categoriesToCleanup.clear();
+            timeSeriesToCleanup.clear();
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -154,7 +154,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept("application/json")
-                .queryParam("office", "SPK")
+                .queryParam("office", user.getOperatingOffice())
             .when()
                 .get("/timeseries/group")
             .then()
@@ -162,8 +162,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(200))
                 .body("$.size()", is(1),
-                "[0].time-series-category.office-id", is("SPK"),
-                    "[0].office-id", is("SPK"))
+                "[0].time-series-category.office-id", is(user.getOperatingOffice()),
+                    "[0].office-id", is(user.getOperatingOffice()))
             .extract()
                 .response();
 
@@ -200,7 +200,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
         int itemIndex = ids.indexOf(testGroupId);
 
-        assertThat(jsonPathEval.get("[" + itemIndex + "].time-series-category.office-id"), Matchers.is("CWMS"));
+        assertThat(jsonPathEval.get("[" + itemIndex + "].time-series-category.office-id"), Matchers.is(CWMS_OFFICE));
 
         List<String> tsIds = jsonPathEval.get("[" + itemIndex + "].assigned-time-series.timeseries-id");
         assertNotNull(tsIds);
@@ -217,11 +217,10 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_create_read_delete() throws Exception {
-        String officeId = "SPK";
+        String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
         createLocation(timeSeriesId.split("\\.")[0],true,officeId);
         createTimeseries(officeId,timeSeriesId);
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_create_read_delete", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_create_read_delete", "IntegrationTesting",
             "sharedTsAliasId", timeSeriesId);
@@ -328,7 +327,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
-            .queryParam("office", officeId)
+            .queryParam(OFFICE, officeId)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -365,11 +364,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_rename_group() throws Exception {
-        String officeId = "SPK";
+        String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
         createLocation(timeSeriesId.split("\\.")[0],true,officeId);
         createTimeseries(officeId, timeSeriesId);
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_rename_group_cat", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_rename_group", "IntegrationTesting",
             "sharedTsAliasId", timeSeriesId);
@@ -464,7 +463,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body(newGroupXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(CATEGORY_ID, newGroup.getTimeSeriesCategory().getId())
-            .queryParam(REPLACE_ASSIGNED_TS, "true")
+            .queryParam(REPLACE_ASSIGNED_TS, true)
             .queryParam(OFFICE, newGroup.getOfficeId())
         .when()
             .redirects().follow(true)
@@ -509,9 +508,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_add_assigned_locs() throws Exception {
-        String officeId = "SPK";
+        String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_add_assigned_locs", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_add_assigned_locs", "IntegrationTesting",
             "sharedTsAliasId", timeSeriesId);
@@ -529,7 +527,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
-            .queryParam(FAIL_IF_EXISTS, "false")
+            .queryParam(FAIL_IF_EXISTS, false)
             .queryParam(OFFICE, officeId)
         .when()
             .redirects().follow(true)
@@ -546,7 +544,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
-            .queryParam(FAIL_IF_EXISTS, "false")
+            .queryParam(FAIL_IF_EXISTS, false)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -568,7 +566,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
-            .queryParam(REPLACE_ASSIGNED_LOCS, "true")
+            .queryParam(REPLACE_ASSIGNED_LOCS, true)
             .queryParam(OFFICE, group.getOfficeId())
         .when()
             .redirects().follow(true)
@@ -609,7 +607,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
-            .queryParam(REPLACE_ASSIGNED_TS, "true")
+            .queryParam(REPLACE_ASSIGNED_TS, true)
             .queryParam(OFFICE, group.getOfficeId())
         .when()
             .redirects().follow(true)
@@ -657,19 +655,17 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
-                "/cwms/cda/api/timeseries_permission_create4.json");
+                "/cwms/cda/api/timeseries_create_SPK4.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         TimeSeries deserialize = Formats.parseContent(new ContentType(Formats.JSON), tsData, TimeSeries.class);
-        timeSeries.add(deserialize);
+        timeSeriesToCleanup.add(deserialize);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
         createLocation(location, true, officeId);
-
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         // inserting the time series
         given()
@@ -698,7 +694,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
         String newGroupJson = Formats.format(new ContentType(Formats.JSONV1), newGroup);
 
-        groups.add(newGroup);
+        groupsToCleanup.add(newGroup);
 
         // Retrieve the group and assert it's empty
         given()
@@ -758,9 +754,9 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
-                "/cwms/cda/api/timeseries_permission_create.json");
+                "/cwms/cda/api/timeseries_create_SPK1.json");
         InputStream resource2 = this.getClass().getResourceAsStream(
-                "/cwms/cda/api/timeseries_permission_create2.json");
+                "/cwms/cda/api/timeseries_create_SPK2.json");
         assertNotNull(resource);
         assertNotNull(resource2);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -768,16 +764,14 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
         TimeSeries deserialize = Formats.parseContent(new ContentType(Formats.JSON), tsData, TimeSeries.class);
         TimeSeries deserialize2 = Formats.parseContent(new ContentType(Formats.JSON), tsData2, TimeSeries.class);
-        timeSeries.add(deserialize2);
-        timeSeries.add(deserialize);
+        timeSeriesToCleanup.add(deserialize2);
+        timeSeriesToCleanup.add(deserialize);
 
         JsonNode ts = mapper.readTree(tsData);
         JsonNode ts2 = mapper.readTree(tsData2);
         String location = ts.get("name").asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
         createLocation(location, true, officeId);
-
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         // inserting the time series
         given()
@@ -825,7 +819,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
         String newGroupJson2 = Formats.format(new ContentType(Formats.JSONV1), newGroup);
 
-        groups.add(newGroup);
+        groupsToCleanup.add(newGroup);
 
         // Attempt a patch on TS owned by CWMS with replacement
         given()
@@ -866,14 +860,13 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     @Test
     void test_patch_district_permission() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         InputStream resource = this.getClass().getResourceAsStream(
-                "/cwms/cda/api/timeseries_permission_create3.json");
+                "/cwms/cda/api/timeseries_create_SPK3.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         TimeSeries deserialize = Formats.parseContent(new ContentType(Formats.JSON), tsData, TimeSeries.class);
-        timeSeries.add(deserialize);
+        timeSeriesToCleanup.add(deserialize);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
@@ -885,7 +878,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         TimeSeriesGroup districtGroup = new TimeSeriesGroup(category, CWMS_OFFICE, "Default", "All Time Series", null, null);
         AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null, null);
         TimeSeriesGroup newDistrictGroup = new TimeSeriesGroup(districtGroup, Collections.singletonList(assignedTimeSeries));
-        groups.add(newDistrictGroup);
+        groupsToCleanup.add(newDistrictGroup);
 
         String newDistrictGroupJson = Formats.format(new ContentType(Formats.JSONV1), newDistrictGroup);
 
