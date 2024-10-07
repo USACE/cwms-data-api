@@ -9,9 +9,9 @@ package cwms.cda.data.dao.location.kind;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.DataApiTestIT;
+import cwms.cda.api.LocationCleanup;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.NotFoundException;
-import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
@@ -46,24 +46,10 @@ public abstract class ProjectStructureIT extends DataApiTestIT {
 		CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
 		databaseLink.connection(c -> {
 			DSLContext context = getDslContext(c, OFFICE_ID);
-			CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC), "T");
-			CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC2), "T");
-		}, CwmsDataApiSetupCallback.getWebUser());
-	}
-
-	public static void tearDownProject() throws Exception
-	{
-		//Don't tag this as a @AfterAll - JUnit can't guarantee this occurs first.
-		CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-		databaseLink.connection(c -> {
-			DSLContext context = getDslContext(c, OFFICE_ID);
-			LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-			CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
-					DeleteRule.DELETE_ALL.getRule(), OFFICE_ID);
-			CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC2.getName(),
-					DeleteRule.DELETE_ALL.getRule(), OFFICE_ID);
-			locationsDao.deleteLocation(PROJECT_LOC.getName(), OFFICE_ID, true);
-			locationsDao.deleteLocation(PROJECT_LOC2.getName(), OFFICE_ID, true);
+			CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC), "F");
+			LocationCleanup.locationsCreated.add(PROJECT_LOC);
+			CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC2), "F");
+			LocationCleanup.locationsCreated.add(PROJECT_LOC2);
 		}, CwmsDataApiSetupCallback.getWebUser());
 	}
 
@@ -134,6 +120,7 @@ public abstract class ProjectStructureIT extends DataApiTestIT {
 		LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
 		deleteLocation(context, loc.getOfficeId(), loc.getName());
 		locationsDao.storeLocation(loc);
+		LocationCleanup.locationsCreated.add(loc);
 	}
 
 	public static void deleteLocation(DSLContext context, String officeId, String locId) {

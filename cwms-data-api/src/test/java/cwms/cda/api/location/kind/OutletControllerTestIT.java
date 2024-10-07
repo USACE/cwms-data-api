@@ -126,16 +126,7 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             deleteLocationGroup(context, EXISTING_CONDUIT_GATE_OUTLET);
             deleteLocationGroup(context, NEW_CONDUIT_GATE_1_OUTLET);
             deleteLocationGroup(context, NEW_CONDUIT_GATE_2_OUTLET);
-            deleteLocation(context, NEW_CONDUIT_GATE_1.getOfficeId(), NEW_CONDUIT_GATE_1.getName());
-            deleteLocation(context, NEW_CONDUIT_GATE_2.getOfficeId(), NEW_CONDUIT_GATE_2.getName());
-            deleteLocation(context, RENAMED_CONDUIT_GATE.getOfficeId(), RENAMED_CONDUIT_GATE.getName());
-            deleteLocation(context, EXISTING_CONDUIT_GATE.getOfficeId(), EXISTING_CONDUIT_GATE.getName());
-            deleteLocation(context, RATED_OUTLET_LOCATION_CONTROLLED.getOfficeId(),
-                           RATED_OUTLET_LOCATION_CONTROLLED.getName());
-            deleteLocation(context, RATED_OUTLET_LOCATION_UNCONTROLLED.getOfficeId(),
-                            RATED_OUTLET_LOCATION_UNCONTROLLED.getName());
         }, CwmsDataApiSetupCallback.getWebUser());
-        tearDownProject();
     }
 
     @Disabled("Disabled due to a DB issue.  See https://jira.hecdev.net/browse/CWDB-296")

@@ -69,11 +69,6 @@ class OutletDaoRatingIT extends BaseOutletDaoIT {
         setupProject();
     }
 
-    @AfterAll
-    static void cleanup() throws Exception {
-        tearDownProject();
-    }
-
     @Test
     void test_uncontrolled_outlet() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();

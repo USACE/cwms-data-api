@@ -78,7 +78,6 @@ final class EmbankmentDaoIT extends ProjectStructureIT {
 
     @AfterAll
     public void tearDown() throws Exception {
-        tearDownProject();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
