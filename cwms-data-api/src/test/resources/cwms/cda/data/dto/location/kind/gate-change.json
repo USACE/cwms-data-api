@@ -1,4 +1,5 @@
 {
+  "type": "gate-change",
   "project-id": {
     "office-id": "SPK",
     "name": "BIGH"
