@@ -199,6 +199,7 @@ class GateChangeTest {
                                        .withNotes(notes)
                                        .withChangeDate(changeDate)
                                        .withSettings(settings)
+//                                       .withType("gate-change")
                                        .build();
     }
 }

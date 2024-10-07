@@ -35,6 +35,8 @@ import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
 import io.restassured.filter.log.LogDetail;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
@@ -42,16 +44,20 @@ import java.util.Collections;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+@Tag("integration")
 class GateChangeControllerTestIT extends BaseOutletDaoIT {
 
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
@@ -267,6 +273,47 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
             .ifValidationFails(LogDetail.ALL, true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @Test
+    void test_changes_create_from_file() throws Exception {
+        InputStream is = this.getClass().getResourceAsStream("/cwms/cda/api/gate_change.json");
+        assertNotNull(is);
+        String json = IOUtils.toString(is, StandardCharsets.UTF_8);
+        List<GateChange> change = Formats.parseContentList(Formats.parseHeader(Formats.JSONV1, GateChange.class), json, GateChange.class);
+
+        //Create the gate changes
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, USER.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("projects/gate-changes")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .header(AUTH_HEADER, USER.toHeaderValue())
+            .queryParam(BEGIN, JAN_FIRST.toString())
+            .queryParam(END, JAN_SECOND.toString())
+            .queryParam(OVERRIDE_PROTECTION, "true")
+            .queryParam(FAIL_IF_EXISTS, "false")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("projects/" + change.get(0).getProjectId().getOfficeId()
+                    + "/" + change.get(0).getProjectId().getName() + "/gate-changes")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
     private boolean isSimilar(GateChange left, GateChange right) {

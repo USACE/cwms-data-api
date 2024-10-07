@@ -20,6 +20,8 @@
 
 package cwms.cda.data.dao.location.kind;
 
+import static cwms.cda.data.dao.location.kind.LocationUtil.getLocationRef;
+
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
@@ -45,6 +47,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
+import org.jooq.exception.IntegrityConstraintViolationException;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_OUTLET_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.GATE_CHANGE_OBJ_T;
@@ -55,7 +58,7 @@ import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_STRUCTURE_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_TAB_T;
-import static cwms.cda.data.dao.location.kind.LocationUtil.getLocationRef;
+
 
 public class OutletDao extends JooqDao<Outlet> {
 
@@ -114,8 +117,12 @@ public class OutletDao extends JooqDao<Outlet> {
     public void deleteOutlet(String officeId, String locationId, DeleteRule deleteRule) {
         connection(dsl, conn -> {
             setOffice(conn, officeId);
-            CWMS_OUTLET_PACKAGE.call_DELETE_OUTLET(DSL.using(conn).configuration(), locationId, deleteRule.getRule(),
-                                                   officeId);
+            try {
+                CWMS_OUTLET_PACKAGE.call_DELETE_OUTLET(DSL.using(conn).configuration(), locationId,
+                        deleteRule.getRule(), officeId);
+            } catch (IntegrityConstraintViolationException e) {
+                throw new NotFoundException(e);
+            }
         });
     }
 
@@ -257,8 +264,8 @@ public class OutletDao extends JooqDao<Outlet> {
     }
 
     public List<GateChange> retrieveOperationalChanges(CwmsId projectId, Instant startTime, Instant endTime,
-                                                       boolean startInclusive, boolean endInclusive, UnitSystem unitSystem,
-                                                       long rowLimit) {
+                                                       boolean startInclusive, boolean endInclusive,
+                                                       UnitSystem unitSystem, long rowLimit) {
         return connectionResult(dsl, conn -> {
             setOffice(conn, projectId.getOfficeId());
 
@@ -267,11 +274,12 @@ public class OutletDao extends JooqDao<Outlet> {
             Timestamp endTimestamp = Timestamp.from(endTime);
             BigInteger rowLimitBig = BigInteger.valueOf(rowLimit);
             GATE_CHANGE_TAB_T changeTab = CWMS_OUTLET_PACKAGE.call_RETRIEVE_GATE_CHANGES(
-                    DSL.using(conn).configuration(), locationRef, startTimestamp, endTimestamp, "UTC", unitSystem.getValue(),
-                    formatBool(startInclusive), formatBool(endInclusive), rowLimitBig);
+                    DSL.using(conn).configuration(), locationRef, startTimestamp, endTimestamp, "UTC",
+                    unitSystem.getValue(), formatBool(startInclusive), formatBool(endInclusive), rowLimitBig);
 
             if (changeTab == null) {
-                throw new NotFoundException("No changes found for " + projectId.getOfficeId() + "." + projectId.getName()
+                throw new NotFoundException("No changes found for " + projectId.getOfficeId() + "."
+                        + projectId.getName()
                 + "\nStart time: " + startTime
                 + "\nEnd time: " + endTime
                 + "\nStart inclusive: " + startInclusive

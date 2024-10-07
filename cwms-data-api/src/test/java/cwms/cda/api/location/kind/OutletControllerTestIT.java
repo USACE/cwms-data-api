@@ -20,7 +20,6 @@
 
 package cwms.cda.api.location.kind;
 
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.location.kind.BaseOutletDaoIT;
@@ -39,6 +38,7 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
@@ -46,8 +46,8 @@ import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
+@Tag("integration")
 class OutletControllerTestIT extends BaseOutletDaoIT {
-    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final CwmsId CONDUIT_GATE_RATING_GROUP = new CwmsId.Builder().withName(
             "Rating-" + PROJECT_1_ID.getName() + "-ConduitGate").withOfficeId(OFFICE_ID).build();
     private static final CwmsId MODIFIED_CONDUIT_GATE_RATING_GROUP = new CwmsId.Builder().withName(
