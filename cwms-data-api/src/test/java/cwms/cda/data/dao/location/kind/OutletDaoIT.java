@@ -70,16 +70,15 @@ class OutletDaoIT extends BaseOutletDaoIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
-            OutletDao outletDao = new OutletDao(context);
             deleteLocation(context, TG_LOC4_ID.getOfficeId(), TG_LOC4_ID.getName());
             try {
                 storeLocation(context, TAINTER_GATE_1_LOC);
                 storeLocation(context, TAINTER_GATE_2_LOC);
                 storeLocation(context, TAINTER_GATE_3_LOC);
                 storeLocation(context, BOX_CULVERT_1_LOC);
-                outletDao.storeOutlet(TAINTER_GATE_1_OUTLET, false);
-                outletDao.storeOutlet(TAINTER_GATE_2_OUTLET, false);
-                outletDao.storeOutlet(BOX_CULVERT_1_OUTLET, false);
+                storeOutlet(context, TAINTER_GATE_1_OUTLET);
+                storeOutlet(context, TAINTER_GATE_2_OUTLET);
+                storeOutlet(context, BOX_CULVERT_1_OUTLET);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -91,15 +90,12 @@ class OutletDaoIT extends BaseOutletDaoIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
-            OutletDao outletDao = new OutletDao(context);
             deleteLocationGroup(context, TAINTER_GATE_1_OUTLET);
             deleteLocationGroup(context, TAINTER_GATE_2_OUTLET);
             deleteLocationGroup(context, BOX_CULVERT_1_OUTLET);
-            outletDao.deleteOutlet(TAINTER_GATE_1_LOC.getOfficeId(), TAINTER_GATE_1_LOC.getName(),
-                                   DeleteRule.DELETE_ALL);
-            outletDao.deleteOutlet(TAINTER_GATE_2_LOC.getOfficeId(), TAINTER_GATE_2_LOC.getName(),
-                                   DeleteRule.DELETE_ALL);
-            outletDao.deleteOutlet(BOX_CULVERT_1_LOC.getOfficeId(), BOX_CULVERT_1_LOC.getName(), DeleteRule.DELETE_ALL);
+            deleteOutlet(context, TAINTER_GATE_1_OUTLET);
+            deleteOutlet(context, TAINTER_GATE_2_OUTLET);
+            deleteOutlet(context, BOX_CULVERT_1_OUTLET);
             deleteLocation(context, TAINTER_GATE_1_LOC.getOfficeId(), TAINTER_GATE_1_LOC.getName());
             deleteLocation(context, TAINTER_GATE_2_LOC.getOfficeId(), TAINTER_GATE_2_LOC.getName());
             deleteLocation(context, TAINTER_GATE_3_LOC.getOfficeId(), TAINTER_GATE_3_LOC.getName());

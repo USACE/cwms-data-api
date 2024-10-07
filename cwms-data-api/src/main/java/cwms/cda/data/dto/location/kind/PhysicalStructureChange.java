@@ -29,8 +29,6 @@
 
 package cwms.cda.data.dto.location.kind;
 
-import static java.util.Comparator.comparing;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsDTOValidator;
@@ -41,6 +39,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import static java.util.Comparator.comparing;
 
 public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTOBase {
     @JsonProperty(required = true)
@@ -235,6 +234,7 @@ public abstract class PhysicalStructureChange<T extends Setting> extends CwmsDTO
         }
 
         public B withSettings(List<T> settings) {
+            this.settings.clear();
             settings.forEach(s -> {
                 if (!this.settings.add(s)) {
                     throw new FormattingException(
