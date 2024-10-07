@@ -131,11 +131,8 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
             } catch (RuntimeException ex) {
                 LOGGER.atFinest().withCause(ex).log("We don't care about this...");
             }
-            deleteLocation(context, CONDUIT_GATE_1.getOfficeId(), CONDUIT_GATE_1.getName());
-            deleteLocation(context, CONDUIT_GATE_2.getOfficeId(), CONDUIT_GATE_2.getName());
             deleteLocationGroup(context, CONDUIT_GATE_1_OUTLET);
         }, CwmsDataApiSetupCallback.getWebUser());
-        tearDownProject();
     }
 
     @Test

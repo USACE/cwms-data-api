@@ -24,7 +24,8 @@ java-ee = "8.0.1"
 cwms-tomcat-auth = "1.1.0"
 jjwt = "0.11.5"
 jstl = "1.2"
-junit = "5.8.2"
+junit = "5.11.1"
+junit-launcher = "1.11.2"
 testcontainers = "1.17.1"
 cwms-testcontainers = "1.0.7"
 oracle-jdbc = "19.3.0.0"
@@ -96,6 +97,7 @@ junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-launcher" }
 
 
 testcontainers-base = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers"}
@@ -126,7 +128,7 @@ io-github-classgraph = { module = "io.github.classgraph:classgraph", version.ref
 io-swagger-parser = { module = "io.swagger.parser.v3:swagger-parser", version.ref = "swagger-parser" }
 
 [bundles]
-junit = ["junit-jupiter-api", "junit-jupiter-params", "junit-jupiter-engine"]
+junit = ["junit-jupiter-api", "junit-jupiter-params", "junit-jupiter-engine", "junit-platform-launcher"]
 tomcat-embedded = [ "tomcat-embedded-core", "tomcat-embedded-jasper" ]
 tomcat-support = [ "tomcat-juli", "tomcat-jdbc" ]
 testcontainers = [ "testcontainers-base", "testcontainers-database-commons", "testcontainers-jdbc", "testcontainers-junit-jupiter", "testcontainers-cwms"]
