@@ -26,17 +26,14 @@
 
 package cwms.cda.api.timeseriesprofile;
 
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.LOCATION_ID;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
-import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
+import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileList;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
@@ -52,48 +49,55 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class TimeSeriesProfileController extends TimeSeriesProfileBase implements Handler {
-    public TimeSeriesProfileController(MetricRegistry metrics) {
+public final class TimeSeriesProfileCatalogController extends TimeSeriesProfileBase implements Handler {
+    public static final String PARAMETER_ID_MASK = "parameter-id-mask";
+
+    public TimeSeriesProfileCatalogController(MetricRegistry metrics) {
         tspMetrics(metrics);
     }
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = OFFICE, description = "The office ID associated with the time series profile"),
-        },
-        pathParams = {
-            @OpenApiParam(name = PARAMETER_ID, description = "The key parameter ID associated with the time "
-                + "series profile"),
-            @OpenApiParam(name = LOCATION_ID, description = "The location ID associated with the "
-                + "time series profile")
+            @OpenApiParam(name = OFFICE_MASK, description = "The office mask for the time series profile. "
+                    + "Default is *"),
+            @OpenApiParam(name = LOCATION_MASK, description = "The location mask for the time series profile. "
+                    + "Default is *"),
+            @OpenApiParam(name = PARAMETER_ID_MASK, description = "The key parameter mask for the time series "
+                    + "profile. Default is *"),
+            @OpenApiParam(name = PAGE, description = "The page cursor. Default is null"),
+            @OpenApiParam(name = PAGE_SIZE, description = "The page size. Default is 500")
         },
         method = HttpMethod.GET,
         summary = "Get a time series profile",
         tags = {TAG},
         responses = {
             @OpenApiResponse(status = STATUS_200,
-                description = "A TimeSeriesProfileParser object",
+                description = "A TimeSeriesProfile object",
                 content = {
-                    @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.JSONV1),
-                    @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.XMLV2),
+                    @OpenApiContent(from = TimeSeriesProfileList.class, type = Formats.JSONV1),
+                    @OpenApiContent(from = TimeSeriesProfileList.class, type = Formats.XMLV2),
                 }),
-            @OpenApiResponse(status = "400", description = "Invalid input")
+            @OpenApiResponse(status = STATUS_400, description = "Invalid input"),
+            @OpenApiResponse(status = STATUS_404, description = "No data matching input parameters found")
         }
     )
     @Override
     public void handle(@NotNull Context ctx) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
-            String parameterId = ctx.pathParam(PARAMETER_ID);
             TimeSeriesProfileDao tspDao = new TimeSeriesProfileDao(dsl);
-            String office = requiredParam(ctx, OFFICE);
-            String locationId = requiredParam(ctx, LOCATION_ID);
-            TimeSeriesProfile returned = tspDao.retrieveTimeSeriesProfile(locationId, parameterId, office);
+            String officeMask = ctx.queryParamAsClass(OFFICE_MASK, String.class).getOrDefault("*");
+            String locationMask = ctx.queryParamAsClass(LOCATION_MASK, String.class).getOrDefault("*");
+            String parameterIdMask = ctx.queryParamAsClass(PARAMETER_ID_MASK, String.class).getOrDefault("*");
+            String cursor = ctx.queryParam(PAGE);
+            int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(500);
+            TimeSeriesProfileList retrievedProfiles = tspDao.catalogTimeSeriesProfiles(locationMask,
+                    parameterIdMask, officeMask, cursor, pageSize);
             String acceptHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfile.class);
-            String result = Formats.format(contentType, returned);
+            ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileList.class);
+            String results = Formats.format(contentType, retrievedProfiles);
             ctx.status(HttpServletResponse.SC_OK);
-            ctx.result(result);
+            ctx.result(results);
         }
     }
 }

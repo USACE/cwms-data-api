@@ -15,13 +15,15 @@ import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
 import fixtures.CwmsDataApiSetupCallback;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PROFILE_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.cwms_ts_profile.RETRIEVE_TS_PROFILE_PARSER;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
@@ -64,8 +66,8 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
             timeSeriesProfileParserDao.deleteTimeSeriesProfileParser(timeSeriesProfileParser.getLocationId().getName(),
                     timeSeriesProfileParser.getKeyParameter(), timeSeriesProfileParser.getLocationId().getOfficeId());
 
-            timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfile.getLocationId().getName(), timeSeriesProfile.getKeyParameter(),
-                    timeSeriesProfile.getLocationId().getOfficeId());
+            timeSeriesProfileDao.deleteTimeSeriesProfile(locationName, parameter[0], officeId);
+            timeSeriesProfileDao.deleteTimeSeriesProfile(locationName1, parameter[0], officeId);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -180,39 +182,32 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
     }
 
     @Test
-    void testStoreAndCopy() throws SQLException {
+    void testGetTimeSeriesParameterInfoList() throws Exception {
         String officeId = "SPK";
-        String locationName = "Glensboro";
-        String locationName1 = "Greensburg";
-        String[] parameter = {"Depth", "Temp-Water"};
+        String locationName = "Greensburg";
+        String[] parameters = {"Depth", "Pres"};
+        TimeSeriesProfile instance = buildTestTimeSeriesProfile(officeId, locationName, parameters[0], parameters);
+        TimeSeriesProfileParser parser = buildTestTimeSeriesProfileParserIndexed(officeId, locationName, parameters[0]);
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
-
             TimeSeriesProfileDao timeSeriesProfileDao = new TimeSeriesProfileDao(context);
-
-            TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile(officeId, locationName, parameter[0], parameter);
-            timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
-
-            timeSeriesProfile = buildTestTimeSeriesProfile(officeId, locationName1, parameter[0], parameter);
-            timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
-
+            timeSeriesProfileDao.storeTimeSeriesProfile(instance, false);
             TimeSeriesProfileParserDao timeSeriesProfileParserDao = new TimeSeriesProfileParserDao(context);
-            TimeSeriesProfileParserIndexed timeSeriesProfileParser = buildTestTimeSeriesProfileParserIndexed(officeId, locationName, parameter[0]);
-            timeSeriesProfileParserDao.storeTimeSeriesProfileParser( timeSeriesProfileParser, false);
-
-            TimeSeriesProfileParser retrieved = timeSeriesProfileParserDao.retrieveTimeSeriesProfileParser(timeSeriesProfileParser.getLocationId().getName(),
-                    timeSeriesProfileParser.getKeyParameter(), timeSeriesProfileParser.getLocationId().getOfficeId());
-
-            timeSeriesProfileParserDao.copyTimeSeriesProfileParser(timeSeriesProfileParser.getLocationId().getName(),
-                    timeSeriesProfileParser.getKeyParameter(), timeSeriesProfileParser.getLocationId().getOfficeId(), locationName1);
-
-            TimeSeriesProfileParser retrieved1 = timeSeriesProfileParserDao.retrieveTimeSeriesProfileParser(locationName1,
-                    timeSeriesProfileParser.getKeyParameter(), timeSeriesProfileParser.getLocationId().getOfficeId());
-            assertEquals(timeSeriesProfileParser.getKeyParameter(), retrieved.getKeyParameter());
-            assertEquals(locationName1, retrieved1.getLocationId().getName());
-            assertEquals(timeSeriesProfileParser.getTimeFormat(), retrieved1.getTimeFormat());
-
+            timeSeriesProfileParserDao.storeTimeSeriesProfileParser((TimeSeriesProfileParserIndexed) parser, false);
+            RETRIEVE_TS_PROFILE_PARSER timeSeriesProfileParser
+                = CWMS_TS_PROFILE_PACKAGE.call_RETRIEVE_TS_PROFILE_PARSER(DSL.using(c).configuration(),
+                locationName, parameters[0], officeId);
+            String info = timeSeriesProfileParser.getP_PARAMETER_INFO();
+            List<ParameterInfo> parameterInfo = TimeSeriesProfileParserDao.getParameterInfoList(info, timeSeriesProfileParser.getP_RECORD_DELIMITER(),
+                    timeSeriesProfileParser.getP_FIELD_DELIMITER());
+            assertAll(() -> {
+                assertEquals(2, parameterInfo.size());
+                assertEquals(parameters[0], parameterInfo.get(1).getParameter());
+                assertEquals(parameters[1], parameterInfo.get(0).getParameter());
+            });
+            timeSeriesProfileParserDao.deleteTimeSeriesProfileParser(locationName, parameters[0], officeId);
+            timeSeriesProfileDao.deleteTimeSeriesProfile(locationName, parameters[0], officeId);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 

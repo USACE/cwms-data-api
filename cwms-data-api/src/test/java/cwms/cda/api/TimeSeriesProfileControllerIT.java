@@ -45,6 +45,8 @@ import org.junit.jupiter.api.Test;
 import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
@@ -54,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 final class TimeSeriesProfileControllerIT extends DataApiTestIT {
+    private static final Logger LOGGER = Logger.getLogger(TimeSeriesProfileControllerIT.class.getName());
     private static final String OFFICE_ID = "SPK";
     private static final TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     private final InputStream resource = this.getClass()
@@ -117,7 +120,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/timeseries/profile/" + tsProfile.getKeyParameter())
+            .get("/timeseries/profile/" + tsProfile.getLocationId().getName() + "/" + tsProfile.getKeyParameter())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -231,57 +234,57 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
     void test_get_all_TimeSeriesProfilePaginated_minimum() {
         // Create a new TimeSeriesProfile
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
-                .contentType(Formats.JSONV1)
-                .body(tsData)
-                .header(AUTH_HEADER, user.toHeaderValue())
-                .queryParam(FAIL_IF_EXISTS, false)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/profile/")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .body(tsData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/profile/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
 
         // Retrieve all TimeSeriesProfiles
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
-                .contentType(Formats.JSONV1)
-                .header(AUTH_HEADER, user.toHeaderValue())
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/profile/")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body("profile-list.size()", is(1))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/profile/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("profile-list.size()", is(1))
         ;
 
         // Retrieve TimeSeriesProfiles with pagination, page 1, assert that next-page is null
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
-                .contentType(Formats.JSONV1)
-                .header(AUTH_HEADER, user.toHeaderValue())
-                .queryParam(PAGE_SIZE, 1)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/profile/")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body("profile-list.size()", is(1))
-                .body("next-page", is(nullValue()))
-                ;
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(PAGE_SIZE, 1)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/profile/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("profile-list.size()", is(1))
+            .body("next-page", is(nullValue()))
+        ;
     }
 
     @Test
@@ -370,11 +373,10 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
-            .queryParam(LOCATION_ID, tsProfile.getLocationId().getName())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/timeseries/profile/" + tsProfile.getKeyParameter())
+            .delete("/timeseries/profile/" + tsProfile.getLocationId().getName() + "/" + tsProfile.getKeyParameter())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -414,7 +416,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/timeseries/profile/" + tsProfile.getKeyParameter())
+            .delete("/timeseries/profile/" + tsProfile.getLocationId().getName() + "/" + tsProfile.getKeyParameter())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -431,7 +433,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
                 dao.deleteTimeSeriesProfile(locationId, keyParameter, OFFICE_ID);
             });
         } catch (NotFoundException e) {
-            // Ignore
+            LOGGER.log(Level.CONFIG, "Unable to cleanup TS Profile - not found", e);
         }
     }
 

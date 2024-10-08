@@ -23,16 +23,15 @@ import usace.cwms.db.jooq.codegen.tables.AV_TS_PROFILE_PARSER_PARAM;
 
 
 public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser> {
-    private static final  String PARAMETER_ID = "PARAMETER_ID";
-    private static final  String KEY_PARAMETER_ID = "KEY_PARAMTER_ID";
-    private static final  String TIME_FORMAT = "TIME_FORMAT";
-    private static final  String TIME_ZONE = "TIME_ZONE";
+    private static final AV_TS_PROFILE_PARSER_PARAM cwmsTsProfileParserParamView = AV_TS_PROFILE_PARSER_PARAM
+            .AV_TS_PROFILE_PARSER_PARAM;
+    private static final AV_TS_PROFILE_PARSER cwmsTsProfileParserView = AV_TS_PROFILE_PARSER.AV_TS_PROFILE_PARSER;
 
     public TimeSeriesProfileParserDao(DSLContext dsl) {
         super(dsl);
     }
 
-    private List<ParameterInfo> getParameterInfoList(String info, String recordDelimiter, String fieldDelimiter) {
+    protected static List<ParameterInfo> getParameterInfoList(String info, String recordDelimiter, String fieldDelimiter) {
         fieldDelimiter = fieldDelimiter == null ? "," : fieldDelimiter;
         List<ParameterInfo> parameterInfoList = new ArrayList<>();
         String[] records = info.split(recordDelimiter);
@@ -114,30 +113,26 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
 
     public List<ParameterInfo> retrieveParameterInfoList(String locationId, String parameterId, String officeId) {
         List<ParameterInfo> parameterInfoList = new ArrayList<>();
-        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_TS_PROFILE_PARSER_PARAM
-                .AV_TS_PROFILE_PARSER_PARAM.LOCATION_ID, locationId);
-        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_PARSER_PARAM
-                .AV_TS_PROFILE_PARSER_PARAM.OFFICE_ID, officeId));
-        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_PARSER_PARAM
-                .AV_TS_PROFILE_PARSER_PARAM.KEY_PARAMETER_ID, parameterId));
-        Result<Record> parameterInfoResults = dsl.select(DSL.asterisk()).from(AV_TS_PROFILE_PARSER_PARAM
-                        .AV_TS_PROFILE_PARSER_PARAM)
+        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(cwmsTsProfileParserParamView.LOCATION_ID, locationId);
+        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(cwmsTsProfileParserParamView.OFFICE_ID, officeId));
+        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(cwmsTsProfileParserParamView.KEY_PARAMETER_ID, parameterId));
+        Result<Record> parameterInfoResults = dsl.select(DSL.asterisk()).from(cwmsTsProfileParserParamView)
                 .where(whereCondition)
                 .fetch();
         for (Record recordParameterInfo : parameterInfoResults) {
-            Short parameterField = recordParameterInfo.get("PARAMETER_FIELD", Short.class);
+            Short parameterField = cwmsTsProfileParserParamView.PARAMETER_FIELD.get(recordParameterInfo);
             if (parameterField != null) {
                 parameterInfoList.add(new ParameterInfoIndexed.Builder()
                         .withIndex(parameterField)
-                        .withParameter((String) recordParameterInfo.get(PARAMETER_ID))
-                        .withUnit((String) recordParameterInfo.get("PARAMETER_UNIT"))
+                        .withParameter(cwmsTsProfileParserParamView.PARAMETER_ID.get(recordParameterInfo))
+                        .withUnit(cwmsTsProfileParserParamView.PARAMETER_UNIT.get(recordParameterInfo))
                         .build());
             } else {
                 parameterInfoList.add(new ParameterInfoColumnar.Builder()
-                        .withStartColumn(recordParameterInfo.get("PARAMETER_COL_START", Short.class))
-                        .withEndColumn(recordParameterInfo.get("PARAMETER_COL_END", Short.class))
-                        .withParameter((String) recordParameterInfo.get(PARAMETER_ID))
-                        .withUnit((String) recordParameterInfo.get("PARAMETER_UNIT"))
+                        .withStartColumn(cwmsTsProfileParserParamView.PARAMETER_COL_START.get(recordParameterInfo))
+                        .withEndColumn(cwmsTsProfileParserParamView.PARAMETER_COL_END.get(recordParameterInfo))
+                        .withParameter(cwmsTsProfileParserParamView.PARAMETER_ID.get(recordParameterInfo))
+                        .withUnit(cwmsTsProfileParserParamView.PARAMETER_UNIT.get(recordParameterInfo))
                         .build());
             }
         }
@@ -148,28 +143,25 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
             String officeIdMask, boolean includeParameters) {
         List<TimeSeriesProfileParser> timeSeriesProfileParserList = new ArrayList<>();
 
-        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_TS_PROFILE_PARSER
-                .AV_TS_PROFILE_PARSER.LOCATION_ID, locationIdMask);
-        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_PARSER
-                .AV_TS_PROFILE_PARSER.OFFICE_ID, officeIdMask));
-        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_PROFILE_PARSER
-                .AV_TS_PROFILE_PARSER.KEY_PARAMETER_ID, parameterIdMask));
+        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(cwmsTsProfileParserView.LOCATION_ID, locationIdMask);
+        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(cwmsTsProfileParserView.OFFICE_ID, officeIdMask));
+        whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(cwmsTsProfileParserView.KEY_PARAMETER_ID, parameterIdMask));
 
         @NotNull Result<Record> timeSeriesProfileParserResults = dsl.select(DSL.asterisk())
-                .from(AV_TS_PROFILE_PARSER.AV_TS_PROFILE_PARSER)
+                .from(cwmsTsProfileParserView)
                 .where(whereCondition)
                 .fetch();
         for (Record profileParser : timeSeriesProfileParserResults) {
-            String recordDelimiter = profileParser.get("RECORD_DELIMTER_VALUE", String.class);
-            String fieldDelimiter = profileParser.get("FIELD_DELIMIETER_VALUE", String.class);
-            Short timeField = profileParser.get("TIME_FIELD", Short.class);
-            Short timeStartCol = profileParser.get("TIME_COL_START", Short.class);
-            Short timeEndCol = profileParser.get("TIME_COL_END", Short.class);
+            String recordDelimiter = cwmsTsProfileParserView.RECORD_DELIMTER_VALUE.get(profileParser);
+            String fieldDelimiter = cwmsTsProfileParserView.FIELD_DELIMIETER_VALUE.get(profileParser);
+            Short timeField = cwmsTsProfileParserView.TIME_FIELD.get(profileParser);
+            Short timeStartCol = cwmsTsProfileParserView.TIME_COL_START.get(profileParser);
+            Short timeEndCol = cwmsTsProfileParserView.TIME_COL_END.get(profileParser);
             CwmsId locationId = new CwmsId.Builder()
-                    .withOfficeId((String) profileParser.get("OFFICE_ID"))
-                    .withName((String) profileParser.get("LOCATION_ID"))
+                    .withOfficeId(cwmsTsProfileParserView.OFFICE_ID.get(profileParser))
+                    .withName(cwmsTsProfileParserView.LOCATION_ID.get(profileParser))
                     .build();
-            String keyParameter = profileParser.get("KEY_PARAMETER_ID", String.class);
+            String keyParameter = cwmsTsProfileParserView.KEY_PARAMETER_ID.get(profileParser);
             TimeSeriesProfileParser timeSeriesProfileParser;
             List<ParameterInfo> parameterInfoList = null;
             if (includeParameters) {
@@ -183,8 +175,8 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
                         .withLocationId(locationId)
                         .withKeyParameter(keyParameter)
                         .withParameterInfoList(parameterInfoList)
-                        .withTimeFormat((String) profileParser.get(TIME_FORMAT))
-                        .withTimeZone((String) profileParser.get("TIME_ZONE_ID"))
+                        .withTimeFormat(cwmsTsProfileParserView.TIME_FORMAT.get(profileParser))
+                        .withTimeZone(cwmsTsProfileParserView.TIME_ZONE_ID.get(profileParser))
                         .withRecordDelimiter(recordDelimiter.toCharArray()[0])
                         .build();
                 timeSeriesProfileParserList.add(timeSeriesProfileParser);
@@ -195,94 +187,14 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
                         .withLocationId(locationId)
                         .withKeyParameter(keyParameter)
                         .withParameterInfoList(parameterInfoList)
-                        .withTimeFormat((String) profileParser.get(TIME_FORMAT))
-                        .withTimeZone((String) profileParser.get("TIME_ZONE_ID"))
+                        .withTimeFormat(cwmsTsProfileParserView.TIME_FORMAT.get(profileParser))
+                        .withTimeZone(cwmsTsProfileParserView.TIME_ZONE_ID.get(profileParser))
                         .withRecordDelimiter(recordDelimiter.toCharArray()[0])
                         .build();
                 timeSeriesProfileParserList.add(timeSeriesProfileParser);
             }
         }
         return timeSeriesProfileParserList;
-    }
-
-    public List<TimeSeriesProfileParser> catalogTimeSeriesProfileParsers(String locationIdMask, String parameterIdMask,
-            String officeIdMask) {
-        return connectionResult(dsl, conn -> {
-            Result<Record> tsProfileParserResult = CWMS_TS_PROFILE_PACKAGE.call_CAT_TS_PROFILE_PARSER(DSL.using(conn)
-                            .configuration(),
-                    locationIdMask, parameterIdMask, officeIdMask);
-            List<TimeSeriesProfileParser> timeSeriesProfileParserList = new ArrayList<>();
-            for (Record profileParser : tsProfileParserResult) {
-                String recordDelimiter = profileParser.get("RECORD_DELIMITER", String.class);
-                String fieldDelimiter = profileParser.get("FIELD_DELIMITER", String.class);
-                Short timeField = profileParser.get("TIME_FIELD", Short.class);
-                Short timeStartCol = profileParser.get("TIME_START_COL", Short.class);
-                Short timeEndCol = profileParser.get("TIME_END_COL", Short.class);
-                Result<Record> parameterInfoResult = profileParser.get("PARAMETER_INFO", Result.class);
-
-                List<ParameterInfo> parameterInfoList = new ArrayList<>();
-                for (Record recordParam : parameterInfoResult) {
-                    if (timeField != null) {
-                        parameterInfoList.add(new ParameterInfoIndexed.Builder()
-                                .withIndex(recordParam.get("FIELD_NUMBER", Short.class))
-                                .withParameter((String) recordParam.get(PARAMETER_ID))
-                                .withUnit((String) recordParam.get("UNIT"))
-                                .build());
-                    } else {
-                        parameterInfoList.add(new ParameterInfoColumnar.Builder()
-                                .withStartColumn(recordParam.get("START_COL", Short.class))
-                                .withEndColumn(recordParam.get("END_COL", Short.class))
-                                .withParameter((String) recordParam.get(PARAMETER_ID))
-                                .withUnit((String) recordParam.get("UNIT"))
-                                .build());
-                    }
-                }
-
-
-                CwmsId locationId = new CwmsId.Builder()
-                        .withOfficeId((String) profileParser.get("CWMS_UTIL.GET_DB_OFFICE_ID(LOC.OFFICE_CODE)"))
-                        .withName((String) profileParser.get("LOCATION_ID"))
-                        .build();
-                TimeSeriesProfileParser timeSeriesProfileParser;
-                if (timeField != null) {
-                    timeSeriesProfileParser = new TimeSeriesProfileParserIndexed.Builder()
-                            .withFieldDelimiter(fieldDelimiter.toCharArray()[0])
-                            .withTimeField(timeField)
-                            .withLocationId(locationId)
-                            .withKeyParameter(profileParser.get(KEY_PARAMETER_ID, String.class))
-                            .withTimeFormat((String) profileParser.get(TIME_FORMAT))
-                            .withTimeZone((String) profileParser.get(TIME_ZONE))
-                            .withRecordDelimiter(recordDelimiter.toCharArray()[0])
-                            .withParameterInfoList(parameterInfoList)
-                            .build();
-                    timeSeriesProfileParserList.add(timeSeriesProfileParser);
-                } else if (timeStartCol != null && timeEndCol != null) {
-                    timeSeriesProfileParser = new TimeSeriesProfileParserColumnar.Builder()
-                            .withTimeStartColumn(timeStartCol)
-                            .withTimeEndColumn(timeEndCol)
-                            .withLocationId(locationId)
-                            .withKeyParameter((String) profileParser.get(KEY_PARAMETER_ID))
-                            .withTimeFormat((String) profileParser.get(TIME_FORMAT))
-                            .withTimeZone((String) profileParser.get(TIME_ZONE))
-                            .withRecordDelimiter(recordDelimiter.toCharArray()[0])
-                            .withParameterInfoList(parameterInfoList)
-                            .build();
-                    timeSeriesProfileParserList.add(timeSeriesProfileParser);
-                }
-
-            }
-            return timeSeriesProfileParserList;
-        });
-    }
-
-
-    public void copyTimeSeriesProfileParser(String locationId, String parameterId, String officeId,
-            String destinationLocation) {
-        connection(dsl, conn -> {
-            setOffice(conn, officeId);
-            CWMS_TS_PROFILE_PACKAGE.call_COPY_TS_PROFILE_PARSER(DSL.using(conn).configuration(), locationId,
-                    parameterId, destinationLocation, "F", officeId);
-        });
     }
 
     public void deleteTimeSeriesProfileParser(String locationId, String parameterId, String officeId) {
@@ -326,11 +238,9 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
         }
         return new TimeSeriesProfileParser.Builder()
                 .withLocationId(locationId)
-//				.withTimeField(timeSeriesProfileParser.getP_TIME_FIELD())
                 .withTimeZone(timeSeriesProfileParser.getP_TIME_ZONE())
                 .withTimeFormat(timeSeriesProfileParser.getP_TIME_FORMAT())
                 .withKeyParameter(keyParameter)
-//				.withFieldDelimiter(timeSeriesProfileParser.getP_FIELD_DELIMITER().toCharArray()[0])
                 .withRecordDelimiter(timeSeriesProfileParser.getP_RECORD_DELIMITER().toCharArray()[0])
                 .withTimeInTwoFields(false)
                 .withParameterInfoList(parameterInfo)

@@ -78,30 +78,6 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
     }
 
     @Test
-    void testCopyTimeSeriesProfile() throws SQLException {
-        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, databaseLink.getOfficeId());
-            TimeSeriesProfileDao timeSeriesProfileDao = new TimeSeriesProfileDao(context);
-            TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile( "Glensboro", "Depth");
-            timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
-            timeSeriesProfileDao.copyTimeSeriesProfile(timeSeriesProfile.getLocationId().getName(), timeSeriesProfile.getKeyParameter(),
-                    "Greensburg", null,
-                    timeSeriesProfile.getLocationId().getOfficeId());
-            TimeSeriesProfile timeSeriesProfileCopied = timeSeriesProfileDao.retrieveTimeSeriesProfile(
-                    "Greensburg",
-                    timeSeriesProfile.getKeyParameter(), timeSeriesProfile.getLocationId().getOfficeId());
-            assertEquals("Greensburg", timeSeriesProfileCopied.getLocationId().getName());
-            assertEquals(timeSeriesProfile.getKeyParameter(), timeSeriesProfileCopied.getKeyParameter());
-            assertEquals(timeSeriesProfile.getParameterList(), timeSeriesProfileCopied.getParameterList());
-
-            timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfile.getLocationId().getName(), timeSeriesProfile.getKeyParameter(), timeSeriesProfile.getLocationId().getOfficeId());
-            timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfileCopied.getLocationId().getName(),
-                    timeSeriesProfileCopied.getKeyParameter(), timeSeriesProfileCopied.getLocationId().getOfficeId());
-        }, CwmsDataApiSetupCallback.getWebUser());
-    }
-
-    @Test
     void testRetrieveTimeSeriesProfile() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -133,13 +109,13 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
 
 
             TimeSeriesProfileList timeSeriesProfileListBefore =
-                    timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*", null, -1);
+                    timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*", null, 1000);
 
             for (TimeSeriesProfile timeSeriesProfile : timeSeriesProfileListBefore.getProfileList()) {
                     timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfile.getLocationId().getName(), timeSeriesProfile.getKeyParameter(),
                             timeSeriesProfile.getLocationId().getOfficeId());
             }
-            TimeSeriesProfileList timeSeriesProfileListAfter = timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*", null, -1);
+            TimeSeriesProfileList timeSeriesProfileListAfter = timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*", null, 1000);
 
             assertEquals(0, timeSeriesProfileListAfter.getProfileList().size());
             assertEquals(2, timeSeriesProfileListBefore.getProfileList().size());
@@ -170,7 +146,7 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
                     timeSeriesProfileListPage2.getProfileList().get(0).getKeyParameter(),
                     timeSeriesProfileListPage2.getProfileList().get(0).getLocationId().getOfficeId());
 
-            TimeSeriesProfileList timeSeriesProfileListAfter = timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*", null, -1);
+            TimeSeriesProfileList timeSeriesProfileListAfter = timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*", null, 1000);
 
             assertEquals(0, timeSeriesProfileListAfter.getProfileList().size());
             assertEquals(1, timeSeriesProfileListPage1.getProfileList().size());
@@ -188,13 +164,13 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
             timeSeriesProfileDao.storeTimeSeriesProfile(timeSeriesProfile, false);
 
             TimeSeriesProfileList timeSeriesProfileListBefore =
-                    timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*", null, -1);
+                    timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*", null, 1000);
 
             timeSeriesProfileDao.deleteTimeSeriesProfile(timeSeriesProfile.getLocationId().getName(),
                     timeSeriesProfile.getKeyParameter(), timeSeriesProfile.getLocationId().getOfficeId());
 
             TimeSeriesProfileList timeSeriesProfileListAfter =
-                    timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*", null, -1);
+                    timeSeriesProfileDao.catalogTimeSeriesProfiles("*", "*", "*", null, 1000);
 
             assertEquals(timeSeriesProfileListBefore.getProfileList().size() - 1,
                     timeSeriesProfileListAfter.getProfileList().size());

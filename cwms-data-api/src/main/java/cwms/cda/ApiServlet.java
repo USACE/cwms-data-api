@@ -24,19 +24,8 @@
 
 package cwms.cda;
 
-
-import static cwms.cda.api.Controllers.CONTRACT_NAME;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PROJECT_ID;
-import static cwms.cda.api.Controllers.WATER_USER;
-import static io.javalin.apibuilder.ApiBuilder.crud;
-import static io.javalin.apibuilder.ApiBuilder.delete;
-import static io.javalin.apibuilder.ApiBuilder.get;
-import static io.javalin.apibuilder.ApiBuilder.patch;
-import static io.javalin.apibuilder.ApiBuilder.post;
-import static io.javalin.apibuilder.ApiBuilder.prefixPath;
-import static io.javalin.apibuilder.ApiBuilder.staticInstance;
+import static cwms.cda.api.Controllers.*;
+import static io.javalin.apibuilder.ApiBuilder.*;
 import static java.lang.String.format;
 
 import com.codahale.metrics.Meter;
@@ -104,9 +93,9 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
+import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.GateChangeDeleteController;
 import cwms.cda.api.location.kind.GateChangeGetAllController;
-import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.OutletController;
 import cwms.cda.api.location.kind.VirtualOutletController;
 import cwms.cda.api.location.kind.VirtualOutletCreateController;
@@ -121,6 +110,21 @@ import cwms.cda.api.project.ProjectLockRevokeDeny;
 import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileBase;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCatalogController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCreateController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileDeleteController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceBase;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceCatalogController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceCreateController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceDeleteController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserBase;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserCatalogController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserCreateController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserDeleteController;
 import cwms.cda.api.watersupply.WaterContractCatalogController;
 import cwms.cda.api.watersupply.WaterContractController;
 import cwms.cda.api.watersupply.WaterContractCreateController;
@@ -134,9 +138,6 @@ import cwms.cda.api.watersupply.WaterUserController;
 import cwms.cda.api.watersupply.WaterUserCreateController;
 import cwms.cda.api.watersupply.WaterUserDeleteController;
 import cwms.cda.api.watersupply.WaterUserUpdateController;
-import cwms.cda.api.timeseriesprofile.TimeSeriesProfileController;
-import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceController;
-import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -492,12 +493,35 @@ public class ApiServlet extends HttpServlet {
         get(textBinaryValuePath, new BinaryTimeSeriesValueController(metrics));
         addCacheControl(textBinaryValuePath, 1, TimeUnit.DAYS);
 
-        cdaCrudCache("/timeseries/parser/{parameter-id}", new TimeSeriesProfileParserController(metrics),
-                requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/timeseries/profile/{parameter-id}", new TimeSeriesProfileController(metrics),
-                requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/timeseries/instance/{timeseries-id}", new TimeSeriesProfileInstanceController(metrics),
-                requiredRoles,5, TimeUnit.MINUTES);
+        String timeSeriesProfilePath = "/timeseries/profile/";
+        get(format(timeSeriesProfilePath + "{%s}/{%s}", Controllers.LOCATION_ID, TimeSeriesProfileBase.PARAMETER_ID),
+                new TimeSeriesProfileController(metrics));
+        delete(format(timeSeriesProfilePath + "/{%s}/{%s}", Controllers.LOCATION_ID,
+                    TimeSeriesProfileBase.PARAMETER_ID), new TimeSeriesProfileDeleteController(metrics),
+                requiredRoles);
+        get(format(timeSeriesProfilePath, Controllers.LOCATION_ID, TimeSeriesProfileBase.PARAMETER_ID),
+                new TimeSeriesProfileCatalogController(metrics));
+        post(timeSeriesProfilePath, new TimeSeriesProfileCreateController(metrics), requiredRoles);
+
+        String timeSeriesProfileParserPath = "/timeseries/profile-parser/";
+        get(format(timeSeriesProfileParserPath + "{%s}/{%s}/", Controllers.LOCATION_ID,
+                TimeSeriesProfileParserBase.PARAMETER_ID), new TimeSeriesProfileParserController(metrics));
+        post(timeSeriesProfileParserPath, new TimeSeriesProfileParserCreateController(metrics), requiredRoles);
+        delete(format(timeSeriesProfileParserPath + "{%s}/{%s}/", Controllers.LOCATION_ID,
+                TimeSeriesProfileParserBase.PARAMETER_ID), new TimeSeriesProfileParserDeleteController(metrics),
+                requiredRoles);
+        get(timeSeriesProfileParserPath, new TimeSeriesProfileParserCatalogController(metrics));
+
+        String timeSeriesProfileInstancePath = "/timeseries/profile-instance/";
+        get(format(timeSeriesProfileInstancePath + "{%s}/{%s}/{%s}/", Controllers.LOCATION_ID,
+                TimeSeriesProfileInstanceBase.PARAMETER_ID, Controllers.VERSION),
+                new TimeSeriesProfileInstanceController(metrics));
+        post(timeSeriesProfileInstancePath, new TimeSeriesProfileInstanceCreateController(metrics), requiredRoles);
+        delete(format(timeSeriesProfileInstancePath + "{%s}/{%s}/{%s}/", Controllers.LOCATION_ID,
+                TimeSeriesProfileInstanceBase.PARAMETER_ID, Controllers.VERSION),
+                new TimeSeriesProfileInstanceDeleteController(metrics), requiredRoles);
+        get(timeSeriesProfileInstancePath, new TimeSeriesProfileInstanceCatalogController(metrics));
+
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",

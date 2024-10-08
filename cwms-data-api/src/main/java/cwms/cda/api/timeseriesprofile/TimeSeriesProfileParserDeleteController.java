@@ -26,27 +26,16 @@
 
 package cwms.cda.api.timeseriesprofile;
 
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.LOCATION_ID;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
-import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParser;
-import cwms.cda.formatters.ContentType;
-import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import javax.servlet.http.HttpServletResponse;
@@ -54,55 +43,43 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class TimeSeriesProfileParserController extends TimeSeriesProfileParserBase implements Handler {
+public final class TimeSeriesProfileParserDeleteController extends TimeSeriesProfileParserBase implements Handler {
 
-    public TimeSeriesProfileParserController(MetricRegistry metrics) {
+    public TimeSeriesProfileParserDeleteController(MetricRegistry metrics) {
         tspMetrics(metrics);
     }
 
     @OpenApi(
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "The office associated with the "
-                    + "TimeSeriesProfile"),
+                + "TimeSeriesProfile"),
         },
         pathParams = {
-            @OpenApiParam(name = PARAMETER_ID, required = true, description = "The ID of the TimeSeriesProfileParser"),
+            @OpenApiParam(name = PARAMETER_ID, required = true, description = "The parameter ID "
+                + "of the TimeSeriesProfileParser parameter"),
             @OpenApiParam(name = LOCATION_ID, required = true, description = "The location ID associated"
                 + " with the TimeSeriesProfile"),
         },
         responses = {
-            @OpenApiResponse(status = STATUS_200,
-                description = "A TimeSeriesProfileParser object",
-                content = {
-                    @OpenApiContent(from = TimeSeriesProfileParser.class, type = Formats.JSONV1),
-                }),
-            @OpenApiResponse(status = STATUS_404, description = "The provided combination of parameters did not"
-                + " find a TimeSeriesProfileParser object"),
-            @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
-                + "implemented")
-
+            @OpenApiResponse(status = STATUS_204, description = "The TimeSeriesProfileParser was successfully deleted"),
+            @OpenApiResponse(status = STATUS_404, description = "The provided ID did not find a"
+                + " TimeSeriesProfileParser object"),
+            @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
-        method = HttpMethod.GET,
-        summary = "Get a TimeSeriesProfileParser by ID",
+        method = HttpMethod.DELETE,
+        summary = "Delete a TimeSeriesProfileParser by ID",
         tags = {TAG}
     )
-
     @Override
     public void handle(@NotNull Context ctx) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+        try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            String parameterId = ctx.pathParam(PARAMETER_ID);
-            String officeId = requiredParam(ctx, OFFICE);
-            String locationId = ctx.pathParam(LOCATION_ID);
             TimeSeriesProfileParserDao tspParserDao = new TimeSeriesProfileParserDao(dsl);
-            TimeSeriesProfileParser tspParser = tspParserDao.retrieveTimeSeriesProfileParser(locationId,
-                    parameterId, officeId);
-            String acceptHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileParser.class);
-            String result = Formats.format(contentType, tspParser);
-            ctx.status(HttpServletResponse.SC_OK);
-            ctx.result(result);
+            String parameterId = ctx.pathParam(PARAMETER_ID);
+            String locationId = ctx.pathParam(LOCATION_ID);
+            String officeId = requiredParam(ctx, OFFICE);
+            tspParserDao.deleteTimeSeriesProfileParser(locationId, parameterId, officeId);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
-
 }

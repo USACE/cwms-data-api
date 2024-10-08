@@ -3,6 +3,7 @@ package cwms.cda.data.dao.timeseriesprofile;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.timeseriesprofile.DataColumnInfo;
 import cwms.cda.data.dto.timeseriesprofile.ParameterColumnInfo;
 import cwms.cda.data.dto.timeseriesprofile.ParameterInfo;
@@ -13,7 +14,6 @@ import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileInstance;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserColumnar;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
-import cwms.cda.data.dto.timeseriesprofile.TimeValuePair;
 import fixtures.CwmsDataApiSetupCallback;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -944,18 +945,16 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         TimeSeriesProfile timeSeriesProfile = buildTestTimeSeriesProfile(officeId, locationName, keyParameterUnit[0], parameterUnit1[0]);
 
 
-        List<TimeValuePair> timeValuePairList = new ArrayList<>();
+        List<TimeSeries.Record> timeValuePairList = new ArrayList<>();
         for (int i = 0; i < dateTimeArray.length; i++) {
-            TimeValuePair timeValuePair = new TimeValuePair.Builder()
-                    .withValue(valueArray[i])
-                    .withDateTime(dateTimeArray[i])
-                    .build();
+            TimeSeries.Record timeValuePair = new TimeSeries.Record(Timestamp.from(dateTimeArray[i]),
+                    valueArray[i], 0);
             timeValuePairList.add(timeValuePair);
         }
 
         List<TimeSeriesData> profileTimeSeries = new ArrayList<>();
         profileTimeSeries.add(new TimeSeriesData(timeValuePairList.get(0).getValue(),
-                timeValuePairList.get(0).getQuality()));
+                timeValuePairList.get(0).getQualityCode()));
 
         List<ParameterColumnInfo> parameterColumnInfoList = new ArrayList<>();
         ParameterColumnInfo paramColumnInfo = new ParameterColumnInfo.Builder()
@@ -986,11 +985,11 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         dataColumnInfoList.add(dataColumnInfo);
 
         Map<Long, List<TimeSeriesData>> timeSeriesList = new TreeMap<>();
-        timeSeriesList.put(timeValuePairList.get(0).getDateTime().toEpochMilli(), profileTimeSeries);
+        timeSeriesList.put(timeValuePairList.get(0).getDateTime().toInstant().toEpochMilli(), profileTimeSeries);
 
-        profileTimeSeries.add(new TimeSeriesData(timeValuePairList.get(1).getValue(), timeValuePairList.get(1).getQuality()));
+        profileTimeSeries.add(new TimeSeriesData(timeValuePairList.get(1).getValue(), timeValuePairList.get(1).getQualityCode()));
 
-        timeSeriesList.put(timeValuePairList.get(1).getDateTime().toEpochMilli(), profileTimeSeries);
+        timeSeriesList.put(timeValuePairList.get(1).getDateTime().toInstant().toEpochMilli(), profileTimeSeries);
         return new TimeSeriesProfileInstance.Builder()
                 .withTimeSeriesProfile(timeSeriesProfile)
                 .withParameterColumns(parameterColumnInfoList)
