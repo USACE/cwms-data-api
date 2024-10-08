@@ -71,12 +71,12 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
     TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     private static final Logger LOGGER = Logger.getLogger(TimeSeriesRecentControllerIT.class.getName());
     private static final String OFFICE_ID = "SPK";
-    private static final String LOCATION = "ZACK1";
-    private static final String TS_ID = LOCATION + ".Depth.Inst.15Minutes.0.TS_TEST";
-    private static final String CATEGORY_ID = "TEST";
-    private static final String GROUP_ID = "TEST_GROUP";
-    private static final ZonedDateTime START = ZonedDateTime.parse("2024-09-21T08:00:00-07:00[PST8PDT]");
-    private static final ZonedDateTime END = ZonedDateTime.parse("2024-09-21T09:00:00-07:00[PST8PDT]");
+    private static final String LOCATION = "Sacramento River Delta";
+    private static final String TS_ID = LOCATION + ".Depth.Inst.15Minutes.0.OBS-Raw";
+    private static final String CATEGORY_ID = "USACE Data Acquisition";
+    private static final String GROUP_ID = "USACE Include List";
+    private static final ZonedDateTime END = ZonedDateTime.now();
+    private static final ZonedDateTime START = END.minusHours(1);
     private static final ZonedDateTime VERSION_DATE = ZonedDateTime.parse("2024-09-21T09:00:00-07:00[PST8PDT]");
     private static TimeSeriesGroup group;
 
@@ -137,7 +137,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
         ;
 
-        TimeSeriesCategory category = new TimeSeriesCategory(OFFICE_ID, CATEGORY_ID, "Test Category");
+        TimeSeriesCategory category = new TimeSeriesCategory(OFFICE_ID, CATEGORY_ID, "Data Acquisition category");
         json = JsonV1.buildObjectMapper().writeValueAsString(category);
 
         // add timeseries to category
@@ -158,7 +158,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
 
-        group = new TimeSeriesGroup(category, OFFICE_ID, GROUP_ID, "Test Group", null, TS_ID);
+        group = new TimeSeriesGroup(category, OFFICE_ID, GROUP_ID, "USACE Include group", null, TS_ID);
         List<AssignedTimeSeries> tsList = Collections
                 .singletonList(new AssignedTimeSeries(OFFICE_ID, TS_ID, null, null, TS_ID, 0));
         group = new TimeSeriesGroup(group, tsList);
