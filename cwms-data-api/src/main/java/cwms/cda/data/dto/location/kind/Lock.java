@@ -30,6 +30,7 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
+import cwms.cda.data.dto.Unit;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -45,12 +46,15 @@ public class Lock extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final Location location;
     @JsonProperty(required = true)
-    private final LookupType chamberLocationDescription;
+    private final LookupType chamberType;
     private final double lockWidth;
     private final double lockLength;
     private final double normalLockLift;
     private final double volumePerLockage;
     private final double minimumDraft;
+    private final double maximumLockLift;
+    private final Unit units;
+    private final Unit volumeUnits;
     private final CwmsId highWaterUpperPoolLocationLevel;
     private final CwmsId lowWaterLowerPoolLocationLevel;
     private final CwmsId highWaterLowerPoolLocationLevel;
@@ -59,7 +63,7 @@ public class Lock extends CwmsDTOBase {
     private Lock(Builder builder) {
         this.location = builder.location;
         this.projectId = builder.projectId;
-        this.chamberLocationDescription = builder.locationDescription;
+        this.chamberType = builder.chamberType;
         this.lockWidth = builder.lockWidth;
         this.lockLength = builder.lockLength;
         this.normalLockLift = builder.normalLockLift;
@@ -69,6 +73,9 @@ public class Lock extends CwmsDTOBase {
         this.lowWaterLowerPoolLocationLevel = builder.lowWaterLowerPoolLocationLevel;
         this.highWaterLowerPoolLocationLevel = builder.highWaterLowerPoolLocationLevel;
         this.lowWaterUpperPoolLocationLevel = builder.lowWaterUpperPoolLocationLevel;
+        this.maximumLockLift = builder.maximumLockLift;
+        this.units = builder.units;
+        this.volumeUnits = builder.volumeUnits;
     }
 
     public final CwmsId getProjectId() {
@@ -79,8 +86,8 @@ public class Lock extends CwmsDTOBase {
         return location;
     }
 
-    public final LookupType getChamberLocationDescription() {
-        return chamberLocationDescription;
+    public final LookupType getChamberType() {
+        return chamberType;
     }
 
     public final double getLockWidth() {
@@ -93,6 +100,18 @@ public class Lock extends CwmsDTOBase {
 
     public final double getNormalLockLift() {
         return normalLockLift;
+    }
+
+    public final double getMaximumLockLift() {
+        return maximumLockLift;
+    }
+
+    public final Unit getUnits() {
+        return units;
+    }
+
+    public final Unit getVolumeUnits() {
+        return volumeUnits;
     }
 
     public final double getVolumePerLockage() {
@@ -122,12 +141,15 @@ public class Lock extends CwmsDTOBase {
     public static final class Builder {
         private Location location;
         private CwmsId projectId;
-        private LookupType locationDescription;
+        private LookupType chamberType;
         private double lockWidth;
         private double lockLength;
         private double normalLockLift;
+        private double maximumLockLift;
         private double volumePerLockage;
         private double minimumDraft;
+        private Unit units;
+        private Unit volumeUnits;
         private CwmsId highWaterUpperPoolLocationLevel;
         private CwmsId lowWaterLowerPoolLocationLevel;
         private CwmsId highWaterLowerPoolLocationLevel;
@@ -143,8 +165,8 @@ public class Lock extends CwmsDTOBase {
             return this;
         }
 
-        public Lock.Builder withLocationDescription(LookupType locationDescription) {
-            this.locationDescription = locationDescription;
+        public Lock.Builder withChamberType(LookupType chamberType) {
+            this.chamberType = chamberType;
             return this;
         }
 
@@ -160,6 +182,21 @@ public class Lock extends CwmsDTOBase {
 
         public Lock.Builder withNormalLockLift(double normalLockLift) {
             this.normalLockLift = normalLockLift;
+            return this;
+        }
+
+        public Lock.Builder withMaximumLockLift(double maximumLockLift) {
+            this.maximumLockLift = maximumLockLift;
+            return this;
+        }
+
+        public Lock.Builder withUnit(Unit unit) {
+            this.units = unit;
+            return this;
+        }
+
+        public Lock.Builder withVolumeUnit(Unit volumeUnit) {
+            this.volumeUnits = volumeUnit;
             return this;
         }
 
