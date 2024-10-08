@@ -2,7 +2,7 @@
   "type" : "gate-change",
   "project-id" : {
     "office-id" : "SPK",
-    "name" : "PROJECT1"
+    "name" : "BIGH"
   },
   "change-date" : 1704096000000,
   "pool-elevation" : 3.0,
@@ -29,7 +29,7 @@
     "type" : "gate-setting",
     "location-id" : {
       "office-id" : "SPK",
-      "name" : "PROJECT1-CG100"
+      "name" : "BIGH-CG100"
     },
     "opening" : 10.0,
     "opening-parameter" : "Opening",

@@ -23,6 +23,7 @@ package cwms.cda.data.dao.location.kind;
 import static cwms.cda.data.dao.location.kind.LocationUtil.getLocationRef;
 
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.errors.DeleteConflictException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
@@ -39,6 +40,7 @@ import cwms.cda.data.dto.location.kind.ProjectStructure;
 import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.data.dto.location.kind.VirtualOutletRecord;
 import java.math.BigInteger;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -121,7 +123,9 @@ public class OutletDao extends JooqDao<Outlet> {
                 CWMS_OUTLET_PACKAGE.call_DELETE_OUTLET(DSL.using(conn).configuration(), locationId,
                         deleteRule.getRule(), officeId);
             } catch (IntegrityConstraintViolationException e) {
-                throw new NotFoundException(e);
+                SQLException cause = e.getCause(SQLException.class);
+                throw new DeleteConflictException("Cannot delete outlet " + locationId + " because of an integrity"
+                        + " constraint violation.", cause);
             }
         });
     }
