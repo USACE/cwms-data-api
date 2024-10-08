@@ -284,9 +284,32 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()));
     }
 
+    @Order(6)
+    @ParameterizedTest
+	@ArgumentsSource(UserSpecSource.class)
+	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
+    public void test_api_key_cannot_create_new_key(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+        final String KEY_NAME = "KeyFromKey";
+
+        // This doesn't need to be a user in the database, the check is done before it gets there
+        final ApiKey key = new ApiKey(theUser.getName(),KEY_NAME,null,null,ZonedDateTime.now());
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .header("Authorization", "apikey " + realKeys.get(0).getApiKey())
+            .contentType("application/json")
+            .body(key)
+        .when()
+            .post("/auth/keys")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.FORBIDDEN.getStatus()))
+            .body("message",is("Missing roles {Role{name='cac_user'}}"));
+    }
+
     // delete api keys
     // List API keys
-    @Order(6)
+    @Order(7)
     @ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)
 	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
