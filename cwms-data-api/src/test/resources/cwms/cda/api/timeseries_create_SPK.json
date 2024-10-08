@@ -2,7 +2,7 @@
   "begin": "2021-06-21T08:00:00-0700[PST8PDT]",
   "end": "2021-06-21T09:00:00-0700[PST8PDT]",
   "interval": "PT15M",
-  "name": "ZACK2.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST",
+  "name": "ZACK.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST",
   "office-id": "SPK",
   "units": "m",
   "page-size": 1000,

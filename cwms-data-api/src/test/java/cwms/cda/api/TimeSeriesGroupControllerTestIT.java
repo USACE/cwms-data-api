@@ -655,9 +655,10 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
-                "/cwms/cda/api/timeseries_create_SPK4.json");
+                "/cwms/cda/api/timeseries_create_SPK.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8)
+                .replace("ZACK.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST", "ZACK.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST4");
 
         TimeSeries deserialize = Formats.parseContent(new ContentType(Formats.JSON), tsData, TimeSeries.class);
         timeSeriesToCleanup.add(deserialize);
@@ -754,13 +755,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
-                "/cwms/cda/api/timeseries_create_SPK1.json");
-        InputStream resource2 = this.getClass().getResourceAsStream(
-                "/cwms/cda/api/timeseries_create_SPK2.json");
+                "/cwms/cda/api/timeseries_create_SPK.json");
         assertNotNull(resource);
-        assertNotNull(resource2);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        String tsData2 = IOUtils.toString(resource2, StandardCharsets.UTF_8);
+        String tsData2 = tsData
+                .replace("ZACK.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST", "ZACK.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST2");
 
         TimeSeries deserialize = Formats.parseContent(new ContentType(Formats.JSON), tsData, TimeSeries.class);
         TimeSeries deserialize2 = Formats.parseContent(new ContentType(Formats.JSON), tsData2, TimeSeries.class);
@@ -861,9 +860,10 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     void test_patch_district_permission() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         InputStream resource = this.getClass().getResourceAsStream(
-                "/cwms/cda/api/timeseries_create_SPK3.json");
+                "/cwms/cda/api/timeseries_create_SPK.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8)
+                .replace("ZACK.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST", "ZACK.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST3");
 
         TimeSeries deserialize = Formats.parseContent(new ContentType(Formats.JSON), tsData, TimeSeries.class);
         timeSeriesToCleanup.add(deserialize);
