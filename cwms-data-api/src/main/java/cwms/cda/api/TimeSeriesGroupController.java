@@ -239,9 +239,9 @@ public class TimeSeriesGroupController implements CrudHandler {
             @OpenApiParam(name = REPLACE_ASSIGNED_TS, type = Boolean.class, description = "Specifies whether to "
                 + "unassign all existing time series before assigning new time series specified in the content body "
                 + "Default: false"),
-                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                    + "office of the user making the request. This is the office that the timeseries, group, and category "
-                    + "belong to. If the group and/or category belong to the CWMS office, this only identifies the timeseries."),
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                + "office of the user making the request. This is the office that the timeseries, group, and category "
+                + "belong to. If the group and/or category belong to the CWMS office, this only identifies the timeseries."),
         },
         method = HttpMethod.PATCH,
         tags = {TAG}
@@ -250,7 +250,6 @@ public class TimeSeriesGroupController implements CrudHandler {
     public void update(@NotNull Context ctx, @NotNull String oldGroupId) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-            final String CWMS_OFFICE = "CWMS";
             String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
             String office = requiredParam(ctx, OFFICE);
