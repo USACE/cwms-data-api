@@ -50,6 +50,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
+
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
@@ -281,6 +283,25 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
         assertNotNull(is);
         String json = IOUtils.toString(is, StandardCharsets.UTF_8);
         List<GateChange> change = Formats.parseContentList(Formats.parseHeader(Formats.JSONV1, GateChange.class), json, GateChange.class);
+        String office = change.get(0).getProjectId().getOfficeId();
+        String project = change.get(0).getProjectId().getName();
+        String location = change.get(0).getSettings().stream().findFirst().get().getLocationId().getName();
+        Location projectLocation = buildProjectLocation(project);
+        createLocation(project, true, office, "PROJECT");
+        createLocation(project + "-" + location, false, office);
+        String outletRatingSpecId = project + ".Opening-ConduitGate,Elev;Flow-ConduitGate.Standard.Production";
+        CwmsId outletRatingGroup = new CwmsId.Builder().withName(
+                "Rating-" + project + "-ConduitGate").withOfficeId(office).build();
+        Outlet outlet = buildTestOutlet(buildProjectStructureLocation(location, OUTLET_KIND), projectLocation,
+                outletRatingGroup, outletRatingSpecId);
+
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            DSLContext context = getDslContext(c, office);
+            OutletDao outletDao = new OutletDao(context);
+            CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(projectLocation), "F");
+            outletDao.storeOutlet(outlet, false);
+        }, CwmsDataApiSetupCallback.getWebUser());
 
         //Create the gate changes
         given()
