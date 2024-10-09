@@ -31,6 +31,8 @@ import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 
+import io.restassured.response.ExtractableResponse;
+import io.restassured.response.Response;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.Configuration;
 import org.jooq.impl.DSL;
@@ -617,7 +619,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         String groupJson = Formats.format(new ContentType(Formats.JSON), group);
 
         // get the location group and assert that changes were made
-        given()
+        ExtractableResponse<Response> response = given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
@@ -631,7 +633,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("assigned-locations.size()", equalTo(0));
+            .extract()
+        ;
+        int expectedSize = response.body().jsonPath().getInt("assigned-locations.size()");
 
         // patch the location group owned by CWMS office
         given()
@@ -706,7 +710,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("assigned-locations.size()", equalTo(0));
+            .body("assigned-locations.size()", equalTo(expectedSize));
     }
 
     @Test
@@ -727,8 +731,8 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         String newGroupJson = Formats.format(new ContentType(Formats.JSON), newLocGroup);
         String groupJson = Formats.format(new ContentType(Formats.JSON), group);
 
-        // get the location group and assert that changes were made
-        given()
+        // get the starting size of the assigned locations
+        ExtractableResponse<Response> response = given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
@@ -742,7 +746,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("assigned-locations.size()", equalTo(0));
+            .extract();
+
+        int expectedSize = response.body().jsonPath().getInt("assigned-locations.size()");
 
         // patch the location group owned by CWMS office
         given()
@@ -817,6 +823,6 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("assigned-locations.size()", equalTo(0));
+            .body("assigned-locations.size()", equalTo(expectedSize));
     }
 }
