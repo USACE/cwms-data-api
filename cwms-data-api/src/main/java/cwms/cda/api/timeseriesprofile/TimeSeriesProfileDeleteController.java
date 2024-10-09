@@ -76,7 +76,7 @@ public final class TimeSeriesProfileDeleteController extends TimeSeriesProfileBa
             String keyParameter = ctx.pathParam(PARAMETER_ID);
             String office = requiredParam(ctx, OFFICE);
             String locationId = ctx.pathParam(LOCATION_ID);
-            TimeSeriesProfileDao tspDao = new TimeSeriesProfileDao(dsl);
+            TimeSeriesProfileDao tspDao = getProfileDao(dsl);
             tspDao.deleteTimeSeriesProfile(locationId, keyParameter, office);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }

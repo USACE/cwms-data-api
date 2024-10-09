@@ -20,11 +20,13 @@ import java.math.BigInteger;
 public final class TimeSeriesProfileParserColumnar extends TimeSeriesProfileParser {
     private final Integer timeStartColumn;
     private final Integer timeEndColumn;
+    private final String type;
 
     TimeSeriesProfileParserColumnar(Builder builder) {
         super(builder);
         timeStartColumn = builder.timeStartColumn;
         timeEndColumn = builder.timeEndColumn;
+        type = builder.type;
     }
 
     @Override
@@ -47,11 +49,16 @@ public final class TimeSeriesProfileParserColumnar extends TimeSeriesProfilePars
         return null;
     }
 
+    public String getType() {
+        return type;
+    }
+
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static final class Builder extends TimeSeriesProfileParser.Builder {
         private Integer timeStartColumn = null;
         private Integer timeEndColumn = null;
+        private String type = "columnar-timeseries-profile-parser";
 
         public TimeSeriesProfileParserColumnar.Builder withTimeStartColumn(int timeStartColumn) {
             this.timeStartColumn = timeStartColumn;
@@ -60,6 +67,11 @@ public final class TimeSeriesProfileParserColumnar extends TimeSeriesProfilePars
 
         public TimeSeriesProfileParserColumnar.Builder withTimeEndColumn(int timeEndColumn) {
             this.timeEndColumn = timeEndColumn;
+            return this;
+        }
+
+        public TimeSeriesProfileParserColumnar.Builder withType(String type) {
+            this.type = type;
             return this;
         }
 

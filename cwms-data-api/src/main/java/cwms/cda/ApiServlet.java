@@ -110,17 +110,14 @@ import cwms.cda.api.project.ProjectLockRevokeDeny;
 import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
-import cwms.cda.api.timeseriesprofile.TimeSeriesProfileBase;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCatalogController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCreateController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileDeleteController;
-import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceBase;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceCatalogController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceCreateController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceDeleteController;
-import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserBase;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserCatalogController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserCreateController;
@@ -494,31 +491,31 @@ public class ApiServlet extends HttpServlet {
         addCacheControl(textBinaryValuePath, 1, TimeUnit.DAYS);
 
         String timeSeriesProfilePath = "/timeseries/profile/";
-        get(format(timeSeriesProfilePath + "{%s}/{%s}", Controllers.LOCATION_ID, TimeSeriesProfileBase.PARAMETER_ID),
+        get(format(timeSeriesProfilePath + "{%s}/{%s}", Controllers.LOCATION_ID, Controllers.PARAMETER_ID),
                 new TimeSeriesProfileController(metrics));
         delete(format(timeSeriesProfilePath + "/{%s}/{%s}", Controllers.LOCATION_ID,
-                    TimeSeriesProfileBase.PARAMETER_ID), new TimeSeriesProfileDeleteController(metrics),
+                        Controllers.PARAMETER_ID), new TimeSeriesProfileDeleteController(metrics),
                 requiredRoles);
-        get(format(timeSeriesProfilePath, Controllers.LOCATION_ID, TimeSeriesProfileBase.PARAMETER_ID),
+        get(format(timeSeriesProfilePath, Controllers.LOCATION_ID, Controllers.PARAMETER_ID),
                 new TimeSeriesProfileCatalogController(metrics));
         post(timeSeriesProfilePath, new TimeSeriesProfileCreateController(metrics), requiredRoles);
 
         String timeSeriesProfileParserPath = "/timeseries/profile-parser/";
         get(format(timeSeriesProfileParserPath + "{%s}/{%s}/", Controllers.LOCATION_ID,
-                TimeSeriesProfileParserBase.PARAMETER_ID), new TimeSeriesProfileParserController(metrics));
+                Controllers.PARAMETER_ID), new TimeSeriesProfileParserController(metrics));
         post(timeSeriesProfileParserPath, new TimeSeriesProfileParserCreateController(metrics), requiredRoles);
         delete(format(timeSeriesProfileParserPath + "{%s}/{%s}/", Controllers.LOCATION_ID,
-                TimeSeriesProfileParserBase.PARAMETER_ID), new TimeSeriesProfileParserDeleteController(metrics),
+                        Controllers.PARAMETER_ID), new TimeSeriesProfileParserDeleteController(metrics),
                 requiredRoles);
         get(timeSeriesProfileParserPath, new TimeSeriesProfileParserCatalogController(metrics));
 
         String timeSeriesProfileInstancePath = "/timeseries/profile-instance/";
         get(format(timeSeriesProfileInstancePath + "{%s}/{%s}/{%s}/", Controllers.LOCATION_ID,
-                TimeSeriesProfileInstanceBase.PARAMETER_ID, Controllers.VERSION),
+                        Controllers.PARAMETER_ID, Controllers.VERSION),
                 new TimeSeriesProfileInstanceController(metrics));
         post(timeSeriesProfileInstancePath, new TimeSeriesProfileInstanceCreateController(metrics), requiredRoles);
         delete(format(timeSeriesProfileInstancePath + "{%s}/{%s}/{%s}/", Controllers.LOCATION_ID,
-                TimeSeriesProfileInstanceBase.PARAMETER_ID, Controllers.VERSION),
+                        Controllers.PARAMETER_ID, Controllers.VERSION),
                 new TimeSeriesProfileInstanceDeleteController(metrics), requiredRoles);
         get(timeSeriesProfileInstancePath, new TimeSeriesProfileInstanceCatalogController(metrics));
 
@@ -850,7 +847,7 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
         totalRequests.mark();
         try {
             String office = officeFromContext(req.getContextPath());

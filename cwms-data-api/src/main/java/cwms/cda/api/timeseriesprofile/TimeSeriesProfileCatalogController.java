@@ -85,7 +85,7 @@ public final class TimeSeriesProfileCatalogController extends TimeSeriesProfileB
     public void handle(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
-            TimeSeriesProfileDao tspDao = new TimeSeriesProfileDao(dsl);
+            TimeSeriesProfileDao tspDao = getProfileDao(dsl);
             String officeMask = ctx.queryParamAsClass(OFFICE_MASK, String.class).getOrDefault("*");
             String locationMask = ctx.queryParamAsClass(LOCATION_MASK, String.class).getOrDefault("*");
             String parameterIdMask = ctx.queryParamAsClass(PARAMETER_ID_MASK, String.class).getOrDefault("*");

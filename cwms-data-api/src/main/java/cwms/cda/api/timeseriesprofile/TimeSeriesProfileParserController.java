@@ -29,6 +29,7 @@ package cwms.cda.api.timeseriesprofile;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PARAMETER_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
@@ -94,7 +95,7 @@ public final class TimeSeriesProfileParserController extends TimeSeriesProfilePa
             String parameterId = ctx.pathParam(PARAMETER_ID);
             String officeId = requiredParam(ctx, OFFICE);
             String locationId = ctx.pathParam(LOCATION_ID);
-            TimeSeriesProfileParserDao tspParserDao = new TimeSeriesProfileParserDao(dsl);
+            TimeSeriesProfileParserDao tspParserDao = getParserDao(dsl);
             TimeSeriesProfileParser tspParser = tspParserDao.retrieveTimeSeriesProfileParser(locationId,
                     parameterId, officeId);
             String acceptHeader = ctx.header(Header.ACCEPT);

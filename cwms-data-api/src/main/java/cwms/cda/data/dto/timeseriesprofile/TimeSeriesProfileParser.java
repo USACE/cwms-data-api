@@ -19,8 +19,10 @@ import java.util.List;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonDeserialize(builder = TimeSeriesProfileInstance.Builder.class)
-@JsonSubTypes({@JsonSubTypes.Type(value = TimeSeriesProfileParserIndexed.class, name = "indexed-timeseries-profile-parser"),
-    @JsonSubTypes.Type(value = TimeSeriesProfileParserColumnar.class, name = "columnar-timeseries-profile-parser")
+@JsonSubTypes({@JsonSubTypes.Type(value = TimeSeriesProfileParserIndexed.class,
+        name = "indexed-timeseries-profile-parser"),
+    @JsonSubTypes.Type(value = TimeSeriesProfileParserColumnar.class,
+        name = "columnar-timeseries-profile-parser")
 })
 
 public  class TimeSeriesProfileParser extends CwmsDTOBase {
@@ -47,7 +49,6 @@ public  class TimeSeriesProfileParser extends CwmsDTOBase {
         // there must be a key parameter
         validator.required(getKeyParameter(),"keyParameter");
     }
-
 
     public CwmsId getLocationId() {
         return locationId;

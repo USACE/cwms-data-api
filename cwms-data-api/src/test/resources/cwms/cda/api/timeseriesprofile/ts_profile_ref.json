@@ -6,11 +6,11 @@
   ],
   "location-id": {
     "office-id": "SPK",
-    "name": "Test_TSP_Location"
+    "name": "Beaverdam Ck Dam"
   },
   "reference-ts-id": {
-    "office-id": "SWT",
-    "name": "Test_TSP_Location.Elev.Inst.1Hour.0.DSS-Obs"
+    "office-id": "SPK",
+    "name": "Beaverdam Ck Dam.Elev.Inst.1Hour.0.DSS-Obs"
   },
   "key-parameter": "Depth"
 }

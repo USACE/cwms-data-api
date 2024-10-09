@@ -32,19 +32,11 @@ import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileInstanceDao;
 import org.jooq.DSLContext;
 
-public class TimeSeriesProfileInstanceBase {
+public abstract class TimeSeriesProfileInstanceBase {
     static final String TAG = "TimeSeries";
-    public static final String PARAMETER_ID = "parameter-id";
-    public static final String PARAMETER_ID_MASK = "parameter-id-mask";
-    public static final String VERSION_MASK = "version-mask";
-    public static final String PROFILE_DATA = "profile-data";
-    public static final String START_INCLUSIVE = "start-inclusive";
-    public static final String END_INCLUSIVE = "end-inclusive";
-    public static final String PREVIOUS = "previous";
-    public static final String NEXT = "next";
     private MetricRegistry metrics;
 
-    TimeSeriesProfileInstanceDao getContractDao(DSLContext dsl) {
+    TimeSeriesProfileInstanceDao getProfileInstanceDao(DSLContext dsl) {
         return new TimeSeriesProfileInstanceDao(dsl);
     }
 

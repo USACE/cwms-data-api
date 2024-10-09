@@ -2,7 +2,7 @@
   "type": "indexed-timeseries-profile-parser",
   "location-id": {
     "office-id": "SPK",
-    "name": "Test_TSP_Location"
+    "name": "Beaverdam Ck Dam"
   },
   "key-parameter": "Depth",
   "record-delimiter": "\n",

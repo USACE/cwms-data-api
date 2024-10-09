@@ -32,13 +32,13 @@ import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
 import org.jooq.DSLContext;
 
-public class TimeSeriesProfileParserBase {
+public abstract class TimeSeriesProfileParserBase {
     static final String TAG = "TimeSeries";
-    public static final String PARAMETER_ID = "parameter-id";
+
     public static final String PARAMETER_ID_MASK = "parameter-id-mask";
     private MetricRegistry metrics;
 
-    TimeSeriesProfileParserDao getContractDao(DSLContext dsl) {
+    TimeSeriesProfileParserDao getParserDao(DSLContext dsl) {
         return new TimeSeriesProfileParserDao(dsl);
     }
 

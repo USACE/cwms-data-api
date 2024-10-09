@@ -29,6 +29,7 @@ package cwms.cda.api.timeseriesprofile;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PARAMETER_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -85,9 +86,9 @@ public final class TimeSeriesProfileController extends TimeSeriesProfileBase imp
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             String parameterId = ctx.pathParam(PARAMETER_ID);
-            TimeSeriesProfileDao tspDao = new TimeSeriesProfileDao(dsl);
+            TimeSeriesProfileDao tspDao = getProfileDao(dsl);
             String office = requiredParam(ctx, OFFICE);
-            String locationId = requiredParam(ctx, LOCATION_ID);
+            String locationId = ctx.pathParam(LOCATION_ID);
             TimeSeriesProfile returned = tspDao.retrieveTimeSeriesProfile(locationId, parameterId, office);
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfile.class);

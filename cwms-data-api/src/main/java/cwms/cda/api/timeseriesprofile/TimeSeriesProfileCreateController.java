@@ -74,7 +74,7 @@ public final class TimeSeriesProfileCreateController extends TimeSeriesProfileBa
             TimeSeriesProfile timeSeriesProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                     TimeSeriesProfile.class), ctx.body(), TimeSeriesProfile.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, boolean.class).getOrDefault(true);
-            TimeSeriesProfileDao tspDao = new TimeSeriesProfileDao(dsl);
+            TimeSeriesProfileDao tspDao = getProfileDao(dsl);
             tspDao.storeTimeSeriesProfile(timeSeriesProfile, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED);
         }

@@ -84,6 +84,8 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
 
     @AfterEach
     public void tearDown() throws Exception {
+        // cleans up time series profiles between tests
+        // this is necessary because the tests reuse the same profiles
         cleanupTS(tsProfile.getLocationId().getName(), tsProfile.getKeyParameter());
         cleanupTS(tsProfile2.getLocationId().getName(), tsProfile2.getKeyParameter());
     }

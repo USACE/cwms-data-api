@@ -74,7 +74,7 @@ public final class TimeSeriesProfileParserDeleteController extends TimeSeriesPro
     public void handle(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            TimeSeriesProfileParserDao tspParserDao = new TimeSeriesProfileParserDao(dsl);
+            TimeSeriesProfileParserDao tspParserDao = getParserDao(dsl);
             String parameterId = ctx.pathParam(PARAMETER_ID);
             String locationId = ctx.pathParam(LOCATION_ID);
             String officeId = requiredParam(ctx, OFFICE);

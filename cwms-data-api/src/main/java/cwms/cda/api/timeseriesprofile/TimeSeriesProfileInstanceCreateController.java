@@ -26,8 +26,14 @@
 
 package cwms.cda.api.timeseriesprofile;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
+import static cwms.cda.api.Controllers.PROFILE_DATA;
+import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.requiredInstant;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -62,7 +68,7 @@ public final class TimeSeriesProfileInstanceCreateController extends TimeSeriesP
             @OpenApiParam(name = OVERRIDE_PROTECTION, type = Boolean.class, description = "Override protection"
                 + " for the time series profile instance. Default is false"),
             @OpenApiParam(name = VERSION_DATE, type = Long.class, description = "The version date of the"
-                + " time series profile instance. Default is the current date and time"),
+                + " time series profile instance.", required = true),
             @OpenApiParam(name = PROFILE_DATA, required = true, description = "The profile data of the"
                 + " time series profile instance"),
             @OpenApiParam(name = VERSION, description = "The version of the"
@@ -82,13 +88,12 @@ public final class TimeSeriesProfileInstanceCreateController extends TimeSeriesP
     public void handle(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-            TimeSeriesProfileInstanceDao tspInstanceDao = new TimeSeriesProfileInstanceDao(dsl);
+            TimeSeriesProfileInstanceDao tspInstanceDao = getProfileInstanceDao(dsl);
             TimeSeriesProfile timeSeriesProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                     TimeSeriesProfile.class), ctx.body(), TimeSeriesProfile.class);
             String profileData = requiredParam(ctx, PROFILE_DATA);
             String versionId = requiredParam(ctx, VERSION);
-            Instant versionDate = Instant.ofEpochMilli(ctx.queryParamAsClass(VERSION_DATE, Long.class)
-                    .getOrDefault(Instant.now().toEpochMilli()));
+            Instant versionDate = requiredInstant(ctx, VERSION_DATE);
             StoreRule storeRule = ctx.queryParamAsClass(METHOD, StoreRule.class).getOrDefault(StoreRule.REPLACE_ALL);
             boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, boolean.class)
                     .getOrDefault(false);

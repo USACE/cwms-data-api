@@ -26,7 +26,17 @@
 
 package cwms.cda.api.timeseriesprofile;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.DATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.LOCATION_ID;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
+import static cwms.cda.api.Controllers.PARAMETER_ID;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.requiredInstant;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -55,12 +65,13 @@ public final class TimeSeriesProfileInstanceDeleteController extends TimeSeriesP
         queryParams = {
             @OpenApiParam(name = OFFICE, description = "The office associated with the"
                 + " time series profile instance.", required = true),
-            @OpenApiParam(name = TIMEZONE, description = "The timezone of the"
-                + " time series profile instance. Default is UTC"),
+            @OpenApiParam(name = TIMEZONE, description = "Specifies "
+                    + "the time zone of the values of the begin and end fields. If this field is not specified, "
+                    + "the default time zone of UTC shall be used."),
             @OpenApiParam(name = VERSION_DATE, type = Instant.class, description = "The version date of the"
-                + " time series profile instance. Default is current time"),
+                + " time series profile instance.", required = true),
             @OpenApiParam(name = DATE, type = Instant.class, description = "The first date of the"
-                + " time series profile instance. Default is current time"),
+                + " time series profile instance.", required = true),
             @OpenApiParam(name = OVERRIDE_PROTECTION, type = Boolean.class, description = "Override protection"
                 + " for the time series profile instance. Default is true")
         },
@@ -83,16 +94,14 @@ public final class TimeSeriesProfileInstanceDeleteController extends TimeSeriesP
     public void handle(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            TimeSeriesProfileInstanceDao tspInstanceDao = new TimeSeriesProfileInstanceDao(dsl);
+            TimeSeriesProfileInstanceDao tspInstanceDao = getProfileInstanceDao(dsl);
             String office = requiredParam(ctx, OFFICE);
             String locationId = ctx.pathParam(LOCATION_ID);
             String timeZone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
             String version = ctx.pathParam(VERSION);
             String keyParameter = ctx.pathParam(PARAMETER_ID);
-            Instant versionDate = Instant.ofEpochMilli(ctx.queryParamAsClass(VERSION_DATE, Long.class)
-                    .getOrDefault(Instant.now().toEpochMilli()));
-            Instant firstDate = Instant.ofEpochMilli(ctx.queryParamAsClass(DATE, Long.class)
-                    .getOrDefault(Instant.now().toEpochMilli()));
+            Instant versionDate = requiredInstant(ctx, VERSION_DATE);
+            Instant firstDate = requiredInstant(ctx, DATE);
             CwmsId tspIdentifier = new CwmsId.Builder().withName(locationId).withOfficeId(office).build();
             boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, boolean.class).getOrDefault(true);
             tspInstanceDao.deleteTimeSeriesProfileInstance(tspIdentifier, keyParameter, version, firstDate, timeZone,

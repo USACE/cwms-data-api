@@ -26,15 +26,18 @@
 
 package cwms.cda.api.timeseriesprofile;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.LOCATION_MASK;
+import static cwms.cda.api.Controllers.OFFICE_MASK;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParser;
-import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserList;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParsers;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -59,28 +62,28 @@ public final class TimeSeriesProfileParserCatalogController extends TimeSeriesPr
     }
 
     @OpenApi(
-            queryParams = {
-                    @OpenApiParam(name = PARAMETER_ID_MASK, description = "The ID mask of the TimeSeriesProfileParser"
-                            + " parameter. Default is *"),
-                    @OpenApiParam(name = OFFICE_MASK, description = "The office mask associated with the "
-                            + "TimeSeriesProfile. Default is *"),
-                    @OpenApiParam(name = LOCATION_MASK, description = "The location ID mask associated"
-                            + " with the TimeSeriesProfile. Default is *"),
-            },
-            responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            description = "A TimeSeriesProfileParser object",
-                            content = {
-                                    @OpenApiContent(from = TimeSeriesProfileParsers.class, type = Formats.JSONV1),
-                            }),
-                    @OpenApiResponse(status = STATUS_404, description = "The provided combination of parameters did not"
-                            + " find a TimeSeriesProfileParser object"),
-                    @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
-                            + "implemented")
-            },
-            method = HttpMethod.GET,
-            summary = "Get a TimeSeriesProfileParser by ID",
-            tags = {TAG}
+        queryParams = {
+            @OpenApiParam(name = PARAMETER_ID_MASK, description = "The ID mask of the TimeSeriesProfileParser"
+                + " parameter. Default is *"),
+            @OpenApiParam(name = OFFICE_MASK, description = "The office mask associated with the "
+                + "TimeSeriesProfile. Default is *"),
+            @OpenApiParam(name = LOCATION_MASK, description = "The location ID mask associated"
+                + " with the TimeSeriesProfile. Default is *"),
+        },
+        responses = {
+            @OpenApiResponse(status = STATUS_200,
+                description = "A TimeSeriesProfileParser object",
+                content = {
+                    @OpenApiContent(from = TimeSeriesProfileParsers.class, type = Formats.JSONV1),
+                }),
+            @OpenApiResponse(status = STATUS_404, description = "The provided combination of parameters did not"
+                + " find a TimeSeriesProfileParser object"),
+            @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
+                + "implemented")
+        },
+        method = HttpMethod.GET,
+        summary = "Get a TimeSeriesProfileParser by ID",
+        tags = {TAG}
     )
     @Override
     public void handle(@NotNull Context ctx) {
@@ -91,16 +94,15 @@ public final class TimeSeriesProfileParserCatalogController extends TimeSeriesPr
             String locationId = ctx.queryParamAsClass(LOCATION_MASK, String.class).getOrDefault("*");
             String parameterIdMask = ctx.queryParamAsClass(PARAMETER_ID_MASK, String.class).getOrDefault("*");
 
-            TimeSeriesProfileParserDao tspParserDao = new TimeSeriesProfileParserDao(dsl);
+            TimeSeriesProfileParserDao tspParserDao = getParserDao(dsl);
             List<TimeSeriesProfileParser> tspParsers = tspParserDao.catalogTimeSeriesProfileParsers(locationId,
                     officeIdMask, parameterIdMask, true);
             String acceptHeader = ctx.header(Header.ACCEPT);
-            // Added custom List wrapper due to serialization issues with List for TimeSeriesProfileParser Type handling.
+            // Added type to DTO due to serialization issues with List for TimeSeriesProfileParser Type handling.
             // Related to Jackson subclassing annotations @JSONTypeInfo and @JSONSubTypes
             // See issue: https://github.com/FasterXML/jackson-databind/issues/2185
-            TimeSeriesProfileParserList parserList = new TimeSeriesProfileParserList(tspParsers);
             ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileParsers.class);
-            String result = Formats.format(contentType, parserList, TimeSeriesProfileParsers.class);
+            String result = Formats.format(contentType, tspParsers, TimeSeriesProfileParsers.class);
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(result);
         }

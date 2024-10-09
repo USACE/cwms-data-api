@@ -145,35 +145,36 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
 
         // Map the results to the return object
         // Initialize the previous location code and parameter id to split the pages correctly
-        Long prevLocationCode = AV_TS_PROFILE.LOCATION_CODE.get(timeSeriesProfileResults.get(0));
-        String prevParameterId = AV_TS_PROFILE.KEY_PARAMETER_ID.get(timeSeriesProfileResults.get(0));
+        Long prevLocationCode = timeSeriesProfileResults.get(0).get(AV_TS_PROFILE.LOCATION_CODE);
+        String prevParameterId = timeSeriesProfileResults.get(0).get(AV_TS_PROFILE.KEY_PARAMETER_ID);
         for (Record timeSeriesProfileResult : timeSeriesProfileResults) {
-            String parameters = AV_TS_PROFILE.PARAMETERS.get(timeSeriesProfileResult);
+            String parameters = timeSeriesProfileResult.get(AV_TS_PROFILE.PARAMETERS);
             String[] parameterArray = parameters.split(",");
             List<String> parameterList = Arrays.asList(parameterArray);
 
             CwmsId locationId = new CwmsId.Builder()
-                .withName(AV_TS_PROFILE.LOCATION_ID.get(timeSeriesProfileResult))
-                .withOfficeId(AV_TS_PROFILE.OFFICE_ID.get(timeSeriesProfileResult))
+                .withName(timeSeriesProfileResult.get(AV_TS_PROFILE.LOCATION_ID))
+                .withOfficeId(timeSeriesProfileResult.get(AV_TS_PROFILE.OFFICE_ID))
                 .build();
             CwmsId referenceTsId = new CwmsId.Builder()
-                .withName(AV_TS_PROFILE.ELEV_TS_ID.get(timeSeriesProfileResult))
-                .withOfficeId(AV_TS_PROFILE.OFFICE_ID.get(timeSeriesProfileResult))
+                .withName(timeSeriesProfileResult.get(AV_TS_PROFILE.ELEV_TS_ID))
+                .withOfficeId(timeSeriesProfileResult.get(AV_TS_PROFILE.OFFICE_ID))
                 .build();
 
             // Add the value to the return object
             // Adds page breaks if the page size is reached
-            timeSeriesProfileList.addValue(AV_TS_PROFILE.LOCATION_CODE.get(timeSeriesProfileResult),
-                new TimeSeriesProfile.Builder().withDescription(AV_TS_PROFILE.DESCRIPTION.get(timeSeriesProfileResult))
+            timeSeriesProfileList.addValue(timeSeriesProfileResult.get(AV_TS_PROFILE.LOCATION_CODE),
+                new TimeSeriesProfile.Builder().withDescription(timeSeriesProfileResult
+                                .get(AV_TS_PROFILE.DESCRIPTION))
                     .withReferenceTsId(referenceTsId)
-                    .withKeyParameter(AV_TS_PROFILE.KEY_PARAMETER_ID.get(timeSeriesProfileResult))
+                    .withKeyParameter(timeSeriesProfileResult.get(AV_TS_PROFILE.KEY_PARAMETER_ID))
                     .withLocationId(locationId)
                     .withParameterList(parameterList)
                     .build(),
                 prevParameterId, prevLocationCode)
             ;
-            prevLocationCode = AV_TS_PROFILE.LOCATION_CODE.get(timeSeriesProfileResult);
-            prevParameterId = AV_TS_PROFILE.KEY_PARAMETER_ID.get(timeSeriesProfileResult);
+            prevLocationCode = timeSeriesProfileResult.get(AV_TS_PROFILE.LOCATION_CODE);
+            prevParameterId = timeSeriesProfileResult.get(AV_TS_PROFILE.KEY_PARAMETER_ID);
         }
         return timeSeriesProfileList;
     }

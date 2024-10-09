@@ -26,7 +26,26 @@
 
 package cwms.cda.api.timeseriesprofile;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.END_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.LOCATION_ID;
+import static cwms.cda.api.Controllers.MAX_VERSION;
+import static cwms.cda.api.Controllers.NEXT;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.PARAMETER_ID;
+import static cwms.cda.api.Controllers.PREVIOUS;
+import static cwms.cda.api.Controllers.START;
+import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.requiredInstant;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -70,9 +89,9 @@ public final class TimeSeriesProfileInstanceController extends TimeSeriesProfile
                 + " time series profile instance. Default is the min or max version date, depending on the maxVersion"),
             @OpenApiParam(name = UNIT, description = "The units of the"
                 + " time series profile instance. Provided as a list separated by ','", required = true),
-            @OpenApiParam(name = START_INCLUSIVE, type = Boolean.class, description = "The start inclusive of the"
+            @OpenApiParam(name = START_TIME_INCLUSIVE, type = Boolean.class, description = "The start inclusive of the"
                 + " time series profile instance. Default is true"),
-            @OpenApiParam(name = END_INCLUSIVE, type = Boolean.class, description = "The end inclusive of the"
+            @OpenApiParam(name = END_TIME_INCLUSIVE, type = Boolean.class, description = "The end inclusive of the"
                 + " time series profile instance. Default is true"),
             @OpenApiParam(name = PREVIOUS, type = boolean.class, description = "Whether to include the previous "
                 + " time window of the time series profile instance. Default is false"),
@@ -99,7 +118,9 @@ public final class TimeSeriesProfileInstanceController extends TimeSeriesProfile
                     + " time series profile instance.", required = true),
         },
         method = HttpMethod.GET,
-        summary = "Get all time series profile instances",
+        summary = "Get all time series profile instances that match the provided masks. This endpoint will return a "
+                + "list of time series profile instances without the associated data. Data for an instance can be "
+                + "retrieved using the singular retrieval endpoint.",
         tags = {TAG},
         responses = {
             @OpenApiResponse(status = STATUS_200,
@@ -115,34 +136,32 @@ public final class TimeSeriesProfileInstanceController extends TimeSeriesProfile
     public void handle(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
-            TimeSeriesProfileInstanceDao tspInstanceDao = new TimeSeriesProfileInstanceDao(dsl);
+            TimeSeriesProfileInstanceDao tspInstanceDao = getProfileInstanceDao(dsl);
             String officeId = requiredParam(ctx, OFFICE);
             String locationId = ctx.pathParam(LOCATION_ID);
             String keyParameter = ctx.pathParam(PARAMETER_ID);
             String version = ctx.pathParam(VERSION);
             List<String> unit = Arrays.asList(requiredParam(ctx, UNIT).split(","));
-            Instant startTime = Instant.ofEpochMilli(Long.parseLong(ctx.queryParamAsClass(START, String.class)
-                    .getOrDefault(String.valueOf(Instant.now().toEpochMilli()))));
-            Instant endTime = Instant.ofEpochMilli(Long.parseLong(ctx.queryParamAsClass(END, String.class)
-                    .getOrDefault(String.valueOf(Instant.now().toEpochMilli()))));
+            Instant startTime = requiredInstant(ctx, START);
+            Instant endTime = requiredInstant(ctx, END);
             String timeZone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-            boolean startInclusive = ctx.queryParamAsClass(START_INCLUSIVE, boolean.class)
+            boolean startInclusive = ctx.queryParamAsClass(START_TIME_INCLUSIVE, boolean.class)
                     .getOrDefault(true);
-            boolean endInclusive = ctx.queryParamAsClass(END_INCLUSIVE, boolean.class)
+            boolean endInclusive = ctx.queryParamAsClass(END_TIME_INCLUSIVE, boolean.class)
                     .getOrDefault(true);
             boolean previous = ctx.queryParamAsClass(PREVIOUS, boolean.class).getOrDefault(false);
             boolean next = ctx.queryParamAsClass(NEXT, boolean.class).getOrDefault(false);
             Instant versionDate = ctx.queryParamAsClass(VERSION_DATE, String.class).getOrDefault(null) == null
-                    ? null : Instant.ofEpochMilli(Long.parseLong(ctx.queryParamAsClass(VERSION_DATE, String.class)
-                    .getOrDefault(null)));
+                    ? null : Instant.parse(ctx.queryParamAsClass(VERSION_DATE, String.class)
+                    .getOrDefault(null));
             boolean maxVersion = ctx.queryParamAsClass(MAX_VERSION, boolean.class)
                     .getOrDefault(false);
             String page = ctx.queryParam(PAGE);
             int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(500);
-            CwmsId tspIdentifier = new CwmsId.Builder().withOfficeId(officeId).withName(locationId).build();
-            TimeSeriesProfileInstance returnedInstance = tspInstanceDao.retrieveTimeSeriesProfileInstance(tspIdentifier,
-                    keyParameter, version, unit, startTime, endTime, timeZone, startInclusive, endInclusive,
-                    previous, next, versionDate, maxVersion, page, pageSize);
+            CwmsId tspLocationIdentifier = new CwmsId.Builder().withOfficeId(officeId).withName(locationId).build();
+            TimeSeriesProfileInstance returnedInstance = tspInstanceDao.retrieveTimeSeriesProfileInstance(
+                    tspLocationIdentifier, keyParameter, version, unit, startTime, endTime, timeZone, startInclusive,
+                    endInclusive, previous, next, versionDate, maxVersion, page, pageSize);
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileInstance.class);
             String result = Formats.format(contentType, returnedInstance);

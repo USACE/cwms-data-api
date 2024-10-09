@@ -79,7 +79,7 @@ public final class TimeSeriesProfileParserCreateController extends TimeSeriesPro
 
             TimeSeriesProfileParserColumnar tspParserColumnar = null;
             TimeSeriesProfileParserIndexed tspParserIndexed = null;
-            TimeSeriesProfileParserDao tspParserDao = new TimeSeriesProfileParserDao(dsl);
+            TimeSeriesProfileParserDao tspParserDao = getParserDao(dsl);
             if (ctx.body().contains("columnar-timeseries-profile-parser")) {
                 tspParserColumnar = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                         TimeSeriesProfileParserColumnar.class), ctx.body(), TimeSeriesProfileParserColumnar.class);
