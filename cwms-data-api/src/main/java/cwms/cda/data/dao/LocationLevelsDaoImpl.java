@@ -62,7 +62,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -184,8 +183,10 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         private final JDomLocationLevelRef locationLevelRef;
         private final Date effectiveDate;
 
-        public LevelLookup(String officeId, String locLevelId, String attributeId, String attributeValue, String attributeUnits, Date effectiveDate) {
-            this(new JDomLocationLevelRef(officeId, locLevelId, attributeId, attributeValue, attributeUnits), effectiveDate);
+        public LevelLookup(String officeId, String locLevelId, String attributeId, String attributeValue,
+                String attributeUnits, Date effectiveDate) {
+            this(new JDomLocationLevelRef(officeId, locLevelId, attributeId, attributeValue, attributeUnits),
+                    effectiveDate);
         }
 
         public LevelLookup(JDomLocationLevelRef locationLevelRef, Date effectiveDate) {
@@ -203,7 +204,8 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             }
 
             LevelLookup that = (LevelLookup) o;
-            return Objects.equals(locationLevelRef, that.locationLevelRef) && Objects.equals(effectiveDate, that.effectiveDate);
+            return Objects.equals(locationLevelRef, that.locationLevelRef)
+                    && Objects.equals(effectiveDate, that.effectiveDate);
         }
 
         @Override
@@ -242,13 +244,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         List<SeasonalValueBean> seasonalValues = locationLevel.getSeasonalValues();
 
         SEASONAL_VALUE_TAB_T pSeasonalValues = null;
-        if(seasonalValues != null && !seasonalValues.isEmpty()) {
+        if (seasonalValues != null && !seasonalValues.isEmpty()) {
             pSeasonalValues = new SEASONAL_VALUE_TAB_T();
-            for(SeasonalValueBean seasonalValue : seasonalValues)
-            {
+            for(SeasonalValueBean seasonalValue : seasonalValues) {
                 SEASONAL_VALUE_T seasonalValueT = new SEASONAL_VALUE_T();
                 seasonalValueT.setOFFSET_MINUTES(toBigDecimal(seasonalValue.getOffsetMinutes()));
-                if(seasonalValue.getOffsetMonths() != null) {
+                if (seasonalValue.getOffsetMonths() != null) {
                     seasonalValueT.setOFFSET_MONTHS(seasonalValue.getOffsetMonths().byteValue());
                 }
                 seasonalValueT.setVALUE(toBigDecimal(seasonalValue.getValue()));
@@ -330,6 +331,11 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         return connectionResult(dsl, c -> {
             String units = pUnits;
             Configuration configuration = getDslContext(c, officeId).configuration();
+            if (units != null && (units.equalsIgnoreCase("SI")
+                    || units.equalsIgnoreCase("EN"))) {
+                units = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(configuration,
+                        locationLevelName.split("\\.")[1], units);
+            }
             RETRIEVE_LOCATION_LEVEL3 level = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOCATION_LEVEL3(
                 configuration, locationLevelName, units, date,
                 "UTC", null, null, units,
@@ -464,12 +470,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 //                offset.setDaysHoursMinutesString(dayToSecond.toString());
 //            }
 //            seasonalValuesImpl.setOffset(offset);
-           // TODO: LocationLevel is missing seasonal origin and offset.
+            // TODO: LocationLevel is missing seasonal origin and offset.
 
             String calOffset = r.get(view.CALENDAR_OFFSET);
             String timeOffset = r.get(view.TIME_OFFSET);
             JDomSeasonalIntervalImpl newSeasonalOffset = buildSeasonalOffset(calOffset, timeOffset);
-            SeasonalValueBean seasonalValue = buildSeasonalValueBean(seasonalLevel, newSeasonalOffset) ;
+            SeasonalValueBean seasonalValue = buildSeasonalValueBean(seasonalLevel, newSeasonalOffset);
             builder.withSeasonalValue(seasonalValue);
         }
     }
