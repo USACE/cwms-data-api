@@ -25,7 +25,33 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.AT;
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DATE_FORMAT;
+import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.EFFECTIVE_DATE;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.EXAMPLE_DATE;
+import static cwms.cda.api.Controllers.FORMAT;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.METHOD;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.RATING_ID;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.STORE_TEMPLATE;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -272,19 +298,16 @@ public class RatingController implements CrudHandler {
 
             ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, RatingAliasMarker.class);
 
-            if (format.isEmpty())
-            {
+            if (format.isEmpty()) {
                 //Use the full content type here (i.e. application/json;version=2)
                 ctx.contentType(contentType.toString());
-            }
-            else
-            {
+            } else {
                 //Legacy content type only includes the basic type (i.e. application/json)
                 ctx.contentType(contentType.getType());
             }
 
-            //At the moment, we still use the legacy formatting here, since we don't have a newer API for serializing/deserializing
-            //a collection of rating sets - unlike getOne.
+            //At the moment, we still use the legacy formatting here, since we don't have a newer API for
+            // serializing/deserializing a collection of rating sets - unlike getOne.
             String legacyFormat = Formats.getLegacyTypeFromContentType(contentType);
             String results = ratingDao.retrieveRatings(legacyFormat, names, unit, datum, office, start,
                     end, timezone);
@@ -298,7 +321,8 @@ public class RatingController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                @OpenApiParam(name = RATING_ID, required = true, description = "The rating-id of the effective dates to be retrieve. "),
+                @OpenApiParam(name = RATING_ID, required = true, description = "The rating-id of the effective "
+                        + "dates to be retrieve. "),
             },
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description =
@@ -315,14 +339,14 @@ public class RatingController implements CrudHandler {
                         + "otherwise specified), as well as the time zone of any times in the"
                         + " response. If this field is not specified, the default time zone "
                         + "of UTC shall be used."),
-                @OpenApiParam(name = DATE, description = "Specifies the "
+                @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies the "
                         + "date to find the closest match to for retrieving a specific rating curve. Uses a time window"
                         + " of 24 hours before and after the specified date. The format for this field is ISO 8601 extended,"
                         + " The enable flag must be set for this parameter to be used. If the date is not specified,"
                         + " the rating curve closest the current time will be used."),
-                    @OpenApiParam(name = ENABLE, description = "Specifies whether the date parameter is enabled. " +
-                        "If this parameter is not set, the date parameter will not be used, even if a value is provided."
-                            + " Default is `false`."),
+                @OpenApiParam(name = ENABLE, description = "Specifies whether the date parameter is enabled. "
+                        + "If this parameter is not set, the date parameter will not be used, even if a value is provided."
+                        + " Default is `false`."),
                 @OpenApiParam(name = METHOD, description = "Specifies "
                         + "the retrieval method used.  If no method is provided EAGER will be used.",
                         type = RatingSet.DatabaseLoadMethod.class),
@@ -338,11 +362,11 @@ public class RatingController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String rating) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            String officeId = ctx.queryParam(OFFICE);
+
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
             boolean enable = ctx.queryParamAsClass(ENABLE, Boolean.class).getOrDefault(false);
             Instant date = null;
-            String specificDate = ctx.queryParam(DATE);
+            String specificDate = ctx.queryParam(EFFECTIVE_DATE);
             if (specificDate != null && enable) {
                 date = DateUtils.parseUserDate(specificDate, timezone).toInstant();
             } else if (enable) {
@@ -360,6 +384,8 @@ public class RatingController implements CrudHandler {
             if (end != null) {
                 endInstant = DateUtils.parseUserDate(end, timezone).toInstant();
             }
+
+            String officeId = ctx.queryParam(OFFICE);
 
             RatingSet.DatabaseLoadMethod method = ctx.queryParamAsClass(METHOD,
                     RatingSet.DatabaseLoadMethod.class)

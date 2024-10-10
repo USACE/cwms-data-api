@@ -7,6 +7,7 @@
 
 package cwms.cda.api;
 
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import hec.data.cwmsRating.io.RatingSetContainer;
@@ -15,6 +16,7 @@ import io.restassured.filter.log.LogDetail;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,6 +33,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 {
 	private static final String EXISTING_LOC = "RatingsControllerTestIT";
 	private static final String EXISTING_SPEC = EXISTING_LOC + ".Stage;Flow.COE.Production";
+	private static final String TEMPLATE = "Stage;Flow.COE";
 	private static final String SPK = "SPK";
 
 	@BeforeAll
@@ -99,6 +102,28 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.assertThat()
 			.log().ifValidationFails(LogDetail.ALL,true)
 			.statusCode(is(HttpServletResponse.SC_OK));
+	}
+
+	@AfterAll
+	static void afterAll()
+	{
+		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+		// Delete Template
+		given()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.contentType(Formats.XMLV2)
+			.header("Authorization", user.toHeaderValue())
+			.queryParam(OFFICE, SPK)
+			.queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("/ratings/template/" + TEMPLATE)
+		.then()
+			.log().ifValidationFails(LogDetail.ALL,true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 	}
 
 	@ParameterizedTest
