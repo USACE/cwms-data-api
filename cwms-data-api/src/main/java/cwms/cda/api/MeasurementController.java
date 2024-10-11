@@ -86,12 +86,12 @@ public final class MeasurementController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = OFFICE_MASK, description = "Office id for filtering measurements."),
-                    @OpenApiParam(name = ID_MASK, description = "Location id for filtering measurements."),
-                    @OpenApiParam(name = MIN_NUMBER, description = "Minimum number for filtering measurements."),
-                    @OpenApiParam(name = MAX_NUMBER, description = "Maximum number for filtering measurements."),
-                    @OpenApiParam(name = MIN_DATE, description = "Minimum date for filtering measurements."),
-                    @OpenApiParam(name = MAX_DATE, description = "Maximum date for filtering measurements."),
+                    @OpenApiParam(name = OFFICE_MASK, description = "Office id mask for filtering measurements. Use null to retrieve measurements for all offices."),
+                    @OpenApiParam(name = ID_MASK, description = "Location id mask for filtering measurements. Use null to retrieve measurements for all locations."),
+                    @OpenApiParam(name = MIN_NUMBER, description = "Minimum measurement number-id for filtering measurements."),
+                    @OpenApiParam(name = MAX_NUMBER, description = "Maximum measurement number-id for filtering measurements."),
+                    @OpenApiParam(name = MIN_DATE, description = "Minimum date for filtering measurements in ISO-8601 format."),
+                    @OpenApiParam(name = MAX_DATE, description = "Maximum date for filtering measurements in ISO-8601 format."),
                     @OpenApiParam(name = UNIT_SYSTEM, description = "Specifies the unit system"
                             + " of the response. Valid values for the unit field are: "
                             + "\n* `EN`  Specifies English unit system.  Location values will be in the "
@@ -196,10 +196,10 @@ public final class MeasurementController implements CrudHandler {
     @OpenApi(
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the measurements to delete"),
-                    @OpenApiParam(name = MIN_NUMBER, description = "Specifies the min number of the measurement to delete."),
-                    @OpenApiParam(name = MAX_NUMBER, description = "Specifies the max number of the measurement to delete."),
-                    @OpenApiParam(name = MIN_DATE, description = "Specifies the minimum date of the measurement to delete."),
-                    @OpenApiParam(name = MAX_DATE, description = "Specifies the maximum date of the measurement to delete."),
+                    @OpenApiParam(name = MIN_NUMBER, description = "Specifies the min number-id of the measurement to delete."),
+                    @OpenApiParam(name = MAX_NUMBER, description = "Specifies the max number-id of the measurement to delete."),
+                    @OpenApiParam(name = MIN_DATE, description = "Specifies the minimum date (in ISO-8601 format) of the measurement to delete."),
+                    @OpenApiParam(name = MAX_DATE, description = "Specifies the maximum date (in ISO-8601 format) of the measurement to delete."),
             },
             description = "Delete an existing measurement.",
             method = HttpMethod.DELETE,

@@ -58,7 +58,7 @@ public final class MeasurementPatchController implements Handler {
                             @OpenApiContent(from = Measurement.class, type = Formats.JSON)
                     },
                     required = true),
-            description = "Update Measurement",
+            description = "Update Measurement Data. This is not a rename operation. The measurement data is updated with the new data provided.",
             method = HttpMethod.PATCH,
             tags = {MeasurementController.TAG},
             responses = {

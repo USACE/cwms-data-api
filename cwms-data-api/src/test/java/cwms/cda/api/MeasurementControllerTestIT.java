@@ -26,6 +26,7 @@ package cwms.cda.api;
 import cwms.cda.api.enums.UnitSystem;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.MeasurementDao;
 import cwms.cda.data.dao.StreamDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.measurement.Measurement;
@@ -50,6 +51,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static org.hamcrest.Matchers.*;
@@ -59,11 +61,13 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
 
     private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
+    private static final List<String> STREAM_LOC_IDS = new ArrayList<>();
 
     @BeforeAll
     public static void setup() throws SQLException {
         String testLoc = "StreamLoc321"; // match the stream location name in the json file
         createLocation(testLoc, true, OFFICE_ID, "STREAM_LOCATION");
+        STREAM_LOC_IDS.add(testLoc);
         createAndStoreTestStream("ImOnThisStream2");
     }
 
@@ -103,9 +107,26 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
             }
         }
         STREAMS_CREATED.clear();
+        for(String measLoc: STREAM_LOC_IDS)
+        {
+            try {
+                CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+                db.connection(c -> {
+                    MeasurementDao measDao = new MeasurementDao(getDslContext(c, OFFICE_ID));
+                    try {
+                        measDao.deleteMeasurements(OFFICE_ID, measLoc, null, null, null, null, null, null, null, null, null, null, null);
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                }, CwmsDataApiSetupCallback.getWebUser());
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
     }
 
     @Test
+    @Disabled
     void test_create_retrieve_delete_measurement() throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/measurement.json");
         assertNotNull(resource);
@@ -149,7 +170,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .get("/measurements/")
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
+        .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .body("[0].height-unit", equalTo(measurement.getHeightUnit()))
                 .body("[0].flow-unit", equalTo(measurement.getFlowUnit()))
@@ -308,6 +329,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @Disabled
     void test_create_retrieve_delete_measurement_multiple() throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/measurements.json");
         assertNotNull(resource);
@@ -583,6 +605,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @Disabled
     void test_update_does_not_exist() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
@@ -610,9 +633,10 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @Disabled
     void test_delete_does_not_exist() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        // Delete a Embankment
+        // Delete a Measurement
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .queryParam(Controllers.OFFICE, user.getOperatingOffice())

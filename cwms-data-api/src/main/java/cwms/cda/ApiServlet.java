@@ -542,7 +542,7 @@ public class ApiServlet extends HttpServlet {
         cdaCrudCache(format("/stream-reaches/{%s}", NAME),
                 new StreamReachController(metrics), requiredRoles,1, TimeUnit.DAYS);
         String measurements = "/measurements/";
-        patch(measurements ,new MeasurementPatchController(metrics));
+        patch(measurements, new MeasurementPatchController(metrics));
         cdaCrudCache(format(measurements + "{%s}", LOCATION_ID),
                 new cwms.cda.api.MeasurementController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
