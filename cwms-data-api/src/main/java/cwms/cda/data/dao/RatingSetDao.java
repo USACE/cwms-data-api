@@ -87,7 +87,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
     @Override
     public RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId,
-                              String specificationId, Instant startZdt, Instant endZdt, Instant date
+                              String specificationId, Instant startZdt, Instant endZdt, Instant effectiveDateParam
     ) throws IOException, RatingException {
         AV_RATING_LOCAL view = AV_RATING_LOCAL.AV_RATING_LOCAL;
 
@@ -113,7 +113,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
             RatingSet.DatabaseLoadMethod finalMethod = method;
 
-            if (date != null) {
+            if (effectiveDateParam != null) {
 
                 String ratingId = null;
                 Long difference = null;
@@ -127,7 +127,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
                 );
                 for (int i = 0; i < results.size(); i++) {
                     Timestamp effectiveDate = results.getValue(i, view.EFFECTIVE_DATE);
-                    long effectiveDifference = Math.abs(effectiveDate.toInstant().toEpochMilli() - date.toEpochMilli());
+                    long effectiveDifference = Math.abs(effectiveDate.toInstant().toEpochMilli() - effectiveDateParam.toEpochMilli());
                     if (difference == null || effectiveDifference < difference) {
                         difference = effectiveDifference;
                         ratingId = results.getValue(i, view.RATING_ID);

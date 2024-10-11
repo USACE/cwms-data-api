@@ -359,10 +359,10 @@ public class RatingController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
 
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-            Instant date = null;
-            String specificDate = ctx.queryParam(EFFECTIVE_DATE);
-            if (specificDate != null) {
-                date = DateUtils.parseUserDate(specificDate, timezone).toInstant();
+            Instant effectiveDate = null;
+            String effectiveDateParam = ctx.queryParam(EFFECTIVE_DATE);
+            if (effectiveDateParam != null) {
+                effectiveDate = DateUtils.parseUserDate(effectiveDateParam, timezone).toInstant();
             }
 
             Instant beginInstant = null;
@@ -383,7 +383,7 @@ public class RatingController implements CrudHandler {
                     RatingSet.DatabaseLoadMethod.class)
                     .getOrDefault(RatingSet.DatabaseLoadMethod.EAGER);
 
-            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant, date);
+            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant, effectiveDate);
             if (body != null) {
                 ctx.result(body);
                 ctx.status(HttpCode.OK);
@@ -395,7 +395,7 @@ public class RatingController implements CrudHandler {
     @Nullable
     private String getRatingSetString(Context ctx, RatingSet.DatabaseLoadMethod method,
                                       String officeId, String rating, Instant begin,
-                                      Instant end, Instant date) {
+                                      Instant end, Instant effectiveDate) {
         String retval = null;
 
         try (final Timer.Context ignored = markAndTime("getRatingSetString")) {
@@ -408,7 +408,7 @@ public class RatingController implements CrudHandler {
             if (isJson || isXml) {
                 ctx.contentType(contentType.toString());
                 try {
-                    RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end, date);
+                    RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end, effectiveDate);
                     if (ratingSet != null) {
                         if (isJson) {
                             retval = JsonRatingUtils.toJson(ratingSet);
@@ -446,13 +446,13 @@ public class RatingController implements CrudHandler {
 
     private RatingSet getRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
                                    String officeId, String rating, Instant begin,
-                                   Instant end, Instant date) throws IOException, RatingException {
+                                   Instant end, Instant effectiveDate) throws IOException, RatingException {
         RatingSet ratingSet;
         try (final Timer.Context ignored = markAndTime("getRatingSet")) {
             DSLContext dsl = getDslContext(ctx);
 
             RatingDao ratingDao = getRatingDao(dsl);
-            ratingSet = ratingDao.retrieve(method, officeId, rating, begin, end, date);
+            ratingSet = ratingDao.retrieve(method, officeId, rating, begin, end, effectiveDate);
         }
 
         return ratingSet;

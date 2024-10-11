@@ -34,12 +34,12 @@ import java.util.regex.Pattern;
 
 public interface RatingDao {
 
-    static final Pattern officeMatcher = Pattern.compile(".*office-id=\"(.*?)\"");
+    Pattern officeMatcher = Pattern.compile(".*office-id=\"(.*?)\"");
 
     void create(String ratingSet, boolean storeTemplate) throws IOException, RatingException;
 
     RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId,
-                       Instant start, Instant end, Instant date) throws IOException, RatingException;
+                       Instant start, Instant end, Instant effectiveDate) throws IOException, RatingException;
 
     String retrieveRatings(String format, String names, String unit, String datum, String office,
                            String start, String end, String timezone);
