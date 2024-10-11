@@ -1134,7 +1134,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             for (int i = 0; iter.hasNext(); i++) {
                 TimeSeries.Record value = iter.next();
                 timeArray[i] = value.getDateTime().getTime();
-                valueArray[i] = value.getValue();
+                Double val = value.getValue();
+                if (val == null) {
+                    val = Double.NEGATIVE_INFINITY;
+                }
+                valueArray[i] = val;
                 qualityArray[i] = value.getQualityCode();
             }
         }
