@@ -28,6 +28,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -353,13 +354,16 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         }
     }
 
-    private static String[] getMissingRoles(@NotNull Context ctx,
+    private static List<String> getMissingRoles(@NotNull Context ctx,
                                         @NotNull Set<RouteRole> requiredRoles,
                                         @NotNull DataApiPrincipal p) {
         Set<RouteRole> specifiedRoles = p.getRoles();
         Set<RouteRole> missing = new LinkedHashSet<>(requiredRoles);
         missing.removeAll(specifiedRoles);
-        return missing.stream().map(r -> r.toString()).collect(Collectors.toList()).toArray(new String[0]);
+        return Collections.unmodifiableList(
+            missing.stream()
+                   .map(r -> r.toString())
+                   .collect(Collectors.toList()));
     }
 
 
