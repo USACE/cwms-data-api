@@ -180,6 +180,81 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         }
     }
 
+    @Test
+    void test_get_constants_over_time() throws Exception {
+        String locId = "level_get_constants_test";
+        String levelId = locId + ".Stor.Ave.1Day.Regulating";
+        createLocation(locId, true, OFFICE);
+        final ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America"
+                + "/Los_Angeles"));
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            LocationLevel level = new LocationLevel.Builder(levelId, time)
+                    .withOfficeId(OFFICE)
+                    .withConstantValue(1.0)
+                    .withLevelUnitsId("ac-ft")
+                    .build();
+            LocationLevel level2 = new LocationLevel.Builder(levelId, time.plusDays(1))
+                    .withOfficeId(OFFICE)
+                    .withConstantValue(2.0)
+                    .withLevelUnitsId("ac-ft")
+                    .build();
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level);
+            dao.storeLocationLevel(level2);
+        });
+
+        Instant startTime = Instant.parse("2023-06-01T00:00:00Z");
+        Instant endTime = Instant.parse("2023-06-02T12:00:00Z");
+
+        // get location level constants over time
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(START, startTime.toEpochMilli())
+            .queryParam(END, endTime.toEpochMilli())
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(UNIT, "ac-ft")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/" + levelId)
+        .then()
+        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("constant-value-list.size()", is(2))
+            .body("constant-value-list[0].toString()",equalTo("[2023-06-01T00:00:00Z, 1.0]"))
+            .body("constant-value-list[1].toString()",equalTo("[2023-06-02T00:00:00Z, 2.0]"))
+        ;
+
+        // get location level constants over time with specified timezone
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(START, startTime.toEpochMilli())
+            .queryParam(END, endTime.toEpochMilli())
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(UNIT, "ac-ft")
+            .queryParam(TIMEZONE, "America/Phoenix")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/" + levelId)
+        .then()
+        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("constant-value-list.size()", is(2))
+            .body("constant-value-list[0].toString()",equalTo("[2023-06-01T00:00:00-07:00, 1.0]"))
+            .body("constant-value-list[1].toString()",equalTo("[2023-06-02T00:00:00-07:00, 2.0]"))
+        ;
+    }
+
 
     @Test
     void test_get_all_location_level() throws Exception {
@@ -347,7 +422,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @EnumSource(GetAllTestNewAliases.class)
-    void test_get_all_aliases_new(GetAllTestNewAliases test) throws Exception
+    void test_get_all_aliases_new(GetAllTestNewAliases test)
     {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
@@ -367,7 +442,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @EnumSource(GetAllTestLegacy.class)
-    void test_get_all_aliases_legacy(GetAllTestLegacy test) throws Exception
+    void test_get_all_aliases_legacy(GetAllTestLegacy test)
     {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)

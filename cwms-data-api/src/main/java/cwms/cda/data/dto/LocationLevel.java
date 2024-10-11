@@ -67,6 +67,10 @@ public final class LocationLevel extends CwmsDTO {
             + "seasonableTimeSeriesId and seasonValues.")
     
     private final Double constantValue;
+    @Schema(description = "List of constant values for this location level.")
+    @JsonFormat(shape = JsonFormat.Shape.ARRAY)
+
+    private final List<ConstantValue> constantValueList;
     @Schema(description = "Units the provided levels are in")
     
     private final String levelUnitsId;
@@ -121,6 +125,7 @@ public final class LocationLevel extends CwmsDTO {
         parameterTypeId = builder.parameterTypeId;
         parameterId = builder.parameterId;
         constantValue = builder.constantValue;
+        constantValueList = builder.constantValueList;
         levelUnitsId = builder.levelUnitsId;
         levelDate = builder.levelDate;
         levelComment = builder.levelComment;
@@ -160,6 +165,10 @@ public final class LocationLevel extends CwmsDTO {
 
     public Double getConstantValue() {
         return constantValue;
+    }
+
+    public List<ConstantValue> getConstantValueList() {
+        return constantValueList;
     }
 
     public String getLevelUnitsId() {
@@ -231,6 +240,7 @@ public final class LocationLevel extends CwmsDTO {
         private String parameterTypeId;
         private String parameterId;
         private Double constantValue;
+        private List<ConstantValue> constantValueList;
         private String levelUnitsId;
         private ZonedDateTime levelDate;
         private String levelComment;
@@ -470,6 +480,11 @@ public final class LocationLevel extends CwmsDTO {
             return this;
         }
 
+        public Builder withConstantValueList(List<ConstantValue> constantValueList) {
+            this.constantValueList = constantValueList;
+            return this;
+        }
+
         public Builder withLevelUnitsId(String levelUnitsId) {
             this.levelUnitsId = levelUnitsId;
             return this;
@@ -576,14 +591,54 @@ public final class LocationLevel extends CwmsDTO {
         super.validateInternal(validator);
         validator.required(getOfficeId(), "office-id");
         validator.required(getLocationLevelId(), "location-level-id");
-        if(getConstantValue() == null && getSeasonalTimeSeriesId() == null) {
+        if (getConstantValue() == null && getSeasonalTimeSeriesId() == null) {
             validator.required(getSeasonalValues(), "seasonal-values");
-        } else if(getSeasonalValues() == null && getSeasonalTimeSeriesId() == null) {
+        } else if (getSeasonalValues() == null && getSeasonalTimeSeriesId() == null) {
             validator.required(getConstantValue(), "constant-value");
-        } else if(getConstantValue() == null && getSeasonalValues() == null) {
+        } else if (getConstantValue() == null && getSeasonalValues() == null) {
             validator.required(getSeasonalTimeSeriesId(), "seasonable-time-series-id");
         }
-        validator.mutuallyExclusive("Only one of the following can be defined for location levels: constant-value, seasonal-values, seasonable-time-series-id",
+        validator.mutuallyExclusive("Only one of the following can be defined for location levels: "
+                        + "constant-value, seasonal-values, seasonable-time-series-id",
             getConstantValue(), getSeasonalValues(), getSeasonalTimeSeriesId());
+    }
+
+    @JsonFormat(shape = JsonFormat.Shape.ARRAY)
+    public static class ConstantValue {
+        @JsonFormat(shape = JsonFormat.Shape.STRING)
+        private final ZonedDateTime levelDate;
+        private final double value;
+
+        private ConstantValue(Builder builder) {
+            levelDate = builder.levelDate;
+            value = builder.constantValue;
+        }
+
+        public ZonedDateTime getLevelDate() {
+            return levelDate;
+        }
+
+        public double getValue() {
+            return value;
+        }
+
+        public static class Builder {
+            private ZonedDateTime levelDate;
+            private double constantValue;
+
+            public Builder withConstantValue(double constantValue) {
+                this.constantValue = constantValue;
+                return this;
+            }
+
+            public Builder withLevelDate(ZonedDateTime levelDate) {
+                this.levelDate = levelDate;
+                return this;
+            }
+
+            public ConstantValue build() {
+                return new ConstantValue(this);
+            }
+        }
     }
 }

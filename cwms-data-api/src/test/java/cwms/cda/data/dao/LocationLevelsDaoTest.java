@@ -70,7 +70,7 @@ public class LocationLevelsDaoTest extends DaoTest
             locationsDao.storeLocation(location);
             LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
             levelsDao.storeLocationLevel(levelToStore);
-            LocationLevel retrievedLevel = levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelToStore.getLevelDate(), "LRL");
+            LocationLevel retrievedLevel = levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelToStore.getLevelDate(), "LRL", null, null);
             assertNotNull(retrievedLevel);
             assertEquals(levelToStore.getLocationLevelId(), retrievedLevel.getLocationLevelId());
             assertEquals(levelToStore.getLevelDate(), retrievedLevel.getLevelDate());
@@ -92,10 +92,10 @@ public class LocationLevelsDaoTest extends DaoTest
         Location location = buildTestLocation("TEST_LOC5");
         locationsDao.storeLocation(location);
         levelsDao.storeLocationLevel(levelToStore);
-        LocationLevel retrievedLevel = levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelToStore.getLevelDate(), OFFICE_ID);
+        LocationLevel retrievedLevel = levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelToStore.getLevelDate(), OFFICE_ID, null, null);
         assertNotNull(retrievedLevel);
         levelsDao.deleteLocationLevel(levelToStore.getLocationLevelId(), levelToStore.getLevelDate(), OFFICE_ID, true);
-        assertThrows(IOException.class, () -> levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelToStore.getLevelDate(), OFFICE_ID));
+        assertThrows(IOException.class, () -> levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelToStore.getLevelDate(), OFFICE_ID, null, null));
     }
 
     @Disabled
@@ -114,7 +114,7 @@ public class LocationLevelsDaoTest extends DaoTest
             String format = Formats.JSON;
 
             LocationLevel levelFromBody = deserializeLocationLevel(body, Formats.JSON, OFFICE_ID);
-            existingLocationLevel = levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelFromBody.getLevelDate(), OFFICE_ID);
+            existingLocationLevel = levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelFromBody.getLevelDate(), OFFICE_ID, null, null);
             existingLocationLevel = updatedClearedFields(body, format, existingLocationLevel);
             //only store (update) if level does exist
             updatedLocationLevel = getUpdatedLocationLevel(existingLocationLevel, levelFromBody);
@@ -125,7 +125,7 @@ public class LocationLevelsDaoTest extends DaoTest
             } else {
                 levelsDao.storeLocationLevel(updatedLocationLevel);
             }
-            LocationLevel retrievedLevel = levelsDao.retrieveLocationLevel(updatedLocationLevel.getLocationLevelId(), UnitSystem.EN.getValue(), updatedLocationLevel.getLevelDate(), OFFICE_ID);
+            LocationLevel retrievedLevel = levelsDao.retrieveLocationLevel(updatedLocationLevel.getLocationLevelId(), UnitSystem.EN.getValue(), updatedLocationLevel.getLevelDate(), OFFICE_ID, null, null);
             assertNotNull(retrievedLevel);
         }
         finally {
