@@ -96,7 +96,6 @@ import org.jooq.DSLContext;
 public class RatingController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingController.class.getName());
     private static final String TAG = "Ratings";
-    private static final String ENABLE = "enable";
 
     private final MetricRegistry metrics;
 
@@ -340,13 +339,9 @@ public class RatingController implements CrudHandler {
                         + " response. If this field is not specified, the default time zone "
                         + "of UTC shall be used."),
                 @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies the "
-                        + "date to find the closest match to for retrieving a specific rating curve. Uses a time window"
-                        + " of 24 hours before and after the specified date. The format for this field is ISO 8601 extended,"
-                        + " The enable flag must be set for this parameter to be used. If the date is not specified,"
-                        + " the rating curve closest the current time will be used."),
-                @OpenApiParam(name = ENABLE, description = "Specifies whether the date parameter is enabled. "
-                        + "If this parameter is not set, the date parameter will not be used, even if a value is provided."
-                        + " Default is `false`."),
+                        + "date to find the closest match to for retrieving a specific rating curve. This date is used "
+                        + "instead of the time window specified by start and end. "
+                        + "The format for this field is ISO 8601 extended."),
                 @OpenApiParam(name = METHOD, description = "Specifies "
                         + "the retrieval method used.  If no method is provided EAGER will be used.",
                         type = RatingSet.DatabaseLoadMethod.class),
@@ -364,13 +359,10 @@ public class RatingController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
 
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-            boolean enable = ctx.queryParamAsClass(ENABLE, Boolean.class).getOrDefault(false);
             Instant date = null;
             String specificDate = ctx.queryParam(EFFECTIVE_DATE);
-            if (specificDate != null && enable) {
+            if (specificDate != null) {
                 date = DateUtils.parseUserDate(specificDate, timezone).toInstant();
-            } else if (enable) {
-                date = Instant.now();
             }
 
             Instant beginInstant = null;
@@ -442,8 +434,7 @@ public class RatingController implements CrudHandler {
             } else {
                 CdaError re = new CdaError("Currently supporting only: " + Formats.JSONV2
                         + " and " + Formats.XMLV2);
-                logger.log(Level.WARNING, "Provided accept header not recognized:"
-                                + acceptHeader, re);
+                logger.log(Level.WARNING, String.format("Provided accept header not recognized: %s", acceptHeader), re);
                 ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
                 ctx.json(CdaError.notImplemented());
             }

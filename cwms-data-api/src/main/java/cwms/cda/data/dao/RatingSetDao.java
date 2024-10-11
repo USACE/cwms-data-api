@@ -29,6 +29,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.List;
 import mil.army.usace.hec.cwms.rating.io.jdbc.ConnectionProvider;
 import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
 import org.jooq.DSLContext;
@@ -37,11 +43,6 @@ import org.jooq.exception.DataAccessException;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_LOCAL;
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.List;
 
 public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
@@ -59,8 +60,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
                 DSLContext context = getDslContext(c, office);
                 String errs = CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
                         ratingSetXml, "T", storeTemplate ? "T" : "F");
-                if (errs != null && !errs.isEmpty())
-                {
+                if (errs != null && !errs.isEmpty()) {
                     throw new DataAccessException(errs);
                 }
             });
@@ -118,6 +118,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
                 String ratingId = null;
                 Long difference = null;
                 Instant startInstant = null;
+                Instant endInstant = null;
                 Result<?> results = connectionResult(dsl, c ->
                     dsl.select(view.RATING_ID, view.EFFECTIVE_DATE, view.RATING_CODE).from(view)
                             .where(view.OFFICE_ID.eq(officeId)
@@ -126,10 +127,12 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
                 );
                 for (int i = 0; i < results.size(); i++) {
                     Timestamp effectiveDate = results.getValue(i, view.EFFECTIVE_DATE);
-                    if (difference == null || effectiveDate.toInstant().toEpochMilli() - date.toEpochMilli() < difference) {
-                        difference = effectiveDate.toInstant().toEpochMilli() - date.toEpochMilli();
+                    long effectiveDifference = Math.abs(effectiveDate.toInstant().toEpochMilli() - date.toEpochMilli());
+                    if (difference == null || effectiveDifference < difference) {
+                        difference = effectiveDifference;
                         ratingId = results.getValue(i, view.RATING_ID);
-                        startInstant = effectiveDate.toInstant();
+                        startInstant = effectiveDate.toInstant().atZone(ZoneId.of("UTC")).toInstant();
+                        endInstant = effectiveDate.toInstant().atZone(ZoneId.of("UTC")).toInstant();
                     }
                 }
                 if (ratingId == null) {
@@ -137,10 +140,11 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
                 }
                 final Instant finalStartInstant = startInstant;
                 final String ratingIdFinal = ratingId;
+                final Instant finalEndInstant = endInstant;
                 connection(dsl, c -> retval[0] =
                         RatingJdbcFactory.ratingSet(finalMethod, new RatingConnectionProvider(c), officeId,
                                 ratingIdFinal, finalStartInstant.toEpochMilli(),
-                                null, false));
+                                finalEndInstant.toEpochMilli(), false));
             } else {
                 connection(dsl, c -> retval[0] =
                         RatingJdbcFactory.ratingSet(finalMethod, new RatingConnectionProvider(c), officeId,
@@ -184,7 +188,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     public void delete(String officeId, String specificationId, Instant start, Instant end) {
         Timestamp startDate = new Timestamp(start.toEpochMilli());
         Timestamp endDate = new Timestamp(end.toEpochMilli());
-        dsl.connection(c->
+        dsl.connection(c ->
             CWMS_RATING_PACKAGE.call_DELETE_RATINGS(
                 getDslContext(c,officeId).configuration(), specificationId, startDate,
                 endDate, "UTC", officeId
@@ -203,15 +207,15 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     }
 
     private static final class RatingConnectionProvider implements ConnectionProvider {
-        private final Connection c;
+        private final Connection conn;
 
-        private RatingConnectionProvider(Connection c) {
-            this.c = c;
+        private RatingConnectionProvider(Connection conn) {
+            this.conn = conn;
         }
 
         @Override
         public Connection getConnection() {
-            return c;
+            return conn;
         }
 
         @Override
