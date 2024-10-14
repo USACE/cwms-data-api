@@ -23,6 +23,7 @@
  */
 package cwms.cda.api;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dao.DeleteRule;
@@ -59,15 +60,17 @@ import static org.hamcrest.Matchers.*;
 @Tag("integration")
 final class MeasurementControllerTestIT extends DataApiTestIT {
 
+
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
-    private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
-    private static final List<String> STREAM_LOC_IDS = new ArrayList<>();
+    private static final List<Stream> TEST_STREAMS = new ArrayList<>();
+    private static final List<String> TEST_STREAM_LOC_IDS = new ArrayList<>();
 
     @BeforeAll
     public static void setup() throws SQLException {
         String testLoc = "StreamLoc321"; // match the stream location name in the json file
         createLocation(testLoc, true, OFFICE_ID, "STREAM_LOCATION");
-        STREAM_LOC_IDS.add(testLoc);
+        TEST_STREAM_LOC_IDS.add(testLoc);
         createAndStoreTestStream("ImOnThisStream2");
     }
 
@@ -84,14 +87,14 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                     .withLength(100.0)
                     .withLengthUnits("km")
                     .build();
-            STREAMS_CREATED.add(streamToStore);
+            TEST_STREAMS.add(streamToStore);
             streamDao.storeStream(streamToStore, false);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
     public static void tearDown() {
-        for (Stream stream : STREAMS_CREATED) {
+        for (Stream stream : TEST_STREAMS) {
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
                 db.connection(c -> {
@@ -99,15 +102,15 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                     try {
                         streamDao.deleteStream(stream.getId().getOfficeId(), stream.getId().getName(), DeleteRule.DELETE_ALL);
                     } catch (Exception e) {
-                        // ignore
+                        LOGGER.atInfo().log("Failed to delete stream: " + stream.getId().getName() + ". Stream likely already deleted");
                     }
                 }, CwmsDataApiSetupCallback.getWebUser());
             } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }
         }
-        STREAMS_CREATED.clear();
-        for(String measLoc: STREAM_LOC_IDS)
+        TEST_STREAMS.clear();
+        for(String measLoc: TEST_STREAM_LOC_IDS)
         {
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -116,7 +119,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                     try {
                         measDao.deleteMeasurements(OFFICE_ID, measLoc, null, null, null, null, null, null, null, null, null, null, null);
                     } catch (Exception e) {
-                        // ignore
+                        LOGGER.atInfo().log("Failed to delete measurements for: " + measLoc + ". Measurement(s) likely already deleted");
                     }
                 }, CwmsDataApiSetupCallback.getWebUser());
             } catch (SQLException ex) {
