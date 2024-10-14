@@ -26,50 +26,58 @@
 
 package cwms.cda.data.dto.watersupply;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import cwms.cda.data.dto.CwmsDTOBase;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.CwmsId;
-import java.time.Instant;
-import java.util.Map;
 
+@JsonDeserialize(builder = PumpLocation.Builder.class)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+public final class PumpLocation {
+    private final CwmsId pumpIn;
+    private final CwmsId pumpOut;
+    private final CwmsId pumpBelow;
 
-@JsonDeserialize(builder = PumpAccounting.Builder.class)
-public final class PumpAccounting extends CwmsDTOBase {
-    @JsonProperty(required = true)
-    private final CwmsId pumpLocation;
-    @JsonProperty(required = true)
-    private final Map<Instant, PumpTransfer> pumpTransfers;
-
-    private PumpAccounting(Builder builder) {
-        this.pumpLocation = builder.pumpLocation;
-        this.pumpTransfers = builder.pumpTransfers;
+    private PumpLocation(Builder builder) {
+        this.pumpIn = builder.pumpIn;
+        this.pumpOut = builder.pumpOut;
+        this.pumpBelow = builder.pumpBelow;
     }
 
-    public CwmsId getPumpLocation() {
-        return this.pumpLocation;
+    public CwmsId getPumpIn() {
+        return this.pumpIn;
     }
 
-    public Map<Instant, PumpTransfer> getPumpTransfers() {
-        return this.pumpTransfers;
+    public CwmsId getPumpOut() {
+        return this.pumpOut;
+    }
+
+    public CwmsId getPumpBelow() {
+        return this.pumpBelow;
     }
 
     public static final class Builder {
-        private CwmsId pumpLocation;
-        private Map<Instant, PumpTransfer> pumpTransfers;
+        private CwmsId pumpIn;
+        private CwmsId pumpOut;
+        private CwmsId pumpBelow;
 
-        public Builder withPumpLocation(CwmsId pumpLocation) {
-            this.pumpLocation = pumpLocation;
+        public Builder withPumpIn(CwmsId pumpIn) {
+            this.pumpIn = pumpIn;
             return this;
         }
 
-        public Builder withPumpTransfers(Map<Instant, PumpTransfer> pumpTransfers) {
-            this.pumpTransfers = pumpTransfers;
+        public Builder withPumpOut(CwmsId pumpOut) {
+            this.pumpOut = pumpOut;
             return this;
         }
 
-        public PumpAccounting build() {
-            return new PumpAccounting(this);
+        public Builder withPumpBelow(CwmsId pumpBelow) {
+            this.pumpBelow = pumpBelow;
+            return this;
+        }
+
+        public PumpLocation build() {
+            return new PumpLocation(this);
         }
     }
 }

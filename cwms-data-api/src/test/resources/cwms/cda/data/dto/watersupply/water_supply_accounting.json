@@ -1,95 +1,51 @@
 {
-  "contract-name": "Test Contract",
+  "contract-name": "Sacramento River Water Contract",
   "water-user": {
-    "entity-name": "Test Entity",
+    "entity-name": "California Department of Water Resources",
     "project-id": {
       "office-id": "SPK",
-      "name": "Test Location"
+      "name": "Sacramento River Delta"
     },
-    "water-right": "Test Water Right"
+    "water-right": "State of California Water Rights Permit #12345"
   },
-  "pump-in-accounting": {
-    "Test Pump": {
-      "pump-location": {
-        "office-id": "SPK",
-        "name": "Test Location-Test Pump"
-      },
-      "pump-transfers": {
-        "2286-11-20T21:17:28Z": {
-          "transfer-type-display": "Test Transfer Type",
-          "flow": 1,
-          "transfer-date": 10000012648000,
-          "comment": "Test Comment"
-        },
-        "2286-11-20T21:17:29Z": {
-          "transfer-type-display": "Test Transfer Type",
-          "flow": 2,
-          "transfer-date": 10000012649000,
-          "comment": "Test Comment 2"
-        }
-      }
+  "pump-locations": {
+    "pump-in": {
+      "office-id": "SPK",
+      "name": "Sacramento River Delta-Dam Water Pump 1"
     },
-    "Test Pump2": {
-      "pump-location": {
-        "office-id": "SPK",
-        "name": "Test Location-Test Pump2"
-      },
-      "pump-transfers": {
-        "2286-11-20T21:18:19Z": {
-          "transfer-type-display": "Test Transfer Type2",
-          "flow": 1,
-          "transfer-date": 10000012699000,
-          "comment": "Test Comment"
-        },
-        "2286-11-20T21:18:30Z": {
-          "transfer-type-display": "Test Transfer Type2",
-          "flow": 2,
-          "transfer-date": 10000012710000,
-          "comment": "Test Comment 2"
-        }
-      }
+    "pump-out": {
+      "office-id": "SPK",
+      "name": "Sacramento River Delta-Dam Water Pump 2"
+    },
+    "pump-below": {
+      "office-id": "SPK",
+      "name": "Sacramento River Delta-Dam Water Pump 3"
     }
   },
-  "pump-below-accounting": {
-    "Test Pump": {
-      "pump-location": {
-        "office-id": "SPK",
-        "name": "Test Location-Test Pump"
-      },
-      "pump-transfers": {
-        "2286-11-20T21:17:28Z": {
-          "transfer-type-display": "Test Transfer Type",
-          "flow": 1,
-          "transfer-date": 10000012648000,
-          "comment": "Test Comment"
-        },
-        "2286-11-20T21:17:29Z": {
-          "transfer-type-display": "Test Transfer Type",
-          "flow": 2,
-          "transfer-date": 10000012649000,
-          "comment": "Test Comment 2"
-        }
-      }
-    },
-    "Test Pump2": {
-      "pump-location": {
-        "office-id": "SPK",
-        "name": "Test Location-Test Pump2"
-      },
-      "pump-transfers": {
-        "2286-11-20T21:18:19Z": {
-          "transfer-type-display": "Test Transfer Type2",
-          "flow": 1,
-          "transfer-date": 10000012699000,
-          "comment": "Test Comment"
-        },
-        "2286-11-20T21:18:30Z": {
-          "transfer-type-display": "Test Transfer Type2",
-          "flow": 2,
-          "transfer-date": 10000012710000,
-          "comment": "Test Comment 2"
-        }
-      }
-    }
-  }
+  "data-columns": {
+    "0": "pump-type",
+    "1": "transfer-type-display",
+    "2": "flow",
+    "3": "comment"
+  },
+  "pump-accounting": {
+    "2022-11-20T21:17:28Z": [
+      ["IN", "Pipeline", 1.0, "Added water to the system"],
+      ["OUT", "Pipeline", 2.0, "Removed excess water"],
+      ["BELOW", "River", 3.0, "Daily water release"]
+    ],
+    "2022-11-21T21:17:28Z": [
+      ["IN", "Pipeline", 4.0, "Pump transfer for the day"],
+      ["OUT", "Pipeline", 5.0, "Excess water transfer"],
+      ["BELOW", "River", 6.0, "Water returned to the river"]
+    ],
+    "2022-11-22T21:17:28Z": [
+      ["IN", "Pipeline", 7.0, "Pump transfer for the day"],
+      ["OUT", "Pipeline", 8.0, "Excess water transfer"],
+      ["BELOW", "River", 9.0, "Water returned to the river"]
+    ]
+  },
+  "page": "",
+  "page-size": 500,
+  "total": 6
 }

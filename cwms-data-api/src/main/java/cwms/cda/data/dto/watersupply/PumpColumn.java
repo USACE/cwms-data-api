@@ -26,49 +26,42 @@
 
 package cwms.cda.data.dto.watersupply;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.data.dto.CwmsDTOBase;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonFormat(shape = JsonFormat.Shape.ARRAY)
-public final class PumpTransfer extends CwmsDTOBase {
-    @JsonProperty(required = true, index = 0)
-    private final PumpType pumpType;
-    @JsonProperty(required = true, index = 1)
+@JsonIncludeProperties("data-columns")
+@JsonPropertyOrder({"0", "1", "2", "3"})
+public final class PumpColumn {
+    @JsonProperty(index = 0, value = "0")
+    private final String pumpType;
+    @JsonProperty(index = 1, value = "1")
     private final String transferTypeDisplay;
-    @JsonProperty(required = true, index = 2)
-    private final Double flow;
-    @JsonProperty(required = true, index = 3)
+    @JsonProperty(index = 2, value = "2")
+    private final String flow;
+    @JsonProperty(index = 3, value = "3")
     private final String comment;
 
-    @JsonCreator
-    public PumpTransfer(@JsonProperty("pump-type") PumpType pumpType,
-            @JsonProperty("transfer-type-display") String transferTypeDisplay,
-            @JsonProperty("flow") Double flow, @JsonProperty("comment") String comment) {
-        this.transferTypeDisplay = transferTypeDisplay;
-        this.flow = flow;
-        this.comment = comment;
-        this.pumpType = pumpType;
+    public String getPumpType() {
+        return pumpType;
     }
 
     public String getTransferTypeDisplay() {
-        return this.transferTypeDisplay;
+        return transferTypeDisplay;
     }
 
-    public Double getFlow() {
-        return this.flow;
-    }
-
-    public PumpType getPumpType() {
-        return this.pumpType;
+    public String getFlow() {
+        return flow;
     }
 
     public String getComment() {
-        return this.comment;
+        return comment;
     }
 
+    public PumpColumn() {
+        this.pumpType = "pump-type";
+        this.transferTypeDisplay = "transfer-type-display";
+        this.flow = "flow";
+        this.comment = "comment";
+    }
 }

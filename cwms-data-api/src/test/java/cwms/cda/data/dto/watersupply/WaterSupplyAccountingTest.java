@@ -37,9 +37,9 @@ import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.NavigableMap;
 import java.util.TreeMap;
 
 
@@ -48,14 +48,20 @@ class WaterSupplyAccountingTest {
 
     @Test
     void testWaterSupplyAccountingSerializationRoundTrip() {
-        WaterUser user = new WaterUser.Builder().withEntityName("Test Entity")
+        WaterUser user = new WaterUser.Builder().withEntityName("California Department of Water Resources")
             .withProjectId(new CwmsId.Builder()
                 .withOfficeId(OFFICE)
-                .withName("Test Location")
+                .withName("Sacramento River Delta")
                 .build())
-            .withWaterRight("Test Water Right").build();
+            .withWaterRight("State of California Water Rights Permit #12345").build();
         WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting.Builder()
-                .withWaterUser(user).withContractName("Test Contract").withPumpInAccounting(buildTestPumpInAccountingList()).build();
+                .withWaterUser(user).withContractName("Sacramento River Water Contract").withPumpLocations(
+                    new PumpLocation.Builder()
+                        .withPumpIn(new CwmsId.Builder().withOfficeId(OFFICE).withName("Sacramento River Delta-Dam Water Pump 1").build())
+                        .withPumpOut(new CwmsId.Builder().withOfficeId(OFFICE).withName("Sacramento River Delta-Dam Water Pump 2").build())
+                        .withPumpBelow(new CwmsId.Builder().withOfficeId(OFFICE).withName("Sacramento River Delta-Dam Water Pump 3").build())
+                        .build())
+                .withPumpAccounting(buildTestPumpAccountingList()).build();
         String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterSupplyAccounting.class),
             waterSupplyAccounting);
         WaterSupplyAccounting deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
@@ -67,12 +73,13 @@ class WaterSupplyAccountingTest {
     void testWaterSupplyAccountingSerializationRoundTripFromFile() throws Exception {
         WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting.Builder()
                 .withWaterUser(new WaterUser.Builder()
-                .withEntityName("Test Entity").withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
-                        .withName("Test Location").build())
-                .withWaterRight("Test Water Right").build())
-                .withContractName("Test Contract")
-                .withPumpInAccounting(buildTestPumpInAccountingList())
-                .withPumpBelowAccounting(buildTestPumpInAccountingList())
+                .withEntityName("California Department of Water Resources")
+                .withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
+                        .withName("Sacramento River Delta").build())
+                .withWaterRight("State of California Water Rights Permit #12345").build())
+                .withContractName("Sacramento River Water Contract")
+                .withPumpLocations(buildTestPumpLocation())
+                .withPumpAccounting(buildTestPumpAccountingList())
                 .build();
         InputStream resource = this.getClass().getResourceAsStream(
             "/cwms/cda/data/dto/watersupply/water_supply_accounting.json");
@@ -89,19 +96,24 @@ class WaterSupplyAccountingTest {
         assertAll(
             () -> {
                 WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting.Builder()
-                        .withWaterUser(new WaterUser.Builder().withEntityName("Test Entity")
+                        .withWaterUser(new WaterUser.Builder()
+                                .withEntityName("California Department of Water Resources")
                                 .withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
-                                .withName("Test Location").build())
-                        .withWaterRight("Test Water Right").build()).withContractName("Test Contract")
+                                .withName("Sacramento River Delta").build())
+                        .withWaterRight("State of California Water Rights Permit #12345").build())
+                        .withContractName("Sacramento River Water Contract")
+                        .withPumpAccounting(buildTestPumpAccountingList())
+                        .withPumpLocations(buildTestPumpLocation())
                         .build();
                 assertDoesNotThrow(waterSupplyAccounting::validate, "Expected validation to pass");
             },
             () -> {
                 WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting.Builder()
                         .withWaterUser(new WaterUser.Builder()
-                        .withEntityName("Test Entity").withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
-                                .withName("Test Location").build())
-                        .withWaterRight("Test Water Right").build())
+                        .withEntityName("California Department of Water Resources")
+                                .withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
+                                .withName("Sacramento River Delta").build())
+                        .withWaterRight("State of California Water Rights Permit #12345").build())
                         .withContractName(null)
                         .build();
                 assertThrows(FieldException.class, waterSupplyAccounting::validate, "Expected validation to "
@@ -109,7 +121,7 @@ class WaterSupplyAccountingTest {
             },
             () -> {
                 WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting.Builder()
-                        .withContractName("Test Contract")
+                        .withContractName("Sacramento River Water Contract")
                         .build();
                 assertThrows(FieldException.class, waterSupplyAccounting::validate, "Expected validation to "
                     + "fail due to null water user");
@@ -118,25 +130,29 @@ class WaterSupplyAccountingTest {
     }
 
 
-    private Map<String, PumpAccounting> buildTestPumpInAccountingList() {
-        Map<String, PumpAccounting> retList = new HashMap<>();
+    private Map<Instant, List<PumpTransfer>> buildTestPumpAccountingList() {
+        Map<Instant, List<PumpTransfer>> retMap = new TreeMap<>();
+        List<PumpTransfer> pumpMap = new ArrayList<>();
+        pumpMap.add(new PumpTransfer(PumpType.IN, "Pipeline", 1.0, "Added water to the system"));
+        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 2.0, "Removed excess water"));
+        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 3.0, "Daily water release"));
+        retMap.put(Instant.ofEpochMilli(1668979048000L), pumpMap);
+        pumpMap = new ArrayList<>();
+        pumpMap.add(new PumpTransfer(PumpType.IN, "Pipeline", 4.0, "Pump transfer for the day"));
+        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 5.0, "Excess water transfer"));
+        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 6.0, "Water returned to the river"));
+        retMap.put(Instant.ofEpochMilli(1669065448000L), pumpMap);
+        pumpMap = new ArrayList<>();
+        pumpMap.add(new PumpTransfer(PumpType.IN,"Pipeline", 7.0, "Pump transfer for the day"));
+        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 8.0, "Excess water transfer"));
+        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 9.0, "Water returned to the river"));
+        retMap.put(Instant.ofEpochMilli(1669151848000L), pumpMap);
+        return retMap;
+    }
 
-        NavigableMap<Instant, PumpTransfer> pumpMap = new TreeMap<>();
-        pumpMap.put(Instant.ofEpochMilli(10000012648000L), new PumpTransfer.Builder().withTransferTypeDisplay("Test Transfer Type")
-                .withFlow(1.0).withTransferDate(Instant.ofEpochMilli(10000012648000L)).withComment("Test Comment").build());
-        pumpMap.put(Instant.ofEpochMilli(10000012649000L), new PumpTransfer.Builder().withTransferTypeDisplay("Test Transfer Type")
-                .withFlow(2.0).withTransferDate(Instant.ofEpochMilli(10000012649000L)).withComment("Test Comment 2").build());
-        PumpAccounting accounting = new PumpAccounting.Builder().withPumpTransfers(pumpMap)
-                .withPumpLocation(new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location-Test Pump").build()).build();
-        retList.put("Test Pump", accounting);
-        pumpMap = new TreeMap<>();
-        pumpMap.put(Instant.ofEpochMilli(10000012699000L), new PumpTransfer.Builder().withTransferTypeDisplay("Test Transfer Type2")
-                .withFlow(1.0).withTransferDate(Instant.ofEpochMilli(10000012699000L)).withComment("Test Comment").build());
-        pumpMap.put(Instant.ofEpochMilli(10000012710000L), new PumpTransfer.Builder().withTransferTypeDisplay("Test Transfer Type2")
-                .withFlow(2.0).withTransferDate(Instant.ofEpochMilli(10000012710000L)).withComment("Test Comment 2").build());
-        accounting = new PumpAccounting.Builder().withPumpTransfers(pumpMap)
-                .withPumpLocation(new CwmsId.Builder().withOfficeId(OFFICE).withName("Test Location-Test Pump2").build()).build();
-        retList.put("Test Pump2", accounting);
-        return retList;
+    private PumpLocation buildTestPumpLocation() {
+        return new PumpLocation.Builder().withPumpIn(new CwmsId.Builder().withOfficeId(OFFICE).withName("Sacramento River Delta-Dam Water Pump 1").build())
+                .withPumpOut(new CwmsId.Builder().withOfficeId(OFFICE).withName("Sacramento River Delta-Dam Water Pump 2").build())
+                .withPumpBelow(new CwmsId.Builder().withOfficeId(OFFICE).withName("Sacramento River Delta-Dam Water Pump 3").build()).build();
     }
 }

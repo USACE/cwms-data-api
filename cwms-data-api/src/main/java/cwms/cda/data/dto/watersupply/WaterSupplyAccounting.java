@@ -26,38 +26,49 @@
 
 package cwms.cda.data.dto.watersupply;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class,
         aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonDeserialize(builder = WaterSupplyAccounting.Builder.class)
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class WaterSupplyAccounting extends CwmsDTOBase {
+public final class WaterSupplyAccounting extends CwmsDTOPaginated {
     @JsonProperty(required = true)
     private final String contractName;
     @JsonProperty(required = true)
     private final WaterUser waterUser;
-    private final Map<String, PumpAccounting> pumpInAccounting;
-    private final Map<String, PumpAccounting> pumpOutAccounting;
-    private final Map<String, PumpAccounting> pumpBelowAccounting;
+    @JsonProperty(required = true)
+    private final PumpLocation pumpLocations;
+    @JsonProperty(value = "data-columns")
+    @Schema(name = "data-columns")
+    private final PumpColumn pumpColumn;
+    private final Map<Instant, List<PumpTransfer>> pumpAccounting;
 
     private WaterSupplyAccounting(Builder builder) {
+        super(builder.page, builder.pageSize, builder.total);
         this.contractName = builder.contractName;
         this.waterUser = builder.waterUser;
-        this.pumpBelowAccounting = builder.pumpBelowAccounting;
-        this.pumpInAccounting = builder.pumpInAccounting;
-        this.pumpOutAccounting = builder.pumpOutAccounting;
+        this.pumpLocations = builder.pumpLocations;
+        this.pumpAccounting = builder.pumpAccounting;
+        this.pumpColumn = new PumpColumn();
     }
 
     public String getContractName() {
@@ -68,24 +79,28 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
         return this.waterUser;
     }
 
-    public Map<String, PumpAccounting> getPumpInAccounting() {
-        return this.pumpInAccounting;
+    public PumpColumn getPumpColumn() {
+        return this.pumpColumn;
     }
 
-    public Map<String, PumpAccounting> getPumpOutAccounting() {
-        return this.pumpOutAccounting;
+    public Map<Instant, List<PumpTransfer>> getPumpAccounting() {
+        return this.pumpAccounting;
     }
 
-    public Map<String, PumpAccounting> getPumpBelowAccounting() {
-        return this.pumpBelowAccounting;
+    public PumpLocation getPumpLocations() {
+        return this.pumpLocations;
     }
 
     public static final class Builder {
         private String contractName;
         private WaterUser waterUser;
-        private Map<String, PumpAccounting> pumpInAccounting;
-        private Map<String, PumpAccounting> pumpOutAccounting;
-        private Map<String, PumpAccounting> pumpBelowAccounting;
+        private Map<Instant, List<PumpTransfer>> pumpAccounting;
+        private PumpLocation pumpLocations;
+        @JsonProperty(value = "data-columns")
+        private PumpColumn pumpColumn;
+        private String page;
+        private int pageSize;
+        private int total;
 
         public Builder withContractName(String contractName) {
             this.contractName = contractName;
@@ -97,26 +112,65 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
             return this;
         }
 
-        public Builder withPumpInAccounting(
-                Map<String, PumpAccounting> pumpInAccounting) {
-            this.pumpInAccounting = pumpInAccounting;
+        public Builder withPumpAccounting(
+                Map<Instant, List<PumpTransfer>> pumpAccounting) {
+            this.pumpAccounting = pumpAccounting;
             return this;
         }
 
-        public Builder withPumpOutAccounting(
-                Map<String, PumpAccounting> pumpOutAccounting) {
-            this.pumpOutAccounting = pumpOutAccounting;
+        public Builder withPumpLocations(
+                PumpLocation pumpLocations) {
+            this.pumpLocations = pumpLocations;
             return this;
         }
 
-        public Builder withPumpBelowAccounting(
-                Map<String,  PumpAccounting> pumpBelowAccounting) {
-            this.pumpBelowAccounting = pumpBelowAccounting;
+        public Builder withPage(String page) {
+            this.page = page;
+            return this;
+        }
+
+        public Builder withPageSize(int pageSize) {
+            this.pageSize = pageSize;
+            return this;
+        }
+
+        public Builder withTotal(int total) {
+            this.total = total;
             return this;
         }
 
         public WaterSupplyAccounting build() {
             return new WaterSupplyAccounting(this);
         }
+    }
+
+    public void addTransfer(Timestamp dateTime, double flowValue, String transferTypeDisplay, String comment,
+            PumpType pumpType, Timestamp previousDateTime) {
+        if ((page == null || page.isEmpty()) && (pumpAccounting == null || pumpAccounting.isEmpty())) {
+            page = encodeCursor(delimiter, String.format("%d", dateTime.getTime()), total);
+        }
+        if (pageSize > 0 && mapSize(pumpAccounting) == pageSize) {
+            nextPage = encodeCursor(delimiter, String.format("%d", previousDateTime.getTime()), total);
+        } else {
+            assert pumpAccounting != null;
+            pumpAccounting.computeIfAbsent(dateTime.toInstant(), k -> new ArrayList<>());
+            pumpAccounting.get(dateTime.toInstant()).add(new PumpTransfer(pumpType, transferTypeDisplay,
+                    flowValue, comment));
+        }
+    }
+
+    public void addNullValue(Timestamp dateTime, int index) {
+        pumpAccounting.get(dateTime.toInstant()).add(index, null);
+    }
+
+    private static int mapSize(Map<Instant, List<PumpTransfer>> map) {
+        int size = 0;
+        if (map == null) {
+            return size;
+        }
+        for (List<PumpTransfer> list : map.values()) {
+            size += list.size();
+        }
+        return size;
     }
 }
