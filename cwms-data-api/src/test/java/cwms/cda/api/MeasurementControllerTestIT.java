@@ -129,7 +129,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled
+    @Disabled("Disabled until schema with updated measurement api is deployed as production schema.")
     void test_create_retrieve_delete_measurement() throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/measurement.json");
         assertNotNull(resource);
@@ -332,7 +332,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled
+    @Disabled("Disabled until schema with updated measurement api is deployed as production schema.")
     void test_create_retrieve_delete_measurement_multiple() throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/measurements.json");
         assertNotNull(resource);
@@ -608,7 +608,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled
+    @Disabled("Disabled until schema with updated measurement api is deployed as production schema.")
     void test_update_does_not_exist() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
@@ -636,7 +636,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled
+    @Disabled("Disabled until schema with updated measurement api is deployed as production schema.")
     void test_delete_does_not_exist() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         // Delete a Measurement
