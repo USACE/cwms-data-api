@@ -17,7 +17,7 @@ jobs:
       thewar: ${{steps.thebuild.outputs.WARFILE}}
     steps:
       - name: checkout code
-        uses: actions/checkout@v4.2.0
+        uses: actions/checkout@v4.2.1
       - name: setup java
         uses: actions/setup-java@v4.4.0
         with:
@@ -28,7 +28,7 @@ jobs:
         id: thebuild
         run: ./gradlew build --info --init-script init.gradle
       - name: Upload WAR
-        uses: actions/upload-artifact@v4.4.0
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: warfile
           path: cwms-data-api/build/libs/${{steps.thebuild.outputs.WARFILE}}
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v4.2.0
+        uses: actions/checkout@v4.2.1
       - name: setup java
         uses: actions/setup-java@v4.4.0
         with:
