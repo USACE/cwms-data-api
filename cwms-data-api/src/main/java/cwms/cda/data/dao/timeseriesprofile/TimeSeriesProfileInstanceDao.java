@@ -1,5 +1,7 @@
 package cwms.cda.data.dao.timeseriesprofile;
 
+import static cwms.cda.data.dto.CwmsDTOPaginated.delimiter;
+import static cwms.cda.data.dto.CwmsDTOPaginated.encodeCursor;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.max;
@@ -64,33 +66,33 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         connection(dsl, conn -> {
             setOffice(conn, timeSeriesProfile.getLocationId().getOfficeId());
             CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_INSTANCE__2(using(conn).configuration(),
-                timeSeriesProfile.getLocationId().getName(),
-                timeSeriesProfile.getKeyParameter(),
-                profileData,
-                versionId,
-                storeRule,
-                overrideProtection ? "T" : "F",
-                versionDate != null ? Timestamp.from(versionDate) : null,
-                timeSeriesProfile.getLocationId().getOfficeId());
+                    timeSeriesProfile.getLocationId().getName(),
+                    timeSeriesProfile.getKeyParameter(),
+                    profileData,
+                    versionId,
+                    storeRule,
+                    overrideProtection ? "T" : "F",
+                    versionDate != null ? Timestamp.from(versionDate) : null,
+                    timeSeriesProfile.getLocationId().getOfficeId());
         });
     }
 
     public void storeTimeSeriesProfileInstance(TimeSeriesProfileInstance timeseriesProfileInstance, String versionId,
-            Instant versionInstant, String storeRule,String overrideProtection) {
+            Instant versionInstant, String storeRule, String overrideProtection) {
         connection(dsl, conn -> {
             setOffice(conn, timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId());
             Map<String, BigInteger> parameterIdToCode = new HashMap<>();
 
             String parameter = timeseriesProfileInstance.getTimeSeriesProfile().getKeyParameter();
             BigDecimal parameterCodeDec = CWMS_UTIL_PACKAGE.call_GET_PARAMETER_CODE(using(conn).configuration(),
-                parameter, timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId());
+                    parameter, timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId());
             parameterIdToCode.put(parameter, parameterCodeDec.toBigInteger());
 
             List<String> dependentParameters = timeseriesProfileInstance.getTimeSeriesProfile().getParameterList();
             for (String param : dependentParameters) {
                 parameter = param;
                 parameterCodeDec = CWMS_UTIL_PACKAGE.call_GET_PARAMETER_CODE(using(conn).configuration(), parameter,
-                    timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId());
+                        timeseriesProfileInstance.getTimeSeriesProfile().getLocationId().getOfficeId());
                 parameterIdToCode.put(parameter, parameterCodeDec.toBigInteger());
             }
 
@@ -104,7 +106,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                     : timeseriesProfileInstance.getTimeSeriesList().entrySet()) {
                 Long timestamp = entry.getKey();
                 TS_PROF_DATA_REC_T dataRecord = new TS_PROF_DATA_REC_T();
-                Timestamp timeStamp =  Timestamp.from(Instant.ofEpochMilli(timestamp));
+                Timestamp timeStamp = Timestamp.from(Instant.ofEpochMilli(timestamp));
                 dataRecord.setDATE_TIME(timeStamp);
 
                 PVQ_TAB_T parameters = new PVQ_TAB_T();
@@ -137,7 +139,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                     .getTimeSeriesProfile().getKeyParameter()));
             tsProfileData.setUNITS(units);
 
-            Timestamp versionTimeStamp =  Timestamp.from(versionInstant);
+            Timestamp versionTimeStamp = Timestamp.from(versionInstant);
 
             CWMS_TS_PROFILE_PACKAGE.call_STORE_TS_PROFILE_INSTANCE(using(conn).configuration(),
                     tsProfileData,
@@ -162,31 +164,31 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(
                 VIEW.VERSION_ID, versionMask));
 
-        @NotNull Result<Record> timeSeriesProfileInstanceResults =  dsl.select(asterisk())
+        @NotNull Result<Record> timeSeriesProfileInstanceResults = dsl.select(asterisk())
                 .from(VIEW)
                 .where(whereCondition)
                 .fetch();
         List<TimeSeriesProfileInstance> timeSeriesProfileInstanceList = new ArrayList<>();
         for (Record result : timeSeriesProfileInstanceResults) {
             CwmsId locationId = new CwmsId.Builder()
-                .withOfficeId(result.get(VIEW.OFFICE_ID))
-                .withName(result.get(VIEW.LOCATION_ID))
-                .build();
+                    .withOfficeId(result.get(VIEW.OFFICE_ID))
+                    .withName(result.get(VIEW.LOCATION_ID))
+                    .build();
             String parameterId = result.get(VIEW.KEY_PARAMETER_ID);
             TimeSeriesProfile timeSeriesProfile = new TimeSeriesProfile.Builder()
-                .withLocationId(locationId)
-                .withKeyParameter(parameterId)
-                .build();
+                    .withLocationId(locationId)
+                    .withKeyParameter(parameterId)
+                    .build();
             TimeSeriesProfileInstance timeSeriesProfileInstance = new TimeSeriesProfileInstance.Builder()
-                .withTimeSeriesProfile(timeSeriesProfile)
-                .withVersion(result.get(VIEW.VERSION_ID))
-                .withVersionDate(result.get(VIEW.VERSION_DATE) != null
-                    ? result.get(VIEW.VERSION_DATE).toInstant() : null)
-                .withFirstDate(result.get(VIEW.FIRST_DATE_TIME) != null
-                    ? result.get(VIEW.FIRST_DATE_TIME).toInstant() : null)
-                .withLastDate(result.get(VIEW.LAST_DATE_TIME) != null
-                    ? result.get(VIEW.LAST_DATE_TIME).toInstant() : null)
-                .build();
+                    .withTimeSeriesProfile(timeSeriesProfile)
+                    .withVersion(result.get(VIEW.VERSION_ID))
+                    .withVersionDate(result.get(VIEW.VERSION_DATE) != null
+                            ? result.get(VIEW.VERSION_DATE).toInstant() : null)
+                    .withFirstDate(result.get(VIEW.FIRST_DATE_TIME) != null
+                            ? result.get(VIEW.FIRST_DATE_TIME).toInstant() : null)
+                    .withLastDate(result.get(VIEW.LAST_DATE_TIME) != null
+                            ? result.get(VIEW.LAST_DATE_TIME).toInstant() : null)
+                    .build();
 
             timeSeriesProfileInstanceList.add(timeSeriesProfileInstance);
         }
@@ -194,22 +196,21 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
     }
 
     public TimeSeriesProfileInstance retrieveTimeSeriesProfileInstance(CwmsId location, String keyParameter,
-        String version,
-        List<String> unit,
-        Instant startTime,
-        Instant endTime,
-        String timeZone,
-        boolean startInclusive,
-        boolean endInclusive,
-        boolean previous,
-        boolean next,
-        Instant versionDate,
-        boolean maxVersion,
-        String page,
-        int pageSize) {
+            String version,
+            List<String> unit,
+            Instant startTime,
+            Instant endTime,
+            String timeZone,
+            boolean startInclusive,
+            boolean endInclusive,
+            boolean previous,
+            boolean next,
+            Instant versionDate,
+            boolean maxVersion,
+            String page,
+            int pageSize) {
 
         Integer total = null;
-        String cursor = null;
         Timestamp tsCursor = null;
         String parameterId = null;
 
@@ -231,7 +232,6 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             });
 
             if (parts.length > 1) {
-                cursor = parts[0];
                 tsCursor = Timestamp.from(Instant.ofEpochMilli(Long.parseLong(parts[0])));
 
                 if (parts.length > 2) {
@@ -299,25 +299,24 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         // Add the time windows conditions depending on the inclusive flags
         if (startInclusive && endInclusive) {
             whereCondition = whereCondition
-                .and(VIEW_TSV2.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
-                .and(VIEW_TSV2.LAST_DATE_TIME.le(Timestamp.from(endTime)));
+                    .and(VIEW_TSV2.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
+                    .and(VIEW_TSV2.LAST_DATE_TIME.le(Timestamp.from(endTime)));
         } else if (!startInclusive && endInclusive) {
             whereCondition = whereCondition
-                .and(VIEW_TSV2.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
-                .and(VIEW_TSV2.LAST_DATE_TIME.le(Timestamp.from(endTime)));
+                    .and(VIEW_TSV2.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
+                    .and(VIEW_TSV2.LAST_DATE_TIME.le(Timestamp.from(endTime)));
         } else if (startInclusive) {
             whereCondition = whereCondition
-                .and(VIEW_TSV2.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
-                .and(VIEW_TSV2.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
+                    .and(VIEW_TSV2.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
+                    .and(VIEW_TSV2.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
         } else {
             whereCondition = whereCondition
-                .and(VIEW_TSV2.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
-                .and(VIEW_TSV2.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
+                    .and(VIEW_TSV2.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
+                    .and(VIEW_TSV2.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
         }
         Condition finalWhereCondition = whereCondition;
 
         // set semi-final variables for lambda
-        final String recordCursor = cursor;
         final int recordPageSize = pageSize;
 
         // Get the total number of records if not already set
@@ -407,9 +406,9 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             // if the page number is set, limit the results to the page size (plus one for setting the next page)
             if (pageSize > 0) {
                 if (tsCursor == null) {
-                    result = resultQuery.limit(pageSize + 1).fetch();
+                    result = resultQuery.limit(pageSize).fetch();
                 } else {
-                    result = resultQuery2.limit(pageSize + 1).fetch();
+                    result = resultQuery2.limit(pageSize).fetch();
                 }
             } else {
                 if (tsCursor == null) {
@@ -432,7 +431,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 
         BigInteger locationCode = null;
         BigInteger keyParameterCode = null;
-        STR_TAB_T units = new STR_TAB_T(unit);
+
         TS_PROF_DATA_TAB_T records = new TS_PROF_DATA_TAB_T();
         Map<Timestamp, Map<String, PVQ_T>> timeValuePairMap = new TreeMap<>();
         Map<String, String> unitParamMap = new TreeMap<>();
@@ -477,65 +476,77 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             index++;
         }
 
-        TS_PROF_DATA_T timeSeriesProfileData = new TS_PROF_DATA_T(locationCode, keyParameterCode,
-                timeZone, units, records);
-
         if (minVersionDate != null) {
             versionDate = minVersionDate.toInstant();
         } else if (maxVersionDate != null) {
             versionDate = maxVersionDate.toInstant();
         }
 
-        int totalRecords = total;
-
-        // map the TimeSeriesProfileInstance without the value/quality data
-        TimeSeriesProfileInstance returnInstance = map(location.getOfficeId(), location.getName(), keyParameter,
-                timeSeriesProfileData, version, versionDate, startTime, endTime, unitParamMap, recordCursor,
-                recordPageSize, totalRecords);
-
-        List<ParameterColumnInfo> paramlist = returnInstance.getParameterColumns();
+        List<ParameterColumnInfo> paramList = new ArrayList<>();
+        int ordinal = 1;
+        for (Map.Entry<String, String> entry : unitParamMap.entrySet()) {
+            ParameterColumnInfo parameterColumnInfo = new ParameterColumnInfo.Builder()
+                    .withParameter(entry.getKey())
+                    .withOrdinal(ordinal)
+                    .withUnit(entry.getValue())
+                    .build();
+            ordinal++;
+            paramList.add(parameterColumnInfo);
+        }
+        Map<Long, List<TimeSeriesData>> timeSeriesProfileInstanceList = new TreeMap<>();
 
         // map the TVQ data to the TimeSeriesProfileInstance
         // needs previous parameter and cursor to be set to correctly split the data into pages
         // adds page, nextpage data to the TimeSeriesProfileInstance
-        String previousParameter = null;
-        Timestamp previousCursor = Timestamp.from(startTime);
         for (Map.Entry<Timestamp, Map<String, PVQ_T>> entry : timeValuePairMap.entrySet()) {
             for (Map.Entry<String, PVQ_T> dataValue : entry.getValue().entrySet()) {
                 Timestamp dateTime = entry.getKey();
-                returnInstance.addValue(dateTime, dataValue.getValue().getVALUE(),
-                        dataValue.getValue().getQUALITY_CODE().intValue(),
-                        previousParameter, previousCursor);
-                previousCursor = dateTime;
-                previousParameter = dataValue.getKey();
+                if (timeSeriesProfileInstanceList.containsKey(dateTime.getTime())) {
+                    timeSeriesProfileInstanceList.get(dateTime.getTime())
+                        .add(new TimeSeriesData(dataValue.getValue().getVALUE(),
+                            dataValue.getValue().getQUALITY_CODE().intValue()));
+                } else {
+                    List<TimeSeriesData> dataList = new ArrayList<>();
+                    dataList.add(new TimeSeriesData(dataValue.getValue().getVALUE(),
+                            dataValue.getValue().getQUALITY_CODE().intValue()));
+                    timeSeriesProfileInstanceList.put(dateTime.getTime(), dataList);
+                }
             }
         }
 
         // add null values to the TimeSeriesProfileInstance value list if
         // the data is missing for the associated parameter
-        for (Map.Entry<Long, List<TimeSeriesData>> entry : returnInstance.getTimeSeriesList().entrySet()) {
-            if (entry.getValue().size() < paramlist.size()) {
-                for (int i = 0; i < paramlist.size(); i++) {
+        for (Map.Entry<Long, List<TimeSeriesData>> entry : timeSeriesProfileInstanceList.entrySet()) {
+            if (entry.getValue().size() < paramList.size()) {
+                for (int i = 0; i < paramList.size(); i++) {
                     Timestamp dateTime = Timestamp.from(Instant.ofEpochMilli(entry.getKey()));
                     try {
                         entry.getValue().get(i);
                     } catch (IndexOutOfBoundsException e) {
-                        returnInstance.addNullValue(dateTime, i);
+                        timeSeriesProfileInstanceList.get(dateTime.getTime()).add(i, null);
                         continue;
                     }
                     if (timeValuePairMap.get(dateTime) == null
-                            || !timeValuePairMap.get(dateTime).containsKey(paramlist.get(i).getParameter())) {
-                        returnInstance.addNullValue(dateTime, i);
+                            || !timeValuePairMap.get(dateTime).containsKey(paramList.get(i).getParameter())) {
+                        timeSeriesProfileInstanceList.get(dateTime.getTime()).add(i, null);
                     }
                 }
             }
         }
 
-        return returnInstance;
+        STR_TAB_T units = new STR_TAB_T(unit);
+
+        TS_PROF_DATA_T timeSeriesProfileData = new TS_PROF_DATA_T(locationCode, keyParameterCode,
+                timeZone, units, records);
+
+        // map the TimeSeriesProfileInstance without the value/quality data
+        return map(location.getOfficeId(), location.getName(), keyParameter,
+                timeSeriesProfileData, version, versionDate, startTime, endTime, unitParamMap,
+                recordPageSize, total, paramList, timeSeriesProfileInstanceList);
     }
 
     public void deleteTimeSeriesProfileInstance(CwmsId location, String keyParameter,
-            String version, Instant firstDate, String timeZone,boolean overrideProtection, Instant versionDate) {
+            String version, Instant firstDate, String timeZone, boolean overrideProtection, Instant versionDate) {
 
         connection(dsl, conn -> {
             setOffice(conn, location.getOfficeId());
@@ -545,15 +556,15 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             }
 
             CWMS_TS_PROFILE_PACKAGE.call_DELETE_TS_PROFILE_INSTANCE(
-                using(conn).configuration(),
-                location.getName(),
-                keyParameter,
-                version,
-                Timestamp.from(firstDate),
-                timeZone,
-                overrideProtection ? "T" : "F",
-                versionTimestamp,
-                location.getOfficeId()
+                    using(conn).configuration(),
+                    location.getName(),
+                    keyParameter,
+                    version,
+                    Timestamp.from(firstDate),
+                    timeZone,
+                    overrideProtection ? "T" : "F",
+                    versionTimestamp,
+                    location.getOfficeId()
             );
         });
     }
@@ -561,8 +572,9 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
 
     private TimeSeriesProfileInstance map(String officeId, String location, String keyParameter,
             TS_PROF_DATA_T timeSeriesProfileData, String version, Instant versionDate, Instant startTime,
-            Instant endTime, Map<String, String> unitParamMap, String page, int pageSize, int total)  {
-
+            Instant endTime, Map<String, String> unitParamMap, int pageSize, int total,
+            List<ParameterColumnInfo> parameterColumnInfoList,
+            Map<Long, List<TimeSeriesData>> timeSeriesProfileInstanceList) {
         List<Instant> timeList = new ArrayList<>();
         List<DataColumnInfo> dataColumnInfoList = new ArrayList<>();
         DataColumnInfo valueDataColumnInfo = new DataColumnInfo.Builder()
@@ -583,18 +595,6 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             timeList.add(dateTime.toInstant());
         }
 
-        List<ParameterColumnInfo> parameterColumnInfoList = new ArrayList<>();
-        int ordinal = 1;
-        for (Map.Entry<String, String> entry : unitParamMap.entrySet()) {
-            ParameterColumnInfo parameterColumnInfo = new ParameterColumnInfo.Builder()
-                    .withParameter(entry.getKey())
-                    .withOrdinal(ordinal)
-                    .withUnit(entry.getValue())
-                    .build();
-            ordinal++;
-            parameterColumnInfoList.add(parameterColumnInfo);
-        }
-
         List<String> parameterList = new ArrayList<>(unitParamMap.keySet());
         String timeZone = timeSeriesProfileData.getTIME_ZONE();
         CwmsId locationId = new CwmsId.Builder()
@@ -606,15 +606,24 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                 .withLocationId(locationId)
                 .withParameterList(parameterList)
                 .build();
+
+        Long latestTimestamp = timeSeriesProfileInstanceList.keySet().stream().max(Long::compare).orElse(null);
+        Long earliestTimestamp = timeSeriesProfileInstanceList.keySet().stream().min(Long::compare).orElse(null);
+
         return new TimeSeriesProfileInstance.Builder()
                 .withTimeSeriesProfile(timeSeriesProfile)
-                .withTimeSeriesList(new TreeMap<>())
+                .withTimeSeriesList(timeSeriesProfileInstanceList)
                 .withVersion(version)
                 .withFirstDate(startTime)
                 .withLastDate(endTime)
                 .withLocationTimeZone(timeZone)
-                .withPage(page)
+                .withPage(encodeCursor(delimiter, String.format("%d", earliestTimestamp),
+                        keyParameter, total))
                 .withPageSize(pageSize)
+                .withNextPage(mapSize(timeSeriesProfileInstanceList) >= pageSize && total > pageSize
+                        ? encodeCursor(delimiter, String.format("%d", latestTimestamp),
+                        parameterColumnInfoList.get(findParameterIndex(parameterColumnInfoList, latestTimestamp,
+                                timeSeriesProfileInstanceList)).getParameter(), total) : null)
                 .withTotal(total)
                 .withDataColumns(dataColumnInfoList)
                 .withParameterColumns(parameterColumnInfoList)
@@ -622,5 +631,30 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                 .withPageLastDate(timeList.stream().max(Instant::compareTo).orElse(null))
                 .withVersionDate(versionDate)
                 .build();
+
+    }
+
+    private static int findParameterIndex(List<ParameterColumnInfo> parameterColumnInfoList, long latestTime,
+            Map<Long, List<TimeSeriesData>> timeSeriesProfileInstanceList) {
+        int returnIndex = -1;
+        int index = 0;
+        for (int i = 0; i < parameterColumnInfoList.size(); i++) {
+            if (timeSeriesProfileInstanceList.get(latestTime).get(index) != null) {
+                returnIndex = index;
+            }
+            index++;
+        }
+        return returnIndex;
+    }
+
+    public static int mapSize(Map<Long, List<TimeSeriesData>> map) {
+        int size = 0;
+        if (map == null) {
+            return size;
+        }
+        for (List<TimeSeriesData> list : map.values()) {
+            size += list.size();
+        }
+        return size;
     }
 }

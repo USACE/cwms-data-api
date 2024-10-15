@@ -1,7 +1,11 @@
 package cwms.cda.data.dao.timeseriesprofile;
 
-import static org.jooq.impl.DSL.asterisk;
+import static cwms.cda.data.dto.CwmsDTOPaginated.delimiter;
+import static cwms.cda.data.dto.CwmsDTOPaginated.encodeCursor;
 import static org.jooq.impl.DSL.count;
+import static org.jooq.impl.DSL.field;
+import static org.jooq.impl.DSL.table;
+import static org.jooq.impl.DSL.value;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_PROFILE.AV_TS_PROFILE;
 
 import cwms.cda.data.dao.JooqDao;
@@ -21,6 +25,7 @@ import org.jooq.Result;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectSeekStep2;
 import org.jooq.impl.DSL;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PROFILE_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.TS_PROFILE_T;
@@ -106,9 +111,21 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
 
         // Get the total count if not already set
         if (total == null) {
-            SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
-                .from(AV_TS_PROFILE)
-                .where(whereCondition);
+            // Initialize the where condition
+            Condition totalWhereCondition = JooqDao
+                    .caseInsensitiveLikeRegexNullTrue(value("AT_TS_PROFILE.LOCATION_ID"), locationIdMask);
+            totalWhereCondition = totalWhereCondition
+                    .and(JooqDao.caseInsensitiveLikeRegex(value("AT_TS_PROFILE.OFFICE_ID"), officeIdMask));
+            totalWhereCondition = totalWhereCondition
+                    .and(JooqDao.caseInsensitiveLikeRegex(value("AT_TS_PROFILE.KEY_PARAMETER_ID"),
+                    parameterIdMask));
+            SelectConditionStep<Record1<Integer>> count = dsl
+                    .select(count(field("CWMS_20.AT_TS_PROFILE.LOCATION_CODE")))
+                .from(table("CWMS_20.AT_TS_PROFILE"))
+                .join(table("CWMS_20.AT_PHYSICAL_LOCATION"))
+                .on(field("CWMS_20.AT_TS_PROFILE.LOCATION_CODE")
+                        .eq(field("CWMS_20.AT_PHYSICAL_LOCATION.LOCATION_CODE")))
+                .where(totalWhereCondition);
             total = count.fetchOne().value1();
         }
 
@@ -122,61 +139,64 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
         // Start page at the cursor using JOOQ seek method
         if (pageSize > 0) {
             if (cursor != null) {
-                timeSeriesProfileResults = selectionStep.seek(tsCursor, parameterId).limit(pageSize + 1).fetch();
+                timeSeriesProfileResults = selectionStep.seek(tsCursor, parameterId).limit(pageSize).fetch();
             } else {
-                timeSeriesProfileResults = selectionStep.limit(pageSize + 1).fetch();
+                timeSeriesProfileResults = selectionStep.limit(pageSize).fetch();
             }
         } else {
             throw new RuntimeException("Provided page size must be greater than 0");
         }
 
-        // initialize the return object
-        TimeSeriesProfileList timeSeriesProfileList = new TimeSeriesProfileList.Builder()
-                .page(page)
-                .pageSize(Math.min(timeSeriesProfileResults.size(), pageSize))
-                .total(total)
-                .timeSeriesProfileList(new ArrayList<>())
-                .build();
-
         // If there are no results, return the empty list
         if (timeSeriesProfileResults.isEmpty()) {
-            return timeSeriesProfileList;
+            return new TimeSeriesProfileList.Builder().build();
         }
 
-        // Map the results to the return object
-        // Initialize the previous location code and parameter id to split the pages correctly
-        Long prevLocationCode = timeSeriesProfileResults.get(0).get(AV_TS_PROFILE.LOCATION_CODE);
-        String prevParameterId = timeSeriesProfileResults.get(0).get(AV_TS_PROFILE.KEY_PARAMETER_ID);
+        List<TimeSeriesProfile> profileList = parseRecords(timeSeriesProfileResults);
+
+        return new TimeSeriesProfileList.Builder()
+            .page(encodeCursor(delimiter, String.format("%s",
+                profileList.get(0).getLocationId().getName()),
+                profileList.get(0).getKeyParameter(), total))
+            .pageSize(Math.min(timeSeriesProfileResults.size(), pageSize))
+            .total(total)
+            .nextPage(encodeCursor(delimiter, String.format("%s",
+                    CWMS_LOC_PACKAGE.call_GET_LOCATION_CODE(dsl.configuration(),
+                            profileList.get(profileList.size() - 1).getLocationId().getOfficeId(),
+                            profileList.get(profileList.size() - 1).getLocationId().getName())),
+                profileList.get(profileList.size() - 1).getKeyParameter(), total))
+            .timeSeriesProfileList(profileList)
+            .build();
+    }
+
+    private List<TimeSeriesProfile> parseRecords(Result<Record> timeSeriesProfileResults) {
+        List<TimeSeriesProfile> timeSeriesProfiles = new ArrayList<>();
         for (Record timeSeriesProfileResult : timeSeriesProfileResults) {
             String parameters = timeSeriesProfileResult.get(AV_TS_PROFILE.PARAMETERS);
             String[] parameterArray = parameters.split(",");
             List<String> parameterList = Arrays.asList(parameterArray);
 
             CwmsId locationId = new CwmsId.Builder()
-                .withName(timeSeriesProfileResult.get(AV_TS_PROFILE.LOCATION_ID))
-                .withOfficeId(timeSeriesProfileResult.get(AV_TS_PROFILE.OFFICE_ID))
-                .build();
+                    .withName(timeSeriesProfileResult.get(AV_TS_PROFILE.LOCATION_ID))
+                    .withOfficeId(timeSeriesProfileResult.get(AV_TS_PROFILE.OFFICE_ID))
+                    .build();
             CwmsId referenceTsId = new CwmsId.Builder()
-                .withName(timeSeriesProfileResult.get(AV_TS_PROFILE.ELEV_TS_ID))
-                .withOfficeId(timeSeriesProfileResult.get(AV_TS_PROFILE.OFFICE_ID))
-                .build();
+                    .withName(timeSeriesProfileResult.get(AV_TS_PROFILE.ELEV_TS_ID))
+                    .withOfficeId(timeSeriesProfileResult.get(AV_TS_PROFILE.OFFICE_ID))
+                    .build();
 
             // Add the value to the return object
-            // Adds page breaks if the page size is reached
-            timeSeriesProfileList.addValue(timeSeriesProfileResult.get(AV_TS_PROFILE.LOCATION_CODE),
+            timeSeriesProfiles.add(
                 new TimeSeriesProfile.Builder().withDescription(timeSeriesProfileResult
-                                .get(AV_TS_PROFILE.DESCRIPTION))
+                            .get(AV_TS_PROFILE.DESCRIPTION))
                     .withReferenceTsId(referenceTsId)
                     .withKeyParameter(timeSeriesProfileResult.get(AV_TS_PROFILE.KEY_PARAMETER_ID))
                     .withLocationId(locationId)
                     .withParameterList(parameterList)
-                    .build(),
-                prevParameterId, prevLocationCode)
+                    .build())
             ;
-            prevLocationCode = timeSeriesProfileResult.get(AV_TS_PROFILE.LOCATION_CODE);
-            prevParameterId = timeSeriesProfileResult.get(AV_TS_PROFILE.KEY_PARAMETER_ID);
         }
-        return timeSeriesProfileList;
+        return timeSeriesProfiles;
     }
 
     private TimeSeriesProfile map(TS_PROFILE_T timeSeriesProfile, String locationName, String keyParameter,

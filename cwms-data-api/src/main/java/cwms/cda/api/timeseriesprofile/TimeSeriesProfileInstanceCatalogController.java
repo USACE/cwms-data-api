@@ -26,8 +26,12 @@
 
 package cwms.cda.api.timeseriesprofile;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.LOCATION_MASK;
+import static cwms.cda.api.Controllers.OFFICE_MASK;
+import static cwms.cda.api.Controllers.PARAMETER_ID_MASK;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.VERSION_MASK;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -67,8 +71,7 @@ public final class TimeSeriesProfileInstanceCatalogController extends TimeSeries
                 + " time series profile instance. Default is *"),
         },
         method = HttpMethod.GET,
-        summary = "Get all time series profile instances. Masks can be provided to filter the results, but are"
-            + "not necessary to get a response.",
+        summary = "Get all time series profile instances. Masks can be provided to filter the results.",
         tags = {TAG},
         responses = {
             @OpenApiResponse(status = STATUS_200,

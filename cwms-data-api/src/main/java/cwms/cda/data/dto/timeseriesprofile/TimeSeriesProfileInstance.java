@@ -13,11 +13,10 @@ import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = TimeSeriesProfileInstance.Builder.class)
@@ -51,6 +50,7 @@ public final class TimeSeriesProfileInstance extends CwmsDTOPaginated {
         lastDate = builder.lastDate;
         pageFirstDate = builder.pageFirstDate;
         pageLastDate = builder.pageLastDate;
+        super.nextPage = builder.nextPage;
     }
 
     public TimeSeriesProfile getTimeSeriesProfile() {
@@ -107,7 +107,7 @@ public final class TimeSeriesProfileInstance extends CwmsDTOPaginated {
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static final class Builder {
-        private Map<Long, List<TimeSeriesData>> timeSeriesList;
+        private Map<Long, List<TimeSeriesData>> timeSeriesList = new TreeMap<>();
         private TimeSeriesProfile timeSeriesProfile;
         private String version;
         private Instant versionDate;
@@ -121,6 +121,7 @@ public final class TimeSeriesProfileInstance extends CwmsDTOPaginated {
         private String page;
         private int pageSize;
         private int total;
+        private String nextPage;
 
         public TimeSeriesProfileInstance.Builder withTimeSeriesProfile(TimeSeriesProfile timeSeriesProfile) {
             this.timeSeriesProfile = timeSeriesProfile;
@@ -192,40 +193,13 @@ public final class TimeSeriesProfileInstance extends CwmsDTOPaginated {
             return this;
         }
 
+        public Builder withNextPage(String nextPage) {
+            this.nextPage = nextPage;
+            return this;
+        }
+
         public TimeSeriesProfileInstance build() {
             return new TimeSeriesProfileInstance(this);
         }
-    }
-
-    public void addValue(Timestamp dateTime, Double value, int qualityCode, String parameter, Timestamp prevDateTime) {
-        // Set the current page, if not set
-        if ((page == null || page.isEmpty()) && (timeSeriesList == null || timeSeriesList.isEmpty())) {
-            page = encodeCursor(delimiter, String.format("%d", dateTime.getTime()), parameter, total);
-        }
-        // if the current item will be on a new page, set the next page to the item before it
-        if (pageSize > 0 && mapSize(timeSeriesList) == pageSize) {
-            nextPage = encodeCursor(delimiter, String.format("%d", prevDateTime.toInstant().toEpochMilli()),
-                    parameter, total);
-        } else {
-            // add the value to the time series list
-            assert timeSeriesList != null;
-            timeSeriesList.computeIfAbsent(dateTime.getTime(), k -> new ArrayList<>());
-            timeSeriesList.get(dateTime.getTime()).add(new TimeSeriesData(value, qualityCode));
-        }
-    }
-
-    public void addNullValue(Timestamp dateTime, int index) {
-        timeSeriesList.get(dateTime.getTime()).add(index, null);
-    }
-
-    private static int mapSize(Map<Long, List<TimeSeriesData>> map) {
-        int size = 0;
-        if (map == null) {
-            return size;
-        }
-        for (List<TimeSeriesData> list : map.values()) {
-            size += list.size();
-        }
-        return size;
     }
 }

@@ -34,6 +34,7 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import java.util.ArrayList;
 import java.util.List;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
@@ -45,6 +46,7 @@ public class TimeSeriesProfileList extends CwmsDTOPaginated {
 
     private TimeSeriesProfileList(Builder builder) {
         super(builder.page, builder.pageSize, builder.total);
+        super.nextPage = builder.nextPage;
         profileList = builder.timeSeriesProfileList;
     }
 
@@ -56,7 +58,8 @@ public class TimeSeriesProfileList extends CwmsDTOPaginated {
         private String page;
         private int pageSize;
         private int total;
-        private List<TimeSeriesProfile> timeSeriesProfileList;
+        private List<TimeSeriesProfile> timeSeriesProfileList = new ArrayList<>();
+        private String nextPage;
 
         public Builder page(String page) {
             this.page = page;
@@ -73,6 +76,11 @@ public class TimeSeriesProfileList extends CwmsDTOPaginated {
             return this;
         }
 
+        public Builder nextPage(String nextPage) {
+            this.nextPage = nextPage;
+            return this;
+        }
+
         public Builder timeSeriesProfileList(List<TimeSeriesProfile> timeSeriesProfileList) {
             this.timeSeriesProfileList = timeSeriesProfileList;
             return this;
@@ -83,19 +91,5 @@ public class TimeSeriesProfileList extends CwmsDTOPaginated {
         }
     }
 
-    public void addValue(long locationCode, TimeSeriesProfile profile, String keyParameter, long prevLocationCode) {
-        // Set the current page, if not set
-        if ((page == null || page.isEmpty()) && (profileList == null || profileList.isEmpty())) {
-            page = encodeCursor(delimiter, String.format("%d", locationCode), keyParameter, total);
-        }
-        // if the current item will be on a new page, set the next page to the item before it
-        if (pageSize > 0 && profileList != null && profileList.size() == pageSize) {
-            nextPage = encodeCursor(delimiter, String.format("%d", prevLocationCode),
-                    keyParameter, total);
-        } else {
-            // add the value to the time series profile list
-            assert profileList != null;
-            profileList.add(profile);
-        }
-    }
+
 }

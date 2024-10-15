@@ -34,6 +34,8 @@ import org.jooq.DSLContext;
 
 public abstract class TimeSeriesProfileParserBase {
     static final String TAG = "TimeSeries";
+    public static final String COLUMNAR_TYPE = "columnar-timeseries-profile-parser";
+    public static final String INDEXED_TYPE = "indexed-timeseries-profile-parser";
 
     public static final String PARAMETER_ID_MASK = "parameter-id-mask";
     private MetricRegistry metrics;

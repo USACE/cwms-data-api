@@ -77,19 +77,21 @@ public final class TimeSeriesProfileParserCreateController extends TimeSeriesPro
 
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
 
-            TimeSeriesProfileParserColumnar tspParserColumnar = null;
-            TimeSeriesProfileParserIndexed tspParserIndexed = null;
             TimeSeriesProfileParserDao tspParserDao = getParserDao(dsl);
-            if (ctx.body().contains("columnar-timeseries-profile-parser")) {
-                tspParserColumnar = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
-                        TimeSeriesProfileParserColumnar.class), ctx.body(), TimeSeriesProfileParserColumnar.class);
-            } else {
-                tspParserIndexed = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
-                        TimeSeriesProfileParserIndexed.class), ctx.body(), TimeSeriesProfileParserIndexed.class);
+            String content = ctx.body();
+            if (content.isEmpty()) {
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                return;
             }
-            if (tspParserColumnar != null) {
+            if (content.contains(COLUMNAR_TYPE)) {
+                TimeSeriesProfileParserColumnar tspParserColumnar = Formats
+                        .parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class),
+                                content, TimeSeriesProfileParserColumnar.class);
                 tspParserDao.storeTimeSeriesProfileParser(tspParserColumnar, failIfExists);
             } else {
+                TimeSeriesProfileParserIndexed tspParserIndexed = Formats
+                        .parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserIndexed.class),
+                                content, TimeSeriesProfileParserIndexed.class);
                 tspParserDao.storeTimeSeriesProfileParser(tspParserIndexed, failIfExists);
             }
             ctx.status(HttpServletResponse.SC_CREATED);

@@ -1,5 +1,8 @@
 package cwms.cda.data.dto.timeseriesprofile;
 
+import static cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserBase.COLUMNAR_TYPE;
+import static cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserBase.INDEXED_TYPE;
+
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -20,9 +23,9 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonDeserialize(builder = TimeSeriesProfileInstance.Builder.class)
 @JsonSubTypes({@JsonSubTypes.Type(value = TimeSeriesProfileParserIndexed.class,
-        name = "indexed-timeseries-profile-parser"),
+        name = INDEXED_TYPE),
     @JsonSubTypes.Type(value = TimeSeriesProfileParserColumnar.class,
-        name = "columnar-timeseries-profile-parser")
+        name = COLUMNAR_TYPE)
 })
 
 public  class TimeSeriesProfileParser extends CwmsDTOBase {

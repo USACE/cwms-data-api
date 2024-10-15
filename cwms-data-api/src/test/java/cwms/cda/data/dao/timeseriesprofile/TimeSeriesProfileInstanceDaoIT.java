@@ -192,7 +192,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
 
                 // check if the instance parameters are the same size as the timeseries parameters we stored
                 assertEquals(parameterArray.length, timeSeriesProfileInstance.getParameterColumns().size());
-                assertEquals(3, timeSeriesProfileInstance.getTimeSeriesList().size());
+                assertEquals(6, mapSize(timeSeriesProfileInstance.getTimeSeriesList()));
                 assertEquals("Depth", timeSeriesProfileInstance.getParameterColumns().get(0).getParameter());
                 assertEquals("m", timeSeriesProfileInstance.getParameterColumns().get(0).getUnit());
                 assertEquals("Pres", timeSeriesProfileInstance.getParameterColumns().get(1).getParameter());
@@ -294,7 +294,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                 assertAll(
                         () -> assertEquals(parameterArray.length, timeSeriesProfileInstance.getParameterColumns().size(),
                                 "First instance parameter count does not match"),
-                        () -> assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().size(),
+                        () -> assertEquals(3, mapSize(timeSeriesProfileInstance.getTimeSeriesList()),
                                 "Size of timeseries list does not match"),
                         () -> assertEquals("Depth", timeSeriesProfileInstance.getParameterColumns().get(0).getParameter(),
                                 "First instance parameter does not match"),
@@ -312,7 +312,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                                 "Second instance timeseries list does not match in size"),
                         () -> assertEquals(parameterArray.length, timeSeriesProfileInstance1.getParameterColumns().size(),
                                 "Second instance timeseries list does not match in size"),
-                        () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().size(),
+                        () -> assertEquals(3, mapSize(timeSeriesProfileInstance1.getTimeSeriesList()),
                                 "Second instance timeseries list does not match in size"),
                         () -> assertEquals("Pres", timeSeriesProfileInstance1.getParameterColumns().get(1).getParameter(),
                                 "Second instance count of parameters does not match"),
@@ -328,31 +328,29 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                                 "Second instance timeseries list does not match in size"),
                         () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().get(1568035040000L).size(),
                                 "Second instance timeseries list does not match in size"),
-                        () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().size(),
-                                "Second instance timeseries list does not match expected size."),
-                        () -> assertEquals(parameterArray.length, timeSeriesProfileInstance2.getParameterColumns().size(),
+                        () -> assertEquals(parameterArray.length - 1, timeSeriesProfileInstance2.getParameterColumns().size(),
                                 "Third instance timeseries list does not match in size"),
-                        () -> assertEquals(1, timeSeriesProfileInstance2.getTimeSeriesList().size(),
+                        () -> assertEquals(1, mapSize(timeSeriesProfileInstance2.getTimeSeriesList()),
                                 "Third instance timeseries list does not match in size"),
                         () -> assertEquals("Depth", timeSeriesProfileInstance2.getParameterColumns().get(0).getParameter(),
                                 "Third instance parameter does not match"),
                         () -> assertEquals("m", timeSeriesProfileInstance2.getParameterColumns().get(0).getUnit(),
                                 "Third instance unit does not match"),
-                        () -> assertEquals(2, timeSeriesProfileInstance2.getTimeSeriesList().get(1568033347000L).size(),
+                        () -> assertEquals(1, timeSeriesProfileInstance2.getTimeSeriesList().get(1568033347000L).size(),
                                 "Third instance timeseries list does not match in size"),
-                        () -> assertEquals(parameterArray.length, timeSeriesProfileInstance3.getParameterColumns().size(),
+                        () -> assertEquals(parameterArray.length - 1, timeSeriesProfileInstance3.getParameterColumns().size(),
                                 "Fourth instance timeseries list does not match in size"),
-                        () -> assertEquals(1, timeSeriesProfileInstance3.getTimeSeriesList().size(),
+                        () -> assertEquals(1, mapSize(timeSeriesProfileInstance3.getTimeSeriesList()),
                                 "Fourth instance timeseries list does not match in size"),
-                        () -> assertEquals("Depth", timeSeriesProfileInstance3.getParameterColumns().get(0).getParameter(),
+                        () -> assertEquals("Pres", timeSeriesProfileInstance3.getParameterColumns().get(0).getParameter(),
                                 "Fourth instance parameter does not match"),
-                        () -> assertEquals("m", timeSeriesProfileInstance3.getParameterColumns().get(0).getUnit(),
+                        () -> assertEquals("kPa", timeSeriesProfileInstance3.getParameterColumns().get(0).getUnit(),
                                 "Fourth instance unit does not match"),
-                        () -> assertEquals(2, timeSeriesProfileInstance3.getTimeSeriesList().get(1568033347000L).size(),
+                        () -> assertEquals(1, timeSeriesProfileInstance3.getTimeSeriesList().get(1568033347000L).size(),
                                 "Fourth instance timeseries list does not match in size"),
                         () -> assertEquals(parameterArray.length, timeSeriesProfileInstance4.getParameterColumns().size(),
                                 "Fifth instance timeseries list does not match in size"),
-                        () -> assertEquals(1, timeSeriesProfileInstance4.getTimeSeriesList().size(),
+                        () -> assertEquals(2, mapSize(timeSeriesProfileInstance4.getTimeSeriesList()),
                                 "Fifth instance timeseries list does not match in size"),
                         () -> assertEquals("Depth", timeSeriesProfileInstance4.getParameterColumns().get(0).getParameter(),
                                 "Fifth instance parameter does not match"),
@@ -1081,5 +1079,20 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                         .withTimeInTwoFields(true)
                         .withParameterInfoList(parameterInfoList)
                         .build();
+    }
+
+    public static int mapSize(Map<Long, List<TimeSeriesData>> map) {
+        int size = 0;
+        if (map == null) {
+            return size;
+        }
+        for (List<TimeSeriesData> list : map.values()) {
+            for (TimeSeriesData tsd : list) {
+                if (tsd != null) {
+                    size++;
+                }
+            }
+        }
+        return size;
     }
 }
