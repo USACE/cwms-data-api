@@ -110,12 +110,20 @@ However, *DO NOT* be afraid to say, "that looks terrible", and tweak it until it
 
 2. If it is known that an integration test requires a specific database version it should be gated behind a EnableIfSchemaVersion (NOTE: not implemented at the time of this writing) annotation so streamline automated testing results.
 
-#### JUnit
+#### Tests
 
-1. For repeated tests with different, but very similar data, ParameterizedTests are preferred.
-2. In integration tests for data that should be cleaned up after all tests register them with the functions available in the base class. Create if reasonable.
-3. If it adds clarity, do not be afraid to use the `@Order` annotation to sequence tests. (See the [ApiKey Controller Test](https://github.com/USACE/cwms-data-api/blob/develop/cwms-data-api/src/test/java/cwms/cda/api/auth/ApiKeyControllerTestIT.java) for an example)
-4. Prefer disabling test by database schema version, if that does work use `EnabledIfProperty` and share a property name between related tests.
+1. Assume the following when creating and naming your test:
+   a. Someone will come in cold to the entire project.
+   b. The tests will be used by API users to guide their client application designs
+3. For repeated tests with different, but very similar data, ParameterizedTests are preferred.
+4. In integration tests for data that should be cleaned up after all tests register them with the functions available in the base class. Create if reasonable.
+5. If it adds clarity, do not be afraid to use the `@Order` annotation to sequence tests. (See the [ApiKey Controller Test](https://github.com/USACE/cwms-data-api/blob/develop/cwms-data-api/src/test/java/cwms/cda/api/auth/ApiKeyControllerTestIT.java) for an example)
+6. Prefer disabling test by database schema version, if that does work use `EnabledIfProperty` and share a property name between related tests.
+7. Use "real" names for data in test data set. Either use actual real location/project/basin/etc names, or make up something that feels like one.
+  a. NOTE: within reason. Location names, absolutely, but otherwise make sure the purpose of the name is clear.
+8. Name files consistent with the purpose of the test.
+   
+
 
 ## Submitting an Issue
 
