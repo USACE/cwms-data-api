@@ -232,7 +232,12 @@ public class TimeSeries extends CwmsDTOPaginated {
             ),
             arraySchema = @Schema(
                     type="array",
-                    example = "[1509654000000, 54.3, 0]"
+                    example = "[1509654000000, 54.3, 0]",
+                    description = "Time is Milliseconds since the UNIX Epoch. Value is Double (for missing data you "
+                                + "can use null, or -Float.MAX_VALUE (-340282346638528859811704183484516925440), "
+                                + "quality is an integer.) If you are using missing data set the quality to 5."
+                                + "Failure to do this may result in silently ignoring that value on not storing a "
+                                + "placeholder which can be important in irregular and psuedo regular timeseries."
             )
     )
     public static class Record {

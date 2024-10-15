@@ -90,11 +90,12 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("values[2][1]", closeTo(600.0,0.0001))
+                .body("values[0][1]", closeTo(500.0,0.0001))
                 .body("values[1][1]", nullValue())
                 .body("values[1][2]", is(5))
-                .body("values[0][1]", closeTo(500.0,0.0001))
-
+                .body("values[2][1]", nullValue())
+                .body("values[2][2]", is(5))
+                .body("values[3][1]", closeTo(600.0,0.0001))
             ;
         } catch (SQLException ex) {
             throw new RuntimeException("Unable to create location for TS", ex);
