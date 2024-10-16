@@ -121,7 +121,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         return dsl.select(AV_LOC.asterisk())
                     .from(AV_LOC)
                     .where(whereCondition)
-                    .fetchSize(500)
+                    .fetchSize(DEFAULT_SMALL_FETCH_SIZE)
                     .fetch(this::buildLocation);
     }
 
@@ -291,7 +291,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             selectQuery = selectQuery.and(AV_LOC.LOCATION_ID.in(identifiers));
         }
 
-        List<Feature> features = selectQuery.fetchSize(500).stream()
+        List<Feature> features = selectQuery.fetchSize(DEFAULT_SMALL_FETCH_SIZE).stream()
                 .map(LocationsDaoImpl::buildFeatureFromAvLocRecord)
                 .collect(toList());
         FeatureCollection collection = new FeatureCollection();
@@ -433,7 +433,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             .orderBy(avLoc2.DB_OFFICE_ID.asc(),limitId.asc(),avLoc2.ALIASED_ITEM.asc());
         logger.log(Level.FINER, () -> query.getSQL(ParamType.INLINED));
         List<? extends CatalogEntry> entries = query
-                .fetchSize(1000)
+                .fetchSize(DEFAULT_FETCH_SIZE)
                 .fetchStream()
             .map(r -> r.into(AV_LOC2.AV_LOC2))
             .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2::getLOCATION_CODE))

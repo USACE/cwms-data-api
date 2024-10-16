@@ -123,7 +123,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                 .and(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId))
                 .and(assignmentOffice)
             )
-            .orderBy(alga.ATTRIBUTE).fetchSize(1000).fetch(mapper);
+            .orderBy(alga.ATTRIBUTE).fetchSize(DEFAULT_FETCH_SIZE).fetch(mapper);
 
         // Might want to verify that all the groups in the list are the same?
         LocationGroup locGroup =
@@ -277,7 +277,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
         Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
         connectBy.orderBy(alcg.LOC_CATEGORY_ID, alcg.LOC_GROUP_ID, alga.ATTRIBUTE)
-                .fetchSize(1000)  // This made the query go from 2 minutes to 10 seconds?
+                .fetchSize(DEFAULT_FETCH_SIZE)  // This made the query go from 2 minutes to 10 seconds?
                 .stream().map(mapper::map).forEach(pair -> {
                     LocationGroup locationGroup = pair.component1();
                     List<AssignedLocation> list = map.computeIfAbsent(locationGroup, k -> new ArrayList<>());
