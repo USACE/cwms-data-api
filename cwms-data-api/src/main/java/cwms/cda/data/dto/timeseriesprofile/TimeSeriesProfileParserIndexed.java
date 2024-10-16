@@ -12,21 +12,21 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import java.math.BigInteger;
 
+import static cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserBase.INDEXED_TYPE;
+
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = TimeSeriesProfileParserIndexed.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonTypeName("indexed-timeseries-profile-parser")
+@JsonTypeName(INDEXED_TYPE)
 public class TimeSeriesProfileParserIndexed extends TimeSeriesProfileParser {
     private final Character fieldDelimiter;
     private final Integer timeField;
-    private final String type;
 
     TimeSeriesProfileParserIndexed(Builder builder) {
         super(builder);
         fieldDelimiter = builder.fieldDelimiter;
         timeField = builder.timeField;
-        type = builder.type;
     }
 
     @Override
@@ -45,17 +45,12 @@ public class TimeSeriesProfileParserIndexed extends TimeSeriesProfileParser {
         return BigInteger.valueOf(timeField);
     }
 
-    public String getType() {
-        return type;
-    }
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder extends TimeSeriesProfileParser.Builder {
         private Character fieldDelimiter = null;
         private Integer timeField = null;
-        private String type = "indexed-timeseries-profile-parser";
-
 
         public TimeSeriesProfileParserIndexed.Builder withFieldDelimiter(char delimiter) {
             this.fieldDelimiter = delimiter;
@@ -65,11 +60,6 @@ public class TimeSeriesProfileParserIndexed extends TimeSeriesProfileParser {
 
         public TimeSeriesProfileParserIndexed.Builder withTimeField(int field) {
             this.timeField = field;
-            return this;
-        }
-
-        public TimeSeriesProfileParserIndexed.Builder withType(String type) {
-            this.type = type;
             return this;
         }
 

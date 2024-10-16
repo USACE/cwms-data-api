@@ -5,6 +5,7 @@ import static cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserBase.INDEXED
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -20,6 +21,7 @@ import java.util.List;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeName("time-series-profile-parser")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonDeserialize(builder = TimeSeriesProfileInstance.Builder.class)
 @JsonSubTypes({@JsonSubTypes.Type(value = TimeSeriesProfileParserIndexed.class,

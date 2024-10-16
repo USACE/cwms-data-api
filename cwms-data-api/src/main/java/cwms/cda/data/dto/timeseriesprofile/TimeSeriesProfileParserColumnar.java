@@ -13,12 +13,14 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import java.math.BigInteger;
 
+import static cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserBase.COLUMNAR_TYPE;
+
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = TimeSeriesProfileParserColumnar.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonTypeName("columnar-timeseries-profile-parser")
+@JsonTypeName(COLUMNAR_TYPE)
 public final class TimeSeriesProfileParserColumnar extends TimeSeriesProfileParser {
     private final Integer timeStartColumn;
     private final Integer timeEndColumn;
@@ -48,6 +50,7 @@ public final class TimeSeriesProfileParserColumnar extends TimeSeriesProfilePars
         }
         return null;
     }
+
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)

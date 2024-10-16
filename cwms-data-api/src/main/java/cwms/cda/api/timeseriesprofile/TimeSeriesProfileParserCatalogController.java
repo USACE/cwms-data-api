@@ -98,13 +98,18 @@ public final class TimeSeriesProfileParserCatalogController extends TimeSeriesPr
             List<TimeSeriesProfileParser> tspParsers = tspParserDao.catalogTimeSeriesProfileParsers(locationId,
                     officeIdMask, parameterIdMask, true);
             String acceptHeader = ctx.header(Header.ACCEPT);
-            // Added type to DTO due to serialization issues with List for TimeSeriesProfileParser Type handling.
+            // Uses manual JSON array formatting due to serialization issues with List for TimeSeriesProfileParser Type handling.
             // Related to Jackson subclassing annotations @JSONTypeInfo and @JSONSubTypes
             // See issue: https://github.com/FasterXML/jackson-databind/issues/2185
-            ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileParsers.class);
-            String result = Formats.format(contentType, tspParsers, TimeSeriesProfileParsers.class);
+            ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileParser.class);
+            StringBuilder finalResult = new StringBuilder("[\n");
+            for (TimeSeriesProfileParser tspParser : tspParsers) {
+                String intermediateResult = Formats.format(contentType, tspParser);
+                finalResult.append(intermediateResult).append(",\n");
+            }
+            finalResult = new StringBuilder(finalResult.substring(0, finalResult.length() - 2) + "\n]");
             ctx.status(HttpServletResponse.SC_OK);
-            ctx.result(result);
+            ctx.result(finalResult.toString());
         }
     }
 }
