@@ -39,6 +39,7 @@ import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_204;
 import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -47,6 +48,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.LockDao;
 import cwms.cda.data.dto.CwmsId;
@@ -73,7 +75,6 @@ public final class LockController implements CrudHandler {
 
     private final Histogram requestResultSize;
 
-
     public LockController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
@@ -87,10 +88,12 @@ public final class LockController implements CrudHandler {
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = OFFICE, description = "Office id for the reservoir project location " +
-                "associated with the locks."),
-            @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the " +
-                "Locks whose data is to be included in the response."),
+            @OpenApiParam(name = OFFICE, description = "Office id for the reservoir project location "
+                + "associated with the locks."),
+            @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the "
+                + "Locks whose data is to be included in the response."),
+            @OpenApiParam(name = UNIT, description = "Specifies the unit system to be used in the response. "
+                + "Valid values are: \n* `SI` - Metric units. \n* `EN` - Imperial units. \nDefaults to SI.")
         },
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
@@ -106,10 +109,11 @@ public final class LockController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = ctx.queryParam(OFFICE);
             String projectId = ctx.queryParam(PROJECT_ID);
+            UnitSystem unitSystem = ctx.queryParamAsClass(UNIT, UnitSystem.class).getOrDefault(UnitSystem.SI);
             CwmsId project = CwmsId.buildCwmsId(office, projectId);
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
-            List<CwmsId> locks = dao.retrieveLockIds(project);
+            List<CwmsId> locks = dao.retrieveLockIds(project, unitSystem);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                 Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, Lock.class);
@@ -128,7 +132,9 @@ public final class LockController implements CrudHandler {
         },
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                + "the lock to be retrieved.")
+                + "the lock to be retrieved."),
+            @OpenApiParam(name = UNIT, description = "Specifies the unit system to be used in the response. "
+                + "Valid values are: \n* `SI` - Metric units. \n* `EN` - Imperial units. \nDefaults to SI.")
         },
         responses = {
             @OpenApiResponse(status = STATUS_200,
@@ -143,10 +149,11 @@ public final class LockController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
+        UnitSystem unitSystem = ctx.queryParamAsClass(UNIT, UnitSystem.class).getOrDefault(UnitSystem.SI);
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
-            Lock lock = dao.retrieveLock(CwmsId.buildCwmsId(office, name));
+            Lock lock = dao.retrieveLock(CwmsId.buildCwmsId(office, name), unitSystem);
             String header = ctx.header(Header.ACCEPT);
             String formatHeader = header != null ? header : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, Lock.class);
@@ -188,7 +195,6 @@ public final class LockController implements CrudHandler {
             dao.storeLock(lock, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED).json("Created Lock");
         }
-
     }
 
     @OpenApi(
@@ -199,7 +205,7 @@ public final class LockController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                 + "the lock to be renamed."),
-            @OpenApiParam(name = NAME, required = true, description = "Specifies the new lock name. ")
+            @OpenApiParam(name = NAME, required = true, description = "Specifies the new lock name.")
         },
         description = "Rename CWMS Lock",
         method = HttpMethod.PATCH,
@@ -228,9 +234,8 @@ public final class LockController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                 + "the lock to be deleted."),
-            @OpenApiParam(name = METHOD, description = "Specifies the delete method used. " +
-                "Defaults to \"DELETE_KEY\"",
-                type = JooqDao.DeleteMethod.class)
+            @OpenApiParam(name = METHOD, description = "Specifies the delete method used. "
+                + "Defaults to \"DELETE_KEY\"", type = JooqDao.DeleteMethod.class)
         },
         description = "Delete CWMS Lock",
         method = HttpMethod.DELETE,

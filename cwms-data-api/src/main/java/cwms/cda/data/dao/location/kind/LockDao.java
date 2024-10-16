@@ -26,6 +26,8 @@ package cwms.cda.data.dao.location.kind;
 
 import static java.util.stream.Collectors.toList;
 
+import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
@@ -33,35 +35,55 @@ import cwms.cda.data.dto.location.kind.Lock;
 import java.util.List;
 import org.jooq.DSLContext;
 import org.jooq.Record;
+import org.jooq.Result;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOCK_PACKAGE;
-import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
+import usace.cwms.db.jooq.codegen.tables.AV_LOCK;
 import usace.cwms.db.jooq.codegen.udt.records.LOCK_OBJ_T;
 
 public final class LockDao extends JooqDao<Lock> {
+    private static final AV_LOCK view = AV_LOCK.AV_LOCK;
 
     public LockDao(DSLContext dsl) {
         super(dsl);
     }
 
-    public List<CwmsId> retrieveLockIds(CwmsId projectId) {
+    public List<CwmsId> retrieveLockIds(CwmsId projectId, UnitSystem units) {
+        if (units == null) {
+            units = UnitSystem.SI;
+        }
+        final UnitSystem unitSystemFinal = units;
         return connectionResult(dsl, c -> {
             setOffice(c, projectId.getOfficeId());
-            return CWMS_LOCK_PACKAGE.call_CAT_LOCK(DSL.using(c).configuration(),
-                    projectId.getName(), projectId.getOfficeId())
-                .stream()
-                .map(LockDao::map)
-                .collect(toList());
+            Result<Record> records = DSL.using(c)
+                .select(view.fields())
+                .from(view)
+                .where(view.PROJECT_ID.eq(projectId.getName()))
+                    .and(view.UNIT_SYSTEM.eq(unitSystemFinal.name()))
+                .fetch();
+            return records.stream().map(LockDao::map).collect(toList());
         });
     }
 
-    public Lock retrieveLock(CwmsId lockId) {
+    public Lock retrieveLock(CwmsId lockId, UnitSystem units) {
+        if (units == null) {
+            units = UnitSystem.SI;
+        }
+        UnitSystem unitSystemFinal = units;
         return connectionResult(dsl, c -> {
             setOffice(c, lockId.getOfficeId());
-            LOCATION_REF_T locationRef = LocationUtil.getLocationRef(lockId);
-            LOCK_OBJ_T lock = CWMS_LOCK_PACKAGE.call_RETRIEVE_LOCK(DSL.using(c).configuration(), locationRef);
-            return map(lock);
+            Record dbRecord = DSL.using(c)
+                .select(view.fields())
+                .from(view)
+                .where(view.LOCK_ID.eq(lockId.getName()).and(view.DB_OFFICE_ID.eq(lockId.getOfficeId()))
+                        .and(view.UNIT_SYSTEM.equalIgnoreCase(unitSystemFinal.name())))
+                .fetchOne();
+            if (dbRecord == null) {
+                throw new NotFoundException("Lock not found: " + lockId);
+            }
+            return map(dbRecord.into(LOCK_OBJ_T.class));
         });
+
     }
 
     public void storeLock(Lock lock, boolean failIfExists) {
@@ -73,8 +95,8 @@ public final class LockDao extends JooqDao<Lock> {
 
     static CwmsId map(Record r) {
         String officeId = r.getValue("DB_OFFICE_ID", String.class);
-        String baseLocationId = r.getValue("BASE_LOCATION_ID", String.class);
-        String subLocationId = r.getValue("SUB_LOCATION_ID", String.class);
+        String baseLocationId = r.getValue("PROJECT_ID", String.class);
+        String subLocationId = r.getValue("LOCK_ID", String.class);
         return CwmsId.buildCwmsId(officeId, baseLocationId + "-" + subLocationId);
     }
 
@@ -87,6 +109,8 @@ public final class LockDao extends JooqDao<Lock> {
         retval.setNORMAL_LOCK_LIFT(lock.getNormalLockLift());
         retval.setVOLUME_PER_LOCKAGE(lock.getVolumePerLockage());
         retval.setMINIMUM_DRAFT(lock.getMinimumDraft());
+        retval.setUNITS_ID(lock.getUnits());
+        retval.setVOLUME_UNITS_ID(lock.getVolumeUnits());
         return retval;
     }
 
@@ -99,6 +123,9 @@ public final class LockDao extends JooqDao<Lock> {
             .withNormalLockLift(lock.getNORMAL_LOCK_LIFT())
             .withVolumePerLockage(lock.getVOLUME_PER_LOCKAGE())
             .withMinimumDraft(lock.getMINIMUM_DRAFT())
+            .withUnits(lock.getUNITS_ID())
+            .withVolumeUnits(lock.getVOLUME_UNITS_ID())
+            .withVolumeUnits(lock.getVOLUME_UNITS_ID())
             .build();
     }
 

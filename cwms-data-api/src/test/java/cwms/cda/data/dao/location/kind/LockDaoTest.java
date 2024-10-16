@@ -27,9 +27,11 @@ package cwms.cda.data.dao.location.kind;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.helpers.DTOMatch;
 import java.time.ZoneId;
+
 import org.jooq.Field;
 import org.jooq.Record3;
 import org.jooq.SQLDialect;
@@ -50,8 +52,8 @@ final class LockDaoTest {
     @Test
     void testJooqRecordConversion() {
         Field<String> officeField = DSL.field("DB_OFFICE_ID", String.class);
-        Field<String> baseLocField = DSL.field("BASE_LOCATION_ID", String.class);
-        Field<String> subLocField = DSL.field("SUB_LOCATION_ID", String.class);
+        Field<String> baseLocField = DSL.field("PROJECT_ID", String.class);
+        Field<String> subLocField = DSL.field("LOCK_ID", String.class);
         Record3<String, String, String> lockRecord = DSL.using(SQLDialect.ORACLE18C)
             .newRecord(officeField,
                 baseLocField,
@@ -72,6 +74,11 @@ final class LockDaoTest {
                 .withOfficeId("LRD")
                 .build())
                 .withLockLength(100.0)
+                .withMaximumLockLift(20.0)
+                .withVolumeUnits("ft3")
+                .withUnits("ft")
+                .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
+                        .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
                 .withLockWidth(100.0)
                 .withNormalLockLift(10.0)
                 .withVolumePerLockage(100.0)
@@ -92,6 +99,8 @@ final class LockDaoTest {
                     .withName("LOW_WATER_UPPER")
                     .withOfficeId("SPK")
                     .build())
+                .withHighWaterLowerPoolWarningLevel(2)
+                .withHighWaterUpperPoolWarningLevel(1)
             .build();
     }
 

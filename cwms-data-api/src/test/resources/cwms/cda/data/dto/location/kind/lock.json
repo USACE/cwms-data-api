@@ -25,5 +25,37 @@
     "elevation-units": "m",
     "bounding-office-id": "LRL",
     "nearest-city": "Davis"
-  }
+  },
+  "chamber-type": {
+    "display-value": "LOCK",
+    "tooltip": "Land Side Main",
+    "active": true,
+    "office-id": "LRL"
+  },
+  "lock-width": 50.0,
+  "lock-length": 50.0,
+  "normal-lock-lift": 10.0,
+  "volume-per-lockage": 10.0,
+  "minimum-draft": 25.5,
+  "maximum-lock-lift": 25.6,
+  "units": "ft",
+  "volume-units": "ft3",
+  "high-water-upper-pool-location-level": {
+    "office-id": "LRL",
+    "name": "Upper Pool 1"
+  },
+  "high-water-lower-pool-location-level": {
+    "office-id": "LRL",
+    "name": "Lower Pool 1"
+  },
+  "low-water-upper-pool-location-level": {
+      "office-id": "LRL",
+      "name": "Upper Pool 2"
+  },
+  "low-water-lower-pool-location-level": {
+      "office-id": "LRL",
+      "name": "Lower Pool 2"
+  },
+  "high-water-upper-pool-warning-level": 2,
+  "high-water-lower-pool-warning-level": 2
 }

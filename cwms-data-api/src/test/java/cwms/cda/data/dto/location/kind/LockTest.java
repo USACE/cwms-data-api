@@ -38,6 +38,7 @@ import cwms.cda.helpers.DTOMatch;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
+
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -88,7 +89,34 @@ final class LockTest {
                         .withOfficeId("LRD")
                         .withName("PROJECT")
                         .build())
-        //TODO fill out the rest - subject to change based on https://jira.hecdev.net/browse/CTO-147
+                .withLockWidth(100.0)
+                .withLockLength(100.0)
+                .withNormalLockLift(10.0)
+                .withMaximumLockLift(20.0)
+                .withVolumePerLockage(100.0)
+                .withMinimumDraft(5.0)
+                .withUnits("ft")
+                .withVolumeUnits("ft3")
+                .withHighWaterLowerPoolWarningLevel(2)
+                .withHighWaterUpperPoolWarningLevel(2)
+                .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
+                        .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
+                .withHighWaterLowerPoolLocationLevel(new CwmsId.Builder()
+                        .withName("HIGH_WATER_LOWER")
+                        .withOfficeId("SPK")
+                        .build())
+                .withHighWaterUpperPoolLocationLevel(new CwmsId.Builder()
+                        .withName("HIGH_WATER_UPPER")
+                        .withOfficeId("SPK")
+                        .build())
+                .withLowWaterLowerPoolLocationLevel(new CwmsId.Builder()
+                        .withName("LOW_WATER_LOWER")
+                        .withOfficeId("SPK")
+                        .build())
+                .withLowWaterUpperPoolLocationLevel(new CwmsId.Builder()
+                        .withName("LOW_WATER_UPPER")
+                        .withOfficeId("SPK")
+                        .build())
                 .build();
     }
 

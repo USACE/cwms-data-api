@@ -30,16 +30,20 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
@@ -53,9 +57,10 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 @TestInstance(Lifecycle.PER_CLASS)
 final class LockDaoIT extends ProjectStructureIT {
     private static final String LOCK_KIND = "LOCK";
-    private static final Location LOCK_LOC1 = buildProjectStructureLocation("PROJECT-LOCK_LOC1_IT", LOCK_KIND);
+    private static final Location LOCK_LOC1 = buildProjectStructureLocation("LOCK_LOC1_IT", LOCK_KIND);
     private static final Location LOCK_LOC2 = buildProjectStructureLocation("LOCK_LOC2_IT", LOCK_KIND);
     private static final Location LOCK_LOC3 = buildProjectStructureLocation("LOCK_LOC3_IT", LOCK_KIND);
+    private static final Logger LOGGER = Logger.getLogger(LockDaoIT.class.getName());
 
     @BeforeAll
     public void setup() throws Exception {
@@ -88,6 +93,7 @@ final class LockDaoIT extends ProjectStructureIT {
                     locationsDao.deleteLocation(LOCK_LOC3.getName(), OFFICE_ID, true);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
+                    LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
                 }
             },
             CwmsDataApiSetupCallback.getWebUser());
@@ -104,10 +110,10 @@ final class LockDaoIT extends ProjectStructureIT {
                 String lockId = lock.getLocation().getName();
                 String lockOfficeId = lock.getLocation().getOfficeId();
                 CwmsId cwmsId = CwmsId.buildCwmsId(lockOfficeId, lockId);
-                Lock retrievedLock = lockDao.retrieveLock(cwmsId);
+                Lock retrievedLock = lockDao.retrieveLock(cwmsId, UnitSystem.EN);
                 DTOMatch.assertMatch(lock, retrievedLock);
                 lockDao.deleteLock(cwmsId, DeleteRule.DELETE_ALL);
-                assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId));
+                assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, UnitSystem.EN));
             },
             CwmsDataApiSetupCallback.getWebUser());
     }
@@ -127,17 +133,17 @@ final class LockDaoIT extends ProjectStructureIT {
                 String lockId = lock2.getLocation().getName();
                 String lockOfficeId = lock2.getLocation().getOfficeId();
                 CwmsId projectId = CwmsId.buildCwmsId(lock1.getProjectId().getOfficeId(), lock1.getProjectId().getName());
-                List<CwmsId> retrievedLock = lockDao.retrieveLockIds(projectId);
+                List<CwmsId> retrievedLock = lockDao.retrieveLockIds(projectId, null);
                 assertEquals(2, retrievedLock.size());
                 assertTrue(retrievedLock.stream()
-                    .anyMatch(e -> e.getName().equalsIgnoreCase(lock1.getLocation().getName())));
+                    .anyMatch(e -> e.getName().split("-")[1].equalsIgnoreCase(lock1.getLocation().getName())));
                 assertTrue(retrievedLock.stream()
-                    .anyMatch(e -> e.getName().equalsIgnoreCase(lock2.getLocation().getName())));
+                    .anyMatch(e -> e.getName().split("-")[1].equalsIgnoreCase(lock2.getLocation().getName())));
                 assertFalse(retrievedLock.stream()
-                    .anyMatch(e -> e.getName().equalsIgnoreCase(lock3.getLocation().getName())));
+                    .anyMatch(e -> e.getName().split("-")[1].equalsIgnoreCase(lock3.getLocation().getName())));
                 CwmsId cwmsId = CwmsId.buildCwmsId(lockOfficeId, lockId);
                 lockDao.deleteLock(cwmsId, DeleteRule.DELETE_ALL);
-                assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId));
+                assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, null));
             },
             CwmsDataApiSetupCallback.getWebUser());
     }
@@ -155,9 +161,9 @@ final class LockDaoIT extends ProjectStructureIT {
                 String newId = lock.getLocation().getName() + "New";
                 CwmsId cwmsId = CwmsId.buildCwmsId(office, originalId);
                 lockDao.renameLock(cwmsId, newId);
-                assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId));
+                assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, UnitSystem.EN));
                 CwmsId newCwmsId = CwmsId.buildCwmsId(office, newId);
-                Lock retrievedLock = lockDao.retrieveLock(newCwmsId);
+                Lock retrievedLock = lockDao.retrieveLock(newCwmsId, UnitSystem.EN);
                 assertEquals(newId, retrievedLock.getLocation().getName());
                 lockDao.deleteLock(newCwmsId, DeleteRule.DELETE_ALL);
             },
@@ -171,7 +177,34 @@ final class LockDaoIT extends ProjectStructureIT {
                 .withName(projectId)
                 .withOfficeId(PROJECT_LOC.getOfficeId())
                 .build())
-            //TODO fill out the rest of the properties - subject to change based on https://jira.hecdev.net/browse/CTO-147
+            .withLockWidth(100.0)
+            .withLockLength(100.0)
+            .withNormalLockLift(10.0)
+            .withMaximumLockLift(20.0)
+            .withVolumePerLockage(100.0)
+            .withMinimumDraft(5.0)
+            .withUnits("ft")
+            .withVolumeUnits("ft3")
+            .withHighWaterLowerPoolWarningLevel(2)
+            .withHighWaterUpperPoolWarningLevel(2)
+            .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
+                    .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
+            .withHighWaterLowerPoolLocationLevel(new CwmsId.Builder()
+                .withName("HIGH_WATER_LOWER")
+                .withOfficeId("SPK")
+                .build())
+            .withHighWaterUpperPoolLocationLevel(new CwmsId.Builder()
+                .withName("HIGH_WATER_UPPER")
+                .withOfficeId("SPK")
+                .build())
+            .withLowWaterLowerPoolLocationLevel(new CwmsId.Builder()
+                .withName("LOW_WATER_LOWER")
+                .withOfficeId("SPK")
+                .build())
+            .withLowWaterUpperPoolLocationLevel(new CwmsId.Builder()
+                .withName("LOW_WATER_UPPER")
+                .withOfficeId("SPK")
+                .build())
             .build();
     }
 }
