@@ -28,6 +28,7 @@ import cwms.cda.api.enums.UnitSystem;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.MeasurementDao;
+import static cwms.cda.data.dao.MeasurementDaoTestIT.MINIMUM_SCHEMA;
 import cwms.cda.data.dao.StreamDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.measurement.Measurement;
@@ -36,6 +37,7 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import static io.restassured.RestAssured.given;
 import io.restassured.filter.log.LogDetail;
@@ -129,7 +131,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled("Disabled until schema with updated measurement api is deployed as production schema.")
+    @MinimumSchema(MINIMUM_SCHEMA)
     void test_create_retrieve_delete_measurement() throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/measurement.json");
         assertNotNull(resource);
@@ -332,7 +334,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled("Disabled until schema with updated measurement api is deployed as production schema.")
+    @MinimumSchema(MINIMUM_SCHEMA)
     void test_create_retrieve_delete_measurement_multiple() throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/measurements.json");
         assertNotNull(resource);
@@ -608,7 +610,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled("Disabled until schema with updated measurement api is deployed as production schema.")
+    @MinimumSchema(MINIMUM_SCHEMA)
     void test_update_does_not_exist() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
@@ -636,7 +638,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled("Disabled until schema with updated measurement api is deployed as production schema.")
+    @MinimumSchema(MINIMUM_SCHEMA)
     void test_delete_does_not_exist() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         // Delete a Measurement

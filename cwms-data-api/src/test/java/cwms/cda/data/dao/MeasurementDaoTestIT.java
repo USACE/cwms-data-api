@@ -14,6 +14,7 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -32,11 +33,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("integration")
-final class MeasurementDaoTestIT extends DataApiTestIT {
+public final class MeasurementDaoTestIT extends DataApiTestIT {
 
     private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
     private static final List<String> STREAM_LOC_IDS = new ArrayList<>();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
+    public static final int MINIMUM_SCHEMA = 999999;
 
     @BeforeAll
     public static void setup() {
@@ -79,7 +81,7 @@ final class MeasurementDaoTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled
+    @MinimumSchema(MINIMUM_SCHEMA)
     void testRoundTrip() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         String webUser = CwmsDataApiSetupCallback.getWebUser();
@@ -168,7 +170,7 @@ final class MeasurementDaoTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled
+    @MinimumSchema(MINIMUM_SCHEMA)
     void testRoundTripMultipleStore() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         String webUser = CwmsDataApiSetupCallback.getWebUser();
