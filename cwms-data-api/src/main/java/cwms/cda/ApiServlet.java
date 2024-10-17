@@ -26,6 +26,7 @@ package cwms.cda;
 
 
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
+import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
@@ -214,6 +215,7 @@ import org.owasp.html.PolicyFactory;
     "/streams/*",
     "/stream-locations/*",
     "/stream-reaches/*",
+    "/measurements/*",
     "/blobs/*",
     "/clobs/*",
     "/pools/*",
@@ -538,6 +540,9 @@ public class ApiServlet extends HttpServlet {
                 new StreamLocationController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/stream-reaches/{%s}", NAME),
                 new StreamReachController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        String measurements = "/measurements/";
+        cdaCrudCache(format(measurements + "{%s}", LOCATION_ID),
+                new cwms.cda.api.MeasurementController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
                 new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/clobs/{clob-id}",
