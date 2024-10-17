@@ -48,7 +48,6 @@ public class Lock extends CwmsDTOBase {
     private final CwmsId projectId;
     @JsonProperty(required = true)
     private final Location location;
-    @JsonProperty(required = true)
     private final LookupType chamberType;
     private final double lockWidth;
     private final double lockLength;
