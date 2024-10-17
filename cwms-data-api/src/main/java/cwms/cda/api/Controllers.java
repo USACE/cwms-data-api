@@ -134,9 +134,6 @@ public final class Controllers {
     public static final String ISSUE_DATE = "issue-date";
     public static final String LOCATION_KIND_LIKE = "location-kind-like";
     public static final String LOCATION_TYPE_LIKE = "location-type-like";
-
-    public static final String MIN_DATE = "min-date";
-    public static final String MAX_DATE = "max-date";
     public static final String MIN_NUMBER = "min-number";
     public static final String MAX_NUMBER = "max-number";
     public static final String MIN_HEIGHT = "min-height";

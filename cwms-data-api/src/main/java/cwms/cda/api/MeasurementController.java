@@ -28,17 +28,19 @@ import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.name;
 import com.codahale.metrics.Timer;
 import static cwms.cda.api.Controllers.AGENCY;
+import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DATE_FORMAT;
 import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.EXAMPLE_DATE;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.ID_MASK;
 import static cwms.cda.api.Controllers.LOCATION_ID;
-import static cwms.cda.api.Controllers.MAX_DATE;
+import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.MAX_FLOW;
 import static cwms.cda.api.Controllers.MAX_HEIGHT;
-import static cwms.cda.api.Controllers.MIN_DATE;
 import static cwms.cda.api.Controllers.MIN_FLOW;
 import static cwms.cda.api.Controllers.MIN_HEIGHT;
 import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
@@ -98,9 +100,18 @@ public final class MeasurementController implements CrudHandler {
                     @OpenApiParam(name = ID_MASK, description = "Location id mask for filtering measurements. Use null to retrieve measurements for all locations."),
                     @OpenApiParam(name = MIN_NUMBER, description = "Minimum measurement number-id for filtering measurements."),
                     @OpenApiParam(name = MAX_NUMBER, description = "Maximum measurement number-id for filtering measurements."),
-                    @OpenApiParam(name = MIN_DATE, description = "Minimum date-time for filtering measurements in ISO-8601 format."),
-                    @OpenApiParam(name = MAX_DATE, description = "Maximum date-time for filtering measurements in ISO-8601 format."),
-                    @OpenApiParam(name = TIMEZONE, description = "Timezone for the date range."),
+                    @OpenApiParam(name = BEGIN, description = "The start of the time "
+                            + "window to delete. The format for this field is ISO 8601 extended, with "
+                            + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
+                            + EXAMPLE_DATE + "'."),
+                    @OpenApiParam(name = END, description = "The end of the time "
+                            + "window to delete.The format for this field is ISO 8601 extended, with "
+                            + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
+                            + EXAMPLE_DATE + "'."),
+                    @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone "
+                            + "to be used if the format of the " + BEGIN + "and " + END
+                            + " parameters do not include offset or time zone information. "
+                            + "Defaults to UTC."),
                     @OpenApiParam(name = MIN_HEIGHT, description = "Minimum height for filtering measurements."),
                     @OpenApiParam(name = MAX_HEIGHT, description = "Maximum height for filtering measurements."),
                     @OpenApiParam(name = MIN_FLOW, description = "Minimum flow for filtering measurements."),
@@ -128,8 +139,8 @@ public final class MeasurementController implements CrudHandler {
         String officeId = ctx.queryParam(OFFICE_MASK);
         String locationId = ctx.queryParam(ID_MASK);
         String unitSystem = ctx.queryParamAsClass(UNIT_SYSTEM, String.class).getOrDefault(UnitSystem.EN.value());
-        Instant minDate = queryParamAsInstant(ctx, MIN_DATE);
-        Instant maxDate = queryParamAsInstant(ctx, MAX_DATE);
+        Instant minDate = queryParamAsInstant(ctx, BEGIN);
+        Instant maxDate = queryParamAsInstant(ctx, END);
         String minNum = ctx.queryParam(MIN_NUMBER);
         String maxNum = ctx.queryParam(MAX_NUMBER);
         Number minHeight = queryParamAsDouble(ctx, MIN_HEIGHT);
@@ -217,9 +228,18 @@ public final class MeasurementController implements CrudHandler {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the measurements to delete"),
                     @OpenApiParam(name = MIN_NUMBER, description = "Specifies the min number-id of the measurement to delete."),
                     @OpenApiParam(name = MAX_NUMBER, description = "Specifies the max number-id of the measurement to delete."),
-                    @OpenApiParam(name = MIN_DATE, description = "Specifies the minimum date (in ISO-8601 format) of the measurement to delete."),
-                    @OpenApiParam(name = MAX_DATE, description = "Specifies the maximum date (in ISO-8601 format) of the measurement to delete."),
-                    @OpenApiParam(name = TIMEZONE, description = "Specifies the timezone of the date range.")
+                    @OpenApiParam(name = BEGIN, description = "The start of the time "
+                            + "window to delete. The format for this field is ISO 8601 extended, with "
+                            + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
+                            + EXAMPLE_DATE + "'."),
+                    @OpenApiParam(name = END, description = "The end of the time "
+                            + "window to delete.The format for this field is ISO 8601 extended, with "
+                            + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
+                            + EXAMPLE_DATE + "'."),
+                    @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone "
+                            + "to be used if the format of the " + BEGIN + "and " + END
+                            + " parameters do not include offset or time zone information. "
+                            + "Defaults to UTC."),
             },
             description = "Delete an existing measurement.",
             method = HttpMethod.DELETE,
@@ -234,8 +254,8 @@ public final class MeasurementController implements CrudHandler {
         String officeId = requiredParam(ctx, OFFICE);
         String minNum = ctx.queryParam(MIN_NUMBER);
         String maxNum = ctx.queryParam(MAX_NUMBER);
-        Instant minDate = queryParamAsInstant(ctx, MIN_DATE);
-        Instant maxDate = queryParamAsInstant(ctx, MAX_DATE);
+        Instant minDate = queryParamAsInstant(ctx, BEGIN);
+        Instant maxDate = queryParamAsInstant(ctx, END);
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             MeasurementDao dao = new MeasurementDao(dsl);
