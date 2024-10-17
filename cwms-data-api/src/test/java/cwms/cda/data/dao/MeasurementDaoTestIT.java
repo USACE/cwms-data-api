@@ -28,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -132,17 +131,6 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
                 assertNotNull(meas2Found);
                 DTOMatch.assertMatch(meas2, meas2Found);
 
-                //test update
-                meas1 = buildMeasurement1(streamLocId, 200);
-                measurementDao.updateMeasurement(meas1);
-
-                List<Measurement> retrievedMeasurements = measurementDao.retrieveMeasurements(OFFICE_ID, streamLocId, null, null, UnitSystem.EN.getValue(),
-                        null, null, null, null, meas1.getNumber(), meas1.getNumber(), null, null);
-                DTOMatch.assertMatch(meas1, retrievedMeasurements.get(0));
-
-                Measurement doesntExist = buildMeasurementDoesntExist(streamLocId);
-                assertThrows(NotFoundException.class, () -> measurementDao.updateMeasurement(doesntExist));
-
                 //delete measurements
                 measurementDao.deleteMeasurements(meas1.getId().getOfficeId(), meas1.getId().getName(), null, null, null, null, null, null, null, null, null, null, null);
                 measurementDao.deleteMeasurements(meas2.getId().getOfficeId(), meas2.getId().getName(), null, null, null, null, null, null, null, null, null, null, null);
@@ -184,7 +172,6 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
             StreamLocation streamLocation2 = StreamLocationDaoTestIT.buildTestStreamLocation("TEST_STREAM_123", streamLocId2, OFFICE_ID,11.0, Bank.RIGHT);
 
             try {
-                System.setProperty(MeasurementDao.IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY, String.valueOf(true));
                 //store stream locations
                 streamLocationDao.storeStreamLocation(streamLocation, false);
                 streamLocationDao.storeStreamLocation(streamLocation2, false);
@@ -224,16 +211,6 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
                 assertNotNull(meas2Found);
                 DTOMatch.assertMatch(meas2, meas2Found);
 
-                //test update
-                meas1 = buildMeasurement1(streamLocId, 400);
-                meas1B = buildMeasurement2(streamLocId, 500);
-                List<Measurement> updatedMeasurements = new ArrayList<>();
-                updatedMeasurements.add(meas1);
-                updatedMeasurements.add(meas1B);
-                measurementDao.updateMeasurements(updatedMeasurements);
-
-                System.clearProperty(MeasurementDao.IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY);
-
                 retrievedMeasurements = measurementDao.retrieveMeasurements(OFFICE_ID, streamLocId, null, null, UnitSystem.EN.getValue(),
                         null, null, null, null, null, null, null, null);
 
@@ -252,10 +229,6 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
                 assertNotNull(retrievedMeas1B);
                 DTOMatch.assertMatch(meas1B, retrievedMeas1B);
 
-                Measurement doesntExist = buildMeasurementDoesntExist(streamLocId);
-                updatedMeasurements.add(doesntExist);
-                assertThrows(NotFoundException.class, () -> measurementDao.updateMeasurements(updatedMeasurements));
-
                 //delete measurements
                 measurementDao.deleteMeasurements(meas1.getId().getOfficeId(), meas1.getId().getName(), null, null, null, null, null, null, null, null, null, null, null);
                 measurementDao.deleteMeasurements(meas2.getId().getOfficeId(), meas2.getId().getName(), null, null, null, null, null, null, null, null, null, null, null);
@@ -267,7 +240,6 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
                 assertThrows(NotFoundException.class, () -> measurementDao.retrieveMeasurements(meas2F.getId().getOfficeId(), meas2F.getId().getName(),
                         null, null, UnitSystem.EN.getValue(), null, null, null, null, null, null, null, null));
             } finally {
-                System.clearProperty(MeasurementDao.IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY);
                 //delete stream locations
                 streamLocationDao.deleteStreamLocation(
                         streamLocation.getStreamLocationNode().getId().getOfficeId(),

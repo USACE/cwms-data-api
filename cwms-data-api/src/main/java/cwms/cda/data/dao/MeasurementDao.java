@@ -61,7 +61,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 import mil.army.usace.hec.metadata.location.LocationTemplate;
 import org.jooq.DSLContext;
 
@@ -71,13 +70,11 @@ import static java.util.stream.Collectors.toList;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_STREAM_PACKAGE;
-import static usace.cwms.db.jooq.codegen.tables.AV_STREAMFLOW_MEAS.AV_STREAMFLOW_MEAS;
 import usace.cwms.db.jooq.codegen.udt.records.STREAMFLOW_MEAS2_T;
 import usace.cwms.db.jooq.codegen.udt.records.STREAMFLOW_MEAS2_TAB_T;
 
 public final class MeasurementDao extends JooqDao<Measurement> {
     static final XmlMapper XML_MAPPER = buildXmlMapper();
-    public static final String IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY = "measurement.ignoreExistingCheckForBulkUpdate";
 
     public MeasurementDao(DSLContext dsl) {
         super(dsl);
@@ -152,63 +149,6 @@ public final class MeasurementDao extends JooqDao<Measurement> {
     }
 
     /**
-     * Updates an existing measurement
-     * @param measurement - the measurement to update
-     */
-    public void updateMeasurement(Measurement measurement) {
-        connection(dsl, conn -> {
-            setOffice(conn, measurement.getOfficeId());
-            verifyMeasurementExists(conn, measurement);
-            storeMeasurementJooq(conn, measurement, false);
-        });
-    }
-
-    /**
-     * Updates a list of existing measurements
-     * @param measurements - the measurements to update
-     */
-    public void updateMeasurements(List<Measurement> measurements)
-    {
-        connection(dsl, conn -> {
-            if(!measurements.isEmpty()) {
-                List<List<Measurement>> measurementsByOffice = new ArrayList<>(measurements.stream()
-                        .collect(Collectors.groupingBy(Measurement::getOfficeId))
-                        .values());
-                for (List<Measurement> measurementsList : measurementsByOffice) {
-                    Measurement measurement = measurements.get(0);
-                    String officeId = measurement.getOfficeId();
-                    setOffice(conn, officeId);
-                    //group measurementsList by locationId
-                    List<List<Measurement>> measurementsByLocation = new ArrayList<>(measurementsList.stream()
-                            .collect(Collectors.groupingBy(Measurement::getLocationId))
-                            .values());
-                    for (List<Measurement> locationMeasurements : measurementsByLocation) {
-                        String locationId = locationMeasurements.get(0).getLocationId();
-                        verifyMeasurementsExists(conn, officeId, locationId, locationMeasurements);
-                        storeMeasurementsJooq(conn, locationMeasurements, false);
-                    }
-                }
-            }
-        });
-    }
-
-    // Helper method to retrieve existing measurement numbers from the database
-    private List<String> getExistingMeasurementNumbers(Connection conn, String officeId, String locationId, List<String> measurementNumbers) {
-        usace.cwms.db.jooq.codegen.tables.AV_STREAMFLOW_MEAS view = AV_STREAMFLOW_MEAS;
-        return getDslContext(conn, officeId)
-                .selectDistinct(view.LOCATION_ID, view.OFFICE_ID, view.MEAS_NUMBER)
-                .from(view)
-                .where(view.LOCATION_ID.eq(locationId)
-                        .and(view.OFFICE_ID.eq(officeId))
-                        .and(view.MEAS_NUMBER.in(measurementNumbers)))
-                .groupBy(view.LOCATION_ID, view.OFFICE_ID, view.MEAS_NUMBER)
-                .fetch()
-                .stream()
-                .map(r -> r.get(view.MEAS_NUMBER))
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Delete a measurement
      *
      * @param officeId   - the office id
@@ -229,40 +169,11 @@ public final class MeasurementDao extends JooqDao<Measurement> {
         });
     }
 
-    private void verifyMeasurementExists(Connection conn, Measurement measurement) {
-        List<Measurement> measurements = retrieveMeasurementsJooq(conn, measurement.getOfficeId(), measurement.getLocationId(), UnitSystem.EN.toString(),
-                null, null, null, null, measurement.getNumber(), measurement.getNumber(), null, null, null, null, OracleTypeMap.GMT_TIME_ZONE);
-        if (measurements.isEmpty() || measurements.stream().noneMatch(lt -> lt.getNumber().equals(measurement.getNumber()))) {
-            throw new NotFoundException("Could not find measurement.");
-        }
-    }
-
     private void verifyMeasurementsExists(Connection conn, String officeId, String locationId, String minNum, String maxNum) {
         List<Measurement> measurements = retrieveMeasurementsJooq(conn, officeId, locationId, UnitSystem.EN.toString(),
                 null, null, null, null, minNum, maxNum, null, null, null, null, OracleTypeMap.GMT_TIME_ZONE);
         if (measurements.isEmpty()) {
             throw new NotFoundException("Could not find measurements for " + locationId + " in office " + officeId + ".");
-        }
-    }
-
-    private void verifyMeasurementsExists(Connection conn, String officeId, String locationId, List<Measurement> locationMeasurements) {
-        List<String> measurementNumbers = locationMeasurements.stream()
-                .map(Measurement::getNumber)
-                .collect(Collectors.toList());
-
-        // Retrieve existing measurements from the database
-        List<String> missingNumbers = new ArrayList<>();
-        if(!Boolean.getBoolean(IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY))
-        {
-            List<String> existingNumbers = getExistingMeasurementNumbers(conn, officeId, locationId, measurementNumbers);
-            missingNumbers = new ArrayList<>(measurementNumbers);
-            // Find missing numbers
-            missingNumbers.removeAll(existingNumbers);
-        }
-
-        if (!missingNumbers.isEmpty()) {
-            throw new NotFoundException("Could not find measurements " + String.join(",", missingNumbers) +
-                    " for " + locationId + " in office " + officeId + ".");
         }
     }
 

@@ -189,7 +189,7 @@ public final class MeasurementController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String locationId) {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException("Not supported with required location Id");
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
         }
     }
 

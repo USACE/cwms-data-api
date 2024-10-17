@@ -54,7 +54,6 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static org.hamcrest.Matchers.*;
@@ -96,7 +95,6 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
 
     @AfterAll
     public static void tearDown() {
-        System.clearProperty(MeasurementDao.IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY);
         for (Stream stream : TEST_STREAMS) {
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -218,86 +216,6 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .body("[0].usgs-measurement.air-temp", equalTo(measurement.getUsgsMeasurement().getAirTemp().floatValue()))
                 .body("[0].usgs-measurement.water-temp", equalTo(measurement.getUsgsMeasurement().getWaterTemp().floatValue()));
 
-
-        InputStream resourceUpdated = this.getClass().getResourceAsStream("/cwms/cda/api/measurement_updated.json");
-        assertNotNull(resourceUpdated);
-        String jsonUpdated = IOUtils.toString(resourceUpdated, StandardCharsets.UTF_8);
-        assertNotNull(jsonUpdated);
-        Measurement updatedMeasurement = Formats.parseContent(new ContentType(Formats.JSON), jsonUpdated, Measurement.class);
-
-        //Update the Measurement
-        given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
-                .contentType(Formats.JSON)
-                .body(jsonUpdated)
-                .header(AUTH_HEADER, user.toHeaderValue())
-        .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .patch("/measurements/")
-        .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
-
-        // Retrieve the Updated Measurement and assert that it exists with updated values
-        given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
-                .queryParam(Controllers.OFFICE_MASK, updatedMeasurement.getId().getOfficeId())
-                .queryParam(Controllers.ID_MASK, updatedMeasurement.getLocationId())
-                .queryParam(Controllers.MIN_NUMBER, number)
-                .queryParam(Controllers.MAX_NUMBER, number)
-                .queryParam(Controllers.UNIT_SYSTEM, UnitSystem.EN.getValue())
-        .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/measurements/")
-        .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body("[0].height-unit", equalTo(updatedMeasurement.getHeightUnit()))
-                .body("[0].flow-unit", equalTo(updatedMeasurement.getFlowUnit()))
-                .body("[0].temp-unit", equalTo(updatedMeasurement.getTempUnit()))
-                .body("[0].velocity-unit", equalTo(updatedMeasurement.getVelocityUnit()))
-                .body("[0].area-unit", equalTo(updatedMeasurement.getAreaUnit()))
-                .body("[0].used", equalTo(updatedMeasurement.isUsed()))
-                .body("[0].agency", equalTo(updatedMeasurement.getAgency()))
-                .body("[0].party", equalTo(updatedMeasurement.getParty()))
-                .body("[0].wm-comments", equalTo(updatedMeasurement.getWmComments()))
-                .body("[0].instant", equalTo(updatedMeasurement.getInstant().toString()))
-                .body("[0].number", equalTo(updatedMeasurement.getNumber()))
-                .body("[0].id.name", equalTo(updatedMeasurement.getLocationId()))
-                .body("[0].id.office-id", equalTo(updatedMeasurement.getOfficeId()))
-                .body("[0].streamflow-measurement.gage-height", equalTo(updatedMeasurement.getStreamflowMeasurement().getGageHeight().floatValue()))
-                .body("[0].streamflow-measurement.flow", equalTo(updatedMeasurement.getStreamflowMeasurement().getFlow().floatValue()))
-                .body("[0].streamflow-measurement.quality", equalTo(updatedMeasurement.getStreamflowMeasurement().getQuality()))
-                .body("[0].supplemental-streamflow-measurement.channel-flow", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getChannelFlow().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.overbank-flow", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getOverbankFlow().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.overbank-max-depth", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getOverbankMaxDepth().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.channel-max-depth", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getChannelMaxDepth().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.avg-velocity", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getAvgVelocity().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.surface-velocity", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getSurfaceVelocity().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.max-velocity", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getMaxVelocity().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.effective-flow-area", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getEffectiveFlowArea().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.cross-sectional-area", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getCrossSectionalArea().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.mean-gage", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getMeanGage().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.top-width", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getTopWidth().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.main-channel-area", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getMainChannelArea().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.overbank-area", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getOverbankArea().floatValue()))
-                .body("[0].usgs-measurement.remarks", equalTo(updatedMeasurement.getUsgsMeasurement().getRemarks()))
-                .body("[0].usgs-measurement.current-rating", equalTo(updatedMeasurement.getUsgsMeasurement().getCurrentRating()))
-                .body("[0].usgs-measurement.control-condition", equalTo(updatedMeasurement.getUsgsMeasurement().getControlCondition()))
-                .body("[0].usgs-measurement.flow-adjustment", equalTo(updatedMeasurement.getUsgsMeasurement().getFlowAdjustment()))
-                .body("[0].usgs-measurement.shift-used", equalTo(updatedMeasurement.getUsgsMeasurement().getShiftUsed().floatValue()))
-                .body("[0].usgs-measurement.percent-difference", equalTo(updatedMeasurement.getUsgsMeasurement().getPercentDifference().floatValue()))
-                .body("[0].usgs-measurement.delta-height", equalTo(updatedMeasurement.getUsgsMeasurement().getDeltaHeight().floatValue()))
-                .body("[0].usgs-measurement.delta-time", equalTo(updatedMeasurement.getUsgsMeasurement().getDeltaTime().floatValue()))
-                .body("[0].usgs-measurement.air-temp", equalTo(updatedMeasurement.getUsgsMeasurement().getAirTemp().floatValue()))
-                .body("[0].usgs-measurement.water-temp", equalTo(updatedMeasurement.getUsgsMeasurement().getWaterTemp().floatValue()));
-
         // Delete the Measurement
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
@@ -337,7 +255,6 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     @Test
     @MinimumSchema(MINIMUM_SCHEMA)
     void test_create_retrieve_delete_measurement_multiple() throws IOException {
-        System.setProperty(MeasurementDao.IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY, String.valueOf(true));
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/measurements.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -458,127 +375,6 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .body("[1].usgs-measurement.air-temp", equalTo(measurement2.getUsgsMeasurement().getAirTemp().floatValue()))
                 .body("[1].usgs-measurement.water-temp", equalTo(measurement2.getUsgsMeasurement().getWaterTemp().floatValue()));
 
-
-        InputStream resourceUpdated = this.getClass().getResourceAsStream("/cwms/cda/api/measurements_updated.json");
-        assertNotNull(resourceUpdated);
-        String jsonUpdated = IOUtils.toString(resourceUpdated, StandardCharsets.UTF_8);
-        assertNotNull(jsonUpdated);
-        List<Measurement> measurementsUpdated = Formats.parseContentList(new ContentType(Formats.JSON), jsonUpdated, Measurement.class);
-        Measurement updatedMeasurement = measurementsUpdated.get(0);
-        Measurement updatedMeasurement2 = measurementsUpdated.get(1);
-
-
-        //Update the Measurement
-        given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
-                .contentType(Formats.JSON)
-                .body(jsonUpdated)
-                .header(AUTH_HEADER, user.toHeaderValue())
-        .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .patch("/measurements/")
-        .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
-
-        // Retrieve the Updated Measurements and assert that they exists with updated values
-        String locationId = updatedMeasurement.getLocationId();
-        given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
-                .queryParam(Controllers.OFFICE_MASK, OFFICE_ID)
-                .queryParam(Controllers.ID_MASK, locationId)
-                .queryParam(Controllers.UNIT_SYSTEM, UnitSystem.EN.getValue())
-        .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/measurements/")
-        .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body("[0].height-unit", equalTo(updatedMeasurement.getHeightUnit()))
-                .body("[0].flow-unit", equalTo(updatedMeasurement.getFlowUnit()))
-                .body("[0].temp-unit", equalTo(updatedMeasurement.getTempUnit()))
-                .body("[0].velocity-unit", equalTo(updatedMeasurement.getVelocityUnit()))
-                .body("[0].area-unit", equalTo(updatedMeasurement.getAreaUnit()))
-                .body("[0].used", equalTo(updatedMeasurement.isUsed()))
-                .body("[0].agency", equalTo(updatedMeasurement.getAgency()))
-                .body("[0].party", equalTo(updatedMeasurement.getParty()))
-                .body("[0].wm-comments", equalTo(updatedMeasurement.getWmComments()))
-                .body("[0].instant", equalTo(updatedMeasurement.getInstant().toString()))
-                .body("[0].number", equalTo(updatedMeasurement.getNumber()))
-                .body("[0].id.name", equalTo(updatedMeasurement.getLocationId()))
-                .body("[0].id.office-id", equalTo(updatedMeasurement.getOfficeId()))
-                .body("[0].streamflow-measurement.gage-height", equalTo(updatedMeasurement.getStreamflowMeasurement().getGageHeight().floatValue()))
-                .body("[0].streamflow-measurement.flow", equalTo(updatedMeasurement.getStreamflowMeasurement().getFlow().floatValue()))
-                .body("[0].streamflow-measurement.quality", equalTo(updatedMeasurement.getStreamflowMeasurement().getQuality()))
-                .body("[0].supplemental-streamflow-measurement.channel-flow", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getChannelFlow().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.overbank-flow", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getOverbankFlow().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.overbank-max-depth", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getOverbankMaxDepth().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.channel-max-depth", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getChannelMaxDepth().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.avg-velocity", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getAvgVelocity().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.surface-velocity", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getSurfaceVelocity().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.max-velocity", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getMaxVelocity().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.effective-flow-area", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getEffectiveFlowArea().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.cross-sectional-area", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getCrossSectionalArea().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.mean-gage", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getMeanGage().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.top-width", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getTopWidth().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.main-channel-area", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getMainChannelArea().floatValue()))
-                .body("[0].supplemental-streamflow-measurement.overbank-area", equalTo(updatedMeasurement.getSupplementalStreamflowMeasurement().getOverbankArea().floatValue()))
-                .body("[0].usgs-measurement.remarks", equalTo(updatedMeasurement.getUsgsMeasurement().getRemarks()))
-                .body("[0].usgs-measurement.current-rating", equalTo(updatedMeasurement.getUsgsMeasurement().getCurrentRating()))
-                .body("[0].usgs-measurement.control-condition", equalTo(updatedMeasurement.getUsgsMeasurement().getControlCondition()))
-                .body("[0].usgs-measurement.flow-adjustment", equalTo(updatedMeasurement.getUsgsMeasurement().getFlowAdjustment()))
-                .body("[0].usgs-measurement.shift-used", equalTo(updatedMeasurement.getUsgsMeasurement().getShiftUsed().floatValue()))
-                .body("[0].usgs-measurement.percent-difference", equalTo(updatedMeasurement.getUsgsMeasurement().getPercentDifference().floatValue()))
-                .body("[0].usgs-measurement.delta-height", equalTo(updatedMeasurement.getUsgsMeasurement().getDeltaHeight().floatValue()))
-                .body("[0].usgs-measurement.delta-time", equalTo(updatedMeasurement.getUsgsMeasurement().getDeltaTime().floatValue()))
-                .body("[0].usgs-measurement.air-temp", equalTo(updatedMeasurement.getUsgsMeasurement().getAirTemp().floatValue()))
-                .body("[0].usgs-measurement.water-temp", equalTo(updatedMeasurement.getUsgsMeasurement().getWaterTemp().floatValue()))
-                .body("[1].height-unit", equalTo(updatedMeasurement2.getHeightUnit()))
-                .body("[1].flow-unit", equalTo(updatedMeasurement2.getFlowUnit()))
-                .body("[1].temp-unit", equalTo(updatedMeasurement2.getTempUnit()))
-                .body("[1].velocity-unit", equalTo(updatedMeasurement2.getVelocityUnit()))
-                .body("[1].area-unit", equalTo(updatedMeasurement2.getAreaUnit()))
-                .body("[1].used", equalTo(updatedMeasurement2.isUsed()))
-                .body("[1].agency", equalTo(updatedMeasurement2.getAgency()))
-                .body("[1].party", equalTo(updatedMeasurement2.getParty()))
-                .body("[1].wm-comments", equalTo(updatedMeasurement2.getWmComments()))
-                .body("[1].instant", equalTo(updatedMeasurement2.getInstant().toString()))
-                .body("[1].number", equalTo(updatedMeasurement2.getNumber()))
-                .body("[1].id.name", equalTo(updatedMeasurement2.getLocationId()))
-                .body("[1].id.office-id", equalTo(updatedMeasurement2.getOfficeId()))
-                .body("[1].streamflow-measurement.gage-height", equalTo(updatedMeasurement2.getStreamflowMeasurement().getGageHeight().floatValue()))
-                .body("[1].streamflow-measurement.flow", equalTo(updatedMeasurement2.getStreamflowMeasurement().getFlow().floatValue()))
-                .body("[1].streamflow-measurement.quality", equalTo(updatedMeasurement2.getStreamflowMeasurement().getQuality()))
-                .body("[1].supplemental-streamflow-measurement.channel-flow", equalTo(updatedMeasurement2.getSupplementalStreamflowMeasurement().getChannelFlow().floatValue()))
-                .body("[1].supplemental-streamflow-measurement.overbank-flow", equalTo(updatedMeasurement2.getSupplementalStreamflowMeasurement().getOverbankFlow().floatValue()))
-                .body("[1].supplemental-streamflow-measurement.overbank-max-depth", equalTo(updatedMeasurement2.getSupplementalStreamflowMeasurement().getOverbankMaxDepth().floatValue()))
-                .body("[1].supplemental-streamflow-measurement.channel-max-depth", equalTo(updatedMeasurement2.getSupplementalStreamflowMeasurement().getChannelMaxDepth().floatValue()))
-                .body("[1].supplemental-streamflow-measurement.avg-velocity", equalTo(updatedMeasurement2.getSupplementalStreamflowMeasurement().getAvgVelocity().floatValue()))
-                .body("[1].supplemental-streamflow-measurement.surface-velocity", equalTo(updatedMeasurement2.getSupplementalStreamflowMeasurement().getSurfaceVelocity().floatValue()))
-                .body("[1].supplemental-streamflow-measurement.max-velocity", equalTo(updatedMeasurement2.getSupplementalStreamflowMeasurement().getMaxVelocity().floatValue()))
-                .body("[1].supplemental-streamflow-measurement.effective-flow-area", equalTo(updatedMeasurement2.getSupplementalStreamflowMeasurement().getEffectiveFlowArea().floatValue()))
-                .body("[1].supplemental-streamflow-measurement.cross-sectional-area", equalTo(updatedMeasurement2.getSupplementalStreamflowMeasurement().getCrossSectionalArea().floatValue()))
-                .body("[1].supplemental-streamflow-measurement.mean-gage", equalTo(updatedMeasurement2.getSupplementalStreamflowMeasurement().getMeanGage().floatValue()))
-                .body("[1].supplemental-streamflow-measurement.top-width", equalTo(updatedMeasurement2.getSupplementalStreamflowMeasurement().getTopWidth().floatValue()))
-                .body("[1].supplemental-streamflow-measurement.main-channel-area", equalTo(updatedMeasurement2.getSupplementalStreamflowMeasurement().getMainChannelArea().floatValue()))
-                .body("[1].supplemental-streamflow-measurement.overbank-area", equalTo(updatedMeasurement2.getSupplementalStreamflowMeasurement().getOverbankArea().floatValue()))
-                .body("[1].usgs-measurement.remarks", equalTo(updatedMeasurement2.getUsgsMeasurement().getRemarks()))
-                .body("[1].usgs-measurement.current-rating", equalTo(updatedMeasurement2.getUsgsMeasurement().getCurrentRating()))
-                .body("[1].usgs-measurement.control-condition", equalTo(updatedMeasurement2.getUsgsMeasurement().getControlCondition()))
-                .body("[1].usgs-measurement.flow-adjustment", equalTo(updatedMeasurement2.getUsgsMeasurement().getFlowAdjustment()))
-                .body("[1].usgs-measurement.shift-used", equalTo(updatedMeasurement2.getUsgsMeasurement().getShiftUsed().floatValue()))
-                .body("[1].usgs-measurement.percent-difference", equalTo(updatedMeasurement2.getUsgsMeasurement().getPercentDifference().floatValue()))
-                .body("[1].usgs-measurement.delta-height", equalTo(updatedMeasurement2.getUsgsMeasurement().getDeltaHeight().floatValue()))
-                .body("[1].usgs-measurement.delta-time", equalTo(updatedMeasurement2.getUsgsMeasurement().getDeltaTime().floatValue()))
-                .body("[1].usgs-measurement.air-temp", equalTo(updatedMeasurement2.getUsgsMeasurement().getAirTemp().floatValue()))
-                .body("[1].usgs-measurement.water-temp", equalTo(updatedMeasurement2.getUsgsMeasurement().getWaterTemp().floatValue()));
-
         // Delete the Measurements
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
@@ -588,7 +384,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         .when()
                 .redirects().follow(true)
                 .redirects().max(3)
-                .delete("/measurements/" + locationId)
+                .delete("/measurements/" +  measurement1.getLocationId())
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -599,41 +395,12 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSON)
                 .queryParam(Controllers.OFFICE, OFFICE_ID)
-                .queryParam(Controllers.ID_MASK, locationId)
+                .queryParam(Controllers.ID_MASK, measurement1.getLocationId())
                 .queryParam(Controllers.UNIT_SYSTEM, UnitSystem.EN.getValue())
         .when()
                 .redirects().follow(true)
                 .redirects().max(3)
                 .get("/measurements/")
-        .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
-    }
-
-    @Test
-    @MinimumSchema(MINIMUM_SCHEMA)
-    void test_update_does_not_exist() throws Exception {
-        System.clearProperty(MeasurementDao.IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY);
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-
-        InputStream resourceUpdated = this.getClass().getResourceAsStream("/cwms/cda/api/measurements_updated.json");
-        assertNotNull(resourceUpdated);
-        String jsonUpdated = IOUtils.toString(resourceUpdated, StandardCharsets.UTF_8);
-        assertNotNull(jsonUpdated);
-        List<Measurement> measurementsUpdated = Formats.parseContentList(new ContentType(Formats.JSON), jsonUpdated, Measurement.class);
-
-        //Update the Measurement(s) that were never stored, and therefore doesn't exist in the db
-        given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
-                .contentType(Formats.JSON)
-                .body(jsonUpdated)
-                .header(AUTH_HEADER, user.toHeaderValue())
-        .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .patch("/measurements/")
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()

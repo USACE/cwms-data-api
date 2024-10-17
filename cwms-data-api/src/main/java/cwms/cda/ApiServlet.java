@@ -31,7 +31,6 @@ import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
-import cwms.cda.api.MeasurementPatchController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -542,7 +541,6 @@ public class ApiServlet extends HttpServlet {
         cdaCrudCache(format("/stream-reaches/{%s}", NAME),
                 new StreamReachController(metrics), requiredRoles,1, TimeUnit.DAYS);
         String measurements = "/measurements/";
-        patch(measurements, new MeasurementPatchController(metrics));
         cdaCrudCache(format(measurements + "{%s}", LOCATION_ID),
                 new cwms.cda.api.MeasurementController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
