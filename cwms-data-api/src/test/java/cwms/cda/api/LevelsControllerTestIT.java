@@ -345,9 +345,102 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 assertThat(response.path("levels[1].constant-value"), floatCloseTo(2.0, 0.01));
     }
 
+    @Test
+    void test_get_one_units() throws Exception {
+        createLocation("level_as_single_value", true, OFFICE);
+        String levelId = "level_as_single_value.Stor.Ave.1Day.Regulating";
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        LocationLevel level = new LocationLevel.Builder(levelId, time)
+                .withOfficeId(OFFICE)
+                .withConstantValue(1.0)
+                .withLevelUnitsId("ac-ft")
+                .build();
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level);
+        });
+
+        //Read level with unit
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("m3"))
+            // I think we need to create a custom matcher.
+            // This really shouldn't use equals but due to a quirk in
+            // RestAssured it appears to be necessary.
+            .body("constant-value", equalTo(1233.4818f)); // 1 ac-ft to m3
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(UNIT, "ac-ft")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id",equalTo("ac-ft"))
+            .body("constant-value",equalTo(1.0F));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(UNIT, "EN")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id",equalTo("ac-ft"))
+            .body("constant-value",equalTo(1.0F));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(UNIT, "ft3")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id",equalTo("ft3"))
+            .body("constant-value",equalTo(43560.0F));
+    }
+
     @ParameterizedTest
     @EnumSource(GetAllTestNewAliases.class)
-    void test_get_all_aliases_new(GetAllTestNewAliases test) throws Exception
+    void test_get_all_aliases_new(GetAllTestNewAliases test)
     {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
@@ -367,7 +460,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @EnumSource(GetAllTestLegacy.class)
-    void test_get_all_aliases_legacy(GetAllTestLegacy test) throws Exception
+    void test_get_all_aliases_legacy(GetAllTestLegacy test)
     {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
