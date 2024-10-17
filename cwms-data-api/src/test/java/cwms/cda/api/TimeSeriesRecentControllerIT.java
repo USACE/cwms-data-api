@@ -101,7 +101,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
                 LOGGER.log(Level.CONFIG, "TimeSeries not found");
             }
             try {
-                tsGroupDao.unassignAllTs(group);
+                tsGroupDao.unassignAllTs(group, OFFICE_ID);
                 tsGroupDao.delete(CATEGORY_ID, GROUP_ID, OFFICE_ID);
             } catch (NotFoundException e) {
                 LOGGER.log(Level.CONFIG, "Group not found");
