@@ -47,6 +47,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -136,8 +137,8 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(json);
-        Measurement measurement = Formats.parseContent(new ContentType(Formats.JSON), json, Measurement.class);
-
+        List<Measurement> measurements = Formats.parseContentList(new ContentType(Formats.JSON), json, Measurement.class);
+        Measurement measurement = measurements.get(0);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         // Create the Measurement
@@ -167,6 +168,8 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.ID_MASK, measurement.getLocationId())
                 .queryParam(Controllers.MIN_NUMBER, number)
                 .queryParam(Controllers.MAX_NUMBER, number)
+                .queryParam(Controllers.MIN_HEIGHT, 0.0)
+                .queryParam(Controllers.MAX_FLOW, 1000)
                 .queryParam(Controllers.UNIT_SYSTEM, UnitSystem.EN.getValue())
         .when()
                 .redirects().follow(true)

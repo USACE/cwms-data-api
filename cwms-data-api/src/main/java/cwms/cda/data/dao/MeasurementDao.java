@@ -113,23 +113,6 @@ public final class MeasurementDao extends JooqDao<Measurement> {
     }
 
     /**
-     * Store a measurement
-     *
-     * @param measurement  - the measurement to store
-     * @param failIfExists - if true, fail if the measurement already exists
-     */
-    public void storeMeasurement(Measurement measurement, boolean failIfExists) {
-        connection(dsl, conn -> storeMeasurementJooq(conn, measurement, failIfExists));
-    }
-
-    private void storeMeasurementJooq(Connection conn, Measurement measurement, boolean failIfExists) throws SQLException, JsonProcessingException {
-        setOffice(conn, measurement.getOfficeId());
-        String failIfExistsStr = formatBool(failIfExists);
-        String xml = toDbXml(measurement);
-        CWMS_STREAM_PACKAGE.call_STORE_MEAS_XML(DSL.using(conn).configuration(), xml, failIfExistsStr);
-    }
-
-    /**
      * Store a list of measurements
      * @param measurements - the measurements to store
      * @param failIfExists - if true, fail if a measurement already exists
@@ -180,11 +163,6 @@ public final class MeasurementDao extends JooqDao<Measurement> {
     static String toDbXml(List<Measurement> measurements) throws JsonProcessingException {
         MeasurementsXmlDto xmlDto = convertMeasurementsToXmlDto(measurements);
             return XML_MAPPER.writeValueAsString(xmlDto);
-    }
-
-    static String toDbXml(Measurement measurement) throws JsonProcessingException {
-        MeasurementXmlDto xmlDto = convertMeasurementToXmlDto(measurement);
-        return XML_MAPPER.writeValueAsString(xmlDto);
     }
 
     static Measurement fromJooqMeasurementRecord(STREAMFLOW_MEAS2_T record) {

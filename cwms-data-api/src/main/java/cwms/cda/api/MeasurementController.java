@@ -27,27 +27,36 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.name;
 import com.codahale.metrics.Timer;
+import static cwms.cda.api.Controllers.AGENCY;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.ID_MASK;
+import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.MAX_DATE;
+import static cwms.cda.api.Controllers.MAX_FLOW;
+import static cwms.cda.api.Controllers.MAX_HEIGHT;
 import static cwms.cda.api.Controllers.MIN_DATE;
+import static cwms.cda.api.Controllers.MIN_FLOW;
+import static cwms.cda.api.Controllers.MIN_HEIGHT;
 import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.MIN_NUMBER;
 import static cwms.cda.api.Controllers.MAX_NUMBER;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.OFFICE_MASK;
+import static cwms.cda.api.Controllers.QUALITY;
+import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.UNIT_SYSTEM;
+import static cwms.cda.api.Controllers.queryParamAsDouble;
+import static cwms.cda.api.Controllers.queryParamAsInstant;
 import static cwms.cda.api.Controllers.requiredParam;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.MeasurementDao;
 import cwms.cda.data.dto.measurement.Measurement;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -58,7 +67,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.time.Instant;
-import java.util.ArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -90,8 +98,15 @@ public final class MeasurementController implements CrudHandler {
                     @OpenApiParam(name = ID_MASK, description = "Location id mask for filtering measurements. Use null to retrieve measurements for all locations."),
                     @OpenApiParam(name = MIN_NUMBER, description = "Minimum measurement number-id for filtering measurements."),
                     @OpenApiParam(name = MAX_NUMBER, description = "Maximum measurement number-id for filtering measurements."),
-                    @OpenApiParam(name = MIN_DATE, description = "Minimum date for filtering measurements in ISO-8601 format."),
-                    @OpenApiParam(name = MAX_DATE, description = "Maximum date for filtering measurements in ISO-8601 format."),
+                    @OpenApiParam(name = MIN_DATE, description = "Minimum date-time for filtering measurements in ISO-8601 format."),
+                    @OpenApiParam(name = MAX_DATE, description = "Maximum date-time for filtering measurements in ISO-8601 format."),
+                    @OpenApiParam(name = TIMEZONE, description = "Timezone for the date range."),
+                    @OpenApiParam(name = MIN_HEIGHT, description = "Minimum height for filtering measurements."),
+                    @OpenApiParam(name = MAX_HEIGHT, description = "Maximum height for filtering measurements."),
+                    @OpenApiParam(name = MIN_FLOW, description = "Minimum flow for filtering measurements."),
+                    @OpenApiParam(name = MAX_FLOW, description = "Maximum flow for filtering measurements."),
+                    @OpenApiParam(name = AGENCY, description = "Agencies for filtering measurements."),
+                    @OpenApiParam(name = QUALITY, description = "Quality for filtering measurements."),
                     @OpenApiParam(name = UNIT_SYSTEM, description = "Specifies the unit system"
                             + " of the response. Valid values for the unit field are: "
                             + "\n* `EN`  Specifies English unit system.  Location values will be in the "
@@ -113,21 +128,21 @@ public final class MeasurementController implements CrudHandler {
         String officeId = ctx.queryParam(OFFICE_MASK);
         String locationId = ctx.queryParam(ID_MASK);
         String unitSystem = ctx.queryParamAsClass(UNIT_SYSTEM, String.class).getOrDefault(UnitSystem.EN.value());
-        Instant minDate = parseInstant(ctx.queryParam(MIN_DATE));
-        Instant maxDate = parseInstant(ctx.queryParam(MAX_DATE));
+        Instant minDate = queryParamAsInstant(ctx, MIN_DATE);
+        Instant maxDate = queryParamAsInstant(ctx, MAX_DATE);
         String minNum = ctx.queryParam(MIN_NUMBER);
         String maxNum = ctx.queryParam(MAX_NUMBER);
-        Number minHeight = null;
-        Number maxHeight = null;
-        Number minFlow = null;
-        Number maxFlow = null;
-        String agencies = null;
-        String qualities = null;
+        Number minHeight = queryParamAsDouble(ctx, MIN_HEIGHT);
+        Number maxHeight = queryParamAsDouble(ctx, MAX_HEIGHT);
+        Number minFlow = queryParamAsDouble(ctx, MIN_FLOW);
+        Number maxFlow = queryParamAsDouble(ctx, MAX_FLOW);
+        String agency = ctx.queryParam(AGENCY);
+        String quality = ctx.queryParam(QUALITY);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             MeasurementDao dao = new MeasurementDao(dsl);
             List<Measurement> measurements = dao.retrieveMeasurements(officeId, locationId, minDate, maxDate, unitSystem,
-                    minHeight, maxHeight, minFlow, maxFlow, minNum, maxNum, agencies, qualities);
+                    minHeight, maxHeight, minFlow, maxFlow, minNum, maxNum, agency, quality);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Measurement.class);
             ctx.contentType(contentType.toString());
@@ -151,7 +166,7 @@ public final class MeasurementController implements CrudHandler {
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(isArray = true, from = Measurement.class, type = Formats.JSONV1),
-                            @OpenApiContent(from = Measurement.class, type = Formats.JSON)
+                            @OpenApiContent(isArray = true, from = Measurement.class, type = Formats.JSON)
                     },
                     required = true),
             queryParams = {
@@ -171,17 +186,17 @@ public final class MeasurementController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Measurement.class);
-            List<Measurement> measurements = parseMeasurements(ctx, contentType);
+            List<Measurement> measurements = Formats.parseContentList(contentType, ctx.body(), Measurement.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             DSLContext dsl = getDslContext(ctx);
             MeasurementDao dao = new MeasurementDao(dsl);
-            if(measurements.size() == 1) {
-                dao.storeMeasurement(measurements.get(0), failIfExists);
-                ctx.status(HttpServletResponse.SC_CREATED).json("Created Measurement");
-            } else {
-                dao.storeMeasurements(measurements, failIfExists);
-                ctx.status(HttpServletResponse.SC_CREATED).json("Created Measurements");
+            dao.storeMeasurements(measurements, failIfExists);
+            String statusMsg = "Created Measurement";
+            if(measurements.size() > 1)
+            {
+                statusMsg += "s";
             }
+            ctx.status(HttpServletResponse.SC_CREATED).json(statusMsg);
         }
     }
 
@@ -194,12 +209,17 @@ public final class MeasurementController implements CrudHandler {
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = LOCATION_ID, description = "Specifies the location-id of "
+                            + "the measurement(s) to be deleted."),
+            },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the measurements to delete"),
                     @OpenApiParam(name = MIN_NUMBER, description = "Specifies the min number-id of the measurement to delete."),
                     @OpenApiParam(name = MAX_NUMBER, description = "Specifies the max number-id of the measurement to delete."),
                     @OpenApiParam(name = MIN_DATE, description = "Specifies the minimum date (in ISO-8601 format) of the measurement to delete."),
                     @OpenApiParam(name = MAX_DATE, description = "Specifies the maximum date (in ISO-8601 format) of the measurement to delete."),
+                    @OpenApiParam(name = TIMEZONE, description = "Specifies the timezone of the date range.")
             },
             description = "Delete an existing measurement.",
             method = HttpMethod.DELETE,
@@ -214,8 +234,8 @@ public final class MeasurementController implements CrudHandler {
         String officeId = requiredParam(ctx, OFFICE);
         String minNum = ctx.queryParam(MIN_NUMBER);
         String maxNum = ctx.queryParam(MAX_NUMBER);
-        Instant minDate = parseInstant(ctx.queryParam(MIN_DATE));
-        Instant maxDate = parseInstant(ctx.queryParam(MAX_DATE));
+        Instant minDate = queryParamAsInstant(ctx, MIN_DATE);
+        Instant maxDate = queryParamAsInstant(ctx, MAX_DATE);
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             MeasurementDao dao = new MeasurementDao(dsl);
@@ -225,23 +245,4 @@ public final class MeasurementController implements CrudHandler {
         }
     }
 
-    private Instant parseInstant(String date) {
-        Instant retVal = null;
-        if(date != null && !date.isEmpty()) {
-            retVal = Instant.parse(date);
-        }
-        return retVal;
-    }
-
-    static List<Measurement> parseMeasurements(@NotNull Context ctx, ContentType contentType) {
-        List<Measurement> measurements;
-        try {
-            measurements = Formats.parseContentList(contentType, ctx.body(), Measurement.class);
-        } catch (FormattingException e) {
-            Measurement measurement = Formats.parseContent(contentType, ctx.body(), Measurement.class);
-            measurements = new ArrayList<>();
-            measurements.add(measurement);
-        }
-        return measurements;
-    }
 }
