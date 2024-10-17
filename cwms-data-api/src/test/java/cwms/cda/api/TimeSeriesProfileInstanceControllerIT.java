@@ -352,9 +352,12 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .body("time-series-profile.key-parameter",
                     equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
             .body("time-series-profile.parameter-list.size()", equalTo(2))
-            .body("time-series-list.size()", equalTo(5))
+            .body("time-series-list.size()", equalTo(10))
             .body("time-series-list[\"1568033682000\"].size()", equalTo(2))
             .body("time-series-list[\"1568033337000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033937000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033750000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033787000\"].size()", equalTo(2))
             .extract()
         ;
 
@@ -392,10 +395,10 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .body("time-series-profile.key-parameter",
                     equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
             .body("time-series-profile.parameter-list.size()", equalTo(2))
-            .body("time-series-list.size()", equalTo(5))
-            .body("time-series-list[\"1568033937000\"].size()", equalTo(2))
-            .body("time-series-list[\"1568033750000\"].size()", equalTo(2))
-            .body("time-series-list[\"1568033787000\"].size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(10))
+            .body("time-series-list[\"1568033971000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568034068000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568034586000\"].size()", equalTo(2))
         ;
     }
 
@@ -440,7 +443,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .queryParam(START_TIME_INCLUSIVE, true)
             .queryParam(END_TIME_INCLUSIVE, true)
             .queryParam(UNIT, units)
-            .queryParam(PAGE_SIZE, 3)
+            .queryParam(PAGE_SIZE, 2)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -497,9 +500,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .body("time-series-profile.key-parameter",
                     equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
             .body("time-series-profile.parameter-list.size()", equalTo(2))
-            .body("time-series-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(1))
             .body("time-series-list[\"1568035040000\"].size()", equalTo(2))
-            .body("time-series-list[\"1568033359000\"].size()", equalTo(2))
         ;
     }
 
@@ -612,7 +614,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .body("time-series-profile.key-parameter",
                     equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
             .body("time-series-profile.parameter-list.size()", equalTo(2))
-            .body("time-series-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(3))
             .body("time-series-list[\"1568033347000\"].size()", equalTo(2))
             .body("time-series-list[\"1568033359000\"].size()", equalTo(2))
         ;
@@ -648,7 +650,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .body("time-series-profile.key-parameter",
                     equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
             .body("time-series-profile.parameter-list.size()", equalTo(2))
-            .body("time-series-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(3))
             .body("time-series-list[\"1568033347000\"].size()", equalTo(2))
             .body("time-series-list[\"1568033359000\"].size()", equalTo(2))
         ;
@@ -684,7 +686,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .body("time-series-profile.key-parameter",
                     equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
             .body("time-series-profile.parameter-list.size()", equalTo(2))
-            .body("time-series-list.size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(3))
             .body("time-series-list[\"1599659347000\"].size()", equalTo(2))
             .body("time-series-list[\"1599659359000\"].size()", equalTo(2))
         ;

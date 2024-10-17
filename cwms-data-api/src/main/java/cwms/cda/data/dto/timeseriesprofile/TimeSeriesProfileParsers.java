@@ -26,22 +26,25 @@
 
 package cwms.cda.data.dto.timeseriesprofile;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-
+import cwms.cda.formatters.json.adapters.TimeSeriesProfileParserSerializer;
 import java.util.Collections;
 import java.util.List;
 
+@JsonSerialize(contentUsing = TimeSeriesProfileParserSerializer.class, typing = JsonSerialize.Typing.DYNAMIC)
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class TimeSeriesProfileParsers extends CwmsDTOBase {
-
     private final List<TimeSeriesProfileParser> parsers;
 
+    @JsonCreator
     public TimeSeriesProfileParsers(List<TimeSeriesProfileParser> parsers) {
         this.parsers = Collections.unmodifiableList(parsers);
     }

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
@@ -23,7 +24,8 @@ import java.util.List;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName("time-series-profile-parser")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonDeserialize(builder = TimeSeriesProfileInstance.Builder.class)
+@JsonSerialize(as = TimeSeriesProfileParser.class)
+@JsonDeserialize(builder = TimeSeriesProfileParser.Builder.class)
 @JsonSubTypes({@JsonSubTypes.Type(value = TimeSeriesProfileParserIndexed.class,
         name = INDEXED_TYPE),
     @JsonSubTypes.Type(value = TimeSeriesProfileParserColumnar.class,

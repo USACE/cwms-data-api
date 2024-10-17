@@ -192,10 +192,11 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
 
                 // check if the instance parameters are the same size as the timeseries parameters we stored
                 assertEquals(parameterArray.length, timeSeriesProfileInstance.getParameterColumns().size());
-                assertEquals(6, mapSize(timeSeriesProfileInstance.getTimeSeriesList()));
+                assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().get(1568033359000L).size());
                 assertEquals("Depth", timeSeriesProfileInstance.getParameterColumns().get(0).getParameter());
                 assertEquals("m", timeSeriesProfileInstance.getParameterColumns().get(0).getUnit());
                 assertEquals("Pres", timeSeriesProfileInstance.getParameterColumns().get(1).getParameter());
+                assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().get(1568035040000L).size());
                 assertEquals("kPa", timeSeriesProfileInstance.getParameterColumns().get(1).getUnit());
                 assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().get(1568033359000L).size());
             } catch (SQLException e) {

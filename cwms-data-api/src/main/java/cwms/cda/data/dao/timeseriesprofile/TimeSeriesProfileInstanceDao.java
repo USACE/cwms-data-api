@@ -3,7 +3,7 @@ package cwms.cda.data.dao.timeseriesprofile;
 import static cwms.cda.data.dto.CwmsDTOPaginated.delimiter;
 import static cwms.cda.data.dto.CwmsDTOPaginated.encodeCursor;
 import static org.jooq.impl.DSL.asterisk;
-import static org.jooq.impl.DSL.count;
+import static org.jooq.impl.DSL.countDistinct;
 import static org.jooq.impl.DSL.max;
 import static org.jooq.impl.DSL.min;
 import static org.jooq.impl.DSL.using;
@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -37,6 +38,7 @@ import org.jooq.Record1;
 import org.jooq.Record7;
 import org.jooq.Result;
 import org.jooq.SelectConditionStep;
+import org.jooq.SelectHavingStep;
 import org.jooq.SelectSeekLimitStep;
 import org.jooq.SelectSeekStep1;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
@@ -275,7 +277,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                     .from(VIEW_TSV2)
                     .where(whereCondition.and(dateTimeCol.lessThan(Timestamp.from(startTime)))
                             .and(endTimeCol.greaterThan(Timestamp.from(startTime))));
-            previousDateTime = prev.fetchOne().value1();
+            previousDateTime = Objects.requireNonNull(prev.fetchOne()).value1();
             if (previousDateTime != null) {
                 startTime = previousDateTime.toInstant();
                 startInclusive = true;
@@ -289,7 +291,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                     .from(VIEW_TSV2)
                     .where(whereCondition.and(dateTimeCol.greaterThan(Timestamp.from(endTime)))
                             .and(startTimeCol.le(Timestamp.from(endTime))));
-            nextDateTime = nex.fetchOne().value1();
+            nextDateTime = Objects.requireNonNull(nex.fetchOne()).value1();
             if (nextDateTime != null) {
                 endTime = nextDateTime.toInstant();
                 endInclusive = true;
@@ -316,16 +318,19 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         }
         Condition finalWhereCondition = whereCondition;
 
-        // set semi-final variables for lambda
-        final int recordPageSize = pageSize;
-
         // Get the total number of records if not already set
         if (total == null) {
-            SelectConditionStep<Record1<Integer>> count = dsl.select(count(VIEW_TSV2.LOCATION_CODE))
+            SelectHavingStep<Record1<Integer>> count = dsl.select(countDistinct(VIEW_TSV2.DATE_TIME))
                     .from(VIEW_TSV2)
                     .where(finalWhereCondition);
-            total = count.fetchOne().value1();
+            total = Objects.requireNonNull(count.fetchOne()).value1();
         }
+
+        // get total number of parameters to for setting fetch size
+        SelectHavingStep<Record1<Integer>> count = dsl.select(countDistinct(VIEW_TSV2.PARAMETER_ID))
+                .from(VIEW_TSV2)
+                .where(finalWhereCondition);
+        int totalPars = Objects.requireNonNull(count.fetchOne()).value1();
 
         // Get the max version date if needed
         Timestamp maxVersionDate = null;
@@ -333,14 +338,14 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             SelectConditionStep<Record1<Timestamp>> maxVer = dsl.select(max(VIEW_TSV2.VERSION_DATE))
                     .from(VIEW_TSV2)
                     .where(finalWhereCondition);
-            maxVersionDate = maxVer.fetchOne().value1();
+            maxVersionDate = Objects.requireNonNull(maxVer.fetchOne()).value1();
         }
         Timestamp minVersionDate = null;
         if (!maxVersion && versionDate == null) {
             SelectConditionStep<Record1<Timestamp>> minVer = dsl.select(min(VIEW_TSV2.VERSION_DATE))
                     .from(VIEW_TSV2)
                     .where(finalWhereCondition);
-            minVersionDate = minVer.fetchOne().value1();
+            minVersionDate = Objects.requireNonNull(minVer.fetchOne()).value1();
         }
 
         // generate and run query to get the time series profile data
@@ -403,12 +408,13 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             }
 
             // Get the results
-            // if the page number is set, limit the results to the page size (plus one for setting the next page)
+            // if the page number is set, limit the results to the page size
             if (pageSize > 0) {
+                int fetchSize = pageSize * totalPars;
                 if (tsCursor == null) {
-                    result = resultQuery.limit(pageSize).fetch();
+                    result = resultQuery.limit(fetchSize).fetch();
                 } else {
-                    result = resultQuery2.limit(pageSize).fetch();
+                    result = resultQuery2.limit(fetchSize).fetch();
                 }
             } else {
                 if (tsCursor == null) {
@@ -542,7 +548,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         // map the TimeSeriesProfileInstance without the value/quality data
         return map(location.getOfficeId(), location.getName(), keyParameter,
                 timeSeriesProfileData, version, versionDate, startTime, endTime, unitParamMap,
-                recordPageSize, total, paramList, timeSeriesProfileInstanceList);
+                pageSize, total, paramList, timeSeriesProfileInstanceList);
     }
 
     public void deleteTimeSeriesProfileInstance(CwmsId location, String keyParameter,
@@ -610,26 +616,27 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         Long latestTimestamp = timeSeriesProfileInstanceList.keySet().stream().max(Long::compare).orElse(null);
         Long earliestTimestamp = timeSeriesProfileInstanceList.keySet().stream().min(Long::compare).orElse(null);
 
-        return new TimeSeriesProfileInstance.Builder()
-                .withTimeSeriesProfile(timeSeriesProfile)
-                .withTimeSeriesList(timeSeriesProfileInstanceList)
-                .withVersion(version)
-                .withFirstDate(startTime)
-                .withLastDate(endTime)
-                .withLocationTimeZone(timeZone)
-                .withPage(encodeCursor(delimiter, String.format("%d", earliestTimestamp),
-                        keyParameter, total))
-                .withPageSize(pageSize)
-                .withNextPage(mapSize(timeSeriesProfileInstanceList) >= pageSize && total > pageSize
-                        ? encodeCursor(delimiter, String.format("%d", latestTimestamp),
-                        parameterColumnInfoList.get(findParameterIndex(parameterColumnInfoList, latestTimestamp,
-                                timeSeriesProfileInstanceList)).getParameter(), total) : null)
-                .withTotal(total)
-                .withDataColumns(dataColumnInfoList)
-                .withParameterColumns(parameterColumnInfoList)
-                .withPageFirstDate(timeList.stream().min(Instant::compareTo).orElse(null))
-                .withPageLastDate(timeList.stream().max(Instant::compareTo).orElse(null))
-                .withVersionDate(versionDate)
+        TimeSeriesProfileInstance.Builder builder = new TimeSeriesProfileInstance.Builder();
+        builder.withTimeSeriesProfile(timeSeriesProfile);
+        builder.withTimeSeriesList(timeSeriesProfileInstanceList);
+        builder.withVersion(version);
+        builder.withFirstDate(startTime);
+        builder.withLastDate(endTime);
+        builder.withLocationTimeZone(timeZone);
+        builder.withPage(encodeCursor(delimiter, String.format("%d", earliestTimestamp),
+                keyParameter, total));
+        builder.withPageSize(pageSize);
+        builder.withNextPage(timeSeriesProfileInstanceList.keySet().size() >= pageSize && total > pageSize && latestTimestamp != null
+                ? encodeCursor(delimiter, String.format("%d", latestTimestamp),
+                parameterColumnInfoList.get(findParameterIndex(parameterColumnInfoList, latestTimestamp,
+                        timeSeriesProfileInstanceList)).getParameter(), total) : null);
+        builder.withTotal(total);
+        builder.withDataColumns(dataColumnInfoList);
+        builder.withParameterColumns(parameterColumnInfoList);
+        builder.withPageFirstDate(timeList.stream().min(Instant::compareTo).orElse(null));
+        builder.withPageLastDate(timeList.stream().max(Instant::compareTo).orElse(null));
+        builder.withVersionDate(versionDate);
+        return builder
                 .build();
 
     }

@@ -293,7 +293,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
                 .withRecordDelimiter(tspParserIndexed.getRecordDelimiter())
                 .withTimeInTwoFields(tspParserIndexed.getTimeInTwoFields())
                 .withKeyParameter(tspParserIndexed.getKeyParameter())
-                .withLocationId(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("NEW NAME").build())
+                .withLocationId(new CwmsId.Builder().withOfficeId(OFFICE_ID).withName("Beaverdam Ck Dam").build())
                 .withTimeZone(tspParserIndexed.getTimeZone())
                 .withParameterInfoList(tspParserIndexed.getParameterInfoList())
                 .build();

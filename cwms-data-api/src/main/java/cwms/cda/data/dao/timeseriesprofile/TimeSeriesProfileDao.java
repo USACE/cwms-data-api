@@ -2,7 +2,7 @@ package cwms.cda.data.dao.timeseriesprofile;
 
 import static cwms.cda.data.dto.CwmsDTOPaginated.delimiter;
 import static cwms.cda.data.dto.CwmsDTOPaginated.encodeCursor;
-import static org.jooq.impl.DSL.count;
+import static org.jooq.impl.DSL.countDistinct;
 import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.table;
 import static org.jooq.impl.DSL.value;
@@ -16,6 +16,8 @@ import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -120,13 +122,13 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
                     .and(JooqDao.caseInsensitiveLikeRegex(value("AT_TS_PROFILE.KEY_PARAMETER_ID"),
                     parameterIdMask));
             SelectConditionStep<Record1<Integer>> count = dsl
-                    .select(count(field("CWMS_20.AT_TS_PROFILE.LOCATION_CODE")))
+                    .select(countDistinct(field("CWMS_20.AT_TS_PROFILE.LOCATION_CODE")))
                 .from(table("CWMS_20.AT_TS_PROFILE"))
                 .join(table("CWMS_20.AT_PHYSICAL_LOCATION"))
                 .on(field("CWMS_20.AT_TS_PROFILE.LOCATION_CODE")
                         .eq(field("CWMS_20.AT_PHYSICAL_LOCATION.LOCATION_CODE")))
                 .where(totalWhereCondition);
-            total = count.fetchOne().value1();
+            total = Objects.requireNonNull(count.fetchOne()).value1();
         }
 
         // Get the time series profiles
@@ -144,7 +146,7 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
                 timeSeriesProfileResults = selectionStep.limit(pageSize).fetch();
             }
         } else {
-            throw new RuntimeException("Provided page size must be greater than 0");
+            throw new IllegalArgumentException("Provided page size must be greater than 0");
         }
 
         // If there are no results, return the empty list
@@ -160,11 +162,12 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
                 profileList.get(0).getKeyParameter(), total))
             .pageSize(Math.min(timeSeriesProfileResults.size(), pageSize))
             .total(total)
-            .nextPage(encodeCursor(delimiter, String.format("%s",
+            .nextPage(profileList.size() >= pageSize && total > pageSize
+                    ? encodeCursor(delimiter, String.format("%s",
                     CWMS_LOC_PACKAGE.call_GET_LOCATION_CODE(dsl.configuration(),
                             profileList.get(profileList.size() - 1).getLocationId().getOfficeId(),
                             profileList.get(profileList.size() - 1).getLocationId().getName())),
-                profileList.get(profileList.size() - 1).getKeyParameter(), total))
+                profileList.get(profileList.size() - 1).getKeyParameter(), total) : null)
             .timeSeriesProfileList(profileList)
             .build();
     }
