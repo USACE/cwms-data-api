@@ -59,7 +59,6 @@ import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
@@ -78,6 +77,7 @@ import usace.cwms.db.jooq.codegen.udt.records.STREAMFLOW_MEAS2_TAB_T;
 
 public final class MeasurementDao extends JooqDao<Measurement> {
     static final XmlMapper XML_MAPPER = buildXmlMapper();
+    public static final String IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY = "measurement.ignoreExistingCheckForBulkUpdate";
 
     public MeasurementDao(DSLContext dsl) {
         super(dsl);
@@ -251,11 +251,14 @@ public final class MeasurementDao extends JooqDao<Measurement> {
                 .collect(Collectors.toList());
 
         // Retrieve existing measurements from the database
-        List<String> existingNumbers = getExistingMeasurementNumbers(conn, officeId, locationId, measurementNumbers);
-
-        // Find missing numbers
-        List<String> missingNumbers = new ArrayList<>(measurementNumbers);
-        missingNumbers.removeAll(existingNumbers);
+        List<String> missingNumbers = new ArrayList<>();
+        if(!Boolean.getBoolean(IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY))
+        {
+            List<String> existingNumbers = getExistingMeasurementNumbers(conn, officeId, locationId, measurementNumbers);
+            missingNumbers = new ArrayList<>(measurementNumbers);
+            // Find missing numbers
+            missingNumbers.removeAll(existingNumbers);
+        }
 
         if (!missingNumbers.isEmpty()) {
             throw new NotFoundException("Could not find measurements " + String.join(",", missingNumbers) +

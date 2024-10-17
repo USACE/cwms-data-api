@@ -96,6 +96,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
 
     @AfterAll
     public static void tearDown() {
+        System.clearProperty(MeasurementDao.IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY);
         for (Stream stream : TEST_STREAMS) {
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -336,6 +337,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     @Test
     @MinimumSchema(MINIMUM_SCHEMA)
     void test_create_retrieve_delete_measurement_multiple() throws IOException {
+        System.setProperty(MeasurementDao.IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY, String.valueOf(true));
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/measurements.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -612,6 +614,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     @Test
     @MinimumSchema(MINIMUM_SCHEMA)
     void test_update_does_not_exist() throws Exception {
+        System.clearProperty(MeasurementDao.IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         InputStream resourceUpdated = this.getClass().getResourceAsStream("/cwms/cda/api/measurements_updated.json");

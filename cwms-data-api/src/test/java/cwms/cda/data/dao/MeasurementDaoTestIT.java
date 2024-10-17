@@ -184,6 +184,7 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
             StreamLocation streamLocation2 = StreamLocationDaoTestIT.buildTestStreamLocation("TEST_STREAM_123", streamLocId2, OFFICE_ID,11.0, Bank.RIGHT);
 
             try {
+                System.setProperty(MeasurementDao.IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY, String.valueOf(true));
                 //store stream locations
                 streamLocationDao.storeStreamLocation(streamLocation, false);
                 streamLocationDao.storeStreamLocation(streamLocation2, false);
@@ -231,6 +232,8 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
                 updatedMeasurements.add(meas1B);
                 measurementDao.updateMeasurements(updatedMeasurements);
 
+                System.clearProperty(MeasurementDao.IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY);
+
                 retrievedMeasurements = measurementDao.retrieveMeasurements(OFFICE_ID, streamLocId, null, null, UnitSystem.EN.getValue(),
                         null, null, null, null, null, null, null, null);
 
@@ -264,6 +267,7 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
                 assertThrows(NotFoundException.class, () -> measurementDao.retrieveMeasurements(meas2F.getId().getOfficeId(), meas2F.getId().getName(),
                         null, null, UnitSystem.EN.getValue(), null, null, null, null, null, null, null, null));
             } finally {
+                System.clearProperty(MeasurementDao.IGNORE_EXISTING_CHECK_FOR_BULK_UPDATE_PROPERTY);
                 //delete stream locations
                 streamLocationDao.deleteStreamLocation(
                         streamLocation.getStreamLocationNode().getId().getOfficeId(),
