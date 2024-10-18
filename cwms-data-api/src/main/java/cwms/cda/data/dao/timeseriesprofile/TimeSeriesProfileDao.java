@@ -156,18 +156,22 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
 
         List<TimeSeriesProfile> profileList = parseRecords(timeSeriesProfileResults);
 
+        String nextPage = null;
+        if (profileList.size() >= pageSize && total > pageSize) {
+            nextPage = encodeCursor(delimiter, String.format("%s",
+                    CWMS_LOC_PACKAGE.call_GET_LOCATION_CODE(dsl.configuration(),
+                            profileList.get(profileList.size() - 1).getLocationId().getOfficeId(),
+                            profileList.get(profileList.size() - 1).getLocationId().getName())),
+                    profileList.get(profileList.size() - 1).getKeyParameter(), total);
+        }
+
         return new TimeSeriesProfileList.Builder()
             .page(encodeCursor(delimiter, String.format("%s",
                 profileList.get(0).getLocationId().getName()),
                 profileList.get(0).getKeyParameter(), total))
             .pageSize(Math.min(timeSeriesProfileResults.size(), pageSize))
             .total(total)
-            .nextPage(profileList.size() >= pageSize && total > pageSize
-                    ? encodeCursor(delimiter, String.format("%s",
-                    CWMS_LOC_PACKAGE.call_GET_LOCATION_CODE(dsl.configuration(),
-                            profileList.get(profileList.size() - 1).getLocationId().getOfficeId(),
-                            profileList.get(profileList.size() - 1).getLocationId().getName())),
-                profileList.get(profileList.size() - 1).getKeyParameter(), total) : null)
+            .nextPage(nextPage)
             .timeSeriesProfileList(profileList)
             .build();
     }
