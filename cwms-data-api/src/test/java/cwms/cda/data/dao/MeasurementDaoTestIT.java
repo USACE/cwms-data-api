@@ -14,6 +14,7 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -27,16 +28,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("integration")
-final class MeasurementDaoTestIT extends DataApiTestIT {
+public final class MeasurementDaoTestIT extends DataApiTestIT {
 
     private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
     private static final List<String> STREAM_LOC_IDS = new ArrayList<>();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
+    public static final int MINIMUM_SCHEMA = 999999;
 
     @BeforeAll
     public static void setup() {
@@ -79,97 +80,8 @@ final class MeasurementDaoTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled
-    void testRoundTrip() throws Exception {
-        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        String webUser = CwmsDataApiSetupCallback.getWebUser();
-        databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, databaseLink.getOfficeId());
-            StreamLocationDao streamLocationDao = new StreamLocationDao(context);
-            //build stream locations
-            String streamLocId = STREAM_LOC_IDS.get(0);
-            StreamLocation streamLocation = StreamLocationDaoTestIT.buildTestStreamLocation("TEST_STREAM_123", streamLocId, OFFICE_ID, 10.0, Bank.LEFT);
-            String streamLocId2 = STREAM_LOC_IDS.get(1);
-            StreamLocation streamLocation2 = StreamLocationDaoTestIT.buildTestStreamLocation("TEST_STREAM_123", streamLocId2, OFFICE_ID, 11.0, Bank.RIGHT);
-
-            try {
-                //store stream locations
-                streamLocationDao.storeStreamLocation(streamLocation, false);
-                streamLocationDao.storeStreamLocation(streamLocation2, false);
-
-                Measurement meas1 = buildMeasurement1(streamLocId);
-                Measurement meas1B = buildMeasurement2(streamLocId);
-
-                Measurement meas2 = buildMeasurement1(streamLocId2);
-
-                MeasurementDao measurementDao = new MeasurementDao(context);
-                measurementDao.storeMeasurement(meas1, false);
-                measurementDao.storeMeasurement(meas1B, false);
-                measurementDao.storeMeasurement(meas2, false);
-
-                List<Measurement> measurements = measurementDao.retrieveMeasurements(OFFICE_ID, streamLocId, null, null, UnitSystem.EN.getValue(),
-                        null, null, null, null, null, null, null, null);
-                assertEquals(2, measurements.size());
-
-                DTOMatch.assertMatch(meas1, measurements.get(0));
-                DTOMatch.assertMatch(meas1B, measurements.get(1));
-
-                List<Measurement> measurementsAll = measurementDao.retrieveMeasurements(OFFICE_ID, null, null, null, UnitSystem.EN.getValue(),
-                        null, null, null, null, null, null, null, null);
-                List<Measurement> meas1List = measurementsAll.stream()
-                        .filter(m -> m.getLocationId().equals(streamLocId))
-                        .collect(Collectors.toList());
-                assertEquals(2, meas1List.size());
-                DTOMatch.assertMatch(meas1, meas1List.get(0));
-                DTOMatch.assertMatch(meas1B, meas1List.get(1));
-
-                Measurement meas2Found = measurementsAll.stream()
-                        .filter(m -> m.getLocationId().equals(streamLocId2))
-                        .findFirst()
-                        .orElse(null);
-                assertNotNull(meas2Found);
-                DTOMatch.assertMatch(meas2, meas2Found);
-
-                //test update
-                meas1 = buildMeasurement1(streamLocId, 200);
-                measurementDao.updateMeasurement(meas1);
-
-                List<Measurement> retrievedMeasurements = measurementDao.retrieveMeasurements(OFFICE_ID, streamLocId, null, null, UnitSystem.EN.getValue(),
-                        null, null, null, null, meas1.getNumber(), meas1.getNumber(), null, null);
-                DTOMatch.assertMatch(meas1, retrievedMeasurements.get(0));
-
-                Measurement doesntExist = buildMeasurementDoesntExist(streamLocId);
-                assertThrows(NotFoundException.class, () -> measurementDao.updateMeasurement(doesntExist));
-
-                //delete measurements
-                measurementDao.deleteMeasurements(meas1.getId().getOfficeId(), meas1.getId().getName(), null, null, null, null, null, null, null, null, null, null, null);
-                measurementDao.deleteMeasurements(meas2.getId().getOfficeId(), meas2.getId().getName(), null, null, null, null, null, null, null, null, null, null, null);
-
-                final Measurement meas1F  = meas1;
-                final Measurement meas2F = meas2;
-                assertThrows(NotFoundException.class, () -> measurementDao.retrieveMeasurements(meas1F.getId().getOfficeId(), meas1F.getId().getName(),
-                        null, null, UnitSystem.EN.getValue(), null, null, null, null, null, null, null, null));
-                assertThrows(NotFoundException.class, () -> measurementDao.retrieveMeasurements(meas2F.getId().getOfficeId(), meas2F.getId().getName(),
-                        null, null, UnitSystem.EN.getValue(), null, null, null, null, null, null, null, null));
-            } finally {
-                //delete stream locations
-                streamLocationDao.deleteStreamLocation(
-                        streamLocation.getStreamLocationNode().getId().getOfficeId(),
-                        streamLocation.getStreamLocationNode().getStreamNode().getStreamId().getName(),
-                        streamLocation.getStreamLocationNode().getId().getName()
-                );
-                streamLocationDao.deleteStreamLocation(
-                        streamLocation2.getStreamLocationNode().getId().getOfficeId(),
-                        streamLocation2.getStreamLocationNode().getStreamNode().getStreamId().getName(),
-                        streamLocation2.getStreamLocationNode().getId().getName()
-                );
-            }
-        }, webUser);
-    }
-
-    @Test
-    @Disabled
-    void testRoundTripMultipleStore() throws Exception {
+    @MinimumSchema(MINIMUM_SCHEMA)
+    void testRoundTripStore() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         String webUser = CwmsDataApiSetupCallback.getWebUser();
         databaseLink.connection(c -> {
@@ -221,14 +133,6 @@ final class MeasurementDaoTestIT extends DataApiTestIT {
                 assertNotNull(meas2Found);
                 DTOMatch.assertMatch(meas2, meas2Found);
 
-                //test update
-                meas1 = buildMeasurement1(streamLocId, 400);
-                meas1B = buildMeasurement2(streamLocId, 500);
-                List<Measurement> updatedMeasurements = new ArrayList<>();
-                updatedMeasurements.add(meas1);
-                updatedMeasurements.add(meas1B);
-                measurementDao.updateMeasurements(updatedMeasurements);
-
                 retrievedMeasurements = measurementDao.retrieveMeasurements(OFFICE_ID, streamLocId, null, null, UnitSystem.EN.getValue(),
                         null, null, null, null, null, null, null, null);
 
@@ -247,13 +151,9 @@ final class MeasurementDaoTestIT extends DataApiTestIT {
                 assertNotNull(retrievedMeas1B);
                 DTOMatch.assertMatch(meas1B, retrievedMeas1B);
 
-                Measurement doesntExist = buildMeasurementDoesntExist(streamLocId);
-                updatedMeasurements.add(doesntExist);
-                assertThrows(NotFoundException.class, () -> measurementDao.updateMeasurements(updatedMeasurements));
-
                 //delete measurements
-                measurementDao.deleteMeasurements(meas1.getId().getOfficeId(), meas1.getId().getName(), null, null, null, null, null, null, null, null, null, null, null);
-                measurementDao.deleteMeasurements(meas2.getId().getOfficeId(), meas2.getId().getName(), null, null, null, null, null, null, null, null, null, null, null);
+                measurementDao.deleteMeasurements(meas1.getId().getOfficeId(), meas1.getId().getName(), null, null, null, null);
+                measurementDao.deleteMeasurements(meas2.getId().getOfficeId(), meas2.getId().getName(), null, null, null, null);
 
                 final Measurement meas1F  = meas1;
                 final Measurement meas2F = meas2;

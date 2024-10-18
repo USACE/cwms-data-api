@@ -134,6 +134,15 @@ public final class Controllers {
     public static final String ISSUE_DATE = "issue-date";
     public static final String LOCATION_KIND_LIKE = "location-kind-like";
     public static final String LOCATION_TYPE_LIKE = "location-type-like";
+    public static final String MIN_NUMBER = "min-number";
+    public static final String MAX_NUMBER = "max-number";
+    public static final String MIN_HEIGHT = "min-height";
+    public static final String MAX_HEIGHT = "max-height";
+    public static final String MIN_FLOW = "min-flow";
+    public static final String MAX_FLOW = "max-flow";
+    public static final String AGENCY = "agency";
+    public static final String QUALITY = "quality";
+
 
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
@@ -370,6 +379,16 @@ public final class Controllers {
     public static <T> T requiredParamAs(io.javalin.http.Context ctx, String name, Class<T> type) {
         return ctx.queryParamAsClass(name, type)
             .getOrThrow(e -> new RequiredQueryParameterException(name));
+    }
+
+    @Nullable
+    public static Double queryParamAsDouble(Context ctx, String param) {
+        Double retVal = null;
+        String numberStr = ctx.queryParam(param);
+        if (numberStr != null) {
+            retVal = Double.parseDouble(numberStr);
+        }
+        return retVal;
     }
 
     @Nullable
