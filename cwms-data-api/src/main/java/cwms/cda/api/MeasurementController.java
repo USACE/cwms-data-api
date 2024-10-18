@@ -103,11 +103,11 @@ public final class MeasurementController implements CrudHandler {
                     @OpenApiParam(name = BEGIN, description = "The start of the time "
                             + "window to delete. The format for this field is ISO 8601 extended, with "
                             + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
-                            + EXAMPLE_DATE + "'."),
+                            + EXAMPLE_DATE + "'. A null value is treated as an unbounded start."),
                     @OpenApiParam(name = END, description = "The end of the time "
                             + "window to delete.The format for this field is ISO 8601 extended, with "
                             + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
-                            + EXAMPLE_DATE + "'."),
+                            + EXAMPLE_DATE + "'.A null value is treated as an unbounded end."),
                     @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone "
                             + "to be used if the format of the " + BEGIN + "and " + END
                             + " parameters do not include offset or time zone information. "
@@ -226,13 +226,11 @@ public final class MeasurementController implements CrudHandler {
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the measurements to delete"),
-                    @OpenApiParam(name = MIN_NUMBER, description = "Specifies the min number-id of the measurement to delete."),
-                    @OpenApiParam(name = MAX_NUMBER, description = "Specifies the max number-id of the measurement to delete."),
-                    @OpenApiParam(name = BEGIN, description = "The start of the time "
+                    @OpenApiParam(name = BEGIN, required = true, description = "The start of the time "
                             + "window to delete. The format for this field is ISO 8601 extended, with "
                             + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
                             + EXAMPLE_DATE + "'."),
-                    @OpenApiParam(name = END, description = "The end of the time "
+                    @OpenApiParam(name = END, required = true, description = "The end of the time "
                             + "window to delete.The format for this field is ISO 8601 extended, with "
                             + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
                             + EXAMPLE_DATE + "'."),
@@ -240,6 +238,8 @@ public final class MeasurementController implements CrudHandler {
                             + "to be used if the format of the " + BEGIN + "and " + END
                             + " parameters do not include offset or time zone information. "
                             + "Defaults to UTC."),
+                    @OpenApiParam(name = MIN_NUMBER, description = "Specifies the min number-id of the measurement to delete."),
+                    @OpenApiParam(name = MAX_NUMBER, description = "Specifies the max number-id of the measurement to delete."),
             },
             description = "Delete an existing measurement.",
             method = HttpMethod.DELETE,
@@ -259,8 +259,7 @@ public final class MeasurementController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             MeasurementDao dao = new MeasurementDao(dsl);
-            dao.deleteMeasurements(officeId, locationId, minDate, maxDate, UnitSystem.EN.getValue(), null,
-                    null, null, null, minNum, maxNum, null, null);
+            dao.deleteMeasurements(officeId, locationId, minDate, maxDate,minNum, maxNum);
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json( "Measurements for " + locationId + " Deleted");
         }
     }

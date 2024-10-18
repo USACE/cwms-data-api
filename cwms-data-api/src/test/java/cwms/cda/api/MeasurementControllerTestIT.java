@@ -47,7 +47,6 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -119,7 +118,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 db.connection(c -> {
                     MeasurementDao measDao = new MeasurementDao(getDslContext(c, OFFICE_ID));
                     try {
-                        measDao.deleteMeasurements(OFFICE_ID, measLoc, null, null, null, null, null, null, null, null, null, null, null);
+                        measDao.deleteMeasurements(OFFICE_ID, measLoc, null, null, null, null);
                     } catch (Exception e) {
                         LOGGER.atInfo().log("Failed to delete measurements for: " + measLoc + ". Measurement(s) likely already deleted");
                     }

@@ -152,8 +152,8 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
                 DTOMatch.assertMatch(meas1B, retrievedMeas1B);
 
                 //delete measurements
-                measurementDao.deleteMeasurements(meas1.getId().getOfficeId(), meas1.getId().getName(), null, null, null, null, null, null, null, null, null, null, null);
-                measurementDao.deleteMeasurements(meas2.getId().getOfficeId(), meas2.getId().getName(), null, null, null, null, null, null, null, null, null, null, null);
+                measurementDao.deleteMeasurements(meas1.getId().getOfficeId(), meas1.getId().getName(), null, null, null, null);
+                measurementDao.deleteMeasurements(meas2.getId().getOfficeId(), meas2.getId().getName(), null, null, null, null);
 
                 final Measurement meas1F  = meas1;
                 final Measurement meas2F = meas2;
