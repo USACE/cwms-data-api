@@ -26,14 +26,7 @@
 
 package cwms.cda.api.watersupply;
 
-import static cwms.cda.api.Controllers.CONTRACT_NAME;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PROJECT_ID;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.WATER_USER;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -67,12 +60,8 @@ import org.jooq.DSLContext;
 
 
 public class AccountingCatalogController implements Handler {
-    private final Logger LOGGER = Logger.getLogger(AccountingCatalogController.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AccountingCatalogController.class.getName());
     private static final String TAG = "Pump Accounting";
-    private static final String START_TIME = "start";
-    private static final String START_INCLUSIVE = "start-inclusive";
-    private static final String END_INCLUSIVE = "end-inclusive";
-    private static final String END_TIME = "end";
     private static final String ROW_LIMIT = "row-limit";
     private static final String ASCENDING = "ascending";
     private final MetricRegistry metrics;
@@ -92,13 +81,13 @@ public class AccountingCatalogController implements Handler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = START_TIME, description = "The start time of the time window for "
+                    @OpenApiParam(name = START, description = "The start time of the time window for "
                             + "pump accounting entries to retrieve. Defaults to the year 1800."),
-                    @OpenApiParam(name = END_TIME, description = "The end time of the time window for pump "
+                    @OpenApiParam(name = END, description = "The end time of the time window for pump "
                             + "accounting entries to retrieve. Defaults to the year 3000"),
-                    @OpenApiParam(name = START_INCLUSIVE, description = "Whether or not the start time is "
+                    @OpenApiParam(name = START_TIME_INCLUSIVE, description = "Whether or not the start time is "
                             + "inclusive or not. Defaults to TRUE.", type = Boolean.class),
-                    @OpenApiParam(name = END_INCLUSIVE, description = "Whether or not the end time is inclusive "
+                    @OpenApiParam(name = END_TIME_INCLUSIVE, description = "Whether or not the end time is inclusive "
                             + "or not. Defaults to TRUE.", type = Boolean.class),
                     @OpenApiParam(name = ASCENDING, description = "Whether or not the entries should be returned "
                             + "in ascending order. Defaults to TRUE.", type = Boolean.class),
@@ -140,13 +129,13 @@ public class AccountingCatalogController implements Handler {
             final String waterUserName = ctx.pathParam(WATER_USER);
             final String contractId = ctx.pathParam(CONTRACT_NAME);
             final String locationId = ctx.pathParam(PROJECT_ID);
-            final String startTime = ctx.queryParam(START_TIME) == null
-                    ? "1800-01-01T00:00:00Z" : ctx.queryParam(START_TIME);
-            final String endTime = ctx.queryParam(END_TIME) == null ? "3000-01-01T00:00:00Z" : ctx.queryParam(END_TIME);
-            final boolean startInclusive = ctx.queryParam(START_INCLUSIVE) == null
-                    || Boolean.parseBoolean(ctx.queryParam(START_INCLUSIVE));
-            final boolean endInclusive = ctx.queryParam(END_INCLUSIVE) == null
-                    || Boolean.parseBoolean(ctx.queryParam(END_INCLUSIVE));
+            final String startTime = ctx.queryParam(START) == null
+                    ? "1800-01-01T00:00:00Z" : ctx.queryParam(START);
+            final String endTime = ctx.queryParam(END) == null ? "3000-01-01T00:00:00Z" : ctx.queryParam(END);
+            final boolean startInclusive = ctx.queryParam(START_TIME_INCLUSIVE) == null
+                    || Boolean.parseBoolean(ctx.queryParam(START_TIME_INCLUSIVE));
+            final boolean endInclusive = ctx.queryParam(END_TIME_INCLUSIVE) == null
+                    || Boolean.parseBoolean(ctx.queryParam(END_TIME_INCLUSIVE));
             final boolean ascending = ctx.queryParam(ASCENDING) == null
                     || Boolean.parseBoolean(ctx.queryParam(ASCENDING));
             final int rowLimit = ctx.queryParam(ROW_LIMIT) != null ? Integer.parseInt(ctx.queryParam(ROW_LIMIT)) : 0;
