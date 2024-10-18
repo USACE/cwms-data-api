@@ -1,0 +1,12 @@
+{
+  "location-id": {
+    "office-id": "SPK",
+    "name": "Little Rock Dam"
+  },
+  "description": "Dam near College Station",
+  "parameter-list": [
+    "Depth",
+    "Temp-Water"
+  ],
+  "key-parameter": "Temp-Water"
+}

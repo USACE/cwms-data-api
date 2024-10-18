@@ -1,0 +1,62 @@
+{
+  "time-series-profile": {
+    "location-id": {
+      "office-id": "SPK",
+      "name": "Beaverdam Ck Dam"
+    },
+    "description": "Dam near Durham",
+    "parameter-list": [
+      "Depth",
+      "Temp-Water"
+    ],
+    "key-parameter": "Depth"
+  },
+  "parameter-columns": [
+    {
+      "parameter": "Temp",
+      "ordinal": 1,
+      "unit": "F"
+    },
+    {
+      "parameter": "Depth",
+      "ordinal": 2,
+      "unit": "m"
+    }
+  ],
+  "data-columns": [
+    {
+      "name": "value",
+      "ordinal": 1,
+      "datatype": "java.lang.Double"
+    },
+    {
+      "name": "quality",
+      "ordinal": 2,
+      "datatype": "java.lang.Integer"
+    }
+  ],
+  "time-series-list": {
+    "1612869582120": [
+      [86.5, 0],
+      [98.6, 0]
+    ],
+    "1612869682120": [
+      [86.999, 0],
+      [98.6, 0]
+    ],
+    "1612870682120": [
+      [],
+      [98.6, 0]
+    ]
+  },
+  "location-time-zone": "PST",
+  "version": "DSS-Obs",
+  "version-date": 1594786000000,
+  "first-date": 1594296000000,
+  "last-date": 1752062400000,
+  "page-first-date": 1594296000000,
+  "page-last-date": 1752062400000,
+  "page": null,
+  "page-size": 50,
+  "total": 300
+}

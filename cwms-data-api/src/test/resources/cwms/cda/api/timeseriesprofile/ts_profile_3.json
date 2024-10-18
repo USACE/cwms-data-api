@@ -1,0 +1,16 @@
+{
+  "location-id": {
+    "office-id": "SPK",
+    "name": "Sacramento Dam"
+  },
+  "description": "Dam near Sacramento",
+  "parameter-list": [
+    "Depth",
+    "Temp-Water"
+  ],
+  "key-parameter": "Temp-Water",
+  "reference-ts-id": {
+    "name": "Sacramento Dam.Elev.Total.0.1Hour.Raw",
+    "office-id": "SPK"
+  }
+}
