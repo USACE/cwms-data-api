@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
@@ -42,8 +43,10 @@ import org.jooq.SelectHavingStep;
 import org.jooq.SelectSeekLimitStep;
 import org.jooq.SelectSeekStep1;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PROFILE_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.AV_TS_PROFILE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_PROFILE_INST;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_PROFILE_INST_TSV2;
 import usace.cwms.db.jooq.codegen.udt.records.PVQ_T;
@@ -55,7 +58,7 @@ import usace.cwms.db.jooq.codegen.udt.records.TS_PROF_DATA_TAB_T;
 
 
 public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInstance> {
-    private static final Logger logger = Logger.getLogger(TimeSeriesProfileInstanceDao.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(TimeSeriesProfileInstanceDao.class.getName());
     private static final AV_TS_PROFILE_INST_TSV2 VIEW_TSV2 = AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2;
     private static final AV_TS_PROFILE_INST VIEW = AV_TS_PROFILE_INST.AV_TS_PROFILE_INST;
 
@@ -172,6 +175,29 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                 .fetch();
         List<TimeSeriesProfileInstance> timeSeriesProfileInstanceList = new ArrayList<>();
         for (Record result : timeSeriesProfileInstanceResults) {
+            // Get reference timeseries ID
+            AV_TS_PROFILE profileView = AV_TS_PROFILE.AV_TS_PROFILE;
+            CwmsId tsCwmsId = null;
+            try {
+                Long tsId = Objects.requireNonNull(dsl.selectDistinct(profileView.REFERENCE_TS_CODE)
+                        .from(profileView)
+                        .join(VIEW)
+                        .on(profileView.LOCATION_CODE.eq(VIEW.LOCATION_CODE)
+                                .and(profileView.KEY_PARAMETER_CODE.eq(VIEW.KEY_PARAMETER_CODE))
+                                .and(profileView.OFFICE_ID.eq(VIEW.OFFICE_ID)))
+                        .where(VIEW.LOCATION_ID.eq(result.get(VIEW.LOCATION_ID))
+                                .and(VIEW.OFFICE_ID.eq(result.get(VIEW.OFFICE_ID))
+                                        .and(VIEW.KEY_PARAMETER_ID.eq(result.get(VIEW.KEY_PARAMETER_ID))))
+                                .and(VIEW.VERSION_ID.eq(result.get(VIEW.VERSION_ID))))
+                        .fetchOne()).value1();
+                if (tsId != null) {
+                    tsCwmsId = CwmsId.buildCwmsId(CWMS_TS_PACKAGE.call_GET_DB_OFFICE_ID(dsl.configuration(), tsId),
+                            CWMS_TS_PACKAGE.call_GET_TS_ID(dsl.configuration(), tsId));
+                }
+            } catch (NullPointerException e) {
+                LOGGER.log(Level.CONFIG, "No reference time series found for time series profile instance");
+            }
+
             CwmsId locationId = new CwmsId.Builder()
                     .withOfficeId(result.get(VIEW.OFFICE_ID))
                     .withName(result.get(VIEW.LOCATION_ID))
@@ -180,6 +206,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             TimeSeriesProfile timeSeriesProfile = new TimeSeriesProfile.Builder()
                     .withLocationId(locationId)
                     .withKeyParameter(parameterId)
+                    .withReferenceTsId(tsCwmsId)
                     .build();
             TimeSeriesProfileInstance timeSeriesProfileInstance = new TimeSeriesProfileInstance.Builder()
                     .withTimeSeriesProfile(timeSeriesProfile)
@@ -224,8 +251,8 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         if (page != null && !page.isEmpty()) {
             final String[] parts = CwmsDTOPaginated.decodeCursor(page);
 
-            logger.fine("Decoded cursor");
-            logger.finest(() -> {
+            LOGGER.fine("Decoded cursor");
+            LOGGER.finest(() -> {
                 StringBuilder sb = new StringBuilder();
                 for (String part : parts) {
                     sb.append(part).append("\n");
@@ -424,7 +451,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                 }
             }
             Result<?> lastRecord = result;
-            logger.fine(lastRecord::toString);
+            LOGGER.fine(lastRecord::toString);
         }
 
         // Throw 404 if no results
@@ -545,10 +572,32 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         TS_PROF_DATA_T timeSeriesProfileData = new TS_PROF_DATA_T(locationCode, keyParameterCode,
                 timeZone, units, records);
 
+        // Get reference timeseries ID
+        AV_TS_PROFILE profileView = AV_TS_PROFILE.AV_TS_PROFILE;
+        CwmsId tsCwmsId = null;
+        try {
+            Long tsId = Objects.requireNonNull(dsl.selectDistinct(profileView.REFERENCE_TS_CODE)
+                    .from(profileView)
+                    .join(VIEW)
+                    .on(profileView.LOCATION_CODE.eq(VIEW.LOCATION_CODE)
+                            .and(profileView.KEY_PARAMETER_CODE.eq(VIEW.KEY_PARAMETER_CODE))
+                            .and(profileView.OFFICE_ID.eq(VIEW.OFFICE_ID)))
+                    .where(profileView.KEY_PARAMETER_ID.eq(keyParameter)
+                            .and(profileView.LOCATION_ID.eq(location.getName())
+                                    .and(profileView.OFFICE_ID.eq(location.getOfficeId()))))
+                    .fetchOne()).value1();
+            if (tsId != null) {
+                tsCwmsId = CwmsId.buildCwmsId(CWMS_TS_PACKAGE.call_GET_DB_OFFICE_ID(dsl.configuration(), tsId),
+                        CWMS_TS_PACKAGE.call_GET_TS_ID(dsl.configuration(), tsId));
+            }
+        } catch (NullPointerException e) {
+            LOGGER.log(Level.CONFIG, "No reference time series found for time series profile instance");
+        }
+
         // map the TimeSeriesProfileInstance without the value/quality data
         return map(location.getOfficeId(), location.getName(), keyParameter,
                 timeSeriesProfileData, version, versionDate, startTime, endTime, unitParamMap,
-                pageSize, total, paramList, timeSeriesProfileInstanceList);
+                pageSize, total, paramList, timeSeriesProfileInstanceList, tsCwmsId);
     }
 
     public void deleteTimeSeriesProfileInstance(CwmsId location, String keyParameter,
@@ -580,7 +629,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             TS_PROF_DATA_T timeSeriesProfileData, String version, Instant versionDate, Instant startTime,
             Instant endTime, Map<String, String> unitParamMap, int pageSize, int total,
             List<ParameterColumnInfo> parameterColumnInfoList,
-            Map<Long, List<TimeSeriesData>> timeSeriesProfileInstanceList) {
+            Map<Long, List<TimeSeriesData>> timeSeriesProfileInstanceList, CwmsId tsId) {
         List<Instant> timeList = new ArrayList<>();
         List<DataColumnInfo> dataColumnInfoList = new ArrayList<>();
         DataColumnInfo valueDataColumnInfo = new DataColumnInfo.Builder()
@@ -611,6 +660,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                 .withKeyParameter(keyParameter)
                 .withLocationId(locationId)
                 .withParameterList(parameterList)
+                .withReferenceTsId(tsId)
                 .build();
 
         Long latestTimestamp = timeSeriesProfileInstanceList.keySet().stream().max(Long::compare).orElse(null);
@@ -652,16 +702,5 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             index++;
         }
         return returnIndex;
-    }
-
-    public static int mapSize(Map<Long, List<TimeSeriesData>> map) {
-        int size = 0;
-        if (map == null) {
-            return size;
-        }
-        for (List<TimeSeriesData> list : map.values()) {
-            size += list.size();
-        }
-        return size;
     }
 }

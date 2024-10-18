@@ -353,8 +353,8 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
             .body("[0].key-parameter", equalTo(tspIndex.getKeyParameter()))
             .body("[0].time-format", equalTo(tspIndex.getTimeFormat()))
             .body("[0].time-zone", equalTo(tspIndex.getTimeZone()))
-            .body("[0].parameter-info-list[0].parameter", equalTo(tspIndex.getParameterInfoList().get(0).getParameter()))
-            .body("[0].parameter-info-list[1].parameter", equalTo(tspIndex.getParameterInfoList().get(1).getParameter()))
+            .body("[0].parameter-info-list[0].parameter", equalTo(tspIndex.getParameterInfoList().get(1).getParameter()))
+            .body("[0].parameter-info-list[1].parameter", equalTo(tspIndex.getParameterInfoList().get(0).getParameter()))
             .body("[0].location-id.office-id", equalTo(tspIndex.getLocationId().getOfficeId()))
             .body("[0].type", equalTo("indexed-timeseries-profile-parser"))
         ;

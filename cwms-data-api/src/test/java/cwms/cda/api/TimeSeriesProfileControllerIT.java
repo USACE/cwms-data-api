@@ -63,23 +63,32 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile.json");
     private final InputStream resource2 = this.getClass()
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_2.json");
+    private final InputStream resource3 = this.getClass()
+            .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_3.json");
     private String tsData;
     private String tsData2;
+    private String tsData3;
     private TimeSeriesProfile tsProfile;
     private TimeSeriesProfile tsProfile2;
+    private TimeSeriesProfile tsProfile3;
 
     @BeforeEach
     public void setup() throws Exception {
         assertNotNull(resource);
         assertNotNull(resource2);
+        assertNotNull(resource3);
         tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         tsData2 = IOUtils.toString(resource2, StandardCharsets.UTF_8);
+        tsData3 = IOUtils.toString(resource3, StandardCharsets.UTF_8);
         tsProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfile.class), tsData, TimeSeriesProfile.class);
         tsProfile2 = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfile.class), tsData2, TimeSeriesProfile.class);
+        tsProfile3 = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
+                TimeSeriesProfile.class), tsData3, TimeSeriesProfile.class);
         createLocation(tsProfile.getLocationId().getName(), true, OFFICE_ID, "SITE");
         createLocation(tsProfile2.getLocationId().getName(), true, OFFICE_ID, "SITE");
+        createLocation(tsProfile3.getLocationId().getName(), true, OFFICE_ID, "SITE");
     }
 
     @AfterEach
@@ -88,6 +97,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         // this is necessary because the tests reuse the same profiles
         cleanupTS(tsProfile.getLocationId().getName(), tsProfile.getKeyParameter());
         cleanupTS(tsProfile2.getLocationId().getName(), tsProfile2.getKeyParameter());
+        cleanupTS(tsProfile3.getLocationId().getName(), tsProfile3.getKeyParameter());
     }
 
     @Test
@@ -132,6 +142,54 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .body("location-id.office-id", is(tsProfile.getLocationId().getOfficeId()))
             .body("description", is(tsProfile.getDescription()))
             .body("parameter-list[0]", equalTo(tsProfile.getKeyParameter()))
+        ;
+    }
+
+    @Test
+    void test_store_retrieve_with_ref_TS() throws Exception {
+        // create a new TimeSeries to reference
+        createTimeseries(OFFICE_ID, tsProfile3.getReferenceTsId().getName());
+
+        // Create a new TimeSeriesProfile
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .body(tsData3)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/profile/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Retrieve the TimeSeriesProfile
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(LOCATION_ID, tsProfile3.getLocationId().getName())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/profile/" + tsProfile3.getLocationId().getName() + "/" + tsProfile3.getKeyParameter())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("location-id.name", is(tsProfile3.getLocationId().getName()))
+            .body("key-parameter", is(tsProfile3.getKeyParameter()))
+            .body("location-id.office-id", is(tsProfile3.getLocationId().getOfficeId()))
+            .body("description", is(tsProfile3.getDescription()))
+            .body("parameter-list[1]", equalTo(tsProfile3.getKeyParameter()))
+            .body("reference-ts-id.name", is(tsProfile3.getReferenceTsId().getName()))
         ;
     }
 

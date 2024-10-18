@@ -48,6 +48,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,8 +73,12 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
     private static final TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     private final InputStream resource = this.getClass()
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile.json");
+    private final InputStream resource2 = this.getClass()
+            .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_3.json");
     private final InputStream resourceIndexed = this.getClass()
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_parser_indexed.json");
+    private final InputStream resourceIndexed2 = this.getClass()
+            .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_parser_indexed_2.json");
     private final InputStream resourceColumnar = this.getClass()
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_parser_columnar.json");
     private final InputStream resourceInstance = this.getClass()
@@ -87,7 +92,9 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
     private final InputStream profileResourceInd2 = this.getClass()
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_data_2.txt");
     private TimeSeriesProfile tsProfile;
+    private TimeSeriesProfile tsProfile2;
     private TimeSeriesProfileParserIndexed tspParserIndexed;
+    private TimeSeriesProfileParserIndexed tspParserIndexed2;
     private TimeSeriesProfileParserColumnar tspParserColumnar;
     private TimeSeriesProfileInstance tspInstance;
     private TimeSeriesProfileInstance tspInstance2;
@@ -96,12 +103,15 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
     private String tsProfileDataColumnar2;
     private String tsProfileDataIndexed2;
     private String tspData;
+    private String tspData2;
     private final String units = "m,F";
 
     @BeforeEach
     public void setup() throws Exception {
         assertNotNull(resource);
+        assertNotNull(resource2);
         assertNotNull(resourceIndexed);
+        assertNotNull(resourceIndexed2);
         assertNotNull(resourceInstance);
         assertNotNull(profileResourceCol);
         assertNotNull(resourceColumnar);
@@ -114,10 +124,15 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         tsProfileDataColumnar2 = IOUtils.toString(profileResourceCol2, StandardCharsets.UTF_8);
         tsProfileDataIndexed2 = IOUtils.toString(profileResourceInd2, StandardCharsets.UTF_8);
         tspData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        tspData2 = IOUtils.toString(resource2, StandardCharsets.UTF_8);
         tsProfile = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfile.class), tspData, TimeSeriesProfile.class);
+        tsProfile2 = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
+                TimeSeriesProfile.class), tspData2, TimeSeriesProfile.class);
         tspParserIndexed = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfileParserIndexed.class), resourceIndexed, TimeSeriesProfileParserIndexed.class);
+        tspParserIndexed2 = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
+                TimeSeriesProfileParserIndexed.class), resourceIndexed2, TimeSeriesProfileParserIndexed.class);
         tspParserColumnar = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 TimeSeriesProfileParserColumnar.class), resourceColumnar, TimeSeriesProfileParserColumnar.class);
         tspInstance = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
@@ -132,11 +147,18 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                 .withLastDate(tspInstance.getLastDate())
                 .build();
         createLocation(tsProfile.getLocationId().getName(), true, OFFICE_ID, "SITE");
+        createLocation(tsProfile2.getLocationId().getName(), true, OFFICE_ID, "SITE");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext dsl = dslContext(c, OFFICE_ID);
             TimeSeriesProfileDao dao = new TimeSeriesProfileDao(dsl);
             dao.storeTimeSeriesProfile(tsProfile, false);
+            try {
+                createTimeseries(OFFICE_ID, tsProfile2.getReferenceTsId().getName());
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+            dao.storeTimeSeriesProfile(tsProfile2, false);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -161,12 +183,19 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                 cleanupParser(dsl, tspParserIndexed.getLocationId().getName(),
                         tspParserIndexed.getKeyParameter());
             }
+            if (tspParserIndexed2 != null) {
+                cleanupParser(dsl, tspParserIndexed2.getLocationId().getName(),
+                        tspParserIndexed2.getKeyParameter());
+            }
             if (tspParserColumnar != null) {
                 cleanupParser(dsl, tspParserColumnar.getLocationId().getName(),
                         tspParserColumnar.getKeyParameter());
             }
             if (tsProfile != null) {
                 cleanupTS(dsl, tsProfile.getLocationId().getName(), tsProfile.getKeyParameter());
+            }
+            if (tsProfile2 != null) {
+                cleanupTS(dsl, tsProfile2.getLocationId().getName(), tsProfile2.getKeyParameter());
             }
         }, CwmsDataApiSetupCallback.getWebUser());
     }
@@ -229,6 +258,68 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                     equalTo(tspInstance.getTimeSeriesProfile().getKeyParameter()))
             .body("time-series-profile.parameter-list.size()", equalTo(2))
             .body("time-series-list.size()", equalTo(3))
+        ;
+    }
+
+    @Test
+    void store_retrieve_instance_with_ref_TS() throws Exception {
+        storeParser(tspParserIndexed2, null);
+
+        // Create instance
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .body(tspData2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(METHOD, StoreRule.REPLACE_ALL)
+            .queryParam(OVERRIDE_PROTECTION, true)
+            .queryParam(VERSION_DATE, "2024-07-09T12:00:00.00Z")
+            .queryParam(PROFILE_DATA, tsProfileDataIndexed2)
+            .queryParam(VERSION, "Raw")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/profile-instance/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Retrieve instance
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(VERSION_DATE, "2024-07-09T12:00:00.00Z")
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(START, "2018-07-09T19:06:20.00Z")
+            .queryParam(END, "2025-07-09T19:06:20.00Z")
+            .queryParam(START_TIME_INCLUSIVE, true)
+            .queryParam(END_TIME_INCLUSIVE, true)
+            .queryParam(UNIT, "F,m")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/profile-instance/" + tspParserIndexed2.getLocationId().getName()
+                    + "/" + tspParserIndexed2.getKeyParameter() + "/" + "Raw")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("version", equalTo("Raw"))
+            .body("version-date", equalTo(Instant.parse("2024-07-09T12:00:00.00Z").toEpochMilli()))
+            .body("time-series-profile.location-id.name",
+                    equalTo(tspParserIndexed2.getLocationId().getName()))
+            .body("time-series-profile.key-parameter",
+                    equalTo(tspParserIndexed2.getKeyParameter()))
+            .body("time-series-profile.parameter-list[0]", equalTo("Depth"))
+            .body("time-series-list.size()", equalTo(26))
+            .body("time-series-profile.parameter-list[1]", equalTo("Temp-Water"))
+            .body("time-series-profile.reference-ts-id.name", equalTo(tsProfile2.getReferenceTsId().getName()))
         ;
     }
 
