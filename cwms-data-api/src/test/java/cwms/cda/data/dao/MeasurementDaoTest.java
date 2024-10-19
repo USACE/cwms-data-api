@@ -116,23 +116,6 @@ final class MeasurementDaoTest {
     }
 
     @Test
-    void testToDbXml() throws Exception
-    {
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dao/dbMeasurement.xml");
-        assertNotNull(resource);
-        String expectedXml = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        MeasurementDao.MeasurementXmlDto expectedXmlDto = MeasurementDao.XML_MAPPER.readValue(expectedXml, MeasurementDao.MeasurementXmlDto.class);
-
-        Measurement meas = buildTestMeasurement();
-        String xml = MeasurementDao.toDbXml(meas);
-        assertNotNull(xml);
-        assertFalse(xml.isEmpty());
-        MeasurementDao.MeasurementXmlDto actualXmlDto = MeasurementDao.XML_MAPPER.readValue(xml, MeasurementDao.MeasurementXmlDto.class);
-
-        assertMatch(expectedXmlDto, actualXmlDto);
-    }
-
-    @Test
     void testConvertToMeasurementsXmlDto() {
         Measurement meas1 = buildTestMeasurement();
         Measurement meas2 = buildMeasurement2();

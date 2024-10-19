@@ -59,10 +59,8 @@ import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 import mil.army.usace.hec.metadata.location.LocationTemplate;
 import org.jooq.DSLContext;
 
@@ -72,7 +70,6 @@ import static java.util.stream.Collectors.toList;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_STREAM_PACKAGE;
-import static usace.cwms.db.jooq.codegen.tables.AV_STREAMFLOW_MEAS.AV_STREAMFLOW_MEAS;
 import usace.cwms.db.jooq.codegen.udt.records.STREAMFLOW_MEAS2_T;
 import usace.cwms.db.jooq.codegen.udt.records.STREAMFLOW_MEAS2_TAB_T;
 
@@ -116,23 +113,6 @@ public final class MeasurementDao extends JooqDao<Measurement> {
     }
 
     /**
-     * Store a measurement
-     *
-     * @param measurement  - the measurement to store
-     * @param failIfExists - if true, fail if the measurement already exists
-     */
-    public void storeMeasurement(Measurement measurement, boolean failIfExists) {
-        connection(dsl, conn -> storeMeasurementJooq(conn, measurement, failIfExists));
-    }
-
-    private void storeMeasurementJooq(Connection conn, Measurement measurement, boolean failIfExists) throws SQLException, JsonProcessingException {
-        setOffice(conn, measurement.getOfficeId());
-        String failIfExistsStr = formatBool(failIfExists);
-        String xml = toDbXml(measurement);
-        CWMS_STREAM_PACKAGE.call_STORE_MEAS_XML(DSL.using(conn).configuration(), xml, failIfExistsStr);
-    }
-
-    /**
      * Store a list of measurements
      * @param measurements - the measurements to store
      * @param failIfExists - if true, fail if a measurement already exists
@@ -152,89 +132,24 @@ public final class MeasurementDao extends JooqDao<Measurement> {
     }
 
     /**
-     * Updates an existing measurement
-     * @param measurement - the measurement to update
-     */
-    public void updateMeasurement(Measurement measurement) {
-        connection(dsl, conn -> {
-            setOffice(conn, measurement.getOfficeId());
-            verifyMeasurementExists(conn, measurement);
-            storeMeasurementJooq(conn, measurement, false);
-        });
-    }
-
-    /**
-     * Updates a list of existing measurements
-     * @param measurements - the measurements to update
-     */
-    public void updateMeasurements(List<Measurement> measurements)
-    {
-        connection(dsl, conn -> {
-            if(!measurements.isEmpty()) {
-                List<List<Measurement>> measurementsByOffice = new ArrayList<>(measurements.stream()
-                        .collect(Collectors.groupingBy(Measurement::getOfficeId))
-                        .values());
-                for (List<Measurement> measurementsList : measurementsByOffice) {
-                    Measurement measurement = measurements.get(0);
-                    String officeId = measurement.getOfficeId();
-                    setOffice(conn, officeId);
-                    //group measurementsList by locationId
-                    List<List<Measurement>> measurementsByLocation = new ArrayList<>(measurementsList.stream()
-                            .collect(Collectors.groupingBy(Measurement::getLocationId))
-                            .values());
-                    for (List<Measurement> locationMeasurements : measurementsByLocation) {
-                        String locationId = locationMeasurements.get(0).getLocationId();
-                        verifyMeasurementsExists(conn, officeId, locationId, locationMeasurements);
-                        storeMeasurementsJooq(conn, locationMeasurements, false);
-                    }
-                }
-            }
-        });
-    }
-
-    // Helper method to retrieve existing measurement numbers from the database
-    private List<String> getExistingMeasurementNumbers(Connection conn, String officeId, String locationId, List<String> measurementNumbers) {
-        usace.cwms.db.jooq.codegen.tables.AV_STREAMFLOW_MEAS view = AV_STREAMFLOW_MEAS;
-        return getDslContext(conn, officeId)
-                .selectDistinct(view.LOCATION_ID, view.OFFICE_ID, view.MEAS_NUMBER)
-                .from(view)
-                .where(view.LOCATION_ID.eq(locationId)
-                        .and(view.OFFICE_ID.eq(officeId))
-                        .and(view.MEAS_NUMBER.in(measurementNumbers)))
-                .groupBy(view.LOCATION_ID, view.OFFICE_ID, view.MEAS_NUMBER)
-                .fetch()
-                .stream()
-                .map(r -> r.get(view.MEAS_NUMBER))
-                .collect(Collectors.toList());
-    }
-
-    /**
      * Delete a measurement
      *
      * @param officeId   - the office id
      * @param locationId - the location id of the measurement to delete
+     * @param minNum
      */
-    public void deleteMeasurements(String officeId, String locationId, Instant minDateMask, Instant maxDateMask, String unitSystem,
-                                   Number minHeight, Number maxHeight, Number minFlow, Number maxFlow, String minNum, String maxNum,
-                                   String agencies, String qualities) {
+    public void deleteMeasurements(String officeId, String locationId, Instant minDateMask, Instant maxDateMask, String minNum,
+                                   String maxNum) {
         connection(dsl, conn -> {
             setOffice(conn, officeId);
             Timestamp minTimestamp = OracleTypeMap.buildTimestamp(minDateMask == null ? null : Date.from(minDateMask));
             Timestamp maxTimestamp = OracleTypeMap.buildTimestamp(maxDateMask == null ? null : Date.from(maxDateMask));
             TimeZone timeZone = OracleTypeMap.GMT_TIME_ZONE;
             String timeZoneId = timeZone.getID();
-            verifyMeasurementsExists(conn, officeId, locationId, minNum, maxNum);
-            CWMS_STREAM_PACKAGE.call_DELETE_STREAMFLOW_MEAS(DSL.using(conn).configuration(), locationId, unitSystem, minTimestamp, maxTimestamp,
-                    minHeight, maxHeight, minFlow, maxFlow, minNum, maxNum, agencies, qualities, timeZoneId, officeId);
+            verifyMeasurementsExists(conn, officeId, locationId, maxNum, maxNum);
+            CWMS_STREAM_PACKAGE.call_DELETE_STREAMFLOW_MEAS(DSL.using(conn).configuration(), locationId, minNum, minTimestamp, maxTimestamp,
+                    null, null, null, null, maxNum, maxNum, null, null, timeZoneId, officeId);
         });
-    }
-
-    private void verifyMeasurementExists(Connection conn, Measurement measurement) {
-        List<Measurement> measurements = retrieveMeasurementsJooq(conn, measurement.getOfficeId(), measurement.getLocationId(), UnitSystem.EN.toString(),
-                null, null, null, null, measurement.getNumber(), measurement.getNumber(), null, null, null, null, OracleTypeMap.GMT_TIME_ZONE);
-        if (measurements.isEmpty() || measurements.stream().noneMatch(lt -> lt.getNumber().equals(measurement.getNumber()))) {
-            throw new NotFoundException("Could not find measurement.");
-        }
     }
 
     private void verifyMeasurementsExists(Connection conn, String officeId, String locationId, String minNum, String maxNum) {
@@ -245,32 +160,9 @@ public final class MeasurementDao extends JooqDao<Measurement> {
         }
     }
 
-    private void verifyMeasurementsExists(Connection conn, String officeId, String locationId, List<Measurement> locationMeasurements) {
-        List<String> measurementNumbers = locationMeasurements.stream()
-                .map(Measurement::getNumber)
-                .collect(Collectors.toList());
-
-        // Retrieve existing measurements from the database
-        List<String> existingNumbers = getExistingMeasurementNumbers(conn, officeId, locationId, measurementNumbers);
-
-        // Find missing numbers
-        List<String> missingNumbers = new ArrayList<>(measurementNumbers);
-        missingNumbers.removeAll(existingNumbers);
-
-        if (!missingNumbers.isEmpty()) {
-            throw new NotFoundException("Could not find measurements " + String.join(",", missingNumbers) +
-                    " for " + locationId + " in office " + officeId + ".");
-        }
-    }
-
     static String toDbXml(List<Measurement> measurements) throws JsonProcessingException {
         MeasurementsXmlDto xmlDto = convertMeasurementsToXmlDto(measurements);
             return XML_MAPPER.writeValueAsString(xmlDto);
-    }
-
-    static String toDbXml(Measurement measurement) throws JsonProcessingException {
-        MeasurementXmlDto xmlDto = convertMeasurementToXmlDto(measurement);
-        return XML_MAPPER.writeValueAsString(xmlDto);
     }
 
     static Measurement fromJooqMeasurementRecord(STREAMFLOW_MEAS2_T record) {
