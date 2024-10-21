@@ -38,7 +38,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParser;
-import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParsers;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
@@ -74,7 +73,8 @@ public final class TimeSeriesProfileParserCatalogController extends TimeSeriesPr
             @OpenApiResponse(status = STATUS_200,
                 description = "A TimeSeriesProfileParser object",
                 content = {
-                    @OpenApiContent(from = TimeSeriesProfileParsers.class, type = Formats.JSONV1),
+                    @OpenApiContent(isArray = true, from = TimeSeriesProfileParser.class, type = Formats.JSONV1),
+                    @OpenApiContent(isArray = true, from = TimeSeriesProfileParser.class, type = Formats.JSON)
                 }),
             @OpenApiResponse(status = STATUS_404, description = "The provided combination of parameters did not"
                 + " find a TimeSeriesProfileParser object"),
@@ -98,10 +98,6 @@ public final class TimeSeriesProfileParserCatalogController extends TimeSeriesPr
             List<TimeSeriesProfileParser> tspParsers = tspParserDao.catalogTimeSeriesProfileParsers(locationId,
                     officeIdMask, parameterIdMask, true);
             String acceptHeader = ctx.header(Header.ACCEPT);
-            // Uses manual JSON array formatting due to serialization issues
-            // with List for TimeSeriesProfileParser Type handling.
-            // Related to Jackson subclassing annotations @JSONTypeInfo and @JSONSubTypes
-            // See issue: https://github.com/FasterXML/jackson-databind/issues/2185
             ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileParser.class);
             String result = Formats.format(contentType, tspParsers, TimeSeriesProfileParser.class);
             ctx.status(HttpServletResponse.SC_OK);

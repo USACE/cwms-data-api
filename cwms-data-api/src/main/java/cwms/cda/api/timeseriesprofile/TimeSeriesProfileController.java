@@ -76,7 +76,7 @@ public final class TimeSeriesProfileController extends TimeSeriesProfileBase imp
                 description = "A TimeSeriesProfileParser object",
                 content = {
                     @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.JSONV1),
-                    @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.XMLV2),
+                    @OpenApiContent(from = TimeSeriesProfile.class, type = Formats.JSON),
                 }),
             @OpenApiResponse(status = "400", description = "Invalid input")
         }

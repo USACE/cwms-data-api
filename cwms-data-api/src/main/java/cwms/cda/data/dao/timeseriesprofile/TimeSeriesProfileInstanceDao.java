@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
@@ -168,34 +167,23 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                 VIEW.KEY_PARAMETER_ID, parameterIdMask));
         whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(
                 VIEW.VERSION_ID, versionMask));
-
+        AV_TS_PROFILE profileView = AV_TS_PROFILE.AV_TS_PROFILE;
         @NotNull Result<Record> timeSeriesProfileInstanceResults = dsl.select(asterisk())
                 .from(VIEW)
+                .join(profileView)
+                .on(VIEW.LOCATION_CODE.eq(profileView.LOCATION_CODE)
+                        .and(VIEW.KEY_PARAMETER_CODE.eq(profileView.KEY_PARAMETER_CODE))
+                        .and(VIEW.OFFICE_ID.eq(profileView.OFFICE_ID)))
                 .where(whereCondition)
                 .fetch();
         List<TimeSeriesProfileInstance> timeSeriesProfileInstanceList = new ArrayList<>();
         for (Record result : timeSeriesProfileInstanceResults) {
             // Get reference timeseries ID
-            AV_TS_PROFILE profileView = AV_TS_PROFILE.AV_TS_PROFILE;
             CwmsId tsCwmsId = null;
-            try {
-                Long tsId = Objects.requireNonNull(dsl.selectDistinct(profileView.REFERENCE_TS_CODE)
-                        .from(profileView)
-                        .join(VIEW)
-                        .on(profileView.LOCATION_CODE.eq(VIEW.LOCATION_CODE)
-                                .and(profileView.KEY_PARAMETER_CODE.eq(VIEW.KEY_PARAMETER_CODE))
-                                .and(profileView.OFFICE_ID.eq(VIEW.OFFICE_ID)))
-                        .where(VIEW.LOCATION_ID.eq(result.get(VIEW.LOCATION_ID))
-                                .and(VIEW.OFFICE_ID.eq(result.get(VIEW.OFFICE_ID))
-                                        .and(VIEW.KEY_PARAMETER_ID.eq(result.get(VIEW.KEY_PARAMETER_ID))))
-                                .and(VIEW.VERSION_ID.eq(result.get(VIEW.VERSION_ID))))
-                        .fetchOne()).value1();
-                if (tsId != null) {
-                    tsCwmsId = CwmsId.buildCwmsId(CWMS_TS_PACKAGE.call_GET_DB_OFFICE_ID(dsl.configuration(), tsId),
-                            CWMS_TS_PACKAGE.call_GET_TS_ID(dsl.configuration(), tsId));
-                }
-            } catch (NullPointerException e) {
-                LOGGER.log(Level.CONFIG, "No reference time series found for time series profile instance");
+            Long tsId = result.get(profileView.REFERENCE_TS_CODE);
+            if (tsId != null) {
+                tsCwmsId = CwmsId.buildCwmsId(CWMS_TS_PACKAGE.call_GET_DB_OFFICE_ID(dsl.configuration(), tsId),
+                        CWMS_TS_PACKAGE.call_GET_TS_ID(dsl.configuration(), tsId));
             }
 
             CwmsId locationId = new CwmsId.Builder()
@@ -304,10 +292,14 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                     .from(VIEW_TSV2)
                     .where(whereCondition.and(dateTimeCol.lessThan(Timestamp.from(startTime)))
                             .and(endTimeCol.greaterThan(Timestamp.from(startTime))));
-            previousDateTime = Objects.requireNonNull(prev.fetchOne()).value1();
-            if (previousDateTime != null) {
-                startTime = previousDateTime.toInstant();
-                startInclusive = true;
+            Record1<Timestamp> val = prev.fetchOne();
+
+            if (val != null) {
+                previousDateTime = val.value1();
+                if (previousDateTime != null) {
+                    startTime = previousDateTime.toInstant();
+                    startInclusive = true;
+                }
             }
         }
 
@@ -378,7 +370,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         // generate and run query to get the time series profile data
         Result<Record7<Double, Long, Timestamp, Long, Long, String, String>> result = null;
         SelectSeekStep1<Record7<Double, Long, Timestamp, Long, Long, String, String>, Timestamp> resultQuery = null;
-        SelectConditionStep<Record7<Double, Long, Timestamp, Long, Long, String, String>> resultCondQuery = null;
+        SelectConditionStep<Record7<Double, Long, Timestamp, Long, Long, String, String>> resultCondQuery;
         SelectSeekLimitStep<Record7<Double, Long, Timestamp, Long, Long, String, String>> resultQuery2 = null;
         if (pageSize != 0) {
             if (maxVersion) {
@@ -553,9 +545,8 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             if (entry.getValue().size() < paramList.size()) {
                 for (int i = 0; i < paramList.size(); i++) {
                     Timestamp dateTime = Timestamp.from(Instant.ofEpochMilli(entry.getKey()));
-                    try {
-                        entry.getValue().get(i);
-                    } catch (IndexOutOfBoundsException e) {
+                    boolean inBounds = i < entry.getValue().size();
+                    if (!inBounds) {
                         timeSeriesProfileInstanceList.get(dateTime.getTime()).add(i, null);
                         continue;
                     }
@@ -575,23 +566,23 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         // Get reference timeseries ID
         AV_TS_PROFILE profileView = AV_TS_PROFILE.AV_TS_PROFILE;
         CwmsId tsCwmsId = null;
-        try {
-            Long tsId = Objects.requireNonNull(dsl.selectDistinct(profileView.REFERENCE_TS_CODE)
-                    .from(profileView)
-                    .join(VIEW)
-                    .on(profileView.LOCATION_CODE.eq(VIEW.LOCATION_CODE)
-                            .and(profileView.KEY_PARAMETER_CODE.eq(VIEW.KEY_PARAMETER_CODE))
-                            .and(profileView.OFFICE_ID.eq(VIEW.OFFICE_ID)))
-                    .where(profileView.KEY_PARAMETER_ID.eq(keyParameter)
-                            .and(profileView.LOCATION_ID.eq(location.getName())
-                                    .and(profileView.OFFICE_ID.eq(location.getOfficeId()))))
-                    .fetchOne()).value1();
+
+        Record1<Long> val = dsl.selectDistinct(profileView.REFERENCE_TS_CODE)
+                .from(profileView)
+                .join(VIEW)
+                .on(profileView.LOCATION_CODE.eq(VIEW.LOCATION_CODE)
+                        .and(profileView.KEY_PARAMETER_CODE.eq(VIEW.KEY_PARAMETER_CODE))
+                        .and(profileView.OFFICE_ID.eq(VIEW.OFFICE_ID)))
+                .where(profileView.KEY_PARAMETER_ID.eq(keyParameter)
+                        .and(profileView.LOCATION_ID.eq(location.getName())
+                                .and(profileView.OFFICE_ID.eq(location.getOfficeId()))))
+                .fetchOne();
+        if (val != null) {
+            Long tsId = val.value1();
             if (tsId != null) {
                 tsCwmsId = CwmsId.buildCwmsId(CWMS_TS_PACKAGE.call_GET_DB_OFFICE_ID(dsl.configuration(), tsId),
                         CWMS_TS_PACKAGE.call_GET_TS_ID(dsl.configuration(), tsId));
             }
-        } catch (NullPointerException e) {
-            LOGGER.log(Level.CONFIG, "No reference time series found for time series profile instance");
         }
 
         // map the TimeSeriesProfileInstance without the value/quality data
@@ -651,7 +642,6 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         }
 
         List<String> parameterList = new ArrayList<>(unitParamMap.keySet());
-        String timeZone = timeSeriesProfileData.getTIME_ZONE();
         CwmsId locationId = new CwmsId.Builder()
                 .withOfficeId(officeId)
                 .withName(location)
@@ -663,8 +653,17 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                 .withReferenceTsId(tsId)
                 .build();
 
+        String nextPage = null;
         Long latestTimestamp = timeSeriesProfileInstanceList.keySet().stream().max(Long::compare).orElse(null);
+
+        if (timeSeriesProfileInstanceList.keySet().size() >= pageSize && total > pageSize && latestTimestamp != null) {
+            nextPage = encodeCursor(delimiter, String.format("%d", latestTimestamp),
+                    parameterColumnInfoList.get(findParameterIndex(parameterColumnInfoList, latestTimestamp,
+                            timeSeriesProfileInstanceList)).getParameter(), total);
+        }
+
         Long earliestTimestamp = timeSeriesProfileInstanceList.keySet().stream().min(Long::compare).orElse(null);
+        String timeZone = timeSeriesProfileData.getTIME_ZONE();
 
         TimeSeriesProfileInstance.Builder builder = new TimeSeriesProfileInstance.Builder();
         builder.withTimeSeriesProfile(timeSeriesProfile);
@@ -676,10 +675,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         builder.withPage(encodeCursor(delimiter, String.format("%d", earliestTimestamp),
                 keyParameter, total));
         builder.withPageSize(pageSize);
-        builder.withNextPage(timeSeriesProfileInstanceList.keySet().size() >= pageSize && total > pageSize && latestTimestamp != null
-                ? encodeCursor(delimiter, String.format("%d", latestTimestamp),
-                parameterColumnInfoList.get(findParameterIndex(parameterColumnInfoList, latestTimestamp,
-                        timeSeriesProfileInstanceList)).getParameter(), total) : null);
+        builder.withNextPage(nextPage);
         builder.withTotal(total);
         builder.withDataColumns(dataColumnInfoList);
         builder.withParameterColumns(parameterColumnInfoList);

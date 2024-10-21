@@ -2,7 +2,8 @@ package cwms.cda.data.dao.timeseriesprofile;
 
 import static cwms.cda.data.dto.CwmsDTOPaginated.delimiter;
 import static cwms.cda.data.dto.CwmsDTOPaginated.encodeCursor;
-import static org.jooq.impl.DSL.countDistinct;
+import static org.jooq.impl.DSL.asterisk;
+import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.table;
 import static org.jooq.impl.DSL.value;
@@ -16,15 +17,13 @@ import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
-
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Result;
-import org.jooq.SelectConditionStep;
+import org.jooq.SelectJoinStep;
 import org.jooq.SelectSeekStep2;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
@@ -121,14 +120,20 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
             totalWhereCondition = totalWhereCondition
                     .and(JooqDao.caseInsensitiveLikeRegex(value("AT_TS_PROFILE.KEY_PARAMETER_ID"),
                     parameterIdMask));
-            SelectConditionStep<Record1<Integer>> count = dsl
-                    .select(countDistinct(field("CWMS_20.AT_TS_PROFILE.LOCATION_CODE")))
-                .from(table("CWMS_20.AT_TS_PROFILE"))
-                .join(table("CWMS_20.AT_PHYSICAL_LOCATION"))
-                .on(field("CWMS_20.AT_TS_PROFILE.LOCATION_CODE")
-                        .eq(field("CWMS_20.AT_PHYSICAL_LOCATION.LOCATION_CODE")))
-                .where(totalWhereCondition);
-            total = Objects.requireNonNull(count.fetchOne()).value1();
+
+            SelectJoinStep<Record1<Integer>> count = dsl.select(count(asterisk()))
+                    .from(dsl.selectDistinct(field("CWMS_20.AT_TS_PROFILE.LOCATION_CODE"),
+                                    field("CWMS_20.AT_TS_PROFILE.KEY_PARAMETER_CODE"))
+                            .from(table("CWMS_20.AT_TS_PROFILE"))
+                            .join(table("CWMS_20.AT_PHYSICAL_LOCATION"))
+                            .on(field("CWMS_20.AT_TS_PROFILE.LOCATION_CODE")
+                                    .eq(field("CWMS_20.AT_PHYSICAL_LOCATION.LOCATION_CODE")))
+                            .where(totalWhereCondition));
+
+            Record1<Integer> val = count.fetchOne();
+            if (val != null) {
+                total = val.value1();
+            }
         }
 
         // Get the time series profiles
@@ -157,7 +162,7 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
         List<TimeSeriesProfile> profileList = parseRecords(timeSeriesProfileResults);
 
         String nextPage = null;
-        if (profileList.size() >= pageSize && total > pageSize) {
+        if (profileList.size() >= pageSize && total != null && total > pageSize) {
             nextPage = encodeCursor(delimiter, String.format("%s",
                     CWMS_LOC_PACKAGE.call_GET_LOCATION_CODE(dsl.configuration(),
                             profileList.get(profileList.size() - 1).getLocationId().getOfficeId(),
@@ -170,7 +175,7 @@ public class TimeSeriesProfileDao extends JooqDao<TimeSeriesProfile> {
                 profileList.get(0).getLocationId().getName()),
                 profileList.get(0).getKeyParameter(), total))
             .pageSize(Math.min(timeSeriesProfileResults.size(), pageSize))
-            .total(total)
+            .total(total != null ? total : 0)
             .nextPage(nextPage)
             .timeSeriesProfileList(profileList)
             .build();

@@ -43,6 +43,10 @@ import java.io.IOException;
 
 
 public class TimeSeriesProfileParserSerializer extends JsonSerializer<TimeSeriesProfileParser> {
+    public TimeSeriesProfileParserSerializer() {
+        super();
+    }
+
     @Override
     public void serialize(TimeSeriesProfileParser value, JsonGenerator gen, SerializerProvider provider)
             throws IOException {
@@ -93,6 +97,8 @@ public class TimeSeriesProfileParserSerializer extends JsonSerializer<TimeSeries
     @Override
     public void serializeWithType(TimeSeriesProfileParser value, JsonGenerator gen, SerializerProvider serializers,
             TypeSerializer typeSer) throws IOException {
+        // Uses custom serializer to handle polymorphic serialization
+        // See issue: https://github.com/FasterXML/jackson-databind/issues/2185
         serialize(value, gen, serializers); // call your customized serialize method
     }
 }

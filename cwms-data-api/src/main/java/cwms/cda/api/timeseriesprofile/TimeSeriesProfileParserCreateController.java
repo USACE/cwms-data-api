@@ -36,6 +36,7 @@ import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserColumnar;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
 import cwms.cda.formatters.Formats;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -62,7 +63,7 @@ public final class TimeSeriesProfileParserCreateController extends TimeSeriesPro
         requestBody = @OpenApiRequestBody(
             content = {
                 @OpenApiContent(from = TimeSeriesProfileParserIndexed.class, type = Formats.JSONV1),
-                @OpenApiContent(from = TimeSeriesProfileParserColumnar.class, type = Formats.JSONV1),
+                @OpenApiContent(from = TimeSeriesProfileParserColumnar.class, type = Formats.JSON),
             },
             required = true
         ),
@@ -78,6 +79,7 @@ public final class TimeSeriesProfileParserCreateController extends TimeSeriesPro
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
 
             TimeSeriesProfileParserDao tspParserDao = getParserDao(dsl);
+            String acceptHeader = ctx.header(Header.ACCEPT);
             String content = ctx.body();
             if (content.isEmpty()) {
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
@@ -85,14 +87,17 @@ public final class TimeSeriesProfileParserCreateController extends TimeSeriesPro
             }
             if (content.contains(COLUMNAR_TYPE)) {
                 TimeSeriesProfileParserColumnar tspParserColumnar = Formats
-                        .parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class),
+                        .parseContent(Formats.parseHeader(acceptHeader, TimeSeriesProfileParserColumnar.class),
                                 content, TimeSeriesProfileParserColumnar.class);
                 tspParserDao.storeTimeSeriesProfileParser(tspParserColumnar, failIfExists);
-            } else {
+            } else if (content.contains(INDEXED_TYPE)) {
                 TimeSeriesProfileParserIndexed tspParserIndexed = Formats
-                        .parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserIndexed.class),
+                        .parseContent(Formats.parseHeader(acceptHeader, TimeSeriesProfileParserIndexed.class),
                                 content, TimeSeriesProfileParserIndexed.class);
                 tspParserDao.storeTimeSeriesProfileParser(tspParserIndexed, failIfExists);
+            } else {
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                return;
             }
             ctx.status(HttpServletResponse.SC_CREATED);
         }

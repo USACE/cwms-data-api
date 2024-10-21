@@ -21,6 +21,8 @@ import java.math.BigInteger;
 @JsonDeserialize(builder = TimeSeriesProfileParserColumnar.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+// Uses custom serializer to handle polymorphic serialization
+// See issue: https://github.com/FasterXML/jackson-databind/issues/2185
 @JsonSerialize(using = TimeSeriesProfileParserSerializer.class, typing = JsonSerialize.Typing.DYNAMIC)
 @JsonTypeName(COLUMNAR_TYPE)
 public final class TimeSeriesProfileParserColumnar extends TimeSeriesProfileParser {

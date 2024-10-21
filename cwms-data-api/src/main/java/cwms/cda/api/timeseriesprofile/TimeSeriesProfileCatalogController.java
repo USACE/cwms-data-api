@@ -26,8 +26,14 @@
 
 package cwms.cda.api.timeseriesprofile;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.LOCATION_MASK;
+import static cwms.cda.api.Controllers.OFFICE_MASK;
+import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -75,7 +81,7 @@ public final class TimeSeriesProfileCatalogController extends TimeSeriesProfileB
                 description = "A TimeSeriesProfile object",
                 content = {
                     @OpenApiContent(from = TimeSeriesProfileList.class, type = Formats.JSONV1),
-                    @OpenApiContent(from = TimeSeriesProfileList.class, type = Formats.XMLV2),
+                    @OpenApiContent(from = TimeSeriesProfileList.class, type = Formats.JSON),
                 }),
             @OpenApiResponse(status = STATUS_400, description = "Invalid input"),
             @OpenApiResponse(status = STATUS_404, description = "No data matching input parameters found")

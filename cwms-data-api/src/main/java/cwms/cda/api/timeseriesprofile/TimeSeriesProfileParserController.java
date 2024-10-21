@@ -76,6 +76,7 @@ public final class TimeSeriesProfileParserController extends TimeSeriesProfilePa
                 description = "A TimeSeriesProfileParser object",
                 content = {
                     @OpenApiContent(from = TimeSeriesProfileParser.class, type = Formats.JSONV1),
+                    @OpenApiContent(from = TimeSeriesProfileParser.class, type = Formats.JSON),
                 }),
             @OpenApiResponse(status = STATUS_404, description = "The provided combination of parameters did not"
                 + " find a TimeSeriesProfileParser object"),
