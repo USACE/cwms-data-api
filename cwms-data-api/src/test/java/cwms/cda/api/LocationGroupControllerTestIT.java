@@ -58,6 +58,7 @@ import java.util.logging.Logger;
 import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 class LocationGroupControllerTestIT extends DataApiTestIT {
@@ -656,7 +657,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK));
 
         // get the location group and assert that changes were made
-        given()
+        ExtractableResponse<Response> otherResponse = given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
@@ -670,12 +671,22 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("office-id", equalTo(group.getOfficeId()))
-            .body("id", equalTo(group.getId()))
-            .body("description", equalTo(newLocGroup.getDescription()))
-            .body("assigned-locations[0].location-id", equalTo(locationId))
-            .body("assigned-locations[0].alias-id", nullValue())
-            .body("assigned-locations[0].ref-location-id", nullValue());
+            .extract();
+
+        assertEquals(otherResponse.body().jsonPath().getString("office-id"), group.getOfficeId());
+        assertEquals(otherResponse.body().jsonPath().getString("id"), group.getId());
+        assertEquals(otherResponse.body().jsonPath().getString("description"), newLocGroup.getDescription());
+        List<AssignedLocation> assignedLocations = otherResponse.body().jsonPath().getList("assigned-locations", AssignedLocation.class);
+        boolean found = false;
+        for (AssignedLocation assignedLocation : assignedLocations) {
+            if (assignedLocation.getLocationId().equals(locationId)) {
+                assertEquals(assignedLocation.getLocationId(), locationId);
+                assertNull(assignedLocation.getAliasId());
+                assertNull(assignedLocation.getRefLocationId());
+                found = true;
+            }
+        }
+        assertTrue(found);
 
         // patch the location group owned by CWMS office
         given()
@@ -764,12 +775,12 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .redirects().max(3)
             .patch("/location/group/" + group.getId())
         .then()
-        .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
         // get the location group and assert that changes were made
-        given()
+        ExtractableResponse<Response> otherResponse = given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
@@ -780,15 +791,25 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .redirects().max(3)
             .get("/location/group/" + group.getId())
         .then()
-        .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("office-id", equalTo(group.getOfficeId()))
-            .body("id", equalTo(group.getId()))
-            .body("description", equalTo(newLocGroup.getDescription()))
-            .body("assigned-locations[0].location-id", equalTo(locationId))
-            .body("assigned-locations[0].alias-id", nullValue())
-            .body("assigned-locations[0].ref-location-id", nullValue());
+            .extract();
+
+        assertEquals(otherResponse.body().jsonPath().getString("office-id"), group.getOfficeId());
+        assertEquals(otherResponse.body().jsonPath().getString("id"), group.getId());
+        assertEquals(otherResponse.body().jsonPath().getString("description"), newLocGroup.getDescription());
+        List<AssignedLocation> assignedLocations = otherResponse.body().jsonPath().getList("assigned-locations", AssignedLocation.class);
+        boolean found = false;
+        for (AssignedLocation assignedLocation : assignedLocations) {
+            if (assignedLocation.getLocationId().equals(locationId)) {
+                assertEquals(assignedLocation.getLocationId(), locationId);
+                assertNull(assignedLocation.getAliasId());
+                assertNull(assignedLocation.getRefLocationId());
+                found = true;
+            }
+        }
+        assertTrue(found);
 
         // patch the location group owned by CWMS office
         given()
