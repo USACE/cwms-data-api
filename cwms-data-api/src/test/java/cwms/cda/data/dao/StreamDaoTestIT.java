@@ -152,7 +152,7 @@ final class StreamDaoTestIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    private static Stream buildTestStream(String streamId, StreamNode flowsIntoNode, StreamNode divertsFromNode) {
+    static Stream buildTestStream(String streamId, StreamNode flowsIntoNode, StreamNode divertsFromNode) {
         return new Stream.Builder()
                 .withStartsDownstream(true)
                 .withId(new CwmsId.Builder()
@@ -169,7 +169,7 @@ final class StreamDaoTestIT extends DataApiTestIT {
                 .build();
     }
 
-    private static StreamNode buildStreamNode(String streamId, double station, Bank bank) {
+    static StreamNode buildStreamNode(String streamId, double station, Bank bank) {
         return new StreamNode.Builder()
                 .withStreamId(new CwmsId.Builder()
                         .withName(streamId)

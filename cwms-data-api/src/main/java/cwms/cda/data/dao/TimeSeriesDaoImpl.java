@@ -58,7 +58,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
-import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
@@ -89,6 +88,8 @@ import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
+import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
+import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
 
 public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeriesDao {
     private static final Logger logger = Logger.getLogger(TimeSeriesDaoImpl.class.getName());
@@ -959,16 +960,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     @NotNull
     private RecentValue buildRecentValue(AV_TSV_DQU tsvView, Record jrecord, String tsColumnName) {
 
-        TsvDqu tsv = buildTsvDqu(tsvView, jrecord);
+        TsvDqu tsv = buildTsvDqu(tsvView, jrecord, tsColumnName);
         String tsId = jrecord.getValue(tsColumnName, String.class);
         return new RecentValue(tsId, tsv);
     }
 
     @NotNull
-    private TsvDqu buildTsvDqu(AV_TSV_DQU tsvView, Record jrecord) {
+    private TsvDqu buildTsvDqu(AV_TSV_DQU tsvView, Record jrecord, String tsColumnName) {
         return new TsvDqu.Builder()
                 .withOfficeId(jrecord.getValue(tsvView.OFFICE_ID))
-                .withCwmsTsId(jrecord.getValue(tsvView.CWMS_TS_ID))
+                .withCwmsTsId(jrecord.getValue(tsvView.CWMS_TS_ID.as(tsColumnName)))
                 .withUnitId(jrecord.getValue(tsvView.UNIT_ID))
                 .withDateTime(jrecord.getValue(tsvView.DATE_TIME))
                 .withVersionDate(jrecord.getValue(tsvView.VERSION_DATE))
@@ -1121,21 +1122,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                        Timestamp versionDate, List<TimeSeries.Record> values, boolean createAsLrts,
                        StoreRule storeRule, boolean overrideProtection) throws SQLException {
         setOffice(connection,officeId);
-        CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
 
-        final int count = values == null ? 0 : values.size();
-
-        final long[] timeArray = new long[count];
-        final double[] valueArray = new double[count];
-        final int[] qualityArray = new int[count];
+        final ZTSV_ARRAY tsvArray = new ZTSV_ARRAY();
 
         if (values != null && !values.isEmpty()) {
             Iterator<TimeSeries.Record> iter = values.iterator();
-            for (int i = 0; iter.hasNext(); i++) {
+            while (iter.hasNext()) {
                 TimeSeries.Record value = iter.next();
-                timeArray[i] = value.getDateTime().getTime();
-                valueArray[i] = value.getValue();
-                qualityArray[i] = value.getQualityCode();
+                Double dataValue = value.getValue();
+                if (dataValue != null && dataValue == -Float.MAX_VALUE) {
+                    dataValue = null;
+                }
+                tsvArray.add(new ZTSV_TYPE(value.getDateTime(), dataValue, BigDecimal.valueOf(value.getQualityCode())));
             }
         }
 
@@ -1157,10 +1155,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 }
             }
         }
-
-        tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
-                storeRule.getRule(), overrideProtection, versionDate, createAsLrts);
-
+        CWMS_TS_PACKAGE.call_ZSTORE_TS(getDslContext(connection, officeId).configuration(),
+                                      tsId,
+                                      units,
+                                      tsvArray,
+                                      storeRule.getRule(),
+                                      formatBool(overrideProtection),
+                                      versionDate,
+                                      officeId,
+                                      formatBool(createAsLrts));
     }
 
     public void update(TimeSeries input, boolean createAsLrts, StoreRule storeRule,

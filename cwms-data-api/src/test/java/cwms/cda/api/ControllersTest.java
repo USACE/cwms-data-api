@@ -413,4 +413,25 @@ class ControllersTest {
         assertThrows(RequiredQueryParameterException.class,
             () -> Controllers.requiredParamAs(ctx, Controllers.OFFICE, String.class));
     }
+
+    @Test
+    void testQueryParamAsDouble() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        Map<String, String> urlParams = new LinkedHashMap<>();
+        urlParams.put("a_double", "1.0");
+        urlParams.put("an_int", "1");
+        String paramStr = ControllerTest.buildParamStr(urlParams);
+        when(request.getQueryString()).thenReturn(paramStr);
+        Context ctx = new Context(request, response, new LinkedHashMap<String, String>());
+
+        Double retVal = Controllers.queryParamAsDouble(ctx, "a_double");
+        assertEquals(1.0, retVal);
+
+        Double retVal2 = Controllers.queryParamAsDouble(ctx, "an_int");
+        assertEquals(1.0, retVal2);
+
+        Double retVal3 = Controllers.queryParamAsDouble(ctx, "null");
+        assertNull(retVal3);
+    }
 }

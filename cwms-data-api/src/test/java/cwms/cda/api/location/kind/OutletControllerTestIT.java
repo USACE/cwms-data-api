@@ -20,7 +20,6 @@
 
 package cwms.cda.api.location.kind;
 
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.location.kind.BaseOutletDaoIT;
@@ -39,6 +38,7 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
@@ -46,8 +46,8 @@ import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
+@Tag("integration")
 class OutletControllerTestIT extends BaseOutletDaoIT {
-    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final CwmsId CONDUIT_GATE_RATING_GROUP = new CwmsId.Builder().withName(
             "Rating-" + PROJECT_1_ID.getName() + "-ConduitGate").withOfficeId(OFFICE_ID).build();
     private static final CwmsId MODIFIED_CONDUIT_GATE_RATING_GROUP = new CwmsId.Builder().withName(
@@ -126,16 +126,7 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             deleteLocationGroup(context, EXISTING_CONDUIT_GATE_OUTLET);
             deleteLocationGroup(context, NEW_CONDUIT_GATE_1_OUTLET);
             deleteLocationGroup(context, NEW_CONDUIT_GATE_2_OUTLET);
-            deleteLocation(context, NEW_CONDUIT_GATE_1.getOfficeId(), NEW_CONDUIT_GATE_1.getName());
-            deleteLocation(context, NEW_CONDUIT_GATE_2.getOfficeId(), NEW_CONDUIT_GATE_2.getName());
-            deleteLocation(context, RENAMED_CONDUIT_GATE.getOfficeId(), RENAMED_CONDUIT_GATE.getName());
-            deleteLocation(context, EXISTING_CONDUIT_GATE.getOfficeId(), EXISTING_CONDUIT_GATE.getName());
-            deleteLocation(context, RATED_OUTLET_LOCATION_CONTROLLED.getOfficeId(),
-                           RATED_OUTLET_LOCATION_CONTROLLED.getName());
-            deleteLocation(context, RATED_OUTLET_LOCATION_UNCONTROLLED.getOfficeId(),
-                            RATED_OUTLET_LOCATION_UNCONTROLLED.getName());
         }, CwmsDataApiSetupCallback.getWebUser());
-        tearDownProject();
     }
 
     @Disabled("Disabled due to a DB issue.  See https://jira.hecdev.net/browse/CWDB-296")

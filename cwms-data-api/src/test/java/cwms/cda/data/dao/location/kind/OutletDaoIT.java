@@ -100,12 +100,7 @@ class OutletDaoIT extends BaseOutletDaoIT {
             outletDao.deleteOutlet(TAINTER_GATE_2_LOC.getOfficeId(), TAINTER_GATE_2_LOC.getName(),
                                    DeleteRule.DELETE_ALL);
             outletDao.deleteOutlet(BOX_CULVERT_1_LOC.getOfficeId(), BOX_CULVERT_1_LOC.getName(), DeleteRule.DELETE_ALL);
-            deleteLocation(context, TAINTER_GATE_1_LOC.getOfficeId(), TAINTER_GATE_1_LOC.getName());
-            deleteLocation(context, TAINTER_GATE_2_LOC.getOfficeId(), TAINTER_GATE_2_LOC.getName());
-            deleteLocation(context, TAINTER_GATE_3_LOC.getOfficeId(), TAINTER_GATE_3_LOC.getName());
-            deleteLocation(context, BOX_CULVERT_1_LOC.getOfficeId(), BOX_CULVERT_1_LOC.getName());
         }, CwmsDataApiSetupCallback.getWebUser());
-        tearDownProject();
     }
 
     @Test

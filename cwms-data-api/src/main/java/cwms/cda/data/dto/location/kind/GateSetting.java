@@ -22,6 +22,8 @@ package cwms.cda.data.dto.location.kind;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -33,7 +35,9 @@ import cwms.cda.formatters.json.JsonV1;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = GateSetting.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonSubTypes({@JsonSubTypes.Type(value = GateChange.class, name = "gate-change")})
 @JsonTypeName("gate-setting")
 public final class GateSetting extends Setting {
     @JsonProperty(required = true)
@@ -44,6 +48,7 @@ public final class GateSetting extends Setting {
     private final String openingUnits;
     @JsonProperty(required = true)
     private final Double invertElevation;
+    private final String type;
 
     private GateSetting(Builder builder) {
         super(builder);
@@ -51,6 +56,7 @@ public final class GateSetting extends Setting {
         openingParameter = builder.openingParameter;
         openingUnits = builder.openingUnits;
         invertElevation = builder.invertElevation;
+        type = builder.type;
     }
 
     public Double getInvertElevation() {
@@ -69,11 +75,16 @@ public final class GateSetting extends Setting {
         return openingUnits;
     }
 
+    public String getType() {
+        return type;
+    }
+
     public static final class Builder extends Setting.Builder<GateSetting.Builder> {
         private Double opening;
         private String openingParameter;
         private String openingUnits;
         private Double invertElevation;
+        private String type;
 
         @Override
         protected Builder self() {
@@ -97,6 +108,11 @@ public final class GateSetting extends Setting {
 
         public Builder withInvertElevation(Double invertElevation) {
             this.invertElevation = invertElevation;
+            return self();
+        }
+
+        public Builder withType(String type) {
+            this.type = type;
             return self();
         }
 

@@ -69,11 +69,6 @@ class OutletDaoRatingIT extends BaseOutletDaoIT {
         setupProject();
     }
 
-    @AfterAll
-    static void cleanup() throws Exception {
-        tearDownProject();
-    }
-
     @Test
     void test_uncontrolled_outlet() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -90,8 +85,8 @@ class OutletDaoRatingIT extends BaseOutletDaoIT {
                     group.getId(), group.getDescription(), SPILLWAY_CURVE_ID, group.getSharedRefLocationId(),
                     group.getLocGroupAttribute());
             LocationGroup newGroup = new LocationGroup(modifiedGroup, group.getAssignedLocations());
-            locationGroupDao.unassignAllLocs(group);
-            locationGroupDao.assignLocs(newGroup);
+            locationGroupDao.unassignAllLocs(group, PROJECT_1_ID.getOfficeId());
+            locationGroupDao.assignLocs(newGroup, PROJECT_1_ID.getOfficeId());
             Outlet retrievedOutlet = outletDao.retrieveOutlet(PROJECT_SPILLWAY_LOC.getOfficeId(),
                     PROJECT_SPILLWAY_LOC.getName());
             assertNotNull(retrievedOutlet);
@@ -119,8 +114,8 @@ class OutletDaoRatingIT extends BaseOutletDaoIT {
                     group.getId(), group.getDescription(), LOW_FLOW_CURVE_ID, group.getSharedRefLocationId(),
                     group.getLocGroupAttribute());
             LocationGroup newGroup = new LocationGroup(modifiedGroup, group.getAssignedLocations());
-            locationGroupDao.unassignAllLocs(group);
-            locationGroupDao.assignLocs(newGroup);
+            locationGroupDao.unassignAllLocs(group, PROJECT_1_ID.getOfficeId());
+            locationGroupDao.assignLocs(newGroup, PROJECT_1_ID.getOfficeId());
             Outlet retrievedOutlet = outletDao.retrieveOutlet(PROJECT_LOW_FLOW_LOC.getOfficeId(),
                     PROJECT_LOW_FLOW_LOC.getName());
             assertNotNull(retrievedOutlet);

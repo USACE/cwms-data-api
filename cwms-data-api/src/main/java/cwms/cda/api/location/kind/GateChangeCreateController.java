@@ -20,6 +20,10 @@
 
 package cwms.cda.api.location.kind;
 
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.STATUS_201;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.BaseHandler;
@@ -40,7 +44,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import static cwms.cda.api.Controllers.*;
+
 
 public class GateChangeCreateController extends BaseHandler {
 
@@ -49,22 +53,22 @@ public class GateChangeCreateController extends BaseHandler {
     }
 
     @OpenApi(
-            requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSONV1),
-                            @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSON)
-                    },
-                    required = true),
-            queryParams = {
-                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                            description = "Create will fail if provided Gate Changes already exist. Default: true")
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSONV1),
+                @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSON)
             },
-            description = "Create CWMS Gate Changes",
-            method = HttpMethod.POST,
-            tags = {OutletController.TAG},
-            responses = {
-                    @OpenApiResponse(status = STATUS_201, description = "Gate Changes successfully stored to CWMS.")
-            }
+            required = true),
+        queryParams = {
+            @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                description = "Create will fail if provided Gate Changes already exist. Default: true")
+        },
+        description = "Create CWMS Gate Changes",
+        method = HttpMethod.POST,
+        tags = {OutletController.TAG},
+        responses = {
+            @OpenApiResponse(status = STATUS_201, description = "Gate Changes successfully stored to CWMS.")
+        }
     )
     @Override
     public void handle(@NotNull Context context) throws Exception {
@@ -72,6 +76,9 @@ public class GateChangeCreateController extends BaseHandler {
         String formatHeader = context.header(Header.ACCEPT) != null ? context.header(Header.ACCEPT) : Formats.JSONV1;
         ContentType contentType = Formats.parseHeader(formatHeader, GateChange.class);
         List<GateChange> changes = Formats.parseContentList(contentType, context.body(), GateChange.class);
+
+        // Sort changes by date to avoid DB errors
+        changes.sort(GateChange::compareTo);
 
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = JooqDao.getDslContext(context);

@@ -28,7 +28,6 @@ package cwms.cda.api.watersupply;
 
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
@@ -55,6 +54,7 @@ import org.jooq.DSLContext;
 
 public final class WaterPumpDisassociateController extends WaterSupplyControllerBase implements Handler {
     private static final String PUMP_TYPE = "pump-type";
+    private static final String DELETE_ACCOUNTING = "delete-accounting";
 
     public WaterPumpDisassociateController(MetricRegistry metrics) {
         waterMetrics(metrics);
@@ -65,8 +65,8 @@ public final class WaterPumpDisassociateController extends WaterSupplyController
             @OpenApiParam(name = PUMP_TYPE, required = true, type = PumpType.class,
                     description = "The type of pump to be disassociated from the contract."
                             + " Expected values: IN, OUT, OUT BELOW"),
-            @OpenApiParam(name = METHOD, type = boolean.class, required = true,
-                    description = "Whether to delete the associated accounting data.")
+            @OpenApiParam(name = DELETE_ACCOUNTING, type = boolean.class,
+                    description = "Whether to delete the associated accounting data. Defaults to FALSE.")
         },
         pathParams = {
             @OpenApiParam(name = NAME, description = "The name of the pump to be "
@@ -88,7 +88,7 @@ public final class WaterPumpDisassociateController extends WaterSupplyController
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            boolean deleteAccounting = requiredParamAs(ctx, METHOD, boolean.class);
+            boolean deleteAccounting = ctx.queryParamAsClass(DELETE_ACCOUNTING, boolean.class).getOrDefault(false);
             String officeId = ctx.pathParam(OFFICE);
             String pumpName = ctx.pathParam(NAME);
             String projectName = ctx.pathParam(PROJECT_ID);

@@ -69,7 +69,8 @@ import static org.hamcrest.Matchers.*;
 @Tag("integration")
 class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
-    private final String PUMP_TYPE = "pump-type";
+    private static final String PUMP_TYPE = "pump-type";
+    private static final String DELETE_ACCOUNTING = "delete-accounting";
     private static final WaterUserContract CONTRACT;
     private static final WaterUserContract CONTRACT_NO_PUMP;
     static {
@@ -154,7 +155,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
                 projectDao.store(project1, true);
                 projectDao.store(project2, true);
                 waterContractDao.storeWaterUser(CONTRACT.getWaterUser(), false);
-                waterContractDao.storeWaterContractTypes(CONTRACT.getContractType(), false);
+                waterContractDao.storeWaterContractType(CONTRACT.getContractType(), false);
                 waterContractDao.storeWaterUser(CONTRACT_NO_PUMP.getWaterUser(), false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -222,7 +223,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
 
         // Remove pump and assert it is removed
         given()
-            .queryParam(METHOD, false)
+            .queryParam(DELETE_ACCOUNTING, false)
             .queryParam(PUMP_TYPE, PumpType.IN)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -416,7 +417,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
         // Remove pump
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .queryParam(METHOD, DeleteMethod.DELETE_ALL)
+            .queryParam(DELETE_ACCOUNTING, true)
             .queryParam(PUMP_TYPE, PumpType.IN)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()

@@ -26,6 +26,7 @@ package cwms.cda;
 
 
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
+import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
@@ -127,6 +128,7 @@ import cwms.cda.api.watersupply.WaterContractCreateController;
 import cwms.cda.api.watersupply.WaterContractDeleteController;
 import cwms.cda.api.watersupply.WaterContractTypeCatalogController;
 import cwms.cda.api.watersupply.WaterContractTypeCreateController;
+import cwms.cda.api.watersupply.WaterContractTypeDeleteController;
 import cwms.cda.api.watersupply.WaterContractUpdateController;
 import cwms.cda.api.watersupply.WaterPumpDisassociateController;
 import cwms.cda.api.watersupply.WaterUserCatalogController;
@@ -139,6 +141,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.security.CwmsAuthException;
+import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
 import cwms.cda.spi.AccessManagers;
 import cwms.cda.spi.CdaAccessManager;
@@ -212,6 +215,7 @@ import org.owasp.html.PolicyFactory;
     "/streams/*",
     "/stream-locations/*",
     "/stream-reaches/*",
+    "/measurements/*",
     "/blobs/*",
     "/clobs/*",
     "/pools/*",
@@ -232,6 +236,7 @@ public class ApiServlet extends HttpServlet {
 
     // based on https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_aaa/browse/IntegrationTests/src/test/resources/sql/load_testusers.sql
     public static final String CWMS_USERS_ROLE = "CWMS Users";
+    public static final String CAC_USER = "cac_user";
     /** Default OFFICE where needed. Based on context. e.g. /cwms-data -> HQ, /spk-data -> SPK */
     public static final String OFFICE_ID = "office_id";
     public static final String DATA_SOURCE = "data_source";
@@ -381,6 +386,16 @@ public class ApiServlet extends HttpServlet {
                     CdaError re = new CdaError(e.getMessage(), e.getDetails(), true);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
+                .exception(MissingRolesException.class, (e,ctx) -> {
+                    CdaError re = new CdaError(e.getMessage(), true);
+                    if (logger.atFine().isEnabled()) {
+                        logger.atFine().withCause(e).log(e.getMessage());
+                    } else {
+                        logger.atInfo().log(e.getMessage());
+                    }
+
+                    ctx.status(e.getAuthFailCode()).json(re);
+                })
                 .exception(CwmsAuthException.class, (e,ctx) -> {
                     CdaError re;
                     switch (e.getAuthFailCode()) {
@@ -446,7 +461,7 @@ public class ApiServlet extends HttpServlet {
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API")
                 .contentType(Formats.PLAIN));
         // Even view on this one requires authorization
-        crud("/auth/keys/{key-name}",new ApiKeyController(metrics), requiredRoles);
+        crud("/auth/keys/{key-name}",new ApiKeyController(metrics), new RouteRole[]{new Role(CAC_USER), new Role(CWMS_USERS_ROLE)});
         cdaCrudCache("/location/category/{category-id}",
                 new LocationCategoryController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
         cdaCrudCache("/location/group/{group-id}",
@@ -491,7 +506,7 @@ public class ApiServlet extends HttpServlet {
 
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",
+        cdaCrudCache("/timeseries/identifier-descriptor/{name}",
                 new TimeSeriesIdentifierDescriptorController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/group/{group-id}",
                 new TimeSeriesGroupController(metrics), requiredRoles,5, TimeUnit.MINUTES);
@@ -525,6 +540,9 @@ public class ApiServlet extends HttpServlet {
                 new StreamLocationController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/stream-reaches/{%s}", NAME),
                 new StreamReachController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        String measurements = "/measurements/";
+        cdaCrudCache(format(measurements + "{%s}", LOCATION_ID),
+                new cwms.cda.api.MeasurementController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
                 new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/clobs/{clob-id}",
@@ -627,6 +645,7 @@ public class ApiServlet extends HttpServlet {
     private void addWaterContractTypeHandlers(String path, RouteRole[] requiredRoles) {
         post(path, new WaterContractTypeCreateController(metrics), requiredRoles);
         get(path, new WaterContractTypeCatalogController(metrics), requiredRoles);
+        delete(path + "/{display-value}", new WaterContractTypeDeleteController(metrics), requiredRoles);
     }
 
     /**

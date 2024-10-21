@@ -126,10 +126,7 @@ class OutletDaoChangeIT extends BaseOutletDaoIT {
             outletDao.deleteOutlet(TAINTER_GATE_20_LOC.getOfficeId(), TAINTER_GATE_20_LOC.getName(),
                                    DeleteRule.DELETE_ALL);
             deleteLocationGroup(context, TAINTER_GATE_10_OUTLET);
-            deleteLocation(context, TAINTER_GATE_10_LOC.getOfficeId(), TAINTER_GATE_10_LOC.getName());
-            deleteLocation(context, TAINTER_GATE_20_LOC.getOfficeId(), TAINTER_GATE_20_LOC.getName());
         }, CwmsDataApiSetupCallback.getWebUser());
-        tearDownProject();
     }
 
     @Test

@@ -30,6 +30,7 @@ import static java.util.stream.Collectors.toList;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
@@ -161,7 +162,7 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
             setOffice(c, location.getOfficeId());
             LOCATION_REF_T projectLocationRef =  LocationUtil.getLocationRef(location);
             CWMS_WATER_SUPPLY_PACKAGE.call_DELETE_WATER_USER(DSL.using(c).configuration(), projectLocationRef,
-                    entityName, deleteAction.getRule().toString());
+                    entityName, deleteAction == null ? null : deleteAction.getRule().toString());
         });
     }
 
@@ -172,11 +173,21 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
             String contractName = contract.getContractId().getName();
             WATER_USER_CONTRACT_REF_T waterUserContract = new WATER_USER_CONTRACT_REF_T(waterUserT, contractName);
             CWMS_WATER_SUPPLY_PACKAGE.call_DELETE_CONTRACT(DSL.using(c).configuration(), waterUserContract,
-                    deleteAction.getRule().toString());
+                    deleteAction == null ? null : deleteAction.getRule().toString());
         });
     }
 
-    public void storeWaterContractTypes(LookupType lookupType,
+    public void deleteWaterContractType(String office, String displayValue) {
+        connection(dsl, c -> {
+            setOffice(c, office);
+            LookupTypeDao lookupTypeDao = new LookupTypeDao(DSL.using(c));
+            String category = "AT_WS_CONTRACT_TYPE";
+            String prefix = "WS_CONTRACT_TYPE";
+            lookupTypeDao.deleteLookupType(category, prefix, office, displayValue);
+        });
+    }
+
+    public void storeWaterContractType(LookupType lookupType,
             boolean failIfExists) {
         connection(dsl, c -> {
             setOffice(c, lookupType.getOfficeId());
