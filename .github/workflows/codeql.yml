@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.0
+        uses: actions/checkout@v4.2.1
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3.26.11
+        uses: github/codeql-action/init@v3.26.13
         with:
           languages: 'java'
       - name: setup java
@@ -34,4 +34,4 @@ jobs:
         id: build
         run: ./gradlew build --info --init-script init.gradle
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3.26.11
+        uses: github/codeql-action/analyze@v3.26.13
