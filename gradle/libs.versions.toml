@@ -1,6 +1,6 @@
 [versions]
 jaxb-api = "2.3.1"
-jaxb-impl = "3.0.2"
+jaxb-impl = "4.0.5"
 jooq-codegen = "99.99.99.3-CDA_STAGING"
 jooq = "3.18.7-jdk8"
 hec-data-access = "9.8.0"
