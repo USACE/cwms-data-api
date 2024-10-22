@@ -3,6 +3,7 @@ package cwms.cda.data.dto.timeseriesprofile;
 import static cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserBase.COLUMNAR_TYPE;
 import static cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserBase.INDEXED_TYPE;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -24,15 +25,14 @@ import java.util.List;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonTypeName("time-series-profile-parser")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonSerialize(as = TimeSeriesProfileParser.class)
 @JsonDeserialize(builder = TimeSeriesProfileParser.Builder.class)
 @JsonSubTypes({@JsonSubTypes.Type(value = TimeSeriesProfileParserIndexed.class,
         name = INDEXED_TYPE),
     @JsonSubTypes.Type(value = TimeSeriesProfileParserColumnar.class,
         name = COLUMNAR_TYPE)
 })
-
-public  class TimeSeriesProfileParser extends CwmsDTOBase {
+@JsonIgnoreProperties("type")
+public abstract class TimeSeriesProfileParser extends CwmsDTOBase {
     private final CwmsId locationId;
     private final String keyParameter;
     private final char recordDelimiter;
@@ -85,10 +85,11 @@ public  class TimeSeriesProfileParser extends CwmsDTOBase {
         return timeInTwoFields;
     }
 
+    public abstract String getType();
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-    public static class Builder {
+    public abstract static class Builder<T extends TimeSeriesProfileParser> {
         private List<ParameterInfo> parameterInfoList;
         private String keyParameter;
         private char recordDelimiter;
@@ -97,46 +98,44 @@ public  class TimeSeriesProfileParser extends CwmsDTOBase {
         private boolean timeInTwoFields;
         private CwmsId locationId;
 
-        public TimeSeriesProfileParser.Builder withLocationId(CwmsId locationId) {
+        public TimeSeriesProfileParser.Builder<T> withLocationId(CwmsId locationId) {
             this.locationId = locationId;
             return this;
         }
 
-        public TimeSeriesProfileParser.Builder withKeyParameter(String keyParameter) {
+        public TimeSeriesProfileParser.Builder<T> withKeyParameter(String keyParameter) {
             this.keyParameter = keyParameter;
             return this;
         }
 
-        public TimeSeriesProfileParser.Builder withRecordDelimiter(char delimiter) {
+        public TimeSeriesProfileParser.Builder<T> withRecordDelimiter(char delimiter) {
             this.recordDelimiter = delimiter;
             return this;
         }
 
 
-        public TimeSeriesProfileParser.Builder withTimeFormat(String timeFormat) {
+        public TimeSeriesProfileParser.Builder<T> withTimeFormat(String timeFormat) {
             this.timeFormat = timeFormat;
             return this;
         }
 
-        public TimeSeriesProfileParser.Builder withTimeZone(String timeZone) {
+        public TimeSeriesProfileParser.Builder<T> withTimeZone(String timeZone) {
             this.timeZone = timeZone;
             return this;
         }
 
 
-        public TimeSeriesProfileParser.Builder withTimeInTwoFields(boolean timeInTwoFields) {
+        public TimeSeriesProfileParser.Builder<T> withTimeInTwoFields(boolean timeInTwoFields) {
             this.timeInTwoFields = timeInTwoFields;
             return this;
         }
 
-        public TimeSeriesProfileParser.Builder withParameterInfoList(List<ParameterInfo> parameterInfoList) {
+        public TimeSeriesProfileParser.Builder<T> withParameterInfoList(List<ParameterInfo> parameterInfoList) {
             this.parameterInfoList = parameterInfoList;
             return this;
         }
 
-        public TimeSeriesProfileParser build() {
-            return new TimeSeriesProfileParser(this);
-        }
+        public abstract T build();
     }
 
 }

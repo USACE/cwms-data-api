@@ -238,7 +238,7 @@ final class TimeSeriesProfileParserDaoIT extends DataApiTestIT {
                 (TimeSeriesProfileParserIndexed)
                 new TimeSeriesProfileParserIndexed.Builder()
                         .withFieldDelimiter(',')
-                        .withTimeField(1)
+                        .withTimeField(1L)
                         .withLocationId(locationId)
                         .withKeyParameter(keyParameter)
                         .withRecordDelimiter((char) 10)

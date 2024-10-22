@@ -103,7 +103,7 @@ final class TimeSeriesProfileParserTest {
                 .build();
         return
                 new TimeSeriesProfileParserIndexed.Builder()
-                        .withTimeField(1)
+                        .withTimeField(1L)
                         .withFieldDelimiter(',')
                         .withLocationId(locationId)
                         .withKeyParameter("Depth")
