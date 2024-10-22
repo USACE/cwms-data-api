@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -24,9 +25,11 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @JsonRootName("timeseries")
 @JsonPropertyOrder(alphabetic = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
@@ -194,7 +197,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         return getColumnDescriptor();
     }
 
-    public boolean addValue(Timestamp dateTime, Double value, int qualityCode) {
+    public boolean addValue(Timestamp dateTime, Double value, int qualityCode, Timestamp dataEntryDate) {
         // Set the current page, if not set
         if((page == null || page.isEmpty()) && values.isEmpty()) {
             page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
@@ -203,7 +206,11 @@ public class TimeSeries extends CwmsDTOPaginated {
             nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
             return false;
         } else {
-            return values.add(new Record(dateTime, value, qualityCode));
+            if (dataEntryDate != null) {
+                return values.add(new Record(dateTime, value, qualityCode).withDataEntryDate(dataEntryDate));
+            } else {
+                return values.add(new Record(dateTime, value, qualityCode));
+            }
         }
     }
 
@@ -240,6 +247,7 @@ public class TimeSeries extends CwmsDTOPaginated {
                                 + "placeholder which can be important in irregular and psuedo regular timeseries."
             )
     )
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public static class Record {
         // Explicitly set property order for array serialization
         @JsonProperty(value = "date-time", index = 0)
@@ -253,6 +261,11 @@ public class TimeSeries extends CwmsDTOPaginated {
         @JsonProperty(value = "quality-code", index = 2)
         int qualityCode;
 
+//        @JsonProperty(value = "data-entry-date", index = 3)
+        @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch), always UTC")
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+        Timestamp dataEntryDate = null;
+
         @SuppressWarnings("unused") // required so JAXB can initialize and marshal
         private Record() {}
 
@@ -260,6 +273,12 @@ public class TimeSeries extends CwmsDTOPaginated {
             this.dateTime = dateTime;
             this.value = value;
             this.qualityCode = qualityCode;
+        }
+
+        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+        protected Record withDataEntryDate(Timestamp dataEntryDate) {
+            this.dataEntryDate = dataEntryDate;
+            return this;
         }
 
         // When serialized, the value is unix epoch at UTC.
@@ -275,6 +294,10 @@ public class TimeSeries extends CwmsDTOPaginated {
             return qualityCode;
         }
 
+        public Timestamp getDataEntryDate() {
+            return dataEntryDate;
+        }
+
         @Override
         public boolean equals(Object o)
         {
@@ -287,17 +310,20 @@ public class TimeSeries extends CwmsDTOPaginated {
                 return false;
             }
 
-            final Record record = (Record) o;
+            final Record tsRecord = (Record) o;
 
-            if(getQualityCode() != record.getQualityCode())
+            if(getQualityCode() != tsRecord.getQualityCode())
             {
                 return false;
             }
-            if(getDateTime() != null ? !getDateTime().equals(record.getDateTime()) : record.getDateTime() != null)
+            if(getDateTime() != null ? !getDateTime().equals(tsRecord.getDateTime()) : tsRecord.getDateTime() != null)
             {
                 return false;
             }
-            return getValue() != null ? getValue().equals(record.getValue()) : record.getValue() == null;
+            if (!Objects.equals(dataEntryDate, tsRecord.dataEntryDate)) {
+                return false;
+            }
+            return getValue() != null ? getValue().equals(tsRecord.getValue()) : tsRecord.getValue() == null;
         }
 
         @Override
@@ -306,6 +332,7 @@ public class TimeSeries extends CwmsDTOPaginated {
             int result = getDateTime() != null ? getDateTime().hashCode() : 0;
             result = 31 * result + (getValue() != null ? getValue().hashCode() : 0);
             result = 31 * result + getQualityCode();
+            result = 31 * result + (dataEntryDate != null ? dataEntryDate.hashCode() : 0);
             return result;
         }
 

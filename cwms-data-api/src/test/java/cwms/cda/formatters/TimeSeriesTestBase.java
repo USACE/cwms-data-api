@@ -14,7 +14,7 @@ public abstract class TimeSeriesTestBase {
 
     protected TimeSeries getTimeSeries() {
         TimeSeries ts = new TimeSeries(null, -1, 0, "Test.Test.Elev.0.0.RAW", "SPK", ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]"), ZonedDateTime.parse("2021-06-22T08:00:00-07:00[PST8PDT]"), null, Duration.ZERO);
-        ts.addValue(Timestamp.from(ts.getBegin().toInstant()), 30.0, 0);
+        ts.addValue(Timestamp.from(ts.getBegin().toInstant()), 30.0, 0, null);
         return ts;
     }
 

@@ -67,7 +67,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -84,7 +83,7 @@ import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
-
+    private static final String INCLUDE_ENTRY_DATE = "include-entry-date";
     public static final String TAG = "TimeSeries";
     public static final String STORE_RULE_DESC = "The business rule to use "
             + "when merging the incoming with existing data\n"
@@ -204,7 +203,7 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
             dao.create(timeSeries, createAsLrts, storeRule, overrideProtection);
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (IOException | DataAccessException ex) {
+        } catch (DataAccessException ex) {
             CdaError re = new CdaError("Internal Error");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
@@ -382,6 +381,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "\n* `xml`"
                         + "\n* `wml2` (only if name field is specified)"
                         + "\n* `json` (default)"),
+                @OpenApiParam(name = INCLUDE_ENTRY_DATE, type = Boolean.class, description = "Specifies "
+                    + "whether to include the data entry date in the response.  Default is false."),
                 @OpenApiParam(name = PAGE, description = "This end point can return large amounts "
                         + "of data as a series of pages. This parameter is used to describes the "
                         + "current location in the response stream.  This is an opaque "
@@ -431,6 +432,9 @@ public class TimeSeriesController implements CrudHandler {
 
             ZonedDateTime versionDate = queryParamAsZdt(ctx, VERSION_DATE);
 
+            boolean includeEntryDate = ctx.queryParamAsClass(INCLUDE_ENTRY_DATE, Boolean.class)
+                    .getOrDefault(false);
+
             // The following parameters are only used for jsonv2 and xmlv2
             String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
                     String.class, "", metrics, name(TimeSeriesController.class.getName(),
@@ -463,7 +467,7 @@ public class TimeSeriesController implements CrudHandler {
 
                 String office = requiredParam(ctx, OFFICE);
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit,
-                        beginZdt, endZdt, versionDate, trim.getOrDefault(true));
+                        beginZdt, endZdt, versionDate, trim.getOrDefault(true), includeEntryDate);
 
                 results = Formats.format(contentType, ts);
 
@@ -573,14 +577,14 @@ public class TimeSeriesController implements CrudHandler {
             dao.store(timeSeries, createAsLrts, storeRule, overrideProtection);
 
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (IOException | DataAccessException ex) {
+        } catch (DataAccessException ex) {
             CdaError re = new CdaError("Internal Error");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
-    private TimeSeries deserializeTimeSeries(Context ctx) throws IOException {
+    private TimeSeries deserializeTimeSeries(Context ctx) {
         String contentTypeHeader = ctx.req.getContentType();
         ContentType contentType = Formats.parseHeader(contentTypeHeader, TimeSeries.class);
         return Formats.parseContent(contentType, ctx.bodyAsInputStream(), TimeSeries.class);

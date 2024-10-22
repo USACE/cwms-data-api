@@ -21,6 +21,7 @@ import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
@@ -75,7 +76,6 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-//                .body(tsData)
                 .header("Authorization",user.toHeaderValue())
                 .queryParam("office",officeId)
                 .queryParam("units","cfs")
@@ -173,7 +173,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/1day_offset_bad_units.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
@@ -211,7 +211,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/1day_offset_malicious_units.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode ts = mapper.readTree(tsData);
@@ -242,6 +242,92 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
 
     }
 
+    @Test
+    void test_include_data_entry_date() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        final String includeDataEntryDate = "include-entry-date";
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/spk/num_ts_create2.json");
+        assertNotNull(resource);
+
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam("office", officeId)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        //     1675335600000 is Thursday, February 2, 2023 11:00:00 AM
+        // fyi 1675422000000 is Friday, February 3, 2023 11:00:00 AM
+
+        // get it back with the data entry date
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, officeId)
+            .queryParam(Controllers.UNIT, "CFS")
+            .queryParam(Controllers.NAME, ts.get("name").asText())
+            .queryParam(Controllers.BEGIN, "2007-02-02T11:00:00Z")
+            .queryParam(Controllers.END, "2010-02-03T11:00:00Z")
+            .queryParam(Controllers.VERSION_DATE, "2021-06-20T08:00:00-0000[UTC]")
+            .queryParam(includeDataEntryDate, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("values.size()", equalTo(4))
+            .body("values[0][1]", equalTo(4.0F))
+            .body("values[0].size()", equalTo(4));
+
+        // get it back without the data entry date
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, officeId)
+            .queryParam(Controllers.UNIT, "CFS")
+            .queryParam(Controllers.NAME, ts.get("name").asText())
+            .queryParam(Controllers.BEGIN, "2007-02-02T11:00:00Z")
+            .queryParam(Controllers.END, "2010-02-03T11:00:00Z")
+            .queryParam(Controllers.VERSION_DATE, "2021-06-20T08:00:00-0000[UTC]")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("values.size()", equalTo(4))
+            .body("values[0][1]", equalTo(4.0F))
+            .body("values[0].size()", equalTo(3));
+    }
+
 
     @Test
     void test_delete_ts() throws Exception {
@@ -251,7 +337,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
 
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
@@ -330,7 +416,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/timeseries/no_office_perms.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
@@ -365,7 +451,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
 
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode ts = mapper.readTree(tsData);
@@ -402,7 +488,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
 
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode ts = mapper.readTree(tsData);
@@ -441,7 +527,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
 
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode ts = mapper.readTree(tsData);
@@ -479,7 +565,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
@@ -581,7 +667,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         String giantString = buildBigString(tsData, 200000);
         // 200k points looked like about 6MB.
@@ -661,7 +747,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < count; i++) {
             long time = start2 + (diff * (i+1));
-            sb.append(String.format(",\n [ %d, %d,  %d]", time, count, 0));
+            sb.append(String.format(",%n [ %d, %d,  %d]", time, count, 0));
         }
 
         return prefix + sb + "\n ]\n}";
@@ -674,7 +760,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/1hour.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         int count = 365 * 24 * 5; // 5 years of hourly data (43.8k points)
 
@@ -794,7 +880,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
