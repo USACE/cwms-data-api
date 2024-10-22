@@ -1056,7 +1056,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
     }
 
     private static TimeSeriesProfileParserIndexed buildTestTimeSeriesProfileParserIndexed(String officeId, String location, String[] parameterArray, int[] parameterIndexArray, String[] parameterUnitArray,
-            char recordDelimiter, char fieldDelimiter, String timeFormat, String timeZone, int timeField) {
+            char recordDelimiter, char fieldDelimiter, String timeFormat, String timeZone, long timeField) {
         List<ParameterInfo> parameterInfoList = new ArrayList<>();
         for (int i = 0; i < parameterArray.length; i++) {
             parameterInfoList.add(new ParameterInfoIndexed.Builder()

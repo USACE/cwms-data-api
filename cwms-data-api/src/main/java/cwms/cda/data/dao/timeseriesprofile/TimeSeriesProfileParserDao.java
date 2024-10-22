@@ -8,6 +8,7 @@ import cwms.cda.data.dto.timeseriesprofile.ParameterInfoIndexed;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParser;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserColumnar;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -74,7 +75,8 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
                     timeSeriesProfileParser.getLocationId().getName(),
                     timeSeriesProfileParser.getKeyParameter(),
                     String.valueOf(timeSeriesProfileParser.getRecordDelimiter()),
-                    String.valueOf(timeSeriesProfileParser.getFieldDelimiter()), timeSeriesProfileParser.getTimeField(),
+                    String.valueOf(timeSeriesProfileParser.getFieldDelimiter()),
+                    BigInteger.valueOf(timeSeriesProfileParser.getTimeField()),
                     null, null, timeSeriesProfileParser.getTimeFormat(),
                     timeSeriesProfileParser.getTimeZone(), getParameterInfoString(timeSeriesProfileParser),
                     timeSeriesProfileParser.getTimeInTwoFields() ? "T" : "F",
@@ -92,7 +94,8 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
                     timeSeriesProfileParser.getKeyParameter(),
                     String.valueOf(timeSeriesProfileParser.getRecordDelimiter()),
                     null, null,
-                    timeSeriesProfileParser.getTimeStartColumn(), timeSeriesProfileParser.getTimeEndColumn(),
+                    BigInteger.valueOf(timeSeriesProfileParser.getTimeStartColumn()),
+                    BigInteger.valueOf(timeSeriesProfileParser.getTimeEndColumn()),
                     timeSeriesProfileParser.getTimeFormat(),
                     timeSeriesProfileParser.getTimeZone(), getParameterInfoString(timeSeriesProfileParser),
                     timeSeriesProfileParser.getTimeInTwoFields() ? "T" : "F",
@@ -172,7 +175,7 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
             if (timeField != null) {
                 timeSeriesProfileParser = new TimeSeriesProfileParserIndexed.Builder()
                         .withFieldDelimiter(fieldDelimiter.toCharArray()[0])
-                        .withTimeField(timeField)
+                        .withTimeField(timeField.longValue())
                         .withLocationId(locationId)
                         .withKeyParameter(keyParameter)
                         .withParameterInfoList(parameterInfoList)
@@ -183,8 +186,8 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
                 timeSeriesProfileParserList.add(timeSeriesProfileParser);
             } else if (timeStartCol != null && timeEndCol != null) {
                 timeSeriesProfileParser = new TimeSeriesProfileParserColumnar.Builder()
-                        .withTimeStartColumn(timeStartCol)
-                        .withTimeEndColumn(timeEndCol)
+                        .withTimeStartColumn(timeStartCol.intValue())
+                        .withTimeEndColumn(timeEndCol.intValue())
                         .withLocationId(locationId)
                         .withKeyParameter(keyParameter)
                         .withParameterInfoList(parameterInfoList)
@@ -215,7 +218,7 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
         if (timeSeriesProfileParser.getP_TIME_FIELD() != null
                 && timeSeriesProfileParser.getP_FIELD_DELIMITER() != null) {
             return new TimeSeriesProfileParserIndexed.Builder()
-                    .withTimeField(timeSeriesProfileParser.getP_TIME_FIELD())
+                    .withTimeField(timeSeriesProfileParser.getP_TIME_FIELD().longValue())
                     .withFieldDelimiter(timeSeriesProfileParser.getP_FIELD_DELIMITER().toCharArray()[0])
                     .withLocationId(locationId)
                     .withTimeZone(timeSeriesProfileParser.getP_TIME_ZONE())
@@ -237,14 +240,6 @@ public class TimeSeriesProfileParserDao extends JooqDao<TimeSeriesProfileParser>
                     .withParameterInfoList(parameterInfo)
                     .build();
         }
-        return new TimeSeriesProfileParser.Builder()
-                .withLocationId(locationId)
-                .withTimeZone(timeSeriesProfileParser.getP_TIME_ZONE())
-                .withTimeFormat(timeSeriesProfileParser.getP_TIME_FORMAT())
-                .withKeyParameter(keyParameter)
-                .withRecordDelimiter(timeSeriesProfileParser.getP_RECORD_DELIMITER().toCharArray()[0])
-                .withTimeInTwoFields(false)
-                .withParameterInfoList(parameterInfo)
-                .build();
+        throw new IllegalStateException("Return parser type was neither indexed nor columnar formatted");
     }
 }

@@ -287,7 +287,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
     void test_get_all_TimeSeriesProfileParser() throws Exception {
         TimeSeriesProfileParserIndexed tspIndex
                 = (TimeSeriesProfileParserIndexed) new TimeSeriesProfileParserIndexed.Builder()
-                .withTimeField(tspParserIndexed.getTimeField().intValue())
+                .withTimeField(tspParserIndexed.getTimeField())
                 .withFieldDelimiter(tspParserIndexed.getFieldDelimiter())
                 .withTimeFormat(tspParserIndexed.getTimeFormat())
                 .withRecordDelimiter(tspParserIndexed.getRecordDelimiter())
