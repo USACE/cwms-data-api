@@ -62,7 +62,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -623,7 +622,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             if (qualityCode != null) {
                 quality = qualityCode.intValue();
             }
-            timeSeries.addValue(dateTime, value, quality);
+            timeSeries.addValue(dateTime, value, quality, null);
         }
         return timeSeries;
     }

@@ -64,6 +64,7 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Record3;
+import org.jooq.Record4;
 import org.jooq.Record7;
 import org.jooq.Result;
 import org.jooq.SQL;
@@ -164,7 +165,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public TimeSeries getTimeseries(String page, int pageSize, String names, String office,
                                        String units,
                                        ZonedDateTime beginTime, ZonedDateTime endTime,
-                                    ZonedDateTime versionDate, boolean shouldTrim) {
+                                    ZonedDateTime versionDate, boolean shouldTrim, boolean includeEntryDate) {
         TimeSeries retVal = null;
         String cursor = null;
         Timestamp tsCursor = null;
@@ -236,7 +237,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         // put all those columns together as "valid"
         CommonTableExpression<Record7<BigDecimal, String, String, String, String, BigDecimal,
-                String>> valid =
+                        String>> valid =
                 name("valid").fields("tscode", "tsid", "office_id", "loc_part", "units",
                                 "interval", "parm_part")
                         .as(
@@ -248,7 +249,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                         unit.as("units"),
                                         ival.as("interval"),
                                         param.as("parm_part")
-
                                 ).from(validTs)
                         );
 
@@ -368,6 +368,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             );
         });
 
+        Field<Timestamp> dataEntryDate = field("DATA_ENTRY_DATE", Timestamp.class).as("data_entry_date");
+
         if (pageSize != 0) {
             SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query =
                     dsl.select(
@@ -390,14 +392,55 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 query.limit(DSL.val(pageSize + 1));
             }
 
-            logger.fine(() -> query.getSQL(ParamType.INLINED));
+            SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> finalQuery = query;
+            logger.fine(() -> finalQuery.getSQL(ParamType.INLINED));
 
-            query.forEach(tsRecord -> timeseries.addValue(
-                            tsRecord.getValue(dateTimeCol),
-                            tsRecord.getValue(valueCol),
-                            tsRecord.getValue(qualityNormCol).intValue()
-                    )
-            );
+            if (includeEntryDate) {
+                SelectConditionStep<Record4<Timestamp, Double, BigDecimal, Timestamp>> query2 = dsl.select(
+                                    dateTimeCol,
+                                    valueCol,
+                                    qualityNormCol,
+                                    dataEntryDate
+                            )
+                            .from(AV_TSV_DQU.AV_TSV_DQU)
+                            .where(dateTimeCol
+                                    .greaterOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                                            DSL.nvl(DSL.val(tsCursor == null ? null :
+                                                            tsCursor.toInstant().toEpochMilli()),
+                                                    DSL.val(beginTime.toInstant().toEpochMilli())))))
+                            .and(dateTimeCol
+                                    .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                                            DSL.val(endTime.toInstant().toEpochMilli())))
+                            .and(AV_TSV_DQU.AV_TSV_DQU.CWMS_TS_ID.equalIgnoreCase(names))
+                            .and(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID.eq(office))
+                            .and(AV_TSV_DQU.AV_TSV_DQU.UNIT_ID.equalIgnoreCase(unit))
+//                            .and(AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE.eq(versionDate == null ? null :
+//                                    Timestamp.from(versionDate.toInstant())))
+                                );
+
+                if (pageSize > 0) {
+                    query2.limit(DSL.val(pageSize + 1));
+                }
+                query2.forEach(tsRecord -> {
+                    assert timeseries != null;
+                    timeseries.addValue(
+                        tsRecord.getValue(dateTimeCol),
+                        tsRecord.getValue(valueCol),
+                        tsRecord.getValue(qualityNormCol).intValue(),
+                        tsRecord.getValue(dataEntryDate)
+                    );
+                });
+            } else {
+                query.forEach(tsRecord -> {
+                    assert timeseries != null;
+                    timeseries.addValue(
+                        tsRecord.getValue(dateTimeCol),
+                        tsRecord.getValue(valueCol),
+                        tsRecord.getValue(qualityNormCol).intValue(),
+                                null
+                    );
+                });
+            }
 
             retVal = timeseries;
         }
