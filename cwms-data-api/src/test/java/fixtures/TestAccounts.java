@@ -26,15 +26,17 @@ package fixtures;
 
 import java.util.Arrays;
 
+import cwms.cda.ApiServlet;
+
 public class TestAccounts {
 
 
     public enum KeyUser {
         NONE("none",null,null,null,null, null), // Used for annotations
         GUEST("guest",null,null,null, null, null), // USED as marker label for tests
-        SPK_NORMAL("l2hectest","l2hectest","1234567890","l2userkey","ATotallyRandomStringL2hectest","SPK", "CWMS Users", "cac_user"),
-        SPK_NORMAL2("l2hectest_vt","l2hectestvt","2345678901","l2userkey2","DiffrntStringL2hectest_vt","SPK", "CWMS Users", "cac_user"),
-        SWT_NORMAL("m5hectest","swt99db","1234567890","testkey2","ATotallyRandomStringM5hectest","SWT", "CWMS Users", "cac_user"),
+        SPK_NORMAL("l2hectest","l2hectest","1234567890","l2userkey","ATotallyRandomStringL2hectest","SPK", "CWMS Users", ApiServlet.CAC_USER),
+        SPK_NORMAL2("l2hectest_vt","l2hectestvt","2345678901","l2userkey2","DiffrntStringL2hectest_vt","SPK", "CWMS Users", ApiServlet.CAC_USER),
+        SWT_NORMAL("m5hectest","swt99db","1234567890","testkey2","ATotallyRandomStringM5hectest","SWT", "CWMS Users", ApiServlet.CAC_USER),
         SPK_NO_ROLES("user2","user2",null,"User2key","user2SEssion", "SPK");
 
         private final String name; // username
