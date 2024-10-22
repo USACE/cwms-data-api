@@ -31,7 +31,6 @@ import hec.data.level.ILocationLevelRef;
 import mil.army.usace.hec.metadata.Interval;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 public interface LocationLevelsDao {
@@ -43,7 +42,7 @@ public interface LocationLevelsDao {
     void renameLocationLevel(String oldLocationLevelName, String newLocationLevelName, String officeId);
 
     LocationLevel retrieveLocationLevel(String locationLevelName, String unitSystem,
-                                        ZonedDateTime effectiveDate, String officeId);
+                                        ZonedDateTime effectiveDate, String officeId, ZonedDateTime start, ZonedDateTime end);
 
     String getLocationLevels(String format, String names, String office, String unit,
                              String datum, String begin,
