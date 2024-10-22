@@ -45,7 +45,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
@@ -69,6 +68,8 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 public abstract class JooqDao<T> extends Dao<T> {
     protected static final int ORACLE_CURSOR_TYPE = -10;
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    public static final int DEFAULT_FETCH_SIZE = 1000;
+    public static final int DEFAULT_SMALL_FETCH_SIZE = 500;
 
     static ExecuteListener listener = new ExceptionWrappingListener();
 
