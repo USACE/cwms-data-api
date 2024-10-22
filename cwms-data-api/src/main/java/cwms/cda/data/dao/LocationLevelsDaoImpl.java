@@ -638,7 +638,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             if (qualityCode != null) {
                 quality = qualityCode.intValue();
             }
-            timeSeries.addValue(dateTime, value, quality);
+            timeSeries.addValue(dateTime, value, quality, null);
         }
         return timeSeries;
     }

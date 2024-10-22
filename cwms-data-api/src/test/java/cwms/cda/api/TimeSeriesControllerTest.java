@@ -22,11 +22,11 @@ import cwms.cda.formatters.json.JsonV2;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
@@ -67,7 +67,7 @@ class TimeSeriesControllerTest extends ControllerTest {
 
         when(
                 dao.getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                         isNotNull(), isNotNull(), isNull(), eq(true) )).thenReturn(expected);
+                         isNotNull(), isNotNull(), isNull(), eq(true), eq(false))).thenReturn(expected);
 
 
         // build mock request and response
@@ -113,7 +113,7 @@ class TimeSeriesControllerTest extends ControllerTest {
         // Check that the controller accessed our mock dao in the expected way
         verify(dao, times(1)).
                 getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                         isNotNull(), isNotNull(), isNull(), eq(true));//
+                         isNotNull(), isNotNull(), isNull(), eq(true), eq(false));//
 
         // Make sure controller thought it was happy
         verify(response).setStatus(200);
@@ -145,6 +145,19 @@ class TimeSeriesControllerTest extends ControllerTest {
         String officeId = "LRL";
         String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
         TimeSeries fakeTs = buildTimeSeries(officeId, tsId);
+        ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
+        String formatted = Formats.format(contentType, fakeTs);
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        assertNotNull(ts2);
+        assertSimilar(fakeTs, ts2);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.XMLV2, Formats.JSONV2})
+    void testDeserializeTimeSeriesWithEntryDate(String format) {
+        String officeId = "LRL";
+        String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+        TimeSeries fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
         ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
         TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
@@ -227,7 +240,38 @@ class TimeSeriesControllerTest extends ControllerTest {
         ZonedDateTime next = start;
         for(int i = 0; i < count; i++) {
             Timestamp dateTime = Timestamp.from(next.toInstant());
-            ts.addValue(dateTime, (double) i, 0);
+            ts.addValue(dateTime, (double) i, 0, null);
+            next = next.plus(minutes, ChronoUnit.MINUTES);
+        }
+        return ts;
+    }
+
+    @NotNull
+    private TimeSeries buildTimeSeriesWithEntryDate(String officeId, String tsId) {
+        ZonedDateTime start = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
+        ZonedDateTime end = ZonedDateTime.parse("2021-06-21T09:00:00-07:00[PST8PDT]");
+
+        long diff = end.toEpochSecond() - start.toEpochSecond();
+        assertEquals(3600, diff); // just to make sure I've got the date parsing thing right.
+
+        int minutes = 15;
+        int count = 60/15 ; // do I need a +1?  ie should this be 12 or 13?
+        // Also, should end be the last point or the next interval?
+
+        TimeSeries ts = new TimeSeries(null,
+                -1,
+                0,
+                tsId,
+                officeId,
+                start,
+                end,
+                "m",
+                Duration.ofMinutes(minutes));
+
+        ZonedDateTime next = start;
+        for(int i = 0; i < count; i++) {
+            Timestamp dateTime = Timestamp.from(next.toInstant());
+            ts.addValue(dateTime, (double) i, 0, Timestamp.from(Instant.now()));
             next = next.plus(minutes, ChronoUnit.MINUTES);
         }
         return ts;
