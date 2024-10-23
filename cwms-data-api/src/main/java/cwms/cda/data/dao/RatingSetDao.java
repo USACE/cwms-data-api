@@ -24,6 +24,19 @@
 
 package cwms.cda.data.dao;
 
+import static org.jooq.impl.DSL.abs;
+import static org.jooq.impl.DSL.asterisk;
+import static org.jooq.impl.DSL.dateDiff;
+import static org.jooq.impl.DSL.field;
+import static org.jooq.impl.DSL.inline;
+import static org.jooq.impl.DSL.name;
+import static org.jooq.impl.DSL.partitionBy;
+import static org.jooq.impl.DSL.rank;
+import static org.jooq.impl.DSL.select;
+import static org.jooq.impl.DSL.table;
+import static org.jooq.impl.DSL.toDate;
+import static org.jooq.impl.DSL.unquotedName;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -31,14 +44,18 @@ import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import mil.army.usace.hec.cwms.rating.io.jdbc.ConnectionProvider;
 import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
 import org.jooq.DSLContext;
-import org.jooq.Result;
+import org.jooq.DatePart;
+import org.jooq.Name;
+import org.jooq.Record;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_LOCAL;
@@ -114,27 +131,50 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
             RatingSet.DatabaseLoadMethod finalMethod = method;
 
             if (effectiveDateParam != null) {
+                ZoneId utcZone = ZoneId.of("UTC");
+                Name rank = unquotedName("rank");
+                Name alias1 = unquotedName("a");
+                Name alias2 = unquotedName("b");
+                Name alias3 = unquotedName("c");
+                Name diff = unquotedName("difference");
+                Name effectiveDateName = unquotedName("effective_date");
+                Name ratingIdName = unquotedName("rating_id");
+                String dateFormat = "DD-MMM-YYYY H:mm:ss";
+                String oracleDateFormat = "DD-MON-YYYY HH24:MI:SS";
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat)
+                        .withZone(utcZone);
+                String formattedDate = formatter.format(effectiveDateParam);
 
                 String ratingId = null;
-                Long difference = null;
                 Instant startInstant = null;
                 Instant endInstant = null;
-                Result<?> results = connectionResult(dsl, c ->
-                    dsl.select(view.RATING_ID, view.EFFECTIVE_DATE, view.RATING_CODE).from(view)
-                            .where(view.OFFICE_ID.eq(officeId)
-                                    .and(view.RATING_ID.eq(specificationId))
-                            ).fetch()
+                Record result = connectionResult(dsl, c ->
+                    dsl.select(asterisk())
+                        .from(
+                            select(
+                                table(alias1).asterisk(),
+                                rank().over(partitionBy(field(alias3))
+                                        .orderBy(field(diff).asc()))
+                                    .as(rank)
+                            )
+                            .from(
+                                select(
+                                    table(alias2).asterisk(),
+                                    field(name(alias2, ratingIdName)).as(alias3),
+                                    abs(dateDiff(DatePart.DAY, toDate(formattedDate, inline(oracleDateFormat)),
+                                        field(name(alias2, effectiveDateName))
+                                            .cast(Date.class)))
+                                        .as(diff))
+                                .from(view.as(alias2))
+                                .asTable(alias1)))
+                        .where(field(rank).eq(inline(1)))
+                        .fetchOne()
                 );
-                for (int i = 0; i < results.size(); i++) {
-                    Timestamp effectiveDate = results.getValue(i, view.EFFECTIVE_DATE);
-                    long effectiveDifference = Math.abs(effectiveDate.toInstant().toEpochMilli() - effectiveDateParam.toEpochMilli());
-                    if (difference == null || effectiveDifference < difference) {
-                        difference = effectiveDifference;
-                        ratingId = results.getValue(i, view.RATING_ID);
-                        startInstant = effectiveDate.toInstant().atZone(ZoneId.of("UTC")).toInstant();
-                        endInstant = effectiveDate.toInstant().atZone(ZoneId.of("UTC")).toInstant();
-                    }
-                }
+                Timestamp effectiveDate = result.getValue(view.EFFECTIVE_DATE, Timestamp.class);
+                ratingId = result.getValue(view.RATING_ID);
+                startInstant = effectiveDate.toInstant().atZone(utcZone).toInstant();
+                endInstant = effectiveDate.toInstant().atZone(utcZone).toInstant();
+
                 if (ratingId == null) {
                     return null;
                 }
