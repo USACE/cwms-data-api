@@ -51,6 +51,7 @@ import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
 import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.queryParamAsZdt;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -284,8 +285,8 @@ public class LevelsController implements CrudHandler {
                 int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class)
                                   .getOrDefault(DEFAULT_PAGE_SIZE);
 
-                ZonedDateTime endZdt = end != null ? DateUtils.parseUserDate(end, timezone) : null;
-                ZonedDateTime beginZdt = begin != null ? DateUtils.parseUserDate(begin, timezone) : null;
+                ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
+                ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
 
                 LocationLevels levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
                         office, unit, datum, beginZdt, endZdt);
