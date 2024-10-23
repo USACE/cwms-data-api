@@ -14,13 +14,16 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-
+/**
+ * Indexed time series profile parser
+ * See {@link TimeSeriesProfileParser} for more information on serialization
+ *      and type handling.
+ */
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = TimeSeriesProfileParserIndexed.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonTypeName(INDEXED_TYPE)
-@JsonIgnoreProperties("type")
 public class TimeSeriesProfileParserIndexed extends TimeSeriesProfileParser {
     @JsonProperty(required = true)
     private final Character fieldDelimiter;
@@ -43,6 +46,7 @@ public class TimeSeriesProfileParserIndexed extends TimeSeriesProfileParser {
         return timeField;
     }
 
+    @JsonProperty("type")
     @Override
     public String getType() {
         return INDEXED_TYPE;
@@ -50,6 +54,7 @@ public class TimeSeriesProfileParserIndexed extends TimeSeriesProfileParser {
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+    @JsonIgnoreProperties("type")
     public static class Builder extends TimeSeriesProfileParser.Builder<TimeSeriesProfileParserIndexed> {
         private Character fieldDelimiter = null;
         private Long timeField;

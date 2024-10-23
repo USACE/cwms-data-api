@@ -49,6 +49,8 @@ import org.junit.jupiter.api.Test;
 import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
@@ -60,6 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("integration")
 final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
+    private static final Logger LOGGER = Logger.getLogger(TimeSeriesProfileParserControllerIT.class.getName());
     private static final TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     private final InputStream resourceIndexed = this.getClass()
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_parser_indexed.json");
@@ -285,8 +288,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
 
     @Test
     void test_get_all_TimeSeriesProfileParser() throws Exception {
-        TimeSeriesProfileParserIndexed tspIndex
-                = (TimeSeriesProfileParserIndexed) new TimeSeriesProfileParserIndexed.Builder()
+        TimeSeriesProfileParserIndexed tspIndex = new TimeSeriesProfileParserIndexed.Builder()
                 .withTimeField(tspParserIndexed.getTimeField())
                 .withFieldDelimiter(tspParserIndexed.getFieldDelimiter())
                 .withTimeFormat(tspParserIndexed.getTimeFormat())
@@ -362,6 +364,30 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
         cleanupParser(tspIndex.getLocationId().getName(), tspIndex.getKeyParameter());
     }
 
+    @Test
+    void test_bad_input_type() {
+        String badData = tsDataColumnar.replace("columnar-timeseries-profile-parser", "bad-data-type");
+        // Create a Time Series Profile Parser
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .body(badData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/profile-parser")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("message", equalTo("Invalid TimeSeriesProfileParser type - request body did not contain "
+                + "'columnar-timeseries-profile-parser' or 'indexed-timeseries-profile-parser' type"))
+        ;
+    }
+
     private void cleanupParser(String locationId, String parameterId) throws Exception {
         try {
             CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -371,7 +397,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
                 dao.deleteTimeSeriesProfileParser(locationId, parameterId, OFFICE_ID);
             }, CwmsDataApiSetupCallback.getWebUser());
         } catch (NotFoundException e) {
-            // Ignore
+            LOGGER.log(Level.CONFIG, "Parser Cleanup failed", e);
         }
     }
 
@@ -384,7 +410,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
                 dao.deleteTimeSeriesProfile(locationId, keyParameter, OFFICE_ID);
             }, CwmsDataApiSetupCallback.getWebUser());
         } catch (NotFoundException e) {
-            // Ignore
+            LOGGER.log(Level.CONFIG, "TS Cleanup failed", e);
         }
     }
 }

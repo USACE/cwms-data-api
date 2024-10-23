@@ -295,7 +295,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                 assertAll(
                         () -> assertEquals(parameterArray.length, timeSeriesProfileInstance.getParameterColumns().size(),
                                 "First instance parameter count does not match"),
-                        () -> assertEquals(3, mapSize(timeSeriesProfileInstance.getTimeSeriesList()),
+                        () -> assertEquals(2, mapSize(timeSeriesProfileInstance.getTimeSeriesList()),
                                 "Size of timeseries list does not match"),
                         () -> assertEquals("Depth", timeSeriesProfileInstance.getParameterColumns().get(0).getParameter(),
                                 "First instance parameter does not match"),
@@ -307,13 +307,11 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                                 "Second instance units do not match"),
                         () -> assertThrows(IndexOutOfBoundsException.class, () -> timeSeriesProfileInstance.getParameterColumns().get(2),
                                 "Parameter column size too large"),
-                        () -> assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().get(1568033359000L).size(),
-                                "First instance timeseries list does not match in size"),
                         () -> assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).size(),
                                 "Second instance timeseries list does not match in size"),
                         () -> assertEquals(parameterArray.length, timeSeriesProfileInstance1.getParameterColumns().size(),
                                 "Second instance timeseries list does not match in size"),
-                        () -> assertEquals(3, mapSize(timeSeriesProfileInstance1.getTimeSeriesList()),
+                        () -> assertEquals(2, mapSize(timeSeriesProfileInstance1.getTimeSeriesList()),
                                 "Second instance timeseries list does not match in size"),
                         () -> assertEquals("Pres", timeSeriesProfileInstance1.getParameterColumns().get(1).getParameter(),
                                 "Second instance count of parameters does not match"),
@@ -327,27 +325,25 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                                 "Second instance parameter column size too large"),
                         () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().get(1568033359000L).size(),
                                 "Second instance timeseries list does not match in size"),
-                        () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().get(1568035040000L).size(),
-                                "Second instance timeseries list does not match in size"),
-                        () -> assertEquals(parameterArray.length - 1, timeSeriesProfileInstance2.getParameterColumns().size(),
+                        () -> assertEquals(parameterArray.length, timeSeriesProfileInstance2.getParameterColumns().size(),
                                 "Third instance timeseries list does not match in size"),
-                        () -> assertEquals(1, mapSize(timeSeriesProfileInstance2.getTimeSeriesList()),
+                        () -> assertEquals(2, mapSize(timeSeriesProfileInstance2.getTimeSeriesList()),
                                 "Third instance timeseries list does not match in size"),
                         () -> assertEquals("Depth", timeSeriesProfileInstance2.getParameterColumns().get(0).getParameter(),
                                 "Third instance parameter does not match"),
                         () -> assertEquals("m", timeSeriesProfileInstance2.getParameterColumns().get(0).getUnit(),
                                 "Third instance unit does not match"),
-                        () -> assertEquals(1, timeSeriesProfileInstance2.getTimeSeriesList().get(1568033347000L).size(),
+                        () -> assertEquals(2, timeSeriesProfileInstance2.getTimeSeriesList().get(1568033347000L).size(),
                                 "Third instance timeseries list does not match in size"),
-                        () -> assertEquals(parameterArray.length - 1, timeSeriesProfileInstance3.getParameterColumns().size(),
+                        () -> assertEquals(parameterArray.length, timeSeriesProfileInstance3.getParameterColumns().size(),
                                 "Fourth instance timeseries list does not match in size"),
-                        () -> assertEquals(1, mapSize(timeSeriesProfileInstance3.getTimeSeriesList()),
+                        () -> assertEquals(2, mapSize(timeSeriesProfileInstance3.getTimeSeriesList()),
                                 "Fourth instance timeseries list does not match in size"),
-                        () -> assertEquals("Pres", timeSeriesProfileInstance3.getParameterColumns().get(0).getParameter(),
+                        () -> assertEquals("Pres", timeSeriesProfileInstance3.getParameterColumns().get(1).getParameter(),
                                 "Fourth instance parameter does not match"),
-                        () -> assertEquals("kPa", timeSeriesProfileInstance3.getParameterColumns().get(0).getUnit(),
+                        () -> assertEquals("kPa", timeSeriesProfileInstance3.getParameterColumns().get(1).getUnit(),
                                 "Fourth instance unit does not match"),
-                        () -> assertEquals(1, timeSeriesProfileInstance3.getTimeSeriesList().get(1568033347000L).size(),
+                        () -> assertEquals(2, timeSeriesProfileInstance3.getTimeSeriesList().get(1568033359000L).size(),
                                 "Fourth instance timeseries list does not match in size"),
                         () -> assertEquals(parameterArray.length, timeSeriesProfileInstance4.getParameterColumns().size(),
                                 "Fifth instance timeseries list does not match in size"),
@@ -357,7 +353,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                                 "Fifth instance parameter does not match"),
                         () -> assertEquals("m", timeSeriesProfileInstance4.getParameterColumns().get(0).getUnit(),
                                 "Fifth instance unit does not match"),
-                        () -> assertEquals(2, timeSeriesProfileInstance4.getTimeSeriesList().get(1568033359000L).size(),
+                        () -> assertEquals(2, timeSeriesProfileInstance4.getTimeSeriesList().get(1568035040000L).size(),
                                 "Fifth instance timeseries list does not match in size")
                 );
             } catch (SQLException e) {
@@ -452,7 +448,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                     () -> assertEquals(222.0, Math.round(timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).get(2).getValue())),
                     () -> assertEquals(parameterArray.length, timeSeriesProfileInstance.getParameterColumns().size(),
                             "First instance parameter count does not match"),
-                    () -> assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().size(),
+                    () -> assertEquals(1, timeSeriesProfileInstance.getTimeSeriesList().size(),
                             "Size of timeseries list does not match"),
                     () -> assertEquals("Depth", timeSeriesProfileInstance.getParameterColumns().get(0).getParameter(),
                             "First instance parameter does not match"),
@@ -467,13 +463,11 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                             "First instance units do not match"),
                     () -> assertThrows(IndexOutOfBoundsException.class, () -> timeSeriesProfileInstance.getParameterColumns().get(3),
                             "Parameter column size too large"),
-                    () -> assertEquals(3, timeSeriesProfileInstance.getTimeSeriesList().get(1568033359000L).size(),
-                            "First instance timeseries list does not match in size"),
                     () -> assertEquals(3, timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).size(),
                             "Second instance timeseries list does not match in size"),
                     () -> assertEquals(parameterArray.length, timeSeriesProfileInstance1.getParameterColumns().size(),
                             "Second instance timeseries list does not match in size"),
-                    () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().size(),
+                    () -> assertEquals(1, timeSeriesProfileInstance1.getTimeSeriesList().size(),
                             "Second instance timeseries list does not match in size"),
                     () -> assertEquals("Pres", timeSeriesProfileInstance1.getParameterColumns().get(1).getParameter(),
                             "Second instance count of parameters does not match"),
@@ -487,9 +481,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                             "Second instance parameter column size too large"),
                     () -> assertEquals(3, timeSeriesProfileInstance1.getTimeSeriesList().get(1568033359000L).size(),
                             "Second instance timeseries list does not match in size"),
-                    () -> assertEquals(3, timeSeriesProfileInstance1.getTimeSeriesList().get(1568035040000L).size(),
-                            "Second instance timeseries list does not match in size"),
-                    () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().size(),
+                    () -> assertEquals(1, timeSeriesProfileInstance1.getTimeSeriesList().size(),
                             "Second instance timeseries list does not match expected size.")
                 );
             } catch (SQLException e) {
@@ -584,7 +576,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                     () -> assertEquals(222.0, Math.round(timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).get(1).getValue())),
                     () -> assertEquals(parameterArray.length, timeSeriesProfileInstance.getParameterColumns().size(),
                             "First instance parameter count does not match"),
-                    () -> assertEquals(2, timeSeriesProfileInstance.getTimeSeriesList().size(),
+                    () -> assertEquals(1, timeSeriesProfileInstance.getTimeSeriesList().size(),
                             "Size of timeseries list does not match"),
                     () -> assertEquals("Depth", timeSeriesProfileInstance.getParameterColumns().get(0).getParameter(),
                             "First instance parameter does not match"),
@@ -599,13 +591,11 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                             "First instance units do not match"),
                     () -> assertThrows(IndexOutOfBoundsException.class, () -> timeSeriesProfileInstance.getParameterColumns().get(3),
                             "Parameter column size too large"),
-                    () -> assertEquals(3, timeSeriesProfileInstance.getTimeSeriesList().get(1568033359000L).size(),
-                            "First instance timeseries list does not match in size"),
                     () -> assertEquals(3, timeSeriesProfileInstance.getTimeSeriesList().get(1568033347000L).size(),
                             "Second instance timeseries list does not match in size"),
                     () -> assertEquals(parameterArray.length, timeSeriesProfileInstance1.getParameterColumns().size(),
                             "Second instance timeseries list does not match in size"),
-                    () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().size(),
+                    () -> assertEquals(1, timeSeriesProfileInstance1.getTimeSeriesList().size(),
                             "Second instance timeseries list does not match in size"),
                     () -> assertEquals("Pres", timeSeriesProfileInstance1.getParameterColumns().get(1).getParameter(),
                             "Second instance count of parameters does not match"),
@@ -619,9 +609,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                             "Second instance parameter column size too large"),
                     () -> assertEquals(3, timeSeriesProfileInstance1.getTimeSeriesList().get(1568033359000L).size(),
                             "Second instance timeseries list does not match in size"),
-                    () -> assertEquals(3, timeSeriesProfileInstance1.getTimeSeriesList().get(1568035040000L).size(),
-                            "Second instance timeseries list does not match in size"),
-                    () -> assertEquals(2, timeSeriesProfileInstance1.getTimeSeriesList().size(),
+                    () -> assertEquals(1, timeSeriesProfileInstance1.getTimeSeriesList().size(),
                             "Second instance timeseries list does not match expected size.")
                 );
             } catch (SQLException e) {
@@ -1039,20 +1027,17 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         }
 
         CwmsId locationId = new CwmsId.Builder().withOfficeId(officeId).withName(location).build();
-        return (TimeSeriesProfileParserColumnar)
-
-                new TimeSeriesProfileParserColumnar.Builder()
-                        .withTimeStartColumn(timeStartEnd[0])
-                        .withTimeEndColumn(timeStartEnd[1])
-                        .withLocationId(locationId)
-                        .withKeyParameter(parameterArray[0])
-                        .withRecordDelimiter(recordDelimiter)
-                        .withTimeFormat(timeFormat)
-                        .withTimeZone(timeZone)
-
-                        .withTimeInTwoFields(false)
-                        .withParameterInfoList(parameterInfoList)
-                        .build();
+        return new TimeSeriesProfileParserColumnar.Builder()
+            .withTimeStartColumn(timeStartEnd[0])
+            .withTimeEndColumn(timeStartEnd[1])
+            .withLocationId(locationId)
+            .withKeyParameter(parameterArray[0])
+            .withRecordDelimiter(recordDelimiter)
+            .withTimeFormat(timeFormat)
+            .withTimeZone(timeZone)
+            .withTimeInTwoFields(false)
+            .withParameterInfoList(parameterInfoList)
+            .build();
     }
 
     private static TimeSeriesProfileParserIndexed buildTestTimeSeriesProfileParserIndexed(String officeId, String location, String[] parameterArray, int[] parameterIndexArray, String[] parameterUnitArray,
@@ -1067,19 +1052,17 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
         }
 
         CwmsId locationId = new CwmsId.Builder().withOfficeId(officeId).withName(location).build();
-        return (TimeSeriesProfileParserIndexed)
-
-                new TimeSeriesProfileParserIndexed.Builder()
-                        .withFieldDelimiter(fieldDelimiter)
-                        .withTimeField(timeField)
-                        .withLocationId(locationId)
-                        .withKeyParameter(parameterArray[0])
-                        .withRecordDelimiter(recordDelimiter)
-                        .withTimeFormat(timeFormat)
-                        .withTimeZone(timeZone)
-                        .withTimeInTwoFields(true)
-                        .withParameterInfoList(parameterInfoList)
-                        .build();
+        return new TimeSeriesProfileParserIndexed.Builder()
+            .withFieldDelimiter(fieldDelimiter)
+            .withTimeField(timeField)
+            .withLocationId(locationId)
+            .withKeyParameter(parameterArray[0])
+            .withRecordDelimiter(recordDelimiter)
+            .withTimeFormat(timeFormat)
+            .withTimeZone(timeZone)
+            .withTimeInTwoFields(true)
+            .withParameterInfoList(parameterInfoList)
+            .build();
     }
 
     public static int mapSize(Map<Long, List<TimeSeriesData>> map) {

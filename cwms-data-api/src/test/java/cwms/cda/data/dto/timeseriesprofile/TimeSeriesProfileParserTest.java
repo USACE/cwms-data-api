@@ -21,6 +21,7 @@ final class TimeSeriesProfileParserTest {
         ContentType contentType = Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class);
 
         String serialized = Formats.format(contentType, timeSeriesProfileParser);
+        assert(serialized.contains("type"));
         TimeSeriesProfileParserColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class), serialized, TimeSeriesProfileParserColumnar.class);
         testAssertEquals(timeSeriesProfileParser,  deserialized, "Roundtrip serialization failed");
     }
@@ -31,6 +32,7 @@ final class TimeSeriesProfileParserTest {
         ContentType contentType = Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class);
 
         String serialized = Formats.format(contentType, timeSeriesProfileParser);
+        assert(serialized.contains("type"));
         TimeSeriesProfileParserIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserIndexed.class), serialized, TimeSeriesProfileParserIndexed.class);
         testAssertEquals((TimeSeriesProfileParserIndexed)timeSeriesProfileParser, deserialized, "Roundtrip serialization failed");
     }
@@ -40,6 +42,7 @@ final class TimeSeriesProfileParserTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofileparsercolumnar.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assert(serialized.contains("type"));
         TimeSeriesProfileParserColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class), serialized, TimeSeriesProfileParserColumnar.class);
         testAssertEquals(timeSeriesProfileParser,  deserialized, "Roundtrip serialization from file failed");
     }
@@ -50,6 +53,7 @@ final class TimeSeriesProfileParserTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofileparserindexed.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assert(serialized.contains("type"));
         TimeSeriesProfileParserIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserIndexed.class), serialized, TimeSeriesProfileParserIndexed.class);
         testAssertEquals((TimeSeriesProfileParserIndexed) timeSeriesProfileParser, deserialized, "Roundtrip serialization from file failed");
     }
@@ -72,18 +76,17 @@ final class TimeSeriesProfileParserTest {
                 .withOfficeId("SWT")
                 .withName("location")
                 .build();
-        return (TimeSeriesProfileParserColumnar)
-                new TimeSeriesProfileParserColumnar.Builder()
-                        .withTimeStartColumn(1)
-                        .withTimeEndColumn(10)
-                        .withLocationId(locationId)
-                        .withKeyParameter("Depth")
-                        .withRecordDelimiter((char) 10)
-                        .withTimeFormat("MM/DD/YYYY,HH24:MI:SS")
-                        .withTimeZone("UTC")
-                        .withTimeInTwoFields(false)
-                        .withParameterInfoList(parameterInfo)
-                        .build();
+        return new TimeSeriesProfileParserColumnar.Builder()
+                .withTimeStartColumn(1)
+                .withTimeEndColumn(10)
+                .withLocationId(locationId)
+                .withKeyParameter("Depth")
+                .withRecordDelimiter((char) 10)
+                .withTimeFormat("MM/DD/YYYY,HH24:MI:SS")
+                .withTimeZone("UTC")
+                .withTimeInTwoFields(false)
+                .withParameterInfoList(parameterInfo)
+                .build();
     }
     private static TimeSeriesProfileParser buildTestTimeSeriesProfileParserIndexed() {
         List<ParameterInfo> parameterInfo = new ArrayList<>();

@@ -3,7 +3,6 @@ package cwms.cda.data.dto.timeseriesprofile;
 import static cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserBase.COLUMNAR_TYPE;
 import static cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserBase.INDEXED_TYPE;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -11,7 +10,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.data.dto.CwmsId;
@@ -20,9 +18,13 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import java.util.List;
 
-
+/**
+ * Base class for time series profile parsers
+ * Uses type annotations to handle polymorphism
+ * See issue here for details: <a href="https://github.com/FasterXML/jackson-databind/issues/2185">Jackson Issue</a>
+ */
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
 @JsonTypeName("time-series-profile-parser")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonDeserialize(builder = TimeSeriesProfileParser.Builder.class)
@@ -31,7 +33,6 @@ import java.util.List;
     @JsonSubTypes.Type(value = TimeSeriesProfileParserColumnar.class,
         name = COLUMNAR_TYPE)
 })
-@JsonIgnoreProperties("type")
 public abstract class TimeSeriesProfileParser extends CwmsDTOBase {
     private final CwmsId locationId;
     private final String keyParameter;

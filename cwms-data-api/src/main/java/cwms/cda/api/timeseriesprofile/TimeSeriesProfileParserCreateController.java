@@ -97,6 +97,8 @@ public final class TimeSeriesProfileParserCreateController extends TimeSeriesPro
                 tspParserDao.storeTimeSeriesProfileParser(tspParserIndexed, failIfExists);
             } else {
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                ctx.result("{ \"message\": \"Invalid TimeSeriesProfileParser type - request body did not contain "
+                    + "'columnar-timeseries-profile-parser' or 'indexed-timeseries-profile-parser' type\"} ");
                 return;
             }
             ctx.status(HttpServletResponse.SC_CREATED);

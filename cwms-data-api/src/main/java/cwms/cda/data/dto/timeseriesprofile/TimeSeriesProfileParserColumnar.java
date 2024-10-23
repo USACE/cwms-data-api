@@ -4,6 +4,7 @@ import static cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserBase.COLUMNA
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -13,13 +14,16 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-
+/**
+ * Columnar time series profile parser
+ * See {@link TimeSeriesProfileParser} for more information on serialization
+ *      and type handling.
+ */
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = TimeSeriesProfileParserColumnar.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonTypeName(COLUMNAR_TYPE)
-@JsonIgnoreProperties("type")
 public final class TimeSeriesProfileParserColumnar extends TimeSeriesProfileParser {
     private final Integer timeStartColumn;
     private final Integer timeEndColumn;
@@ -38,6 +42,7 @@ public final class TimeSeriesProfileParserColumnar extends TimeSeriesProfilePars
         return timeEndColumn;
     }
 
+    @JsonProperty("type")
     @Override
     public String getType() {
         return COLUMNAR_TYPE;
@@ -45,6 +50,7 @@ public final class TimeSeriesProfileParserColumnar extends TimeSeriesProfilePars
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+    @JsonIgnoreProperties("type")
     public static final class Builder extends TimeSeriesProfileParser.Builder<TimeSeriesProfileParserColumnar> {
         private Integer timeStartColumn = null;
         private Integer timeEndColumn = null;
