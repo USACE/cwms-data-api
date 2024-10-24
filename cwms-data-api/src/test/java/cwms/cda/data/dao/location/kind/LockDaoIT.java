@@ -36,11 +36,14 @@ import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
 import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,6 +64,7 @@ final class LockDaoIT extends ProjectStructureIT {
     private static final Location LOCK_LOC2 = buildProjectStructureLocation("LOCK_LOC2_IT", LOCK_KIND);
     private static final Location LOCK_LOC3 = buildProjectStructureLocation("LOCK_LOC3_IT", LOCK_KIND);
     private static final Logger LOGGER = Logger.getLogger(LockDaoIT.class.getName());
+    private List<Lock> locksToCleanup = new ArrayList<>();
 
     @BeforeAll
     public void setup() throws Exception {
@@ -86,11 +90,17 @@ final class LockDaoIT extends ProjectStructureIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
                 DSLContext context = getDslContext(c, OFFICE_ID);
+                LockDao lockDao = new LockDao(context);
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
                 try {
                     locationsDao.deleteLocation(LOCK_LOC1.getName(), OFFICE_ID, true);
                     locationsDao.deleteLocation(LOCK_LOC2.getName(), OFFICE_ID, true);
                     locationsDao.deleteLocation(LOCK_LOC3.getName(), OFFICE_ID, true);
+                    for (Lock lock : locksToCleanup) {
+                        CwmsId cwmsId = CwmsId.buildCwmsId(lock.getLocation().getOfficeId(), lock.getLocation().getName());
+                        lockDao.deleteLock(cwmsId, DeleteRule.DELETE_ALL);
+                    }
+                    locksToCleanup.clear();
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
                     LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
@@ -107,6 +117,7 @@ final class LockDaoIT extends ProjectStructureIT {
                 LockDao lockDao = new LockDao(context);
                 Lock lock = buildTestLock(LOCK_LOC1, PROJECT_LOC.getName());
                 lockDao.storeLock(lock, false);
+                locksToCleanup.add(lock);
                 String lockId = lock.getLocation().getName();
                 String lockOfficeId = lock.getLocation().getOfficeId();
                 CwmsId cwmsId = CwmsId.buildCwmsId(lockOfficeId, lockId);
@@ -114,6 +125,7 @@ final class LockDaoIT extends ProjectStructureIT {
                 DTOMatch.assertMatch(lock, retrievedLock);
                 lockDao.deleteLock(cwmsId, DeleteRule.DELETE_ALL);
                 assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, UnitSystem.EN));
+                locksToCleanup.remove(lock);
             },
             CwmsDataApiSetupCallback.getWebUser());
     }
@@ -126,10 +138,13 @@ final class LockDaoIT extends ProjectStructureIT {
                 LockDao lockDao = new LockDao(context);
                 Lock lock1 = buildTestLock(LOCK_LOC1, PROJECT_LOC.getName());
                 lockDao.storeLock(lock1, false);
+                locksToCleanup.add(lock1);
                 Lock lock2 = buildTestLock(LOCK_LOC2, PROJECT_LOC.getName());
                 lockDao.storeLock(lock2, false);
+                locksToCleanup.add(lock2);
                 Lock lock3 = buildTestLock(LOCK_LOC3, PROJECT_LOC2.getName());
                 lockDao.storeLock(lock2, false);
+                locksToCleanup.add(lock3);
                 String lockId = lock2.getLocation().getName();
                 String lockOfficeId = lock2.getLocation().getOfficeId();
                 CwmsId projectId = CwmsId.buildCwmsId(lock1.getProjectId().getOfficeId(), lock1.getProjectId().getName());
@@ -144,6 +159,7 @@ final class LockDaoIT extends ProjectStructureIT {
                 CwmsId cwmsId = CwmsId.buildCwmsId(lockOfficeId, lockId);
                 lockDao.deleteLock(cwmsId, DeleteRule.DELETE_ALL);
                 assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, null));
+                locksToCleanup.remove(lock2);
             },
             CwmsDataApiSetupCallback.getWebUser());
     }
@@ -156,6 +172,7 @@ final class LockDaoIT extends ProjectStructureIT {
                 LockDao lockDao = new LockDao(context);
                 Lock lock = buildTestLock(LOCK_LOC1, PROJECT_LOC.getName());
                 lockDao.storeLock(lock, false);
+                locksToCleanup.add(lock);
                 String originalId = lock.getLocation().getName();
                 String office = lock.getLocation().getOfficeId();
                 String newId = lock.getLocation().getName() + "New";
@@ -166,6 +183,7 @@ final class LockDaoIT extends ProjectStructureIT {
                 Lock retrievedLock = lockDao.retrieveLock(newCwmsId, UnitSystem.EN);
                 assertEquals(newId, retrievedLock.getLocation().getName());
                 lockDao.deleteLock(newCwmsId, DeleteRule.DELETE_ALL);
+                locksToCleanup.remove(lock);
             },
             CwmsDataApiSetupCallback.getWebUser());
     }
@@ -189,20 +207,36 @@ final class LockDaoIT extends ProjectStructureIT {
             .withHighWaterUpperPoolWarningLevel(2)
             .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
                     .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
-            .withHighWaterLowerPoolLocationLevel(new CwmsId.Builder()
-                .withName("HIGH_WATER_LOWER")
+            .withHighWaterLowerPoolLocationLevel(new LocationLevel.Builder("HIGH_WATER_LOWER",
+                    ZonedDateTime.parse("2024-09-15T00:00:00Z"))
+                .withLevelComment("High Water Lower Pool Location Level")
+                .withLevelUnitsId("ft")
+                .withParameterId("Elev")
+                .withConstantValue(1.5)
                 .withOfficeId("SPK")
                 .build())
-            .withHighWaterUpperPoolLocationLevel(new CwmsId.Builder()
-                .withName("HIGH_WATER_UPPER")
+            .withHighWaterUpperPoolLocationLevel(new LocationLevel.Builder("HIGH_WATER_UPPER",
+                    ZonedDateTime.parse("2024-09-16T00:00:00Z"))
+                .withLevelComment("High Water Upper Pool Location Level")
+                .withLevelUnitsId("ft")
+                .withParameterId("Elev")
+                .withConstantValue(2.5)
                 .withOfficeId("SPK")
                 .build())
-            .withLowWaterLowerPoolLocationLevel(new CwmsId.Builder()
-                .withName("LOW_WATER_LOWER")
+            .withLowWaterLowerPoolLocationLevel(new LocationLevel.Builder("LOW_WATER_LOWER",
+                    ZonedDateTime.parse("2024-09-17T00:00:00Z"))
+                .withLevelComment("Low Water Lower Pool Location Level")
+                .withLevelUnitsId("ft")
+                .withParameterId("Elev")
+                .withConstantValue(3.14)
                 .withOfficeId("SPK")
                 .build())
-            .withLowWaterUpperPoolLocationLevel(new CwmsId.Builder()
-                .withName("LOW_WATER_UPPER")
+            .withLowWaterUpperPoolLocationLevel(new LocationLevel.Builder("LOW_WATER_UPPER",
+                    ZonedDateTime.parse("2024-09-18T00:00:00Z"))
+                .withLevelComment("Low Water Upper Pool Location Level")
+                .withLevelUnitsId("ft")
+                .withParameterId("Elev")
+                .withConstantValue(6.5)
                 .withOfficeId("SPK")
                 .build())
             .build();

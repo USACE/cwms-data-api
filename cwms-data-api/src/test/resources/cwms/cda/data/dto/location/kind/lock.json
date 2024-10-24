@@ -41,20 +41,40 @@
   "units": "ft",
   "volume-units": "ft3",
   "high-water-upper-pool-location-level": {
-    "office-id": "LRL",
-    "name": "Upper Pool 1"
+    "constant-value": 2.96,
+    "level-units-id":"ac-ft",
+    "level-date":"2023-06-01T07:00:00Z",
+    "level-comment": "land side main high water",
+    "interpolate-string":"1Day",
+    "location-level-id":"UPPER_POOL_1.Stor.Ave.1Day.Regulating",
+    "office-id":"SPK"
   },
   "high-water-lower-pool-location-level": {
-    "office-id": "LRL",
-    "name": "Lower Pool 1"
+    "constant-value": 2.7,
+    "level-units-id":"ac-ft",
+    "level-date":"2023-06-02T07:00:00Z",
+    "level-comment": "water side main high water",
+    "interpolate-string":"1Day",
+    "location-level-id":"UPPER_POOL_2.Stor.Ave.1Day.Regulating",
+    "office-id":"SPK"
   },
   "low-water-upper-pool-location-level": {
-      "office-id": "LRL",
-      "name": "Upper Pool 2"
+    "constant-value": 8.0,
+    "level-units-id":"ac-ft",
+    "level-date":"2023-06-03T07:00:00Z",
+    "level-comment":"low water pool",
+    "interpolate-string":"1Day",
+    "location-level-id":"LOWER_POOL_1.Stor.Ave.1Day.Regulating",
+    "office-id":"SPK"
   },
   "low-water-lower-pool-location-level": {
-      "office-id": "LRL",
-      "name": "Lower Pool 2"
+    "constant-value": 5.0,
+    "level-units-id":"ac-ft",
+    "level-date":"2023-06-04T07:00:00Z",
+    "level-comment":"low water pool",
+    "interpolate-string":"1Day",
+    "location-level-id":"LOWER_POOL_2.Stor.Ave.1Day.Regulating",
+    "office-id":"SPK"
   },
   "high-water-upper-pool-warning-level": 2,
   "high-water-lower-pool-warning-level": 2

@@ -191,6 +191,21 @@ public final class LockController implements CrudHandler {
             Lock lock = Formats.parseContent(contentType, ctx.body(), Lock.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             DSLContext dsl = getDslContext(ctx);
+            if (lock.getHighWaterLowerPoolLocationLevel().getConstantValue() != null
+                    || lock.getHighWaterUpperPoolLocationLevel().getConstantValue() != null
+                    || lock.getLowWaterLowerPoolLocationLevel().getConstantValue() != null
+                    || lock.getLowWaterUpperPoolLocationLevel().getConstantValue() != null
+                    || lock.getLowWaterLowerPoolLocationLevel().getAttributeValue() != null
+                    || lock.getLowWaterUpperPoolLocationLevel().getAttributeValue() != null
+                    || lock.getHighWaterLowerPoolLocationLevel().getAttributeValue() != null
+                    || lock.getHighWaterUpperPoolLocationLevel().getAttributeValue() != null
+                    || lock.getLowWaterLowerPoolLocationLevel().getSeasonalValues() != null
+                    || lock.getLowWaterUpperPoolLocationLevel().getSeasonalValues() != null
+                    || lock.getHighWaterLowerPoolLocationLevel().getSeasonalValues() != null
+                    || lock.getHighWaterUpperPoolLocationLevel().getSeasonalValues() != null) {
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json("Lock to be stored cannot contain value data. "
+                    + "Please use the location level endpoints to store location level data.");
+            }
             LockDao dao = new LockDao(dsl);
             dao.storeLock(lock, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED).json("Created Lock");

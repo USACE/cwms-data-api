@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -57,10 +58,10 @@ public class Lock extends CwmsDTOBase {
     private final double maximumLockLift;
     private final String units;
     private final String volumeUnits;
-    private final CwmsId highWaterUpperPoolLocationLevel;
-    private final CwmsId lowWaterLowerPoolLocationLevel;
-    private final CwmsId highWaterLowerPoolLocationLevel;
-    private final CwmsId lowWaterUpperPoolLocationLevel;
+    private final LocationLevel highWaterUpperPoolLocationLevel;
+    private final LocationLevel lowWaterLowerPoolLocationLevel;
+    private final LocationLevel highWaterLowerPoolLocationLevel;
+    private final LocationLevel lowWaterUpperPoolLocationLevel;
     private final int highWaterUpperPoolWarningLevel;
     private final int highWaterLowerPoolWarningLevel;
 
@@ -128,19 +129,19 @@ public class Lock extends CwmsDTOBase {
         return minimumDraft;
     }
 
-    public final CwmsId getHighWaterUpperPoolLocationLevel() {
+    public final LocationLevel getHighWaterUpperPoolLocationLevel() {
         return highWaterUpperPoolLocationLevel;
     }
 
-    public final CwmsId getLowWaterLowerPoolLocationLevel() {
+    public final LocationLevel getLowWaterLowerPoolLocationLevel() {
         return lowWaterLowerPoolLocationLevel;
     }
 
-    public final CwmsId getHighWaterLowerPoolLocationLevel() {
+    public final LocationLevel getHighWaterLowerPoolLocationLevel() {
         return highWaterLowerPoolLocationLevel;
     }
 
-    public final CwmsId getLowWaterUpperPoolLocationLevel() {
+    public final LocationLevel getLowWaterUpperPoolLocationLevel() {
         return lowWaterUpperPoolLocationLevel;
     }
 
@@ -164,10 +165,10 @@ public class Lock extends CwmsDTOBase {
         private double minimumDraft;
         private String units;
         private String volumeUnits;
-        private CwmsId highWaterUpperPoolLocationLevel;
-        private CwmsId lowWaterLowerPoolLocationLevel;
-        private CwmsId highWaterLowerPoolLocationLevel;
-        private CwmsId lowWaterUpperPoolLocationLevel;
+        private LocationLevel highWaterUpperPoolLocationLevel;
+        private LocationLevel lowWaterLowerPoolLocationLevel;
+        private LocationLevel highWaterLowerPoolLocationLevel;
+        private LocationLevel lowWaterUpperPoolLocationLevel;
         private int highWaterUpperPoolWarningLevel;
         private int highWaterLowerPoolWarningLevel;
 
@@ -226,22 +227,22 @@ public class Lock extends CwmsDTOBase {
             return this;
         }
 
-        public Builder withHighWaterUpperPoolLocationLevel(CwmsId highWaterUpperPoolLocationLevel) {
+        public Builder withHighWaterUpperPoolLocationLevel(LocationLevel highWaterUpperPoolLocationLevel) {
             this.highWaterUpperPoolLocationLevel = highWaterUpperPoolLocationLevel;
             return this;
         }
 
-        public Builder withLowWaterLowerPoolLocationLevel(CwmsId lowWaterLowerPoolLocationLevel) {
+        public Builder withLowWaterLowerPoolLocationLevel(LocationLevel lowWaterLowerPoolLocationLevel) {
             this.lowWaterLowerPoolLocationLevel = lowWaterLowerPoolLocationLevel;
             return this;
         }
 
-        public Builder withHighWaterLowerPoolLocationLevel(CwmsId highWaterLowerPoolLocationLevel) {
+        public Builder withHighWaterLowerPoolLocationLevel(LocationLevel highWaterLowerPoolLocationLevel) {
             this.highWaterLowerPoolLocationLevel = highWaterLowerPoolLocationLevel;
             return this;
         }
 
-        public Builder withLowWaterUpperPoolLocationLevel(CwmsId lowWaterUpperPoolLocationLevel) {
+        public Builder withLowWaterUpperPoolLocationLevel(LocationLevel lowWaterUpperPoolLocationLevel) {
             this.lowWaterUpperPoolLocationLevel = lowWaterUpperPoolLocationLevel;
             return this;
         }
