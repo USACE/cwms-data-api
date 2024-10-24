@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class TimeSeriesProfileParserTest {
     @Test
@@ -21,7 +22,7 @@ final class TimeSeriesProfileParserTest {
         ContentType contentType = Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class);
 
         String serialized = Formats.format(contentType, timeSeriesProfileParser);
-        assert(serialized.contains("type"));
+        assertTrue(serialized.contains("type"));
         TimeSeriesProfileParserColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class), serialized, TimeSeriesProfileParserColumnar.class);
         testAssertEquals(timeSeriesProfileParser,  deserialized, "Roundtrip serialization failed");
     }
@@ -32,7 +33,7 @@ final class TimeSeriesProfileParserTest {
         ContentType contentType = Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class);
 
         String serialized = Formats.format(contentType, timeSeriesProfileParser);
-        assert(serialized.contains("type"));
+        assertTrue(serialized.contains("type"));
         TimeSeriesProfileParserIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserIndexed.class), serialized, TimeSeriesProfileParserIndexed.class);
         testAssertEquals((TimeSeriesProfileParserIndexed)timeSeriesProfileParser, deserialized, "Roundtrip serialization failed");
     }
@@ -42,7 +43,7 @@ final class TimeSeriesProfileParserTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofileparsercolumnar.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        assert(serialized.contains("type"));
+        assertTrue(serialized.contains("type"));
         TimeSeriesProfileParserColumnar deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserColumnar.class), serialized, TimeSeriesProfileParserColumnar.class);
         testAssertEquals(timeSeriesProfileParser,  deserialized, "Roundtrip serialization from file failed");
     }
@@ -53,7 +54,7 @@ final class TimeSeriesProfileParserTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/timeseriesprofile/timeseriesprofileparserindexed.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        assert(serialized.contains("type"));
+        assertTrue(serialized.contains("type"));
         TimeSeriesProfileParserIndexed deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesProfileParserIndexed.class), serialized, TimeSeriesProfileParserIndexed.class);
         testAssertEquals((TimeSeriesProfileParserIndexed) timeSeriesProfileParser, deserialized, "Roundtrip serialization from file failed");
     }

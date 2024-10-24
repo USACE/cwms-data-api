@@ -383,8 +383,6 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-            .body("message", equalTo("Invalid TimeSeriesProfileParser type - request body did not contain "
-                + "'columnar-timeseries-profile-parser' or 'indexed-timeseries-profile-parser' type"))
         ;
     }
 
