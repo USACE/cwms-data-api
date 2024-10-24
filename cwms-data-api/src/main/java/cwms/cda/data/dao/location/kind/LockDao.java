@@ -30,7 +30,10 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.LocationsDao;
+import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.location.kind.Lock;
 import java.util.List;
 import org.jooq.DSLContext;
@@ -72,6 +75,7 @@ public final class LockDao extends JooqDao<Lock> {
         UnitSystem unitSystemFinal = units;
         return connectionResult(dsl, c -> {
             setOffice(c, lockId.getOfficeId());
+            LocationsDao locationsDao = new LocationsDaoImpl(dsl);
             Record dbRecord = DSL.using(c)
                 .select(view.fields())
                 .from(view)
@@ -81,7 +85,9 @@ public final class LockDao extends JooqDao<Lock> {
             if (dbRecord == null) {
                 throw new NotFoundException("Lock not found: " + lockId);
             }
-            return map(dbRecord.into(LOCK_OBJ_T.class));
+            Location lockLocation = locationsDao.getLocation(dbRecord.get(view.LOCK_ID),
+                    "SI", dbRecord.get(view.DB_OFFICE_ID));
+            return map(dbRecord, lockLocation);
         });
 
     }
@@ -125,8 +131,22 @@ public final class LockDao extends JooqDao<Lock> {
             .withMinimumDraft(lock.getMINIMUM_DRAFT())
             .withUnits(lock.getUNITS_ID())
             .withVolumeUnits(lock.getVOLUME_UNITS_ID())
-            .withVolumeUnits(lock.getVOLUME_UNITS_ID())
             .build();
+    }
+
+    static Lock map(Record result, Location lockLocation) {
+        CwmsId projectId = CwmsId.buildCwmsId(result.get(view.DB_OFFICE_ID), result.get(view.PROJECT_ID));
+        return new Lock.Builder()
+                .withLocation(lockLocation)
+                .withProjectId(projectId)
+                .withLockLength(result.get(view.LOCK_LENGTH))
+                .withLockWidth(result.get(view.LOCK_WIDTH))
+                .withNormalLockLift(result.get(view.NORMAL_LOCK_LIFT))
+                .withVolumePerLockage(result.get(view.VOLUME_PER_LOCKAGE))
+                .withMinimumDraft(result.get(view.MINIMUM_DRAFT))
+                .withUnits(result.get(view.LENGTH_UNIT_ID))
+                .withVolumeUnits(result.get(view.VOLUME_UNIT_ID))
+                .build();
     }
 
     public void deleteLock(CwmsId lockId, DeleteRule deleteRule) {

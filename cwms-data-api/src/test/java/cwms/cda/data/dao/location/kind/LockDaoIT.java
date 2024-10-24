@@ -25,10 +25,7 @@
 package cwms.cda.data.dao.location.kind;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.NotFoundException;
@@ -64,7 +61,7 @@ final class LockDaoIT extends ProjectStructureIT {
     private static final Location LOCK_LOC2 = buildProjectStructureLocation("LOCK_LOC2_IT", LOCK_KIND);
     private static final Location LOCK_LOC3 = buildProjectStructureLocation("LOCK_LOC3_IT", LOCK_KIND);
     private static final Logger LOGGER = Logger.getLogger(LockDaoIT.class.getName());
-    private List<Lock> locksToCleanup = new ArrayList<>();
+    private List<CwmsId> locksToCleanup = new ArrayList<>();
 
     @BeforeAll
     public void setup() throws Exception {
@@ -94,16 +91,35 @@ final class LockDaoIT extends ProjectStructureIT {
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
                 try {
                     locationsDao.deleteLocation(LOCK_LOC1.getName(), OFFICE_ID, true);
-                    locationsDao.deleteLocation(LOCK_LOC2.getName(), OFFICE_ID, true);
-                    locationsDao.deleteLocation(LOCK_LOC3.getName(), OFFICE_ID, true);
-                    for (Lock lock : locksToCleanup) {
-                        CwmsId cwmsId = CwmsId.buildCwmsId(lock.getLocation().getOfficeId(), lock.getLocation().getName());
-                        lockDao.deleteLock(cwmsId, DeleteRule.DELETE_ALL);
-                    }
-                    locksToCleanup.clear();
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
                     LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
+                }
+                try {
+                    locationsDao.deleteLocation(LOCK_LOC2.getName(), OFFICE_ID, true);
+                } catch (NotFoundException ex) {
+                    /* only an error within the tests below. */
+                    LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
+                }
+                try {
+                    locationsDao.deleteLocation(LOCK_LOC3.getName(), OFFICE_ID, true);
+                } catch (NotFoundException ex) {
+                    /* only an error within the tests below. */
+                    LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
+                }
+                try{
+                    locationsDao.deleteLocation(LOCK_LOC1.getName() + "New", OFFICE_ID, true);
+                } catch (NotFoundException ex) {
+                    /* only an error within the tests below. */
+                    LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
+                }
+                for (CwmsId lock : locksToCleanup) {
+                    try {
+                        lockDao.deleteLock(lock, DeleteRule.DELETE_ALL);
+                    } catch (NotFoundException ex) {
+                        /* only an error within the tests below. */
+                        LOGGER.log(Level.CONFIG, "Error deleting lock - does not exist", ex);
+                    }
                 }
             },
             CwmsDataApiSetupCallback.getWebUser());
@@ -117,15 +133,15 @@ final class LockDaoIT extends ProjectStructureIT {
                 LockDao lockDao = new LockDao(context);
                 Lock lock = buildTestLock(LOCK_LOC1, PROJECT_LOC.getName());
                 lockDao.storeLock(lock, false);
-                locksToCleanup.add(lock);
                 String lockId = lock.getLocation().getName();
                 String lockOfficeId = lock.getLocation().getOfficeId();
                 CwmsId cwmsId = CwmsId.buildCwmsId(lockOfficeId, lockId);
+                locksToCleanup.add(cwmsId);
                 Lock retrievedLock = lockDao.retrieveLock(cwmsId, UnitSystem.EN);
                 DTOMatch.assertMatch(lock, retrievedLock);
                 lockDao.deleteLock(cwmsId, DeleteRule.DELETE_ALL);
                 assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, UnitSystem.EN));
-                locksToCleanup.remove(lock);
+                locksToCleanup.remove(cwmsId);
             },
             CwmsDataApiSetupCallback.getWebUser());
     }
@@ -138,13 +154,13 @@ final class LockDaoIT extends ProjectStructureIT {
                 LockDao lockDao = new LockDao(context);
                 Lock lock1 = buildTestLock(LOCK_LOC1, PROJECT_LOC.getName());
                 lockDao.storeLock(lock1, false);
-                locksToCleanup.add(lock1);
+                locksToCleanup.add(CwmsId.buildCwmsId(lock1.getLocation().getOfficeId(), lock1.getLocation().getName()));
                 Lock lock2 = buildTestLock(LOCK_LOC2, PROJECT_LOC.getName());
                 lockDao.storeLock(lock2, false);
-                locksToCleanup.add(lock2);
+                locksToCleanup.add(CwmsId.buildCwmsId(lock2.getLocation().getOfficeId(), lock2.getLocation().getName()));
                 Lock lock3 = buildTestLock(LOCK_LOC3, PROJECT_LOC2.getName());
                 lockDao.storeLock(lock2, false);
-                locksToCleanup.add(lock3);
+                locksToCleanup.add(CwmsId.buildCwmsId(lock3.getLocation().getOfficeId(), lock3.getLocation().getName()));
                 String lockId = lock2.getLocation().getName();
                 String lockOfficeId = lock2.getLocation().getOfficeId();
                 CwmsId projectId = CwmsId.buildCwmsId(lock1.getProjectId().getOfficeId(), lock1.getProjectId().getName());
@@ -159,7 +175,7 @@ final class LockDaoIT extends ProjectStructureIT {
                 CwmsId cwmsId = CwmsId.buildCwmsId(lockOfficeId, lockId);
                 lockDao.deleteLock(cwmsId, DeleteRule.DELETE_ALL);
                 assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, null));
-                locksToCleanup.remove(lock2);
+                locksToCleanup.remove(CwmsId.buildCwmsId(lock2.getLocation().getOfficeId(), lock2.getLocation().getName()));
             },
             CwmsDataApiSetupCallback.getWebUser());
     }
@@ -172,18 +188,19 @@ final class LockDaoIT extends ProjectStructureIT {
                 LockDao lockDao = new LockDao(context);
                 Lock lock = buildTestLock(LOCK_LOC1, PROJECT_LOC.getName());
                 lockDao.storeLock(lock, false);
-                locksToCleanup.add(lock);
                 String originalId = lock.getLocation().getName();
                 String office = lock.getLocation().getOfficeId();
                 String newId = lock.getLocation().getName() + "New";
+                CwmsId newCwmsId = CwmsId.buildCwmsId(office, newId);
                 CwmsId cwmsId = CwmsId.buildCwmsId(office, originalId);
+                locksToCleanup.add(cwmsId);
                 lockDao.renameLock(cwmsId, newId);
                 assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, UnitSystem.EN));
-                CwmsId newCwmsId = CwmsId.buildCwmsId(office, newId);
                 Lock retrievedLock = lockDao.retrieveLock(newCwmsId, UnitSystem.EN);
+                assertNotNull(retrievedLock.getLocation());
                 assertEquals(newId, retrievedLock.getLocation().getName());
                 lockDao.deleteLock(newCwmsId, DeleteRule.DELETE_ALL);
-                locksToCleanup.remove(lock);
+                locksToCleanup.remove(cwmsId);
             },
             CwmsDataApiSetupCallback.getWebUser());
     }
