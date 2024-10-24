@@ -1,0 +1,22 @@
+{
+  "office-id": "SWT",
+  "name": "PROJ_LOCK_PHYS",
+  "latitude": 36.153980,
+  "longitude": -95.992775,
+  "active": true,
+  "public-name": "CDA-PROJECT",
+  "long-name": "UNITED STATES",
+  "description": "for testing",
+  "timezone-name": "UTC",
+  "location-type": "SITE",
+  "location-kind": "PROJECT",
+  "nation": "US",
+  "state-initial": "CA",
+  "county-name": "Sacramento",
+  "horizontal-datum": "NVGD29",
+  "published-longitude": -95.992775,
+  "published-latitude": 36.153980,
+  "elevation": 10.0,
+  "elevation-units": "m",
+  "bounding-office-id": "SWT"
+}

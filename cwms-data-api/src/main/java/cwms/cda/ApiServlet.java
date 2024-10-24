@@ -108,6 +108,7 @@ import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.api.location.kind.GateChangeDeleteController;
 import cwms.cda.api.location.kind.GateChangeGetAllController;
 import cwms.cda.api.location.kind.GateChangeCreateController;
+import cwms.cda.api.location.kind.LockController;
 import cwms.cda.api.location.kind.OutletController;
 import cwms.cda.api.location.kind.VirtualOutletController;
 import cwms.cda.api.location.kind.VirtualOutletCreateController;
@@ -573,7 +574,9 @@ public class ApiServlet extends HttpServlet {
             new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/projects/turbines/{%s}", Controllers.NAME),
             new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        String turbineChanges = format("/projects/{%s}/{%s}/turbine-changes", OFFICE, Controllers.NAME);
+        cdaCrudCache(format("/projects/locks/{%s}", Controllers.NAME),
+            new LockController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        String turbineChanges = format("/projects/{%s}/{%s}/turbine-changes", Controllers.OFFICE, Controllers.NAME);
         get(turbineChanges,new TurbineChangesGetController(metrics));
         addCacheControl(turbineChanges, 5, TimeUnit.MINUTES);
         post(turbineChanges, new TurbineChangesPostController(metrics), requiredRoles);

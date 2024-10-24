@@ -1,0 +1,81 @@
+{
+  "project-id": {
+    "office-id": "LRD",
+    "name": "PROJECT"
+  },
+  "location": {
+    "office-id": "LRL",
+    "name": "TEST_LOCATION2",
+    "latitude": 50.0,
+    "longitude": 50.0,
+    "active": true,
+    "public-name": "TEST_LOCATION2",
+    "long-name": "TEST_LOCATION",
+    "description": "for testing",
+    "timezone-name": "UTC",
+    "location-type": "SITE",
+    "location-kind": "LOCK",
+    "nation": "US",
+    "state-initial": "CA",
+    "county-name": "Sacramento",
+    "horizontal-datum": "NVGD29",
+    "published-longitude": 50.0,
+    "published-latitude": 50.0,
+    "elevation": 10.0,
+    "elevation-units": "m",
+    "bounding-office-id": "LRL",
+    "nearest-city": "Davis"
+  },
+  "chamber-type": {
+    "display-value": "LOCK",
+    "tooltip": "Land Side Main",
+    "active": true,
+    "office-id": "LRL"
+  },
+  "lock-width": 50.0,
+  "lock-length": 50.0,
+  "normal-lock-lift": 10.0,
+  "volume-per-lockage": 10.0,
+  "minimum-draft": 25.5,
+  "maximum-lock-lift": 25.6,
+  "units": "ft",
+  "volume-units": "ft3",
+  "high-water-upper-pool-location-level": {
+    "constant-value": 2.96,
+    "level-units-id":"ac-ft",
+    "level-date":"2023-06-01T07:00:00Z",
+    "level-comment": "land side main high water",
+    "interpolate-string":"1Day",
+    "location-level-id":"UPPER_POOL_1.Stor.Ave.1Day.Regulating",
+    "office-id":"SPK"
+  },
+  "high-water-lower-pool-location-level": {
+    "constant-value": 2.7,
+    "level-units-id":"ac-ft",
+    "level-date":"2023-06-02T07:00:00Z",
+    "level-comment": "water side main high water",
+    "interpolate-string":"1Day",
+    "location-level-id":"UPPER_POOL_2.Stor.Ave.1Day.Regulating",
+    "office-id":"SPK"
+  },
+  "low-water-upper-pool-location-level": {
+    "constant-value": 8.0,
+    "level-units-id":"ac-ft",
+    "level-date":"2023-06-03T07:00:00Z",
+    "level-comment":"low water pool",
+    "interpolate-string":"1Day",
+    "location-level-id":"LOWER_POOL_1.Stor.Ave.1Day.Regulating",
+    "office-id":"SPK"
+  },
+  "low-water-lower-pool-location-level": {
+    "constant-value": 5.0,
+    "level-units-id":"ac-ft",
+    "level-date":"2023-06-04T07:00:00Z",
+    "level-comment":"low water pool",
+    "interpolate-string":"1Day",
+    "location-level-id":"LOWER_POOL_2.Stor.Ave.1Day.Regulating",
+    "office-id":"SPK"
+  },
+  "high-water-upper-pool-warning-level": 2,
+  "high-water-lower-pool-warning-level": 2
+}

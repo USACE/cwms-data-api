@@ -112,4 +112,19 @@ public abstract class Dao<T> {
 
     public abstract Optional<T> getByUniqueName(String uniqueName, String office);
 
+    /**
+     * Translates a boolean to the CWMS boolean character, T or F.
+     *
+     * @param tf
+     * @return
+     */
+    protected static String formatBool(Boolean tf)
+    {
+        String parsed = null;
+        if(tf != null)
+        {
+            parsed = tf ? "T" : "F";
+        }
+        return parsed;
+    }
 }
