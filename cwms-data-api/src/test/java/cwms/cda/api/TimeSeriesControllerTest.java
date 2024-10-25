@@ -1,8 +1,6 @@
 package cwms.cda.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -16,6 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.data.dto.TimeSeriesRecordWithDate;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
@@ -28,7 +27,6 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,9 +41,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class TimeSeriesControllerTest extends ControllerTest {
-
-
-
     @Test
     void testDaoMock() throws JsonProcessingException     {
         String officeId = "LRL";
@@ -134,10 +129,62 @@ class TimeSeriesControllerTest extends ControllerTest {
         // Make sure ts we got back resembles the fakeTS our mock dao was supposed to return.
         assertEquals(expected.getOfficeId(), actual.getOfficeId(), "offices did not match");
         assertEquals(expected.getName(), actual.getName(), "names did not match");
-        assertEquals(expected.getValues(), actual.getValues(), "values did not match");
+        assertRecordsMatch(expected.getValues(), actual.getValues());
         assertTrue(expected.getBegin().isEqual(actual.getBegin()), "begin dates not equal");
         assertTrue(expected.getEnd().isEqual(actual.getEnd()), "end dates not equal");
     }
+
+    private void assertRecordsMatch(List<TimeSeries.Record> expected, List<TimeSeries.Record> actual) {
+        for (int i = 0; i < expected.size(); i++) {
+            if (expected.get(i) instanceof TimeSeriesRecordWithDate) {
+                if (!(actual.get(i) instanceof TimeSeriesRecordWithDate)) {
+                    throw new AssertionError("Expected TimeSeriesRecordWithDate but got " + actual.get(i).getClass().getName());
+                }
+                TimeSeriesRecordWithDate expectedRecord = new TimeSeriesRecordWithDate(expected.get(i).getDateTime(),
+                        expected.get(i).getValue(), expected.get(i).getQualityCode(),
+                        ((TimeSeriesRecordWithDate) expected.get(i)).getDataEntryDate());
+                TimeSeriesRecordWithDate actualRecord = new TimeSeriesRecordWithDate(actual.get(i).getDateTime(),
+                        actual.get(i).getValue(), actual.get(i).getQualityCode(),
+                        ((TimeSeriesRecordWithDate) actual.get(i)).getDataEntryDate());
+                assertEquals(expectedRecord.getDataEntryDate(),
+                        actualRecord.getDataEntryDate(), "Entry dates did not match");
+            }
+            assertEquals(expected.get(i).getDateTime(), actual.get(i).getDateTime(), "Timestamps did not match");
+            assertEquals(expected.get(i).getValue(), actual.get(i).getValue(), "Values did not match");
+            assertEquals(expected.get(i).getQualityCode(), actual.get(i).getQualityCode(), "Quality codes did not match");
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.XMLV2, Formats.JSONV2})
+    void testSerializeTimeSeries(String format) {
+        String officeId = "LRL";
+        String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+        TimeSeries fakeTs = buildTimeSeries(officeId, tsId);
+        ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
+        String formatted = Formats.format(contentType, fakeTs);
+        assertNotNull(formatted);
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        assertNotNull(ts2);
+        assertSimilar(fakeTs, ts2);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.XMLV2, Formats.JSONV2})
+    void testSerializeTimeSeriesWithDataEntryDate(String format) {
+        String officeId = "LRL";
+        String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+        TimeSeries fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
+        assertEquals(4, fakeTs.getValueColumnsJSON().size());
+        assertInstanceOf(TimeSeriesRecordWithDate.class, fakeTs.getValues().get(0));
+        ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
+        String formatted = Formats.format(contentType, fakeTs);
+        assertNotNull(formatted);
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        assertNotNull(ts2);
+        assertSimilar(fakeTs, ts2);
+    }
+
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.XMLV2, Formats.JSONV2})
@@ -241,7 +288,7 @@ class TimeSeriesControllerTest extends ControllerTest {
         for(int i = 0; i < count; i++) {
             Timestamp dateTime = Timestamp.from(next.toInstant());
             ts.addValue(dateTime, (double) i, 0, null);
-            next = next.plus(minutes, ChronoUnit.MINUTES);
+            next = next.plusMinutes(minutes);
         }
         return ts;
     }
@@ -272,7 +319,7 @@ class TimeSeriesControllerTest extends ControllerTest {
         for(int i = 0; i < count; i++) {
             Timestamp dateTime = Timestamp.from(next.toInstant());
             ts.addValue(dateTime, (double) i, 0, Timestamp.from(Instant.now()));
-            next = next.plus(minutes, ChronoUnit.MINUTES);
+            next = next.plusMinutes(minutes);
         }
         return ts;
     }

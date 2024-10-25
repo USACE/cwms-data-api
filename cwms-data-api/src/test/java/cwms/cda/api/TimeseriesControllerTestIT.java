@@ -43,7 +43,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/pseudo_reg_1hour.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
@@ -109,7 +109,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
@@ -143,7 +143,6 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-//                .body(tsData)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam("office", officeId)
                 .queryParam("units", "F")
@@ -327,7 +326,6 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .body("values[0][1]", equalTo(4.0F))
             .body("values[0].size()", equalTo(3));
     }
-
 
     @Test
     void test_delete_ts() throws Exception {
@@ -628,7 +626,6 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                     .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .accept(Formats.JSONV2)
-//                    .body(tsData)
                     .header("Authorization", user.toHeaderValue())
                     .queryParam("office", officeId)
                     .queryParam("units", "F")
@@ -655,7 +652,6 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                     .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .accept(Formats.JSONV2)
-//                    .body(tsData)
                     .header("Authorization", user.toHeaderValue())
                     .queryParam("office", officeId)
                     .queryParam("units", "F")
@@ -956,13 +952,13 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         XMLV2(Formats.XMLV2, Formats.XMLV2),
         ;
 
-        final String _accept;
-        final String _expectedContentType;
+        final String accept;
+        final String expectedContentType;
 
         GetAllTest(String accept, String expectedContentType)
         {
-            _accept = accept;
-            _expectedContentType = expectedContentType;
+            this.accept = accept;
+            this.expectedContentType = expectedContentType;
         }
     }
 }

@@ -416,8 +416,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                             .and(AV_TSV_DQU.AV_TSV_DQU.CWMS_TS_ID.equalIgnoreCase(names))
                             .and(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID.eq(office))
                             .and(AV_TSV_DQU.AV_TSV_DQU.UNIT_ID.equalIgnoreCase(unit))
-//                            .and(AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE.eq(versionDate == null ? null :
-//                                    Timestamp.from(versionDate.toInstant())))
+                            .and(AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE.eq(versionDate == null ? null :
+                                    Timestamp.from(versionDate.toInstant())))
                                 );
 
                 if (pageSize > 0) {
