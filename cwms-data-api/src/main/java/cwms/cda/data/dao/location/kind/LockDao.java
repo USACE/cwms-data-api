@@ -115,7 +115,7 @@ public final class LockDao extends JooqDao<Lock> {
         retval.setNORMAL_LOCK_LIFT(lock.getNormalLockLift());
         retval.setVOLUME_PER_LOCKAGE(lock.getVolumePerLockage());
         retval.setMINIMUM_DRAFT(lock.getMinimumDraft());
-        retval.setUNITS_ID(lock.getUnits());
+        retval.setUNITS_ID(lock.getLengthUnits());
         retval.setVOLUME_UNITS_ID(lock.getVolumeUnits());
         return retval;
     }
@@ -129,7 +129,7 @@ public final class LockDao extends JooqDao<Lock> {
             .withNormalLockLift(lock.getNORMAL_LOCK_LIFT())
             .withVolumePerLockage(lock.getVOLUME_PER_LOCKAGE())
             .withMinimumDraft(lock.getMINIMUM_DRAFT())
-            .withUnits(lock.getUNITS_ID())
+            .withLengthUnits(lock.getUNITS_ID())
             .withVolumeUnits(lock.getVOLUME_UNITS_ID())
             .build();
     }
@@ -144,7 +144,7 @@ public final class LockDao extends JooqDao<Lock> {
                 .withNormalLockLift(result.get(view.NORMAL_LOCK_LIFT))
                 .withVolumePerLockage(result.get(view.VOLUME_PER_LOCKAGE))
                 .withMinimumDraft(result.get(view.MINIMUM_DRAFT))
-                .withUnits(result.get(view.LENGTH_UNIT_ID))
+                .withLengthUnits(result.get(view.LENGTH_UNIT_ID))
                 .withVolumeUnits(result.get(view.VOLUME_UNIT_ID))
                 .build();
     }

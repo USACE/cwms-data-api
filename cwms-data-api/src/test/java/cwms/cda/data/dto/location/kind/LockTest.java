@@ -24,27 +24,23 @@
 
 package cwms.cda.data.dto.location.kind;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DTOMatch;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 final class LockTest {
 
@@ -84,6 +80,17 @@ final class LockTest {
         );
     }
 
+    @Test
+    void testLockLocationLevelRef() {
+        LockLocationLevelRef lockLocationLevelRef = new LockLocationLevelRef("/locks/HIGH_WATER_LOWER?office=SPK", 1.5);
+        assertAll(() -> {
+            assertEquals("SPK", lockLocationLevelRef.getOfficeId());
+            assertEquals("HIGH_WATER_LOWER", lockLocationLevelRef.getLockId());
+            assertEquals(1.5, lockLocationLevelRef.getLevelValue());
+            assertEquals("/locks/HIGH_WATER_LOWER?office=SPK", lockLocationLevelRef.getLevelURI());
+        });
+    }
+
     private Lock buildTestLock() {
         return new Lock.Builder()
                 .withLocation(buildTestLocation())
@@ -97,44 +104,20 @@ final class LockTest {
                 .withMaximumLockLift(20.0)
                 .withVolumePerLockage(100.0)
                 .withMinimumDraft(5.0)
-                .withUnits("ft")
+                .withLengthUnits("ft")
                 .withVolumeUnits("ft3")
                 .withHighWaterLowerPoolWarningLevel(2)
                 .withHighWaterUpperPoolWarningLevel(2)
                 .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
                         .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
-                .withHighWaterLowerPoolLocationLevel(new LocationLevel.Builder("HIGH_WATER_LOWER",
-                        ZonedDateTime.parse("2024-09-15T00:00:00Z"))
-                        .withLevelComment("High Water Lower Pool Location Level")
-                        .withLevelUnitsId("ft")
-                        .withParameterId("Elev")
-                        .withConstantValue(3.14)
-                        .withOfficeId("SPK")
-                        .build())
-                .withHighWaterUpperPoolLocationLevel(new LocationLevel.Builder("HIGH_WATER_UPPER",
-                        ZonedDateTime.parse("2024-09-16T00:00:00Z"))
-                        .withLevelComment("High Water Lower Pool Location Level")
-                        .withLevelUnitsId("ft")
-                        .withParameterId("Elev")
-                        .withConstantValue(1.5)
-                        .withOfficeId("SPK")
-                        .build())
-                .withLowWaterLowerPoolLocationLevel(new LocationLevel.Builder("LOW_WATER_LOWER",
-                        ZonedDateTime.parse("2024-09-17T00:00:00Z"))
-                        .withLevelComment("High Water Lower Pool Location Level")
-                        .withLevelUnitsId("ft")
-                        .withParameterId("Elev")
-                        .withConstantValue(6.5)
-                        .withOfficeId("SPK")
-                        .build())
-                .withLowWaterUpperPoolLocationLevel(new LocationLevel.Builder("LOW_WATER_UPPER",
-                        ZonedDateTime.parse("2024-09-18T00:00:00Z"))
-                        .withLevelComment("High Water Lower Pool Location Level")
-                        .withLevelUnitsId("ft")
-                        .withParameterId("Elev")
-                        .withConstantValue(4.5)
-                        .withOfficeId("SPK")
-                        .build())
+                .withHighWaterLowerPoolLocationLevel(
+                        new LockLocationLevelRef("/locks/HIGH_WATER_LOWER?office=SPK", 1.5))
+                .withHighWaterUpperPoolLocationLevel(
+                        new LockLocationLevelRef("/locks/HIGH_WATER_UPPER?office=SPK", 2.5))
+                .withLowWaterLowerPoolLocationLevel(
+                        new LockLocationLevelRef("/locks/LOW_WATER_LOWER?office=SPK", 3.14))
+                .withLowWaterUpperPoolLocationLevel(
+                        new LockLocationLevelRef("/locks/LOW_WATER_UPPER?office=SPK", 6.5))
                 .build();
     }
 

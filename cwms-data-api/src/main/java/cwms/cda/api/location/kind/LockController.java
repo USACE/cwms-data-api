@@ -88,7 +88,7 @@ public final class LockController implements CrudHandler {
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = OFFICE, description = "Office id for the reservoir project location "
+            @OpenApiParam(name = OFFICE, required = true, description = "Office id for the reservoir project location "
                 + "associated with the locks."),
             @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the "
                 + "Locks whose data is to be included in the response."),
@@ -105,9 +105,9 @@ public final class LockController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
             String projectId = ctx.queryParam(PROJECT_ID);
             UnitSystem unitSystem = ctx.queryParamAsClass(UNIT, UnitSystem.class).getOrDefault(UnitSystem.SI);
             CwmsId project = CwmsId.buildCwmsId(office, projectId);
@@ -191,18 +191,14 @@ public final class LockController implements CrudHandler {
             Lock lock = Formats.parseContent(contentType, ctx.body(), Lock.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             DSLContext dsl = getDslContext(ctx);
-            if (lock.getHighWaterLowerPoolLocationLevel().getConstantValue() != null
-                    || lock.getHighWaterUpperPoolLocationLevel().getConstantValue() != null
-                    || lock.getLowWaterLowerPoolLocationLevel().getConstantValue() != null
-                    || lock.getLowWaterUpperPoolLocationLevel().getConstantValue() != null
-                    || lock.getLowWaterLowerPoolLocationLevel().getAttributeValue() != null
-                    || lock.getLowWaterUpperPoolLocationLevel().getAttributeValue() != null
-                    || lock.getHighWaterLowerPoolLocationLevel().getAttributeValue() != null
-                    || lock.getHighWaterUpperPoolLocationLevel().getAttributeValue() != null
-                    || lock.getLowWaterLowerPoolLocationLevel().getSeasonalValues() != null
-                    || lock.getLowWaterUpperPoolLocationLevel().getSeasonalValues() != null
-                    || lock.getHighWaterLowerPoolLocationLevel().getSeasonalValues() != null
-                    || lock.getHighWaterUpperPoolLocationLevel().getSeasonalValues() != null) {
+            if ((lock.getHighWaterLowerPoolLocationLevel() != null &&
+                    lock.getHighWaterLowerPoolLocationLevel().getLevelURI() != null)
+                    || (lock.getHighWaterUpperPoolLocationLevel() != null
+                    && lock.getHighWaterUpperPoolLocationLevel().getLevelURI() != null)
+                    || (lock.getLowWaterLowerPoolLocationLevel() != null
+                    && lock.getLowWaterLowerPoolLocationLevel().getLevelURI() != null)
+                    || (lock.getLowWaterUpperPoolLocationLevel() != null
+                    && lock.getLowWaterUpperPoolLocationLevel().getLevelURI() != null)) {
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST).json("Lock to be stored cannot contain value data. "
                     + "Please use the location level endpoints to store location level data.");
             }

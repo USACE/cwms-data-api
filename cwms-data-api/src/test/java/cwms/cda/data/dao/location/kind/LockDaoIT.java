@@ -33,13 +33,12 @@ import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Lock;
+import cwms.cda.data.dto.location.kind.LockLocationLevelRef;
 import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
 import java.io.IOException;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -218,44 +217,20 @@ final class LockDaoIT extends ProjectStructureIT {
             .withMaximumLockLift(20.0)
             .withVolumePerLockage(100.0)
             .withMinimumDraft(5.0)
-            .withUnits("ft")
+            .withLengthUnits("ft")
             .withVolumeUnits("ft3")
             .withHighWaterLowerPoolWarningLevel(2)
             .withHighWaterUpperPoolWarningLevel(2)
             .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
                     .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
-            .withHighWaterLowerPoolLocationLevel(new LocationLevel.Builder("HIGH_WATER_LOWER",
-                    ZonedDateTime.parse("2024-09-15T00:00:00Z"))
-                .withLevelComment("High Water Lower Pool Location Level")
-                .withLevelUnitsId("ft")
-                .withParameterId("Elev")
-                .withConstantValue(1.5)
-                .withOfficeId("SPK")
-                .build())
-            .withHighWaterUpperPoolLocationLevel(new LocationLevel.Builder("HIGH_WATER_UPPER",
-                    ZonedDateTime.parse("2024-09-16T00:00:00Z"))
-                .withLevelComment("High Water Upper Pool Location Level")
-                .withLevelUnitsId("ft")
-                .withParameterId("Elev")
-                .withConstantValue(2.5)
-                .withOfficeId("SPK")
-                .build())
-            .withLowWaterLowerPoolLocationLevel(new LocationLevel.Builder("LOW_WATER_LOWER",
-                    ZonedDateTime.parse("2024-09-17T00:00:00Z"))
-                .withLevelComment("Low Water Lower Pool Location Level")
-                .withLevelUnitsId("ft")
-                .withParameterId("Elev")
-                .withConstantValue(3.14)
-                .withOfficeId("SPK")
-                .build())
-            .withLowWaterUpperPoolLocationLevel(new LocationLevel.Builder("LOW_WATER_UPPER",
-                    ZonedDateTime.parse("2024-09-18T00:00:00Z"))
-                .withLevelComment("Low Water Upper Pool Location Level")
-                .withLevelUnitsId("ft")
-                .withParameterId("Elev")
-                .withConstantValue(6.5)
-                .withOfficeId("SPK")
-                .build())
+            .withHighWaterLowerPoolLocationLevel(
+                    new LockLocationLevelRef("/locks/HIGH_WATER_LOWER?office=SPK", 1.5))
+            .withHighWaterUpperPoolLocationLevel(
+                    new LockLocationLevelRef("/locks/HIGH_WATER_UPPER?office=SPK", 2.5))
+            .withLowWaterLowerPoolLocationLevel(
+                    new LockLocationLevelRef("/locks/LOW_WATER_LOWER?office=SPK", 3.14))
+            .withLowWaterUpperPoolLocationLevel(
+                    new LockLocationLevelRef("/locks/LOW_WATER_UPPER?office=SPK", 6.5))
             .build();
     }
 }
