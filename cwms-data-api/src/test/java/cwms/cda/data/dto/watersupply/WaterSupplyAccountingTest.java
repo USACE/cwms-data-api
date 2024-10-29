@@ -26,12 +26,12 @@
 
 package cwms.cda.data.dto.watersupply;
 
+import static cwms.cda.helpers.DTOMatch.assertMatch;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
-import cwms.cda.helpers.DTOMatch;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import java.io.InputStream;
@@ -66,7 +66,7 @@ class WaterSupplyAccountingTest {
             waterSupplyAccounting);
         WaterSupplyAccounting deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
             WaterSupplyAccounting.class), serialized, WaterSupplyAccounting.class);
-        DTOMatch.assertMatch(waterSupplyAccounting, deserialized);
+        assertMatch(waterSupplyAccounting, deserialized);
     }
 
     @Test
@@ -87,7 +87,7 @@ class WaterSupplyAccountingTest {
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         WaterSupplyAccounting deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 WaterSupplyAccounting.class), serialized, WaterSupplyAccounting.class);
-        DTOMatch.assertMatch(waterSupplyAccounting, deserialized);
+        assertMatch(waterSupplyAccounting, deserialized);
     }
 
     @Test
@@ -118,6 +118,35 @@ class WaterSupplyAccountingTest {
                 assertThrows(FieldException.class, testColumn::validate);
             }
         );
+    }
+
+    @Test
+    void testBuildWSA() {
+        WaterUser user = new WaterUser.Builder().withEntityName("California Department of Water Resources")
+            .withProjectId(new CwmsId.Builder()
+                .withOfficeId(OFFICE)
+                .withName("Sacramento River Delta")
+                .build())
+            .withWaterRight("State of California Water Rights Permit #12345").build();
+
+        WaterSupplyAccounting wsa = new WaterSupplyAccounting.Builder()
+                .withPage("YWJjZHx8MTAwfHwxMA==")
+                .withPageSize(10)
+                .withTotal(100)
+                .withPumpLocations(buildTestPumpLocation())
+                .withContractName("Sacramento River Water Contract")
+                .withPumpAccounting(buildTestPumpAccountingList())
+                .withWaterUser(user)
+                .build();
+        assertAll(
+            () -> assertEquals("WVdKalpIeDhNVEF3Zkh3eE1BPT18fDEwMHx8MTA=", wsa.getPage(), "Expected page to be 'abcd'"),
+            () -> assertEquals(10, wsa.getPageSize(), "Expected page size to be 10"),
+            () -> assertEquals(100, wsa.getTotal(), "Expected total to be 100"),
+            () -> assertMatch(buildTestPumpLocation(), wsa.getPumpLocations()),
+            () -> assertMatch(buildTestPumpAccountingList(), wsa.getPumpAccounting()),
+            () -> assertMatch(user, wsa.getWaterUser())
+        );
+        assertDoesNotThrow(wsa::validate, "Expected validation to pass");
     }
 
 

@@ -141,7 +141,7 @@ public final class WaterSupplyAccounting extends CwmsDTOPaginated {
 
     private List<PumpColumn> buildPumpColumns() {
         List<PumpColumn> retVal = new ArrayList<>();
-        retVal.add(new PumpColumn.Builder().withName("pump-type").withOrdinal(1).withDataType(PumpType.class.getTypeName()).build());
+        retVal.add(new PumpColumn.Builder().withName("pump-type").withOrdinal(1).withDataType(String.class.getTypeName()).build());
         retVal.add(new PumpColumn.Builder().withName("transfer-type-display").withOrdinal(2).withDataType(String.class.getTypeName()).build());
         retVal.add(new PumpColumn.Builder().withName("flow").withOrdinal(3).withDataType(Double.class.getTypeName()).build());
         retVal.add(new PumpColumn.Builder().withName("comment").withOrdinal(4).withDataType(String.class.getTypeName()).build());

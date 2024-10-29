@@ -372,7 +372,7 @@ public final class DTOMatch {
         );
     }
 
-    private static void assertMatch(Map<Instant, List<PumpTransfer>> first, Map<Instant, List<PumpTransfer>> second) {
+    public static void assertMatch(Map<Instant, List<PumpTransfer>> first, Map<Instant, List<PumpTransfer>> second) {
         assertAll(
             () -> assertEquals(first.size(), second.size(), "Pump accounting sizes do not match"),
             () -> first.forEach((key, value) -> {
@@ -393,7 +393,7 @@ public final class DTOMatch {
         );
     }
 
-    private static void assertMatch(PumpLocation first, PumpLocation second) {
+    public static void assertMatch(PumpLocation first, PumpLocation second) {
         assertAll(
             () -> {
                 if (first != null && second != null) {
