@@ -26,42 +26,67 @@
 
 package cwms.cda.data.dto.watersupply;
 
-import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 
-@JsonIncludeProperties("data-columns")
-@JsonPropertyOrder({"0", "1", "2", "3"})
-public final class PumpColumn {
-    @JsonProperty(index = 0, value = "0")
-    private final String pumpType;
-    @JsonProperty(index = 1, value = "1")
-    private final String transferTypeDisplay;
-    @JsonProperty(index = 2, value = "2")
-    private final String flow;
-    @JsonProperty(index = 3, value = "3")
-    private final String comment;
+@JsonDeserialize(builder = PumpColumn.Builder.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class,
+        aliases = {Formats.DEFAULT, Formats.JSON})
+public final class PumpColumn extends CwmsDTOBase {
+    @JsonProperty(value = "name", required = true)
+    private final String name;
+    @JsonProperty(value = "ordinal", required = true)
+    private final int ordinal;
+    @JsonProperty(value = "datatype", required = true)
+    private final String dataType;
 
-    public String getPumpType() {
-        return pumpType;
+    private PumpColumn(Builder builder) {
+        name = builder.name;
+        ordinal = builder.ordinal;
+        dataType = builder.dataType;
     }
 
-    public String getTransferTypeDisplay() {
-        return transferTypeDisplay;
+    public String getName() {
+        return name;
     }
 
-    public String getFlow() {
-        return flow;
+    public int getOrdinal() {
+        return ordinal;
     }
 
-    public String getComment() {
-        return comment;
+    public String getDataType() {
+        return dataType;
     }
 
-    public PumpColumn() {
-        this.pumpType = "pump-type";
-        this.transferTypeDisplay = "transfer-type-display";
-        this.flow = "flow";
-        this.comment = "comment";
+    public static class Builder {
+        @JsonProperty("name")
+        private String name;
+        @JsonProperty("ordinal")
+        private int ordinal;
+        @JsonProperty("datatype")
+        private String dataType;
+
+        public Builder withName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder withOrdinal(int ordinal) {
+            this.ordinal = ordinal;
+            return this;
+        }
+
+        public Builder withDataType(String dataType) {
+            this.dataType = dataType;
+            return this;
+        }
+
+        public PumpColumn build() {
+            return new PumpColumn(this);
+        }
     }
 }

@@ -47,6 +47,7 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
+import cwms.cda.data.dto.watersupply.PumpColumn;
 import cwms.cda.data.dto.watersupply.PumpLocation;
 import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
@@ -366,7 +367,8 @@ public final class DTOMatch {
             () -> assertEquals(first.getContractName(), second.getContractName()),
             () -> assertMatch(first.getWaterUser(), second.getWaterUser()),
             () -> assertMatch(first.getPumpAccounting(), second.getPumpAccounting()),
-            () -> assertMatch(first.getPumpLocations(), second.getPumpLocations())
+            () -> assertMatch(first.getPumpLocations(), second.getPumpLocations()),
+            () -> assertMatch(first.getPumpColumn(), second.getPumpColumn(), DTOMatch::assertMatch)
         );
     }
 
@@ -378,8 +380,16 @@ public final class DTOMatch {
                 if (secondValue == null) {
                     fail("Pump accounting key not found: " + key);
                 }
-                assertMatch(value, secondValue);
+                assertMatch(value, secondValue, DTOMatch::assertMatch);
             })
+        );
+    }
+
+    private static void assertMatch(PumpColumn first, PumpColumn second) {
+        assertAll(
+            () -> assertEquals(first.getName(), second.getName(), "Pump column names do not match"),
+            () -> assertEquals(first.getOrdinal(), second.getOrdinal(), "Pump column ordinals do not match"),
+            () -> assertEquals(first.getDataType(), second.getDataType(), "Pump column data types do not match")
         );
     }
 
@@ -406,13 +416,6 @@ public final class DTOMatch {
                     fail("Pump below locations do not match");
                 }
             }
-        );
-    }
-
-    private static void assertMatch(List<PumpTransfer> first, List<PumpTransfer> second) {
-        assertAll(
-            () -> assertEquals(first.size(), second.size(), "Pump transfer sizes do not match"),
-            () -> IntStream.range(0, first.size()).forEach(i -> assertMatch(first.get(i), second.get(i)))
         );
     }
 

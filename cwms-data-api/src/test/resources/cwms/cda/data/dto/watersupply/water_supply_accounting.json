@@ -22,12 +22,28 @@
       "name": "Sacramento River Delta-Dam Water Pump 3"
     }
   },
-  "data-columns": {
-    "0": "pump-type",
-    "1": "transfer-type-display",
-    "2": "flow",
-    "3": "comment"
-  },
+  "data-columns": [
+    {
+      "name": "pump-type",
+      "ordinal": 1,
+      "datatype": "cwms.cda.data.dto.watersupply.PumpType"
+    },
+    {
+      "name": "transfer-type-display",
+      "ordinal": 2,
+      "datatype": "java.lang.String"
+    },
+    {
+      "name": "flow",
+      "ordinal": 3,
+      "datatype": "java.lang.Double"
+    },
+    {
+      "name": "comment",
+      "ordinal": 4,
+      "datatype": "java.lang.String"
+    }
+  ],
   "pump-accounting": {
     "2022-11-20T21:17:28Z": [
       ["IN", "Pipeline", 1.0, "Added water to the system"],

@@ -27,7 +27,6 @@
 package cwms.cda.data.dto.watersupply;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -37,7 +36,6 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,8 +43,6 @@ import java.util.Map;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class,
         aliases = {Formats.DEFAULT, Formats.JSON})
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonDeserialize(builder = WaterSupplyAccounting.Builder.class)
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -57,9 +53,9 @@ public final class WaterSupplyAccounting extends CwmsDTOPaginated {
     private final WaterUser waterUser;
     @JsonProperty(required = true)
     private final PumpLocation pumpLocations;
-    @JsonProperty(value = "data-columns")
     @Schema(name = "data-columns")
-    private final PumpColumn pumpColumn;
+    @JsonProperty(required = true, value = "data-columns")
+    private final List<PumpColumn> pumpColumn;
     private final Map<Instant, List<PumpTransfer>> pumpAccounting;
 
     private WaterSupplyAccounting(Builder builder) {
@@ -68,7 +64,7 @@ public final class WaterSupplyAccounting extends CwmsDTOPaginated {
         this.waterUser = builder.waterUser;
         this.pumpLocations = builder.pumpLocations;
         this.pumpAccounting = builder.pumpAccounting;
-        this.pumpColumn = new PumpColumn();
+        this.pumpColumn = buildPumpColumns();
     }
 
     public String getContractName() {
@@ -79,7 +75,7 @@ public final class WaterSupplyAccounting extends CwmsDTOPaginated {
         return this.waterUser;
     }
 
-    public PumpColumn getPumpColumn() {
+    public List<PumpColumn> getPumpColumn() {
         return this.pumpColumn;
     }
 
@@ -91,13 +87,12 @@ public final class WaterSupplyAccounting extends CwmsDTOPaginated {
         return this.pumpLocations;
     }
 
+    @JsonIgnoreProperties("data-columns")
     public static final class Builder {
         private String contractName;
         private WaterUser waterUser;
         private Map<Instant, List<PumpTransfer>> pumpAccounting;
         private PumpLocation pumpLocations;
-        @JsonProperty(value = "data-columns")
-        private PumpColumn pumpColumn;
         private String page;
         private int pageSize;
         private int total;
@@ -144,33 +139,12 @@ public final class WaterSupplyAccounting extends CwmsDTOPaginated {
         }
     }
 
-    public void addTransfer(Timestamp dateTime, double flowValue, String transferTypeDisplay, String comment,
-            PumpType pumpType, Timestamp previousDateTime) {
-        if ((page == null || page.isEmpty()) && (pumpAccounting == null || pumpAccounting.isEmpty())) {
-            page = encodeCursor(delimiter, String.format("%d", dateTime.getTime()), total);
-        }
-        if (pageSize > 0 && mapSize(pumpAccounting) == pageSize) {
-            nextPage = encodeCursor(delimiter, String.format("%d", previousDateTime.getTime()), total);
-        } else {
-            assert pumpAccounting != null;
-            pumpAccounting.computeIfAbsent(dateTime.toInstant(), k -> new ArrayList<>());
-            pumpAccounting.get(dateTime.toInstant()).add(new PumpTransfer(pumpType, transferTypeDisplay,
-                    flowValue, comment));
-        }
-    }
-
-    public void addNullValue(Timestamp dateTime, int index) {
-        pumpAccounting.get(dateTime.toInstant()).add(index, null);
-    }
-
-    private static int mapSize(Map<Instant, List<PumpTransfer>> map) {
-        int size = 0;
-        if (map == null) {
-            return size;
-        }
-        for (List<PumpTransfer> list : map.values()) {
-            size += list.size();
-        }
-        return size;
+    private List<PumpColumn> buildPumpColumns() {
+        List<PumpColumn> retVal = new ArrayList<>();
+        retVal.add(new PumpColumn.Builder().withName("pump-type").withOrdinal(1).withDataType(PumpType.class.getTypeName()).build());
+        retVal.add(new PumpColumn.Builder().withName("transfer-type-display").withOrdinal(2).withDataType(String.class.getTypeName()).build());
+        retVal.add(new PumpColumn.Builder().withName("flow").withOrdinal(3).withDataType(Double.class.getTypeName()).build());
+        retVal.add(new PumpColumn.Builder().withName("comment").withOrdinal(4).withDataType(String.class.getTypeName()).build());
+        return retVal;
     }
 }

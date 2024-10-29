@@ -90,6 +90,36 @@ class WaterSupplyAccountingTest {
         DTOMatch.assertMatch(waterSupplyAccounting, deserialized);
     }
 
+    @Test
+    void testPumpColumn() {
+        PumpColumn pumpColumn = new PumpColumn.Builder().withName("pump-type").withOrdinal(1).withDataType(PumpType.class.getTypeName()).build();
+        assertAll(
+            () -> assertEquals("pump-type", pumpColumn.getName(), "Expected name to be 'pump-type'"),
+            () -> assertEquals(1, pumpColumn.getOrdinal(), "Expected ordinal to be 1"),
+            () -> assertEquals(PumpType.class.getTypeName(), pumpColumn.getDataType(), "Expected data type to be PumpType")
+        );
+    }
+
+    @Test
+    void testPumpColumnValidate() {
+        assertAll(
+            () -> {
+                PumpColumn testColumn = new PumpColumn.Builder()
+                .withName(null)
+                .withOrdinal(1)
+                .withDataType(PumpType.class.getTypeName()).build();
+                assertThrows(FieldException.class, testColumn::validate);
+            },
+            () -> {
+                PumpColumn testColumn = new PumpColumn.Builder()
+                    .withName("pump-type")
+                    .withOrdinal(1)
+                    .withDataType(null).build();
+                assertThrows(FieldException.class, testColumn::validate);
+            }
+        );
+    }
+
 
     @Test
     void testValidate() {
