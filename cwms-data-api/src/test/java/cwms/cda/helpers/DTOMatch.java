@@ -51,6 +51,7 @@ import cwms.cda.data.dto.watersupply.PumpColumn;
 import cwms.cda.data.dto.watersupply.PumpLocation;
 import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
+import cwms.cda.data.dto.watersupply.WaterSupplyAccountingList;
 import cwms.cda.data.dto.watersupply.WaterSupplyPump;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
@@ -382,6 +383,14 @@ public final class DTOMatch {
                 }
                 assertMatch(value, secondValue, DTOMatch::assertMatch);
             })
+        );
+    }
+
+    public static void assertMatch(WaterSupplyAccountingList first, WaterSupplyAccountingList second) {
+        assertAll(
+                () -> assertEquals(first.getPageSize(), second.getPageSize()),
+                () -> assertEquals(first.getWaterSupplyAccounting().size(), second.getWaterSupplyAccounting().size()),
+                () -> assertMatch(first.getWaterSupplyAccounting(), second.getWaterSupplyAccounting(), DTOMatch::assertMatch)
         );
     }
 

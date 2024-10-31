@@ -60,7 +60,7 @@ class PumpAccountingTest {
     void testWaterSupplyPumpAccountingSerializationRoundTripFromFile() throws Exception {
         WaterSupplyAccounting pumpAccounting = buildTestAccounting();
         InputStream resource = this.getClass().getResourceAsStream(
-            "/cwms/cda/data/dto/watersupply/water_supply_accounting.json");
+                "/cwms/cda/data/dto/watersupply/water_pump_accounting.json");
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         WaterSupplyAccounting deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,

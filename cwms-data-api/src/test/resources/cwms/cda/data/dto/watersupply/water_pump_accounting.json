@@ -60,8 +60,5 @@
       ["OUT", "Pipeline", 8.0, "Excess water transfer"],
       ["BELOW", "River", 9.0, "Water returned to the river"]
     ]
-  },
-  "page": "",
-  "page-size": 500,
-  "total": 6
+  }
 }
