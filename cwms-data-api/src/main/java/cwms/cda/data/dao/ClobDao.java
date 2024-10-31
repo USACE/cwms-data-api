@@ -134,10 +134,10 @@ public class ClobDao extends JooqDao<Clob> {
                         includeValues ? v_clob.VALUE : DSL.inline("").as(v_clob.VALUE)
                 )
                 .from(v_clob)
-                //.innerJoin(forLimit).on(forLimit.field(v_clob.ID).eq(v_clob.ID))
                 .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
                 .where(JooqDao.caseInsensitiveLikeRegex(v_clob.ID,idRegex))
                 .and(DSL.upper(v_clob.ID).greaterThan(clobCursor))
+                .and(officeLike == null ? noCondition() : DSL.upper(v_office.OFFICE_ID).like(officeLike.toUpperCase()))
                 .orderBy(v_clob.ID).limit(pageSize);
 
 
