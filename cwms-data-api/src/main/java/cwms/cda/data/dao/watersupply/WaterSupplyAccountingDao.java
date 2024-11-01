@@ -28,9 +28,9 @@ package cwms.cda.data.dao.watersupply;
 
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.watersupply.PumpAccounting;
 import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
+import cwms.cda.data.dto.watersupply.WaterSupplyAccountingList;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import hec.lang.Const;
 import java.math.BigInteger;
@@ -39,7 +39,10 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import usace.cwms.db.dao.ifc.loc.LocationRefType;
@@ -53,6 +56,8 @@ import usace.cwms.db.jooq.dao.util.WaterUserTypeUtil;
 
 
 public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
+    private static final Logger LOGGER = Logger.getLogger(WaterSupplyAccountingDao.class.getName());
+
     public WaterSupplyAccountingDao(DSLContext dsl) {
         super(dsl);
     }
@@ -80,7 +85,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
         });
     }
 
-    public List<WaterSupplyAccounting> retrieveAccounting(String contractName, WaterUser waterUser,
+    public WaterSupplyAccountingList retrieveAccounting(String contractName, WaterUser waterUser,
             CwmsId projectLocation, String units, Instant startTime, Instant endTime,
             boolean startInclusive, boolean endInclusive, boolean ascendingFlag, int rowLimit) {
 
@@ -95,49 +100,70 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
         String ascendingFlagStr = OracleTypeMap.formatBool(ascendingFlag);
         BigInteger rowLimitBigInt = BigInteger.valueOf(rowLimit);
 
-        return connectionResult(dsl, c -> {
-            setOffice(c, projectLocation.getOfficeId());
-            WAT_USR_CONTRACT_ACCT_TAB_T watUsrContractAcctObjTs
-                    = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_ACCOUNTING_SET(DSL.using(c).configuration(),
-                    contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
-                    endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
-            if (!watUsrContractAcctObjTs.isEmpty()) {
-                return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs);
-            } else {
-                return new ArrayList<>();
-            }
-        });
+        return new WaterSupplyAccountingList.Builder()
+            .withWaterSupplyAccounting(
+                connectionResult(dsl, c -> {
+                    setOffice(c, projectLocation.getOfficeId());
+                    WAT_USR_CONTRACT_ACCT_TAB_T watUsrContractAcctObjTs
+                            = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_ACCOUNTING_SET(DSL.using(c).configuration(),
+                            contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
+                            endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
+                    if (!watUsrContractAcctObjTs.isEmpty()) {
+                        return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs);
+                    } else {
+                        return new ArrayList<>();
+                    }
+                }))
+                .withPageSize(rowLimit)
+                .build();
     }
 
     private List<TimeWindowType> getTimeWindowTypeList(WaterSupplyAccounting accounting) {
         List<TimeWindowType> retList = new ArrayList<>();
-        if (accounting.getPumpInAccounting() != null) {
-            for (PumpAccounting pumpIn : accounting.getPumpInAccounting().values()) {
-                LocationRefType locationRefType = new LocationRefType(pumpIn.getPumpLocation().getName(),
-                        null, pumpIn.getPumpLocation().getOfficeId());
-                for (PumpTransfer transfer : pumpIn.getPumpTransfers().values()) {
-                    retList.add(new TimeWindowType(locationRefType, new Date(transfer.getTransferDate().toEpochMilli()),
-                            new Date(transfer.getTransferDate().toEpochMilli())));
-                }
-            }
-        }
-        if (accounting.getPumpOutAccounting() != null) {
-            for (PumpAccounting pumpOut : accounting.getPumpOutAccounting().values()) {
-                LocationRefType locationRefType = new LocationRefType(pumpOut.getPumpLocation().getName(),
-                        null, pumpOut.getPumpLocation().getOfficeId());
-                for (PumpTransfer transfer : pumpOut.getPumpTransfers().values()) {
-                    retList.add(new TimeWindowType(locationRefType, new Date(transfer.getTransferDate().toEpochMilli()),
-                            new Date(transfer.getTransferDate().toEpochMilli())));
-                }
-            }
-        }
-        if (accounting.getPumpBelowAccounting() != null) {
-            for (PumpAccounting pumpBelow : accounting.getPumpBelowAccounting().values()) {
-                LocationRefType locationRefType = new LocationRefType(pumpBelow.getPumpLocation().getName(),
-                        null, pumpBelow.getPumpLocation().getOfficeId());
-                for (PumpTransfer transfer : pumpBelow.getPumpTransfers().values()) {
-                    retList.add(new TimeWindowType(locationRefType, new Date(transfer.getTransferDate().toEpochMilli()),
-                            new Date(transfer.getTransferDate().toEpochMilli())));
+        if (accounting.getPumpAccounting() != null) {
+            for (Map.Entry<Instant, List<PumpTransfer>> transfers : accounting.getPumpAccounting().entrySet()) {
+                for (PumpTransfer transfer : transfers.getValue()) {
+                    switch (transfer.getPumpType()) {
+                        case IN:
+                            retList.add(
+                                new TimeWindowType(
+                                    new LocationRefType(
+                                        WaterSupplyUtils.parseLocationParts(
+                                                accounting.getPumpLocations().getPumpIn().getName(), false),
+                                        WaterSupplyUtils.parseLocationParts(
+                                                accounting.getPumpLocations().getPumpIn().getName(), true),
+                                        accounting.getPumpLocations().getPumpIn().getOfficeId()),
+                                    Date.from(transfers.getKey()),
+                                    Date.from(transfers.getKey())));
+                            break;
+                        case OUT:
+                            retList.add(
+                                new TimeWindowType(
+                                    new LocationRefType(
+                                        WaterSupplyUtils.parseLocationParts(
+                                                accounting.getPumpLocations().getPumpOut().getName(), false),
+                                        WaterSupplyUtils.parseLocationParts(
+                                                accounting.getPumpLocations().getPumpOut().getName(), true),
+                                        accounting.getPumpLocations().getPumpIn().getOfficeId()),
+                                    Date.from(transfers.getKey()),
+                                    Date.from(transfers.getKey())));
+                            break;
+                        case BELOW:
+                            retList.add(
+                                new TimeWindowType(
+                                    new LocationRefType(
+                                        WaterSupplyUtils.parseLocationParts(
+                                                accounting.getPumpLocations().getPumpBelow().getName(), false),
+                                        WaterSupplyUtils.parseLocationParts(
+                                                accounting.getPumpLocations().getPumpBelow().getName(), true),
+                                        accounting.getPumpLocations().getPumpIn().getOfficeId()),
+                                    Date.from(transfers.getKey()),
+                                    Date.from(transfers.getKey())));
+                            break;
+                        default:
+                            LOGGER.log(Level.CONFIG, "Unknown pump type: {0}", transfer.getPumpType());
+                            break;
+                    }
                 }
             }
         }
