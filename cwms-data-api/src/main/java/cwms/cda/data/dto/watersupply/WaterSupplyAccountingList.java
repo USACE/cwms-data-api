@@ -32,7 +32,9 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class,
         aliases = {Formats.DEFAULT, Formats.JSON})
@@ -57,11 +59,11 @@ public class WaterSupplyAccountingList extends CwmsDTOBase {
     }
 
     public static final class Builder {
-        private List<WaterSupplyAccounting> waterSupplyAccounting;
+        private List<WaterSupplyAccounting> waterSupplyAccounting = new ArrayList<>();
         private int pageSize;
 
-        public Builder withWaterSupplyAccounting(List<WaterSupplyAccounting> waterSupplyAccounting) {
-            this.waterSupplyAccounting = waterSupplyAccounting;
+        public Builder withWaterSupplyAccounting(@NotNull List<WaterSupplyAccounting> waterSupplyAccounting) {
+            this.waterSupplyAccounting.addAll(waterSupplyAccounting);
             return this;
         }
 
