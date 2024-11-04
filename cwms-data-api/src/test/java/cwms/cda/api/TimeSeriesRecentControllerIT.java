@@ -247,7 +247,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         ZonedDateTime next = START;
         for(int i = 0; i < count; i++) {
             Timestamp dateTime = Timestamp.from(next.toInstant());
-            ts.addValue(dateTime, (double) i, 0);
+            ts.addValue(dateTime, (double) i, 0, null);
             next = next.plusMinutes(minutes);
         }
         return ts;
