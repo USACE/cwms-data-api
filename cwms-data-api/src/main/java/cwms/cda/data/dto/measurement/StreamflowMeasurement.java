@@ -59,6 +59,7 @@ public final class StreamflowMeasurement extends CwmsDTOBase {
         return quality;
     }
 
+    @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static final class Builder {
         private Double gageHeight;
         private Double flow;

@@ -23,6 +23,7 @@
  */
 package cwms.cda.data.dto.measurement;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -128,6 +129,7 @@ public final class Measurement extends CwmsDTOBase {
         return id;
     }
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     public Instant getInstant() {
         return instant;
     }

@@ -120,6 +120,7 @@ public final class SupplementalStreamflowMeasurement extends CwmsDTOBase {
         return overbankArea;
     }
 
+    @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static final class Builder {
         private Double channelFlow;
         private Double overbankFlow;

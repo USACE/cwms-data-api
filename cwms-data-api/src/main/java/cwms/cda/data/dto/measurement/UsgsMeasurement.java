@@ -114,6 +114,7 @@ public final class UsgsMeasurement extends CwmsDTOBase
         return waterTemp;
     }
 
+    @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static final class Builder
     {
         private String remarks;

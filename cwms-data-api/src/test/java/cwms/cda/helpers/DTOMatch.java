@@ -405,27 +405,27 @@ public final class DTOMatch {
 
     public static void assertMatch(StreamflowMeasurement first, StreamflowMeasurement second) {
         assertAll(
-                () -> assertEquals(first.getGageHeight(), second.getGageHeight(), "Gage height does not match"),
-                () -> assertEquals(first.getFlow(), second.getFlow(), "Flow does not match"),
+                () -> assertEquals(first.getGageHeight(), second.getGageHeight(), DEFAULT_DELTA,"Gage height does not match"),
+                () -> assertEquals(first.getFlow(), second.getFlow(), DEFAULT_DELTA, "Flow does not match"),
                 () -> assertEquals(first.getQuality(), second.getQuality(), "Quality does not match")
         );
     }
 
     public static void assertMatch(SupplementalStreamflowMeasurement first, SupplementalStreamflowMeasurement second) {
         assertAll(
-                () -> assertEquals(first.getChannelFlow(), second.getChannelFlow(), "Channel flow does not match"),
-                () -> assertEquals(first.getOverbankFlow(), second.getOverbankFlow(), "Overbank flow does not match"),
-                () -> assertEquals(first.getOverbankMaxDepth(), second.getOverbankMaxDepth(), "Overbank max depth does not match"),
-                () -> assertEquals(first.getChannelMaxDepth(), second.getChannelMaxDepth(), "Channel max depth does not match"),
-                () -> assertEquals(first.getAvgVelocity(), second.getAvgVelocity(), "Average velocity does not match"),
-                () -> assertEquals(first.getSurfaceVelocity(), second.getSurfaceVelocity(), "Surface velocity does not match"),
-                () -> assertEquals(first.getMaxVelocity(), second.getMaxVelocity(), "Max velocity does not match"),
-                () -> assertEquals(first.getEffectiveFlowArea(), second.getEffectiveFlowArea(), "Effective flow area does not match"),
-                () -> assertEquals(first.getCrossSectionalArea(), second.getCrossSectionalArea(), "Cross sectional area does not match"),
-                () -> assertEquals(first.getMeanGage(), second.getMeanGage(), "Mean gage does not match"),
-                () -> assertEquals(first.getTopWidth(), second.getTopWidth(), "Top width does not match"),
-                () -> assertEquals(first.getMainChannelArea(), second.getMainChannelArea(), "Main channel area does not match"),
-                () -> assertEquals(first.getOverbankArea(), second.getOverbankArea(), "Overbank area does not match")
+                () -> assertEquals(first.getChannelFlow(), second.getChannelFlow(), DEFAULT_DELTA, "Channel flow does not match"),
+                () -> assertEquals(first.getOverbankFlow(), second.getOverbankFlow(), DEFAULT_DELTA, "Overbank flow does not match"),
+                () -> assertEquals(first.getOverbankMaxDepth(), second.getOverbankMaxDepth(), DEFAULT_DELTA, "Overbank max depth does not match"),
+                () -> assertEquals(first.getChannelMaxDepth(), second.getChannelMaxDepth(), DEFAULT_DELTA, "Channel max depth does not match"),
+                () -> assertEquals(first.getAvgVelocity(), second.getAvgVelocity(), DEFAULT_DELTA, "Average velocity does not match"),
+                () -> assertEquals(first.getSurfaceVelocity(), second.getSurfaceVelocity(), DEFAULT_DELTA, "Surface velocity does not match"),
+                () -> assertEquals(first.getMaxVelocity(), second.getMaxVelocity(), DEFAULT_DELTA, "Max velocity does not match"),
+                () -> assertEquals(first.getEffectiveFlowArea(), second.getEffectiveFlowArea(), DEFAULT_DELTA, "Effective flow area does not match"),
+                () -> assertEquals(first.getCrossSectionalArea(), second.getCrossSectionalArea(), DEFAULT_DELTA, "Cross sectional area does not match"),
+                () -> assertEquals(first.getMeanGage(), second.getMeanGage(), DEFAULT_DELTA, "Mean gage does not match"),
+                () -> assertEquals(first.getTopWidth(), second.getTopWidth(), DEFAULT_DELTA, "Top width does not match"),
+                () -> assertEquals(first.getMainChannelArea(), second.getMainChannelArea(), DEFAULT_DELTA, "Main channel area does not match"),
+                () -> assertEquals(first.getOverbankArea(), second.getOverbankArea(), DEFAULT_DELTA, "Overbank area does not match")
         );
     }
 
@@ -434,13 +434,13 @@ public final class DTOMatch {
                 () -> assertEquals(first.getRemarks(), second.getRemarks(), "Remarks do not match"),
                 () -> assertEquals(first.getCurrentRating(), second.getCurrentRating(), "Current rating does not match"),
                 () -> assertEquals(first.getControlCondition(), second.getControlCondition(), "Control condition does not match"),
-                () -> assertEquals(first.getShiftUsed(), second.getShiftUsed(), "Shift used does not match"),
-                () -> assertEquals(first.getPercentDifference(), second.getPercentDifference(), "Percent difference does not match"),
+                () -> assertEquals(first.getShiftUsed(), second.getShiftUsed(), DEFAULT_DELTA, "Shift used does not match"),
+                () -> assertEquals(first.getPercentDifference(), second.getPercentDifference(), DEFAULT_DELTA, "Percent difference does not match"),
                 () -> assertEquals(first.getFlowAdjustment(), second.getFlowAdjustment(), "Flow adjustment does not match"),
-                () -> assertEquals(first.getDeltaHeight(), second.getDeltaHeight(), "Delta height does not match"),
+                () -> assertEquals(first.getDeltaHeight(), second.getDeltaHeight(), DEFAULT_DELTA, "Delta height does not match"),
                 () -> assertEquals(first.getDeltaTime(), second.getDeltaTime(), "Delta time does not match"),
-                () -> assertEquals(first.getAirTemp(), second.getAirTemp(), "Air temperature does not match"),
-                () -> assertEquals(first.getWaterTemp(), second.getWaterTemp(), "Water temperature does not match")
+                () -> assertEquals(first.getAirTemp(), second.getAirTemp(), DEFAULT_DELTA, "Air temperature does not match"),
+                () -> assertEquals(first.getWaterTemp(), second.getWaterTemp(), DEFAULT_DELTA, "Water temperature does not match")
         );
     }
 

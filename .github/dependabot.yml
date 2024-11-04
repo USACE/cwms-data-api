@@ -14,25 +14,12 @@ updates:
     reviewers:
       - "@MikeNeilson"
       - "@DanielTOsborne"
-  - package-ecosystem: "gradle"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    groups:
-      alldependencies:
-        patterns:
-          - "*"
-        update-types:
-          - "major"
-    reviewers:
-      - "@MikeNeilson"
-      - "@DanielTOsborne"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     groups:
-      alldependencies:
+      github-action-dependencies:
         patterns:
           - "*"
         update-types:

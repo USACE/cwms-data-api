@@ -31,7 +31,8 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-@JsonSubTypes({@JsonSubTypes.Type(value = TurbineSetting.class, name = "turbine-setting")})
+@JsonSubTypes({@JsonSubTypes.Type(value = TurbineSetting.class, name = "turbine-setting"),
+    @JsonSubTypes.Type(value = GateSetting.class, name = "gate-setting")})
 public abstract class Setting extends CwmsDTOBase {
 
     @JsonProperty(required = true)

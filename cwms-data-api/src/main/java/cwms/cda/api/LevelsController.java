@@ -24,6 +24,37 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DATE;
+import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.EFFECTIVE_DATE;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.FORMAT;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.LEVEL_ID;
+import static cwms.cda.api.Controllers.LEVEL_ID_MASK;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.queryParamAsZdt;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -58,19 +89,14 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-
 import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
 
 
 public class LevelsController implements CrudHandler {
@@ -195,11 +221,10 @@ public class LevelsController implements CrudHandler {
                         + "specified or default units above the NGVD-29 datum."),
                 @OpenApiParam(name = BEGIN, description = "Specifies the start of the time "
                         + "window for data to be included in the response. If this field is "
-                        + "not specified, any required time window begins 24 hours prior to "
-                        + "the specified or default end time."),
+                        + "not specified, no beginning time will be used."),
                 @OpenApiParam(name = END, description = "Specifies the end of the time "
                         + "window for data to be included in the response. If this field is "
-                        + "not specified, any required time window ends at the current time"),
+                        + "not specified, no end time will be used."),
                 @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
                         + "the values of the begin and end fields (unless otherwise "
                         + "specified), as well as the time zone of any times in the response."
@@ -261,16 +286,8 @@ public class LevelsController implements CrudHandler {
                 int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class)
                                   .getOrDefault(DEFAULT_PAGE_SIZE);
 
-                ZoneId tz = ZoneId.of(timezone, ZoneId.SHORT_IDS);
-
-                ZonedDateTime endZdt = end != null ? DateUtils.parseUserDate(end, timezone) :
-                        ZonedDateTime.now(tz);
-                ZonedDateTime beginZdt;
-                if (begin != null) {
-                    beginZdt = DateUtils.parseUserDate(begin, timezone);
-                } else {
-                    beginZdt = endZdt.minusHours(24);
-                }
+                ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
+                ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
 
                 LocationLevels levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
                         office, unit, datum, beginZdt, endZdt);
@@ -291,8 +308,7 @@ public class LevelsController implements CrudHandler {
                 requestResultSize.update(results.length());
                 if (isLegacyVersion) {
                     ctx.contentType(contentType.toString());
-                }
-                else {
+                } else {
                     ctx.contentType(contentType.getType());
                 }
             }
