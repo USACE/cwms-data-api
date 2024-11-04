@@ -62,6 +62,9 @@ public final class TimeSeriesRecordDeserializer extends JsonDeserializer<TimeSer
                 return new TimeSeriesRecordWithDate(dateTime, value, quality, entryDate);
             } else if (valList.length == 3) {
                 Timestamp dateTime = Timestamp.from(Instant.ofEpochMilli(Long.parseLong(valList[0])));
+                if (valList[1].equalsIgnoreCase("null") || valList[1].isEmpty()) {
+                    return new TimeSeries.Record(dateTime, null, Integer.parseInt(valList[2]));
+                }
                 double value = Double.parseDouble(valList[1]);
                 int quality = Integer.parseInt(valList[2]);
                 return new TimeSeries.Record(dateTime, value, quality);
