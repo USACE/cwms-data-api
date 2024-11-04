@@ -20,9 +20,12 @@
 
 package cwms.cda.data.dto.location.kind;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -30,15 +33,21 @@ import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-import java.util.Objects;
+
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = GateChange.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonTypeName("gate-change")
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({"project-id", "change-date", "reference-elevation", "pool-elevation", "protected", "discharge-computation-type", "reason-type", "notes"})
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
+@JsonPropertyOrder({"project-id", "change-date", "reference-elevation", "pool-elevation", "protected",
+    "discharge-computation-type", "reason-type", "notes", "type"})
 public class GateChange  extends PhysicalStructureChange<GateSetting> {
+    @JsonProperty("reference-elevation")
     private final Double referenceElevation;
+    private static final String type = "gate-change";
 
     GateChange(Builder builder) {
         super(builder);
@@ -49,13 +58,22 @@ public class GateChange  extends PhysicalStructureChange<GateSetting> {
         return referenceElevation;
     }
 
+    public String getType() {
+        return type;
+    }
+
     @Override
     protected void validateInternal(CwmsDTOValidator validator) {
         validator.required(getPoolElevation(), "pool-elevation");
         super.validateInternal(validator);
     }
 
+    public int compareTo(GateChange other) {
+        return this.getChangeDate().compareTo(other.getChangeDate());
+    }
+
     public static final class Builder extends PhysicalStructureChange.Builder<GateChange.Builder, GateSetting> {
+        @JsonProperty("reference-elevation")
         private Double referenceElevation;
 
         public Builder() {
@@ -69,6 +87,10 @@ public class GateChange  extends PhysicalStructureChange<GateSetting> {
 
         public Builder referenceElevation(Double referenceElevation) {
             this.referenceElevation = referenceElevation;
+            return this;
+        }
+
+        public Builder withType(String type) {
             return this;
         }
 

@@ -253,12 +253,12 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             group.getId(), group.getDescription(), formatBool(failIfExists),
             "T", group.getSharedAliasId(),
             group.getSharedRefTsId(), group.getOfficeId());
-            assignTs(configuration,group);
+            assignTs(configuration,group, group.getOfficeId());
         });
         
     }
 
-    private void assignTs(Configuration configuration,TimeSeriesGroup group) {
+    private void assignTs(Configuration configuration,TimeSeriesGroup group, String office) {
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
         if(assignedTimeSeries != null)
         {
@@ -267,12 +267,12 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 .collect(toList());
             TS_ALIAS_TAB_T assignedLocs = new TS_ALIAS_TAB_T(collect);
             CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS(configuration, group.getTimeSeriesCategory().getId(),
-                group.getId(), assignedLocs, group.getOfficeId());
+                group.getId(), assignedLocs, office);
         }
     }
 
-    public void assignTs(TimeSeriesGroup group) {
-        connection(dsl, c->assignTs(getDslContext(c,group.getOfficeId()).configuration(),group));
+    public void assignTs(TimeSeriesGroup group, String office) {
+        connection(dsl, c->assignTs(getDslContext(c, office).configuration(),group, office));
     }
 
     private static TS_ALIAS_T convertToTsAliasType(AssignedTimeSeries assignedTimeSeries) {
@@ -290,12 +290,12 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         );
     }
 
-    public void unassignAllTs(TimeSeriesGroup group) {
+    public void unassignAllTs(TimeSeriesGroup group, String officeId) {
         connection(dsl, c ->
             CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(
-                getDslContext(c,group.getOfficeId()).configuration(), 
+                getDslContext(c,officeId).configuration(),
                 group.getTimeSeriesCategory().getId(), group.getId(),
-                null, "T", group.getOfficeId())
+                null, "T", officeId)
         );
     }
 

@@ -94,8 +94,7 @@ public final class EmbankmentController  implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             EmbankmentDao dao = new EmbankmentDao(dsl);
             List<Embankment> embankments = dao.retrieveEmbankments(projectId, office);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Embankment.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, embankments, Embankment.class);
@@ -131,8 +130,7 @@ public final class EmbankmentController  implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             EmbankmentDao dao = new EmbankmentDao(dsl);
             Embankment embankment = dao.retrieveEmbankment(name, office);
-            String header = ctx.header(Header.ACCEPT);
-            String formatHeader = header != null ? header : Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Embankment.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, embankment);
@@ -162,8 +160,7 @@ public final class EmbankmentController  implements CrudHandler {
     @Override
     public void create(Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
+            String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Embankment.class);
             Embankment embankment = Formats.parseContent(contentType, ctx.body(), Embankment.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);

@@ -49,6 +49,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -80,6 +82,9 @@ public final class WaterContractController extends WaterSupplyControllerBase imp
                     + " did not find any contracts."),
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
         },
+        security = {
+            @OpenApiSecurity(name = "gets overridden allows lock icon.")
+        },
         description = "Return a specified water contract",
         path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{contract-name}",
         method = HttpMethod.GET,
@@ -95,7 +100,7 @@ public final class WaterContractController extends WaterSupplyControllerBase imp
             String contractName = ctx.pathParam(CONTRACT_NAME);
             String waterUser = ctx.pathParam(WATER_USER);
             CwmsId projectLocation = CwmsId.buildCwmsId(office, locationId);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
             WaterContractDao contractDao = getContractDao(dsl);

@@ -48,6 +48,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -73,6 +75,9 @@ public final class WaterUserCatalogController extends WaterSupplyControllerBase 
                     @OpenApiContent(type = Formats.JSONV1, from = WaterUser.class)
                 })
         },
+        security = {
+            @OpenApiSecurity(name = "gets overridden allows lock icon.")
+        },
         description = "Gets all water users.",
         method = HttpMethod.GET,
         path = "/projects/{office}/{project-id}/water-user/all-users",
@@ -86,7 +91,7 @@ public final class WaterUserCatalogController extends WaterSupplyControllerBase 
             String office = ctx.pathParam(OFFICE);
             String locationId = ctx.pathParam(PROJECT_ID);
             CwmsId projectLocation = CwmsId.buildCwmsId(office, locationId);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
             WaterContractDao contractDao = getContractDao(dsl);

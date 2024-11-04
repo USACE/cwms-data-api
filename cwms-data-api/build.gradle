@@ -16,6 +16,13 @@ configurations.implementation {
     exclude group: 'com.oracle.database.jdbc'
 }
 
+configurations.all {
+    exclude group: 'dom4j'
+    exclude group: 'org.apache.xmlbeans'
+    exclude group: 'org.apache.poi'
+    exclude group: 'org.bouncycastle'
+}
+
 dependencies {
     implementation(libs.jaxb.api)
     implementation(libs.jaxb.core)
@@ -62,7 +69,9 @@ dependencies {
     implementation(libs.google.errorProne)
     runtimeOnly(libs.google.flogger.backend)
 
-    implementation(libs.nucleus.data)
+    implementation(libs.nucleus.data) {
+        exclude group: "org.jdom"
+    }
     implementation(libs.nucleus.metadata)
     implementation(libs.cwms.ratings.core) {
         
@@ -144,6 +153,9 @@ dependencies {
         transitive = false
     }
 
+
+    // override versions
+    implementation(libs.bundles.overrides)
 }
 
 task extractWebJars(type: Copy) {

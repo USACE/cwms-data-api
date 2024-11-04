@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.List;
 
 @JsonRootName("pools")
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class Pools extends CwmsDTOPaginated {
     @JacksonXmlElementWrapper

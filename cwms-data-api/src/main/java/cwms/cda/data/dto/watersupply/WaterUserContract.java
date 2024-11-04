@@ -37,7 +37,7 @@ import cwms.cda.formatters.json.JsonV1;
 import java.time.Instant;
 
 
-@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = WaterUserContract.Builder.class)
 public final class WaterUserContract extends CwmsDTO {
 

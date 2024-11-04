@@ -20,13 +20,10 @@
 
 package cwms.cda.api.location.kind;
 
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
-import cwms.cda.data.dao.LocationGroupDao;
+import cwms.cda.data.dao.location.kind.BaseOutletDaoIT;
 import cwms.cda.data.dao.location.kind.OutletDao;
-import cwms.cda.data.dao.location.kind.ProjectStructureIT;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationGroup;
@@ -41,16 +38,16 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
-class OutletControllerTestIT extends ProjectStructureIT {
-    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
+@Tag("integration")
+class OutletControllerTestIT extends BaseOutletDaoIT {
     private static final CwmsId CONDUIT_GATE_RATING_GROUP = new CwmsId.Builder().withName(
             "Rating-" + PROJECT_1_ID.getName() + "-ConduitGate").withOfficeId(OFFICE_ID).build();
     private static final CwmsId MODIFIED_CONDUIT_GATE_RATING_GROUP = new CwmsId.Builder().withName(
@@ -129,16 +126,7 @@ class OutletControllerTestIT extends ProjectStructureIT {
             deleteLocationGroup(context, EXISTING_CONDUIT_GATE_OUTLET);
             deleteLocationGroup(context, NEW_CONDUIT_GATE_1_OUTLET);
             deleteLocationGroup(context, NEW_CONDUIT_GATE_2_OUTLET);
-            deleteLocation(context, NEW_CONDUIT_GATE_1.getOfficeId(), NEW_CONDUIT_GATE_1.getName());
-            deleteLocation(context, NEW_CONDUIT_GATE_2.getOfficeId(), NEW_CONDUIT_GATE_2.getName());
-            deleteLocation(context, RENAMED_CONDUIT_GATE.getOfficeId(), RENAMED_CONDUIT_GATE.getName());
-            deleteLocation(context, EXISTING_CONDUIT_GATE.getOfficeId(), EXISTING_CONDUIT_GATE.getName());
-            deleteLocation(context, RATED_OUTLET_LOCATION_CONTROLLED.getOfficeId(),
-                           RATED_OUTLET_LOCATION_CONTROLLED.getName());
-            deleteLocation(context, RATED_OUTLET_LOCATION_UNCONTROLLED.getOfficeId(),
-                            RATED_OUTLET_LOCATION_UNCONTROLLED.getName());
         }, CwmsDataApiSetupCallback.getWebUser());
-        tearDownProject();
     }
 
     @Disabled("Disabled due to a DB issue.  See https://jira.hecdev.net/browse/CWDB-296")
@@ -679,16 +667,6 @@ class OutletControllerTestIT extends ProjectStructureIT {
                 locGroup.getLocGroupAttribute());
         modifiedLocGroup = new LocationGroup(modifiedLocGroup, locGroup.getAssignedLocations());
         return modifiedLocGroup;
-    }
-
-    private static void deleteLocationGroup(DSLContext context, Outlet outlet) {
-        LocationGroupDao locationGroupDao = new LocationGroupDao(context);
-        try {
-            locationGroupDao.delete(outlet.getRatingCategoryId().getName(), outlet.getRatingGroupId().getName(), true, OFFICE_ID);
-        } catch (NotFoundException e) {
-            LOGGER.atFinest().withCause(e).log("No data found for category:" + outlet.getRatingCategoryId().getName()
-                    + ", group-id:" + outlet.getRatingGroupId().getName());
-        }
     }
 
     private static Outlet buildTestOutlet(Location outletLoc, Location projectLoc, CwmsId ratingId, String ratingSpecId) {

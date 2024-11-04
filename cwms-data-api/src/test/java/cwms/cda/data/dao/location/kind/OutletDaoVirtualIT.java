@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Test;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static org.junit.jupiter.api.Assertions.*;
 
-class OutletDaoVirtualIT extends ProjectStructureIT {
+class OutletDaoVirtualIT extends BaseOutletDaoIT {
     private static final String OUTLET_KIND = "OUTLET";
     private static final CwmsId VIRTUAL_OUTLET_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_LOC2.getName() + "-VirtualOutlet")
                                                                                   .withOfficeId(OFFICE_ID)
@@ -170,19 +170,7 @@ class OutletDaoVirtualIT extends ProjectStructureIT {
             outletDao.deleteOutlet(CO3_I2.getOfficeId(), CO3_I2.getName(), DeleteRule.DELETE_ALL);
             outletDao.deleteOutlet(CO3_I3.getOfficeId(), CO3_I3.getName(), DeleteRule.DELETE_ALL);
             outletDao.deleteOutlet(CO3_CONDUIT.getOfficeId(), CO3_CONDUIT.getName(), DeleteRule.DELETE_ALL);
-
-            deleteLocation(context, CO1_I25.getOfficeId(), CO1_I25.getName());
-            deleteLocation(context, CO1_I53.getOfficeId(), CO1_I53.getName());
-            deleteLocation(context, CO1_LOW_FLOW.getOfficeId(), CO1_LOW_FLOW.getName());
-            deleteLocation(context, CO2_CONDUIT.getOfficeId(), CO2_CONDUIT.getName());
-            deleteLocation(context, CO2_INTAKE.getOfficeId(), CO2_INTAKE.getName());
-            deleteLocation(context, CO2_WEIR.getOfficeId(), CO2_WEIR.getName());
-            deleteLocation(context, CO3_I1.getOfficeId(), CO3_I1.getName());
-            deleteLocation(context, CO3_I2.getOfficeId(), CO3_I2.getName());
-            deleteLocation(context, CO3_I3.getOfficeId(), CO3_I3.getName());
-            deleteLocation(context, CO3_CONDUIT.getOfficeId(), CO3_CONDUIT.getName());
         }, CwmsDataApiSetupCallback.getWebUser());
-        tearDownProject();
     }
 
     @Test

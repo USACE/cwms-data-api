@@ -98,7 +98,7 @@ public class SpecifiedLevelController implements CrudHandler {
         String templateIdMask = ctx.queryParam(TEMPLATE_ID_MASK);
 
         String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+        ContentType contentType = Formats.parseHeader(formatHeader, SpecifiedLevel.class);
         try (Timer.Context timeContext = markAndTime(GET_ALL)){
             DSLContext dsl = getDslContext(ctx);
 
@@ -146,10 +146,9 @@ public class SpecifiedLevelController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)){
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
+            String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, SpecifiedLevel.class);
             SpecifiedLevel deserialize = Formats.parseContent(contentType, body, SpecifiedLevel.class);
             SpecifiedLevelDao dao = getDao(dsl);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);

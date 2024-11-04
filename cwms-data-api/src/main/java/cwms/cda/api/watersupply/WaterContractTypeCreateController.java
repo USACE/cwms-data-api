@@ -36,7 +36,6 @@ import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -81,12 +80,12 @@ public final class WaterContractTypeCreateController extends WaterSupplyControll
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
+            String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, LookupType.class);
             ctx.contentType(contentType.toString());
             LookupType contractType = Formats.parseContent(contentType, ctx.body(), LookupType.class);
             WaterContractDao contractDao = getContractDao(dsl);
-            contractDao.storeWaterContractTypes(contractType, failIfExists);
+            contractDao.storeWaterContractType(contractType, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED).json("Contract type successfully stored to CWMS.");
         }
     }

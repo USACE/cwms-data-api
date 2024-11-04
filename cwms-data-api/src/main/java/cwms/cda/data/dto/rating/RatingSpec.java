@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull;
 @JsonDeserialize(builder = RatingSpec.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class RatingSpec extends CwmsDTO {
     private final String ratingId;
     private final String templateId;

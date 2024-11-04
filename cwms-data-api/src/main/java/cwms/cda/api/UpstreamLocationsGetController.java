@@ -98,9 +98,10 @@ public final class UpstreamLocationsGetController implements Handler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
-            List<StreamLocation> upstreamLocations = dao.retrieveUpstreamLocations(office, locationId, allUpstream, sameStreamOnly, stationUnits, stageUnits, areaUnits);
+            List<StreamLocation> upstreamLocations = dao.retrieveUpstreamLocations(office, locationId, allUpstream,
+                sameStreamOnly, stationUnits, stageUnits, areaUnits);
 
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, upstreamLocations, StreamLocation.class);

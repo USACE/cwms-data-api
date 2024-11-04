@@ -51,6 +51,7 @@ import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION;
 import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.queryParamAsZdt;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -67,7 +68,6 @@ import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.LocationLevelsDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.LocationLevel;
@@ -133,9 +133,8 @@ public class LevelsController implements CrudHandler {
     public void create(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime(CREATE)) {
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, LocationLevel.class);
             LocationLevel level = Formats.parseContent(contentType, ctx.body(), LocationLevel.class);
             level.validate();
 
@@ -221,11 +220,10 @@ public class LevelsController implements CrudHandler {
                         + "specified or default units above the NGVD-29 datum."),
                 @OpenApiParam(name = BEGIN, description = "Specifies the start of the time "
                         + "window for data to be included in the response. If this field is "
-                        + "not specified, any required time window begins 24 hours prior to "
-                        + "the specified or default end time."),
+                        + "not specified, no beginning time will be used."),
                 @OpenApiParam(name = END, description = "Specifies the end of the time "
                         + "window for data to be included in the response. If this field is "
-                        + "not specified, any required time window ends at the current time"),
+                        + "not specified, no end time will be used."),
                 @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
                         + "the values of the begin and end fields (unless otherwise "
                         + "specified), as well as the time zone of any times in the response."
@@ -281,23 +279,14 @@ public class LevelsController implements CrudHandler {
 
             boolean isLegacyVersion = version.equals("1");
 
-            if (format.isEmpty() && !isLegacyVersion)
-            {
+            if (format.isEmpty() && !isLegacyVersion) {
                 String cursor = ctx.queryParamAsClass(PAGE, String.class)
                                    .getOrDefault("");
                 int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class)
                                   .getOrDefault(DEFAULT_PAGE_SIZE);
 
-                ZoneId tz = ZoneId.of(timezone, ZoneId.SHORT_IDS);
-
-                ZonedDateTime endZdt = end != null ? DateUtils.parseUserDate(end, timezone) :
-                        ZonedDateTime.now(tz);
-                ZonedDateTime beginZdt;
-                if (begin != null) {
-                    beginZdt = DateUtils.parseUserDate(begin, timezone);
-                } else {
-                    beginZdt = endZdt.minusHours(24);
-                }
+                ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
+                ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
 
                 LocationLevels levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
                         office, unit, datum, beginZdt, endZdt);
@@ -316,12 +305,9 @@ public class LevelsController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
                 requestResultSize.update(results.length());
-                if (isLegacyVersion)
-                {
+                if (isLegacyVersion) {
                     ctx.contentType(contentType.toString());
-                }
-                else
-                {
+                } else {
                     ctx.contentType(contentType.getType());
                 }
             }
@@ -403,9 +389,8 @@ public class LevelsController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, LocationLevel.class);
             LocationLevel levelFromBody = Formats.parseContent(contentType, ctx.body(),
                 LocationLevel.class);
             String officeId = levelFromBody.getOfficeId();

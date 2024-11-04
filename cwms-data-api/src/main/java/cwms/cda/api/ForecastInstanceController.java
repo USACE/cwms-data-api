@@ -74,8 +74,6 @@ public final class ForecastInstanceController implements CrudHandler {
             ForecastInstance forecastInstance = deserializeForecastInstance(ctx);
             dao.create(forecastInstance);
             ctx.status(HttpServletResponse.SC_CREATED);
-        } catch (IOException ex) {
-            throw new IllegalArgumentException("Unable to deserialize forecast instance from content body", ex);
         }
     }
 
@@ -170,7 +168,7 @@ public final class ForecastInstanceController implements CrudHandler {
             List<ForecastInstance> instances = dao.getForecastInstances(KILO_BYTE_LIMIT, urlBuilder,
                     office, name, desionatorMask);
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            ContentType contentType = Formats.parseHeader(formatHeader, ForecastInstance.class);
             String result = Formats.format(contentType, instances, ForecastInstance.class);
 
             ctx.result(result).contentType(contentType.toString());
@@ -240,7 +238,7 @@ public final class ForecastInstanceController implements CrudHandler {
             ForecastInstance instance = dao.getForecastInstance(KILO_BYTE_LIMIT, urlBuilder, office, name,
                     designator, forecastInstant, issueInstant);
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            ContentType contentType = Formats.parseHeader(formatHeader, ForecastInstance.class);
             String result = Formats.format(contentType, instance);
 
             ctx.result(result).contentType(contentType.toString());
@@ -278,15 +276,12 @@ public final class ForecastInstanceController implements CrudHandler {
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
             dao.update(forecastInstance);
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (IOException ex) {
-            throw new IllegalArgumentException("Unable to deserialize forecast instance from content body", ex);
         }
     }
 
-    private ForecastInstance deserializeForecastInstance(Context ctx) throws IOException {
-        String reqContentType = ctx.req.getContentType();
-        String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-        ContentType contentType = Formats.parseHeader(formatHeader);
+    private ForecastInstance deserializeForecastInstance(Context ctx) {
+        String formatHeader = ctx.req.getContentType();
+        ContentType contentType = Formats.parseHeader(formatHeader, ForecastInstance.class);
         return Formats.parseContent(contentType, ctx.body(), ForecastInstance.class);
     }
 

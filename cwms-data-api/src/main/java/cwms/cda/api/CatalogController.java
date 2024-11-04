@@ -232,7 +232,7 @@ public class CatalogController implements CrudHandler {
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
             String acceptHeader = ctx.header(ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, null);
+            ContentType contentType = Formats.parseHeader(acceptHeader, Catalog.class);
             Catalog cat = null;
             if (TIMESERIES.equalsIgnoreCase(valDataSet)) {
                 TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl, metrics);

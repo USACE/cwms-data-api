@@ -156,35 +156,27 @@ public class RatingController implements CrudHandler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    @NotNull
-    private ContentType getContentType(Context ctx) {
-        String requestContent = ctx.req.getContentType();
-        String formatHeader = requestContent != null ? requestContent : Formats.JSON;
-        return Formats.parseHeader(formatHeader);
-    }
-
     private String deserializeRatingSet(Context ctx) throws IOException, RatingException {
-        return deserializeRatingSet(ctx.body(), getContentType(ctx).getType());
+        String formatHeader = ctx.req.getContentType();
+        //Using placeholder CwmsDTOBase.class since we do not have a RatingSet DTO
+        //The contentType will match against the standard listing of Formats constants
+        ContentType contentType = Formats.parseHeader(formatHeader, CwmsDTOBase.class);
+        String body = ctx.body();
+        return deserializeRatingSet(body, contentType.getType());
     }
 
-    String deserializeRatingSet(String body, String contentType) throws IOException,
-            RatingException {
+    //Package private for unit testing
+    String deserializeRatingSet(String body, String contentType) throws IOException, RatingException {
         String retval;
-
-        if ((Formats.XML).equals(contentType)) {
+        if (Formats.XML.equals(contentType)) {
             retval = body;
-        } else if ((Formats.JSON).equals(contentType)) {
+        } else if (Formats.JSON.equals(contentType)) {
             retval = RatingXmlFactory.toXml(JsonRatingUtils.fromJson(body), "");
         } else {
             throw new IOException("Unexpected format:" + contentType);
         }
 
         return retval;
-    }
-
-    @NotNull
-    public RatingSet deserializeFromXml(String body) throws RatingException {
-        return RatingXmlFactory.ratingSet(body);
     }
 
     @OpenApi(

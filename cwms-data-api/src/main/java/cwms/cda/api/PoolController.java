@@ -133,7 +133,7 @@ public class PoolController implements CrudHandler {
                     topMask, isExplicit, isImplicit, office);
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+            ContentType contentType = Formats.parseHeader(formatHeader, Pools.class);
 
             String result = Formats.format(contentType, pools);
 
@@ -214,7 +214,7 @@ public class PoolController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             } else {
                 String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+                ContentType contentType = Formats.parseHeader(formatHeader, Pool.class);
                 ctx.contentType(contentType.toString());
 
                 String result = Formats.format(contentType, pool);

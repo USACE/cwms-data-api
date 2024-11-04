@@ -132,7 +132,7 @@ public class ProjectController implements CrudHandler {
 
             Projects projects = dao.retrieveProjects(cursor, office, projectIdMask, pageSize);
 
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSON;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Projects.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, projects);
@@ -218,8 +218,7 @@ public class ProjectController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Project.class);
             Project project = Formats.parseContent(contentType, ctx.body(), Project.class);
             ProjectDao dao = new ProjectDao(dsl);

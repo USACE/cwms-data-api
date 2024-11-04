@@ -6,3 +6,7 @@ repositories {
     gradlePluginPortal() // so that external plugins can be resolved in dependencies section
     mavenCentral()
 }
+
+dependencies {
+    implementation 'org.owasp:dependency-check-gradle:10.0.3'
+}

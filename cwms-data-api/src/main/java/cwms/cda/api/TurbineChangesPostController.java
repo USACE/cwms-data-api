@@ -114,8 +114,7 @@ public final class TurbineChangesPostController implements Handler {
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
+            String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, TurbineChange.class);
             List<TurbineChange> turbine = Formats.parseContentList(contentType, ctx.body(), TurbineChange.class);
             boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)

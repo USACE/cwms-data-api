@@ -58,7 +58,7 @@ public final class WaterUserDeleteController extends WaterSupplyControllerBase i
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = METHOD, description = "Specifies the delete method used. Default is DELETE_ALL.",
+            @OpenApiParam(name = METHOD, description = "Specifies the delete method used. Default is DELETE_KEY.",
                     type = DeleteMethod.class),
         },
         pathParams = {
@@ -80,8 +80,7 @@ public final class WaterUserDeleteController extends WaterSupplyControllerBase i
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE);
             String locationId = ctx.pathParam(PROJECT_ID);
-            DeleteMethod deleteMode = getDeleteMethod(ctx.queryParamAsClass(METHOD, String.class)
-                    .getOrDefault(DeleteMethod.DELETE_ALL.toString()));
+            DeleteMethod deleteMode = getDeleteMethod(ctx.queryParam(METHOD));
             String entityName = ctx.pathParam(WATER_USER);
             CwmsId location = CwmsId.buildCwmsId(office, locationId);
             WaterContractDao contractDao = getContractDao(dsl);

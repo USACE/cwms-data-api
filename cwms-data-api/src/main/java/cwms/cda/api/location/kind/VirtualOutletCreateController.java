@@ -22,6 +22,7 @@ package cwms.cda.api.location.kind;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.BaseHandler;
 import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.formatters.ContentType;
@@ -39,7 +40,7 @@ import org.jooq.DSLContext;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-public class VirtualOutletCreateController extends BaseOutletHandler {
+public class VirtualOutletCreateController extends BaseHandler {
 
     public VirtualOutletCreateController(MetricRegistry metrics) {
         super(metrics);
@@ -66,8 +67,7 @@ public class VirtualOutletCreateController extends BaseOutletHandler {
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
+            String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, VirtualOutlet.class);
             VirtualOutlet virtualOutlet = Formats.parseContent(contentType, ctx.body(), VirtualOutlet.class);
             boolean failIfExists = queryParamAsClass(ctx, Boolean.class, true, FAIL_IF_EXISTS);

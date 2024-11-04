@@ -99,7 +99,7 @@ public class LocationCategoryController implements CrudHandler {
 
             if (!cats.isEmpty()) {
                 String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+                ContentType contentType = Formats.parseHeader(formatHeader, LocationCategory.class);
 
                 String result = Formats.format(contentType, cats, LocationCategory.class);
 
@@ -155,7 +155,7 @@ public class LocationCategoryController implements CrudHandler {
             Optional<LocationCategory> grp = dao.getLocationCategory(office, categoryId);
             if (grp.isPresent()) {
                 String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+                ContentType contentType = Formats.parseHeader(formatHeader, LocationCategory.class);
 
                 String result = Formats.format(contentType, grp.get());
 
@@ -194,10 +194,9 @@ public class LocationCategoryController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)){
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, LocationCategory.class);
             LocationCategory deserialize = Formats.parseContent(contentType, body, LocationCategory.class);
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
             dao.create(deserialize);

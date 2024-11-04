@@ -152,8 +152,7 @@ public final class TurbineChangesGetController implements Handler {
             TurbineDao dao = new TurbineDao(dsl);
             List<TurbineChange> turbineChanges = dao.retrieveOperationalChanges(cwmsId,
                 begin, end, startTimeInclusive, endTimeInclusive, unitSystem.getValue(), rowLimit);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, TurbineChange.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, turbineChanges, TurbineChange.class);

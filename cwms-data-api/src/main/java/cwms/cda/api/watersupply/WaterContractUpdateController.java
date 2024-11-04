@@ -97,7 +97,7 @@ public final class WaterContractUpdateController extends WaterSupplyControllerBa
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
             String contractName = ctx.pathParam(CONTRACT_NAME);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
+            String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
             String newName = requiredParam(ctx, CONTRACT_NAME);

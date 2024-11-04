@@ -29,6 +29,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.IntegrationTestNameGenerator;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
 import java.io.File;
@@ -44,7 +45,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -64,6 +64,7 @@ import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
@@ -71,17 +72,13 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
  * Helper class to manage cycling tests multiple times against a database.
  * NOTE: Not thread safe, do not run parallel tests. That may be future work though.
  */
+@DisplayNameGeneration(IntegrationTestNameGenerator.class)
 @Tag("integration")
 @ExtendWith(CwmsDataApiSetupCallback.class)
 public class DataApiTestIT {
     private static FluentLogger logger = FluentLogger.forEnclosingClass();
-    /**
-     * List of locations that will need to be deleted when tests are done.
-     */
-    private static ArrayList<Location> locationsCreated = new ArrayList<>();
 
     protected static String createLocationQuery = null;
-    protected static String deleteLocationQuery = null;
     protected static String createTimeseriesQuery = null;
     protected static String createTimeseriesOffsetQuery = null;
     protected final static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
@@ -140,11 +137,6 @@ public class DataApiTestIT {
                         .getResourceAsStream("cwms/cda/data/sql_templates/create_timeseries_offset.sql"),"UTF-8"
         );
 
-        deleteLocationQuery = IOUtils.toString(
-                                TimeseriesControllerTestIT.class
-                                    .getClassLoader()
-                                    .getResourceAsStream("cwms/cda/data/sql_templates/delete_location.sql"),"UTF-8"
-                            );
     }
 
     /**
@@ -196,35 +188,6 @@ public class DataApiTestIT {
         }
     }
 
-    /**
-     * Runs cascade delete on each locations. Location not existing is not an error.
-     * All other errors will throw a runtime exception and may require manual database
-     * cleanup.
-     */
-    @AfterAll
-    public static void remove_data() {
-        Iterator<Location> it = locationsCreated.iterator();
-        while(it.hasNext()) {
-            try {
-                Location location = it.next();
-                CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-                db.connection((c)-> {
-                    try(PreparedStatement stmt = c.prepareStatement(deleteLocationQuery)) {
-                        stmt.setString(1,location.getName());
-                        stmt.setString(2,location.getOfficeId());
-                        stmt.execute();
-                    } catch (SQLException ex) {
-                        if (ex.getErrorCode() != 20025 /*does not exist*/) {
-                            throw new RuntimeException("Unable to remove location",ex);
-                        }
-                    }
-                },"cwms_20");
-                it.remove();
-            } catch(SQLException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-    }
 
     /**
      * Removes all registered users' API keys from the database.
@@ -275,7 +238,7 @@ public class DataApiTestIT {
                                             office)
                                     .withActive(active)
                                     .build();
-        if (locationsCreated.contains(loc)) {
+        if (LocationCleanup.locationsCreated.contains(loc)) {
             return; // we already have this location registered
         }
 
@@ -290,7 +253,7 @@ public class DataApiTestIT {
                 stmt.setString(7,horizontalDatum);
                 stmt.setString(8,kind);
                 stmt.execute();
-                locationsCreated.add(loc);
+                LocationCleanup.locationsCreated.add(loc);
             } catch (SQLException ex) {
                 throw new RuntimeException("Unable to create location",ex);
             }

@@ -121,7 +121,7 @@ public class RatingSpecController implements CrudHandler {
         String ratingIdMask = ctx.queryParam(RATING_ID_MASK);
 
         String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+        ContentType contentType = Formats.parseHeader(formatHeader, RatingSpecs.class);
         try (final Timer.Context timeContext = markAndTime(GET_ALL)){
             DSLContext dsl = getDslContext(ctx);
 
@@ -167,7 +167,7 @@ public class RatingSpecController implements CrudHandler {
     @Override
     public void getOne(Context ctx, String ratingId) {
         String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+        ContentType contentType = Formats.parseHeader(formatHeader, RatingSpec.class);
 
         String office = ctx.queryParam(OFFICE);
 

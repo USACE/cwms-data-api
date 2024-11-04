@@ -117,7 +117,7 @@ public class TextTimeSeriesController implements CrudHandler {
         Instant version = queryParamAsInstant(ctx, VERSION_DATE);
         int kiloByteLimit = Integer.parseInt(System.getProperty("cda.api.ts.text.max.length.kB", "64"));
         String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+        ContentType contentType = Formats.parseHeader(formatHeader, TextTimeSeries.class);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             TimeSeriesTextDao dao = getDao(dsl);
@@ -185,10 +185,9 @@ public class TextTimeSeriesController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
+            String formatHeader = ctx.req.getContentType();
 
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, TextTimeSeries.class);
             TextTimeSeries tts = Formats.parseContent(contentType, ctx.bodyAsInputStream(), TextTimeSeries.class);
             TimeSeriesTextDao dao = getDao(dsl);
 
@@ -221,10 +220,10 @@ public class TextTimeSeriesController implements CrudHandler {
     public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
 
         try (Timer.Context ignored = markAndTime(UPDATE)) {
-            boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(DEFAULT_UPDATE_REPLACE_ALL);
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class)
+                .getOrDefault(DEFAULT_UPDATE_REPLACE_ALL);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, TextTimeSeries.class);
             TextTimeSeries tts = Formats.parseContent(contentType, ctx.bodyAsInputStream(), TextTimeSeries.class);
             DSLContext dsl = getDslContext(ctx);
 

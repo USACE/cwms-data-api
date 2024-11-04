@@ -33,23 +33,22 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.data.dto.location.kind.Outlet;
 import fixtures.CwmsDataApiSetupCallback;
+import java.sql.SQLException;
+import java.util.List;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import java.sql.SQLException;
-import java.util.List;
-
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
-class OutletDaoRatingIT extends ProjectStructureIT {
-    private static final String lowFlowCurveId = "opening-low flow,elev;flow";
-    private static final String spillwayCurveId = "elev;flow curve";
+class OutletDaoRatingIT extends BaseOutletDaoIT {
+    private static final String LOW_FLOW_CURVE_ID = "opening-low flow,elev;flow";
+    private static final String SPILLWAY_CURVE_ID = "elev;flow curve";
     private static final String OUTLET_KIND = "OUTLET";
     private static final CwmsId PROJECT_LOW_FLOW_RATING_GROUP = new CwmsId.Builder()
             .withName("Rating-" + PROJECT_1_ID.getName() + "-LowFlow").withOfficeId(PROJECT_1_ID.getOfficeId()).build();
@@ -57,9 +56,9 @@ class OutletDaoRatingIT extends ProjectStructureIT {
             .withName("Rating-" + PROJECT_1_ID.getName() + "-Spillway")
             .withOfficeId(PROJECT_1_ID.getOfficeId()).build();
     private static final Location PROJECT_LOW_FLOW_LOC
-            = buildProjectStructureLocation(PROJECT_1_ID.getName() + "-LF1", OUTLET_KIND);
+            = buildProjectStructureLocation(PROJECT_1_ID.getName() + "-LF", OUTLET_KIND);
     private static final Location PROJECT_SPILLWAY_LOC
-            = buildProjectStructureLocation(PROJECT_1_ID.getName() + "-LF2", OUTLET_KIND);
+            = buildProjectStructureLocation(PROJECT_1_ID.getName() + "-Spillway", OUTLET_KIND);
     private static final Outlet PROJECT_LOW_FLOW_OUTLET = buildTestOutlet(PROJECT_LOW_FLOW_LOC,
             PROJECT_LOC, PROJECT_LOW_FLOW_RATING_GROUP);
     private static final Outlet PROJECT_SPILLWAY_OUTLET = buildTestOutlet(PROJECT_SPILLWAY_LOC,
@@ -68,11 +67,6 @@ class OutletDaoRatingIT extends ProjectStructureIT {
     @BeforeAll
     static void setup() throws Exception {
         setupProject();
-    }
-
-    @AfterAll
-    static void cleanup() throws Exception {
-        tearDownProject();
     }
 
     @Test
@@ -88,11 +82,11 @@ class OutletDaoRatingIT extends ProjectStructureIT {
             LocationGroup group = retrieveFromGroup(groups, PROJECT_SPILLWAY_RATING_GROUP);
             assertNotNull(group);
             LocationGroup modifiedGroup = new LocationGroup(group.getLocationCategory(), group.getOfficeId(),
-                    group.getId(), group.getDescription(), spillwayCurveId, group.getSharedRefLocationId(),
+                    group.getId(), group.getDescription(), SPILLWAY_CURVE_ID, group.getSharedRefLocationId(),
                     group.getLocGroupAttribute());
             LocationGroup newGroup = new LocationGroup(modifiedGroup, group.getAssignedLocations());
-            locationGroupDao.unassignAllLocs(group);
-            locationGroupDao.assignLocs(newGroup);
+            locationGroupDao.unassignAllLocs(group, PROJECT_1_ID.getOfficeId());
+            locationGroupDao.assignLocs(newGroup, PROJECT_1_ID.getOfficeId());
             Outlet retrievedOutlet = outletDao.retrieveOutlet(PROJECT_SPILLWAY_LOC.getOfficeId(),
                     PROJECT_SPILLWAY_LOC.getName());
             assertNotNull(retrievedOutlet);
@@ -117,11 +111,11 @@ class OutletDaoRatingIT extends ProjectStructureIT {
             LocationGroup group = retrieveFromGroup(groups, PROJECT_LOW_FLOW_RATING_GROUP);
             assertNotNull(group);
             LocationGroup modifiedGroup = new LocationGroup(group.getLocationCategory(), group.getOfficeId(),
-                    group.getId(), group.getDescription(), lowFlowCurveId, group.getSharedRefLocationId(),
+                    group.getId(), group.getDescription(), LOW_FLOW_CURVE_ID, group.getSharedRefLocationId(),
                     group.getLocGroupAttribute());
             LocationGroup newGroup = new LocationGroup(modifiedGroup, group.getAssignedLocations());
-            locationGroupDao.unassignAllLocs(group);
-            locationGroupDao.assignLocs(newGroup);
+            locationGroupDao.unassignAllLocs(group, PROJECT_1_ID.getOfficeId());
+            locationGroupDao.assignLocs(newGroup, PROJECT_1_ID.getOfficeId());
             Outlet retrievedOutlet = outletDao.retrieveOutlet(PROJECT_LOW_FLOW_LOC.getOfficeId(),
                     PROJECT_LOW_FLOW_LOC.getName());
             assertNotNull(retrievedOutlet);

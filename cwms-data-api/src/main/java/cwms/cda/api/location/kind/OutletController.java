@@ -20,16 +20,30 @@
 
 package cwms.cda.api.location.kind;
 
-import com.codahale.metrics.Histogram;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.METHOD;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
+import cwms.cda.api.BaseCrudHandler;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dto.location.kind.Outlet;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -42,51 +56,37 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-public class OutletController implements CrudHandler {
+
+public class OutletController extends BaseCrudHandler {
     static final String TAG = "Outlets";
 
-    private final MetricRegistry metrics;
-
-    private final Histogram requestResultSize;
-
     public OutletController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        String className = this.getClass().getName();
-
-        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
-            requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = Outlet.class, type = Formats.JSONV1),
-                            @OpenApiContent(from = Outlet.class, type = Formats.JSON)
-                    },
-                    required = true),
-            queryParams = {
-                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                            description = "Create will fail if provided ID already exists. Default: true")
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = Outlet.class, type = Formats.JSONV1),
+                @OpenApiContent(from = Outlet.class, type = Formats.JSON)
             },
-            description = "Create CWMS Outlet",
-            method = HttpMethod.POST,
-            tags = {TAG},
-            responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Outlet successfully stored to CWMS.")
-            }
+            required = true),
+        queryParams = {
+            @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                description = "Create will fail if provided ID already exists. Default: true")
+        },
+        description = "Create CWMS Outlet",
+        method = HttpMethod.POST,
+        tags = {TAG},
+        responses = {
+            @OpenApiResponse(status = STATUS_204, description = "Outlet successfully stored to CWMS.")
+        }
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
+            String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Outlet.class);
             Outlet outlet = Formats.parseContent(contentType, ctx.body(), Outlet.class);
             outlet.validate();
@@ -99,20 +99,20 @@ public class OutletController implements CrudHandler {
     }
 
     @OpenApi(
-            queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Office id for the reservoir project location " +
-                            "associated with the outlets."),
-                    @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the " +
-                            "Outlets whose data is to be included in the response."),
-            },
-            responses = {
-                    @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(from = Outlet.class, isArray = true, type = Formats.JSONV1),
-                            @OpenApiContent(from = Outlet.class, isArray = true, type = Formats.JSON)
-                    })
-            },
-            description = "Returns matching CWMS Outlet Data for a Reservoir Project.",
-            tags = {TAG}
+        queryParams = {
+            @OpenApiParam(name = OFFICE, required = true, description = "Office id for the reservoir project location "
+                + "associated with the outlets."),
+            @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the "
+                + "Outlets whose data is to be included in the response."),
+        },
+        responses = {
+            @OpenApiResponse(status = STATUS_200, content = {
+                @OpenApiContent(from = Outlet.class, isArray = true, type = Formats.JSONV1),
+                @OpenApiContent(from = Outlet.class, isArray = true, type = Formats.JSON)
+            })
+        },
+        description = "Returns matching CWMS Outlet Data for a Reservoir Project.",
+        tags = {TAG}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -122,35 +122,34 @@ public class OutletController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
             List<Outlet> outlets = dao.retrieveOutletsForProject(office, projectId);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Outlet.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, outlets, Outlet.class);
             ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
-            requestResultSize.update(serialized.length());
+            updateResultSize(serialized);
         }
     }
 
     @OpenApi(
-            pathParams = {
-                    @OpenApiParam(name = NAME, required = true, description = "Specifies the location-id of the " +
-                            "Outlet to be created."),
-            },
-            queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                            + "the outlet to be retrieved."),
-            },
-            responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            content = {
-                                    @OpenApiContent(from = Outlet.class, type = Formats.JSONV1),
-                                    @OpenApiContent(from = Outlet.class, type = Formats.JSON)
-                            })
-            },
-            description = "Returns CWMS Outlet Data",
-            tags = {TAG}
+        pathParams = {
+            @OpenApiParam(name = NAME, required = true, description = "Specifies the location-id of the "
+                + "Outlet to be created."),
+        },
+        queryParams = {
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                + "the outlet to be retrieved."),
+        },
+        responses = {
+            @OpenApiResponse(status = STATUS_200,
+                content = {
+                    @OpenApiContent(from = Outlet.class, type = Formats.JSONV1),
+                    @OpenApiContent(from = Outlet.class, type = Formats.JSON)
+                })
+        },
+        description = "Returns CWMS Outlet Data",
+        tags = {TAG}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -159,33 +158,32 @@ public class OutletController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
             Outlet outlet = dao.retrieveOutlet(office, name);
-            String header = ctx.header(Header.ACCEPT);
-            String formatHeader = header != null ? header : Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Outlet.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, outlet);
             ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
-            requestResultSize.update(serialized.length());
+            updateResultSize(serialized);
         }
     }
 
     @OpenApi(
-            pathParams = {
-                    @OpenApiParam(name = NAME, required = true, description = "Specifies the location-id of "
-                            + "the outlet to be renamed."),
-            },
-            queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                            + "the outlet to be renamed."),
-                    @OpenApiParam(name = NAME, required = true, description = "Specifies the new outlet location-id."),
-            },
-            description = "Rename CWMS Outlet",
-            method = HttpMethod.PATCH,
-            tags = {TAG},
-            responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "CWMS Outlet successfully renamed.")
-            }
+        pathParams = {
+            @OpenApiParam(name = NAME, required = true, description = "Specifies the location-id of "
+                + "the outlet to be renamed."),
+        },
+        queryParams = {
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                + "the outlet to be renamed."),
+            @OpenApiParam(name = NAME, required = true, description = "Specifies the new outlet location-id."),
+        },
+        description = "Rename CWMS Outlet",
+        method = HttpMethod.PATCH,
+        tags = {TAG},
+        responses = {
+            @OpenApiResponse(status = STATUS_204, description = "CWMS Outlet successfully renamed.")
+        }
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
@@ -200,25 +198,24 @@ public class OutletController implements CrudHandler {
     }
 
     @OpenApi(
-            pathParams = {
-                    @OpenApiParam(name = NAME, required = true, description = "Specifies the location-id of the outlet to be" +
-                            " deleted."),
-            },
-            queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
-                            + "the outlet to be deleted."),
-                    @OpenApiParam(name = METHOD, description = "Specifies the delete method used. " +
-                            "Defaults to \"DELETE_KEY\"",
-                            type = JooqDao.DeleteMethod.class)
-            },
-            description = "Delete CWMS Outlet",
-            method = HttpMethod.DELETE,
-            tags = {TAG},
-            responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Outlet successfully deleted from CWMS."),
-                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                            + "inputs provided the outlet was not found.")
-            }
+        pathParams = {
+            @OpenApiParam(name = NAME, required = true, description = "Specifies the location-id of the outlet to be"
+                + " deleted."),
+        },
+        queryParams = {
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                + "the outlet to be deleted."),
+            @OpenApiParam(name = METHOD, description = "Specifies the delete method used. "
+                + "Defaults to \"DELETE_KEY\"", type = JooqDao.DeleteMethod.class)
+        },
+        description = "Delete CWMS Outlet",
+        method = HttpMethod.DELETE,
+        tags = {TAG},
+        responses = {
+            @OpenApiResponse(status = STATUS_204, description = "Outlet successfully deleted from CWMS."),
+            @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
+                + "inputs provided the outlet was not found.")
+        }
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {

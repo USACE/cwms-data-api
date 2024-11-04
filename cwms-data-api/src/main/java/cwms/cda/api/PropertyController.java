@@ -40,6 +40,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+
 import org.jooq.DSLContext;
 
 import javax.servlet.http.HttpServletResponse;
@@ -81,6 +83,9 @@ public final class PropertyController implements CrudHandler {
                         @OpenApiContent(isArray = true, type = Formats.JSON, from = Property.class)
                 })
             },
+            security = {
+                @OpenApiSecurity(name = "gets overridden allows lock icon.")
+            },
             description = "Returns matching CWMS Property Data.",
             tags = {TAG}
     )
@@ -93,9 +98,8 @@ public final class PropertyController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);
             List<Property> properties = dao.retrieveProperties(officeMask, categoryMask, nameMask);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(formatHeader, Property.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, properties, Property.class);
             ctx.result(serialized);
@@ -123,6 +127,9 @@ public final class PropertyController implements CrudHandler {
                                 @OpenApiContent(type = Formats.JSON, from = Property.class)
                         })
             },
+            security = {
+                @OpenApiSecurity(name = "gets overridden allows lock icon.")
+            },
             description = "Returns CWMS Property Data",
             tags = {TAG}
     )
@@ -135,9 +142,8 @@ public final class PropertyController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);
             Property property = dao.retrieveProperty(office, category, name, defaultValue);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(formatHeader, Property.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, property);
             ctx.result(serialized);
@@ -163,9 +169,8 @@ public final class PropertyController implements CrudHandler {
     @Override
     public void create(Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, Property.class);
             Property property = Formats.parseContent(contentType, ctx.body(), Property.class);
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);
@@ -191,9 +196,8 @@ public final class PropertyController implements CrudHandler {
     @Override
     public void update(Context ctx, String name) {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSON;
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, Property.class);
             Property property = Formats.parseContent(contentType, ctx.body(), Property.class);
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);

@@ -44,6 +44,7 @@ import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.sql.SQLException;
 import java.util.LinkedHashMap;
@@ -146,6 +147,7 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSON)
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue()) // catalog call needs auth b/c it returns PII
             .queryParam(OFFICE_MASK, OFFICE)
             .queryParam(PROJECT_MASK, "catLocks*")
             .queryParam(APPLICATION_MASK, appId)

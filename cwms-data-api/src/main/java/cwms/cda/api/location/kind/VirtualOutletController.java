@@ -23,6 +23,7 @@ package cwms.cda.api.location.kind;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.BaseCrudHandler;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
@@ -46,22 +47,11 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-public class VirtualOutletController implements CrudHandler {
-
-    private final MetricRegistry metrics;
-    private final Histogram requestResultSize;
+public class VirtualOutletController extends BaseCrudHandler {
 
     public VirtualOutletController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        String className = this.getClass().getName();
-
-        requestResultSize = this.metrics.histogram(name(className, RESULTS, SIZE));
+        super(metrics);
     }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
-
 
     @OpenApi(ignore = true)
     @Override
@@ -94,14 +84,13 @@ public class VirtualOutletController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
             List<VirtualOutlet> outlets = dao.retrieveVirtualOutletsForProject(office, projectId);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, VirtualOutlet.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, outlets, VirtualOutlet.class);
             ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
-            requestResultSize.update(serialized.length());
+            updateResultSize(serialized);
         }
     }
 
@@ -132,14 +121,13 @@ public class VirtualOutletController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
             VirtualOutlet outlet = dao.retrieveVirtualOutlet(office, projectId, name);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, VirtualOutlet.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, outlet);
             ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
-            requestResultSize.update(serialized.length());
+            updateResultSize(serialized);
         }
     }
 

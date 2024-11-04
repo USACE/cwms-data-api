@@ -119,26 +119,26 @@ public class BasinController implements CrudHandler {
             String units =
                     ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
             String office = ctx.queryParam(OFFICE);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV1;
-
-            ContentType contentType = Formats.parseHeader(formatHeader, Basin.class);
+            String formatHeader = ctx.header(Header.ACCEPT);
             String result;
-
-            ctx.contentType(contentType.toString());
-            if (contentType.getType().equals(Formats.NAMED_PGJSON)) {
+            ContentType contentType;
+            if (formatHeader != null && formatHeader.contains(Formats.NAMED_PGJSON)) {
+                contentType = Formats.parseHeader(formatHeader, Basin.class);
+                ctx.contentType(contentType.toString());
                 BasinDao basinDao = new BasinDao(dsl);
                 List<Basin> basins = basinDao.getAllBasins(units, office);
                 result = Formats.format(contentType, basins, Basin.class);
                 ctx.result(result);
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
+                contentType = Formats.parseHeader(formatHeader, cwms.cda.data.dto.basin.Basin.class);
+                ctx.contentType(contentType.toString());
                 cwms.cda.data.dao.basin.BasinDao basinDao = new cwms.cda.data.dao.basin.BasinDao(dsl);
                 List<cwms.cda.data.dto.basin.Basin> basins = basinDao.getAllBasins(office, units);
                 result = Formats.format(contentType, basins, cwms.cda.data.dto.basin.Basin.class);
-                ctx.result(result);
-                ctx.status(HttpServletResponse.SC_OK);
             }
+            ctx.result(result);
+            ctx.status(HttpServletResponse.SC_OK);
         } catch (SQLException ex) {
             CdaError error = new CdaError("Error retrieving all basins");
             LOGGER.log(Level.SEVERE, "Error retrieving all basins", ex);
@@ -189,18 +189,14 @@ public class BasinController implements CrudHandler {
             String units =
                     ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
             String office = ctx.queryParam(OFFICE);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.NAMED_PGJSON;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Basin.class);
             ctx.contentType(contentType.toString());
             String result;
-
             if (contentType.getType().equals(Formats.NAMED_PGJSON)) {
                 BasinDao basinDao = new BasinDao(dsl);
                 Basin basin = basinDao.getBasin(name, units, office);
                 result = Formats.format(contentType, Collections.singletonList(basin), Basin.class);
-                ctx.result(result);
-                ctx.status(HttpServletResponse.SC_OK);
             } else {
                 cwms.cda.data.dao.basin.BasinDao basinDao = new cwms.cda.data.dao.basin.BasinDao(dsl);
                 CwmsId basinId = new CwmsId.Builder()
@@ -209,9 +205,9 @@ public class BasinController implements CrudHandler {
                         .build();
                 cwms.cda.data.dto.basin.Basin basin = basinDao.getBasin(basinId, units);
                 result = Formats.format(contentType, basin);
-                ctx.result(result);
-                ctx.status(HttpServletResponse.SC_OK);
             }
+            ctx.result(result);
+            ctx.status(HttpServletResponse.SC_OK);
         } catch (SQLException ex) {
             CdaError error = new CdaError("Error retrieving " + name);
             String errorMsg = "Error retrieving " + name;
@@ -270,8 +266,7 @@ public class BasinController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx) {
         DSLContext dsl = getDslContext(ctx);
-        String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                Formats.JSONV1;
+        String formatHeader = ctx.req.getContentType();
         ContentType contentType = Formats.parseHeader(formatHeader, cwms.cda.data.dto.basin.Basin.class);
         ctx.contentType(contentType.toString());
 

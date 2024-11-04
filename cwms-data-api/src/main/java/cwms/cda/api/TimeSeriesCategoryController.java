@@ -97,7 +97,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
             List<TimeSeriesCategory> cats = dao.getTimeSeriesCategories(office);
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesCategory.class);
 
             String result = Formats.format(contentType, cats, TimeSeriesCategory.class);
 
@@ -140,7 +140,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
             String office = requiredParam(ctx, OFFICE);
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesCategory.class);
 
             Optional<TimeSeriesCategory> grp = dao.getTimeSeriesCategory(office, categoryId);
             if (grp.isPresent()) {
@@ -179,11 +179,10 @@ public class TimeSeriesCategoryController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)){
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
 
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesCategory.class);
             TimeSeriesCategory deserialize = Formats.parseContent(contentType, body, TimeSeriesCategory.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
