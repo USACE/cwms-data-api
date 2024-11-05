@@ -3,7 +3,6 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -71,10 +70,4 @@ public class Clobs extends CwmsDTOPaginated {
             return this;
         }
     }
-
-    @Override
-    public void validate() throws FieldException {
-        // Clobs always contains a valid array even empty.
-    }
-
 }

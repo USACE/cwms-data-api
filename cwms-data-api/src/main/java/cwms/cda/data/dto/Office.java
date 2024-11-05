@@ -3,10 +3,7 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.csv.CsvV1;
@@ -28,7 +25,7 @@ import java.util.HashMap;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.CSV, formatter = CsvV1.class)
 @FormattableWith(contentType = Formats.TAB, formatter = TabV1.class)
-public class Office implements CwmsDTOBase {
+public class Office extends CwmsDTOBase {
     private static final HashMap<String,String> office_types = new HashMap<String,String>(){
         /**
          *
@@ -72,11 +69,5 @@ public class Office implements CwmsDTOBase {
 
     public static boolean validOfficeCanNull(String office){
         return office == null || validOfficeNotNull(office);
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        // TODO Auto-generated method stub
-
     }
 }

@@ -1,23 +1,17 @@
 package cwms.cda.data.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import cwms.cda.api.errors.FieldException;
 
 @JsonRootName("vertical-datum-info")
 @JsonDeserialize(builder = VerticalDatumInfo.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class VerticalDatumInfo implements CwmsDTOBase {
+public class VerticalDatumInfo extends CwmsDTOBase {
     String office;
 
     String unit;
@@ -55,11 +49,6 @@ public class VerticalDatumInfo implements CwmsDTOBase {
 
     public Offset[] getOffsets() {
         return offsets;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-
     }
 
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)

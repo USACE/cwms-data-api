@@ -51,7 +51,8 @@ public class LocationControllerTestIT extends DataApiTestIT {
     void test_location_create_get_delete() throws Exception {
         String officeId = "SPK";
         String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
-        Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON), json, Location.class))
+        Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
+            json, Location.class))
                 .withOfficeId(officeId)
                 //withName(getClass().getSimpleName())
                 .build();

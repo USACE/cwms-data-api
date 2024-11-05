@@ -22,23 +22,23 @@ package cwms.cda.data.dto.location.kind;
 
 
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.CwmsIdTest;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
+import cwms.cda.helpers.DTOMatch;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class OutletTest {
+final class OutletTest {
     private static final String SPK = "SPK";
-    private static final String PROJECT_LOC = "location";
-    private static final String OUTLET_LOC = PROJECT_LOC + "-outlet";
-    private static final String BASE_OUTLET_LOC = "outlet";
+    private static final String PROJECT_LOC = "BIGH";
+    private static final String OUTLET_LOC = PROJECT_LOC + "-TG1";
+    private static final String BASE_OUTLET_LOC = "TG2";
+    private static final CwmsId RATING_GROUP_ID = new CwmsId.Builder().withName("Rating-" + OUTLET_LOC).withOfficeId(SPK).build();
 
     @Test
     void test_serialization() {
@@ -47,9 +47,7 @@ class OutletTest {
         String json = Formats.format(contentType, outlet);
 
         Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
-        CwmsIdTest.assertSame(outlet.getCharacteristicsId(), parsedOutlet.getCharacteristicsId());
-        assertEquals(outlet.getLocation(), parsedOutlet.getLocation(), "Locations do not match");
-        CwmsIdTest.assertSame(outlet.getProjectId(), parsedOutlet.getProjectId());
+        DTOMatch.assertMatch(outlet, parsedOutlet);
     }
 
     @Test
@@ -59,9 +57,7 @@ class OutletTest {
         String json = Formats.format(contentType, outlet);
 
         Outlet parsedOutlet = Formats.parseContent(contentType, json, Outlet.class);
-        CwmsIdTest.assertSame(outlet.getCharacteristicsId(), parsedOutlet.getCharacteristicsId());
-        assertEquals(outlet.getLocation(), parsedOutlet.getLocation(), "Locations do not match");
-        CwmsIdTest.assertSame(outlet.getProjectId(), parsedOutlet.getProjectId());
+        DTOMatch.assertMatch(outlet, parsedOutlet);
     }
 
     @Test
@@ -72,10 +68,7 @@ class OutletTest {
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
-        CwmsIdTest.assertSame(outlet.getCharacteristicsId(), deserialized.getCharacteristicsId(),
-                "characteristic-ref");
-        assertEquals(outlet.getLocation(), deserialized.getLocation(), "Locations do not match");
-        CwmsIdTest.assertSame(outlet.getProjectId(), deserialized.getProjectId(), "project-id");
+        DTOMatch.assertMatch(outlet, deserialized);
     }
 
     @Test
@@ -86,10 +79,7 @@ class OutletTest {
         assertNotNull(resource);
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Outlet deserialized = Formats.parseContent(contentType, serialized, Outlet.class);
-        CwmsIdTest.assertSame(outlet.getCharacteristicsId(), deserialized.getCharacteristicsId(),
-                              "characteristic-ref");
-        assertEquals(outlet.getLocation(), deserialized.getLocation(), "Locations do not match");
-        CwmsIdTest.assertSame(outlet.getProjectId(), deserialized.getProjectId(), "project-id");
+        DTOMatch.assertMatch(outlet, deserialized);
     }
 
     private Outlet buildTestOutlet(String outletLocId) {
@@ -106,15 +96,10 @@ class OutletTest {
                 .withHorizontalDatum("NAD84")
                 .withVerticalDatum("NAVD88")
                 .build();
-        CwmsId charRef = new CwmsId.Builder()
-                .withName("Ogee Weir Depth")
-                .withOfficeId(SPK)
-                .build();
 
-        return new Outlet.Builder()
-                .withProjectId(identifier)
-                .withCharacteristicsId(charRef)
+        return new Outlet.Builder().withProjectId(identifier)
                 .withLocation(loc)
+                .withRatingGroupId(RATING_GROUP_ID)
                 .build();
     }
 }

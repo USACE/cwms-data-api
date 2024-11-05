@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonIgnoreProperties("office-id")  // This does work to block office-id from the super!
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class StandardTextValue extends CwmsDTO {
 
     private final StandardTextId id;
@@ -38,11 +38,6 @@ public class StandardTextValue extends CwmsDTO {
 
     public StandardTextId getId() {
         return id;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-
     }
 
     @Override

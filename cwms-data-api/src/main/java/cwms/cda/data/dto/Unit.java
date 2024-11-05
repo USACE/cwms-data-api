@@ -10,7 +10,6 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -24,7 +23,7 @@ import java.util.Objects;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class Unit extends CwmsDTO
+public final class Unit extends CwmsDTOBase
 {
 	private String abstractParameter;
 	private String name;
@@ -35,7 +34,6 @@ public final class Unit extends CwmsDTO
 
 	public Unit(String name, String longName, String abstractParameter, String description, String unitSystem, List<String> alternateNames)
 	{
-		super(null);
 		this.abstractParameter = abstractParameter;
 		this.name = name;
 		this.longName = longName;
@@ -51,7 +49,7 @@ public final class Unit extends CwmsDTO
 
 	public Unit()
 	{
-		super(null);
+		//No-op
 	}
 
 	public String getLongName()
@@ -98,11 +96,5 @@ public final class Unit extends CwmsDTO
 	public int hashCode()
 	{
 		return Objects.hash(getName(), getLongName(), getUnitSystem(), getDescription(), getAlternateNames());
-	}
-
-	@Override
-	public void validate() throws FieldException
-	{
-		//Nothing to validate
 	}
 }

@@ -36,7 +36,8 @@ class LocationControllerTest extends ControllerTest
     {
         String xml = loadResourceAsString("cwms/cda/api/location_create.xml");
         assertNotNull(xml);
-        Location location = Formats.parseContent(Formats.parseHeader(Formats.XML), xml, Location.class);
+        Location location = Formats.parseContent(Formats.parseHeader(Formats.XML, Location.class),
+            xml, Location.class);
         assertNotNull(location);
         assertEquals("LOC_TEST", location.getName());
         assertEquals("LRL", location.getOfficeId());
@@ -52,7 +53,8 @@ class LocationControllerTest extends ControllerTest
         final String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
 
         assertNotNull(json);
-        Location location = Formats.parseContent(Formats.parseHeader(Formats.JSON), json, Location.class);
+        Location location = Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
+            json, Location.class);
         assertNotNull(location);
         assertEquals("LOC_TEST", location.getName());
         assertEquals(OFFICE, location.getOfficeId());

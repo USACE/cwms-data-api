@@ -30,7 +30,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
@@ -42,8 +41,8 @@ import java.time.Instant;
 @JsonDeserialize(builder = Project.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
-public class Project implements CwmsDTOBase {
+@FormattableWith(contentType = Formats.JSONV1, aliases = {Formats.DEFAULT, Formats.JSON}, formatter = JsonV2.class)
+public class Project extends CwmsDTOBase {
 
     private final Location location;
     private final BigDecimal federalCost;
@@ -85,11 +84,6 @@ public class Project implements CwmsDTOBase {
         this.yieldTimeFrameStart = builder.yieldTimeFrameStart;
         this.yieldTimeFrameEnd = builder.yieldTimeFrameEnd;
         this.projectRemarks = builder.projectRemarks;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-
     }
 
     public Location getLocation() {

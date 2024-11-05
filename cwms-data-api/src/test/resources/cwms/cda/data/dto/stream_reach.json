@@ -9,22 +9,34 @@
   },
   "comment": "This is a comment for the stream reach.",
   "downstream-node": {
-    "stream-id": {
+    "id": {
       "office-id": "SPK",
-      "name": "Downstream123"
+      "name": "DownstreamLoc123"
     },
-    "station": 20.0,
-    "bank": "R",
-    "station-units": "ft"
+    "stream-node": {
+      "stream-id": {
+        "office-id": "SPK",
+        "name": "Downstream123"
+      },
+      "station": 20.0,
+      "bank": "R",
+      "station-units": "km"
+    }
   },
   "upstream-node": {
-    "stream-id": {
+    "id": {
       "office-id": "SPK",
-      "name": "Upstream123"
+      "name": "UpstreamLoc123"
     },
-    "station": 10.0,
-    "bank": "L",
-    "station-units": "ft"
+    "stream-node": {
+        "stream-id": {
+            "office-id": "SPK",
+            "name": "Upstream123"
+        },
+        "station": 10.0,
+        "bank": "L",
+        "station-units": "km"
+    }
   },
   "configuration-id": {
     "office-id": "SPK",

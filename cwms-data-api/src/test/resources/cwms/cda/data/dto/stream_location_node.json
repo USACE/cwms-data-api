@@ -1,0 +1,15 @@
+{
+  "id": {
+    "office-id": "SPK",
+    "name": "StreamLoc123"
+  },
+  "stream-node":{
+    "stream-id": {
+      "office-id": "SPK",
+      "name": "Stream123"
+    },
+    "bank": "L",
+    "station": 123.45,
+    "station-units": "mi"
+  }
+}

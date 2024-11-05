@@ -57,10 +57,11 @@ class LocationTest
 		Location location = buildTestLocation();
 		assertNotNull(location);
 
-		String serialized = Formats.format(Formats.parseHeader(format), location);
+		String serialized = Formats.format(Formats.parseHeader(format, Location.class), location);
 		assertNotNull(serialized);
 
-		Location deserialized = Formats.parseContent(Formats.parseHeader(format), serialized, Location.class);
+		Location deserialized = Formats.parseContent(Formats.parseHeader(format, Location.class),
+			serialized, Location.class);
 		assertEquals(location, deserialized);
 	}
 
@@ -94,8 +95,8 @@ class LocationTest
 			assertNotNull(details);
 			assertTrue(details.containsKey(RequiredFieldException.MISSING_FIELDS));
 			List<String> missingFields = details.get(RequiredFieldException.MISSING_FIELDS);
-			assertTrue(missingFields.contains("Latitude"));
-			assertTrue(missingFields.contains("Longitude"));
+			assertTrue(missingFields.contains("latitude"));
+			assertTrue(missingFields.contains("longitude"));
 		}
 	}
 

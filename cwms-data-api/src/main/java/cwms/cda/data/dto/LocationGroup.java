@@ -27,7 +27,6 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.csv.CsvV1;
@@ -39,7 +38,7 @@ import java.util.List;
 @Schema(description = "A representation of a location group")
 @JsonRootName("location_group")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.CSV, formatter = CsvV1.class)
 public class LocationGroup extends CwmsDTO {
     private String id;
@@ -173,11 +172,5 @@ public class LocationGroup extends CwmsDTO {
         result = 31 * result + (getAssignedLocations() != null ?
 				getAssignedLocations().hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        // TODO Auto-generated method stub
-
     }
 }

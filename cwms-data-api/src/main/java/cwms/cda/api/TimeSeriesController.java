@@ -373,7 +373,7 @@ public class TimeSeriesController implements CrudHandler {
                         + "whether to trim missing values from the beginning and end of the "
                         + "retrieved values. "
                         + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2 + ". "
-                        + "Default is false."),
+                        + "Default is true."),
                 @OpenApiParam(name = FORMAT,  description = "Specifies the"
                         + " encoding format of the response. Valid values for the format "
                         + "field for this URI are:"
@@ -463,7 +463,7 @@ public class TimeSeriesController implements CrudHandler {
 
                 String office = requiredParam(ctx, OFFICE);
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, unit,
-                        beginZdt, endZdt, versionDate, trim.getOrDefault(false));
+                        beginZdt, endZdt, versionDate, trim.getOrDefault(true));
 
                 results = Formats.format(contentType, ts);
 
@@ -582,7 +582,7 @@ public class TimeSeriesController implements CrudHandler {
 
     private TimeSeries deserializeTimeSeries(Context ctx) throws IOException {
         String contentTypeHeader = ctx.req.getContentType();
-        ContentType contentType = Formats.parseHeader(contentTypeHeader);
+        ContentType contentType = Formats.parseHeader(contentTypeHeader, TimeSeries.class);
         return Formats.parseContent(contentType, ctx.bodyAsInputStream(), TimeSeries.class);
     }
 

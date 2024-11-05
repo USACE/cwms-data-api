@@ -1,0 +1,11 @@
+{
+  "type": "gate-setting",
+  "location-id": {
+    "office-id": "SPK",
+    "name": "BIGH-TG1"
+  },
+  "opening": 0.0,
+  "opening-parameter": "Opening",
+  "invert-elevation": 1.0,
+  "opening-units": "ft"
+}

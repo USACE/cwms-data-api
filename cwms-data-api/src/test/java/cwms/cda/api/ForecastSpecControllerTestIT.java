@@ -4,6 +4,7 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.UnsupportedFormatException;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
@@ -16,7 +17,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -73,15 +73,16 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
     }
 
     static void deleteSpec() throws SQLException {
-        try {
-            CwmsDataApiSetupCallback.getDatabaseLink()
-                    .connection(c -> {
-                        CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), SPEC_ID, designator,
-                                DeleteRule.DELETE_ALL.getRule(), OFFICE);
-                    });
-        } catch (DataAccessException e) {
-            LOGGER.atFine().withCause(e).log("Couldn't clean up forecast spec before executing tests. Probably didn't exist");
-        }
+        throw new UnsupportedFormatException("The Forecast API is not yet implemented in CWMS");
+//        try {
+//            CwmsDataApiSetupCallback.getDatabaseLink()
+//                    .connection(c -> {
+//                        CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), SPEC_ID, designator,
+//                                DeleteRule.DELETE_ALL.getRule(), OFFICE);
+//                    });
+//        } catch (DataAccessException e) {
+//            LOGGER.atFine().withCause(e).log("Couldn't clean up forecast spec before executing tests. Probably didn't exist");
+//        }
     }
 
 

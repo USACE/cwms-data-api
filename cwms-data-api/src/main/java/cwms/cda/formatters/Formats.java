@@ -27,10 +27,10 @@ package cwms.cda.formatters;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.annotations.FormattableWith;
 
-import javax.validation.constraints.NotNull;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,6 +40,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 
 public class Formats {
@@ -74,7 +76,8 @@ public class Formats {
 
     static {
         contentTypeList.addAll(
-                Stream.of(JSON, JSONV1, XML, XMLV1, XMLV2, WML2, JSONV2, TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON)
+                Stream.of(DEFAULT, JSON, JSONV1, XML, XMLV1, XMLV2, WML2, JSONV2,
+                        TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON)
                         .map(ContentType::new)
                         .collect(Collectors.toList()));
     }
@@ -170,6 +173,25 @@ public class Formats {
         }
     }
 
+    private <T extends CwmsDTOBase> List<T> parseContentListFromType(ContentType type, String content, Class<T> rootType)
+        throws FormattingException {
+        OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
+        if (outputFormatter != null) {
+            List<T> retval = outputFormatter.parseContentList(content, rootType);
+            if (retval == null) {
+                throw new UnsupportedFormatException("Cannot deserialize empty content array");
+            }
+            for (T obj : retval) {
+                obj.validate();
+            }
+            return retval;
+        } else {
+            String message = String.format("No Format for this content-type and data type : (%s, %s)",
+                type.toString(), rootType.getName());
+            throw new UnsupportedFormatException(message);
+        }
+    }
+
     private OutputFormatter getOutputFormatter(ContentType type,
                                                Class<? extends CwmsDTOBase> klass) {
         OutputFormatter outputFormatter = null;
@@ -216,19 +238,9 @@ public class Formats {
         return formats.parseContentFromType(type, inputStream, rootType);
     }
 
-    /**
-     * Parses the supplied header param or queryParam to determine the content type.
-     * If both are supplied an exception is thrown.  If neither are supplied an exception is thrown.
-     *
-     * @param header     Accept header value
-     * @param queryParam format query parameter value
-     * @return an appropriate standard mimetype for lookup
-     * @throws FormattingException if the header and queryParam are both supplied or neither are
-     * @deprecated Use overloaded parseHeaderAndQueryParm that takes in a class to utilize the format aliasing.
-     */
-    @Deprecated
-    public static ContentType parseHeaderAndQueryParm(String header, String queryParam) {
-        return parseHeaderAndQueryParm(header, queryParam, null);
+    public static <T extends CwmsDTOBase> List<T> parseContentList(ContentType type, String content, Class<T> rootType)
+        throws FormattingException {
+        return formats.parseContentListFromType(type, content, rootType);
     }
 
     /**
@@ -242,7 +254,8 @@ public class Formats {
      * @return an appropriate standard mimetype for lookup
      * @throws FormattingException if the header and queryParam are both supplied or neither are
      */
-    public static ContentType parseHeaderAndQueryParm(String header, String queryParam, Class<? extends CwmsDTOBase> klass) {
+    public static ContentType parseHeaderAndQueryParm(String header, String queryParam,
+        Class<? extends CwmsDTOBase> klass) {
         if (queryParam != null && !queryParam.isEmpty()) {
             if (header != null && !header.isEmpty() && !DEFAULT.equals(header.trim())) {
                 // If the user supplies an accept header and also a format= parameter, which
@@ -263,12 +276,32 @@ public class Formats {
         } else if (header == null) {
             throw new UnsupportedFormatException("no content type or format specified");
         } else {
-            ContentType ct = parseHeader(header, klass);
-            if (ct != null) {
-                return ct;
-            }
+            return parseHeader(header, klass);
         }
-        throw new UnsupportedFormatException("Content-Type " + header + " is not available");
+    }
+
+    /**
+     * For endpoints that still allow either for transition, favors the query parameter as that's the likely user
+     * expectation since machine systems wouldn't said both.
+     * @param header content type from a header
+     * @param queryParam content type from a query parameter
+     * @param klass DTO to find a matching formatter for.
+     * @return ContentType appropriate to the given selection.
+     * @throws UnsupportedFormatException if there is no matching content type for the given class
+     */
+    public static ContentType parseQueryOrHeaderParam(String headerParam, String queryParam, Class<? extends CwmsDTOBase> klass) {
+        ContentType ct = null;
+        if (!(queryParam == null || queryParam.isEmpty())) {
+            ct = parseQueryParam(queryParam, klass);
+        } else if (headerParam != null) {
+            ct = parseHeader(headerParam, klass);
+        } else {
+            ct = parseHeader(DEFAULT, klass);
+        }
+        if (ct == null) {
+            throw new UnsupportedFormatException("Content-Type " + (headerParam == null ? queryParam : headerParam) + " is not available.");
+        }
+        return ct;
     }
 
     public static ContentType parseQueryParam(String queryParam, Class<? extends CwmsDTOBase> klass)
@@ -298,56 +331,48 @@ public class Formats {
     /**
      * Parses the supplied header param to determine the content type.
      *
-     * @param header Accept header value
-     * @return an appropriate standard mimetype for lookup
-     * @throws FormattingException if the header can't be identified as a mimetype
-     * @deprecated Use overloaded parseHeader that takes in a class to utilize the format aliasing.
-     */
-    @Deprecated
-    public static @NotNull ContentType parseHeader(String header) {
-        return parseHeader(header, null);
-    }
-
-    /**
-     * Parses the supplied header param to determine the content type.
-     *
-     * @param header Accept header value
-     * @param klass  DTO object class, used for identifying content type aliases from the DTO's <code>FormattableWith</code> annotations.
+     * @param header Accept header value. If null, will assume &#42;&#47;&#42; content type
+     * @param klass  DTO object class, used for identifying content type aliases from the DTO's
+     *               {@link cwms.cda.formatters.annotations.FormattableWith} annotations.
      * @return an appropriate standard mimetype for lookup
      * @throws FormattingException if the header can't be identified as a mimetype
      */
-    public static @NotNull ContentType parseHeader(String header, Class<? extends CwmsDTOBase> klass) {
-        ContentTypeAliasMap aliasMap = ContentTypeAliasMap.empty();
-        if (klass != null) {
-            aliasMap = ContentTypeAliasMap.forDtoClass(klass);
+    public static @NotNull ContentType parseHeader(@Nullable String header,
+        @NotNull Class<? extends CwmsDTOBase> klass) {
+        Objects.requireNonNull(klass, "Cannot determine content type without a DTO class definition");
+        ContentTypeAliasMap aliasMap = ContentTypeAliasMap.forDtoClass(klass);
+        //Swap out null content type with */* for flexibility.
+        //This routine will match DTO's when the DEFAULT alias specified by the format annotations.
+        if(header == null || header.trim().isEmpty()) {
+            header = DEFAULT;
         }
-        ArrayList<ContentType> contentTypes = new ArrayList<>();
-        if (header != null && !header.isEmpty()) {
-            String[] all = header.split(",");
-            logger.log(Level.FINEST, "Finding handlers {0}", all.length);
-            for (String ct : all) {
-                ContentType aliasType = aliasMap.getContentType(ct);
-                if (aliasType != null) {
-                    logger.finest(() -> ct + " converted to " + aliasType);
-                    contentTypes.add(aliasType);
-                }
-                else {
-                    logger.finest(ct);
-                    contentTypes.add(new ContentType(ct));
+        //TreeSet will sort based on prioritized content type
+        //if multiple valid content types are specified in the header.
+        SortedSet<ContentType> contentTypes = new TreeSet<>();
+        String[] all = header.split(",");
+        logger.log(Level.FINEST, "Finding handlers {0}", all.length);
+        for (String ct : all) {
+            ContentType aliasType = aliasMap.getContentType(ct);
+            //Found type defined in annotations, add to the priority list.
+            if (aliasType != null) {
+                logger.finest(() -> ct + " converted to " + aliasType);
+                contentTypes.add(aliasType);
+            } else {
+                //If the DTO parameter is null, alias map is empty. Compare against well-known types
+                //Only use the ContentType classes initialized in contentTypeList rather than
+                //the client headers itself
+                ContentType type = new ContentType(ct);
+                if(contentTypeList.contains(type)) {
+                    contentTypes.add(type);
                 }
             }
-            Collections.sort(contentTypes);
         }
         logger.finest(() -> "have " + contentTypes.size());
+        //Look through known content types to match using priority sorted TreeSet
         for (ContentType ct : contentTypes) {
             logger.finest(() -> "checking " + ct.toString());
             if (contentTypeList.contains(ct)) {
                 return ct;
-            }
-        }
-        for (ContentType ct : contentTypes) {
-            if (ct.getType().equals(DEFAULT)) {
-                return new ContentType(Formats.JSON);
             }
         }
         throw new UnsupportedFormatException("Format header " + header + " could not be parsed");

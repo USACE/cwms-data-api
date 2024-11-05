@@ -39,7 +39,7 @@ public class ForecastSpecTest {
     @Test
     void testFormatsSerialization() {
         ForecastSpec s1 = buildForecastSpec();
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2, ForecastSpec.class);
         String jsonStr = Formats.format(contentType, s1);
         assertNotNull(jsonStr);
     }

@@ -24,6 +24,7 @@ import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
@@ -78,7 +79,10 @@ public class ParametersController implements CrudHandler {
                             + " used."),
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200)
+                @OpenApiResponse(status = STATUS_200, content = {
+                    @OpenApiContent(isArray = true, from = Parameter.class, type = Formats.JSONV2),
+                    @OpenApiContent(isArray = true, from = Parameter.class, type = Formats.JSON)
+                }),
             },
             tags = {"Parameters"}
     )
@@ -90,7 +94,7 @@ public class ParametersController implements CrudHandler {
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String office = ctx.queryParamAsClass(OFFICE, String.class).getOrDefault(null);
             String header = ctx.header(ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, Parameter.class);
+            ContentType contentType = Formats.parseQueryOrHeaderParam(header, format, Parameter.class);
             String version = contentType.getParameters()
                                         .getOrDefault(VERSION, "");
 

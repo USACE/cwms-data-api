@@ -28,13 +28,13 @@ import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
-import usace.cwms.db.dao.util.OracleTypeMap;
+import java.time.ZoneId;
+import java.util.Optional;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_OBJ_T;
 
-import java.time.ZoneId;
-import java.util.Optional;
+import static  cwms.cda.data.dao.JooqDao.*;
 
 public final class LocationUtil {
 
@@ -103,7 +103,7 @@ public final class LocationUtil {
         if(lookupType != null) {
             retval = new LookupType.Builder()
                     .withOfficeId(lookupType.getOFFICE_ID())
-                    .withActive(OracleTypeMap.parseBool(lookupType.getACTIVE()))
+                    .withActive(parseBool(lookupType.getACTIVE()))
                     .withDisplayValue(lookupType.getDISPLAY_VALUE())
                     .withTooltip(lookupType.getTOOLTIP())
                     .build();
@@ -116,7 +116,7 @@ public final class LocationUtil {
         if(lookupType != null) {
             retval = new LOOKUP_TYPE_OBJ_T();
             retval.setOFFICE_ID(lookupType.getOfficeId());
-            retval.setACTIVE(OracleTypeMap.formatBool(lookupType.getActive()));
+            retval.setACTIVE(formatBool(lookupType.getActive()));
             retval.setDISPLAY_VALUE(lookupType.getDisplayValue());
             retval.setTOOLTIP(lookupType.getTooltip());
         }
@@ -125,31 +125,31 @@ public final class LocationUtil {
 
     public static Location getLocation(LOCATION_OBJ_T location) {
         Location retval = null;
-        if(location != null) {
+        if (location != null) {
             retval = new Location.Builder(getLocationId(location.getLOCATION_REF()),
-                    location.getLOCATION_KIND_ID(),
-                    ZoneId.of(location.getTIME_ZONE_NAME()),
-                    OracleTypeMap.buildDouble(location.getLATITUDE()),
-                    OracleTypeMap.buildDouble(location.getLONGITUDE()),
-                    location.getHORIZONTAL_DATUM(),
-                    location.getLOCATION_REF().getOFFICE_ID())
-                    .withActive(OracleTypeMap.parseBool(location.getACTIVE_FLAG()))
-                    .withDescription(location.getDESCRIPTION())
-                    .withElevation(OracleTypeMap.buildDouble(location.getELEVATION()))
-                    .withElevationUnits(location.getELEV_UNIT_ID())
-                    .withCountyName(location.getCOUNTY_NAME())
-                    .withBoundingOfficeId(location.getBOUNDING_OFFICE_ID())
-                    .withNation(Nation.nationForName(location.getNATION_ID()))
-                    .withMapLabel(location.getMAP_LABEL())
-                    .withPublicName(location.getPUBLIC_NAME())
-                    .withPublishedLatitude(OracleTypeMap.buildDouble(location.getPUBLISHED_LATITUDE()))
-                    .withPublishedLongitude(OracleTypeMap.buildDouble(location.getPUBLISHED_LONGITUDE()))
-                    .withVerticalDatum(location.getVERTICAL_DATUM())
-                    .withLongName(location.getLONG_NAME())
-                    .withStateInitial(location.getSTATE_INITIAL())
-                    .withLocationType(location.getLOCATION_TYPE())
-                    .withNearestCity(location.getNEAREST_CITY())
-                    .build();
+                location.getLOCATION_KIND_ID(),
+                ZoneId.of(location.getTIME_ZONE_NAME()),
+                buildDouble(location.getLATITUDE()),
+                buildDouble(location.getLONGITUDE()),
+                location.getHORIZONTAL_DATUM(),
+                location.getLOCATION_REF().getOFFICE_ID())
+                .withActive(parseBool(location.getACTIVE_FLAG()))
+                .withDescription(location.getDESCRIPTION())
+                .withElevation(buildDouble(location.getELEVATION()))
+                .withElevationUnits(location.getELEV_UNIT_ID())
+                .withCountyName(location.getCOUNTY_NAME())
+                .withBoundingOfficeId(location.getBOUNDING_OFFICE_ID())
+                .withNation(Nation.nationForName(location.getNATION_ID()))
+                .withMapLabel(location.getMAP_LABEL())
+                .withPublicName(location.getPUBLIC_NAME())
+                .withPublishedLatitude(buildDouble(location.getPUBLISHED_LATITUDE()))
+                .withPublishedLongitude(buildDouble(location.getPUBLISHED_LONGITUDE()))
+                .withVerticalDatum(location.getVERTICAL_DATUM())
+                .withLongName(location.getLONG_NAME())
+                .withStateInitial(location.getSTATE_INITIAL())
+                .withLocationType(location.getLOCATION_TYPE())
+                .withNearestCity(location.getNEAREST_CITY())
+                .build();
         }
         return retval;
     }
@@ -161,20 +161,20 @@ public final class LocationUtil {
             retval.setLOCATION_REF(getLocationRef(location.getName(), location.getOfficeId()));
             retval.setLOCATION_KIND_ID(location.getLocationKind());
             retval.setTIME_ZONE_NAME(location.getTimezoneName());
-            retval.setLATITUDE(OracleTypeMap.toBigDecimal(location.getLatitude()));
-            retval.setLONGITUDE(OracleTypeMap.toBigDecimal(location.getLongitude()));
+            retval.setLATITUDE(toBigDecimal(location.getLatitude()));
+            retval.setLONGITUDE(toBigDecimal(location.getLongitude()));
             retval.setHORIZONTAL_DATUM(location.getHorizontalDatum());
-            retval.setACTIVE_FLAG(OracleTypeMap.formatBool(location.getActive()));
+            retval.setACTIVE_FLAG(formatBool(location.getActive()));
             retval.setDESCRIPTION(location.getDescription());
-            retval.setELEVATION(OracleTypeMap.toBigDecimal(location.getElevation()));
+            retval.setELEVATION(toBigDecimal(location.getElevation()));
             retval.setELEV_UNIT_ID(location.getElevationUnits());
             retval.setCOUNTY_NAME(location.getCountyName());
             retval.setBOUNDING_OFFICE_ID(location.getBoundingOfficeId());
             retval.setNATION_ID(Optional.ofNullable(location.getNation()).map(Nation::getName).orElse(null));
             retval.setMAP_LABEL(location.getMapLabel());
             retval.setPUBLIC_NAME(location.getPublicName());
-            retval.setPUBLISHED_LATITUDE(OracleTypeMap.toBigDecimal(location.getPublishedLatitude()));
-            retval.setPUBLISHED_LONGITUDE(OracleTypeMap.toBigDecimal(location.getPublishedLongitude()));
+            retval.setPUBLISHED_LATITUDE(toBigDecimal(location.getPublishedLatitude()));
+            retval.setPUBLISHED_LONGITUDE(toBigDecimal(location.getPublishedLongitude()));
             retval.setVERTICAL_DATUM(location.getVerticalDatum());
             retval.setLONG_NAME(location.getLongName());
             retval.setSTATE_INITIAL(location.getStateInitial());

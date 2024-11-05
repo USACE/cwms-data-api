@@ -1,11 +1,10 @@
 package cwms.cda.data.dto;
 
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.Formats;
 
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class SpecifiedLevel extends CwmsDTO
 {
 	private String id;
@@ -66,11 +65,5 @@ public class SpecifiedLevel extends CwmsDTO
 		result = 31 * result + (getOfficeId() != null ? getOfficeId().hashCode() : 0);
 		result = 31 * result + (getDescription() != null ? getDescription().hashCode() : 0);
 		return result;
-	}
-
-	@Override
-	public void validate() throws FieldException
-	{
-
 	}
 }

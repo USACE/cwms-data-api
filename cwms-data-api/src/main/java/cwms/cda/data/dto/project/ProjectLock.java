@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -39,7 +38,7 @@ import java.time.Instant;
 @JsonDeserialize(builder = ProjectLock.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class ProjectLock extends CwmsDTO {
     // officeId held by CwmsDTO
     private final String projectId;
@@ -89,11 +88,6 @@ public class ProjectLock extends CwmsDTO {
         return sessionMachine;
     }
 
-    @Override
-    public void validate() throws FieldException {
-        // Nothing to do
-    }
-
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
@@ -107,6 +101,17 @@ public class ProjectLock extends CwmsDTO {
         private String sessionMachine;
 
         public Builder() {
+        }
+
+        public Builder(ProjectLock lock) {
+            this.officeId = lock.officeId;
+            this.projectId = lock.projectId;
+            this.applicationId = lock.applicationId;
+            this.acquireTime = lock.acquireTime;
+            this.sessionUser = lock.sessionUser;
+            this.osUser = lock.osUser;
+            this.sessionProgram = lock.sessionProgram;
+            this.sessionMachine = lock.sessionMachine;
         }
 
         public Builder(String officeId, String projectId, String applicationId) {

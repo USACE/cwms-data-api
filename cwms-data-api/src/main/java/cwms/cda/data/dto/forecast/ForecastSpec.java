@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 @JsonRootName("forecast-spec")
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = ForecastSpec.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -78,10 +78,6 @@ public class ForecastSpec extends CwmsDTO {
 
     public List<String> getTimeSeriesIds() {
         return timeSeriesIds;
-    }
-
-    public void validate() throws FieldException {
-        //TODO
     }
 
     @Override

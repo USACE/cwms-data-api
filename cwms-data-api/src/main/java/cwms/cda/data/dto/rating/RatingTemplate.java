@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 @JsonDeserialize(builder = RatingTemplate.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class RatingTemplate extends CwmsDTO {
     private final String id;
     private final String version;
@@ -107,12 +107,6 @@ public class RatingTemplate extends CwmsDTO {
         result = 31 * result + (getIndependentParameterSpecs() != null
 				? getIndependentParameterSpecs().hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        // TODO Auto-generated method stub
-
     }
 
     @JsonPOJOBuilder

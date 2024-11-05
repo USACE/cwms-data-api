@@ -10,7 +10,6 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.enums.VersionType;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
@@ -19,7 +18,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 
-import javax.xml.bind.annotation.XmlType;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -234,7 +232,12 @@ public class TimeSeries extends CwmsDTOPaginated {
             ),
             arraySchema = @Schema(
                     type="array",
-                    example = "[1509654000000, 54.3, 0]"
+                    example = "[1509654000000, 54.3, 0]",
+                    description = "Time is Milliseconds since the UNIX Epoch. Value is Double (for missing data you "
+                                + "can use null, or -Float.MAX_VALUE (-340282346638528859811704183484516925440), "
+                                + "quality is an integer.) If you are using missing data set the quality to 5."
+                                + "Failure to do this may result in silently ignoring that value on not storing a "
+                                + "placeholder which can be important in irregular and psuedo regular timeseries."
             )
     )
     public static class Record {
@@ -334,11 +337,5 @@ public class TimeSeries extends CwmsDTOPaginated {
         public String getDatatype() {
             return datatype.getTypeName();
         }
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        // TODO Auto-generated method stub
-
     }
 }

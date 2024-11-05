@@ -29,45 +29,36 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-import java.util.ArrayList;
-import java.util.List;
 
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = CwmsId.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonPropertyOrder({"officeId", "name"})
-public final class CwmsId implements CwmsDTOBase {
+public final class CwmsId extends CwmsDTO {
 
-    private final String officeId;
     private final String name;
 
     public CwmsId(Builder builder) {
-        this.officeId = builder.officeId;
+        super(builder.officeId);
         this.name = builder.name;
     }
 
-    @Override
-    public void validate() throws FieldException {
-        List<String> missingFields = new ArrayList<>();
-        if (this.officeId == null || this.officeId.isEmpty()) {
-            missingFields.add("officeId");
-        }
-        if (this.name == null || this.name.isEmpty()) {
-            missingFields.add("name");
-        }
-        if (!missingFields.isEmpty()) {
-            throw new RequiredFieldException(missingFields);
-        }
+    public static CwmsId buildCwmsId(String officeId, String name) {
+        return new CwmsId.Builder()
+            .withOfficeId(officeId)
+            .withName(name)
+            .build();
     }
 
-    public String getOfficeId() {
-        return officeId;
+    @Override
+    protected void validateInternal(CwmsDTOValidator validator) {
+        super.validateInternal(validator);
+        validator.required(getOfficeId(), "office-id");
+        validator.required(getName(), "name");
     }
 
     public String getName() {

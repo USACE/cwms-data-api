@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ExclusiveFieldsException extends FieldException {
     private static final String DETAIL_KEY = "Use only one of";
@@ -14,7 +15,7 @@ public class ExclusiveFieldsException extends FieldException {
         details.put(DETAIL_KEY, new ArrayList<>());
     }
 
-    public ExclusiveFieldsException(List<String> fields) {
+    public ExclusiveFieldsException(Set<String> fields) {
         this();
         details.get(DETAIL_KEY).addAll(fields);
     }

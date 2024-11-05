@@ -72,7 +72,7 @@ public final class TurbineController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Office id for the reservoir project location " +
+                    @OpenApiParam(name = OFFICE, required = true, description = "Office id for the reservoir project location " +
                             "associated with the turbines."),
                     @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the " +
                             "Turbines whose data is to be included in the response."),
@@ -88,14 +88,13 @@ public final class TurbineController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        String office = ctx.queryParam(OFFICE);
-        String projectId = ctx.queryParam(PROJECT_ID);
+        String office = requiredParam(ctx, OFFICE);
+        String projectId = requiredParam(ctx, PROJECT_ID);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             TurbineDao dao = new TurbineDao(dsl);
             List<Turbine> turbines = dao.retrieveTurbines(projectId, office);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
-                    Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Turbine.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, turbines, Turbine.class);
@@ -131,8 +130,7 @@ public final class TurbineController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             TurbineDao dao = new TurbineDao(dsl);
             Turbine turbine = dao.retrieveTurbine(name, office);
-            String header = ctx.header(Header.ACCEPT);
-            String formatHeader = header != null ? header : Formats.JSONV1;
+            String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Turbine.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, turbine);
@@ -163,8 +161,7 @@ public final class TurbineController implements CrudHandler {
     @Override
     public void create(Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
-            String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
+            String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Turbine.class);
             Turbine turbine = Formats.parseContent(contentType, ctx.body(), Turbine.class);
             turbine.validate();

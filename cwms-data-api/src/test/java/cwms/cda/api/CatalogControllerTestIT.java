@@ -88,7 +88,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                             office)
                             .build())
                     .build();
-        projectDao.create(project);
+        projectDao.create(project, true);
         });
     }
 

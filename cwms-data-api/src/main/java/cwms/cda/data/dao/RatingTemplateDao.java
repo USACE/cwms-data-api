@@ -49,7 +49,6 @@ import org.jooq.SelectForUpdateStep;
 import org.jooq.TableField;
 import org.jooq.conf.ParamType;
 
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_TEMPLATE;
@@ -292,7 +291,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
 
         dsl.connection(c ->
             CWMS_RATING_PACKAGE.call_STORE_TEMPLATES__3(
-                getDslContext(c,office).configuration(), xml, OracleTypeMap.formatBool(failIfExists))
+                getDslContext(c,office).configuration(), xml, formatBool(failIfExists))
         );
     }
 

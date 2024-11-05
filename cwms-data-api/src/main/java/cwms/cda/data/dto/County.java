@@ -24,26 +24,26 @@
 
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.util.ArrayList;
-
 @Schema(description = "A representation of a county")
 @JsonRootName("county")
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class County implements CwmsDTOBase {
+public class County extends CwmsDTOBase {
 
+    @JsonProperty(required = true)
     private String name;
+    @JsonProperty(required = true)
     private String countyId;
+    @JsonProperty(required = true)
     private String stateInitial;
 
     public County() {
@@ -65,22 +65,5 @@ public class County implements CwmsDTOBase {
 
     public String getStateInitial() {
         return stateInitial;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        ArrayList<String> missingFields = new ArrayList<>();
-        if (this.getName() == null) {
-            missingFields.add("Name");
-        }
-        if (this.getCountyId() == null) {
-            missingFields.add("County ID");
-        }
-        if (this.getStateInitial() == null) {
-            missingFields.add("State Initial");
-        }
-        if (!missingFields.isEmpty()) {
-            throw new RequiredFieldException(missingFields);
-        }
     }
 }

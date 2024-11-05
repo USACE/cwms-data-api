@@ -26,8 +26,10 @@ package cwms.cda.api;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.location.kind.LocationUtil;
+import cwms.cda.data.dao.location.kind.TurbineDao;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.location.kind.Turbine;
 import cwms.cda.formatters.ContentType;
@@ -38,6 +40,7 @@ import io.restassured.filter.log.LogDetail;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
+import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -60,18 +63,16 @@ import static org.hamcrest.Matchers.*;
 
 //* NOTE requires at least 24.05.24-RC03 to fix nation ID issue with store_location_f */
 final class TurbineControllerIT extends DataApiTestIT {
-    private static final String OFFICE_ID = "SWT";
+    private static final String OFFICE = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
     private static final Location PROJECT_LOC;
-    private static final Location TURBINE_LOC;
     private static final Turbine TURBINE;
     static {
-        try(InputStream projectStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location.json");
-            InputStream turbineStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/turbine.json")) {
+        try(InputStream projectStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location_turb.json");
+            InputStream turbineStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/turbine_phys.json")) {
             String projectLocJson = IOUtils.toString(projectStream, StandardCharsets.UTF_8);
             PROJECT_LOC = Formats.parseContent(new ContentType(Formats.JSONV1), projectLocJson, Location.class);
             String turbineJson = IOUtils.toString(turbineStream, StandardCharsets.UTF_8);
             TURBINE = Formats.parseContent(new ContentType(Formats.JSONV1), turbineJson, Turbine.class);
-            TURBINE_LOC = TURBINE.getLocation();
         } catch(Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -81,37 +82,20 @@ final class TurbineControllerIT extends DataApiTestIT {
     public static void setup() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            try {
-                DSLContext context = getDslContext(c, OFFICE_ID);
-                LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-                PROJECT_OBJ_T projectObjT = buildProject();
-                CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
-                locationsDao.storeLocation(TURBINE_LOC);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        },
-        CwmsDataApiSetupCallback.getWebUser());
+            DSLContext context = getDslContext(c, OFFICE);
+            PROJECT_OBJ_T projectObjT = buildProject();
+            CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @AfterAll
     public static void tearDown() throws Exception {
-
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
-            DSLContext context = getDslContext(c, OFFICE_ID);
-            LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-            try {
-                locationsDao.deleteLocation(TURBINE_LOC.getName(), databaseLink.getOfficeId(), true);
-                CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
-                        DeleteRule.DELETE_ALL.getRule(), databaseLink.getOfficeId());
-                locationsDao.deleteLocation(PROJECT_LOC.getName(), databaseLink.getOfficeId(), true);
-            }
-            catch (NotFoundException ex) {
-                /* if this is an error it's covered under the tests below. */
-            }
-        },
-        CwmsDataApiSetupCallback.getWebUser());
+            DSLContext context = getDslContext(c, OFFICE);
+            cleanTurbine(context, TURBINE.getLocation());
+            cleanProject(context, PROJECT_LOC);
+        }, CwmsDataApiSetupCallback.getWebUser());
     }
 
     @Test
@@ -134,7 +118,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/turbines/")
+            .post("projects/turbines/")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -149,7 +133,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("turbines/" + TURBINE.getLocation().getName())
+            .get("projects/turbines/" + TURBINE.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -167,7 +151,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("turbines/" + TURBINE.getLocation().getName())
+            .delete("projects/turbines/" + TURBINE.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -182,7 +166,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("turbines/" + TURBINE.getLocation().getName())
+            .get("projects/turbines/" + TURBINE.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -203,7 +187,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .patch("/turbines/bogus")
+            .patch("projects/turbines/bogus")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -222,7 +206,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("turbines/" + Instant.now().toEpochMilli())
+            .delete("projects/turbines/" + Instant.now().toEpochMilli())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -249,7 +233,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/turbines/")
+            .post("projects/turbines/")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -265,7 +249,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("turbines/")
+            .get("projects/turbines/")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -283,7 +267,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("turbines/" + TURBINE.getLocation().getName())
+            .delete("projects/turbines/" + TURBINE.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -312,5 +296,38 @@ final class TurbineControllerIT extends DataApiTestIT {
         retval.setYIELD_TIME_FRAME_START(Timestamp.from(Instant.now()));
         retval.setYIELD_TIME_FRAME_END(Timestamp.from(Instant.now()));
         return retval;
+    }
+
+    private static void cleanTurbine(DSLContext context, Location turbine) {
+        try {
+            new TurbineDao(context).deleteTurbine(turbine.getName(), OFFICE, DeleteRule.DELETE_ALL);
+        } catch (NotFoundException ex) {
+            /* this is only an error within the tests themselves */
+        }
+
+        try {
+            new LocationsDaoImpl(context).deleteLocation(turbine.getName(), OFFICE, true);
+        } catch (NotFoundException ex) {
+            /* this is only an error within the tests themselves */
+        }
+    }
+
+    private static void cleanProject(DSLContext context, Location project) {
+        try {
+            CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), project.getName(),
+                DeleteRule.DELETE_ALL.getRule(), OFFICE);
+        } catch (DataAccessException ex) {
+            if (!JooqDao.isNotFound(ex)) {
+                throw ex;
+            }
+        } catch (NotFoundException ex) {
+            /* this is only an error within the tests themselves */
+        }
+
+        try {
+            new LocationsDaoImpl(context).deleteLocation(project.getName(), OFFICE, true);
+        } catch (NotFoundException ex) {
+            /* this is only an error within the tests themselves */
+        }
     }
 }

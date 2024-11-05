@@ -32,7 +32,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.*;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
@@ -239,7 +238,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
 
     public void delete(String categoryId, String groupId, String office) {
-        dsl.connection(c -> 
+        connection(dsl, c ->
             CWMS_TS_PACKAGE.call_DELETE_TS_GROUP(
                 getDslContext(c,office).configuration(), categoryId, groupId, office
             )
@@ -247,19 +246,19 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public void create(TimeSeriesGroup group, boolean failIfExists) {
-        dsl.connection(c-> {
+        connection(dsl, c-> {
             Configuration configuration = getDslContext(c,group.getOfficeId()).configuration();
             String categoryId = group.getTimeSeriesCategory().getId();
             CWMS_TS_PACKAGE.call_STORE_TS_GROUP(configuration, categoryId,
-            group.getId(), group.getDescription(), OracleTypeMap.formatBool(failIfExists),
+            group.getId(), group.getDescription(), formatBool(failIfExists),
             "T", group.getSharedAliasId(),
             group.getSharedRefTsId(), group.getOfficeId());
-            assignTs(configuration,group);
+            assignTs(configuration,group, group.getOfficeId());
         });
         
     }
 
-    private void assignTs(Configuration configuration,TimeSeriesGroup group) {
+    private void assignTs(Configuration configuration,TimeSeriesGroup group, String office) {
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
         if(assignedTimeSeries != null)
         {
@@ -268,22 +267,22 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 .collect(toList());
             TS_ALIAS_TAB_T assignedLocs = new TS_ALIAS_TAB_T(collect);
             CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS(configuration, group.getTimeSeriesCategory().getId(),
-                group.getId(), assignedLocs, group.getOfficeId());
+                group.getId(), assignedLocs, office);
         }
     }
 
-    public void assignTs(TimeSeriesGroup group) {
-        dsl.connection(c->assignTs(getDslContext(c,group.getOfficeId()).configuration(),group));
+    public void assignTs(TimeSeriesGroup group, String office) {
+        connection(dsl, c->assignTs(getDslContext(c, office).configuration(),group, office));
     }
 
     private static TS_ALIAS_T convertToTsAliasType(AssignedTimeSeries assignedTimeSeries) {
-        BigDecimal attribute = OracleTypeMap.toBigDecimal(assignedTimeSeries.getAttribute());
+        BigDecimal attribute = toBigDecimal(assignedTimeSeries.getAttribute());
         return new TS_ALIAS_T(assignedTimeSeries.getTimeseriesId(), attribute,
             assignedTimeSeries.getAliasId(), assignedTimeSeries.getRefTsId());
     }
 
     public void renameTimeSeriesGroup(String oldGroupId, TimeSeriesGroup group) {
-        dsl.connection(c->
+        connection(dsl, c->
             CWMS_TS_PACKAGE.call_RENAME_TS_GROUP(
                 getDslContext(c,group.getOfficeId()).configuration(), 
                 group.getTimeSeriesCategory().getId(), oldGroupId, group.getId(),
@@ -291,12 +290,12 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         );
     }
 
-    public void unassignAllTs(TimeSeriesGroup group) {
-        dsl.connection(c ->
+    public void unassignAllTs(TimeSeriesGroup group, String officeId) {
+        connection(dsl, c ->
             CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(
-                getDslContext(c,group.getOfficeId()).configuration(), 
+                getDslContext(c,officeId).configuration(),
                 group.getTimeSeriesCategory().getId(), group.getId(),
-                null, "T", group.getOfficeId())
+                null, "T", officeId)
         );
     }
 

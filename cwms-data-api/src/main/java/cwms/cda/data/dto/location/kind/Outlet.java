@@ -20,7 +20,9 @@
 
 package cwms.cda.data.dto.location.kind;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -34,30 +36,53 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = Outlet.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class Outlet extends ProjectStructure {
-    private final CwmsId characteristicsId;
+@JsonPropertyOrder({"projectId", "location", "ratingCatId", "ratingGroupId", "ratingSpecId"})
+public final class Outlet extends ProjectStructure {
+    public static final String RATING_LOC_GROUP_CATEGORY = "Rating";
+    private final CwmsId ratingCategoryId;
+    private final CwmsId ratingGroupId;
+    private final String ratingSpecId;
 
     private Outlet(Builder builder) {
         super(builder.projectId, builder.location);
-        characteristicsId = builder.characteristicsId;
+        ratingGroupId = builder.ratingGroupId;
+        ratingCategoryId = new CwmsId.Builder().withOfficeId(builder.projectId.getOfficeId())
+                                               .withName(RATING_LOC_GROUP_CATEGORY)
+                                               .build();
+        ratingSpecId = builder.ratingSpecId;
     }
 
-    public CwmsId getCharacteristicsId() {
-        return characteristicsId;
+    public CwmsId getRatingGroupId() {
+        return ratingGroupId;
     }
 
+    public CwmsId getRatingCategoryId() {
+        return ratingCategoryId;
+    }
+
+    public String getRatingSpecId() {
+        return ratingSpecId;
+    }
+
+    @JsonIgnoreProperties(value = {"rating-category-id"})
     public static final class Builder {
-        private CwmsId characteristicsId;
         private CwmsId projectId;
         private Location location;
+        private CwmsId ratingGroupId;
+        private String ratingSpecId;
+
+        public Builder() {
+        }
+
+        public Builder(Outlet outlet) {
+            projectId = outlet.getProjectId();
+            location = outlet.getLocation();
+            ratingGroupId = outlet.getRatingGroupId();
+            ratingSpecId = outlet.getRatingSpecId();
+        }
 
         public Outlet build() {
             return new Outlet(this);
-        }
-
-        public Builder withCharacteristicsId(CwmsId characteristicsId) {
-            this.characteristicsId = characteristicsId;
-            return this;
         }
 
         public Builder withProjectId(CwmsId projectIdentifier) {
@@ -67,6 +92,16 @@ public class Outlet extends ProjectStructure {
 
         public Builder withLocation(Location location) {
             this.location = location;
+            return this;
+        }
+
+        public Builder withRatingGroupId(CwmsId ratingGroupId) {
+            this.ratingGroupId = ratingGroupId;
+            return this;
+        }
+
+        public Builder withRatingSpecId(String ratingSpecId) {
+            this.ratingSpecId = ratingSpecId;
             return this;
         }
     }

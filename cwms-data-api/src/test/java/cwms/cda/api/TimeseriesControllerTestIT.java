@@ -9,6 +9,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.isNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -89,9 +90,12 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("values[1][1]",closeTo(600.0,0.0001))
-                .body("values[0][1]",closeTo(500.0,0.0001))
-
+                .body("values[0][1]", closeTo(500.0,0.0001))
+                .body("values[1][1]", nullValue())
+                .body("values[1][2]", is(5))
+                .body("values[2][1]", nullValue())
+                .body("values[2][2]", is(5))
+                .body("values[3][1]", closeTo(600.0,0.0001))
             ;
         } catch (SQLException ex) {
             throw new RuntimeException("Unable to create location for TS", ex);
@@ -292,6 +296,9 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
 
+        //     1675335600000 is Thursday, February 2, 2023 11:00:00 AM
+        // fyi 1675422000000 is Friday, February 3, 2023 11:00:00 AM
+
         // get it back
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
@@ -303,6 +310,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam("name", ts.get("name").asText())
                 .queryParam("begin", "2023-02-02T11:00:00+00:00")
                 .queryParam("end", "2023-02-03T11:00:00+00:00")
+                .queryParam(Controllers.TRIM, false)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -311,6 +319,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
+                .body("values.size()", equalTo(2))
                 .body("values[0][1]", nullValue());
     }
 

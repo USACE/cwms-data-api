@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.enums.VersionType;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -26,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
 @JsonDeserialize(builder = BinaryTimeSeries.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class BinaryTimeSeries extends CwmsDTO {
     private final String name;
     private final Long intervalOffset;
@@ -88,12 +87,6 @@ public class BinaryTimeSeries extends CwmsDTO {
         }
         return Collections.unmodifiableCollection(entries.values());
     }
-
-    @Override
-    public void validate() throws FieldException {
-
-    }
-
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)

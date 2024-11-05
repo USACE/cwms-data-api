@@ -3,10 +3,8 @@ package cwms.cda.data.dao;
 import cwms.cda.data.dto.SpecifiedLevel;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import org.jooq.DSLContext;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
 import usace.cwms.db.jooq.dao.CwmsDbLevelJooq;
 
@@ -26,9 +24,6 @@ public final class SpecifiedLevelDao extends JooqDao<SpecifiedLevel> {
         CwmsDbLevelJooq jooq = new CwmsDbLevelJooq();
         connection(dsl, c -> {
             try (ResultSet rs = jooq.catSpecifiedLevels(c, templateIdMask, office)) {
-                final List<String> specLevelColumnsList = Arrays.asList(OFFICE_ID, SPECIFIED_LEVEL_ID,
-                        DESCRIPTION);
-                OracleTypeMap.checkMetaData(rs.getMetaData(), specLevelColumnsList, "Specified Level");
                 while (rs.next()) {
                     String officeId = rs.getString(OFFICE_ID);
                     String id = rs.getString(SPECIFIED_LEVEL_ID);
@@ -49,7 +44,7 @@ public final class SpecifiedLevelDao extends JooqDao<SpecifiedLevel> {
         dsl.connection(c -> 
             CWMS_LEVEL_PACKAGE.call_STORE_SPECIFIED_LEVEL(
                 getDslContext(c,specifiedLevel.getOfficeId()).configuration(),
-                specifiedLevel.getId(), specifiedLevel.getDescription(), OracleTypeMap.formatBool(failIfExists),
+                specifiedLevel.getId(), specifiedLevel.getDescription(), formatBool(failIfExists),
                 specifiedLevel.getOfficeId())
         );
         } catch(RuntimeException ex) {
@@ -71,7 +66,7 @@ public final class SpecifiedLevelDao extends JooqDao<SpecifiedLevel> {
     }
 
     public void delete(String specifiedLevelId, String office) {
-        String failIfNotFound = OracleTypeMap.formatBool(true);
+        String failIfNotFound = formatBool(true);
         try {
             dsl.connection(c -> CWMS_LEVEL_PACKAGE.call_DELETE_SPECIFIED_LEVEL(
                     getDslContext(c, office).configuration(),

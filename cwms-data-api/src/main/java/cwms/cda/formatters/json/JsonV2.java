@@ -95,7 +95,7 @@ public class JsonV2 implements OutputFormatter {
         try {
             return om.readValue(content, type);
         } catch (JsonProcessingException e) {
-            throw new FormattingException("Could not deserialize:" + content, e);
+            throw new FormattingException(String.format(DESERIALIZE_CONTENT_MESSAGE, content, type), e);
         }
     }
 
@@ -104,7 +104,16 @@ public class JsonV2 implements OutputFormatter {
         try {
             return om.readValue(content, type);
         } catch (IOException e) {
-            throw new FormattingException("Could not deserialize:" + content, e);
+            throw new FormattingException(String.format(DESERIALIZE_CONTENT_MESSAGE, content, type), e);
+        }
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> List<T> parseContentList(String content, Class<T> type) {
+        try {
+            return om.readValue(content, om.getTypeFactory().constructCollectionType(List.class, type));
+        } catch (IOException e) {
+            throw new FormattingException(String.format(DESERIALIZE_CONTENT_MESSAGE, content, type), e);
         }
     }
 }

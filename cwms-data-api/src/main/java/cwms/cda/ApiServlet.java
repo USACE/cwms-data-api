@@ -24,10 +24,18 @@
 
 package cwms.cda;
 
+
+import static cwms.cda.api.Controllers.CONTRACT_NAME;
+import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.NAME;
-import cwms.cda.api.LookupTypeController;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.WATER_USER;
 import static io.javalin.apibuilder.ApiBuilder.crud;
+import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
+import static io.javalin.apibuilder.ApiBuilder.patch;
+import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 import static java.lang.String.format;
@@ -47,6 +55,7 @@ import cwms.cda.api.CatalogController;
 import cwms.cda.api.ClobController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
+import cwms.cda.api.DownstreamLocationsGetController;
 import cwms.cda.api.EmbankmentController;
 import cwms.cda.api.ForecastFileController;
 import cwms.cda.api.ForecastInstanceController;
@@ -56,6 +65,7 @@ import cwms.cda.api.LevelsController;
 import cwms.cda.api.LocationCategoryController;
 import cwms.cda.api.LocationController;
 import cwms.cda.api.LocationGroupController;
+import cwms.cda.api.LookupTypeController;
 import cwms.cda.api.OfficeController;
 import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
@@ -68,6 +78,9 @@ import cwms.cda.api.RatingTemplateController;
 import cwms.cda.api.SpecifiedLevelController;
 import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
+import cwms.cda.api.StreamController;
+import cwms.cda.api.StreamLocationController;
+import cwms.cda.api.StreamReachController;
 import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
@@ -76,8 +89,12 @@ import cwms.cda.api.TimeSeriesGroupController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
 import cwms.cda.api.TimeZoneController;
+import cwms.cda.api.TurbineChangesDeleteController;
+import cwms.cda.api.TurbineChangesGetController;
+import cwms.cda.api.TurbineChangesPostController;
 import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
+import cwms.cda.api.UpstreamLocationsGetController;
 import cwms.cda.api.auth.ApiKeyController;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.AlreadyExists;
@@ -88,11 +105,43 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
+import cwms.cda.api.location.kind.GateChangeDeleteController;
+import cwms.cda.api.location.kind.GateChangeGetAllController;
+import cwms.cda.api.location.kind.GateChangeCreateController;
+import cwms.cda.api.location.kind.OutletController;
+import cwms.cda.api.location.kind.VirtualOutletController;
+import cwms.cda.api.location.kind.VirtualOutletCreateController;
+import cwms.cda.api.project.LockRevokerRightsCatalog;
+import cwms.cda.api.project.ProjectChildLocationHandler;
+import cwms.cda.api.project.ProjectLockCatalog;
+import cwms.cda.api.project.ProjectLockGetOne;
+import cwms.cda.api.project.ProjectLockRelease;
+import cwms.cda.api.project.ProjectLockRequest;
+import cwms.cda.api.project.ProjectLockRevoke;
+import cwms.cda.api.project.ProjectLockRevokeDeny;
+import cwms.cda.api.project.ProjectPublishStatusUpdate;
+import cwms.cda.api.project.RemoveAllLockRevokerRights;
+import cwms.cda.api.project.UpdateLockRevokerRights;
+import cwms.cda.api.watersupply.WaterContractCatalogController;
+import cwms.cda.api.watersupply.WaterContractController;
+import cwms.cda.api.watersupply.WaterContractCreateController;
+import cwms.cda.api.watersupply.WaterContractDeleteController;
+import cwms.cda.api.watersupply.WaterContractTypeCatalogController;
+import cwms.cda.api.watersupply.WaterContractTypeCreateController;
+import cwms.cda.api.watersupply.WaterContractTypeDeleteController;
+import cwms.cda.api.watersupply.WaterContractUpdateController;
+import cwms.cda.api.watersupply.WaterPumpDisassociateController;
+import cwms.cda.api.watersupply.WaterUserCatalogController;
+import cwms.cda.api.watersupply.WaterUserController;
+import cwms.cda.api.watersupply.WaterUserCreateController;
+import cwms.cda.api.watersupply.WaterUserDeleteController;
+import cwms.cda.api.watersupply.WaterUserUpdateController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.security.CwmsAuthException;
+import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
 import cwms.cda.spi.AccessManagers;
 import cwms.cda.spi.CdaAccessManager;
@@ -149,32 +198,37 @@ import org.owasp.html.PolicyFactory;
  *
  */
 @WebServlet(urlPatterns = { "/catalog/*",
-        "/auth/*",
-        "/swagger-docs",
-        "/timeseries/*",
-        "/offices/*",
-        "/states/*",
-        "/counties/*",
-        "/location/*",
-        "/locations/*",
-        "/parameters/*",
-        "/timezones/*",
-        "/units/*",
-        "/ratings/*",
-        "/levels/*",
-        "/basins/*",
-        "/blobs/*",
-        "/clobs/*",
-        "/pools/*",
-        "/specified-levels/*",
-        "/forecast-spec/*",
-        "/forecast-instance/*",
-        "/standard-text-id/*",
-        "/projects/*",
-        "/properties/*",
-        "/lookup-types/*",
-        "/embankments/*",
-        "/turbines/*"
+    "/auth/*",
+    "/swagger-docs",
+    "/timeseries/*",
+    "/offices/*",
+    "/states/*",
+    "/counties/*",
+    "/location/*",
+    "/locations/*",
+    "/parameters/*",
+    "/timezones/*",
+    "/units/*",
+    "/ratings/*",
+    "/levels/*",
+    "/basins/*",
+    "/streams/*",
+    "/stream-locations/*",
+    "/stream-reaches/*",
+    "/measurements/*",
+    "/blobs/*",
+    "/clobs/*",
+    "/pools/*",
+    "/specified-levels/*",
+    "/forecast-spec/*",
+    "/forecast-instance/*",
+    "/standard-text-id/*",
+    "/projects/*",
+    "/project-locks/*",
+    "/project-lock-rights/*",
+    "/properties/*",
+    "/lookup-types/*",
+    "/embankments/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -182,6 +236,7 @@ public class ApiServlet extends HttpServlet {
 
     // based on https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_aaa/browse/IntegrationTests/src/test/resources/sql/load_testusers.sql
     public static final String CWMS_USERS_ROLE = "CWMS Users";
+    public static final String CAC_USER = "cac_auth";
     /** Default OFFICE where needed. Based on context. e.g. /cwms-data -> HQ, /spk-data -> SPK */
     public static final String OFFICE_ID = "office_id";
     public static final String DATA_SOURCE = "data_source";
@@ -331,17 +386,29 @@ public class ApiServlet extends HttpServlet {
                     CdaError re = new CdaError(e.getMessage(), e.getDetails(), true);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
+                .exception(MissingRolesException.class, (e,ctx) -> {
+                    CdaError re = new CdaError(e.getMessage(), true);
+                    if (logger.atFine().isEnabled()) {
+                        logger.atFine().withCause(e).log(e.getMessage());
+                    } else {
+                        logger.atInfo().log(e.getMessage());
+                    }
+
+                    ctx.status(e.getAuthFailCode()).json(re);
+                })
                 .exception(CwmsAuthException.class, (e,ctx) -> {
                     CdaError re;
                     switch (e.getAuthFailCode()) {
-                        case 401:
-                        {
+                        case 401: {
                             String msg = !e.suppressMessage() ? e.getLocalizedMessage() : "Invalid User";
-                            re = new CdaError(msg,true);
+                            re = new CdaError(msg, true);
                             break;
                         }
-                        case 403: re = new CdaError("Not Authorized",true); break;
-                        default: re = new CdaError("Unknown auth error.");
+                        case 403:
+                            re = new CdaError("Not Authorized", true);
+                            break;
+                        default:
+                            re = new CdaError("Unknown auth error.");
                     }
 
                     if (logger.atFine().isEnabled()) {
@@ -360,7 +427,6 @@ public class ApiServlet extends HttpServlet {
                     ctx.contentType(ContentType.APPLICATION_JSON.toString());
                     ctx.json(errResponse);
                 })
-
                 .routes(this::configureRoutes)
                 .javalinServlet();
     }
@@ -395,7 +461,7 @@ public class ApiServlet extends HttpServlet {
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API")
                 .contentType(Formats.PLAIN));
         // Even view on this one requires authorization
-        crud("/auth/keys/{key-name}",new ApiKeyController(metrics), requiredRoles);
+        crud("/auth/keys/{key-name}",new ApiKeyController(metrics), new RouteRole[]{new Role(CAC_USER), new Role(CWMS_USERS_ROLE)});
         cdaCrudCache("/location/category/{category-id}",
                 new LocationCategoryController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
         cdaCrudCache("/location/group/{group-id}",
@@ -419,7 +485,6 @@ public class ApiServlet extends HttpServlet {
         String levelTsPath = format("/levels/{%s}/timeseries", Controllers.LEVEL_ID);
         get(levelTsPath, new LevelsAsTimeSeriesController(metrics));
         addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
-        TimeSeriesController tsController = new TimeSeriesController(metrics);
         String recentPath = "/timeseries/recent/";
         get(recentPath, new TimeSeriesRecentController(metrics));
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
@@ -441,11 +506,12 @@ public class ApiServlet extends HttpServlet {
 
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/timeseries/identifier-descriptor/{timeseries-id}",
+        cdaCrudCache("/timeseries/identifier-descriptor/{name}",
                 new TimeSeriesIdentifierDescriptorController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/group/{group-id}",
                 new TimeSeriesGroupController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/timeseries/{timeseries}", tsController, requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/timeseries/{timeseries}",
+                new TimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/ratings/template/{template-id}",
                 new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/ratings/spec/{rating-id}",
@@ -456,8 +522,27 @@ public class ApiServlet extends HttpServlet {
                 new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/catalog/{dataset}",
                 new CatalogController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/basins/{basin-id}",
+        cdaCrudCache("/basins/{name}",
                 new BasinController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(format("/streams/{%s}", NAME),
+                new StreamController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+
+        String downstreamLocations = format("/stream-locations/{%s}/{%s}/downstream-locations",
+                Controllers.OFFICE, Controllers.NAME);
+        get(downstreamLocations,new DownstreamLocationsGetController(metrics));
+        addCacheControl(downstreamLocations, 5, TimeUnit.MINUTES);
+        String upstreamLocations = format("/stream-locations/{%s}/{%s}/upstream-locations",
+                Controllers.OFFICE, Controllers.NAME);
+
+        get(upstreamLocations,new UpstreamLocationsGetController(metrics));
+        addCacheControl(upstreamLocations, 5, TimeUnit.MINUTES);
+        cdaCrudCache(format("/stream-locations/{%s}", NAME),
+                new StreamLocationController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(format("/stream-reaches/{%s}", NAME),
+                new StreamReachController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        String measurements = "/measurements/";
+        cdaCrudCache(format(measurements + "{%s}", LOCATION_ID),
+                new cwms.cda.api.MeasurementController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
                 new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/clobs/{clob-id}",
@@ -474,16 +559,93 @@ public class ApiServlet extends HttpServlet {
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);
 
+
+        post(format("/projects/status-update/{%s}", NAME), new ProjectPublishStatusUpdate(metrics), requiredRoles);
+
+        addWaterUserHandlers(format("/projects/{%s}/{%s}/water-user", OFFICE, PROJECT_ID), requiredRoles);
+        addWaterContractHandlers(format("/projects/{%s}/{%s}/water-user/{%s}/contracts", OFFICE, PROJECT_ID,
+                WATER_USER), requiredRoles);
+        delete(format("/projects/{%s}/{%s}/water-user/{%s}/contracts/{%s}/pumps/{%s}", OFFICE, PROJECT_ID,
+                        WATER_USER, CONTRACT_NAME, NAME), new WaterPumpDisassociateController(metrics), requiredRoles);
+        addWaterContractTypeHandlers(format("/projects/{%s}/contract-types", OFFICE), requiredRoles);
+
+        cdaCrudCache(format("/projects/embankments/{%s}", Controllers.NAME),
+            new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        cdaCrudCache(format("/projects/turbines/{%s}", Controllers.NAME),
+            new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        String turbineChanges = format("/projects/{%s}/{%s}/turbine-changes", OFFICE, Controllers.NAME);
+        get(turbineChanges,new TurbineChangesGetController(metrics));
+        addCacheControl(turbineChanges, 5, TimeUnit.MINUTES);
+        post(turbineChanges, new TurbineChangesPostController(metrics), requiredRoles);
+        delete(turbineChanges, new TurbineChangesDeleteController(metrics), requiredRoles);
+
+        String outletPath = format("/projects/outlets/{%s}", NAME);
+        String gateChangePath = format("/projects/{%s}/{%s}/gate-changes", OFFICE,
+                                      Controllers.PROJECT_ID);
+        String gateChangeCreatePath = "/projects/gate-changes";
+        String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", OFFICE,
+                                          Controllers.PROJECT_ID, NAME);
+        String virtualOutletCreatePath = "/projects/virtual-outlets";
+        cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+        post(gateChangeCreatePath, new GateChangeCreateController(metrics));
+        get(gateChangePath, new GateChangeGetAllController(metrics));
+        delete(gateChangePath, new GateChangeDeleteController(metrics));
+        cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+        post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics));
+
+        get("/projects/locations/", new ProjectChildLocationHandler(metrics));
         cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
                 new ProjectController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/properties/{%s}", Controllers.NAME),
-                new PropertyController(metrics), requiredRoles,1, TimeUnit.DAYS);
+                new PropertyController(metrics), true, requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        cdaCrudCache(format("/embankments/{%s}", Controllers.NAME),
-                new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        cdaCrudCache(format("/turbines/{%s}", Controllers.NAME),
-                new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
+
+        addProjectLocksHandlers("/project-locks/{name}", requiredRoles);
+        addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
+    }
+
+
+    private void addProjectLocksHandlers(String path, RouteRole[] requiredRoles) {
+        String pathWithoutResource = path.replace(getResourceId(path), "");
+
+        get(path, new ProjectLockGetOne(metrics), requiredRoles);
+        get(pathWithoutResource, new ProjectLockCatalog(metrics), requiredRoles);
+        post(pathWithoutResource + "deny", new ProjectLockRevokeDeny(metrics), requiredRoles);
+        post(pathWithoutResource, new ProjectLockRequest(metrics), requiredRoles);
+        post(pathWithoutResource + "release", new ProjectLockRelease(metrics), requiredRoles);
+        delete(path, new ProjectLockRevoke(metrics), requiredRoles);
+    }
+
+    private void addProjectLockRightsHandlers(String path, RouteRole[] requiredRoles) {
+        String pathWithoutResource = path.replace(getResourceId(path), "");
+        get(pathWithoutResource, new LockRevokerRightsCatalog(metrics), requiredRoles);
+        post(pathWithoutResource + "remove-all", new RemoveAllLockRevokerRights(metrics), requiredRoles);
+        post(pathWithoutResource + "update", new UpdateLockRevokerRights(metrics), requiredRoles);
+
+    }
+
+
+    private void addWaterUserHandlers(String path, RouteRole[] requiredRoles) {
+        get(path + format("/{%s}", WATER_USER), new WaterUserController(metrics), requiredRoles);
+        get(path, new WaterUserCatalogController(metrics), requiredRoles);
+        post(path, new WaterUserCreateController(metrics), requiredRoles);
+        patch(path + format("/{%s}", WATER_USER), new WaterUserUpdateController(metrics), requiredRoles);
+        delete(path + format("/{%s}", WATER_USER), new WaterUserDeleteController(metrics), requiredRoles);
+    }
+
+    private void addWaterContractHandlers(String path, RouteRole[] requiredRoles) {
+        get(path + format("/{%s}", CONTRACT_NAME), new WaterContractController(metrics), requiredRoles);
+        get(path, new WaterContractCatalogController(metrics), requiredRoles);
+        post(path, new WaterContractCreateController(metrics), requiredRoles);
+        patch(path + format("/{%s}", CONTRACT_NAME), new WaterContractUpdateController(metrics), requiredRoles);
+        delete(path + format("/{%s}", CONTRACT_NAME), new WaterContractDeleteController(metrics), requiredRoles);
+    }
+
+    private void addWaterContractTypeHandlers(String path, RouteRole[] requiredRoles) {
+        post(path, new WaterContractTypeCreateController(metrics), requiredRoles);
+        get(path, new WaterContractTypeCatalogController(metrics), requiredRoles);
+        delete(path + "/{display-value}", new WaterContractTypeDeleteController(metrics), requiredRoles);
     }
 
     /**
@@ -503,7 +665,28 @@ public class ApiServlet extends HttpServlet {
      */
     public static void cdaCrudCache(@NotNull String path, @NotNull CrudHandler crudHandler,
                                     @NotNull RouteRole[] roles, long duration, TimeUnit timeUnit) {
-        cdaCrud(path, crudHandler, roles);
+        cdaCrudCache(path, crudHandler, false, roles, duration, timeUnit);
+    }
+
+    /**
+     * This method delegates to the cdaCrud method but also adds an after filter for the specified
+     * path.  If the request was a GET request and the response does not already include
+     * Cache-Control then the filter will add the Cache-Control max-age header with the specified
+     * number of seconds.
+     * Controllers can include their own Cache-Control headers via:
+     *  "ctx.header(Header.CACHE_CONTROL, " public, max-age=" + 60);"
+     * This method lets the ApiServlet configure a default max-age for controllers that don't or
+     * forget to set their own.
+     * @param path where to register the routes.
+     * @param crudHandler the handler requests should be forwarded to.
+     * @param getRequriesAuth if the get handlers should have an authoriation check
+     * @param roles the required these roles are present to access post, patch
+     * @param duration the number of TimeUnit to cache GET responses.
+     * @param timeUnit the TimeUnit to use for duration.
+     */
+    public static void cdaCrudCache(@NotNull String path, @NotNull CrudHandler crudHandler, boolean getRequiresAuth,
+                                    @NotNull RouteRole[] roles, long duration, TimeUnit timeUnit) {
+        cdaCrud(path, crudHandler, getRequiresAuth, roles);
 
         // path like /offices/{office} will match /offices/SWT getOne style url
         addCacheControl(path, duration, timeUnit);
@@ -526,7 +709,6 @@ public class ApiServlet extends HttpServlet {
             });
         }
     }
-
     /**
      * This method is very similar to the ApiBuilder.crud method but the specified roles
      * are only required for the post, patch and delete methods.  getOne and getAll are always
@@ -538,31 +720,49 @@ public class ApiServlet extends HttpServlet {
      */
     public static void cdaCrud(@NotNull String path, @NotNull CrudHandler crudHandler,
                                  @NotNull RouteRole... roles) {
+        cdaCrud(path, crudHandler, false, roles);
+    }
+
+    /**
+     * This method is very similar to the ApiBuilder.crud method but the specified roles
+     * are only required for the post, patch and delete methods.  getOne and getAll are always
+     * allowed.
+     * @param path where to register the routes.
+     * @param crudHandler the handler requests should be forwarded to.
+     * @param getRequiresAuth If all operations on this handler should have an authorization check
+     * @param roles the accessmanager will require these roles are present to access post, patch
+     *             and delete methods
+     */
+    public static void cdaCrud(@NotNull String path, @NotNull CrudHandler crudHandler,  boolean getRequiresAuth,
+                                 @NotNull RouteRole... roles) {
         String fullPath = prefixPath(path);
         String resourceId = getResourceId(fullPath);
 
         //noinspection KotlinInternalInJava
-        Map<CrudFunction, Handler> crudFunctions =
-                CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);
+        Map<CrudFunction, Handler> crudFunctions = CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);
 
         Javalin instance = staticInstance();
         // getOne and getAll are assumed not to need authorization
-        instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
         String pathWithoutResource = fullPath.replace(resourceId, "");
-        instance.get(pathWithoutResource,
-                crudFunctions.get(CrudFunction.GET_ALL));
+        if (getRequiresAuth) {
+            instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE), roles);
+            instance.get(pathWithoutResource, crudFunctions.get(CrudFunction.GET_ALL), roles);
+        } else {
+            instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
+            instance.get(pathWithoutResource, crudFunctions.get(CrudFunction.GET_ALL));
+        }
 
         // create, update and delete need authorization.
-        instance.post(pathWithoutResource,
-                crudFunctions.get(CrudFunction.CREATE), roles);
+        instance.post(pathWithoutResource, crudFunctions.get(CrudFunction.CREATE), roles);
         instance.patch(fullPath, crudFunctions.get(CrudFunction.UPDATE), roles);
         instance.delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
     }
 
     /**
      * Given a path like "/location/category/{category-id}" this method returns "{category-id}".
-     * @param fullPath
-     * @return
+     * @param fullPath the full path to extract the resource id from.
+     * @return the resource id portion of the path.
+     * @throws IllegalArgumentException if the path does not contain a resource id.
      */
     @NotNull
     public static String getResourceId(String fullPath) {
@@ -636,7 +836,7 @@ public class ApiServlet extends HttpServlet {
     private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
         /* clear the lock icon from the GET handlers to reduce user confusion */
         logger.atFinest().log("setting security constraints for " + key);
-        if (key.contains("/auth/")) {
+        if ((path.getGet() != null && path.getGet().getSecurity() != null)) {
             setSecurity(path.getGet(), secReqs);
         } else {
             setSecurity(path.getGet(), new ArrayList<>());

@@ -25,28 +25,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.ACTIVE;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.INTERVAL_OFFSET;
-import static cwms.cda.api.Controllers.METHOD;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.SNAP_BACKWARD;
-import static cwms.cda.api.Controllers.SNAP_FORWARD;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.TIMESERIES_ID;
-import static cwms.cda.api.Controllers.TIMESERIES_ID_REGEX;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.*;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -154,7 +133,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                 // parseHeaderAndQueryParm normally defaults to JSONV1 when the input is */*
                 formatHeader = Formats.JSONV2;
             }
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesIdentifierDescriptors.class);
 
             String result = Formats.format(contentType, descriptors);
 
@@ -189,7 +168,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             + "implemented")},
             description = "Retrieves requested timeseries identifier descriptor", tags = {TAG})
     @Override
-    public void getOne(Context ctx, @NotNull String timeseriesId) {
+    public void getOne(@NotNull Context ctx, @NotNull String timeseriesId) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)){
             DSLContext dsl = getDslContext(ctx);
@@ -203,7 +182,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                 formatHeader = Formats.JSONV2;
             }
 
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesIdentifierDescriptor.class);
 
             Optional<TimeSeriesIdentifierDescriptor> grp = dao.getTimeSeriesIdentifier(office, timeseriesId);
             if (grp.isPresent()) {
@@ -242,11 +221,10 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSONV2;
+            String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
 
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesIdentifierDescriptor.class);
             TimeSeriesIdentifierDescriptor tsid = Formats.parseContent(contentType, body,
                     TimeSeriesIdentifierDescriptor.class);
 
@@ -264,7 +242,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = TIMESERIES_ID, description = "The timeseries id"),
+                    @OpenApiParam(name = NAME, description = "The timeseries id"),
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
@@ -281,7 +259,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             }, tags = {TAG}
     )
     @Override
-    public void update(Context ctx, @NotNull String timeseriesId) {
+    public void update(@NotNull Context ctx, @NotNull String name) {
 
         String office = requiredParam(ctx, OFFICE);
         String newTimeseriesId = ctx.queryParam(TIMESERIES_ID);
@@ -307,13 +285,13 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
             if (foundUpdateKeys.isEmpty()) {
                 // basic rename.
-                dao.rename(office, timeseriesId, newTimeseriesId, intervalOffset);
+                dao.rename(office, name, newTimeseriesId, intervalOffset);
             } else {
                 Long forward = ctx.queryParamAsClass(SNAP_FORWARD, Long.class).getOrDefault(null);
                 Long backward = ctx.queryParamAsClass(SNAP_BACKWARD, Long.class).getOrDefault(null);
                 boolean active = ctx.queryParamAsClass(ACTIVE, Boolean.class).getOrDefault(true);
 
-                dao.update(office, timeseriesId, intervalOffset, forward, backward, active);
+                dao.update(office, name, intervalOffset, forward, backward, active);
             }
         }
 

@@ -119,9 +119,10 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         }
 
         return dsl.select(AV_LOC.asterisk())
-                .from(AV_LOC)
-                .where(whereCondition)
-                .fetch(this::buildLocation);
+                    .from(AV_LOC)
+                    .where(whereCondition)
+                    .fetchSize(500)
+                    .fetch(this::buildLocation);
     }
 
     @Override
@@ -290,7 +291,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             selectQuery = selectQuery.and(AV_LOC.LOCATION_ID.in(identifiers));
         }
 
-        List<Feature> features = selectQuery.stream()
+        List<Feature> features = selectQuery.fetchSize(500).stream()
                 .map(LocationsDaoImpl::buildFeatureFromAvLocRecord)
                 .collect(toList());
         FeatureCollection collection = new FeatureCollection();

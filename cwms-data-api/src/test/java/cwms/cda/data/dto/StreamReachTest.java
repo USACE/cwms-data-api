@@ -23,21 +23,25 @@
  */
 package cwms.cda.data.dto;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.stream.Bank;
+import cwms.cda.data.dto.stream.StreamLocationNode;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.DTOMatch;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-public final class StreamReachTest {
+final class StreamReachTest {
 
     @Test
     void createStreamReach_allFieldsProvided_success() {
@@ -50,22 +54,34 @@ public final class StreamReachTest {
                 .withOfficeId("SPK")
                 .build();
 
-        StreamNode upstreamNode = new StreamNode.Builder()
-                .withStreamId(new CwmsId.Builder()
+        StreamLocationNode upstreamNode = new StreamLocationNode.Builder()
+                .withId(new CwmsId.Builder()
                         .withName("Upstream123")
                         .withOfficeId("SPK")
                         .build())
-                .withStation(10.0)
-                .withBank(Bank.LEFT)
+                .withStreamNode(new StreamNode.Builder()
+                    .withStreamId(new CwmsId.Builder()
+                            .withName("Upstream123")
+                            .withOfficeId("SPK")
+                            .build())
+                    .withStation(10.0)
+                    .withBank(Bank.LEFT)
+                    .build())
                 .build();
 
-        StreamNode downstreamNode = new StreamNode.Builder()
-                .withStreamId(new CwmsId.Builder()
+        StreamLocationNode downstreamNode = new StreamLocationNode.Builder()
+                .withId(new CwmsId.Builder()
                         .withName("Downstream123")
                         .withOfficeId("SPK")
                         .build())
-                .withStation(20.0)
-                .withBank(Bank.RIGHT)
+                .withStreamNode(new StreamNode.Builder()
+                    .withStreamId(new CwmsId.Builder()
+                            .withName("Downstream123")
+                            .withOfficeId("SPK")
+                            .build())
+                    .withStation(20.0)
+                    .withBank(Bank.RIGHT)
+                    .build())
                 .build();
 
         StreamReach item = new StreamReach.Builder()
@@ -81,14 +97,14 @@ public final class StreamReachTest {
                 .build();
 
         assertAll(() -> assertEquals("This is a comment for the stream reach.", item.getComment(), "The comment does not match the provided value"),
-                () -> assertEquals(downstreamNode.getStreamId().getName(), item.getDownstreamNode().getStreamId().getName(), "The downstream node does not match the provided value"),
-                () -> assertEquals(downstreamNode.getStation(), item.getDownstreamNode().getStation(), "The downstream node station does not match the provided value"),
-                () -> assertEquals(downstreamNode.getBank(), item.getDownstreamNode().getBank(), "The downstream node bank does not match the provided value"),
-                () -> assertEquals(downstreamNode.getStationUnits(), item.getDownstreamNode().getStationUnits(), "The downstream node station unit does not match the provided value"),
-                () -> assertEquals(upstreamNode.getStreamId().getName(), item.getUpstreamNode().getStreamId().getName(), "The upstream node does not match the provided value"),
-                () -> assertEquals(upstreamNode.getStation(), item.getUpstreamNode().getStation(), "The upstream node station does not match the provided value"),
-                () -> assertEquals(upstreamNode.getBank(), item.getUpstreamNode().getBank(), "The upstream node does not match the provided value"),
-                () -> assertEquals(upstreamNode.getStationUnits(), item.getUpstreamNode().getStationUnits(), "The upstream node station unit does not match the provided value"),
+                () -> assertEquals(downstreamNode.getStreamNode().getStreamId().getName(), item.getDownstreamNode().getStreamNode().getStreamId().getName(), "The downstream node does not match the provided value"),
+                () -> assertEquals(downstreamNode.getStreamNode().getStation(), item.getDownstreamNode().getStreamNode().getStation(), "The downstream node station does not match the provided value"),
+                () -> assertEquals(downstreamNode.getStreamNode().getBank(), item.getDownstreamNode().getStreamNode().getBank(), "The downstream node bank does not match the provided value"),
+                () -> assertEquals(downstreamNode.getStreamNode().getStationUnits(), item.getDownstreamNode().getStreamNode().getStationUnits(), "The downstream node station unit does not match the provided value"),
+                () -> assertEquals(upstreamNode.getStreamNode().getStreamId().getName(), item.getUpstreamNode().getStreamNode().getStreamId().getName(), "The upstream node does not match the provided value"),
+                () -> assertEquals(upstreamNode.getStreamNode().getStation(), item.getUpstreamNode().getStreamNode().getStation(), "The upstream node station does not match the provided value"),
+                () -> assertEquals(upstreamNode.getStreamNode().getBank(), item.getUpstreamNode().getStreamNode().getBank(), "The upstream node does not match the provided value"),
+                () -> assertEquals(upstreamNode.getStreamNode().getStationUnits(), item.getUpstreamNode().getStreamNode().getStationUnits(), "The upstream node station unit does not match the provided value"),
                 () -> assertEquals("Config123", item.getConfigurationId().getName(), "The configuration ID name does not match the provided value"),
                 () -> assertEquals("Stream123", item.getStreamId().getName(), "The stream ID name does not match the provided value"),
                 () -> assertEquals("Reach123", item.getId().getName(), "The reach ID name does not match the provided value"));
@@ -105,22 +121,34 @@ public final class StreamReachTest {
                 .withOfficeId("SPK")
                 .build();
 
-        StreamNode upstreamNode = new StreamNode.Builder()
-                .withStreamId(new CwmsId.Builder()
+        StreamLocationNode upstreamNode = new StreamLocationNode.Builder()
+                .withId(new CwmsId.Builder()
                         .withName("Upstream123")
                         .withOfficeId("SPK")
                         .build())
-                .withStation(10.0)
-                .withBank(Bank.LEFT)
+                .withStreamNode(new StreamNode.Builder()
+                    .withStreamId(new CwmsId.Builder()
+                            .withName("Upstream123")
+                            .withOfficeId("SPK")
+                            .build())
+                    .withStation(10.0)
+                    .withBank(Bank.LEFT)
+                    .build())
                 .build();
 
-        StreamNode downstreamNode = new StreamNode.Builder()
-                .withStreamId(new CwmsId.Builder()
+        StreamLocationNode downstreamNode = new StreamLocationNode.Builder()
+                .withId(new CwmsId.Builder()
                         .withName("Downstream123")
                         .withOfficeId("SPK")
                         .build())
-                .withStation(20.0)
-                .withBank(Bank.RIGHT)
+                .withStreamNode(new StreamNode.Builder()
+                    .withStreamId(new CwmsId.Builder()
+                            .withName("Downstream123")
+                            .withOfficeId("SPK")
+                            .build())
+                    .withStation(20.0)
+                    .withBank(Bank.RIGHT)
+                    .build())
                 .build();
 
         assertAll(
@@ -182,19 +210,7 @@ public final class StreamReachTest {
                             .withId(reachId)
                             .build();
                     item.validate();
-                }, "The validate method should have thrown a FieldException because the downstream node field is missing"),
-
-                // When ConfigurationId is missing
-                () -> assertThrows(FieldException.class, () -> {
-                    StreamReach item = new StreamReach.Builder()
-                            .withComment("This is a comment for the stream reach.")
-                            .withDownstreamNode(downstreamNode)
-                            .withUpstreamNode(upstreamNode)
-                            .withStreamId(streamId)
-                            .withId(reachId)
-                            .build();
-                    item.validate();
-                }, "The validate method should have thrown a FieldException because the configuration ID field is missing"));
+                }, "The validate method should have thrown a FieldException because the downstream node field is missing"));
     }
 
     @Test
@@ -208,22 +224,34 @@ public final class StreamReachTest {
                 .withOfficeId("SPK")
                 .build();
 
-        StreamNode upstreamNode = new StreamNode.Builder()
-                .withStreamId(new CwmsId.Builder()
+        StreamLocationNode upstreamNode = new StreamLocationNode.Builder()
+                .withId(new CwmsId.Builder()
                         .withName("Upstream123")
                         .withOfficeId("SPK")
                         .build())
-                .withStation(10.0)
-                .withBank(Bank.LEFT)
+                .withStreamNode(new StreamNode.Builder()
+                    .withStreamId(new CwmsId.Builder()
+                            .withName("Upstream123")
+                            .withOfficeId("SPK")
+                            .build())
+                    .withStation(10.0)
+                    .withBank(Bank.LEFT)
+                    .build())
                 .build();
 
-        StreamNode downstreamNode = new StreamNode.Builder()
-                .withStreamId(new CwmsId.Builder()
+        StreamLocationNode downstreamNode = new StreamLocationNode.Builder()
+                .withId(new CwmsId.Builder()
                         .withName("Downstream123")
                         .withOfficeId("SPK")
                         .build())
-                .withStation(20.0)
-                .withBank(Bank.RIGHT)
+                .withStreamNode(new StreamNode.Builder()
+                    .withStreamId(new CwmsId.Builder()
+                            .withName("Downstream123")
+                            .withOfficeId("SPK")
+                            .build())
+                    .withStation(20.0)
+                    .withBank(Bank.RIGHT)
+                    .build())
                 .build();
 
         StreamReach streamReach = new StreamReach.Builder()
@@ -241,7 +269,7 @@ public final class StreamReachTest {
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, streamReach);
         StreamReach deserialized = Formats.parseContent(contentType, json, StreamReach.class);
-        assertSame(streamReach, deserialized);
+        DTOMatch.assertMatch(streamReach, deserialized);
     }
 
     @Test
@@ -255,24 +283,35 @@ public final class StreamReachTest {
                 .withOfficeId("SPK")
                 .build();
 
-        StreamNode upstreamNode = new StreamNode.Builder()
-                .withStreamId(new CwmsId.Builder()
-                        .withName("Upstream123")
+        StreamLocationNode upstreamNode = new StreamLocationNode.Builder()
+                .withId(new CwmsId.Builder()
+                        .withName("UpstreamLoc123")
                         .withOfficeId("SPK")
                         .build())
-                .withStation(10.0)
-                .withBank(Bank.LEFT)
-                .withStationUnits("ft")
+                .withStreamNode(new StreamNode.Builder()
+                    .withStreamId(new CwmsId.Builder()
+                            .withName("Upstream123")
+                            .withOfficeId("SPK")
+                            .build())
+                    .withStation(10.0)
+                    .withBank(Bank.LEFT)
+                    .withStationUnits("km")
+                    .build())
                 .build();
 
-        StreamNode downstreamNode = new StreamNode.Builder()
-                .withStreamId(new CwmsId.Builder()
-                        .withName("Downstream123")
+        StreamLocationNode downstreamNode = new StreamLocationNode.Builder()
+                .withId(new CwmsId.Builder()
+                        .withName("DownstreamLoc123")
                         .withOfficeId("SPK")
                         .build())
-                .withStation(20.0)
-                .withBank(Bank.RIGHT)
-                .withStationUnits("ft")
+                .withStreamNode(new StreamNode.Builder()
+                    .withStreamId(new CwmsId.Builder()
+                            .withName("Downstream123")
+                            .withOfficeId("SPK")
+                            .build())
+                    .withStation(20.0)
+                    .withBank(Bank.RIGHT).withStationUnits("km")
+                    .build())
                 .build();
 
         StreamReach expected = new StreamReach.Builder()
@@ -292,18 +331,7 @@ public final class StreamReachTest {
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = new ContentType(Formats.JSON);
         StreamReach deserialized = Formats.parseContent(contentType, json, StreamReach.class);
-        assertSame(expected, deserialized);
+        DTOMatch.assertMatch(expected, deserialized);
     }
 
-    public static void assertSame(StreamReach reach1, StreamReach reach2)
-    {
-        assertAll(
-            () -> assertEquals(reach1.getComment(), reach2.getComment()),
-            () -> StreamNodeTest.assertSame(reach1.getDownstreamNode(), reach2.getDownstreamNode()),
-            () -> StreamNodeTest.assertSame(reach1.getUpstreamNode(), reach2.getUpstreamNode()),
-            () -> CwmsIdTest.assertSame(reach1.getConfigurationId(), reach2.getConfigurationId()),
-            () -> CwmsIdTest.assertSame(reach1.getStreamId(), reach2.getStreamId()),
-            () -> CwmsIdTest.assertSame(reach1.getId(), reach2.getId())
-        );
-    }
 }

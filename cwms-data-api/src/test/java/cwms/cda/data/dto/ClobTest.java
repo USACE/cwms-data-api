@@ -49,7 +49,7 @@ class ClobTest {
 
         assertNotNull(output);
 
-        Clob clob2 = Formats.parseContent(Formats.parseHeader(Formats.XMLV2), output, Clob.class);
+        Clob clob2 = Formats.parseContent(Formats.parseHeader(Formats.XMLV2, Clob.class), output, Clob.class);
 
         assertNotNull(clob2);
 
@@ -76,7 +76,7 @@ class ClobTest {
         //    <value>MYVALUE</value>
         // </clob>
 
-        Clob clob2 = Formats.parseContent(Formats.parseHeader(Formats.XMLV2), output, Clob.class);
+        Clob clob2 = Formats.parseContent(Formats.parseHeader(Formats.XMLV2, Clob.class), output, Clob.class);
 
         assertNotNull(clob2);
 
@@ -93,9 +93,9 @@ class ClobTest {
         Clobs clobs = new Clobs.Builder("cursor", 1, 1)
                 .addClob(clob)
                 .build();
-        String output = Formats.format(Formats.parseHeader(format), clobs);
+        String output = Formats.format(Formats.parseHeader(format, Clobs.class), clobs);
 
-        Clobs clobs2 = Formats.parseContent(Formats.parseHeader(format), output, Clobs.class);
+        Clobs clobs2 = Formats.parseContent(Formats.parseHeader(format, Clobs.class), output, Clobs.class);
 
         assertNotNull(clobs2);
 

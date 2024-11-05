@@ -29,6 +29,8 @@ import cwms.cda.data.dto.TsvId;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
+import cwms.cda.formatters.FormattingException;
+import cwms.cda.formatters.xml.XMLv1;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -52,13 +54,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import cwms.cda.formatters.FormattingException;
-import cwms.cda.formatters.xml.XMLv1;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
-import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
@@ -75,15 +74,10 @@ import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableLike;
 import org.jooq.TableOnConditionStep;
-import org.jooq.WindowOrderByStep;
-import org.jooq.WindowSpecification;
-import org.jooq.WindowSpecificationRowsStep;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
-import org.jooq.impl.SQLDataType;
 import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
@@ -94,6 +88,8 @@ import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
+import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
+import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
 
 public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeriesDao {
     private static final Logger logger = Logger.getLogger(TimeSeriesDaoImpl.class.getName());
@@ -267,7 +263,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
-        String trim = OracleTypeMap.formatBool(shouldTrim);
+        String trim = formatBool(shouldTrim);
         String startInclusive = "T";
         String endInclusive = "T";
         String previous = "F";
@@ -294,13 +290,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 trim, startInclusive, endInclusive, previous, next,
                 versionDateMilli, maxVersion, officeId);
 
-        Field<String> tzName;
-        if (this.getDbVersion() >= Dao.CWMS_21_1_1) {
-            tzName = AV_CWMS_TS_ID2.TIME_ZONE_ID;
-        } else {
-            tzName = DSL.inline(null, SQLDataType.VARCHAR);
-        }
-
+        Field<String> tzName = AV_CWMS_TS_ID2.TIME_ZONE_ID;
 
         Field<Integer> totalField;
         if (total != null) {
@@ -429,11 +419,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     public static String getTimeZoneId(DSLContext dsl, String tsId, String officeId) {
-        return dsl.connectionResult(c -> {
-            Configuration config = getDslContext(c, officeId).configuration();
-            String locationId = TimeSeriesDaoImpl.parseLocFromTimeSeriesId(tsId);
-            return CWMS_LOC_PACKAGE.call_GET_LOCAL_TIMEZONE__2(config, locationId, officeId);
-        });
+        String locationId = TimeSeriesDaoImpl.parseLocFromTimeSeriesId(tsId);
+        return CWMS_LOC_PACKAGE.call_GET_LOCAL_TIMEZONE__2(dsl.configuration(), locationId, officeId);
     }
 
     public static VersionType getVersionType(DSLContext dsl, String names, String office, boolean dateProvided) {
@@ -460,14 +447,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Boolean cachedValue = isVersionedCache.getIfPresent(cacheKey);
         if (cachedValue == null) {
-            cachedValue = connectionResult(dsl, connection -> {
-                Configuration configuration = getDslContext(connection, office).configuration();
-                boolean isVersioned =
-                        OracleTypeMap.parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(configuration,
-                                tsId, office));
-                isVersionedCache.put(cacheKey, isVersioned);
-                return isVersioned;
-            });
+            cachedValue = parseBool(CWMS_TS_PACKAGE.call_IS_TSID_VERSIONED(dsl.configuration(), tsId, office));
+            isVersionedCache.put(cacheKey, cachedValue);
         }
         return cachedValue;
     }
@@ -501,7 +482,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String cursorOffice = null;
         Catalog.CatalogPage catPage = null;
         if (page == null || page.isEmpty()) {
-            CommonTableExpression<?> limiter = buildWithClause(inputParams, buildWhereConditions(inputParams), new ArrayList<Condition>(), pageSize, true);
+            CommonTableExpression<?> limiter = buildWithClause(inputParams, buildWhereConditions(inputParams), new ArrayList<>(), pageSize, true);
             SelectJoinStep<Record1<Integer>> totalQuery = dsl.with(limiter)
                     .select(countDistinct(limiter.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)))
                     .from(limiter);
@@ -566,9 +547,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         .units(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.UNIT_ID))
                         .interval(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_ID))
                         .intervalOffset(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_UTC_OFFSET));
-                if (this.getDbVersion() > Dao.CWMS_21_1_1) {
-                    builder.timeZone(row.get("TIME_ZONE_ID", String.class));
-                }
+
+                builder.timeZone(row.get("TIME_ZONE_ID", String.class));
+
                 if (params.isIncludeExtents()) {
                     builder.withExtents(new ArrayList<>());
                 }
@@ -628,9 +609,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.UNIT_ID);
         cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_ID);
         cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_UTC_OFFSET);
-        if (this.getDbVersion() >= Dao.CWMS_21_1_1) {
-            cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TIME_ZONE_ID);
-        }
+        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TIME_ZONE_ID);
+
         return cwmsTsIdFields;
     }
 
@@ -980,16 +960,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     @NotNull
     private RecentValue buildRecentValue(AV_TSV_DQU tsvView, Record jrecord, String tsColumnName) {
 
-        TsvDqu tsv = buildTsvDqu(tsvView, jrecord);
+        TsvDqu tsv = buildTsvDqu(tsvView, jrecord, tsColumnName);
         String tsId = jrecord.getValue(tsColumnName, String.class);
         return new RecentValue(tsId, tsv);
     }
 
     @NotNull
-    private TsvDqu buildTsvDqu(AV_TSV_DQU tsvView, Record jrecord) {
+    private TsvDqu buildTsvDqu(AV_TSV_DQU tsvView, Record jrecord, String tsColumnName) {
         return new TsvDqu.Builder()
                 .withOfficeId(jrecord.getValue(tsvView.OFFICE_ID))
-                .withCwmsTsId(jrecord.getValue(tsvView.CWMS_TS_ID))
+                .withCwmsTsId(jrecord.getValue(tsvView.CWMS_TS_ID.as(tsColumnName)))
                 .withUnitId(jrecord.getValue(tsvView.UNIT_ID))
                 .withDateTime(jrecord.getValue(tsvView.DATE_TIME))
                 .withVersionDate(jrecord.getValue(tsvView.VERSION_DATE))
@@ -1142,21 +1122,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                        Timestamp versionDate, List<TimeSeries.Record> values, boolean createAsLrts,
                        StoreRule storeRule, boolean overrideProtection) throws SQLException {
         setOffice(connection,officeId);
-        CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
 
-        final int count = values == null ? 0 : values.size();
-
-        final long[] timeArray = new long[count];
-        final double[] valueArray = new double[count];
-        final int[] qualityArray = new int[count];
+        final ZTSV_ARRAY tsvArray = new ZTSV_ARRAY();
 
         if (values != null && !values.isEmpty()) {
             Iterator<TimeSeries.Record> iter = values.iterator();
-            for (int i = 0; iter.hasNext(); i++) {
+            while (iter.hasNext()) {
                 TimeSeries.Record value = iter.next();
-                timeArray[i] = value.getDateTime().getTime();
-                valueArray[i] = value.getValue();
-                qualityArray[i] = value.getQualityCode();
+                Double dataValue = value.getValue();
+                if (dataValue != null && dataValue == -Float.MAX_VALUE) {
+                    dataValue = null;
+                }
+                tsvArray.add(new ZTSV_TYPE(value.getDateTime(), dataValue, BigDecimal.valueOf(value.getQualityCode())));
             }
         }
 
@@ -1178,10 +1155,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 }
             }
         }
-
-        tsDao.store(connection, officeId, tsId, units, timeArray, valueArray, qualityArray, count,
-                storeRule.getRule(), overrideProtection, versionDate, createAsLrts);
-
+        CWMS_TS_PACKAGE.call_ZSTORE_TS(getDslContext(connection, officeId).configuration(),
+                                      tsId,
+                                      units,
+                                      tsvArray,
+                                      storeRule.getRule(),
+                                      formatBool(overrideProtection),
+                                      versionDate,
+                                      officeId,
+                                      formatBool(createAsLrts));
     }
 
     public void update(TimeSeries input, boolean createAsLrts, StoreRule storeRule,
