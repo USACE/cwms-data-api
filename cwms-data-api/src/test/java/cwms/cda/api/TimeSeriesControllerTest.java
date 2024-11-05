@@ -219,6 +219,22 @@ class TimeSeriesControllerTest extends ControllerTest {
     }
 
     @Test
+    void testXMLSerializeDeserializeTimeSeries()
+    {
+        String format = Formats.XMLV2;
+        String officeId = "LRL";
+        String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+        TimeSeriesWithDate fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
+        ContentType contentType = Formats.parseHeader(format, TimeSeriesWithDate.class);
+        String formatted = Formats.format(contentType, fakeTs);
+        assertTrue(formatted.contains("quality-code"));
+        assertTrue(formatted.contains("data-entry-date"));
+        TimeSeriesWithDate ts2 = Formats.parseContent(contentType, formatted, TimeSeriesWithDate.class);
+        assertNotNull(ts2);
+        assertSimilarWithDate(fakeTs, ts2);
+    }
+
+    @Test
     void testDeserializeTimeSeriesXmlUTC() {
         TimeZone aDefault = TimeZone.getDefault();
         try {

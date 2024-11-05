@@ -28,9 +28,7 @@ package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.formatters.Formats;
@@ -55,6 +53,7 @@ public final class TimeSeriesWithDate extends TimeSeries {
 
     private List<TimeSeriesWithDate.Record> values;
 
+	// list of TimeSeriesWithDate.Record, uses raw to avoid typing errors
     @Override
     public List getValues() {
         return values;
@@ -135,7 +134,6 @@ public final class TimeSeriesWithDate extends TimeSeries {
         return columns;
     }
 
-    @JsonDeserialize(using = JsonDeserializer.None.class)
     public static final class Record extends TimeSeries.Record {
         @JsonProperty(value = "data-entry-date", index = 3)
         @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch), always UTC")
