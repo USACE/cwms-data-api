@@ -249,7 +249,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         SEASONAL_VALUE_TAB_T pSeasonalValues = null;
         if (seasonalValues != null && !seasonalValues.isEmpty()) {
             pSeasonalValues = new SEASONAL_VALUE_TAB_T();
-            for(SeasonalValueBean seasonalValue : seasonalValues) {
+            for (SeasonalValueBean seasonalValue : seasonalValues) {
                 SEASONAL_VALUE_T seasonalValueT = new SEASONAL_VALUE_T();
                 seasonalValueT.setOFFSET_MINUTES(toBigDecimal(seasonalValue.getOffsetMinutes()));
                 if (seasonalValue.getOffsetMonths() != null) {
@@ -638,7 +638,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             if (qualityCode != null) {
                 quality = qualityCode.intValue();
             }
-            timeSeries.addValue(dateTime, value, quality, null);
+            timeSeries.addValue(dateTime, value, quality);
         }
         return timeSeries;
     }

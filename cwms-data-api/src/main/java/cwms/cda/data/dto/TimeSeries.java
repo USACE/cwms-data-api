@@ -9,15 +9,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.formatters.json.adapters.TimeSeriesRecordDeserializer;
 import cwms.cda.formatters.xml.XMLv2;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -108,7 +105,7 @@ public class TimeSeries extends CwmsDTOPaginated {
 
 
     @SuppressWarnings("unused") // required so JAXB can initialize and marshal
-    private TimeSeries() {}
+    protected TimeSeries() {}
 
     public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval) {
         this(page, pageSize, total, name, officeId, begin, end, units, interval, null, null, null, null, null);
@@ -165,7 +162,6 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     // Use the array shape to optimize data transfer to client
     @JsonFormat(shape = JsonFormat.Shape.ARRAY)
-    @JsonDeserialize(contentUsing = TimeSeriesRecordDeserializer.class)
     public List<Record> getValues() {
         return values;
     }
@@ -198,11 +194,10 @@ public class TimeSeries extends CwmsDTOPaginated {
     @JsonProperty(value = "value-columns")
     @Schema(name = "value-columns", accessMode = AccessMode.READ_ONLY)
     public List<Column> getValueColumnsJSON() {
-        return getColumnDescriptor((values != null && !values.isEmpty())
-                && values.get(0) instanceof TimeSeriesRecordWithDate);
+        return getColumnDescriptor();
     }
 
-    public void addValue(Timestamp dateTime, Double value, int qualityCode, Timestamp dataEntryDate) {
+    public void addValue(Timestamp dateTime, Double value, int qualityCode) {
         // Set the current page, if not set
         if ((page == null || page.isEmpty()) && values.isEmpty()) {
             page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
@@ -210,32 +205,18 @@ public class TimeSeries extends CwmsDTOPaginated {
         if (pageSize > 0 && values.size() == pageSize) {
             nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
         } else {
-            if (dataEntryDate != null) {
-                values.add(new TimeSeriesRecordWithDate(dateTime, value, qualityCode, dataEntryDate));
-            } else {
-                values.add(new Record(dateTime, value, qualityCode));
-            }
+            values.add(new Record(dateTime, value, qualityCode));
         }
     }
 
-    private List<Column> getColumnDescriptor(boolean includeDataEntryDate) {
+    private List<Column> getColumnDescriptor() {
         List<Column> columns = new ArrayList<>();
         for (Field f: Record.class.getDeclaredFields()) {
             JsonProperty field = f.getAnnotation(JsonProperty.class);
-            if(field != null) {
+            if (field != null) {
                 String fieldName = !field.value().isEmpty() ? field.value() : f.getName();
                 int fieldIndex = field.index();
                 columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
-            }
-        }
-        if (includeDataEntryDate) {
-            for (Field f: TimeSeriesRecordWithDate.class.getDeclaredFields()) {
-                JsonProperty field = f.getAnnotation(JsonProperty.class);
-                if(field != null) {
-                    String fieldName = !field.value().isEmpty() ? field.value() : f.getName();
-                    int fieldIndex = field.index();
-                    columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
-                }
             }
         }
         return columns;
@@ -260,14 +241,6 @@ public class TimeSeries extends CwmsDTOPaginated {
             )
     )
 
-    // This class is used to deserialize the time-series data JSON into an object
-    // Solves the issue of the deserializer getting stuck in a loop
-    // and throwing a StackOverflowError when trying to handle the Record class directly
-    @JsonDeserialize(using = JsonDeserializer.None.class)
-    public static final class RecordChild extends Record {
-    }
-
-    @JsonDeserialize(using = TimeSeriesRecordDeserializer.class)
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Record {
         // Explicitly set property order for array serialization
@@ -283,9 +256,11 @@ public class TimeSeries extends CwmsDTOPaginated {
         int qualityCode;
 
         @SuppressWarnings("unused") // required so JAXB can initialize and marshal
-        private Record() {}
+        private Record() {
+        }
 
         public Record(Timestamp dateTime, Double value, int qualityCode) {
+            super();
             this.dateTime = dateTime;
             this.value = value;
             this.qualityCode = qualityCode;
@@ -339,7 +314,7 @@ public class TimeSeries extends CwmsDTOPaginated {
     }
 
     @Schema(hidden = true, name = "TimeSeries.Column", accessMode = Schema.AccessMode.READ_ONLY)
-    private static class Column {
+    protected static class Column {
         public final String name;
         public final int ordinal;
         public final Class<?> datatype;

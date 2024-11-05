@@ -14,7 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dto.TimeSeries;
-import cwms.cda.data.dto.TimeSeriesRecordWithDate;
+import cwms.cda.data.dto.TimeSeriesWithDate;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
@@ -134,21 +134,27 @@ class TimeSeriesControllerTest extends ControllerTest {
         assertTrue(expected.getEnd().isEqual(actual.getEnd()), "end dates not equal");
     }
 
+    private void assertSimilarWithDate(TimeSeriesWithDate expected, TimeSeriesWithDate actual)
+    {
+        assertEquals(expected.getOfficeId(), actual.getOfficeId(), "offices did not match");
+        assertEquals(expected.getName(), actual.getName(), "names did not match");
+        assertDateRecordsMatch(expected.getValues(), actual.getValues());
+        assertTrue(expected.getBegin().isEqual(actual.getBegin()), "begin dates not equal");
+        assertTrue(expected.getEnd().isEqual(actual.getEnd()), "end dates not equal");
+    }
+
     private void assertRecordsMatch(List<TimeSeries.Record> expected, List<TimeSeries.Record> actual) {
         for (int i = 0; i < expected.size(); i++) {
-            if (expected.get(i) instanceof TimeSeriesRecordWithDate) {
-                if (!(actual.get(i) instanceof TimeSeriesRecordWithDate)) {
-                    throw new AssertionError("Expected TimeSeriesRecordWithDate but got " + actual.get(i).getClass().getName());
-                }
-                TimeSeriesRecordWithDate expectedRecord = new TimeSeriesRecordWithDate(expected.get(i).getDateTime(),
-                        expected.get(i).getValue(), expected.get(i).getQualityCode(),
-                        ((TimeSeriesRecordWithDate) expected.get(i)).getDataEntryDate());
-                TimeSeriesRecordWithDate actualRecord = new TimeSeriesRecordWithDate(actual.get(i).getDateTime(),
-                        actual.get(i).getValue(), actual.get(i).getQualityCode(),
-                        ((TimeSeriesRecordWithDate) actual.get(i)).getDataEntryDate());
-                assertEquals(expectedRecord.getDataEntryDate(),
-                        actualRecord.getDataEntryDate(), "Entry dates did not match");
-            }
+            assertEquals(expected.get(i).getDateTime(), actual.get(i).getDateTime(), "Timestamps did not match");
+            assertEquals(expected.get(i).getValue(), actual.get(i).getValue(), "Values did not match");
+            assertEquals(expected.get(i).getQualityCode(), actual.get(i).getQualityCode(), "Quality codes did not match");
+        }
+    }
+
+    private void assertDateRecordsMatch(List<? extends TimeSeries.Record> expected, List<? extends TimeSeries.Record> actual) {
+        for (int i = 0; i < expected.size(); i++) {
+            assertEquals(((TimeSeriesWithDate.Record) expected.get(i)).getDataEntryDate(),
+                    ((TimeSeriesWithDate.Record) actual.get(i)).getDataEntryDate(), "Entry dates did not match");
             assertEquals(expected.get(i).getDateTime(), actual.get(i).getDateTime(), "Timestamps did not match");
             assertEquals(expected.get(i).getValue(), actual.get(i).getValue(), "Values did not match");
             assertEquals(expected.get(i).getQualityCode(), actual.get(i).getQualityCode(), "Quality codes did not match");
@@ -174,15 +180,15 @@ class TimeSeriesControllerTest extends ControllerTest {
     void testSerializeTimeSeriesWithDataEntryDate(String format) {
         String officeId = "LRL";
         String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
-        TimeSeries fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
+        TimeSeriesWithDate fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
         assertEquals(4, fakeTs.getValueColumnsJSON().size());
-        assertInstanceOf(TimeSeriesRecordWithDate.class, fakeTs.getValues().get(0));
-        ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
+        assertInstanceOf(TimeSeriesWithDate.Record.class, fakeTs.getValues().get(0));
+        ContentType contentType = Formats.parseHeader(format, TimeSeriesWithDate.class);
         String formatted = Formats.format(contentType, fakeTs);
         assertNotNull(formatted);
-        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        TimeSeriesWithDate ts2 = Formats.parseContent(contentType, formatted, TimeSeriesWithDate.class);
         assertNotNull(ts2);
-        assertSimilar(fakeTs, ts2);
+        assertSimilarWithDate(fakeTs, ts2);
     }
 
 
@@ -204,12 +210,12 @@ class TimeSeriesControllerTest extends ControllerTest {
     void testDeserializeTimeSeriesWithEntryDate(String format) {
         String officeId = "LRL";
         String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
-        TimeSeries fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
-        ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
+        TimeSeriesWithDate fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
+        ContentType contentType = Formats.parseHeader(format, TimeSeriesWithDate.class);
         String formatted = Formats.format(contentType, fakeTs);
-        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        TimeSeriesWithDate ts2 = Formats.parseContent(contentType, formatted, TimeSeriesWithDate.class);
         assertNotNull(ts2);
-        assertSimilar(fakeTs, ts2);
+        assertSimilarWithDate(fakeTs, ts2);
     }
 
     @Test
@@ -287,14 +293,14 @@ class TimeSeriesControllerTest extends ControllerTest {
         ZonedDateTime next = start;
         for(int i = 0; i < count; i++) {
             Timestamp dateTime = Timestamp.from(next.toInstant());
-            ts.addValue(dateTime, (double) i, 0, null);
+            ts.addValue(dateTime, (double) i, 0);
             next = next.plusMinutes(minutes);
         }
         return ts;
     }
 
     @NotNull
-    private TimeSeries buildTimeSeriesWithEntryDate(String officeId, String tsId) {
+    private TimeSeriesWithDate buildTimeSeriesWithEntryDate(String officeId, String tsId) {
         ZonedDateTime start = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
         ZonedDateTime end = ZonedDateTime.parse("2021-06-21T09:00:00-07:00[PST8PDT]");
 
@@ -305,7 +311,7 @@ class TimeSeriesControllerTest extends ControllerTest {
         int count = 60/15 ; // do I need a +1?  ie should this be 12 or 13?
         // Also, should end be the last point or the next interval?
 
-        TimeSeries ts = new TimeSeries(null,
+        TimeSeriesWithDate ts = new TimeSeriesWithDate(null,
                 -1,
                 0,
                 tsId,
