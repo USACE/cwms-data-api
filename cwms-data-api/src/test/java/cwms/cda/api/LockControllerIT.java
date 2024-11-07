@@ -78,12 +78,13 @@ final class LockControllerIT extends DataApiTestIT {
 
 
     static {
-        try (InputStream projectStream = LockControllerIT.class.getResourceAsStream(
-            "/cwms/cda/api/project_location_lock.json");
-             InputStream lockStream = LockControllerIT.class.getResourceAsStream("/cwms/cda/api/lock.json")) {
-            String projectLocJson = IOUtils.toString(projectStream, StandardCharsets.UTF_8);
+        try (
+            InputStream projectStream = LockControllerIT.class.getResourceAsStream(
+                "/cwms/cda/api/project_location_lock.json");
+            InputStream lockStream = LockControllerIT.class.getResourceAsStream("/cwms/cda/api/lock.json")) {
+			String projectLocJson = IOUtils.toString(projectStream, StandardCharsets.UTF_8);
             PROJECT_LOC = Formats.parseContent(new ContentType(Formats.JSONV1), projectLocJson, Location.class);
-            String lockJson = IOUtils.toString(lockStream, StandardCharsets.UTF_8);
+			String lockJson = IOUtils.toString(lockStream, StandardCharsets.UTF_8);
             LOCK = Formats.parseContent(new ContentType(Formats.JSONV1), lockJson, Lock.class);
             LOCK_LOC = LOCK.getLocation();
             STORABLE_LOCK = new Lock.Builder()
@@ -153,7 +154,7 @@ final class LockControllerIT extends DataApiTestIT {
     }
 
     @Test
-    void test_get_create_delete() {
+    void test_get_create_delete_EN() {
 
         // Structure of test:
         // 1)Create the Lock
@@ -171,7 +172,7 @@ final class LockControllerIT extends DataApiTestIT {
                 .contentType(Formats.JSONV1)
                 .body(levelJson)
                 .header(AUTH_HEADER, user.toHeaderValue())
-                .queryParam(FAIL_IF_EXISTS, "false")
+                .queryParam(FAIL_IF_EXISTS, false)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -226,6 +227,129 @@ final class LockControllerIT extends DataApiTestIT {
             .body("lock-width", equalTo((float) LOCK.getLockWidth()))
             .body("lock-length", equalTo((float) LOCK.getLockLength()))
             .body("length-units", equalTo(LOCK.getLengthUnits()))
+            .body("minimum-draft", equalTo((float) LOCK.getMinimumDraft()))
+        ;
+
+        // Delete a Lock
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, office)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/projects/locks/" + LOCK.getLocation().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+        ;
+
+        // Retrieve a Lock and assert that it does not exist
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .queryParam(Controllers.OFFICE, office)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/projects/locks/" + LOCK.getLocation().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
+    }
+
+    @Test
+    void test_get_create_delete_SI() {
+
+        // Structure of test:
+        // 1)Create the Lock
+        // 2)Retrieve the Lock and assert that it exists
+        // 3)Delete the Lock
+        // 4)Retrieve the Lock and assert that it does not exist
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        Lock metricLock = new Lock.Builder()
+                .withLockLength(STORABLE_LOCK.getLockLength())
+                .withLockWidth(STORABLE_LOCK.getLockWidth())
+                .withProjectId(STORABLE_LOCK.getProjectId())
+                .withElevationUnits("m")
+                .withChamberType(STORABLE_LOCK.getChamberType())
+                .withMinimumDraft(STORABLE_LOCK.getMinimumDraft())
+                .withMaximumLockLift(STORABLE_LOCK.getMaximumLockLift())
+                .withVolumeUnits("m3")
+                .withLocation(STORABLE_LOCK.getLocation())
+                .withNormalLockLift(STORABLE_LOCK.getNormalLockLift())
+                .withVolumePerLockage(STORABLE_LOCK.getVolumePerLockage())
+                .withLengthUnits("m")
+                .build();
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Lock.class), metricLock);
+        List<LocationLevel> levelList = createLocationLevelList(LOCK);
+        // store location levels
+        for (LocationLevel level : levelList) {
+            String levelJson = Formats.format(Formats.parseHeader(Formats.JSONV1, LocationLevel.class), level);
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .body(levelJson)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(FAIL_IF_EXISTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/levels/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+            ;
+        }
+
+        //Create the Lock
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, "false")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/locks/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+        String office = metricLock.getLocation().getOfficeId();
+        // Retrieve the Lock and assert that it exists
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .queryParam(Controllers.OFFICE, office)
+            .queryParam(UNIT, "SI")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/projects/locks/" + metricLock.getLocation().getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("location", not(nullValue()))
+            .body("project-id.name", equalTo(metricLock.getProjectId().getName()))
+            .body("project-id.office-id", equalTo(metricLock.getProjectId().getOfficeId()))
+            .body("maximum-lock-lift", equalTo((float) metricLock.getMaximumLockLift()))
+            .body("elevation-units", equalTo(metricLock.getElevationUnits()))
+            .body("chamber-type.display-value", equalTo(metricLock.getChamberType().getDisplayValue()))
+            .body("chamber-type.tooltip", equalTo(metricLock.getChamberType().getTooltip()))
+            .body("volume-per-lockage", equalTo((float) metricLock.getVolumePerLockage()))
+            .body("volume-units", equalTo(metricLock.getVolumeUnits()))
+            .body("lock-width", equalTo((float) metricLock.getLockWidth()))
+            .body("lock-length", equalTo((float) metricLock.getLockLength()))
+            .body("length-units", equalTo(metricLock.getLengthUnits()))
+            .body("minimum-draft", equalTo((float) metricLock.getMinimumDraft()))
         ;
 
         // Delete a Lock
@@ -332,7 +456,7 @@ final class LockControllerIT extends DataApiTestIT {
             .contentType(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(FAIL_IF_EXISTS, "false")
+            .queryParam(FAIL_IF_EXISTS, false)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -357,7 +481,7 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("[0].name", equalTo(LOCK.getProjectId().getName() + "-" + LOCK.getLocation().getName()))
+            .body("[0].name", equalTo(LOCK.getLocation().getName()))
             .body("[0].office-id", equalTo(LOCK.getLocation().getOfficeId()))
         ;
 

@@ -91,9 +91,7 @@ public final class LockController implements CrudHandler {
             @OpenApiParam(name = OFFICE, required = true, description = "Office id for the reservoir project location "
                 + "associated with the locks."),
             @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the "
-                + "Locks whose data is to be included in the response."),
-            @OpenApiParam(name = UNIT, description = "Specifies the unit system to be used in the response. "
-                + "Valid values are: \n* `SI` - Metric units. \n* `EN` - Imperial units. \nDefaults to SI.")
+                + "Locks whose data is to be included in the response.")
         },
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
@@ -109,11 +107,10 @@ public final class LockController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = requiredParam(ctx, OFFICE);
             String projectId = ctx.queryParam(PROJECT_ID);
-            UnitSystem unitSystem = ctx.queryParamAsClass(UNIT, UnitSystem.class).getOrDefault(UnitSystem.SI);
             CwmsId project = CwmsId.buildCwmsId(office, projectId);
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
-            List<CwmsId> locks = dao.retrieveLockIds(project, unitSystem);
+            List<CwmsId> locks = dao.retrieveLockIds(project);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                 Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, Lock.class);
@@ -154,6 +151,10 @@ public final class LockController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
             Lock lock = dao.retrieveLock(CwmsId.buildCwmsId(office, name), unitSystem);
+            if (lock == null) {
+                ctx.status(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
             String header = ctx.header(Header.ACCEPT);
             String formatHeader = header != null ? header : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, Lock.class);

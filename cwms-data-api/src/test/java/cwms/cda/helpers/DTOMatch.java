@@ -446,7 +446,7 @@ public final class DTOMatch {
     }
 
     public static void assertMatch(Lock first, Lock second) {
-        // TODO: Add support for all values to the database
+        // TODO: add warning levels to DB Lock OBJ
         assertAll(
                 () -> assertEquals(first.getLocation(), second.getLocation(), "Location doesn't match"),
                 () -> assertMatch(first.getProjectId(), second.getProjectId(), "Project ID does not match"),
@@ -455,12 +455,12 @@ public final class DTOMatch {
                 () -> assertEquals(first.getLengthUnits(), second.getLengthUnits(), "Length units do not match"),
 //                () -> assertEquals(first.getHighWaterLowerPoolWarningLevel(), second.getHighWaterLowerPoolWarningLevel(), "High water lower pool warning level does not match"),
 //                () -> assertEquals(first.getHighWaterUpperPoolWarningLevel(), second.getHighWaterUpperPoolWarningLevel(), "High water upper pool warning level does not match"),
-                () -> assertEquals(first.getLockLength(), second.getLockLength(), "Lock length does not match"),
-                () -> assertEquals(first.getLockWidth(), second.getLockWidth(), "Lock width does not match"),
-                () -> assertEquals(first.getNormalLockLift(), second.getNormalLockLift(), "Normal lock lift values do not match"),
-                () -> assertEquals(first.getMaximumLockLift(), second.getMaximumLockLift(), "Maximum lock lift values do not match"),
-                () -> assertEquals(first.getMinimumDraft(), second.getMinimumDraft(), "Minimum draft does not match"),
-                () -> assertEquals(first.getVolumePerLockage(), second.getVolumePerLockage(), "Volume per lockage does not match"),
+                () -> assertEquals(first.getLockLength(), second.getLockLength(), DEFAULT_DELTA, "Lock length does not match"),
+                () -> assertEquals(first.getLockWidth(), second.getLockWidth(), DEFAULT_DELTA, "Lock width does not match"),
+                () -> assertEquals(first.getNormalLockLift(), second.getNormalLockLift(), DEFAULT_DELTA, "Normal lock lift values do not match"),
+                () -> assertEquals(first.getMaximumLockLift(), second.getMaximumLockLift(), DEFAULT_DELTA, "Maximum lock lift values do not match"),
+                () -> assertEquals(first.getMinimumDraft(), second.getMinimumDraft(), DEFAULT_DELTA, "Minimum draft does not match"),
+                () -> assertEquals(first.getVolumePerLockage(), second.getVolumePerLockage(), DEFAULT_DELTA, "Volume per lockage does not match"),
                 () -> assertEquals(first.getVolumeUnits(), second.getVolumeUnits(), "Volume units does not match"),
                 () -> assertMatch(first.getHighWaterLowerPoolLocationLevel(), second.getHighWaterLowerPoolLocationLevel()),
                 () -> assertMatch(first.getHighWaterUpperPoolLocationLevel(), second.getHighWaterUpperPoolLocationLevel()),
@@ -471,12 +471,12 @@ public final class DTOMatch {
 
     public static void assertMatch(LockLocationLevelRef first, LockLocationLevelRef second)
     {
-        // TODO: Add support for all values to the database
         assertAll(
-//                () -> assertEquals(first.getLevelURI(), second.getLevelURI(), "Level URI does not match"),
+                () -> assertEquals(first.getLevelLink(), second.getLevelLink(), "Level link does not match"),
                 () -> assertEquals(first.getOfficeId(), second.getOfficeId(), "Office ID does not match"),
-                () -> assertEquals(first.getLevelValue(), second.getLevelValue(), "Level value does not match")
-//                () -> assertEquals(first.getLockId(), second.getLockId(), "Lock IDs do not match")
+                () -> assertEquals(first.getLevelValue(), second.getLevelValue(), DEFAULT_DELTA, "Level value does not match"),
+                () -> assertEquals(first.getLevelId(), second.getLevelId(), "Level IDs do not match"),
+                () -> assertEquals(first.getSpecifiedLevelId(), second.getSpecifiedLevelId(), "Specified level IDs do not match")
         );
     }
 

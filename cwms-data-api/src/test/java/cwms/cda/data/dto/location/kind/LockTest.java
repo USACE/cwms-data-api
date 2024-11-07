@@ -114,13 +114,13 @@ final class LockTest {
             .withChamberType(new LookupType.Builder().withOfficeId("LRL").withActive(true)
                 .withDisplayValue("LOCK").withTooltip("Land Side Main").build())
             .withHighWaterLowerPoolLocationLevel(
-                new LockLocationLevelRef("/locks/LOWER_POOL_1?office=SPK", 2.7))
+                new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Inoperable.Inst.0.High Water Lower Pool?office=SPK", 2.7))
             .withHighWaterUpperPoolLocationLevel(
-                new LockLocationLevelRef("/locks/UPPER_POOL_1?office=SPK", 2.96))
+                new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Inoperable.Inst.0.High Water Upper Pool?office=SPK", 2.96))
             .withLowWaterLowerPoolLocationLevel(
-                new LockLocationLevelRef("/locks/LOWER_POOL_2?office=SPK", 5.0))
+                new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Inoperable.Inst.0.Low Water Lower Pool?office=SPK", 5.0))
             .withLowWaterUpperPoolLocationLevel(
-                new LockLocationLevelRef("/locks/UPPER_POOL_2?office=SPK", 8.0))
+                new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Inoperable.Inst.0.Low Water Upper Pool?office=SPK", 8.0))
             .build();
     }
 
