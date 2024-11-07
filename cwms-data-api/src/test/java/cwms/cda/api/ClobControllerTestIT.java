@@ -1,9 +1,9 @@
 package cwms.cda.api;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dto.Clob;
 import cwms.cda.formatters.Formats;
@@ -13,7 +13,6 @@ import io.restassured.filter.log.LogDetail;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import javax.servlet.http.HttpServletResponse;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -29,7 +28,7 @@ public class ClobControllerTestIT extends DataApiTestIT {
     private static final String EXISTING_CLOB_DESC = "test description";
 
     @BeforeAll
-    static void createExistingClob() throws Exception
+    static void createExistingClobs() throws Exception
     {
         Clob clob = new Clob(SPK, EXISTING_CLOB_ID, EXISTING_CLOB_DESC, EXISTING_CLOB_VALUE);
         ObjectMapper om = JsonV2.buildObjectMapper();
@@ -50,6 +49,26 @@ public class ClobControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+        //Need to verify that getAll filters to a specific office
+        user = TestAccounts.KeyUser.SWT_NORMAL;
+        clob = new Clob(user.getOperatingOffice(), EXISTING_CLOB_ID, EXISTING_CLOB_DESC, EXISTING_CLOB_VALUE);
+        serializedClob = om.writeValueAsString(clob);
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(serializedClob)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam("office",SPK)
+            .queryParam("fail-if-exists",false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/clobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
     }
 
@@ -129,6 +148,34 @@ public class ClobControllerTestIT extends DataApiTestIT {
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body( is(EXISTING_CLOB_VALUE));
+    }
+
+    @Test
+    void test_getAll_specific_office()
+    {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .queryParam(Controllers.OFFICE, SPK)
+            .accept(Formats.JSON)
+        .when()
+            .get("/clobs/")
+            .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("clobs.office-id", hasItem(SPK));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .queryParam(Controllers.OFFICE, TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice())
+            .accept(Formats.JSON)
+        .when()
+            .get("/clobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("clobs.office-id", hasItem(TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice()));
     }
 
 

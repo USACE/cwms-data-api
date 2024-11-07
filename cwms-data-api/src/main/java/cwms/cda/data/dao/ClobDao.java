@@ -42,29 +42,6 @@ public class ClobDao extends JooqDao<Clob> {
         super(dsl);
     }
 
-
-    // Yikes, I hate this method - it retrieves all the clobs?  That could be gigabytes of data.
-    // Not returning Value or Desc fields until a useful way of working with this method is
-    // figured out.
-    @Override
-    public List<Clob> getAll(String limitToOffice) {
-        AV_CLOB ac = AV_CLOB.AV_CLOB;
-        AV_OFFICE ao = AV_OFFICE.AV_OFFICE;
-
-        Condition whereCond = noCondition();
-        if (limitToOffice != null && !limitToOffice.isEmpty()) {
-            whereCond = ao.OFFICE_ID.eq(limitToOffice);
-        }
-
-        return dsl.select(ac.ID, ao.OFFICE_ID)
-                .from(ac.join(ao).on(ac.OFFICE_CODE.eq(ao.OFFICE_CODE)))
-                .where(whereCond)
-                .fetch(joinRecord ->
-                        new Clob(joinRecord.get(ao.OFFICE_ID),
-                                joinRecord.get(ac.ID), null, null));
-
-    }
-
     @Override
     public Optional<Clob> getByUniqueName(String uniqueName, String office) {
         AV_CLOB ac = AV_CLOB.AV_CLOB;
@@ -89,27 +66,23 @@ public class ClobDao extends JooqDao<Clob> {
     }
 
     public Clobs getClobs(String cursor, int pageSize, String officeLike,
-                          boolean includeValues) {
-        return getClobs(cursor, pageSize, officeLike, includeValues, ".*");
-    }
-
-    public Clobs getClobs(String cursor, int pageSize, String officeLike,
                           boolean includeValues, String idRegex) {
         int total = 0;
         String clobCursor = "*";
         AV_CLOB v_clob = AV_CLOB.AV_CLOB;
         AV_OFFICE v_office = AV_OFFICE.AV_OFFICE;
 
+        Condition whereClause = JooqDao.caseInsensitiveLikeRegex(v_clob.ID, idRegex)
+            .and(officeLike == null ? noCondition() : JooqDao.caseInsensitiveLikeRegex(v_office.OFFICE_ID, officeLike));
         if (cursor == null || cursor.isEmpty()) {
-
-            SelectConditionStep<Record1<Integer>> count =
-                    dsl.select(count(asterisk()))
-                            .from(v_clob)
-                            .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
-                            .where(JooqDao.caseInsensitiveLikeRegex(v_clob.ID, idRegex))
-                            .and(officeLike == null ? noCondition() : DSL.upper(v_office.OFFICE_ID).like(officeLike.toUpperCase()));
-
-            total = count.fetchOne().value1();
+            SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
+                .from(v_clob)
+                .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
+                .where(whereClause);
+            Record1<Integer> rec = count.fetchOne();
+            if(rec != null) {
+                total = rec.value1();
+            }
         } else {
             final String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "||");
 
@@ -128,17 +101,17 @@ public class ClobDao extends JooqDao<Clob> {
         }
 
         SelectLimitPercentStep<Record4<String, String, String, String>> query = dsl.select(
-                        v_office.OFFICE_ID,
-                        v_clob.ID,
-                        v_clob.DESCRIPTION,
-                        includeValues ? v_clob.VALUE : DSL.inline("").as(v_clob.VALUE)
-                )
-                .from(v_clob)
-                .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
-                .where(JooqDao.caseInsensitiveLikeRegex(v_clob.ID,idRegex))
-                .and(DSL.upper(v_clob.ID).greaterThan(clobCursor))
-                .and(officeLike == null ? noCondition() : DSL.upper(v_office.OFFICE_ID).like(officeLike.toUpperCase()))
-                .orderBy(v_clob.ID).limit(pageSize);
+                v_office.OFFICE_ID,
+                v_clob.ID,
+                v_clob.DESCRIPTION,
+                includeValues ? v_clob.VALUE : DSL.inline("").as(v_clob.VALUE)
+            )
+            .from(v_clob)
+            .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
+            .where(whereClause)
+            .and(DSL.upper(v_clob.ID).greaterThan(clobCursor))
+            .orderBy(v_office.OFFICE_ID, v_clob.ID)
+            .limit(pageSize);
 
 
         Clobs.Builder builder = new Clobs.Builder(clobCursor, pageSize, total);
@@ -179,18 +152,6 @@ public class ClobDao extends JooqDao<Clob> {
 
         return dsl.select(ac.asterisk(), ao.OFFICE_ID).from(
                 ac.join(ao).on(ac.OFFICE_CODE.eq(ao.OFFICE_CODE))).where(cond).fetch(mapper);
-    }
-
-    public String getClobValue(String office, String id) {
-        AV_CLOB ac = AV_CLOB.AV_CLOB;
-        AV_OFFICE ao = AV_OFFICE.AV_OFFICE;
-
-        Condition cond = ac.ID.eq(id).and(ao.OFFICE_ID.eq(office));
-
-        Record1<String> clobRecord = dsl.select(ac.VALUE).from(
-                ac.join(ao).on(ac.OFFICE_CODE.eq(ao.OFFICE_CODE))).where(cond).fetchOne();
-
-        return clobRecord.value1();
     }
 
     public void create(Clob clob, boolean failIfExists) {
