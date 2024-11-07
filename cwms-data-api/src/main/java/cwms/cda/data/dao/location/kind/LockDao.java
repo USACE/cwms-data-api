@@ -24,7 +24,12 @@
 
 package cwms.cda.data.dao.location.kind;
 
+import static cwms.cda.data.dao.location.kind.LocationUtil.getLookupType;
 import static java.util.stream.Collectors.toList;
+import static org.jooq.impl.DSL.asterisk;
+import static org.jooq.impl.DSL.field;
+import static org.jooq.impl.DSL.name;
+import static org.jooq.impl.DSL.table;
 
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.NotFoundException;
@@ -34,11 +39,17 @@ import cwms.cda.data.dao.LocationsDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Lock;
+import cwms.cda.data.dto.location.kind.LockLocationLevelRef;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
+import org.jooq.Table;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOCK_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOCK;
@@ -77,7 +88,7 @@ public final class LockDao extends JooqDao<Lock> {
             setOffice(c, lockId.getOfficeId());
             LocationsDao locationsDao = new LocationsDaoImpl(dsl);
             Record dbRecord = DSL.using(c)
-                .select(view.fields())
+                .select(asterisk())
                 .from(view)
                 .where(view.LOCK_ID.eq(lockId.getName()).and(view.DB_OFFICE_ID.eq(lockId.getOfficeId()))
                         .and(view.UNIT_SYSTEM.equalIgnoreCase(unitSystemFinal.name())))
@@ -85,9 +96,28 @@ public final class LockDao extends JooqDao<Lock> {
             if (dbRecord == null) {
                 throw new NotFoundException("Lock not found: " + lockId);
             }
+
+            Long chamberTypeCode = dbRecord.get(view.CHAMBER_LOCATION_DESCRIPTION_CODE);
+            Table<?> chamberTable = table("CWMS_20.AT_LOCK_GATE_TYPE");
+            Table<?> officeTable = table("CWMS_20.CWMS_OFFICE");
+            Record chamberResult = DSL.using(c).select(asterisk())
+                    .from(chamberTable
+                            .join(officeTable)
+                            .on(field(name(chamberTable.getQualifiedName().unquotedName().toString(),
+                                        "DB_OFFICE_CODE").unquotedName())
+                                    .eq(officeTable.field("OFFICE_CODE"))))
+                    .where(field(name(chamberTable.getQualifiedName().unquotedName().toString(),
+                                "CHAMBER_TYPE_CODE").unquotedName())
+                            .eq(chamberTypeCode)).fetchOne();
+            LookupType chamber = new LookupType.Builder()
+                    .withOfficeId(chamberResult.get("OFFICE_ID", String.class))
+                    .withActive(chamberResult.get("ACTIVE", Boolean.class))
+                    .withTooltip(chamberResult.get("CHAMBER_TYPE_TOOLTIP", String.class))
+                    .withDisplayValue(chamberResult.get("CHAMBER_TYPE_DISPLAY_VALUE", String.class))
+                    .build();
             Location lockLocation = locationsDao.getLocation(dbRecord.get(view.LOCK_ID),
                     "SI", dbRecord.get(view.DB_OFFICE_ID));
-            return map(dbRecord, lockLocation);
+            return map(dbRecord, lockLocation, chamber);
         });
 
     }
@@ -117,36 +147,85 @@ public final class LockDao extends JooqDao<Lock> {
         retval.setMINIMUM_DRAFT(lock.getMinimumDraft());
         retval.setUNITS_ID(lock.getLengthUnits());
         retval.setVOLUME_UNITS_ID(lock.getVolumeUnits());
+        retval.setELEV_UNITS_ID(lock.getElevationUnits());
+        retval.setCHAMBER_LOCATION_DESCRIPTION(getLookupType(lock.getChamberType()));
+        retval.setELEV_INOPERABLE_HIGH_WATER_LOWER_POOL(lock.getHighWaterLowerPoolLocationLevel() == null
+                ? null : lock.getHighWaterLowerPoolLocationLevel().getLevelValue());
+        retval.setELEV_INOPERABLE_HIGH_WATER_UPPER_POOL(lock.getHighWaterUpperPoolLocationLevel() == null
+                ? null : lock.getHighWaterUpperPoolLocationLevel().getLevelValue());
+        retval.setELEV_INOPERABLE_LOW_WATER_LOWER_POOL(lock.getLowWaterLowerPoolLocationLevel() == null
+                ? null : lock.getLowWaterLowerPoolLocationLevel().getLevelValue());
+        retval.setELEV_INOPERABLE_LOW_WATER_UPPER_POOL(lock.getLowWaterUpperPoolLocationLevel() == null
+                ? null : lock.getLowWaterUpperPoolLocationLevel().getLevelValue());
+        retval.setMAXIMUM_LOCK_LIFT(lock.getMaximumLockLift());
         return retval;
     }
 
-    static Lock map(LOCK_OBJ_T lock) {
+    static Lock map(LOCK_OBJ_T lock) throws UnsupportedEncodingException {
         return new Lock.Builder()
-            .withLocation(LocationUtil.getLocation(lock.getLOCK_LOCATION()))
-            .withProjectId(LocationUtil.getLocationIdentifier(lock.getPROJECT_LOCATION_REF()))
-            .withLockLength(lock.getLOCK_LENGTH())
-            .withLockWidth(lock.getLOCK_WIDTH())
-            .withNormalLockLift(lock.getNORMAL_LOCK_LIFT())
-            .withVolumePerLockage(lock.getVOLUME_PER_LOCKAGE())
-            .withMinimumDraft(lock.getMINIMUM_DRAFT())
-            .withLengthUnits(lock.getUNITS_ID())
-            .withVolumeUnits(lock.getVOLUME_UNITS_ID())
-            .build();
+                .withLocation(LocationUtil.getLocation(lock.getLOCK_LOCATION()))
+                .withProjectId(LocationUtil.getLocationIdentifier(lock.getPROJECT_LOCATION_REF()))
+                .withLockLength(lock.getLOCK_LENGTH())
+                .withLockWidth(lock.getLOCK_WIDTH())
+                .withNormalLockLift(lock.getNORMAL_LOCK_LIFT())
+                .withVolumePerLockage(lock.getVOLUME_PER_LOCKAGE())
+                .withMinimumDraft(lock.getMINIMUM_DRAFT())
+                .withLengthUnits(lock.getUNITS_ID())
+                .withVolumeUnits(lock.getVOLUME_UNITS_ID())
+                .withElevationUnits(lock.getELEV_UNITS_ID())
+                .withChamberType(getLookupType(lock.getCHAMBER_LOCATION_DESCRIPTION()))
+                .withHighWaterUpperPoolLocationLevel(new LockLocationLevelRef(
+                        mapToLockRef(lock.getLOCK_LOCATION().getBOUNDING_OFFICE_ID(),
+                                lock.getLOCK_LOCATION().getPUBLIC_NAME()),
+                        lock.getELEV_INOPERABLE_HIGH_WATER_UPPER_POOL()))
+                .withHighWaterLowerPoolLocationLevel(new LockLocationLevelRef(
+                        mapToLockRef(lock.getLOCK_LOCATION().getBOUNDING_OFFICE_ID(),
+                                lock.getLOCK_LOCATION().getPUBLIC_NAME()),
+                        lock.getELEV_INOPERABLE_HIGH_WATER_LOWER_POOL()))
+                .withLowWaterLowerPoolLocationLevel(new LockLocationLevelRef(
+                        mapToLockRef(lock.getLOCK_LOCATION().getBOUNDING_OFFICE_ID(),
+                                lock.getLOCK_LOCATION().getPUBLIC_NAME()),
+                        lock.getELEV_INOPERABLE_LOW_WATER_LOWER_POOL()))
+                .withLowWaterUpperPoolLocationLevel(new LockLocationLevelRef(
+                        mapToLockRef(lock.getLOCK_LOCATION().getBOUNDING_OFFICE_ID(),
+                                lock.getLOCK_LOCATION().getPUBLIC_NAME()),
+                        lock.getELEV_INOPERABLE_LOW_WATER_UPPER_POOL()))
+                .withMaximumLockLift(lock.getMAXIMUM_LOCK_LIFT() == null ? -9999 : lock.getMAXIMUM_LOCK_LIFT())
+                .build();
     }
 
-    static Lock map(Record result, Location lockLocation) {
+    static Lock map(Record result, Location lockLocation, LookupType chamberType) {
         CwmsId projectId = CwmsId.buildCwmsId(result.get(view.DB_OFFICE_ID), result.get(view.PROJECT_ID));
         return new Lock.Builder()
                 .withLocation(lockLocation)
                 .withProjectId(projectId)
-                .withLockLength(result.get(view.LOCK_LENGTH))
-                .withLockWidth(result.get(view.LOCK_WIDTH))
-                .withNormalLockLift(result.get(view.NORMAL_LOCK_LIFT))
-                .withVolumePerLockage(result.get(view.VOLUME_PER_LOCKAGE))
-                .withMinimumDraft(result.get(view.MINIMUM_DRAFT))
+                .withLockLength(result.get(view.LOCK_LENGTH, Double.class))
+                .withLockWidth(result.get(view.LOCK_WIDTH, Double.class))
+                .withNormalLockLift(result.get(view.NORMAL_LOCK_LIFT, Double.class))
+                .withVolumePerLockage(result.get(view.VOLUME_PER_LOCKAGE, Double.class))
+                .withMinimumDraft(result.get(view.MINIMUM_DRAFT, Double.class))
                 .withLengthUnits(result.get(view.LENGTH_UNIT_ID))
                 .withVolumeUnits(result.get(view.VOLUME_UNIT_ID))
+                .withHighWaterLowerPoolWarningLevel(result.get(view.ELEV_INOPERABLE_HIGH_WATER_LOWER_POOL_WARNING, Double.class))
+                .withHighWaterUpperPoolWarningLevel(result.get(view.ELEV_INOPERABLE_HIGH_WATER_UPPER_POOL_WARNING, Double.class))
+                .withChamberType(chamberType)
+                .withElevationUnits(result.get(view.ELEV_UNIT_ID))
+                .withVolumeUnits(result.get(view.VOLUME_UNIT_ID))
+                .withMaximumLockLift(result.get(view.MAXIMUM_LOCK_LIFT, Double.class))
+                .withLowWaterUpperPoolLocationLevel(new LockLocationLevelRef(lockLocation.getOfficeId(),
+                        result.get(view.ELEV_INOPERABLE_LOW_WATER_UPPER_POOL, Double.class)))
+                .withLowWaterLowerPoolLocationLevel(new LockLocationLevelRef(lockLocation.getOfficeId(),
+                        result.get(view.ELEV_INOPERABLE_LOW_WATER_LOWER_POOL, Double.class)))
+                .withHighWaterLowerPoolLocationLevel(new LockLocationLevelRef(lockLocation.getOfficeId(),
+                        result.get(view.ELEV_INOPERABLE_LOW_WATER_LOWER_POOL, Double.class)))
+                .withHighWaterUpperPoolLocationLevel(new LockLocationLevelRef(lockLocation.getOfficeId(),
+                        result.get(view.ELEV_INOPERABLE_LOW_WATER_UPPER_POOL, Double.class)))
                 .build();
+    }
+
+    static String mapToLockRef(String office, String locationName) throws UnsupportedEncodingException {
+        return String.format("/locks/%s?office=%s", URLEncoder.encode(locationName, StandardCharsets.UTF_8.toString()),
+                URLEncoder.encode(office, StandardCharsets.UTF_8.toString()));
     }
 
     public void deleteLock(CwmsId lockId, DeleteRule deleteRule) {

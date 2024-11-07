@@ -25,6 +25,7 @@
 package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
@@ -38,6 +39,7 @@ import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -50,21 +52,30 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 
+@Tag("integration")
 final class LockControllerIT extends DataApiTestIT {
-
+    private static final Logger LOGGER = Logger.getLogger(LockControllerIT.class.getName());
     private static final Location PROJECT_LOC;
     private static final Location LOCK_LOC;
     private static final Lock LOCK;
+    private static final Lock STORABLE_LOCK;
+
 
     static {
         try (InputStream projectStream = LockControllerIT.class.getResourceAsStream(
@@ -75,6 +86,19 @@ final class LockControllerIT extends DataApiTestIT {
             String lockJson = IOUtils.toString(lockStream, StandardCharsets.UTF_8);
             LOCK = Formats.parseContent(new ContentType(Formats.JSONV1), lockJson, Lock.class);
             LOCK_LOC = LOCK.getLocation();
+            STORABLE_LOCK = new Lock.Builder()
+                    .withLockLength(LOCK.getLockLength())
+                    .withLockWidth(LOCK.getLockWidth())
+                    .withMaximumLockLift(LOCK.getMaximumLockLift())
+                    .withElevationUnits(LOCK.getElevationUnits())
+                    .withChamberType(LOCK.getChamberType())
+                    .withLocation(LOCK_LOC)
+                    .withLengthUnits(LOCK.getLengthUnits())
+                    .withVolumePerLockage(LOCK.getVolumePerLockage())
+                    .withVolumeUnits(LOCK.getVolumeUnits())
+                    .withProjectId(LOCK.getProjectId())
+                    .withMinimumDraft(LOCK.getMinimumDraft())
+                    .build();
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -87,6 +111,7 @@ final class LockControllerIT extends DataApiTestIT {
             try {
                 DSLContext context = getDslContext(c, LOCK_LOC.getOfficeId());
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
+                locationsDao.storeLocation(PROJECT_LOC);
                 PROJECT_OBJ_T projectObjT = buildProject();
                 CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
                 locationsDao.storeLocation(LOCK_LOC);
@@ -108,6 +133,7 @@ final class LockControllerIT extends DataApiTestIT {
 
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
+                LOGGER.log(Level.CONFIG, String.format("Unable to delete Lock location: %s", ex.getMessage()));
             }
             try {
                 CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
@@ -115,11 +141,13 @@ final class LockControllerIT extends DataApiTestIT {
 
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
+                LOGGER.log(Level.CONFIG, String.format("Unable to delete project: %s", ex.getMessage()));
             }
             try {
                 locationsDao.deleteLocation(PROJECT_LOC.getName(), PROJECT_LOC.getOfficeId(), true);
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
+                LOGGER.log(Level.CONFIG, String.format("Unable to delete project location: %s", ex.getMessage()));
             }
         }, CwmsDataApiSetupCallback.getWebUser());
     }
@@ -132,8 +160,29 @@ final class LockControllerIT extends DataApiTestIT {
         // 2)Retrieve the Lock and assert that it exists
         // 3)Delete the Lock
         // 4)Retrieve the Lock and assert that it does not exist
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Lock.class), LOCK);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Lock.class), STORABLE_LOCK);
+        List<LocationLevel> levelList = createLocationLevelList(LOCK);
+        // store location levels
+        for (LocationLevel level : levelList) {
+            String levelJson = Formats.format(Formats.parseHeader(Formats.JSONV1, LocationLevel.class), level);
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .body(levelJson)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(FAIL_IF_EXISTS, "false")
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/levels/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+            ;
+        }
+
         //Create the Lock
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -141,13 +190,13 @@ final class LockControllerIT extends DataApiTestIT {
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, "false")
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .post("/projects/locks/")
-            .then()
+        .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
         String office = LOCK.getLocation().getOfficeId();
@@ -156,17 +205,27 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
-            .when()
+            .queryParam(UNIT, "EN")
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/projects/locks/" + LOCK.getLocation().getName())
-            .then()
+        .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("location", not(nullValue()))
             .body("project-id.name", equalTo(LOCK.getProjectId().getName()))
             .body("project-id.office-id", equalTo(LOCK.getProjectId().getOfficeId()))
+            .body("maximum-lock-lift", equalTo((float) LOCK.getMaximumLockLift()))
+            .body("elevation-units", equalTo(LOCK.getElevationUnits()))
+            .body("chamber-type.display-value", equalTo(LOCK.getChamberType().getDisplayValue()))
+            .body("chamber-type.tooltip", equalTo(LOCK.getChamberType().getTooltip()))
+            .body("volume-per-lockage", equalTo((float) LOCK.getVolumePerLockage()))
+            .body("volume-units", equalTo(LOCK.getVolumeUnits()))
+            .body("lock-width", equalTo((float) LOCK.getLockWidth()))
+            .body("lock-length", equalTo((float) LOCK.getLockLength()))
+            .body("length-units", equalTo(LOCK.getLengthUnits()))
         ;
 
         // Delete a Lock
@@ -174,13 +233,13 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, office)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/projects/locks/" + LOCK.getLocation().getName())
-            .then()
+        .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
         ;
 
@@ -189,51 +248,51 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/projects/locks/" + LOCK.getLocation().getName())
-            .then()
+        .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
         ;
     }
 
     @Test
     void test_update_does_not_exist() {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, user.getOperatingOffice())
             .queryParam(Controllers.NAME, "NewBogus")
             .header(AUTH_HEADER, user.toHeaderValue())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .patch("/projects/locks/bogus")
-            .then()
+        .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
         ;
     }
 
     @Test
     void test_delete_does_not_exist() {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         // Delete a Lock
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, user.getOperatingOffice())
             .header(AUTH_HEADER, user.toHeaderValue())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/projects/locks/" + Instant.now().toEpochMilli())
-            .then()
+        .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
         ;
     }
@@ -245,8 +304,28 @@ final class LockControllerIT extends DataApiTestIT {
         // 1)Create the Lock
         // 2)Retrieve the Lock with getAll and assert that it exists
         // 3)Delete the Lock
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Lock.class), LOCK);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Lock.class), STORABLE_LOCK);
+        List<LocationLevel> levelList = createLocationLevelList(LOCK);
+        // store location levels
+        for (LocationLevel level : levelList) {
+            String levelJson = Formats.format(Formats.parseHeader(Formats.JSONV1, LocationLevel.class), level);
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .body(levelJson)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(FAIL_IF_EXISTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/levels/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+            ;
+        }
         //Create the Lock
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -254,13 +333,13 @@ final class LockControllerIT extends DataApiTestIT {
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, "false")
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .post("/projects/locks/")
-            .then()
+        .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
         String office = LOCK.getLocation().getOfficeId();
@@ -270,15 +349,15 @@ final class LockControllerIT extends DataApiTestIT {
             .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.PROJECT_ID, LOCK.getProjectId().getName())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/projects/locks/")
-            .then()
+        .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("[0].name", equalTo(LOCK.getLocation().getName()))
+            .body("[0].name", equalTo(LOCK.getProjectId().getName() + "-" + LOCK.getLocation().getName()))
             .body("[0].office-id", equalTo(LOCK.getLocation().getOfficeId()))
         ;
 
@@ -287,13 +366,13 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, office)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/projects/locks/" + LOCK.getLocation().getName())
-            .then()
+        .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
         ;
     }
@@ -319,5 +398,38 @@ final class LockControllerIT extends DataApiTestIT {
         retval.setYIELD_TIME_FRAME_START(Timestamp.from(Instant.now()));
         retval.setYIELD_TIME_FRAME_END(Timestamp.from(Instant.now()));
         return retval;
+    }
+
+    private List<LocationLevel> createLocationLevelList(Lock lock) {
+        List<LocationLevel> retVal = new ArrayList<>();
+        LocationLevel lowLowerLevel = new LocationLevel.Builder(lock.getLowWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+                .withLevelUnitsId(lock.getElevationUnits())
+                .withConstantValue(lock.getLowWaterLowerPoolLocationLevel().getLevelValue())
+                .withOfficeId(lock.getLowWaterLowerPoolLocationLevel().getOfficeId())
+                .withSpecifiedLevelId(lock.getLowWaterLowerPoolLocationLevel().getSpecifiedLevelId())
+                .build();
+        retVal.add(lowLowerLevel);
+        LocationLevel lowUpperLevel = new LocationLevel.Builder(lock.getLowWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+                .withLevelUnitsId(lock.getElevationUnits())
+                .withConstantValue(lock.getLowWaterUpperPoolLocationLevel().getLevelValue())
+                .withOfficeId(lock.getLowWaterUpperPoolLocationLevel().getOfficeId())
+                .withSpecifiedLevelId(lock.getLowWaterUpperPoolLocationLevel().getSpecifiedLevelId())
+                .build();
+        retVal.add(lowUpperLevel);
+        LocationLevel highLowerLevel = new LocationLevel.Builder(lock.getHighWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+                .withLevelUnitsId(lock.getElevationUnits())
+                .withConstantValue(lock.getHighWaterLowerPoolLocationLevel().getLevelValue())
+                .withOfficeId(lock.getHighWaterLowerPoolLocationLevel().getOfficeId())
+                .withSpecifiedLevelId(lock.getHighWaterLowerPoolLocationLevel().getSpecifiedLevelId())
+                .build();
+        retVal.add(highLowerLevel);
+        LocationLevel highUpperLevel = new LocationLevel.Builder(lock.getHighWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+                .withLevelUnitsId(lock.getElevationUnits())
+                .withConstantValue(lock.getHighWaterUpperPoolLocationLevel().getLevelValue())
+                .withOfficeId(lock.getHighWaterUpperPoolLocationLevel().getOfficeId())
+                .withSpecifiedLevelId(lock.getHighWaterUpperPoolLocationLevel().getSpecifiedLevelId())
+                .build();
+        retVal.add(highUpperLevel);
+        return retVal;
     }
 }

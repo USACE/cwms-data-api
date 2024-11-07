@@ -31,6 +31,8 @@ import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.location.kind.LockLocationLevelRef;
 import cwms.cda.helpers.DTOMatch;
+
+import java.io.UnsupportedEncodingException;
 import java.time.ZoneId;
 
 import org.jooq.Field;
@@ -43,7 +45,8 @@ import usace.cwms.db.jooq.codegen.udt.records.LOCK_OBJ_T;
 final class LockDaoTest {
 
     @Test
-    void testJooqTypeConversion() {
+    void testJooqTypeConversion() throws UnsupportedEncodingException
+    {
         Lock expected = buildTestLock();
         LOCK_OBJ_T lockObjT = LockDao.map(expected);
         Lock lock = LockDao.map(lockObjT);
@@ -74,28 +77,28 @@ final class LockDaoTest {
                 .withName("PROJECT")
                 .withOfficeId("LRD")
                 .build())
-                .withLockLength(100.0)
-                .withMaximumLockLift(20.0)
-                .withVolumeUnits("ft3")
-                .withLengthUnits("ft")
-                .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
-                        .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
-                .withLockWidth(100.0)
-                .withNormalLockLift(10.0)
-                .withVolumePerLockage(100.0)
-                .withMinimumDraft(5.0)
-                .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
-                        .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
-                .withHighWaterLowerPoolLocationLevel(
-                        new LockLocationLevelRef("/locks/HIGH_WATER_LOWER?office=SPK", 1.5))
-                .withHighWaterUpperPoolLocationLevel(
-                        new LockLocationLevelRef("/locks/HIGH_WATER_UPPER?office=SPK", 2.5))
-                .withLowWaterLowerPoolLocationLevel(
-                        new LockLocationLevelRef("/locks/LOW_WATER_LOWER?office=SPK", 3.14))
-                .withLowWaterUpperPoolLocationLevel(
-                        new LockLocationLevelRef("/locks/LOW_WATER_UPPER?office=SPK", 6.5))
-                .withHighWaterLowerPoolWarningLevel(2)
-                .withHighWaterUpperPoolWarningLevel(1)
+            .withLockLength(100.0)
+            .withMaximumLockLift(20.0)
+            .withVolumeUnits("ft3")
+            .withLengthUnits("ft")
+            .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
+                 .withDisplayValue("LOCK").withTooltip("Land Side Main").build())
+            .withLockWidth(100.0)
+            .withNormalLockLift(10.0)
+            .withVolumePerLockage(100.0)
+            .withMinimumDraft(5.0)
+            .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
+                .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
+            .withHighWaterLowerPoolLocationLevel(
+                new LockLocationLevelRef("/locks/HIGH_WATER_LOWER?office=LRL", 1.5))
+            .withHighWaterUpperPoolLocationLevel(
+                new LockLocationLevelRef("/locks/HIGH_WATER_UPPER?office=LRL", 2.5))
+            .withLowWaterLowerPoolLocationLevel(
+                new LockLocationLevelRef("/locks/LOW_WATER_LOWER?office=LRL", 3.14))
+            .withLowWaterUpperPoolLocationLevel(
+                new LockLocationLevelRef("/locks/LOW_WATER_UPPER?office=LRL", 6.5))
+            .withHighWaterLowerPoolWarningLevel(2)
+            .withHighWaterUpperPoolWarningLevel(1)
             .build();
     }
 

@@ -35,48 +35,66 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-
 import java.util.Objects;
 
-@JsonIgnoreProperties({"lock-id", "office-id"})
+@JsonIgnoreProperties({"level-id", "office-id", "specified-level-id", "create-link"})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class LockLocationLevelRef extends CwmsDTOBase {
-    private final String levelURI;
+    private final String levelLink;
     private final double levelValue;
 
     @JsonCreator
-    public LockLocationLevelRef(@JsonProperty("level-uri") String levelURI, @JsonProperty("level-value") double levelValue) {
-        this.levelURI = levelURI;
+    public LockLocationLevelRef(@JsonProperty("level-link") String levelLink, @JsonProperty("level-value") double levelValue) {
+        this.levelLink = levelLink;
         this.levelValue = levelValue;
     }
 
-    public String getLevelURI() {
-        return levelURI;
+    public LockLocationLevelRef(String office, String locationLevelId, double levelValue) {
+        this.levelValue = levelValue;
+        this.levelLink = createLink(office, locationLevelId);
     }
+
+    public String getLevelLink() {
+        return levelLink;
+    }
+
     public double getLevelValue() {
         return levelValue;
     }
 
     public String getOfficeId() {
-        return levelURI.split("=")[1];
+        return levelLink.split("=")[1];
     }
 
-    public String getLockId() {
-        return levelURI.split("/")[2].split("[?]")[0];
+    public String getLevelId() {
+        return levelLink.split("/")[2].split("[?]")[0];
+    }
+
+    public String getSpecifiedLevelId() {
+        String[] locationLevelId = getLevelId().split("[.]");
+        return locationLevelId[locationLevelId.length - 1];
+    }
+
+    public static String createLink(String office, String locationLevelName) {
+        return String.format("/locks/%s?office=%s", locationLevelName, office);
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         LockLocationLevelRef that = (LockLocationLevelRef) o;
         return Double.compare(getLevelValue(), that.getLevelValue()) == 0
-                && Objects.equals(getLevelURI(), that.getLevelURI());
+                && Objects.equals(getLevelLink(), that.getLevelLink());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getLevelURI(), getLevelValue());
+        return Objects.hash(getLevelLink(), getLevelValue());
     }
 }

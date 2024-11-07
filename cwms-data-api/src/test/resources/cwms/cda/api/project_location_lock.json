@@ -1,6 +1,6 @@
 {
-  "office-id": "SWT",
-  "name": "PROJ_LOCK_PHYS",
+  "office-id": "SPK",
+  "name": "PROJECT",
   "latitude": 36.153980,
   "longitude": -95.992775,
   "active": true,
@@ -18,5 +18,5 @@
   "published-latitude": 36.153980,
   "elevation": 10.0,
   "elevation-units": "m",
-  "bounding-office-id": "SWT"
+  "bounding-office-id": "SPK"
 }

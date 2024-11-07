@@ -68,74 +68,77 @@ final class LockTest {
     @Test
     void testValidate() {
         Location location = buildTestLocation();
-        assertAll(() -> {
-                    Lock lock = new Lock.Builder().build();
-                    assertThrows(FieldException.class, lock::validate,
-                            "Expected validate() to throw FieldException because Location field can't be null, but it didn't");
-                }, () -> {
-                    Lock lock = new Lock.Builder().withLocation(location).build();
-                    assertThrows(FieldException.class, lock::validate,
-                            "Expected validate() to throw FieldException because Project Id field can't be null, but it didn't");
-                }
+        assertAll(
+            () -> {
+                Lock lock = new Lock.Builder().build();
+                assertThrows(FieldException.class, lock::validate,
+                        "Expected validate() to throw FieldException because Location field can't be null, but it didn't");
+            },
+            () -> {
+                Lock lock = new Lock.Builder().withLocation(location).build();
+                assertThrows(FieldException.class, lock::validate,
+                        "Expected validate() to throw FieldException because Project Id field can't be null, but it didn't");
+            }
         );
     }
 
     @Test
     void testLockLocationLevelRef() {
-        LockLocationLevelRef lockLocationLevelRef = new LockLocationLevelRef("/locks/HIGH_WATER_LOWER?office=SPK", 1.5);
+        LockLocationLevelRef lockLocationLevelRef = new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Inoperable.Inst.0.High Water Upper Pool?office=SPK", 1.5);
         assertAll(() -> {
             assertEquals("SPK", lockLocationLevelRef.getOfficeId());
-            assertEquals("HIGH_WATER_LOWER", lockLocationLevelRef.getLockId());
+            assertEquals("TEST_LOCATION2.Elev-Inoperable.Inst.0.High Water Upper Pool", lockLocationLevelRef.getLevelId());
             assertEquals(1.5, lockLocationLevelRef.getLevelValue());
-            assertEquals("/locks/HIGH_WATER_LOWER?office=SPK", lockLocationLevelRef.getLevelURI());
+            assertEquals("High Water Upper Pool", lockLocationLevelRef.getSpecifiedLevelId());
+            assertEquals("/locks/TEST_LOCATION2.Elev-Inoperable.Inst.0.High Water Upper Pool?office=SPK", lockLocationLevelRef.getLevelLink());
         });
     }
 
     private Lock buildTestLock() {
         return new Lock.Builder()
-                .withLocation(buildTestLocation())
-                .withProjectId(new CwmsId.Builder()
-                        .withOfficeId("LRD")
-                        .withName("PROJECT")
-                        .build())
-                .withLockWidth(100.0)
-                .withLockLength(100.0)
-                .withNormalLockLift(10.0)
-                .withMaximumLockLift(20.0)
-                .withVolumePerLockage(100.0)
-                .withMinimumDraft(5.0)
-                .withLengthUnits("ft")
-                .withVolumeUnits("ft3")
-                .withHighWaterLowerPoolWarningLevel(2)
-                .withHighWaterUpperPoolWarningLevel(2)
-                .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
-                        .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
-                .withHighWaterLowerPoolLocationLevel(
-                        new LockLocationLevelRef("/locks/HIGH_WATER_LOWER?office=SPK", 1.5))
-                .withHighWaterUpperPoolLocationLevel(
-                        new LockLocationLevelRef("/locks/HIGH_WATER_UPPER?office=SPK", 2.5))
-                .withLowWaterLowerPoolLocationLevel(
-                        new LockLocationLevelRef("/locks/LOW_WATER_LOWER?office=SPK", 3.14))
-                .withLowWaterUpperPoolLocationLevel(
-                        new LockLocationLevelRef("/locks/LOW_WATER_UPPER?office=SPK", 6.5))
-                .build();
+            .withLocation(buildTestLocation())
+            .withProjectId(new CwmsId.Builder()
+                .withOfficeId("LRD")
+                .withName("PROJECT")
+                .build())
+            .withLockWidth(50.0)
+            .withLockLength(50.0)
+            .withNormalLockLift(10.0)
+            .withMaximumLockLift(25.6)
+            .withVolumePerLockage(10.0)
+            .withMinimumDraft(25.5)
+            .withLengthUnits("ft")
+            .withVolumeUnits("ft3")
+            .withHighWaterLowerPoolWarningLevel(2)
+            .withHighWaterUpperPoolWarningLevel(2)
+            .withChamberType(new LookupType.Builder().withOfficeId("LRL").withActive(true)
+                .withDisplayValue("LOCK").withTooltip("Land Side Main").build())
+            .withHighWaterLowerPoolLocationLevel(
+                new LockLocationLevelRef("/locks/LOWER_POOL_1?office=SPK", 2.7))
+            .withHighWaterUpperPoolLocationLevel(
+                new LockLocationLevelRef("/locks/UPPER_POOL_1?office=SPK", 2.96))
+            .withLowWaterLowerPoolLocationLevel(
+                new LockLocationLevelRef("/locks/LOWER_POOL_2?office=SPK", 5.0))
+            .withLowWaterUpperPoolLocationLevel(
+                new LockLocationLevelRef("/locks/UPPER_POOL_2?office=SPK", 8.0))
+            .build();
     }
 
     private Location buildTestLocation() {
         return new Location.Builder("TEST_LOCATION2", "LOCK", ZoneId.of("UTC"),
-                50.0, 50.0, "NVGD29", "LRL")
-                .withElevation(10.0)
-                .withElevationUnits("m")
-                .withLocationType("SITE")
-                .withCountyName("Sacramento")
-                .withNation(Nation.US)
-                .withActive(true)
-                .withStateInitial("CA")
-                .withBoundingOfficeId("LRL")
-                .withLongName("TEST_LOCATION")
-                .withPublishedLatitude(50.0)
-                .withPublishedLongitude(50.0)
-                .withDescription("for testing")
-                .build();
+            50.0, 50.0, "NVGD29", "LRL")
+            .withElevation(10.0)
+            .withElevationUnits("m")
+            .withLocationType("SITE")
+            .withCountyName("Sacramento")
+            .withNation(Nation.US)
+            .withActive(true)
+            .withStateInitial("CA")
+            .withBoundingOfficeId("LRL")
+            .withLongName("TEST_LOCATION")
+            .withPublishedLatitude(50.0)
+            .withPublishedLongitude(50.0)
+            .withDescription("for testing")
+            .build();
     }
 }

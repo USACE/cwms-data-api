@@ -57,6 +57,7 @@ public class Lock extends CwmsDTOBase {
     private final double maximumLockLift;
     private final String lengthUnits;
     private final String volumeUnits;
+    private final String elevationUnits;
     private final LockLocationLevelRef highWaterUpperPoolLocationLevel;
     private final LockLocationLevelRef lowWaterLowerPoolLocationLevel;
     private final LockLocationLevelRef highWaterLowerPoolLocationLevel;
@@ -80,6 +81,7 @@ public class Lock extends CwmsDTOBase {
         this.maximumLockLift = builder.maximumLockLift;
         this.lengthUnits = builder.lengthUnits;
         this.volumeUnits = builder.volumeUnits;
+        this.elevationUnits = builder.elevationUnits;
         this.highWaterUpperPoolWarningLevel = builder.highWaterUpperPoolWarningLevel;
         this.highWaterLowerPoolWarningLevel = builder.highWaterLowerPoolWarningLevel;
     }
@@ -118,6 +120,10 @@ public class Lock extends CwmsDTOBase {
 
     public final String getVolumeUnits() {
         return volumeUnits;
+    }
+
+    public final String getElevationUnits() {
+        return elevationUnits;
     }
 
     public final double getVolumePerLockage() {
@@ -164,6 +170,7 @@ public class Lock extends CwmsDTOBase {
         private double minimumDraft;
         private String lengthUnits;
         private String volumeUnits;
+        private String elevationUnits;
         private LockLocationLevelRef highWaterUpperPoolLocationLevel;
         private LockLocationLevelRef lowWaterLowerPoolLocationLevel;
         private LockLocationLevelRef highWaterLowerPoolLocationLevel;
@@ -213,6 +220,11 @@ public class Lock extends CwmsDTOBase {
 
         public Builder withVolumeUnits(String volumeUnits) {
             this.volumeUnits = volumeUnits;
+            return this;
+        }
+
+        public Builder withElevationUnits(String elevationUnits) {
+            this.elevationUnits = elevationUnits;
             return this;
         }
 

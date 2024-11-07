@@ -204,7 +204,8 @@ final class LockDaoIT extends ProjectStructureIT {
             CwmsDataApiSetupCallback.getWebUser());
     }
 
-    private static Lock buildTestLock(Location location, String projectId) {
+    private static Lock buildTestLock(Location location, String projectId)
+    {
         return new Lock.Builder()
             .withLocation(location)
             .withProjectId(new CwmsId.Builder()
@@ -222,15 +223,15 @@ final class LockDaoIT extends ProjectStructureIT {
             .withHighWaterLowerPoolWarningLevel(2)
             .withHighWaterUpperPoolWarningLevel(2)
             .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
-                    .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
+                .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
             .withHighWaterLowerPoolLocationLevel(
-                    new LockLocationLevelRef("/locks/HIGH_WATER_LOWER?office=SPK", 1.5))
+                new LockLocationLevelRef("/locks/HIGH_WATER_LOWER?office=SPK", 1.5))
             .withHighWaterUpperPoolLocationLevel(
-                    new LockLocationLevelRef("/locks/HIGH_WATER_UPPER?office=SPK", 2.5))
+                new LockLocationLevelRef("/locks/HIGH_WATER_UPPER?office=SPK", 2.5))
             .withLowWaterLowerPoolLocationLevel(
-                    new LockLocationLevelRef("/locks/LOW_WATER_LOWER?office=SPK", 3.14))
+                new LockLocationLevelRef("/locks/LOW_WATER_LOWER?office=SPK", 3.14))
             .withLowWaterUpperPoolLocationLevel(
-                    new LockLocationLevelRef("/locks/LOW_WATER_UPPER?office=SPK", 6.5))
+                new LockLocationLevelRef("/locks/LOW_WATER_UPPER?office=SPK", 6.5))
             .build();
     }
 }
