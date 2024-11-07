@@ -107,9 +107,6 @@ public abstract class Dao<T> {
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
     }
 
-
-    public abstract List<T> getAll(String office);
-
     public abstract Optional<T> getByUniqueName(String uniqueName, String office);
 
 }

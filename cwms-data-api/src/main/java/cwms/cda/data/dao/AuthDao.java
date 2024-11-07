@@ -138,11 +138,6 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         return getInstance(dsl, null);
     }
 
-    @Override
-    public List<DataApiPrincipal> getAll(String limitToOffice) {
-        throw new UnsupportedOperationException("Unimplemented method 'getAll'");
-    }
-
     /**
      * Reserved for future use, get user principal by presented unique name and office.
      * (Also required by Dao&lt;DataApiPrincipal&gt;)
