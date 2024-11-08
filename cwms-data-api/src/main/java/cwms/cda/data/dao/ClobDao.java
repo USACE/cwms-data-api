@@ -68,12 +68,13 @@ public class ClobDao extends JooqDao<Clob> {
     public Clobs getClobs(String cursor, int pageSize, String officeLike,
                           boolean includeValues, String idRegex) {
         int total = 0;
-        String clobCursor = "*";
+        String cursorOffice = null;
+        String cursorClobId = null;
         AV_CLOB v_clob = AV_CLOB.AV_CLOB;
         AV_OFFICE v_office = AV_OFFICE.AV_OFFICE;
 
         Condition whereClause = JooqDao.caseInsensitiveLikeRegex(v_clob.ID, idRegex)
-            .and(officeLike == null ? noCondition() : JooqDao.caseInsensitiveLikeRegex(v_office.OFFICE_ID, officeLike));
+            .and(JooqDao.caseInsensitiveLikeRegexNullTrue(v_office.OFFICE_ID, officeLike));
         if (cursor == null || cursor.isEmpty()) {
             SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
                 .from(v_clob)
@@ -92,9 +93,8 @@ public class ClobDao extends JooqDao<Clob> {
             }
 
             if (parts.length > 1) {
-                clobCursor = parts[0].split(";")[0];
-                clobCursor = clobCursor.substring(clobCursor.indexOf("/") + 1); // ditch the
-                // officeId that's embedded in
+                cursorOffice = Clobs.getOffice(cursor);
+                cursorClobId = Clobs.getId(cursor);
                 total = Integer.parseInt(parts[1]);
                 pageSize = Integer.parseInt(parts[2]);
             }
@@ -109,12 +109,15 @@ public class ClobDao extends JooqDao<Clob> {
             .from(v_clob)
             .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
             .where(whereClause)
-            .and(DSL.upper(v_clob.ID).greaterThan(clobCursor))
+            .and(cursorClobId == null ? DSL.noCondition() :
+                DSL.upper(v_clob.ID).greaterThan(cursorClobId.toUpperCase()))
+            .and(cursorOffice == null ? DSL.noCondition() :
+                DSL.upper(v_office.OFFICE_ID).greaterThan(cursorOffice.toUpperCase()))
             .orderBy(v_office.OFFICE_ID, v_clob.ID)
             .limit(pageSize);
 
 
-        Clobs.Builder builder = new Clobs.Builder(clobCursor, pageSize, total);
+        Clobs.Builder builder = new Clobs.Builder(cursor, pageSize, total);
 
         logger.atFine().log(query.getSQL(ParamType.INLINED));
 
