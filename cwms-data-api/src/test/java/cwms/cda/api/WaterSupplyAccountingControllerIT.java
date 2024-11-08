@@ -57,7 +57,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.ZoneId;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
@@ -67,19 +70,21 @@ import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
 class WaterSupplyAccountingControllerIT extends DataApiTestIT {
-    private static final String OFFICE_ID = "SWT";
-    private static final WaterSupplyAccounting WATER_SUPPLY_ACCOUNTING;
+    private static final Logger LOGGER = Logger.getLogger(WaterSupplyAccountingControllerIT.class.getName());
+    private static final String OFFICE_ID = "SPK";
+    private static WaterSupplyAccounting WATER_SUPPLY_ACCOUNTING;
     private static final String START_TIME = "start";
     private static final String START_INCLUSIVE = "start-inclusive";
     private static final String END_INCLUSIVE = "end-inclusive";
     private static final String END_TIME = "end";
     private static final String ROW_LIMIT = "row-limit";
     private static final String ASCENDING = "ascending";
-    private static final WaterUserContract CONTRACT;
-    private static final LookupType testTransferType;
-    private static final LookupType testContractType;
-    private static final Location pump1;
-    private static final Location pump3;
+    private static WaterUserContract CONTRACT;
+    private static LookupType testTransferType;
+    private static LookupType testContractType;
+    private static Location pump1;
+    private static Location pump2;
+    private static Location pump3;
 
     static {
         try (InputStream accountStream = WaterSupplyAccounting.class
@@ -93,14 +98,22 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             String accountingJson = IOUtils.toString(accountStream, StandardCharsets.UTF_8);
             WATER_SUPPLY_ACCOUNTING = Formats.parseContent(new ContentType(Formats.JSONV1),
                     accountingJson, WaterSupplyAccounting.class);
-            testTransferType = WATER_SUPPLY_ACCOUNTING.getPumpAccounting().get(0).getTransferType();
+            testTransferType = new LookupType.Builder()
+                    .withOfficeId(OFFICE_ID)
+                    .withActive(true)
+                    .withDisplayValue(WATER_SUPPLY_ACCOUNTING.getPumpAccounting()
+                            .get(Instant.parse("2022-11-20T21:17:28Z")).get(0).getTransferTypeDisplay())
+                    .withTooltip("Test tooltip")
+                    .build();
             testContractType = CONTRACT.getContractType();
-            pump1 = buildTestLocation(WATER_SUPPLY_ACCOUNTING.getPumpAccounting().get(0).getPumpLocation().getName(),
+            pump1 = buildTestLocation(WATER_SUPPLY_ACCOUNTING.getPumpLocations().getPumpIn().getName(),
                     "PUMP");
-            pump3 = buildTestLocation(WATER_SUPPLY_ACCOUNTING.getPumpAccounting().get(1).getPumpLocation().getName(),
+            pump2 = buildTestLocation(WATER_SUPPLY_ACCOUNTING.getPumpLocations().getPumpOut().getName(),
+                    "PUMP");
+            pump3 = buildTestLocation(WATER_SUPPLY_ACCOUNTING.getPumpLocations().getPumpBelow().getName(),
                     "PUMP");
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            LOGGER.log(Level.CONFIG, String.format("Unable to delete location: %s", e.getMessage()));
         }
     }
 
@@ -110,7 +123,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         // create water user
         // create water user contract
 
-        Location contractLocation = buildTestLocation(CONTRACT.getContractId().getName(), "PROJECT");
+        Location contractLocation = buildTestLocation(CONTRACT.getContractId().getName(), "SITE");
         Location parentLocation = buildTestLocation(CONTRACT.getWaterUser().getProjectId().getName(), "PROJECT");
 
         Project project = new Project.Builder().withLocation(parentLocation)
@@ -120,7 +133,8 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
                 .build();
 
         WaterUser waterUser = CONTRACT.getWaterUser();
-
+        createLocation(CONTRACT.getWaterUser().getProjectId().getName(), true, OFFICE_ID);
+        createLocation(CONTRACT.getContractId().getName(), true, OFFICE_ID);
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
@@ -131,56 +145,132 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             try {
                 lookupTypeDao.storeLookupType("AT_PHYSICAL_TRANSFER_TYPE","PHYS_TRANS_TYPE",
                         testTransferType);
+            } catch (Exception e) {
+                LOGGER.log(Level.CONFIG, String.format("Unable to store lookup type: %s", e.getMessage()));
+            }
+            try {
                 lookupTypeDao.storeLookupType("AT_WS_CONTRACT_TYPE","WS_CONTRACT_TYPE",
                         testContractType);
+            } catch (Exception e) {
+                LOGGER.log(Level.CONFIG, String.format("Unable to store lookup type: %s", e.getMessage()));
+            }
+            try {
                 locationsDao.storeLocation(contractLocation);
+            } catch (IOException e) {
+                LOGGER.log(Level.CONFIG, String.format("Unable to store location: %s", e.getMessage()));
+            }
+            try {
                 locationsDao.storeLocation(parentLocation);
+            } catch (IOException e) {
+                LOGGER.log(Level.CONFIG, String.format("Unable to store location: %s",e.getMessage()));
+            }
+
+            try {
+                projectDao.store(project, false);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            try {
+                waterContractDao.storeWaterUser(waterUser, false);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            try {
                 locationsDao.storeLocation(pump1);
-                locationsDao.storeLocation(pump3);
-                projectDao.store(project, true);
-                waterContractDao.storeWaterUser(waterUser, true);
-                waterContractDao.storeWaterContract(CONTRACT, true, true);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+            try {
+                locationsDao.storeLocation(pump2);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            try {
+                locationsDao.storeLocation(pump3);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            try {
+                waterContractDao.storeWaterContract(CONTRACT, false, true);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }, CwmsDataApiSetupCallback.getWebUser());
-
     }
 
     @AfterAll
-    static void cleanup() throws Exception {
+    static void cleanup() {
         // delete water user contract
         // delete water user
         // delete water contract parent location
 
-        Location contractLocation = new Location.Builder(CONTRACT.getContractId().getOfficeId(),
-                CONTRACT.getContractId().getName()).withLocationKind("PROJECT")
-                .withTimeZoneName(ZoneId.of("UTC"))
-                .withHorizontalDatum("WGS84").withLongitude(78.0).withLatitude(67.9).build();
-        Location parentLocation = new Location.Builder(CONTRACT.getWaterUser().getProjectId().getOfficeId(),
-                CONTRACT.getWaterUser().getProjectId().getName()).withLocationKind("PROJECT")
-                .withTimeZoneName(ZoneId.of("UTC")).withHorizontalDatum("WGS84")
-                .withLongitude(38.0).withLatitude(56.5).build();
+        Location contractLocation = buildTestLocation(CONTRACT.getContractId().getName(), "SITE");
+        Location parentLocation = buildTestLocation(CONTRACT.getWaterUser().getProjectId().getName(), "PROJECT");
 
-        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
-        databaseLink.connection(c -> {
-            DSLContext ctx = getDslContext(c, OFFICE_ID);
-            LocationsDaoImpl locationsDao = new LocationsDaoImpl(ctx);
-            LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
-            ProjectDao projectDao = new ProjectDao(ctx);
-            WaterContractDao waterContractDao = new WaterContractDao(ctx);
-            waterContractDao.deleteWaterContract(CONTRACT, DeleteMethod.DELETE_ALL);
-            lookupTypeDao.deleteLookupType("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE",
-                    OFFICE_ID, testTransferType.getDisplayValue());
-            lookupTypeDao.deleteLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE",
-                    OFFICE_ID, testContractType.getDisplayValue());
-            projectDao.delete(CONTRACT.getOfficeId(), CONTRACT.getWaterUser().getProjectId().getName(),
-                    DeleteRule.DELETE_ALL);
-            locationsDao.deleteLocation(pump1.getName(), pump1.getOfficeId(), true);
-            locationsDao.deleteLocation(pump3.getName(), pump3.getOfficeId(), true);
-            locationsDao.deleteLocation(contractLocation.getName(), contractLocation.getOfficeId(), true);
-            locationsDao.deleteLocation(parentLocation.getName(), parentLocation.getOfficeId(), true);
-        }, CwmsDataApiSetupCallback.getWebUser());
+        try
+        {
+            CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+            databaseLink.connection(c ->
+            {
+                DSLContext ctx = getDslContext(c, OFFICE_ID);
+                LocationsDaoImpl locationsDao = new LocationsDaoImpl(ctx);
+                LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
+                ProjectDao projectDao = new ProjectDao(ctx);
+                WaterContractDao waterContractDao = new WaterContractDao(ctx);
+                try
+                {
+                    waterContractDao.deleteWaterContract(CONTRACT, DeleteMethod.DELETE_ALL);
+                } catch (Exception e) {
+                    LOGGER.log(Level.CONFIG, String.format("Unable to delete water contract: %s", e.getMessage()));
+                }
+                try
+                {
+                    lookupTypeDao.deleteLookupType("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE",
+                            OFFICE_ID, testTransferType.getDisplayValue());
+                } catch (Exception e) {
+                    LOGGER.log(Level.CONFIG, String.format("Unable to delete lookup type: %s", e.getMessage()));
+                }
+                try {
+                    lookupTypeDao.deleteLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE",
+                            OFFICE_ID, testContractType.getDisplayValue());
+                } catch (Exception e) {
+                    LOGGER.log(Level.CONFIG, String.format("Unable to delete contract lookup type: %s", e.getMessage()));
+                }
+                try
+                {
+                    projectDao.delete(CONTRACT.getOfficeId(), CONTRACT.getWaterUser().getProjectId().getName(),
+                            DeleteRule.DELETE_ALL);
+                } catch (Exception e) {
+                    LOGGER.log(Level.CONFIG, String.format("Unable to delete project: %s", e.getMessage()));
+                }
+                try
+                {
+                    locationsDao.deleteLocation(pump1.getName(), pump1.getOfficeId(), true);
+                } catch (Exception e) {
+                    LOGGER.log(Level.CONFIG, String.format("Unable to delete location: %s", e.getMessage()));
+                }
+                try
+                {
+                    locationsDao.deleteLocation(pump3.getName(), pump3.getOfficeId(), true);
+                } catch (Exception e) {
+                    LOGGER.log(Level.CONFIG, String.format("Unable to delete location: %s", e.getMessage()));
+                }
+                try
+                {
+                    locationsDao.deleteLocation(contractLocation.getName(), contractLocation.getOfficeId(), true);
+                } catch (Exception e) {
+                    LOGGER.log(Level.CONFIG, String.format("Unable to delete location: %s", e.getMessage()));
+                }
+                try
+                {
+                locationsDao.deleteLocation(parentLocation.getName(), parentLocation.getOfficeId(), true);
+                } catch (Exception e) {
+                    LOGGER.log(Level.CONFIG, String.format("Unable to delete location: %s", e.getMessage()));
+                }
+            }, CwmsDataApiSetupCallback.getWebUser());
+        } catch (Exception e) {
+            LOGGER.log(Level.CONFIG, String.format("Unable to delete object: %s", e.getMessage()));
+        }
     }
 
     @Test
@@ -191,9 +281,8 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         // 3) Retrieve pump accounting
         // 4) Assert pump accounting is same as created
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String json = JsonV1.buildObjectMapper().writeValueAsString(WATER_SUPPLY_ACCOUNTING);
-
 
         // create pump accounting
         given()
@@ -241,8 +330,8 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .body("[0].water-user.project-id.office-id", equalTo(WATER_SUPPLY_ACCOUNTING.getWaterUser().getProjectId().getOfficeId()))
             .body("[0].water-user.water-right", equalTo(WATER_SUPPLY_ACCOUNTING.getWaterUser().getWaterRight()))
             .body("[0].pump-accounting[0].transfer-type.display-value", equalTo(testTransferType.getDisplayValue()))
-            .body("[0].pump-accounting[1].pump-location.name", equalTo(WATER_SUPPLY_ACCOUNTING.getPumpAccounting().get(0).getPumpLocation().getName()))
-            .body("[0].pump-accounting[0].pump-location.name", equalTo(WATER_SUPPLY_ACCOUNTING.getPumpAccounting().get(1).getPumpLocation().getName()))
+            .body("[0].pump-accounting[1].pump-location.name", equalTo(WATER_SUPPLY_ACCOUNTING.getPumpLocations().getPumpIn().getName()))
+            .body("[0].pump-accounting[0].pump-location.name", equalTo(WATER_SUPPLY_ACCOUNTING.getPumpLocations().getPumpBelow().getName()))
         ;
     }
 
@@ -254,7 +343,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         // 2) Retrieve accounting outside time window
         // 3) Assert not found
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String json = JsonV1.buildObjectMapper().writeValueAsString(WATER_SUPPLY_ACCOUNTING);
 
 

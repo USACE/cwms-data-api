@@ -1,43 +1,64 @@
 {
-  "contract-name": "TEST_CONTRACT",
+  "contract-name": "Sac River Contract",
   "water-user": {
-    "entity-name": "Test User",
+    "entity-name": "California Department of Water Resources",
     "project-id": {
-      "name": "SACRAMENTO",
-      "office-id": "SWT"
+      "office-id": "SPK",
+      "name": "Sacramento Delta"
     },
-    "water-right": "Test Water Right"
+    "water-right": "State of California Water Rights Permit #12345"
   },
-  "pump-accounting": [
+  "pump-locations": {
+    "pump-in": {
+      "office-id": "SPK",
+      "name": "Sacramento Delta-Pump 1"
+    },
+    "pump-out": {
+      "office-id": "SPK",
+      "name": "Sacramento Delta-Pump 2"
+    },
+    "pump-below": {
+      "office-id": "SPK",
+      "name": "Sacramento Delta-Pump 3"
+    }
+  },
+  "data-columns": [
     {
-      "pump-location": {
-        "office-id": "SWT",
-        "name": "PUMP3"
-      },
-      "transfer-type": {
-        "office-id": "SWT",
-        "display-value": "Test Transfer Type",
-        "tooltip": "Test Tool Tip",
-        "active": true
-      },
-      "flow": 1.0,
-      "transfer-date": 10000012648000,
-      "comment": "Test Comment"
+      "name": "pump-type",
+      "ordinal": 1,
+      "datatype": "java.lang.String"
     },
     {
-      "pump-location": {
-        "office-id": "SWT",
-        "name": "SACRAMENTO-PUMP1"
-      },
-      "transfer-type": {
-        "office-id": "SWT",
-        "display-value": "Test Transfer Type",
-        "tooltip": "Test Tool Tip",
-        "active": true
-      },
-      "flow": 2.0,
-      "transfer-date": 10000016484000,
-      "comment": "Test Comment 2"
+      "name": "transfer-type-display",
+      "ordinal": 2,
+      "datatype": "java.lang.String"
+    },
+    {
+      "name": "flow",
+      "ordinal": 3,
+      "datatype": "java.lang.Double"
+    },
+    {
+      "name": "comment",
+      "ordinal": 4,
+      "datatype": "java.lang.String"
     }
-  ]
+  ],
+  "pump-accounting": {
+    "2022-11-20T21:17:28Z": [
+      ["IN", "Pipeline", 1.0, "Added water to the system"],
+      ["OUT", "Pipeline", 2.0, "Removed excess water"],
+      ["BELOW", "River", 3.0, "Daily water release"]
+    ],
+    "2022-11-21T21:17:28Z": [
+      ["IN", "Pipeline", 4.0, "Pump transfer for the day"],
+      ["OUT", "Pipeline", 5.0, "Excess water transfer"],
+      ["BELOW", "River", 6.0, "Water returned to the river"]
+    ],
+    "2022-11-22T21:17:28Z": [
+      ["IN", "Pipeline", 7.0, "Pump transfer for the day"],
+      ["OUT", "Pipeline", 8.0, "Excess water transfer"],
+      ["BELOW", "River", 9.0, "Water returned to the river"]
+    ]
+  }
 }

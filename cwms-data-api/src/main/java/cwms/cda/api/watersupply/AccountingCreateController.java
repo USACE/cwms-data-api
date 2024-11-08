@@ -40,7 +40,7 @@ import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.watersupply.WaterSupplyAccountingDao;
 import cwms.cda.data.dto.LookupType;
-import cwms.cda.data.dto.watersupply.PumpAccounting;
+import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -53,11 +53,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import java.util.Iterator;
-import java.util.List;
 
 
 public class AccountingCreateController implements Handler {
@@ -117,11 +118,13 @@ public class AccountingCreateController implements Handler {
             List<LookupType> lookupList = lookupTypeDao
                     .retrieveLookupTypes("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE", office);
 
-            for (PumpAccounting pumpAccounting : accounting.getPumpAccounting()) {
-                if (!searchForTransferType(pumpAccounting, lookupList)) {
-                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json("No matching transfer type found "
-                            + "for an accounting entry.");
-                    return;
+            for (Map.Entry<Instant, List<PumpTransfer>> entry : accounting.getPumpAccounting().entrySet()) {
+                for (PumpTransfer pumpTransfer : entry.getValue()) {
+                    if (!searchForTransferType(pumpTransfer, lookupList)) {
+                        ctx.status(HttpServletResponse.SC_BAD_REQUEST).json("No matching transfer type found "
+                                + "for an accounting entry.");
+                        return;
+                    }
                 }
             }
             waterSupplyAccountingDao.storeAccounting(accounting);
@@ -129,12 +132,9 @@ public class AccountingCreateController implements Handler {
         }
     }
 
-    private boolean searchForTransferType(PumpAccounting accounting, List<LookupType> lookupTypes) {
+    private boolean searchForTransferType(PumpTransfer accounting, List<LookupType> lookupTypes) {
         for (LookupType lookupType : lookupTypes) {
-            if (accounting.getTransferType().getActive() == lookupType.getActive()
-                    && accounting.getTransferType().getOfficeId().equals(lookupType.getOfficeId())
-                    && accounting.getTransferType().getTooltip().equals(lookupType.getTooltip())
-                    && accounting.getTransferType().getDisplayValue().equals(lookupType.getDisplayValue())) {
+            if (accounting.getTransferTypeDisplay().equalsIgnoreCase(lookupType.getDisplayValue())) {
                 return true;
             }
         }

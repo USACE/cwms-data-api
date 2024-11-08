@@ -27,9 +27,13 @@
 package cwms.cda.api.watersupply;
 
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.END_TIME_INCLUSIVE;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.START;
+import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
@@ -44,6 +48,7 @@ import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dao.watersupply.WaterSupplyAccountingDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
+import cwms.cda.data.dto.watersupply.WaterSupplyAccountingList;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
@@ -87,46 +92,46 @@ public class AccountingCatalogController implements Handler {
     }
 
     @OpenApi(
-            queryParams = {
-                    @OpenApiParam(name = START, description = "The start time of the time window for "
-                            + "pump accounting entries to retrieve. Defaults to the year 1800."),
-                    @OpenApiParam(name = END, description = "The end time of the time window for pump "
-                            + "accounting entries to retrieve. Defaults to the year 3000"),
-                    @OpenApiParam(name = START_TIME_INCLUSIVE, description = "Whether or not the start time is "
-                            + "inclusive or not. Defaults to TRUE.", type = Boolean.class),
-                    @OpenApiParam(name = END_TIME_INCLUSIVE, description = "Whether or not the end time is inclusive "
-                            + "or not. Defaults to TRUE.", type = Boolean.class),
-                    @OpenApiParam(name = ASCENDING, description = "Whether or not the entries should be returned "
-                            + "in ascending order. Defaults to TRUE.", type = Boolean.class),
-                    @OpenApiParam(name = ROW_LIMIT, description = "The maximum number of rows to return. "
-                            + "Defaults to 0, which means no limit.", type = Integer.class)
-            },
-            pathParams = {
-                    @OpenApiParam(name = OFFICE, description = "The office ID the pump accounting is associated with.",
-                            required = true),
-                    @OpenApiParam(name = WATER_USER, description = "The water user the pump accounting is "
-                            + "associated with.", required = true),
-                    @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract associated with "
-                            + "the pump accounting.", required = true),
-                    @OpenApiParam(name = PROJECT_ID, description = "The project ID the pump accounting is "
-                            + "associated with.", required = true)
-            },
-            responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            content = {
-                                    @OpenApiContent(from = WaterSupplyAccounting.class, isArray = true,
-                                            type = Formats.JSONV1),
-                                    @OpenApiContent(from = WaterSupplyAccounting.class, isArray = true,
-                                            type = Formats.JSON)
-                            }),
-                    @OpenApiResponse(status = STATUS_404, description = "Pump Accounting not found for "
-                            + "provided input parameters."),
-                    @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
-            },
-            description = "Get pump accounting entries associated with a water supply contract.",
-            path = "/projects/{office}/water-user/{water-user}/contracts/{contract-name}/accounting",
-            method = HttpMethod.GET,
-            tags = {TAG}
+        queryParams = {
+            @OpenApiParam(name = START, description = "The start time of the time window for "
+                + "pump accounting entries to retrieve. Defaults to the year 1800."),
+            @OpenApiParam(name = END, description = "The end time of the time window for pump "
+                + "accounting entries to retrieve. Defaults to the year 3000"),
+            @OpenApiParam(name = START_TIME_INCLUSIVE, description = "Whether or not the start time is "
+                + "inclusive or not. Defaults to TRUE.", type = Boolean.class),
+            @OpenApiParam(name = END_TIME_INCLUSIVE, description = "Whether or not the end time is inclusive "
+                + "or not. Defaults to TRUE.", type = Boolean.class),
+            @OpenApiParam(name = ASCENDING, description = "Whether or not the entries should be returned "
+                + "in ascending order. Defaults to TRUE.", type = Boolean.class),
+            @OpenApiParam(name = ROW_LIMIT, description = "The maximum number of rows to return. "
+                + "Defaults to 0, which means no limit.", type = Integer.class)
+        },
+        pathParams = {
+            @OpenApiParam(name = OFFICE, description = "The office ID the pump accounting is associated with.",
+                required = true),
+            @OpenApiParam(name = WATER_USER, description = "The water user the pump accounting is "
+                + "associated with.", required = true),
+            @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract associated with "
+                + "the pump accounting.", required = true),
+            @OpenApiParam(name = PROJECT_ID, description = "The project ID the pump accounting is "
+                + "associated with.", required = true)
+        },
+        responses = {
+            @OpenApiResponse(status = STATUS_200,
+                content = {
+                    @OpenApiContent(from = WaterSupplyAccounting.class, isArray = true,
+                        type = Formats.JSONV1),
+                    @OpenApiContent(from = WaterSupplyAccounting.class, isArray = true,
+                        type = Formats.JSON)
+                }),
+            @OpenApiResponse(status = STATUS_404, description = "Pump Accounting not found for "
+                + "provided input parameters."),
+            @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
+        },
+        description = "Get pump accounting entries associated with a water supply contract.",
+        path = "/projects/{office}/water-user/{water-user}/contracts/{contract-name}/accounting",
+        method = HttpMethod.GET,
+        tags = {TAG}
     )
 
     @Override
@@ -147,10 +152,9 @@ public class AccountingCatalogController implements Handler {
                     || Boolean.parseBoolean(ctx.queryParam(ASCENDING));
             final int rowLimit = ctx.queryParam(ROW_LIMIT) != null ? Integer.parseInt(ctx.queryParam(ROW_LIMIT)) : 0;
             DSLContext dsl = getDslContext(ctx);
-            Instant startInstant = DateUtils.parseUserDate(startTime, "UTC").toInstant();
-            Instant endInstant = DateUtils.parseUserDate(endTime, "UTC").toInstant();
+
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
-            ContentType contentType = Formats.parseHeader(formatHeader, WaterSupplyAccounting.class);
+            ContentType contentType = Formats.parseHeader(formatHeader, WaterSupplyAccountingList.class);
             ctx.contentType(contentType.toString());
             CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();
 
@@ -183,12 +187,15 @@ public class AccountingCatalogController implements Handler {
                 return;
             }
 
+            Instant startInstant = DateUtils.parseUserDate(startTime, "UTC").toInstant();
+            Instant endInstant = DateUtils.parseUserDate(endTime, "UTC").toInstant();
+
             WaterSupplyAccountingDao waterSupplyAccountingDao = getWaterSupplyAccountingDao(dsl);
-            List<WaterSupplyAccounting> accounting = waterSupplyAccountingDao.retrieveAccounting(contractId, waterUser,
+            WaterSupplyAccountingList accounting = waterSupplyAccountingDao.retrieveAccounting(contractId, waterUser,
                     projectLocation, null, startInstant, endInstant, startInclusive, endInclusive,
                     ascending, rowLimit);
 
-            String result = Formats.format(contentType, accounting, WaterSupplyAccounting.class);
+            String result = Formats.format(contentType, accounting);
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
         }
