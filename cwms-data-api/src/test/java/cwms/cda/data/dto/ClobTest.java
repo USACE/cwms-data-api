@@ -102,7 +102,9 @@ class ClobTest {
         assertEquals(1, clobs2.getPageSize());
         assertEquals(1, clobs2.getTotal());
         assertEquals("Y3Vyc29yfHwxfHwx", clobs2.getPage());
-        assertEquals("TVlPRkZJQ0UvTVlJRDtERVNDUklQVElPTj1NWURFU0N8fDF8fDE=", clobs2.getNextPage());
+        assertEquals("VFZsUFJrWkpRMFY4ZkUxWlNVUT18fDF8fDE=", clobs2.getNextPage());
+        assertEquals(clob.getOfficeId(), Clobs.getOffice(clobs2.getNextPage()));
+        assertEquals(clob.getId(), Clobs.getId(clobs2.getNextPage()));
         assertEquals(clob.getId(), clobs2.getClobs().get(0).getId());
         assertEquals(clob.getOfficeId(), clobs2.getClobs().get(0).getOfficeId());
         assertEquals(clob.getDescription(), clobs2.getClobs().get(0).getDescription());
