@@ -360,6 +360,26 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    void test_invalid_office() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            //Purposefully misspelled office id
+            .queryParam("office", "NWDW")
+            .queryParam("name", "Buckhorn.Temp-Water.Inst.1Day.0.cda-test")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("details.message", equalTo("\"NWDW\" is not a valid CWMS office id"));
+    }
+
+    @Test
     void test_v1_cant_trim() throws Exception {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/1day_offset.json");
