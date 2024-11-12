@@ -422,6 +422,50 @@ final class LockControllerIT extends DataApiTestIT {
     }
 
     @Test
+    void test_save_lock_with_level_values() {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Lock.class), LOCK);
+        List<LocationLevel> levelList = createLocationLevelList(LOCK);
+        // store location levels
+        for (LocationLevel level : levelList) {
+            String levelJson = Formats.format(Formats.parseHeader(Formats.JSONV1, LocationLevel.class), level);
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .body(levelJson)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(FAIL_IF_EXISTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/levels/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+            ;
+        }
+
+        //Create the Lock with specified level values
+        // expect an error to be thrown
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, "false")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/locks/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+        ;
+    }
+
+    @Test
     void test_get_all() {
 
         // Structure of test:

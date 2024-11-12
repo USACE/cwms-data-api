@@ -192,14 +192,10 @@ public final class LockController implements CrudHandler {
             Lock lock = Formats.parseContent(contentType, ctx.body(), Lock.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             DSLContext dsl = getDslContext(ctx);
-            if ((lock.getHighWaterLowerPoolLocationLevel() != null
-                    && lock.getHighWaterLowerPoolLocationLevel().getLevelLink() != null)
-                    || (lock.getHighWaterUpperPoolLocationLevel() != null
-                    && lock.getHighWaterUpperPoolLocationLevel().getLevelLink() != null)
-                    || (lock.getLowWaterLowerPoolLocationLevel() != null
-                    && lock.getLowWaterLowerPoolLocationLevel().getLevelLink() != null)
-                    || (lock.getLowWaterUpperPoolLocationLevel() != null
-                    && lock.getLowWaterUpperPoolLocationLevel().getLevelLink() != null)) {
+            if (lock.getHighWaterLowerPoolLocationLevel() != null
+                    || lock.getHighWaterUpperPoolLocationLevel() != null
+                    || lock.getLowWaterLowerPoolLocationLevel() != null
+                    || lock.getLowWaterUpperPoolLocationLevel() != null) {
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST).json("Lock to be stored cannot contain value data. "
                     + "Please use the location level endpoints to store location level data.");
             }
