@@ -12,6 +12,7 @@ import cwms.cda.datasource.SessionTimeZonePreparer;
 import cwms.cda.helpers.ResourceHelper;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.DataApiPrincipal;
+import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
@@ -27,6 +28,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -35,6 +37,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -321,8 +325,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                 logger.atFinest().log("User has required roles.");
                 return;
             } else {
-                logger.atFine().log();
-                throw new CwmsAuthException(getFailMessage(ctx,routeRoles,p),403);
+                throw new MissingRolesException(getMissingRoles(ctx, routeRoles, p));
             }
         } else {
             throw new CwmsAuthException("No credentials provided.",401);
@@ -351,14 +354,16 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         }
     }
 
-    private static String getFailMessage(@NotNull Context ctx,
+    private static List<String> getMissingRoles(@NotNull Context ctx,
                                         @NotNull Set<RouteRole> requiredRoles,
                                         @NotNull DataApiPrincipal p) {
         Set<RouteRole> specifiedRoles = p.getRoles();
         Set<RouteRole> missing = new LinkedHashSet<>(requiredRoles);
         missing.removeAll(specifiedRoles);
-
-        return "Request for: " + ctx.req.getRequestURI() + " denied. Missing roles: " + missing;
+        return Collections.unmodifiableList(
+            missing.stream()
+                   .map(r -> r.toString())
+                   .collect(Collectors.toList()));
     }
 
 

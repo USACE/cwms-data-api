@@ -280,6 +280,30 @@ public class Formats {
         }
     }
 
+    /**
+     * For endpoints that still allow either for transition, favors the query parameter as that's the likely user
+     * expectation since machine systems wouldn't said both.
+     * @param header content type from a header
+     * @param queryParam content type from a query parameter
+     * @param klass DTO to find a matching formatter for.
+     * @return ContentType appropriate to the given selection.
+     * @throws UnsupportedFormatException if there is no matching content type for the given class
+     */
+    public static ContentType parseQueryOrHeaderParam(String headerParam, String queryParam, Class<? extends CwmsDTOBase> klass) {
+        ContentType ct = null;
+        if (!(queryParam == null || queryParam.isEmpty())) {
+            ct = parseQueryParam(queryParam, klass);
+        } else if (headerParam != null) {
+            ct = parseHeader(headerParam, klass);
+        } else {
+            ct = parseHeader(DEFAULT, klass);
+        }
+        if (ct == null) {
+            throw new UnsupportedFormatException("Content-Type " + (headerParam == null ? queryParam : headerParam) + " is not available.");
+        }
+        return ct;
+    }
+
     public static ContentType parseQueryParam(String queryParam, Class<? extends CwmsDTOBase> klass)
     {
         ContentTypeAliasMap aliasMap = ContentTypeAliasMap.empty();

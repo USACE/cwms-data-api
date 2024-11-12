@@ -228,7 +228,8 @@ public class TimeSeriesGroupController implements CrudHandler {
     }
 
     @OpenApi(
-        description = "Update existing TimeSeriesGroup",
+        description = "Update existing TimeSeriesGroup. Allows for renaming of the group, "
+            + "assigning new time series, and unassigning all time series from the group.",
         requestBody = @OpenApiRequestBody(
             content = {
                 @OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON)
@@ -239,31 +240,31 @@ public class TimeSeriesGroupController implements CrudHandler {
                 + "unassign all existing time series before assigning new time series specified in the content body "
                 + "Default: false"),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                + "owning office of the time series group to be updated"),
+                + "office of the user making the request. This is the office that the timeseries, group, and category "
+                + "belong to. If the group and/or category belong to the CWMS office, this only identifies the timeseries."),
         },
         method = HttpMethod.PATCH,
         tags = {TAG}
     )
     @Override
-    public void update(@NotNull Context ctx, String oldGroupId) {
-
+    public void update(@NotNull Context ctx, @NotNull String oldGroupId) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-
             String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
+            String office = requiredParam(ctx, OFFICE);
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
             TimeSeriesGroup deserialize = Formats.parseContent(contentType, body, TimeSeriesGroup.class);
             boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_TS, Boolean.class)
                 .getOrDefault(false);
             TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
-            if (!oldGroupId.equals(deserialize.getId())) {
+            if (!office.equalsIgnoreCase(CWMS_OFFICE) && !oldGroupId.equals(deserialize.getId())) {
                 timeSeriesGroupDao.renameTimeSeriesGroup(oldGroupId, deserialize);
             }
             if (replaceAssignedTs) {
-                timeSeriesGroupDao.unassignAllTs(deserialize);
+                timeSeriesGroupDao.unassignAllTs(deserialize, office);
             }
-            timeSeriesGroupDao.assignTs(deserialize);
+            timeSeriesGroupDao.assignTs(deserialize, office);
             ctx.status(HttpServletResponse.SC_OK);
         }
     }

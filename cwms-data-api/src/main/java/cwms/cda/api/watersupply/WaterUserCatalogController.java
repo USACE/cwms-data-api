@@ -48,6 +48,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -72,6 +74,9 @@ public final class WaterUserCatalogController extends WaterSupplyControllerBase 
                 content = {
                     @OpenApiContent(type = Formats.JSONV1, from = WaterUser.class)
                 })
+        },
+        security = {
+            @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
         description = "Gets all water users.",
         method = HttpMethod.GET,
