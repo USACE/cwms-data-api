@@ -95,25 +95,11 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
     }
 
     @NotNull
-    private Set<RatingTemplate> buildRatingTemplateSet(ResultQuery<? extends Record> query) {
-
-        TableField<usace.cwms.db.jooq.codegen.tables.records.AV_RATING_SPEC, String> idField =
-                AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID;
-
+    private static Set<RatingTemplate> buildRatingTemplateSet(ResultQuery<? extends Record> query) {
         Map<RatingTemplate, List<String>> map = new LinkedHashMap<>();
-
         try (Stream<? extends Record> stream = query.fetchStream()) {
-            stream.forEach(rec -> {
-                RatingTemplate template = buildRatingTemplate(rec);
-                String specID = rec.get(idField);
-
-                List<String> list = map.computeIfAbsent(template, k -> new ArrayList<>());
-                if (specID != null) {
-                    list.add(specID);
-                }
-            });
+            stream.forEach(rec -> addTemplate(rec, map));
         }
-
         return map.entrySet().stream()
                 .map(entry -> new RatingTemplate.Builder()
                         .fromRatingTemplate(entry.getKey())
@@ -151,15 +137,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
         Map<RatingTemplate, List<String>> map = new LinkedHashMap<>();
 
         try (Stream<? extends Record> stream = query.fetchStream()) {
-            stream.forEach(rec -> {
-                RatingTemplate template = buildRatingTemplate(rec);
-                String specID = rec.get(specView.RATING_ID);
-
-                List<String> list = map.computeIfAbsent(template, k -> new ArrayList<>());
-                if (specID != null) {
-                    list.add(specID);
-                }
-            });
+            stream.forEach(rec -> addTemplate(rec, map));
         }
 
         retVal = map.entrySet().stream()
@@ -177,8 +155,22 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
         return retVal.stream().findFirst();
     }
 
+    static void addTemplate(Record rec, Map<RatingTemplate, List<String>> map) {
+        try {
+            RatingTemplate template = buildRatingTemplate(rec);
+            String specID = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID);
+            if (specID != null) {
+                map.computeIfAbsent(template, k -> new ArrayList<>())
+                    .add(specID);
+            }
+        } catch(RuntimeException ex) {
+            logger.log(Level.WARNING, ex, () ->
+                "Error transforming rating template table record into RatingTemplate DTO:\n" + rec);
+        }
+    }
 
-    private RatingTemplate buildRatingTemplate(Record queryRecord) {
+
+    private static RatingTemplate buildRatingTemplate(Record queryRecord) {
         String indParameters =
                 queryRecord.get(AV_RATING_TEMPLATE.AV_RATING_TEMPLATE.INDEPENDENT_PARAMETERS);
         String depParameter =
@@ -203,7 +195,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .build();
     }
 
-    private List<ParameterSpec> buildParameterSpecs(String indParameters, String ratingMethods) {
+    private static List<ParameterSpec> buildParameterSpecs(String indParameters, String ratingMethods) {
         List<ParameterSpec> retVal = new ArrayList<>();
         String[] indParams = indParameters.split(",");
         String[] methodsForParam = ratingMethods.split("/");
