@@ -36,6 +36,8 @@ import static org.hamcrest.Matchers.nullValue;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.LocationLevelsDao;
+import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.Location;
@@ -62,10 +64,12 @@ import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 
 @Tag("integration")
@@ -75,7 +79,6 @@ final class LockControllerIT extends DataApiTestIT {
     private static final Location LOCK_LOC;
     private static final Lock LOCK;
     private static final Lock STORABLE_LOCK;
-
 
     static {
         try (
@@ -149,6 +152,23 @@ final class LockControllerIT extends DataApiTestIT {
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
                 LOGGER.log(Level.CONFIG, String.format("Unable to delete project location: %s", ex.getMessage()));
+            }
+        }, CwmsDataApiSetupCallback.getWebUser());
+    }
+
+    @AfterEach
+    void cleanupLocLevels() throws Exception {
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            DSLContext context = getDslContext(c, LOCK_LOC.getOfficeId());
+            LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(context);
+            for (LocationLevel level : createLocationLevelList(LOCK)) {
+                try {
+                    levelsDao.deleteLocationLevel(level.getLocationLevelId(), level.getLevelDate(), level.getOfficeId(), true);
+                } catch (NotFoundException ex) {
+                    /* only an error within the tests below. */
+                    LOGGER.log(Level.CONFIG, String.format("Unable to delete location level: %s", ex.getMessage()));
+                }
             }
         }, CwmsDataApiSetupCallback.getWebUser());
     }
@@ -228,6 +248,18 @@ final class LockControllerIT extends DataApiTestIT {
             .body("lock-length", equalTo((float) LOCK.getLockLength()))
             .body("length-units", equalTo(LOCK.getLengthUnits()))
             .body("minimum-draft", equalTo((float) LOCK.getMinimumDraft()))
+            .body("high-water-upper-pool-location-level.level-value",
+                    equalTo((float) LOCK.getHighWaterUpperPoolLocationLevel().getLevelValue()))
+            .body("high-water-lower-pool-location-level.level-value",
+                    equalTo((float) LOCK.getHighWaterLowerPoolLocationLevel().getLevelValue()))
+            .body("low-water-upper-pool-location-level.level-value",
+                    equalTo((float) LOCK.getLowWaterUpperPoolLocationLevel().getLevelValue()))
+            .body("low-water-lower-pool-location-level.level-value",
+                    equalTo((float) LOCK.getLowWaterLowerPoolLocationLevel().getLevelValue()))
+            .body("high-water-upper-pool-warning-level",
+                    equalTo((float) (LOCK.getHighWaterUpperPoolLocationLevel().getLevelValue() - LOCK.getHighWaterUpperPoolWarningLevel())))
+            .body("high-water-lower-pool-warning-level",
+                    equalTo((float) (LOCK.getHighWaterLowerPoolLocationLevel().getLevelValue() - LOCK.getHighWaterLowerPoolWarningLevel())))
         ;
 
         // Delete a Lock
@@ -262,7 +294,7 @@ final class LockControllerIT extends DataApiTestIT {
     }
 
     @Test
-    void test_get_create_delete_SI() {
+    void test_get_create_delete_SI() throws Exception {
 
         // Structure of test:
         // 1)Create the Lock
@@ -283,6 +315,8 @@ final class LockControllerIT extends DataApiTestIT {
                 .withNormalLockLift(STORABLE_LOCK.getNormalLockLift())
                 .withVolumePerLockage(STORABLE_LOCK.getVolumePerLockage())
                 .withLengthUnits("m")
+                .withHighWaterLowerPoolWarningLevel(LOCK.getHighWaterLowerPoolWarningLevel())
+                .withHighWaterUpperPoolWarningLevel(LOCK.getHighWaterUpperPoolWarningLevel())
                 .build();
         String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Lock.class), metricLock);
         List<LocationLevel> levelList = createLocationLevelList(LOCK);
@@ -323,34 +357,58 @@ final class LockControllerIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
         String office = metricLock.getLocation().getOfficeId();
-        // Retrieve the Lock and assert that it exists
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
-            .queryParam(Controllers.OFFICE, office)
-            .queryParam(UNIT, "SI")
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/projects/locks/" + metricLock.getLocation().getName())
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .body("location", not(nullValue()))
-            .body("project-id.name", equalTo(metricLock.getProjectId().getName()))
-            .body("project-id.office-id", equalTo(metricLock.getProjectId().getOfficeId()))
-            .body("maximum-lock-lift", equalTo((float) metricLock.getMaximumLockLift()))
-            .body("elevation-units", equalTo(metricLock.getElevationUnits()))
-            .body("chamber-type.display-value", equalTo(metricLock.getChamberType().getDisplayValue()))
-            .body("chamber-type.tooltip", equalTo(metricLock.getChamberType().getTooltip()))
-            .body("volume-per-lockage", equalTo((float) metricLock.getVolumePerLockage()))
-            .body("volume-units", equalTo(metricLock.getVolumeUnits()))
-            .body("lock-width", equalTo((float) metricLock.getLockWidth()))
-            .body("lock-length", equalTo((float) metricLock.getLockLength()))
-            .body("length-units", equalTo(metricLock.getLengthUnits()))
-            .body("minimum-draft", equalTo((float) metricLock.getMinimumDraft()))
-        ;
+
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c -> {
+            DSLContext context = getDslContext(c, office);
+            double metricWarningLevelUpper = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(context.configuration(),
+                    LOCK.getHighWaterUpperPoolLocationLevel().getLevelValue() - LOCK.getHighWaterUpperPoolWarningLevel(), LOCK.getElevationUnits(), "m");
+            double metricWarningLevelLower = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(context.configuration(),
+                    LOCK.getHighWaterLowerPoolLocationLevel().getLevelValue() - LOCK.getHighWaterLowerPoolWarningLevel(), LOCK.getElevationUnits(), "m");
+            double metricHighWaterLowerPoolValue = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(context.configuration(),
+                    LOCK.getHighWaterLowerPoolLocationLevel().getLevelValue(), LOCK.getElevationUnits(), "m");
+            double metricHighWaterUpperPoolValue = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(context.configuration(),
+                    LOCK.getHighWaterUpperPoolLocationLevel().getLevelValue(), LOCK.getElevationUnits(), "m");
+            double metricLowWaterLowerPoolValue = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(context.configuration(),
+                    LOCK.getLowWaterLowerPoolLocationLevel().getLevelValue(), LOCK.getElevationUnits(), "m");
+            double metricLowWaterUpperPoolValue = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(context.configuration(),
+                    LOCK.getLowWaterUpperPoolLocationLevel().getLevelValue(), LOCK.getElevationUnits(), "m");
+
+            // Retrieve the Lock and assert that it exists
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV1)
+                .queryParam(Controllers.OFFICE, office)
+                .queryParam(UNIT, "SI")
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/projects/locks/" + metricLock.getLocation().getName())
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("location", not(nullValue()))
+                .body("project-id.name", equalTo(metricLock.getProjectId().getName()))
+                .body("project-id.office-id", equalTo(metricLock.getProjectId().getOfficeId()))
+                .body("maximum-lock-lift", equalTo((float) metricLock.getMaximumLockLift()))
+                .body("elevation-units", equalTo(metricLock.getElevationUnits()))
+                .body("chamber-type.display-value", equalTo(metricLock.getChamberType().getDisplayValue()))
+                .body("chamber-type.tooltip", equalTo(metricLock.getChamberType().getTooltip()))
+                .body("volume-per-lockage", equalTo((float) metricLock.getVolumePerLockage()))
+                .body("volume-units", equalTo(metricLock.getVolumeUnits()))
+                .body("lock-width", equalTo((float) metricLock.getLockWidth()))
+                .body("lock-length", equalTo((float) metricLock.getLockLength()))
+                .body("length-units", equalTo(metricLock.getLengthUnits()))
+                .body("minimum-draft", equalTo((float) metricLock.getMinimumDraft()))
+                .body("high-water-upper-pool-location-level.level-value", equalTo((float) metricHighWaterUpperPoolValue))
+                .body("high-water-lower-pool-location-level.level-value", equalTo((float) metricHighWaterLowerPoolValue))
+                .body("low-water-upper-pool-location-level.level-value", equalTo((float) metricLowWaterUpperPoolValue))
+                .body("low-water-lower-pool-location-level.level-value", equalTo((float) metricLowWaterLowerPoolValue))
+                .body("high-water-upper-pool-warning-level", equalTo((float) metricWarningLevelUpper))
+                .body("high-water-lower-pool-warning-level", equalTo((float) metricWarningLevelLower))
+            ;
+        }, CwmsDataApiSetupCallback.getWebUser());
 
         // Delete a Lock
         given()
@@ -598,6 +656,13 @@ final class LockControllerIT extends DataApiTestIT {
                 .withSpecifiedLevelId(lock.getHighWaterUpperPoolLocationLevel().getSpecifiedLevelId())
                 .build();
         retVal.add(highUpperLevel);
+        LocationLevel warningBuffer = new LocationLevel.Builder(String.format("%s.Elev.Inst.0.Warning Buffer", lock.getLocation().getName()), ZonedDateTime.now())
+                .withLevelUnitsId(lock.getElevationUnits())
+                .withConstantValue(lock.getHighWaterLowerPoolWarningLevel())
+                .withOfficeId(lock.getLocation().getOfficeId())
+                .withSpecifiedLevelId("Warning Buffer")
+                .build();
+        retVal.add(warningBuffer);
         return retVal;
     }
 }

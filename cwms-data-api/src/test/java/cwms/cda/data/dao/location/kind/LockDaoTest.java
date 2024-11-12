@@ -47,8 +47,8 @@ final class LockDaoTest {
     void testJooqTypeConversion() {
         Lock expected = buildTestLock();
         LOCK_OBJ_T lockObjT = LockDao.map(expected);
-        Lock lock = LockDao.map(lockObjT);
-        DTOMatch.assertMatch(expected, lock);
+        Lock lock = LockDao.map(lockObjT, expected.getHighWaterUpperPoolWarningLevel(), expected.getHighWaterLowerPoolWarningLevel());
+        DTOMatch.assertMatch(expected, lock, false);
     }
 
     @Test
@@ -88,15 +88,15 @@ final class LockDaoTest {
             .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
                 .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
             .withHighWaterLowerPoolLocationLevel(
-                new LockLocationLevelRef("/locks/PROJECT.Elev-Inoperable.Inst.0.High Water Lower Pool?office=LRL", 1.5))
+                new LockLocationLevelRef("/locks/PROJECT.Elev-Closure.Inst.0.High Water Lower Pool?office=LRL", 18.5))
             .withHighWaterUpperPoolLocationLevel(
-                new LockLocationLevelRef("/locks/PROJECT.Elev-Inoperable.Inst.0.High Water Upper Pool?office=LRL", 2.5))
+                new LockLocationLevelRef("/locks/PROJECT.Elev-Closure.Inst.0.High Water Upper Pool?office=LRL", 20.5))
             .withLowWaterLowerPoolLocationLevel(
-                new LockLocationLevelRef("/locks/PROJECT.Elev-Inoperable.Inst.0.Low Water Lower Pool?office=LRL", 3.14))
+                new LockLocationLevelRef("/locks/PROJECT.Elev-Closure.Inst.0.Low Water Lower Pool?office=LRL", 31.14))
             .withLowWaterUpperPoolLocationLevel(
-                new LockLocationLevelRef("/locks/PROJECT.Elev-Inoperable.Inst.0.Low Water Upper Pool?office=LRL", 6.5))
-            .withHighWaterLowerPoolWarningLevel(2)
-            .withHighWaterUpperPoolWarningLevel(1)
+                new LockLocationLevelRef("/locks/PROJECT.Elev-Closure.Inst.0.Low Water Upper Pool?office=LRL", 16.5))
+            .withHighWaterLowerPoolWarningLevel(10.0)
+            .withHighWaterUpperPoolWarningLevel(10.0)
             .build();
     }
 

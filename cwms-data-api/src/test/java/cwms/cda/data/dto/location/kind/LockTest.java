@@ -51,7 +51,7 @@ final class LockTest {
         String serialized = Formats.format(Formats.parseHeader(format, Lock.class), lock);
         Lock deserialized = Formats.parseContent(Formats.parseHeader(format, Lock.class),
                 serialized, Lock.class);
-        DTOMatch.assertMatch(lock, deserialized);
+        DTOMatch.assertMatch(lock, deserialized, false);
     }
 
     @Test
@@ -62,7 +62,7 @@ final class LockTest {
         String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
         Lock deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSON, Lock.class),
                 serialized, Lock.class);
-        DTOMatch.assertMatch(lock, deserialized);
+        DTOMatch.assertMatch(lock, deserialized, false);
     }
 
     @Test
@@ -84,13 +84,13 @@ final class LockTest {
 
     @Test
     void testLockLocationLevelRef() {
-        LockLocationLevelRef lockLocationLevelRef = new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Inoperable.Inst.0.High Water Upper Pool?office=SPK", 1.5);
+        LockLocationLevelRef lockLocationLevelRef = new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.High Water Upper Pool?office=SPK", 1.5);
         assertAll(() -> {
             assertEquals("SPK", lockLocationLevelRef.getOfficeId());
-            assertEquals("TEST_LOCATION2.Elev-Inoperable.Inst.0.High Water Upper Pool", lockLocationLevelRef.getLevelId());
+            assertEquals("TEST_LOCATION2.Elev-Closure.Inst.0.High Water Upper Pool", lockLocationLevelRef.getLevelId());
             assertEquals(1.5, lockLocationLevelRef.getLevelValue());
             assertEquals("High Water Upper Pool", lockLocationLevelRef.getSpecifiedLevelId());
-            assertEquals("/locks/TEST_LOCATION2.Elev-Inoperable.Inst.0.High Water Upper Pool?office=SPK", lockLocationLevelRef.getLevelLink());
+            assertEquals("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.High Water Upper Pool?office=SPK", lockLocationLevelRef.getLevelLink());
         });
     }
 
@@ -114,13 +114,13 @@ final class LockTest {
             .withChamberType(new LookupType.Builder().withOfficeId("LRL").withActive(true)
                 .withDisplayValue("LOCK").withTooltip("Land Side Main").build())
             .withHighWaterLowerPoolLocationLevel(
-                new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Inoperable.Inst.0.High Water Lower Pool?office=SPK", 2.7))
+                new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.High Water Lower Pool?office=SPK", 2.7))
             .withHighWaterUpperPoolLocationLevel(
-                new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Inoperable.Inst.0.High Water Upper Pool?office=SPK", 2.96))
+                new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.High Water Upper Pool?office=SPK", 2.96))
             .withLowWaterLowerPoolLocationLevel(
-                new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Inoperable.Inst.0.Low Water Lower Pool?office=SPK", 5.0))
+                new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.Low Water Lower Pool?office=SPK", 5.0))
             .withLowWaterUpperPoolLocationLevel(
-                new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Inoperable.Inst.0.Low Water Upper Pool?office=SPK", 8.0))
+                new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.Low Water Upper Pool?office=SPK", 8.0))
             .build();
     }
 

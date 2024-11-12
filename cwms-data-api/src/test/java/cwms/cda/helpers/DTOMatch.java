@@ -61,6 +61,7 @@ import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -445,16 +446,25 @@ public final class DTOMatch {
         );
     }
 
-    public static void assertMatch(Lock first, Lock second) {
-        // TODO: add warning levels to DB Lock OBJ
+    public static void assertMatch(Lock first, Lock second, boolean fromDB) {
         assertAll(
                 () -> assertEquals(first.getLocation(), second.getLocation(), "Location doesn't match"),
                 () -> assertMatch(first.getProjectId(), second.getProjectId(), "Project ID does not match"),
                 () -> assertEquals(first.getElevationUnits(), second.getElevationUnits(), "Elevation units do not match"),
                 () -> assertMatch(first.getChamberType(), second.getChamberType()),
                 () -> assertEquals(first.getLengthUnits(), second.getLengthUnits(), "Length units do not match"),
-//                () -> assertEquals(first.getHighWaterLowerPoolWarningLevel(), second.getHighWaterLowerPoolWarningLevel(), "High water lower pool warning level does not match"),
-//                () -> assertEquals(first.getHighWaterUpperPoolWarningLevel(), second.getHighWaterUpperPoolWarningLevel(), "High water upper pool warning level does not match"),
+                () -> {
+                    // if the lock to match is from the database, the warning levels are calculated based on the location levels
+                    if (fromDB) {
+                        assertEquals((first.getHighWaterLowerPoolLocationLevel().getLevelValue() - first.getHighWaterLowerPoolWarningLevel()),
+                                second.getHighWaterLowerPoolWarningLevel(), DEFAULT_DELTA);
+                        assertEquals((first.getHighWaterUpperPoolLocationLevel().getLevelValue() - first.getHighWaterUpperPoolWarningLevel()),
+                                second.getHighWaterUpperPoolWarningLevel(), DEFAULT_DELTA);
+                    } else {
+                        assertEquals(first.getHighWaterLowerPoolWarningLevel(), second.getHighWaterLowerPoolWarningLevel());
+                        assertEquals(first.getHighWaterUpperPoolWarningLevel(), second.getHighWaterUpperPoolWarningLevel());
+                    }
+                },
                 () -> assertEquals(first.getLockLength(), second.getLockLength(), DEFAULT_DELTA, "Lock length does not match"),
                 () -> assertEquals(first.getLockWidth(), second.getLockWidth(), DEFAULT_DELTA, "Lock width does not match"),
                 () -> assertEquals(first.getNormalLockLift(), second.getNormalLockLift(), DEFAULT_DELTA, "Normal lock lift values do not match"),

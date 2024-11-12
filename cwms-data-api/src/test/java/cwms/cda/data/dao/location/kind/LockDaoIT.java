@@ -184,7 +184,7 @@ final class LockDaoIT extends ProjectStructureIT {
                 CwmsId cwmsId = CwmsId.buildCwmsId(lockOfficeId, lockId);
                 locksToCleanup.add(cwmsId);
                 Lock retrievedLock = lockDao.retrieveLock(cwmsId, UnitSystem.EN);
-                 DTOMatch.assertMatch(lockWithLevels, retrievedLock);
+                 DTOMatch.assertMatch(lockWithLevels, retrievedLock, true);
                 lockDao.deleteLock(cwmsId, DeleteRule.DELETE_ALL);
                 assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, UnitSystem.EN));
                 locksToCleanup.remove(cwmsId);
@@ -267,18 +267,18 @@ final class LockDaoIT extends ProjectStructureIT {
             .withLengthUnits("ft")
             .withVolumeUnits("ft3")
             .withElevationUnits("ft")
-            .withHighWaterLowerPoolWarningLevel(2)
-            .withHighWaterUpperPoolWarningLevel(2)
+            .withHighWaterLowerPoolWarningLevel(3.0) // will not be stored when lock is stored, must save as location level
+            .withHighWaterUpperPoolWarningLevel(3.0) // will not be stored when lock is stored, must save as location level
             .withChamberType(new LookupType.Builder().withOfficeId("CWMS").withActive(true)
                 .withTooltip("The main chamber on the land side of the lock").withDisplayValue("Land Side Main").build())
             .withHighWaterLowerPoolLocationLevel(
-                new LockLocationLevelRef(String.format("/locks/%s.Elev-Inoperable.Inst.0.High Water Lower Pool?office=SPK", location.getName()), 1.5))
+                new LockLocationLevelRef(String.format("/locks/%s.Elev-Closure.Inst.0.High Water Lower Pool?office=SPK", location.getName()), 4.5))
             .withHighWaterUpperPoolLocationLevel(
-                new LockLocationLevelRef(String.format("/locks/%s.Elev-Inoperable.Inst.0.High Water Upper Pool?office=SPK", location.getName()), 2.5))
+                new LockLocationLevelRef(String.format("/locks/%s.Elev-Closure.Inst.0.High Water Upper Pool?office=SPK", location.getName()), 5.5))
             .withLowWaterLowerPoolLocationLevel(
-                new LockLocationLevelRef(String.format("/locks/%s.Elev-Inoperable.Inst.0.Low Water Lower Pool?office=SPK", location.getName()), 3.14))
+                new LockLocationLevelRef(String.format("/locks/%s.Elev-Closure.Inst.0.Low Water Lower Pool?office=SPK", location.getName()), 8.14))
             .withLowWaterUpperPoolLocationLevel(
-                new LockLocationLevelRef(String.format("/locks/%s.Elev-Inoperable.Inst.0.Low Water Upper Pool?office=SPK", location.getName()), 6.5))
+                new LockLocationLevelRef(String.format("/locks/%s.Elev-Closure.Inst.0.Low Water Upper Pool?office=SPK", location.getName()), 6.5))
             .build();
     }
 
@@ -343,6 +343,13 @@ final class LockDaoIT extends ProjectStructureIT {
             .withSpecifiedLevelId(lock.getHighWaterUpperPoolLocationLevel().getSpecifiedLevelId())
             .build();
         retVal.add(highUpperLevel);
+        LocationLevel warningBuffer = new LocationLevel.Builder(String.format("%s.Elev-Closure.Inst.0.Warning Buffer", lock.getLocation().getName()), ZonedDateTime.now())
+                .withLevelUnitsId(lock.getElevationUnits())
+                .withConstantValue(lock.getHighWaterLowerPoolWarningLevel())
+                .withOfficeId(lock.getLocation().getOfficeId())
+                .withSpecifiedLevelId("Warning Buffer")
+                .build();
+        retVal.add(warningBuffer);
         return retVal;
     }
 }
