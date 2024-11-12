@@ -159,9 +159,9 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
         try {
             RatingTemplate template = buildRatingTemplate(rec);
             String specID = rec.get(AV_RATING_SPEC.AV_RATING_SPEC.RATING_ID);
+            List<String> ratingSpecs = map.computeIfAbsent(template, k -> new ArrayList<>());
             if (specID != null) {
-                map.computeIfAbsent(template, k -> new ArrayList<>())
-                    .add(specID);
+                ratingSpecs.add(specID);
             }
         } catch(RuntimeException ex) {
             logger.log(Level.WARNING, ex, () ->
