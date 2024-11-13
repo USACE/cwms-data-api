@@ -135,15 +135,20 @@ public class LocationGroupController implements CrudHandler {
     @OpenApi(
         pathParams = {
             @OpenApiParam(name = GROUP_ID, required = true, description = "Specifies "
-                    + "the location_group whose data is to be included in the response")
+                + "the location_group whose data is to be included in the response")
         },
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                    + "owning office of the location group whose data is to be included "
-                    + "in the response."),
+                + "owning office of the location group whose data is to be included "
+                + "in the response."),
+            @OpenApiParam(name = GROUP_OFFICE_ID, required = true, description = "Specifies the "
+                + "owning office of the location group whose data is to be included in the response."),
+            @OpenApiParam(name = CATEGORY_OFFICE_ID, required = true, description = "Specifies the "
+                + "owning office of the category the location group belongs to "
+                + "whose data is to be included in the response."),
             @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies"
-                    + " the category containing the location group whose data is to be "
-                    + "included in the response."),
+                + " the category containing the location group whose data is to be "
+                + "included in the response."),
         },
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
@@ -161,14 +166,15 @@ public class LocationGroupController implements CrudHandler {
             LocationGroupDao cdm = new LocationGroupDao(dsl);
             String office = requiredParam(ctx, OFFICE);
             String categoryId = requiredParam(ctx, CATEGORY_ID);
-
+            String groupOfficeId = requiredParam(ctx, GROUP_OFFICE_ID);
+            String categoryOfficeId = requiredParam(ctx, CATEGORY_OFFICE_ID);
             String formatHeader = ctx.header(Header.ACCEPT);
             String result;
             ContentType contentType;
             if (formatHeader != null && formatHeader.contains(Formats.GEOJSON)) {
                 contentType = new ContentType(Formats.GEOJSON);
                 FeatureCollection fc = cdm.buildFeatureCollectionForLocationGroup(office,
-                        categoryId, groupId, "EN");
+                        groupOfficeId, categoryOfficeId, categoryId, groupId, "EN");
                 ObjectMapper mapper = ctx.appAttribute("ObjectMapper");
                 result = mapper.writeValueAsString(fc);
             } else {

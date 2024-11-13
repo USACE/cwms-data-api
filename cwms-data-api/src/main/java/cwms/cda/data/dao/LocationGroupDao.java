@@ -218,9 +218,9 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     /**
      * Get all location groups for a given office and category,
      * as well as a where clause to filter the shared_ref_location_id.
-     * @Param officeId The office id to use for the query.
-     * @Param locCategoryLike A regex to use to filter the location categories.  May be null.
-     * @Param sharedRefLocLike A where clause to filter the shared_loc_alias_id.  May be null.
+     * @param officeId The office id to use for the query.
+     * @param locCategoryLike A regex to use to filter the location categories.  May be null.
+     * @param sharedRefLocLike A where clause to filter the shared_loc_alias_id.  May be null.
      * @return A list of all location groups for the given parameters.
      */
 
@@ -432,7 +432,8 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         return feature;
     }
 
-    public FeatureCollection buildFeatureCollectionForLocationGroup(String officeId,
+    public FeatureCollection buildFeatureCollectionForLocationGroup(String locationOfficeId, String groupOfficeId,
+                                                                    String categoryOfficeId,
                                                                     String categoryId,
                                                                     String groupId, String units) {
         AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
@@ -442,9 +443,9 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                 alga.GROUP_ID, alga.ATTRIBUTE, alga.ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
                 alga.SHARED_ALIAS_ID)
             .from(al).join(alga).on(al.LOCATION_ID.eq(alga.LOCATION_ID))
-            .where(alga.DB_OFFICE_ID.eq(officeId)
-                .and(alga.CATEGORY_OFFICE_ID.eq())
-                .and(alga.GROUP_OFFICE_ID.eq())
+            .where(alga.DB_OFFICE_ID.eq(locationOfficeId)
+                .and(alga.CATEGORY_OFFICE_ID.eq(categoryOfficeId))
+                .and(alga.GROUP_OFFICE_ID.eq(groupOfficeId))
                 .and(alga.CATEGORY_ID.eq(categoryId)
                     .and(alga.GROUP_ID.eq(groupId))
                     .and(al.UNIT_SYSTEM.eq(units))))
@@ -533,8 +534,8 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     /**
      * Used when an appropriate context already exists to avoid opening a second connection.
      * @param dslContext a dslContext that is assumed to be fully prepared for use in this operation
-     * @param group
-     * @param office
+     * @param group the location group to assign locations to
+     * @param office the office to use for the operation
      */
     public void assignLocs(DSLContext dslContext, LocationGroup group, String office) {
         List<AssignedLocation> assignedLocations = group.getAssignedLocations();
@@ -544,8 +545,8 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                 .collect(toList());
             LOC_ALIAS_ARRAY3 assignedLocs = new LOC_ALIAS_ARRAY3(collect);
             LocationCategory cat = group.getLocationCategory(); 
-                CWMS_LOC_PACKAGE.call_ASSIGN_LOC_GROUPS3(dslContext.configuration(),
-                        cat.getId(), group.getId(), assignedLocs, office);
+            CWMS_LOC_PACKAGE.call_ASSIGN_LOC_GROUPS3(dslContext.configuration(),
+                    cat.getId(), group.getId(), assignedLocs, office);
         }
     }
 }
