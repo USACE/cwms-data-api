@@ -182,10 +182,10 @@ final class LockDaoIT extends ProjectStructureIT {
                 String lockOfficeId = lock.getLocation().getOfficeId();
                 CwmsId cwmsId = CwmsId.buildCwmsId(lockOfficeId, lockId);
                 locksToCleanup.add(cwmsId);
-                Lock retrievedLock = lockDao.retrieveLock(cwmsId, UnitSystem.EN);
+                Lock retrievedLock = lockDao.retrieveLock(cwmsId, PROJECT_LOC.getName(), UnitSystem.EN);
                  DTOMatch.assertMatch(lockWithLevels, retrievedLock, true);
                 lockDao.deleteLock(cwmsId, DeleteRule.DELETE_ALL);
-                assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, UnitSystem.EN));
+                assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, PROJECT_LOC.getName(), UnitSystem.EN));
                 locksToCleanup.remove(cwmsId);
             },
             CwmsDataApiSetupCallback.getWebUser());
@@ -209,17 +209,17 @@ final class LockDaoIT extends ProjectStructureIT {
                 String lockId = lock2.getLocation().getName();
                 String lockOfficeId = lock2.getLocation().getOfficeId();
                 CwmsId projectId = CwmsId.buildCwmsId(lock1.getProjectId().getOfficeId(), lock1.getProjectId().getName());
-                List<CwmsId> retrievedLock = lockDao.retrieveLockIds(projectId);
+                List<Lock> retrievedLock = lockDao.retrieveLockCatalog(projectId);
                 assertEquals(2, retrievedLock.size());
                 assertTrue(retrievedLock.stream()
-                    .anyMatch(e -> e.getName().equalsIgnoreCase(lock1.getLocation().getName())));
+                    .anyMatch(e -> e.getLocation().getName().equalsIgnoreCase(lock1.getLocation().getName())));
                 assertTrue(retrievedLock.stream()
-                    .anyMatch(e -> e.getName().equalsIgnoreCase(lock2.getLocation().getName())));
+                    .anyMatch(e -> e.getLocation().getName().equalsIgnoreCase(lock2.getLocation().getName())));
                 assertFalse(retrievedLock.stream()
-                    .anyMatch(e -> e.getName().equalsIgnoreCase(lock3.getLocation().getName())));
+                    .anyMatch(e -> e.getLocation().getName().equalsIgnoreCase(lock3.getLocation().getName())));
                 CwmsId cwmsId = CwmsId.buildCwmsId(lockOfficeId, lockId);
                 lockDao.deleteLock(cwmsId, DeleteRule.DELETE_ALL);
-                assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, null));
+                assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, PROJECT_LOC.getName(),null));
                 locksToCleanup.remove(CwmsId.buildCwmsId(lock2.getLocation().getOfficeId(), lock2.getLocation().getName()));
             },
             CwmsDataApiSetupCallback.getWebUser());
@@ -240,8 +240,8 @@ final class LockDaoIT extends ProjectStructureIT {
                 CwmsId cwmsId = CwmsId.buildCwmsId(office, originalId);
                 locksToCleanup.add(cwmsId);
                 lockDao.renameLock(cwmsId, newId);
-                assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, UnitSystem.EN));
-                Lock retrievedLock = lockDao.retrieveLock(newCwmsId, UnitSystem.EN);
+                assertThrows(NotFoundException.class, () -> lockDao.retrieveLock(cwmsId, PROJECT_LOC.getName(), UnitSystem.EN));
+                Lock retrievedLock = lockDao.retrieveLock(newCwmsId, PROJECT_LOC.getName(), UnitSystem.EN);
                 assertNotNull(retrievedLock.getLocation());
                 assertEquals(newId, retrievedLock.getLocation().getName());
                 lockDao.deleteLock(newCwmsId, DeleteRule.DELETE_ALL);

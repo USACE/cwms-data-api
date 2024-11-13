@@ -42,15 +42,15 @@ import java.util.Objects;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class LockLocationLevelRef extends CwmsDTOBase {
     private final String levelLink;
-    private final double levelValue;
+    private final Double levelValue;
 
     @JsonCreator
-    public LockLocationLevelRef(@JsonProperty("level-link") String levelLink, @JsonProperty("level-value") double levelValue) {
+    public LockLocationLevelRef(@JsonProperty("level-link") String levelLink, @JsonProperty("level-value") Double levelValue) {
         this.levelLink = levelLink;
         this.levelValue = levelValue;
     }
 
-    public LockLocationLevelRef(String office, String locationLevelId, double levelValue) {
+    public LockLocationLevelRef(String office, String locationLevelId, Double levelValue) {
         this.levelValue = levelValue;
         this.levelLink = createLink(office, locationLevelId);
     }
@@ -59,7 +59,7 @@ public class LockLocationLevelRef extends CwmsDTOBase {
         return levelLink;
     }
 
-    public double getLevelValue() {
+    public Double getLevelValue() {
         return levelValue;
     }
 

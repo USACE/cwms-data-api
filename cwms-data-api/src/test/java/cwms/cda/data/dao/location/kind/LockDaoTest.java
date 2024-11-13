@@ -30,6 +30,8 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.location.kind.LockLocationLevelRef;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DTOMatch;
 
 import java.time.ZoneId;
@@ -48,6 +50,25 @@ final class LockDaoTest {
         Lock expected = buildTestLock();
         LOCK_OBJ_T lockObjT = LockDao.map(expected);
         Lock lock = LockDao.map(lockObjT, expected.getHighWaterUpperPoolWarningLevel(), expected.getHighWaterLowerPoolWarningLevel());
+        DTOMatch.assertMatch(expected, lock, false);
+    }
+
+    @Test
+    void testSerializeDeserialize() {
+        Lock expected = buildTestLock();
+        ContentType contentType = new ContentType(Formats.JSONV1);
+        String json = Formats.format(contentType, expected);
+        Lock lock = Formats.parseContent(contentType, json, Lock.class);
+        DTOMatch.assertMatch(expected, lock, false);
+    }
+
+    @Test
+    void testSerializeDeserializeWithNullLevels()
+    {
+        Lock expected = buildTestLockWithNullLevels();
+        ContentType contentType = new ContentType(Formats.JSONV1);
+        String json = Formats.format(contentType, expected);
+        Lock lock = Formats.parseContent(contentType, json, Lock.class);
         DTOMatch.assertMatch(expected, lock, false);
     }
 
@@ -79,6 +100,7 @@ final class LockDaoTest {
             .withMaximumLockLift(20.0)
             .withVolumeUnits("ft3")
             .withLengthUnits("ft")
+            .withElevationUnits("ft")
             .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
                  .withDisplayValue("LOCK").withTooltip("Land Side Main").build())
             .withLockWidth(100.0)
@@ -97,6 +119,33 @@ final class LockDaoTest {
                 new LockLocationLevelRef("/locks/PROJECT.Elev-Closure.Inst.0.Low Water Upper Pool?office=LRL", 16.5))
             .withHighWaterLowerPoolWarningLevel(10.0)
             .withHighWaterUpperPoolWarningLevel(10.0)
+            .build();
+    }
+
+    private Lock buildTestLockWithNullLevels() {
+        return new Lock.Builder()
+            .withLocation(buildTestLocation())
+            .withProjectId(new CwmsId.Builder()
+                .withName("PROJECT")
+                .withOfficeId("LRD")
+                .build())
+            .withLockLength(100.0)
+            .withMaximumLockLift(20.0)
+            .withVolumeUnits("ft3")
+            .withLengthUnits("ft")
+            .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
+                .withDisplayValue("LOCK").withTooltip("Land Side Main").build())
+            .withLockWidth(100.0)
+            .withNormalLockLift(10.0)
+            .withVolumePerLockage(100.0)
+            .withMinimumDraft(5.0)
+            .withElevationUnits("ft")
+            .withChamberType(new LookupType.Builder().withOfficeId("LRD").withActive(true)
+                .withTooltip("CHAMBER").withDisplayValue("Land Side Main").build())
+            .withHighWaterLowerPoolLocationLevel(null)
+            .withHighWaterUpperPoolLocationLevel(null)
+            .withLowWaterLowerPoolLocationLevel(null)
+            .withLowWaterUpperPoolLocationLevel(null)
             .build();
     }
 

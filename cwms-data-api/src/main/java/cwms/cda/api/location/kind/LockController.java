@@ -90,7 +90,7 @@ public final class LockController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Office id for the reservoir project location "
                 + "associated with the locks."),
-            @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project-id of the "
+            @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project ID of the "
                 + "Locks whose data is to be included in the response.")
         },
         responses = {
@@ -110,7 +110,7 @@ public final class LockController implements CrudHandler {
             CwmsId project = CwmsId.buildCwmsId(office, projectId);
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
-            List<CwmsId> locks = dao.retrieveLockIds(project);
+            List<Lock> locks = dao.retrieveLockCatalog(project);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                 Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, Lock.class);
@@ -130,6 +130,8 @@ public final class LockController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                 + "the lock to be retrieved."),
+            @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project ID associated "
+                + "with the Lock whose data is to be included in the response."),
             @OpenApiParam(name = UNIT, description = "Specifies the unit system to be used in the response. "
                 + "Valid values are: \n* `SI` - Metric units. \n* `EN` - Imperial units. \nDefaults to SI.")
         },
@@ -146,11 +148,12 @@ public final class LockController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
+        String projectId = requiredParam(ctx, PROJECT_ID);
         UnitSystem unitSystem = ctx.queryParamAsClass(UNIT, UnitSystem.class).getOrDefault(UnitSystem.SI);
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
-            Lock lock = dao.retrieveLock(CwmsId.buildCwmsId(office, name), unitSystem);
+            Lock lock = dao.retrieveLock(CwmsId.buildCwmsId(office, name), projectId, unitSystem);
             if (lock == null) {
                 ctx.status(HttpServletResponse.SC_NOT_FOUND);
                 return;

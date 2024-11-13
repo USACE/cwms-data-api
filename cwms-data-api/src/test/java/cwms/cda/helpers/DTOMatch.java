@@ -456,13 +456,22 @@ public final class DTOMatch {
                 () -> {
                     // if the lock to match is from the database, the warning levels are calculated based on the location levels
                     if (fromDB) {
-                        assertEquals((first.getHighWaterLowerPoolLocationLevel().getLevelValue() - first.getHighWaterLowerPoolWarningLevel()),
-                                second.getHighWaterLowerPoolWarningLevel(), DEFAULT_DELTA);
-                        assertEquals((first.getHighWaterUpperPoolLocationLevel().getLevelValue() - first.getHighWaterUpperPoolWarningLevel()),
-                                second.getHighWaterUpperPoolWarningLevel(), DEFAULT_DELTA);
+                        if (first.getHighWaterLowerPoolLocationLevel() != null) {
+                            assertEquals((first.getHighWaterLowerPoolLocationLevel().getLevelValue() - first.getHighWaterLowerPoolWarningLevel()),
+                                    second.getHighWaterLowerPoolWarningLevel(), DEFAULT_DELTA);
+                        }
+                        if (first.getHighWaterUpperPoolLocationLevel() != null) {
+                            assertEquals((first.getHighWaterUpperPoolLocationLevel().getLevelValue() - first.getHighWaterUpperPoolWarningLevel()),
+                                    second.getHighWaterUpperPoolWarningLevel(), DEFAULT_DELTA);
+                        }
                     } else {
-                        assertEquals(first.getHighWaterLowerPoolWarningLevel(), second.getHighWaterLowerPoolWarningLevel());
-                        assertEquals(first.getHighWaterUpperPoolWarningLevel(), second.getHighWaterUpperPoolWarningLevel());
+                        if (first.getHighWaterLowerPoolLocationLevel() != null) {
+                            assertEquals(first.getHighWaterLowerPoolWarningLevel(), second.getHighWaterLowerPoolWarningLevel());
+                        }
+                        if (first.getHighWaterUpperPoolLocationLevel() != null)
+                        {
+                            assertEquals(first.getHighWaterUpperPoolWarningLevel(), second.getHighWaterUpperPoolWarningLevel());
+                        }
                     }
                 },
                 () -> assertEquals(first.getLockLength(), second.getLockLength(), DEFAULT_DELTA, "Lock length does not match"),
@@ -481,6 +490,13 @@ public final class DTOMatch {
 
     public static void assertMatch(LockLocationLevelRef first, LockLocationLevelRef second)
     {
+        if (first == null && second == null)
+        {
+            return;
+        } else if (first == null || second == null)
+        {
+            fail("One of the LockLocationLevelRef is null");
+        }
         assertAll(
                 () -> assertEquals(first.getLevelLink(), second.getLevelLink(), "Level link does not match"),
                 () -> assertEquals(first.getOfficeId(), second.getOfficeId(), "Office ID does not match"),
