@@ -112,22 +112,19 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                     return new Pair<>(group, loc);
                 };
 
-        SelectOnConditionStep<?> selectOn = dsl.select(catGrp.CAT_DB_OFFICE_ID,
+        SelectSeekStep1<?, BigDecimal> query = dsl.select(catGrp.CAT_DB_OFFICE_ID,
                         catGrp.TS_CATEGORY_ID, catGrp.TS_CATEGORY_DESC, catGrp.GRP_DB_OFFICE_ID,
                         catGrp.TS_GROUP_ID, catGrp.TS_GROUP_DESC, catGrp.SHARED_TS_ALIAS_ID,
                         catGrp.SHARED_REF_TS_ID, grpAssgn.CATEGORY_ID, grpAssgn.DB_OFFICE_ID,
                         grpAssgn.GROUP_ID, grpAssgn.TS_ID, grpAssgn.TS_CODE, grpAssgn.ATTRIBUTE,
-                        grpAssgn.ALIAS_ID, grpAssgn.REF_TS_ID)
+                        grpAssgn.ALIAS_ID, grpAssgn.REF_TS_ID, grpAssgn.CATEGORY_OFFICE_ID, grpAssgn.GROUP_OFFICE_ID)
                 .from(catGrp).leftJoin(grpAssgn)
                 .on(catGrp.TS_CATEGORY_ID.eq(grpAssgn.CATEGORY_ID)
-                        .and(catGrp.TS_GROUP_ID.eq(grpAssgn.GROUP_ID)));
-
-        SelectOrderByStep<?> select = selectOn;
-        if (whereCond != null) {
-            select = selectOn.where(whereCond);
-        }
-
-        final SelectSeekStep1<?, BigDecimal> query = select.orderBy(grpAssgn.ATTRIBUTE);
+                        .and(catGrp.TS_GROUP_ID.eq(grpAssgn.GROUP_ID)))
+            .where(whereCond)
+            .and(grpAssgn.CATEGORY_OFFICE_ID.eq())
+            .and(grpAssgn.GROUP_OFFICE_ID.eq())
+            .orderBy(grpAssgn.ATTRIBUTE);
 
         logger.fine(() -> query.getSQL(ParamType.INLINED));
 

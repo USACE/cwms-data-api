@@ -439,14 +439,16 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         AV_LOC al = AV_LOC.AV_LOC;
 
         SelectSeekStep1<Record, BigDecimal> select = dsl.select(al.asterisk(), alga.CATEGORY_ID,
-                        alga.GROUP_ID, alga.ATTRIBUTE, alga.ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
-                        alga.SHARED_ALIAS_ID)
-                .from(al).join(alga).on(al.LOCATION_ID.eq(alga.LOCATION_ID))
-                .where(alga.DB_OFFICE_ID.eq(officeId)
-                        .and(alga.CATEGORY_ID.eq(categoryId)
-                                .and(alga.GROUP_ID.eq(groupId))
-                                .and(al.UNIT_SYSTEM.eq(units))))
-                .orderBy(alga.ATTRIBUTE);
+                alga.GROUP_ID, alga.ATTRIBUTE, alga.ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
+                alga.SHARED_ALIAS_ID)
+            .from(al).join(alga).on(al.LOCATION_ID.eq(alga.LOCATION_ID))
+            .where(alga.DB_OFFICE_ID.eq(officeId)
+                .and(alga.CATEGORY_OFFICE_ID.eq())
+                .and(alga.GROUP_OFFICE_ID.eq())
+                .and(alga.CATEGORY_ID.eq(categoryId)
+                    .and(alga.GROUP_ID.eq(groupId))
+                    .and(al.UNIT_SYSTEM.eq(units))))
+            .orderBy(alga.ATTRIBUTE);
 
         List<Feature> features =
                 select.stream()
