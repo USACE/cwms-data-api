@@ -233,6 +233,16 @@ public class TimeSeriesGroupController implements CrudHandler {
             String body = ctx.body();
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
             TimeSeriesGroup deserialize = Formats.parseContent(contentType, body, TimeSeriesGroup.class);
+
+            if (!deserialize.getTimeSeriesCategory().getOfficeId().equalsIgnoreCase(CWMS_OFFICE)
+                    && (!deserialize.getOfficeId().equalsIgnoreCase(deserialize.getTimeSeriesCategory().getOfficeId())
+                    || deserialize.getOfficeId().equalsIgnoreCase(CWMS_OFFICE))) {
+                CdaError re = new CdaError("Office ID cannot be CWMS and must match the TimeSeries category office ID");
+                logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                return;
+            }
+
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
             dao.create(deserialize, failIfExists);

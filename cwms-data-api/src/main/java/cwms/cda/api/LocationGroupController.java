@@ -223,6 +223,16 @@ public class LocationGroupController implements CrudHandler {
             String body = ctx.body();
             ContentType contentType = Formats.parseHeader(formatHeader, LocationGroup.class);
             LocationGroup deserialize = Formats.parseContent(contentType, body, LocationGroup.class);
+
+            if (!deserialize.getLocationCategory().getOfficeId().equalsIgnoreCase(CWMS_OFFICE)
+                    && (!deserialize.getOfficeId().equalsIgnoreCase(deserialize.getLocationCategory().getOfficeId())
+                    || deserialize.getOfficeId().equalsIgnoreCase(CWMS_OFFICE))) {
+                CdaError re = new CdaError("Office ID cannot be CWMS and must match the location category office ID");
+                logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                return;
+            }
+
             LocationGroupDao dao = new LocationGroupDao(dsl);
             dao.create(deserialize);
             ctx.status(HttpServletResponse.SC_CREATED);
