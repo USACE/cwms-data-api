@@ -258,9 +258,8 @@ public class TimeSeriesGroupController implements CrudHandler {
             if (!deserialize.getTimeSeriesCategory().getOfficeId().equalsIgnoreCase(CWMS_OFFICE)
                     && (!deserialize.getOfficeId().equalsIgnoreCase(deserialize.getTimeSeriesCategory().getOfficeId())
                     || deserialize.getOfficeId().equalsIgnoreCase(CWMS_OFFICE))) {
-                CdaError re = new CdaError("TimeSeries Group office ID cannot be CWMS and must match the "
+                throw new IllegalArgumentException("TimeSeries Group office ID cannot be CWMS and must match the "
                         + "TimeSeries Category office ID");
-                throw new IllegalArgumentException(re.toString());
             }
 
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
