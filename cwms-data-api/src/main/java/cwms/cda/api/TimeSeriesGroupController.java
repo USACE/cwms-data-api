@@ -25,7 +25,28 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.CWMS_OFFICE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.GROUP_ID;
+import static cwms.cda.api.Controllers.GROUP_OFFICE_ID;
+import static cwms.cda.api.Controllers.INCLUDE_ASSIGNED;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_TS;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
+import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -237,10 +258,9 @@ public class TimeSeriesGroupController implements CrudHandler {
             if (!deserialize.getTimeSeriesCategory().getOfficeId().equalsIgnoreCase(CWMS_OFFICE)
                     && (!deserialize.getOfficeId().equalsIgnoreCase(deserialize.getTimeSeriesCategory().getOfficeId())
                     || deserialize.getOfficeId().equalsIgnoreCase(CWMS_OFFICE))) {
-                CdaError re = new CdaError("Office ID cannot be CWMS and must match the TimeSeries category office ID");
-                logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
-                return;
+                CdaError re = new CdaError("TimeSeries Group office ID cannot be CWMS and must match the "
+                        + "TimeSeries Category office ID");
+                throw new IllegalArgumentException(re.toString());
             }
 
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
@@ -264,7 +284,8 @@ public class TimeSeriesGroupController implements CrudHandler {
                 + "Default: false"),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "office of the user making the request. This is the office that the timeseries, group, and category "
-                + "belong to. If the group and/or category belong to the CWMS office, this only identifies the timeseries."),
+                + "belong to. If the group and/or category belong to the CWMS office, "
+                + "this only identifies the timeseries."),
         },
         method = HttpMethod.PATCH,
         tags = {TAG}

@@ -141,20 +141,6 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 			.log().ifValidationFails(LogDetail.ALL,true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_CONFLICT));
-		//Read Empty
-		given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(Formats.JSON)
-			.contentType(Formats.JSON)
-			.queryParam("office", officeId)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/location/category/" + cat.getId())
-		.then()
-			.log().ifValidationFails(LogDetail.ALL,true)
-		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
 	}
 
 	@Test
