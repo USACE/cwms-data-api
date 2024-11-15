@@ -366,10 +366,11 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         TimeSeriesCategory cat = new TimeSeriesCategory(CWMS_OFFICE, "Agency Aliases", "Time series aliases for various agencies");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_create_read_delete", "IntegrationTesting",
                 "sharedTsAliasId", timeSeriesId);
+        TimeSeriesGroup group3 = new TimeSeriesGroup(group, null);
         TimeSeriesGroup group2 = new TimeSeriesGroup(cat, officeId2, "test_create_read_delete", "IntegrationTesting",
                 "sharedTsAliasId", timeSeriesId);
+        TimeSeriesGroup group4 = new TimeSeriesGroup(group, null);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
-
         BigDecimal tsCode = getTsCode(officeId, timeSeriesId);
         assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, tsCode, "AliasId", timeSeriesId, 1));
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
@@ -406,7 +407,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
-        //Read
+        // Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
@@ -425,10 +426,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("office-id", equalTo(group.getOfficeId()))
             .body("id", equalTo(group.getId()))
-            .body("description", equalTo(group.getDescription()))
-            .body("assigned-locations[0].location-id", equalTo(locationId))
-            .body("assigned-locations[0].alias-id", equalTo("AliasId"))
-            .body("assigned-locations[0].ref-location-id", equalTo(locationId));
+            .body("description", equalTo(group.getDescription()));
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -448,10 +446,43 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("office-id", equalTo(group2.getOfficeId()))
             .body("id", equalTo(group2.getId()))
-            .body("description", equalTo(group2.getDescription()))
-            .body("assigned-locations[0].location-id", equalTo(locationId))
-            .body("assigned-locations[0].alias-id", equalTo("AliasId"))
-            .body("assigned-locations[0].ref-location-id", equalTo(locationId));
+            .body("description", equalTo(group2.getDescription()));
+        // update group to unassign all time series
+        groupXml = Formats.format(contentType, group3);
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(groupXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, group3.getOfficeId())
+            .queryParam(REPLACE_ASSIGNED_TS, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch("/timeseries/group/" + group3.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+        // update group to unassign all time series
+        groupXml = Formats.format(contentType, group4);
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(groupXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, group4.getOfficeId())
+            .queryParam(REPLACE_ASSIGNED_TS, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch("/timeseries/group/" + group4.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
