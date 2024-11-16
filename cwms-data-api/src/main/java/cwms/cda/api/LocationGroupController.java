@@ -77,20 +77,24 @@ public class LocationGroupController implements CrudHandler {
     }
 
     @OpenApi(queryParams = {
-        @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
+            @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
                 + "location group(s) whose data is to be included in the response. If this "
                 + "field is not specified, matching location groups information from all "
                 + "offices shall be returned."),
-        @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
+            @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
                 + " the assigned locations in the returned location groups. (default: false)"),
-        @OpenApiParam(name = LOCATION_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                + "matching against the location category id"), },
+            @OpenApiParam(name = LOCATION_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                + "matching against the location category id"),
+            @OpenApiParam(name = CATEGORY_OFFICE_ID, required = true, description = "Specifies the "
+                + "owning office of the category the location group belongs to "
+                + "whose data is to be included in the response.")
+        },
         responses = {
             @OpenApiResponse(status = STATUS_200,
-                    content = {
-                        @OpenApiContent(isArray = true, from = LocationGroup.class, type = Formats.JSON),
-                        @OpenApiContent(isArray = true, from = CsvV1LocationGroup.class, type = Formats.CSV)
-                    })
+                content = {
+                    @OpenApiContent(isArray = true, from = LocationGroup.class, type = Formats.JSON),
+                    @OpenApiContent(isArray = true, from = CsvV1LocationGroup.class, type = Formats.CSV)
+                })
         },
         description = "Returns CWMS Location Groups Data", tags = {TAG})
     @Override
@@ -100,7 +104,8 @@ public class LocationGroupController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LocationGroupDao cdm = new LocationGroupDao(dsl);
 
-            String office = ctx.queryParam(OFFICE);
+            String groupOfficeId = requiredParam(ctx, OFFICE);
+            String categoryOfficeId = requiredParam(ctx, CATEGORY_OFFICE_ID);
 
             boolean includeAssigned = queryParamAsClass(ctx, new String[]{INCLUDE_ASSIGNED},
                     Boolean.class, false, metrics, name(LocationGroupController.class.getName(),
@@ -109,7 +114,8 @@ public class LocationGroupController implements CrudHandler {
             String locCategoryLike = queryParamAsClass(ctx, new String[]{LOCATION_CATEGORY_LIKE},
                     String.class, null, metrics, name(LocationGroupController.class.getName(), GET_ALL));
 
-            List<LocationGroup> grps = cdm.getLocationGroups(office, includeAssigned, locCategoryLike);
+            List<LocationGroup> grps = cdm.getLocationGroups(groupOfficeId, categoryOfficeId,
+                    includeAssigned, locCategoryLike);
 
             if (!grps.isEmpty()) {
                 String formatHeader = ctx.header(Header.ACCEPT);
@@ -251,7 +257,8 @@ public class LocationGroupController implements CrudHandler {
                 + "Default: false"),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "office of the user making the request. This is the office that the location, group, and category "
-                + "belong to. If the group and/or category belong to the CWMS office, this only identifies the location."),
+                + "belong to. If the group and/or category belong to the CWMS office, "
+                + "this only identifies the location."),
         },
         method = HttpMethod.PATCH,
         tags = {TAG}

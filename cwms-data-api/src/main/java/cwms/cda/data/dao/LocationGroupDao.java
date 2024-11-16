@@ -186,7 +186,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @return A list of all location groups.
      */
     public List<LocationGroup> getLocationGroups() {
-        return getLocationGroups(null, null);
+        return getLocationGroups(null, null, null);
     }
 
     /**
@@ -195,7 +195,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @return A list of all location groups for the given office.
      */
     public List<LocationGroup> getLocationGroups(String officeId) {
-        return getLocationGroups(officeId, null);
+        return getLocationGroups(officeId, null, null);
     }
 
     /**
@@ -206,25 +206,26 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @return A list of all location groups for the given office and category.
      */
     public List<LocationGroup> getLocationGroups(@Nullable String officeId,
-                                                 boolean includeAssigned,
+                                                 String categoryOfficeId, boolean includeAssigned,
                                                  @Nullable String locCategoryLike) {
         if (includeAssigned) {
-            return getLocationGroups(officeId, locCategoryLike);
+            return getLocationGroups(officeId, categoryOfficeId, locCategoryLike);
         } else {
-            return getGroupsWithoutAssignedLocations(officeId, locCategoryLike);
+            return getGroupsWithoutAssignedLocations(officeId, categoryOfficeId, locCategoryLike);
         }
     }
 
     /**
      * Get all location groups for a given office and category,
      * as well as a where clause to filter the shared_ref_location_id.
-     * @param officeId The office id to use for the query.
+     * @param groupOfficeId The office id to use for the query.
      * @param locCategoryLike A regex to use to filter the location categories.  May be null.
      * @param sharedRefLocLike A where clause to filter the shared_loc_alias_id.  May be null.
      * @return A list of all location groups for the given parameters.
      */
 
-    public List<LocationGroup> getLocationGroups(String officeId, String locCategoryLike, String sharedRefLocLike) {
+    public List<LocationGroup> getLocationGroups(String groupOfficeId, String categoryOfficeId, String locCategoryLike,
+            String sharedRefLocLike) {
         AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
@@ -240,6 +241,10 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         Condition condition = noCondition();
         if (locCategoryLike != null && !locCategoryLike.isEmpty()) {
             condition = caseInsensitiveLikeRegex(alcg.LOC_CATEGORY_ID, locCategoryLike);
+        }
+
+        if (categoryOfficeId != null) {
+            condition = condition.and(alcg.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
         }
 
         if (sharedRefLocLike != null && !sharedRefLocLike.isEmpty()) {
@@ -268,8 +273,8 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                 .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
                         .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
 
-        if (officeId != null) {
-            connectBy = onStep.where(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(officeId.toUpperCase()).and(condition));
+        if (groupOfficeId != null) {
+            connectBy = onStep.where(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(groupOfficeId.toUpperCase()).and(condition));
         } else {
             connectBy = onStep.where(condition);
         }
@@ -296,11 +301,13 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
     /**
      * Get all location groups for a given office and category.
-     * @param officeId The office id to use for the query.
+     * @param groupOfficeId The group office id to use for the query.
+     * @param categoryOfficeId The category office id to use for the query.
      * @param locCategoryLike A regex to use to filter the location categories.  May be null.
      * @return A list of all location groups for the given office and category.
      */
-    public List<LocationGroup> getLocationGroups(String officeId, String locCategoryLike) {
+    public List<LocationGroup> getLocationGroups(String groupOfficeId,
+            String categoryOfficeId, String locCategoryLike) {
         AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
@@ -341,16 +348,20 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             condition = caseInsensitiveLikeRegex(alcg.LOC_CATEGORY_ID, locCategoryLike);
         }
 
-        if (officeId != null) {
-            if (CWMS.equalsIgnoreCase(officeId)) {
+        if (categoryOfficeId != null) {
+            condition = condition.and(alcg.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
+        }
+
+        if (groupOfficeId != null) {
+            if (CWMS.equalsIgnoreCase(groupOfficeId)) {
                 connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.eq(CWMS)
                         .and(alcg.GRP_DB_OFFICE_ID.eq(CWMS))
                         .and(condition)
                 );
             } else {
-                connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId)
-                        .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
-                        .and(alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(officeId)))
+                connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, groupOfficeId)
+                        .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, groupOfficeId))
+                        .and(alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(groupOfficeId)))
                         .and(condition)
                 );
             }
@@ -377,7 +388,8 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     }
 
     private List<LocationGroup> getGroupsWithoutAssignedLocations(
-            @Nullable String officeId, @Nullable String locCategoryLike) {
+            @Nullable String groupOfficeId, @Nullable String categoryOfficeId,
+            @Nullable String locCategoryLike) {
         List<LocationGroup> retVal;
         AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
@@ -389,8 +401,12 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         SelectJoinStep<Record> step = dsl.selectDistinct(columns).from(table);
 
         Condition condition = table.LOC_GROUP_ID.isNotNull();
-        if (officeId != null && !officeId.isEmpty()) {
-            condition = condition.and(table.GRP_DB_OFFICE_ID.eq(officeId));
+        if (groupOfficeId != null && !groupOfficeId.isEmpty()) {
+            condition = condition.and(table.GRP_DB_OFFICE_ID.eq(groupOfficeId));
+        }
+
+        if (categoryOfficeId != null && !categoryOfficeId.isEmpty()) {
+            condition = condition.and(table.CAT_DB_OFFICE_ID.eq(categoryOfficeId));
         }
 
         if (locCategoryLike != null && !locCategoryLike.isEmpty()) {

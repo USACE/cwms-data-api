@@ -105,8 +105,6 @@ public class TimeSeriesGroupController implements CrudHandler {
                         + "matching against the timeseries category id"),
                 @OpenApiParam(name = CATEGORY_OFFICE_ID, description = "Specifies the owning office of the "
                     + "timeseries group category"),
-                @OpenApiParam(name = GROUP_OFFICE_ID, description = "Specifies the owning office of the "
-                    + "timeseries group"),
                 @OpenApiParam(name = TIMESERIES_GROUP_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
                         + "matching against the timeseries group id")
             },
@@ -127,8 +125,8 @@ public class TimeSeriesGroupController implements CrudHandler {
 
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
             String office = ctx.queryParam(OFFICE);
-            String categoryOffice = ctx.queryParam(CATEGORY_OFFICE_ID);
             String groupOffice = ctx.queryParam(GROUP_OFFICE_ID);
+            String categoryOffice = ctx.queryParam(CATEGORY_OFFICE_ID);
 
             boolean includeAssigned = queryParamAsClass(ctx, new String[]{INCLUDE_ASSIGNED},
                     Boolean.class, true, metrics, name(TimeSeriesGroupController.class.getName(),
@@ -138,7 +136,7 @@ public class TimeSeriesGroupController implements CrudHandler {
             String tsGroupLike = queryParamAsClass(ctx, new String[]{TIMESERIES_GROUP_LIKE},
                     String.class, null, metrics, name(TimeSeriesGroupController.class.getName(), GET_ALL));
 
-            List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(office, categoryOffice, groupOffice,
+            List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(office, groupOffice, categoryOffice,
                     includeAssigned, tsCategoryLike, tsGroupLike);
             if (grps.isEmpty()) {
                 CdaError re = new CdaError("No data found for The provided office");
@@ -169,9 +167,9 @@ public class TimeSeriesGroupController implements CrudHandler {
                         + "owning office of the timeseries group whose data is to be included"
                         + " in the response."),
                 @OpenApiParam(name = CATEGORY_OFFICE_ID, description = "Specifies the owning office of the "
-                        + "timeseries group category"),
+                        + "timeseries group category", required = true),
                 @OpenApiParam(name = GROUP_OFFICE_ID, description = "Specifies the owning office of the "
-                        + "timeseries group"),
+                        + "timeseries group", required = true),
                 @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies"
                         + " the category containing the timeseries group whose data is to be "
                         + "included in the response."),
@@ -190,8 +188,8 @@ public class TimeSeriesGroupController implements CrudHandler {
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
             String office = ctx.queryParam(OFFICE);
             String categoryId = ctx.queryParam(CATEGORY_ID);
-            String groupOffice = ctx.queryParam(GROUP_OFFICE_ID);
-            String categoryOffice = ctx.queryParam(CATEGORY_OFFICE_ID);
+            String groupOffice = requiredParam(ctx, GROUP_OFFICE_ID);
+            String categoryOffice = requiredParam(ctx, CATEGORY_OFFICE_ID);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
