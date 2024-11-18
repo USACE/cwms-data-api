@@ -172,8 +172,11 @@ public class LocationGroupController implements CrudHandler {
             LocationGroupDao cdm = new LocationGroupDao(dsl);
             String office = requiredParam(ctx, OFFICE);
             String categoryId = requiredParam(ctx, CATEGORY_ID);
-            String groupOfficeId = requiredParam(ctx, GROUP_OFFICE_ID);
-            String categoryOfficeId = requiredParam(ctx, CATEGORY_OFFICE_ID);
+
+            // Not marked as required to maintain backwards compatibility with existing clients
+            String groupOfficeId = ctx.queryParam(GROUP_OFFICE_ID);
+            String categoryOfficeId = ctx.queryParam(CATEGORY_OFFICE_ID);
+
             String formatHeader = ctx.header(Header.ACCEPT);
             String result;
             ContentType contentType;

@@ -188,8 +188,10 @@ public class TimeSeriesGroupController implements CrudHandler {
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
             String office = ctx.queryParam(OFFICE);
             String categoryId = ctx.queryParam(CATEGORY_ID);
-            String groupOffice = requiredParam(ctx, GROUP_OFFICE_ID);
-            String categoryOffice = requiredParam(ctx, CATEGORY_OFFICE_ID);
+
+            // Not marked as required to maintain backwards compatibility with existing clients
+            String groupOffice = ctx.queryParam(GROUP_OFFICE_ID);
+            String categoryOffice = ctx.queryParam(CATEGORY_OFFICE_ID);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
