@@ -28,6 +28,7 @@ import io.restassured.config.JsonConfig;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import javax.servlet.http.HttpServletResponse;
+import org.testcontainers.images.PullPolicy;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
@@ -64,6 +65,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                             .withOfficeId("HQ")
                             .withVolumeName(TeamCityUtilities.cleanupBranchName(ORACLE_VOLUME))
                             .withSchemaImage(CWMS_DB_IMAGE);
+            cwmsDb.withImagePullPolicy(PullPolicy.alwaysPull());
             cwmsDb.start();
 
            
