@@ -130,8 +130,6 @@ public final class LockController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                 + "the lock to be retrieved."),
-            @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project ID associated "
-                + "with the Lock whose data is to be included in the response."),
             @OpenApiParam(name = UNIT, description = "Specifies the unit system to be used in the response. "
                 + "Valid values are: \n* `SI` - Metric units. \n* `EN` - Imperial units. \nDefaults to SI.")
         },
@@ -148,12 +146,11 @@ public final class LockController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
-        String projectId = requiredParam(ctx, PROJECT_ID);
         UnitSystem unitSystem = ctx.queryParamAsClass(UNIT, UnitSystem.class).getOrDefault(UnitSystem.SI);
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
-            Lock lock = dao.retrieveLock(CwmsId.buildCwmsId(office, name), projectId, unitSystem);
+            Lock lock = dao.retrieveLock(CwmsId.buildCwmsId(office, name), unitSystem);
             if (lock == null) {
                 ctx.status(HttpServletResponse.SC_NOT_FOUND);
                 return;

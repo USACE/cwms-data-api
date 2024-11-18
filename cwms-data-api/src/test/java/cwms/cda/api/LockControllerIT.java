@@ -290,7 +290,6 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
-            .queryParam(PROJECT_ID, LOCK.getProjectId().getName())
             .queryParam(UNIT, "EN")
         .when()
             .redirects().follow(true)
@@ -346,7 +345,6 @@ final class LockControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
-            .queryParam(PROJECT_ID, LOCK.getProjectId().getName())
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -445,8 +443,6 @@ final class LockControllerIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV1)
                 .queryParam(Controllers.OFFICE, office)
-                .queryParam(PROJECT_ID, LOCK.getProjectId().getName())
-                .queryParam(UNIT, "SI")
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -497,7 +493,6 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
-            .queryParam(PROJECT_ID, LOCK.getProjectId().getName())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -531,10 +526,10 @@ final class LockControllerIT extends DataApiTestIT {
     @Test
     void storeRetrieveSameLockNameDifferentProject() throws Exception {
         // Structure of test:
-        // 1)Create the Lock
-        // 2)Retrieve the Lock and assert that it exists
-        // 3)Delete the Lock
-        // 4)Retrieve the Lock and assert that it does not exist
+        // 1)Create the two Locks
+        // 2)Retrieve the Locks and assert that they exist
+        // 3)Delete the Locks
+        // 4)Retrieve the Locks and assert that they do not exist
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         Lock metricLock = new Lock.Builder()
             .withLockLength(120.5)
@@ -549,8 +544,8 @@ final class LockControllerIT extends DataApiTestIT {
             .withNormalLockLift(45.1)
             .withVolumePerLockage(87.8)
             .withLengthUnits("m")
-            .withHighWaterLowerPoolWarningLevel(12)
-            .withHighWaterUpperPoolWarningLevel(15)
+            .withHighWaterLowerPoolWarningLevel(12.0)
+            .withHighWaterUpperPoolWarningLevel(12.0)
             .build();
         Lock metricLockWithLevels = new Lock.Builder()
             .withLockLength(120.5)
@@ -565,8 +560,8 @@ final class LockControllerIT extends DataApiTestIT {
             .withNormalLockLift(45.1)
             .withVolumePerLockage(87.8)
             .withLengthUnits("m")
-            .withHighWaterLowerPoolWarningLevel(12)
-            .withHighWaterUpperPoolWarningLevel(15)
+            .withHighWaterLowerPoolWarningLevel(12.0)
+            .withHighWaterUpperPoolWarningLevel(12.0)
             .withLowWaterUpperPoolLocationLevel(
                 new LockLocationLevelRef(String.format("/locks/%s.Elev-Closure.Inst.0.Low Water Upper Pool?office=%s",
                         LOCK_LOC2.getName(), LOCK_LOC2.getOfficeId()), 25.0))
@@ -582,6 +577,8 @@ final class LockControllerIT extends DataApiTestIT {
             .build();
         final Lock metricLockProj2 = metricLock;
         String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Lock.class), metricLock);
+
+        // location level storage assumes SI units
         List<LocationLevel> levelList = createLocationLevelList(LOCK);
         // store location levels
         for (LocationLevel level : levelList) {
@@ -703,7 +700,6 @@ final class LockControllerIT extends DataApiTestIT {
                 .accept(Formats.JSONV1)
                 .queryParam(Controllers.OFFICE, office)
                 .queryParam(UNIT, "SI")
-                .queryParam(PROJECT_ID, metricLockProj1.getProjectId().getName())
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -729,8 +725,8 @@ final class LockControllerIT extends DataApiTestIT {
                 .body("high-water-lower-pool-location-level.level-value", equalTo((float) metricHighWaterLowerPoolValue))
                 .body("low-water-upper-pool-location-level.level-value", equalTo((float) metricLowWaterUpperPoolValue))
                 .body("low-water-lower-pool-location-level.level-value", equalTo((float) metricLowWaterLowerPoolValue))
-                .body("high-water-upper-pool-warning-level", equalTo((float) metricWarningLevelUpper))
-                .body("high-water-lower-pool-warning-level", equalTo((float) metricWarningLevelLower))
+                .body("high-water-upper-pool-warning-level", equalTo((float) (metricWarningLevelUpper)))
+                .body("high-water-lower-pool-warning-level", equalTo((float) (metricWarningLevelLower)))
             ;
 
             // Retrieve the Lock and assert that it exists
@@ -739,7 +735,6 @@ final class LockControllerIT extends DataApiTestIT {
                 .accept(Formats.JSONV1)
                 .queryParam(Controllers.OFFICE, office)
                 .queryParam(UNIT, "SI")
-                .queryParam(PROJECT_ID, metricLockProj2.getProjectId().getName())
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -761,12 +756,20 @@ final class LockControllerIT extends DataApiTestIT {
                 .body("lock-length", equalTo((float) metricLockProj2.getLockLength()))
                 .body("length-units", equalTo(metricLockProj2.getLengthUnits()))
                 .body("minimum-draft", equalTo((float) metricLockProj2.getMinimumDraft()))
-                .body("high-water-upper-pool-location-level.level-value", equalTo((float) metricHighWaterUpperPoolValue))
-                .body("high-water-lower-pool-location-level.level-value", equalTo((float) metricHighWaterLowerPoolValue))
-                .body("low-water-upper-pool-location-level.level-value", equalTo((float) metricLowWaterUpperPoolValue))
-                .body("low-water-lower-pool-location-level.level-value", equalTo((float) metricLowWaterLowerPoolValue))
-                .body("high-water-upper-pool-warning-level", equalTo((float) metricWarningLevelUpper))
-                .body("high-water-lower-pool-warning-level", equalTo((float) metricWarningLevelLower))
+                .body("high-water-upper-pool-location-level.level-value",
+                        equalTo(metricLockWithLevels.getHighWaterUpperPoolLocationLevel().getLevelValue().floatValue()))
+                .body("high-water-lower-pool-location-level.level-value",
+                        equalTo(metricLockWithLevels.getHighWaterLowerPoolLocationLevel().getLevelValue().floatValue()))
+                .body("low-water-upper-pool-location-level.level-value",
+                        equalTo(metricLockWithLevels.getLowWaterUpperPoolLocationLevel().getLevelValue().floatValue()))
+                .body("low-water-lower-pool-location-level.level-value",
+                        equalTo(metricLockWithLevels.getLowWaterLowerPoolLocationLevel().getLevelValue().floatValue()))
+                .body("high-water-upper-pool-warning-level",
+                        equalTo((float) (metricLockWithLevels.getHighWaterUpperPoolLocationLevel().getLevelValue()
+                                - metricLockWithLevels.getHighWaterUpperPoolWarningLevel())))
+                .body("high-water-lower-pool-warning-level",
+                        equalTo((float) (metricLockWithLevels.getHighWaterLowerPoolLocationLevel().getLevelValue()
+                                - metricLockWithLevels.getHighWaterLowerPoolWarningLevel())))
             ;
         }, CwmsDataApiSetupCallback.getWebUser());
 
@@ -821,7 +824,6 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
             .queryParam(Controllers.OFFICE, office)
-            .queryParam(PROJECT_ID, metricLockProj2.getProjectId().getName())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1031,7 +1033,7 @@ final class LockControllerIT extends DataApiTestIT {
                 .withSpecifiedLevelId(lock.getHighWaterUpperPoolLocationLevel().getSpecifiedLevelId())
                 .build();
         retVal.add(highUpperLevel);
-        LocationLevel warningBuffer = new LocationLevel.Builder(String.format("%s.Elev.Inst.0.Warning Buffer", lock.getLocation().getName()), ZonedDateTime.now())
+        LocationLevel warningBuffer = new LocationLevel.Builder(String.format("%s.Elev-Closure.Inst.0.Warning Buffer", lock.getLocation().getName()), ZonedDateTime.now())
                 .withLevelUnitsId(lock.getElevationUnits())
                 .withConstantValue(lock.getHighWaterLowerPoolWarningLevel())
                 .withOfficeId(lock.getLocation().getOfficeId())

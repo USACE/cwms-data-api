@@ -62,8 +62,8 @@ public class Lock extends CwmsDTOBase {
     private final LockLocationLevelRef lowWaterLowerPoolLocationLevel;
     private final LockLocationLevelRef highWaterLowerPoolLocationLevel;
     private final LockLocationLevelRef lowWaterUpperPoolLocationLevel;
-    private final double highWaterUpperPoolWarningLevel;
-    private final double highWaterLowerPoolWarningLevel;
+    private final Double highWaterUpperPoolWarningLevel;
+    private final Double highWaterLowerPoolWarningLevel;
 
     private Lock(Builder builder) {
         this.location = builder.location;
@@ -150,11 +150,11 @@ public class Lock extends CwmsDTOBase {
         return lowWaterUpperPoolLocationLevel;
     }
 
-    public final double getHighWaterUpperPoolWarningLevel() {
+    public final Double getHighWaterUpperPoolWarningLevel() {
         return highWaterUpperPoolWarningLevel;
     }
 
-    public final double getHighWaterLowerPoolWarningLevel() {
+    public final Double getHighWaterLowerPoolWarningLevel() {
         return highWaterLowerPoolWarningLevel;
     }
 
@@ -175,8 +175,8 @@ public class Lock extends CwmsDTOBase {
         private LockLocationLevelRef lowWaterLowerPoolLocationLevel;
         private LockLocationLevelRef highWaterLowerPoolLocationLevel;
         private LockLocationLevelRef lowWaterUpperPoolLocationLevel;
-        private double highWaterUpperPoolWarningLevel;
-        private double highWaterLowerPoolWarningLevel;
+        private Double highWaterUpperPoolWarningLevel;
+        private Double highWaterLowerPoolWarningLevel;
 
         public Builder withLocation(Location location) {
             this.location = location;
@@ -258,12 +258,12 @@ public class Lock extends CwmsDTOBase {
             return this;
         }
 
-        public Builder withHighWaterUpperPoolWarningLevel(double highWaterUpperPoolWarningLevel) {
+        public Builder withHighWaterUpperPoolWarningLevel(Double highWaterUpperPoolWarningLevel) {
             this.highWaterUpperPoolWarningLevel = highWaterUpperPoolWarningLevel;
             return this;
         }
 
-        public Builder withHighWaterLowerPoolWarningLevel(double highWaterLowerPoolWarningLevel) {
+        public Builder withHighWaterLowerPoolWarningLevel(Double highWaterLowerPoolWarningLevel) {
             this.highWaterLowerPoolWarningLevel = highWaterLowerPoolWarningLevel;
             return this;
         }

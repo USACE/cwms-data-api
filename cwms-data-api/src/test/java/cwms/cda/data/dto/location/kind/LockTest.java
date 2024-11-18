@@ -109,8 +109,8 @@ final class LockTest {
             .withMinimumDraft(25.5)
             .withLengthUnits("ft")
             .withVolumeUnits("ft3")
-            .withHighWaterLowerPoolWarningLevel(2)
-            .withHighWaterUpperPoolWarningLevel(2)
+            .withHighWaterLowerPoolWarningLevel(2.0)
+            .withHighWaterUpperPoolWarningLevel(2.0)
             .withChamberType(new LookupType.Builder().withOfficeId("LRL").withActive(true)
                 .withDisplayValue("LOCK").withTooltip("Land Side Main").build())
             .withHighWaterLowerPoolLocationLevel(
