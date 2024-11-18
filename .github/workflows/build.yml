@@ -17,9 +17,9 @@ jobs:
       thewar: ${{steps.thebuild.outputs.WARFILE}}
     steps:
       - name: checkout code
-        uses: actions/checkout@v4.2.1
+        uses: actions/checkout@v4.2.2
       - name: setup java
-        uses: actions/setup-java@v4.4.0
+        uses: actions/setup-java@v4.5.0
         with:
           distribution: 'temurin'
           java-version: '8'
@@ -44,9 +44,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v4.2.1
+        uses: actions/checkout@v4.2.2
       - name: setup java
-        uses: actions/setup-java@v4.4.0
+        uses: actions/setup-java@v4.5.0
         with:
           distribution: 'temurin'
           java-version: '8'
@@ -63,7 +63,7 @@ jobs:
         run: echo ${VERSION}
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v2.0.8
+        uses: softprops/action-gh-release@v2.0.9
         with:
           files: warfile/${{ needs.build.outputs.thewar}}
           tag_name: ${{env.VERSION}}
