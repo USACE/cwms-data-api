@@ -466,11 +466,11 @@ public final class DTOMatch {
                         }
                     } else {
                         if (first.getHighWaterLowerPoolLocationLevel() != null) {
-                            assertEquals(first.getHighWaterLowerPoolWarningLevel(), second.getHighWaterLowerPoolWarningLevel());
+                            assertEquals(first.getHighWaterLowerPoolWarningLevel(), second.getHighWaterLowerPoolWarningLevel(), DEFAULT_DELTA);
                         }
                         if (first.getHighWaterUpperPoolLocationLevel() != null)
                         {
-                            assertEquals(first.getHighWaterUpperPoolWarningLevel(), second.getHighWaterUpperPoolWarningLevel());
+                            assertEquals(first.getHighWaterUpperPoolWarningLevel(), second.getHighWaterUpperPoolWarningLevel(), DEFAULT_DELTA);
                         }
                     }
                 },

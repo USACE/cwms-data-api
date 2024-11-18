@@ -27,6 +27,7 @@ package cwms.cda.data.dao.location.kind;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static org.junit.jupiter.api.Assertions.*;
 
+import cwms.cda.api.enums.Nation;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
@@ -43,6 +44,7 @@ import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -250,6 +252,20 @@ final class LockDaoIT extends ProjectStructureIT {
             CwmsDataApiSetupCallback.getWebUser());
     }
 
+    @Test
+    void testUnitConvertToEN() throws Exception {
+        Lock lock = buildTestLockSI();
+        Lock expected = buildTestLock();
+        CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
+        databaseLink.connection(c ->
+        {
+            DSLContext context = getDslContext(c, OFFICE_ID);
+            LockDao dao = new LockDao(context);
+            Lock lockEN = dao.unitConvertToEN(lock);
+            DTOMatch.assertMatch(expected, lockEN, false);
+        });
+    }
+
     private static Lock buildTestLock(Location location, String projectId) {
         return new Lock.Builder()
             .withLocation(location)
@@ -350,5 +366,86 @@ final class LockDaoIT extends ProjectStructureIT {
                 .build();
         retVal.add(warningBuffer);
         return retVal;
+    }
+
+    private Lock buildTestLock() {
+        return new Lock.Builder()
+            .withLocation(buildTestLocation())
+            .withProjectId(new CwmsId.Builder()
+                    .withName("PROJECT")
+                    .withOfficeId("SWT")
+                    .build())
+            .withLockLength(328.084)
+            .withMaximumLockLift(65.6168)
+            .withVolumeUnits("ft3")
+            .withLengthUnits("ft")
+            .withElevationUnits("ft")
+            .withChamberType(new LookupType.Builder().withOfficeId("CWMS").withActive(true)
+                    .withDisplayValue("LOCK").withTooltip("Land Side Main").build())
+            .withLockWidth(328.084)
+            .withNormalLockLift(32.8084)
+            .withVolumePerLockage(3531.46667)
+            .withMinimumDraft(16.4042)
+            .withHighWaterLowerPoolLocationLevel(
+                    new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.High Water Lower Pool?office=LRL", 60.69554))
+            .withHighWaterUpperPoolLocationLevel(
+                    new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.High Water Upper Pool?office=LRL", 67.25722))
+            .withLowWaterLowerPoolLocationLevel(
+                    new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.Low Water Lower Pool?office=LRL", 102.1654))
+            .withLowWaterUpperPoolLocationLevel(
+                    new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.Low Water Upper Pool?office=LRL", 54.13386))
+            .withHighWaterLowerPoolWarningLevel(32.8084)
+            .withHighWaterUpperPoolWarningLevel(32.8084)
+            .build();
+    }
+
+    private Lock buildTestLockSI() {
+        return new Lock.Builder()
+                .withLocation(buildTestLocation())
+                .withProjectId(new CwmsId.Builder()
+                        .withName("PROJECT")
+                        .withOfficeId("SWT")
+                        .build())
+                .withLockLength(100.0)
+                .withMaximumLockLift(20.0)
+                .withVolumeUnits("m3")
+                .withLengthUnits("m")
+                .withElevationUnits("m")
+                .withChamberType(new LookupType.Builder().withOfficeId("CWMS").withActive(true)
+                        .withDisplayValue("LOCK").withTooltip("Land Side Main").build())
+                .withLockWidth(100.0)
+                .withNormalLockLift(10.0)
+                .withVolumePerLockage(100.0)
+                .withMinimumDraft(5.0)
+                .withHighWaterLowerPoolLocationLevel(
+                        new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.High Water Lower Pool?office=LRL", 18.5))
+                .withHighWaterUpperPoolLocationLevel(
+                        new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.High Water Upper Pool?office=LRL", 20.5))
+                .withLowWaterLowerPoolLocationLevel(
+                        new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.Low Water Lower Pool?office=LRL", 31.14))
+                .withLowWaterUpperPoolLocationLevel(
+                        new LockLocationLevelRef("/locks/TEST_LOCATION2.Elev-Closure.Inst.0.Low Water Upper Pool?office=LRL", 16.5))
+                .withHighWaterLowerPoolWarningLevel(10.0)
+                .withHighWaterUpperPoolWarningLevel(10.0)
+                .build();
+    }
+
+    private Location buildTestLocation() {
+        return new Location.Builder("TEST_LOCATION2", "LOCK", ZoneId.of("UTC"),
+            50.0, 50.0, "NVGD29", "SPK")
+            .withElevation(10.0)
+            .withElevationUnits("ft")
+            .withLocationType("SITE")
+            .withCountyName("Sacramento")
+            .withNation(Nation.US)
+            .withActive(true)
+            .withStateInitial("CA")
+            .withBoundingOfficeId("SPK")
+            .withLongName("TEST_LOCATION")
+            .withPublishedLatitude(50.0)
+            .withPublishedLongitude(50.0)
+            .withDescription("for testing")
+            .withNearestCity("Davis")
+            .build();
     }
 }
