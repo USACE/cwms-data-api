@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -310,7 +309,11 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                     .from(VIEW_TSV2)
                     .where(whereCondition.and(dateTimeCol.greaterThan(Timestamp.from(endTime)))
                             .and(startTimeCol.le(Timestamp.from(endTime))));
-            nextDateTime = Objects.requireNonNull(nex.fetchOne()).value1();
+            if (nex.fetchOne() != null) {
+                nextDateTime = nex.fetchOne().value1();
+            } else {
+                throw new NotFoundException("No time series profile data found for the given parameters");
+            }
             if (nextDateTime != null) {
                 endTime = nextDateTime.toInstant();
                 endInclusive = true;
@@ -342,9 +345,9 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             SelectHavingStep<Record1<Integer>> count = dsl.select(countDistinct(VIEW_TSV2.DATE_TIME))
                     .from(VIEW_TSV2)
                     .where(finalWhereCondition);
-            try {
+            if (count.fetchOne() != null) {
                 total = count.fetchOne().value1();
-            } catch (NullPointerException e) {
+            } else {
                 throw new NotFoundException("No time series profile data found for the given parameters");
             }
         }
@@ -354,9 +357,9 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         SelectHavingStep<Record1<Integer>> count = dsl.select(countDistinct(VIEW_TSV2.PARAMETER_ID))
                 .from(VIEW_TSV2)
                 .where(finalWhereCondition);
-        try {
+        if (count.fetchOne() != null) {
             totalPars = count.fetchOne().value1();
-        } catch (NullPointerException e) {
+        } else {
             throw new NotFoundException("No time series profile data found for the given parameters");
         }
 
@@ -366,9 +369,9 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             SelectConditionStep<Record1<Timestamp>> maxVer = dsl.select(max(VIEW_TSV2.VERSION_DATE))
                     .from(VIEW_TSV2)
                     .where(finalWhereCondition);
-            try {
+            if (maxVer.fetchOne() != null) {
                 maxVersionDate = maxVer.fetchOne().value1();
-            } catch (NullPointerException e) {
+            } else {
                 throw new NotFoundException("No time series profile data found for the given parameters");
             }
         }
@@ -377,9 +380,9 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             SelectConditionStep<Record1<Timestamp>> minVer = dsl.select(min(VIEW_TSV2.VERSION_DATE))
                     .from(VIEW_TSV2)
                     .where(finalWhereCondition);
-            try {
+            if (minVer.fetchOne() != null) {
                 minVersionDate = minVer.fetchOne().value1();
-            } catch (NullPointerException e) {
+            } else {
                 throw new NotFoundException("No time series profile data found for the given parameters");
             }
         }
