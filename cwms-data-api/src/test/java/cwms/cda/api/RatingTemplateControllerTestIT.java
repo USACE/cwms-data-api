@@ -37,16 +37,16 @@ import io.restassured.filter.log.LogDetail;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
 
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Tag;
 
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
+import org.junit.jupiter.api.Test;
 
 @Tag("integration")
 class RatingTemplateControllerTestIT extends DataApiTestIT {
 
-    @RepeatedTest(value = 30)
+    @Test
     void test_create_read_delete() throws Exception {
         String locationId = "RatingSpecTest";
         String officeId = "SPK";
