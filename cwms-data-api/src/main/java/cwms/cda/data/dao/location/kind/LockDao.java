@@ -226,7 +226,7 @@ public final class LockDao extends JooqDao<Lock> {
         return String.format("/locks/%s?office=%s", locationName, office);
     }
 
-    public Lock unitConvertToEN(Lock lock) {
+    Lock unitConvertToEN(Lock lock) {
         return connectionResult(dsl, c -> {
             setOffice(c, lock.getLocation().getOfficeId());
 
