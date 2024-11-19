@@ -37,7 +37,6 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -54,8 +53,6 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final PumpLocation pumpLocations;
     @Schema(name = "data-columns")
-    @JsonProperty(required = true, value = "data-columns")
-    private final List<PumpColumn> pumpColumn;
     private final Map<Instant, List<PumpTransfer>> pumpAccounting;
 
     private WaterSupplyAccounting(Builder builder) {
@@ -63,7 +60,6 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
         this.waterUser = builder.waterUser;
         this.pumpLocations = builder.pumpLocations;
         this.pumpAccounting = builder.pumpAccounting;
-        this.pumpColumn = buildPumpColumns();
     }
 
     public String getContractName() {
@@ -72,10 +68,6 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
 
     public WaterUser getWaterUser() {
         return this.waterUser;
-    }
-
-    public List<PumpColumn> getPumpColumn() {
-        return this.pumpColumn;
     }
 
     public Map<Instant, List<PumpTransfer>> getPumpAccounting() {
@@ -118,29 +110,5 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
         public WaterSupplyAccounting build() {
             return new WaterSupplyAccounting(this);
         }
-    }
-
-    private List<PumpColumn> buildPumpColumns() {
-        List<PumpColumn> retVal = new ArrayList<>();
-        retVal.add(new PumpColumn.Builder()
-                .withName("pump-type")
-                .withOrdinal(1)
-                .withDataType(String.class.getTypeName())
-                .build());
-        retVal.add(new PumpColumn.Builder()
-                .withName("transfer-type-display")
-                .withOrdinal(2)
-                .withDataType(String.class.getTypeName())
-                .build());
-        retVal.add(new PumpColumn.Builder()
-                .withName("flow").withOrdinal(3)
-                .withDataType(Double.class.getTypeName())
-                .build());
-        retVal.add(new PumpColumn.Builder()
-                .withName("comment")
-                .withOrdinal(4)
-                .withDataType(String.class.getTypeName())
-                .build());
-        return retVal;
     }
 }

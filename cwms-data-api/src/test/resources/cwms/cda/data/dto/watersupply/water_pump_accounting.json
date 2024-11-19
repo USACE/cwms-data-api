@@ -46,19 +46,64 @@
   ],
   "pump-accounting": {
     "2022-11-20T21:17:28Z": [
-      ["IN", "Pipeline", 1.0, "Added water to the system"],
-      ["OUT", "Pipeline", 2.0, "Removed excess water"],
-      ["BELOW", "River", 3.0, "Daily water release"]
+      {
+        "pump-type": "IN",
+        "transfer-type-display": "Pipeline",
+        "flow": 1.0,
+        "comment": "Added water to the system"
+      },
+      {
+        "pump-type": "OUT",
+        "transfer-type-display": "Pipeline",
+        "flow": 2.0,
+        "comment": "Removed excess water"
+      },
+      {
+        "pump-type": "BELOW",
+        "transfer-type-display": "River",
+        "flow": 3.0,
+        "comment": "Daily water release"
+      }
     ],
     "2022-11-21T21:17:28Z": [
-      ["IN", "Pipeline", 4.0, "Pump transfer for the day"],
-      ["OUT", "Pipeline", 5.0, "Excess water transfer"],
-      ["BELOW", "River", 6.0, "Water returned to the river"]
+      {
+        "pump-type": "IN",
+        "transfer-type-display": "Pipeline",
+        "flow": 4.0,
+        "comment": "Pump transfer for the day"
+      },
+      {
+        "pump-type": "OUT",
+        "transfer-type-display": "Pipeline",
+        "flow": 5.0,
+        "comment": "Excess water transfer"
+      },
+      {
+        "pump-type": "BELOW",
+        "transfer-type-display": "River",
+        "flow": 6.0,
+        "comment": "Water returned to the river"
+      }
     ],
     "2022-11-22T21:17:28Z": [
-      ["IN", "Pipeline", 7.0, "Pump transfer for the day"],
-      ["OUT", "Pipeline", 8.0, "Excess water transfer"],
-      ["BELOW", "River", 9.0, "Water returned to the river"]
+      {
+        "pump-type": "IN",
+        "transfer-type-display": "Pipeline",
+        "flow": 7.0,
+        "comment": "Pump transfer for the day"
+      },
+      {
+        "pump-type": "OUT",
+        "transfer-type-display": "Pipeline",
+        "flow": 8.0,
+        "comment": "Excess water transfer"
+      },
+      {
+        "pump-type": "BELOW",
+        "transfer-type-display": "River",
+        "flow": 9.0,
+        "comment": "Water returned to the river"
+      }
     ]
   }
 }

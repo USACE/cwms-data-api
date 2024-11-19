@@ -49,7 +49,6 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
-import cwms.cda.data.dto.watersupply.PumpColumn;
 import cwms.cda.data.dto.watersupply.PumpLocation;
 import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
@@ -63,7 +62,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Assertions;
@@ -373,8 +371,7 @@ public final class DTOMatch {
             () -> assertEquals(first.getContractName(), second.getContractName()),
             () -> assertMatch(first.getWaterUser(), second.getWaterUser()),
             () -> assertMatch(first.getPumpAccounting(), second.getPumpAccounting()),
-            () -> assertMatch(first.getPumpLocations(), second.getPumpLocations()),
-            () -> assertMatch(first.getPumpColumn(), second.getPumpColumn(), DTOMatch::assertMatch)
+            () -> assertMatch(first.getPumpLocations(), second.getPumpLocations())
         );
     }
 
@@ -396,14 +393,6 @@ public final class DTOMatch {
                 () -> assertEquals(first.getPageSize(), second.getPageSize()),
                 () -> assertEquals(first.getWaterSupplyAccounting().size(), second.getWaterSupplyAccounting().size()),
                 () -> assertMatch(first.getWaterSupplyAccounting(), second.getWaterSupplyAccounting(), DTOMatch::assertMatch)
-        );
-    }
-
-    private static void assertMatch(PumpColumn first, PumpColumn second) {
-        assertAll(
-            () -> assertEquals(first.getName(), second.getName(), "Pump column names do not match"),
-            () -> assertEquals(first.getOrdinal(), second.getOrdinal(), "Pump column ordinals do not match"),
-            () -> assertEquals(first.getDataType(), second.getDataType(), "Pump column data types do not match")
         );
     }
 

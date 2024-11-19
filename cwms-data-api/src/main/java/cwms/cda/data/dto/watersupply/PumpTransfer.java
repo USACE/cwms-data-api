@@ -27,22 +27,20 @@
 package cwms.cda.data.dto.watersupply;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.CwmsDTOBase;
 
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonFormat(shape = JsonFormat.Shape.ARRAY)
 public final class PumpTransfer extends CwmsDTOBase {
-    @JsonProperty(required = true, index = 0)
+    @JsonProperty(required = true)
     private final PumpType pumpType;
-    @JsonProperty(required = true, index = 1)
+    @JsonProperty(required = true)
     private final String transferTypeDisplay;
-    @JsonProperty(required = true, index = 2)
+    @JsonProperty(required = true)
     private final Double flow;
-    @JsonProperty(required = true, index = 3)
+    @JsonProperty(required = true)
     private final String comment;
 
     @JsonCreator
