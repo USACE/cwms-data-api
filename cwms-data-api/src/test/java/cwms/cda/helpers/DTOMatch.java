@@ -24,9 +24,11 @@
 
 package cwms.cda.helpers;
 
+import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.location.kind.GateChange;
 import cwms.cda.data.dto.location.kind.GateSetting;
+import cwms.cda.data.dto.location.kind.LockLocationLevelRef;
 import cwms.cda.data.dto.location.kind.Setting;
 import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.location.kind.VirtualOutlet;
@@ -55,11 +57,11 @@ import cwms.cda.data.dto.watersupply.WaterUserContract;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.function.Executable;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -441,6 +443,66 @@ public final class DTOMatch {
                 () -> assertEquals(first.getDeltaTime(), second.getDeltaTime(), "Delta time does not match"),
                 () -> assertEquals(first.getAirTemp(), second.getAirTemp(), DEFAULT_DELTA, "Air temperature does not match"),
                 () -> assertEquals(first.getWaterTemp(), second.getWaterTemp(), DEFAULT_DELTA, "Water temperature does not match")
+        );
+    }
+
+    public static void assertMatch(Lock first, Lock second, boolean fromDB) {
+        assertAll(
+                () -> assertEquals(first.getLocation(), second.getLocation(), "Location doesn't match"),
+                () -> assertMatch(first.getProjectId(), second.getProjectId(), "Project ID does not match"),
+                () -> assertEquals(first.getElevationUnits(), second.getElevationUnits(), "Elevation units do not match"),
+                () -> assertMatch(first.getChamberType(), second.getChamberType()),
+                () -> assertEquals(first.getLengthUnits(), second.getLengthUnits(), "Length units do not match"),
+                () -> {
+                    // if the lock to match is from the database, the warning levels are calculated based on the location levels
+                    if (fromDB) {
+                        if (first.getHighWaterLowerPoolLocationLevel() != null) {
+                            assertEquals((first.getHighWaterLowerPoolLocationLevel().getLevelValue() - first.getHighWaterLowerPoolWarningLevel()),
+                                    second.getHighWaterLowerPoolWarningLevel(), DEFAULT_DELTA);
+                        }
+                        if (first.getHighWaterUpperPoolLocationLevel() != null) {
+                            assertEquals((first.getHighWaterUpperPoolLocationLevel().getLevelValue() - first.getHighWaterUpperPoolWarningLevel()),
+                                    second.getHighWaterUpperPoolWarningLevel(), DEFAULT_DELTA);
+                        }
+                    } else {
+                        if (first.getHighWaterLowerPoolLocationLevel() != null) {
+                            assertEquals(first.getHighWaterLowerPoolWarningLevel(), second.getHighWaterLowerPoolWarningLevel(), DEFAULT_DELTA);
+                        }
+                        if (first.getHighWaterUpperPoolLocationLevel() != null)
+                        {
+                            assertEquals(first.getHighWaterUpperPoolWarningLevel(), second.getHighWaterUpperPoolWarningLevel(), DEFAULT_DELTA);
+                        }
+                    }
+                },
+                () -> assertEquals(first.getLockLength(), second.getLockLength(), DEFAULT_DELTA, "Lock length does not match"),
+                () -> assertEquals(first.getLockWidth(), second.getLockWidth(), DEFAULT_DELTA, "Lock width does not match"),
+                () -> assertEquals(first.getNormalLockLift(), second.getNormalLockLift(), DEFAULT_DELTA, "Normal lock lift values do not match"),
+                () -> assertEquals(first.getMaximumLockLift(), second.getMaximumLockLift(), DEFAULT_DELTA, "Maximum lock lift values do not match"),
+                () -> assertEquals(first.getMinimumDraft(), second.getMinimumDraft(), DEFAULT_DELTA, "Minimum draft does not match"),
+                () -> assertEquals(first.getVolumePerLockage(), second.getVolumePerLockage(), DEFAULT_DELTA, "Volume per lockage does not match"),
+                () -> assertEquals(first.getVolumeUnits(), second.getVolumeUnits(), "Volume units does not match"),
+                () -> assertMatch(first.getHighWaterLowerPoolLocationLevel(), second.getHighWaterLowerPoolLocationLevel()),
+                () -> assertMatch(first.getHighWaterUpperPoolLocationLevel(), second.getHighWaterUpperPoolLocationLevel()),
+                () -> assertMatch(first.getLowWaterLowerPoolLocationLevel(), second.getLowWaterLowerPoolLocationLevel()),
+                () -> assertMatch(first.getLowWaterUpperPoolLocationLevel(), second.getLowWaterUpperPoolLocationLevel())
+        );
+    }
+
+    public static void assertMatch(LockLocationLevelRef first, LockLocationLevelRef second)
+    {
+        if (first == null && second == null)
+        {
+            return;
+        } else if (first == null || second == null)
+        {
+            fail("One of the LockLocationLevelRef is null");
+        }
+        assertAll(
+                () -> assertEquals(first.getLevelLink(), second.getLevelLink(), "Level link does not match"),
+                () -> assertEquals(first.getOfficeId(), second.getOfficeId(), "Office ID does not match"),
+                () -> assertEquals(first.getLevelValue(), second.getLevelValue(), DEFAULT_DELTA, "Level value does not match"),
+                () -> assertEquals(first.getLevelId(), second.getLevelId(), "Level IDs do not match"),
+                () -> assertEquals(first.getSpecifiedLevelId(), second.getSpecifiedLevelId(), "Specified level IDs do not match")
         );
     }
 

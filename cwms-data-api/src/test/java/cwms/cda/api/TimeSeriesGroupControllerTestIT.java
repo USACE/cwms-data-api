@@ -154,7 +154,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept("application/json")
-                .queryParam("office", user.getOperatingOffice())
+                .queryParam(OFFICE, user.getOperatingOffice())
             .when()
                 .get("/timeseries/group")
             .then()
@@ -220,7 +220,6 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
         createLocation(timeSeriesId.split("\\.")[0],true,officeId);
-        createTimeseries(officeId,timeSeriesId);
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_create_read_delete", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_create_read_delete", "IntegrationTesting",
             "sharedTsAliasId", timeSeriesId);
@@ -270,6 +269,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
         .when()
             .redirects().follow(true)
@@ -328,6 +329,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -360,9 +363,9 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String officeId2 = user2.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
         String locationId = timeSeriesId.split("\\.")[0];
-        createLocation(locationId,true,officeId);
-        createTimeseries(officeId,timeSeriesId);
-        createTimeseries(officeId2,timeSeriesId);
+        createLocation(locationId, true, officeId);
+        createLocation(locationId, true, officeId2);
+        createTimeseries(officeId2, timeSeriesId);
         TimeSeriesCategory cat = new TimeSeriesCategory(CWMS_OFFICE, "Agency Aliases", "Time series aliases for various agencies");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_create_read_delete", "IntegrationTesting",
                 "sharedTsAliasId", timeSeriesId);
@@ -376,6 +379,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
         String groupXml = Formats.format(contentType, group);
         groupsToCleanup.add(group);
+        groupsToCleanup.add(group2);
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -406,7 +410,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode((is(HttpServletResponse.SC_CREATED)));
         // Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -435,7 +439,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .queryParam(OFFICE, officeId2)
             .queryParam(CATEGORY_ID, group2.getTimeSeriesCategory().getId())
             .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
-            .queryParam(GROUP_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId2)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -563,7 +567,6 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String locationId = timeSeriesId.split("\\.")[0];
         createLocation(locationId,true, officeId);
         createLocation(locationId,true, officeId2);
-        createTimeseries(officeId, timeSeriesId);
         createTimeseries(officeId2, timeSeriesId);
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "TestCategory2", "IntegrationTesting");
         TimeSeriesCategory cat2 = new TimeSeriesCategory(officeId2, "TestCategory2", "IntegrationTesting");
@@ -574,6 +577,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
         String groupXml = Formats.format(contentType, group);
         groupsToCleanup.add(group);
+        groupsToCleanup.add(group2);
         String categoryXml = Formats.format(contentType, cat);
         categoriesToCleanup.add(cat);
         categoriesToCleanup.add(cat2);
@@ -648,6 +652,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
         .when()
             .redirects().follow(true)
@@ -667,6 +673,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId2)
             .queryParam(CATEGORY_ID, group2.getTimeSeriesCategory().getId())
+            .queryParam(GROUP_OFFICE_ID, officeId2)
+            .queryParam(CATEGORY_OFFICE_ID, officeId2)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -792,6 +800,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
+        categoriesToCleanup.add(cat);
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -808,6 +817,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
+        groupsToCleanup.add(group);
         TimeSeriesGroup newGroup = new TimeSeriesGroup(cat, officeId, "test_rename_group_new", "IntegrationTesting",
             "sharedTsAliasId2", timeSeriesId);
         String newGroupXml = Formats.format(contentType, newGroup);
@@ -828,12 +838,16 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_OK));
+        groupsToCleanup.add(newGroup);
+        groupsToCleanup.remove(group);
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
         .when()
             .redirects().follow(true)
@@ -978,6 +992,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
         .when()
             .redirects().follow(true)
@@ -1102,7 +1118,9 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
-            .queryParam(OFFICE, CWMS_OFFICE)
+            .queryParam(OFFICE, CWMS_OFFICE) // office
+            .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
+            .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1137,6 +1155,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
             .queryParam(OFFICE, CWMS_OFFICE)
+            .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
+            .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1248,6 +1268,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
             .queryParam(OFFICE, CWMS_OFFICE)
+            .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
+            .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1313,7 +1335,9 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
             .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, CWMS_OFFICE)
+            .queryParam(OFFICE, CWMS_OFFICE) //office
+            .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
+            .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1349,6 +1373,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV1)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, CWMS_OFFICE)
+            .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
+            .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

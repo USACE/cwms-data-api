@@ -25,14 +25,24 @@
 package cwms.cda.api;
 
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dto.AssignedLocation;
+import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dao.LocationCategoryDao;
+import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.data.dao.LocationGroupDao;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
-
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.Configuration;
 import org.jooq.impl.DSL;
@@ -40,20 +50,7 @@ import org.jooq.util.oracle.OracleDSL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import cwms.cda.data.dto.AssignedLocation;
-import cwms.cda.data.dto.LocationCategory;
-import cwms.cda.data.dto.LocationGroup;
-import cwms.cda.formatters.ContentType;
-import cwms.cda.formatters.Formats;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
-
-import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
@@ -119,6 +116,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -148,6 +146,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
             .queryParam(INCLUDE_ASSIGNED, false)
         .when()
             .redirects().follow(true)
