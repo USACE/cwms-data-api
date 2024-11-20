@@ -371,8 +371,7 @@ public final class DTOMatch {
             () -> assertMatch(first.getWaterUser(), second.getWaterUser()),
             () -> assertMatch(first.getPumpAccounting(), second.getPumpAccounting()),
             () -> assertMatch(first.getPumpLocations(), second.getPumpLocations()),
-            () -> assertEquals(first.getPageSize(), second.getPageSize()),
-            () -> assertEquals(first.getPage(), second.getPage())
+            () -> assertEquals(first.getPageSize(), second.getPageSize())
         );
     }
 

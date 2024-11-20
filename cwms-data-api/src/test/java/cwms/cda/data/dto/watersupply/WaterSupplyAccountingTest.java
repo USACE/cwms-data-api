@@ -63,7 +63,6 @@ class WaterSupplyAccountingTest {
                         .build())
                 .withPumpAccounting(buildTestPumpAccountingList())
                 .withPageSize(10)
-                .withPage("testPage")
                 .build();
         String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterSupplyAccounting.class),
             waterSupplyAccounting);
