@@ -53,16 +53,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.TreeMap;
 
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -126,9 +124,8 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"default", "startInclusiveTrue", "endInclusiveTrue", "startEndInclusiveTrue",
-            "startInclusiveFalse", "endInclusiveFalse", "startEndInclusiveFalse"})
-    void testStoreAndRetrieveWaterSupplyPumpAccounting(String method) throws Exception {
+    @EnumSource(TestDates.class)
+    void testStoreAndRetrieveWaterSupplyPumpAccounting(TestDates testDates) throws Exception {
 
         // Test Structure
         // 1) Create and store a Water Supply Contract
@@ -136,53 +133,11 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         // 3) Retrieve Water Supply Pump Accounting and assert it is the same (or not in DB)
 
         WaterSupplyAccounting accounting = buildTestAccounting();
-
-        Calendar instance = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-        instance.clear();
-        instance.set(2000, 2, 1, 0, 0);
-        Instant startTime = instance.getTime().toInstant();
-        instance.set(2326, 2, 1, 0, 0);
-        Instant endTime = instance.getTime().toInstant();
-        instance.clear();
-        boolean startInclusive = true;
-        boolean endInclusive = true;
-        boolean inDB = true;
-        switch (method) {
-            // Months are zero indexed
-            case "default":
-                instance.set(2025, 8, 30, 0, 0);
-                startTime = instance.getTime().toInstant();
-                break;
-            case "startInclusiveTrue":
-                instance.set(2000, 2, 1, 0, 0);
-                startTime = instance.getTime().toInstant();
-                break;
-            case "endInclusiveTrue":
-                instance.set(2326, 2, 1, 0, 0);
-                endTime = instance.getTime().toInstant();
-                break;
-            case "startInclusiveFalse":
-                instance.set(2286, 10, 21, 8, 53, 19);
-                startTime = instance.getTime().toInstant();
-                startInclusive = false;
-                inDB = false;
-                break;
-            case "endInclusiveFalse":
-                instance.set(2025, 9, 1, 0, 0, 0);
-                endTime = instance.getTime().toInstant();
-                endInclusive = false;
-                inDB = false;
-                break;
-            case "startEndInclusiveFalse":
-                instance.set(2325, 10, 1, 0, 0);
-                startTime = instance.getTime().toInstant();
-                startInclusive = false;
-                endInclusive = false;
-                inDB = false;
-                break;
-            default:
-                break;
-        }
+        Instant startTime = testDates.startTime();
+        Instant endTime = testDates.endTime();
+        boolean startInclusive = testDates.startInclusive();
+        boolean endInclusive = testDates.endInclusive();
+        boolean inDB = testDates.isInDb();
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
@@ -212,15 +167,10 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         // 3) Retrieve Water Supply Pump Accounting and assert it is the same (or not in DB)
         WaterSupplyAccounting accounting = buildTestAccounting();
 
-        Calendar instance = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-        instance.clear();
-        instance.set(2025, 9, 1, 12, 0);
-        Instant endTime = instance.getTime().toInstant();
-        instance.clear();
+        Instant endTime = Instant.parse("2025-10-01T12:00:00Z");
         boolean startInclusive = true;
         boolean endInclusive = true;
-        instance.set(2025, 9, 1, 0, 0);
-        Instant startTime = instance.getTime().toInstant();
+        Instant startTime = Instant.parse("2025-10-01T00:00:00Z");
 
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
@@ -457,5 +407,228 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         transfers.add(new PumpTransfer(PumpType.BELOW, "Stream", 400.0, "Emergency Transfer"));
         retList.put(Instant.parse("2025-10-02T00:00:00Z"), transfers);
         return retList;
+    }
+
+    private enum TestDates
+    {
+        DEFAULT
+        {
+            @Override
+            public Instant startTime() {
+                this.startTime = Instant.parse("2025-08-30T00:00:00Z");
+                return this.startTime;
+            }
+
+            @Override
+            public Instant endTime() {
+                this.endTime = Instant.parse("2326-02-01T00:00:00Z");
+                return this.endTime;
+            }
+
+            @Override
+            public boolean startInclusive() {
+                this.startInclusive = true;
+                return this.startInclusive;
+            }
+
+            @Override
+            public boolean endInclusive() {
+                this.endInclusive = true;
+                return this.endInclusive;
+            }
+
+            @Override
+            public boolean isInDb() {
+                this.inDb = true;
+                return this.inDb;
+            }
+        },
+        START_INCLUSIVE
+        {
+            @Override
+            public Instant startTime() {
+                this.startTime = Instant.parse("2025-08-30T00:00:00Z");
+                return this.startTime;
+            }
+
+            @Override
+            public Instant endTime() {
+                this.endTime = Instant.parse("2030-02-01T00:00:00Z");
+                return this.endTime;
+            }
+
+            @Override
+            public boolean startInclusive() {
+                this.startInclusive = true;
+                return this.startInclusive;
+            }
+
+            @Override
+            public boolean endInclusive() {
+                this.endInclusive = true;
+                return this.endInclusive;
+            }
+
+            @Override
+            public boolean isInDb() {
+                this.inDb = true;
+                return this.inDb;
+            }
+        },
+        END_INCLUSIVE
+        {
+            @Override
+            public Instant startTime() {
+                this.startTime = Instant.parse("2025-08-30T00:00:00Z");
+                return this.startTime;
+            }
+
+            @Override
+            public Instant endTime() {
+                this.endTime = Instant.parse("2326-02-01T00:00:00Z");
+                return this.endTime;
+            }
+
+            @Override
+            public boolean startInclusive() {
+                this.startInclusive = true;
+                return this.startInclusive;
+            }
+
+            @Override
+            public boolean endInclusive() {
+                this.endInclusive = true;
+                return this.endInclusive;
+            }
+
+            @Override
+            public boolean isInDb() {
+                this.inDb = true;
+                return this.inDb;
+            }
+        },
+        START_INCLUSIVE_FALSE
+        {
+            @Override
+            public Instant startTime() {
+                this.startTime = Instant.parse("2286-10-21T08:53:19Z");
+                return this.startTime;
+            }
+
+            @Override
+            public Instant endTime() {
+                this.endTime = Instant.parse("2326-02-01T00:00:00Z");
+                return this.endTime;
+            }
+
+            @Override
+            public boolean startInclusive() {
+                this.startInclusive = false;
+                return this.startInclusive;
+            }
+
+            @Override
+            public boolean endInclusive() {
+                this.endInclusive = true;
+                return this.endInclusive;
+            }
+
+            @Override
+            public boolean isInDb() {
+                this.inDb = false;
+                return this.inDb;
+            }
+        },
+        END_INCLUSIVE_FALSE
+        {
+            @Override
+            public Instant startTime() {
+                this.startTime = Instant.parse("2025-08-30T00:00:00Z");
+                return this.startTime;
+            }
+
+            @Override
+            public Instant endTime() {
+                this.endTime = Instant.parse("2025-10-01T00:00:00Z");
+                return this.endTime;
+            }
+
+            @Override
+            public boolean startInclusive() {
+                this.startInclusive = true;
+                return this.startInclusive;
+            }
+
+            @Override
+            public boolean endInclusive() {
+                this.endInclusive = false;
+                return this.endInclusive;
+            }
+
+            @Override
+            public boolean isInDb() {
+                this.inDb = false;
+                return this.inDb;
+            }
+        },
+        START_END_INCLUSIVE_FALSE
+        {
+            @Override
+            public Instant startTime() {
+                this.startTime = Instant.parse("2325-10-01T00:00:00Z");
+                return this.startTime;
+            }
+
+            @Override
+            public Instant endTime() {
+                this.endTime = Instant.parse("2326-02-01T00:00:00Z");
+                return this.endTime;
+            }
+
+            @Override
+            public boolean startInclusive() {
+                this.startInclusive = false;
+                return this.startInclusive;
+            }
+
+            @Override
+            public boolean endInclusive() {
+                this.endInclusive = false;
+                return this.endInclusive;
+            }
+
+            @Override
+            public boolean isInDb() {
+                this.inDb = false;
+                return this.inDb;
+            }
+        };
+
+        boolean inDb = true;
+        boolean startInclusive = true;
+        boolean endInclusive = true;
+        Instant startTime = Instant.now();
+        Instant endTime = Instant.now();
+
+        public boolean isInDb() {
+            return this.inDb;
+        }
+
+        public Instant startTime() {
+            return this.startTime;
+        }
+
+        public Instant endTime() {
+            return this.endTime;
+        }
+
+        public boolean startInclusive() {
+            return this.startInclusive;
+        }
+
+        public boolean endInclusive() {
+            return this.endInclusive;
+        }
+
     }
 }
