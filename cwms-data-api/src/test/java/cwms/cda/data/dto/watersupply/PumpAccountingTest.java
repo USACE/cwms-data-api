@@ -123,6 +123,7 @@ class PumpAccountingTest {
                 .withWaterRight("State of California Water Rights Permit #12345").withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
                         .withName("Sacramento River Delta").build()).build()).withPumpLocations(buildTestPumpLocation())
                 .withContractName("Sacramento River Water Contract").withPumpAccounting(buildTestPumpInAccountingList())
+                .withPageSize(10)
                 .build();
     }
 
