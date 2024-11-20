@@ -279,14 +279,13 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
                     .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
 
-
         if (groupOfficeId != null) {
-            connectBy = onStep.where(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(groupOfficeId.toUpperCase()).and(condition));
+            condition = condition.and(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(groupOfficeId.toUpperCase()));
         } else if (officeId != null) {
-            connectBy = onStep.where(DSL.upper(alga.DB_OFFICE_ID).eq(officeId.toUpperCase())).and(condition);
-        } else {
-            connectBy = onStep.where(condition);
+            condition = condition.and(DSL.upper(alga.DB_OFFICE_ID).eq(officeId.toUpperCase()));
         }
+
+        connectBy = onStep.where(condition);
 
 
         Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
