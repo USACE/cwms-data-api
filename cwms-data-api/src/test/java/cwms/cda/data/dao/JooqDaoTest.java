@@ -30,6 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
+import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.Test;
 
 final class JooqDaoTest {
@@ -59,5 +61,12 @@ final class JooqDaoTest {
     void testBuildDouble() {
         assertEquals(5.5, JooqDao.buildDouble(BigDecimal.valueOf(5.5)), 0.0);
         assertEquals(0.0, JooqDao.buildDouble(null));
+    }
+
+    @Test
+    void testInvalidOfficeId() {
+        String msg = "ORA-20010: INVALID_OFFICE_ID: \"NWDW\" is not a valid CWMS office id";
+        SQLException ex = new SQLException(msg, "", 20010);
+        assertTrue(JooqDao.isInvalidOffice(new DataAccessException(msg, ex)));
     }
 }

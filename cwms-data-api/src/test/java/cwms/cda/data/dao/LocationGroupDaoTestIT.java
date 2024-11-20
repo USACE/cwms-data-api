@@ -54,7 +54,7 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             try {
                 LocationGroupDao dao = new LocationGroupDao(dslContext(c));
-                List<LocationGroup> groups = dao.getLocationGroups("SPK", "Test Category3");
+                List<LocationGroup> groups = dao.getLocationGroups("SPK", "SPK", "Test Category3");
                 Optional<LocationGroup> group3 = groups.stream()
                         .filter(g -> "Test Group3".equals(g.getId()))
                         .findFirst();
@@ -75,7 +75,7 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             try {
                 LocationGroupDao dao = new LocationGroupDao(dslContext(c));
-                List<LocationGroup> groups = dao.getLocationGroups("SPK", ".*Category3");
+                List<LocationGroup> groups = dao.getLocationGroups("SPK", "SPK", ".*Category3");
                 Optional<LocationGroup> group3 = groups.stream()
                         .filter(g -> "Test Group3".equals(g.getId()))
                         .findFirst();
@@ -96,7 +96,7 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             try {
                 LocationGroupDao dao = new LocationGroupDao(dslContext(c));
-                List<LocationGroup> groups = dao.getLocationGroups("SPK", "*Category4", "*Loc Ref");
+                List<LocationGroup> groups = dao.getLocationGroups("SPK", "SPK", "*Category4", "*Loc Ref");
                 Optional<LocationGroup> group2 = groups.stream()
                         .filter(g -> "Test Group2".equals(g.getId()))
                         .findFirst();
@@ -114,7 +114,7 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             try {
                 LocationGroupDao dao = new LocationGroupDao(dslContext(c));
-                List<LocationGroup> groups = dao.getLocationGroups("SPK", "*Category*", "*Loc*");
+                List<LocationGroup> groups = dao.getLocationGroups("SPK",  "SPK", "*Category*", "*Loc*");
                 Optional<LocationGroup> group2 = groups.stream()
                         .filter(g -> "Test Group2".equals(g.getId()))
                         .findFirst();
@@ -136,7 +136,7 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             try {
                 LocationGroupDao dao = new LocationGroupDao(dslContext(c));
-                List<LocationGroup> groups = dao.getLocationGroups("SPK", "Test Category.*");
+                List<LocationGroup> groups = dao.getLocationGroups("SPK", null, "Test Category.*");
                 Optional<LocationGroup> group3 = groups.stream()
                         .filter(g -> "Test Group3".equals(g.getId()))
                         .findFirst();
