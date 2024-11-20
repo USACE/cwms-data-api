@@ -222,14 +222,14 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     /**
      * Get all location groups for a given office and category,
      * as well as a where clause to filter the shared_ref_location_id.
-     * @param officeId The office id to use for the query.
+     * @param locationOfficeId The office id to use for the query.
      * @param groupOfficeId The office id to use for the query.
      * @param locCategoryLike A regex to use to filter the location categories.  May be null.
      * @param sharedRefLocLike A where clause to filter the shared_loc_alias_id.  May be null.
      * @return A list of all location groups for the given parameters.
      */
 
-    public List<LocationGroup> getLocationGroups(String officeId, String groupOfficeId, String categoryOfficeId,
+    public List<LocationGroup> getLocationGroups(String locationOfficeId, String groupOfficeId, String categoryOfficeId,
             String locCategoryLike, String sharedRefLocLike) {
 
         final RecordMapper<Record, Pair<LocationGroup, AssignedLocation>> mapper = grpRecord -> {
@@ -281,8 +281,8 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
         if (groupOfficeId != null) {
             condition = condition.and(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(groupOfficeId.toUpperCase()));
-        } else if (officeId != null) {
-            condition = condition.and(DSL.upper(alga.DB_OFFICE_ID).eq(officeId.toUpperCase()));
+        } else if (locationOfficeId != null) {
+            condition = condition.and(DSL.upper(alga.DB_OFFICE_ID).eq(locationOfficeId.toUpperCase()));
         }
 
         connectBy = onStep.where(condition);
