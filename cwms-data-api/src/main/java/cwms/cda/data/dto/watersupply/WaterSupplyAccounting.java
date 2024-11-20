@@ -31,7 +31,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -45,7 +45,7 @@ import java.util.Map;
 @JsonDeserialize(builder = WaterSupplyAccounting.Builder.class)
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class WaterSupplyAccounting extends CwmsDTOBase {
+public final class WaterSupplyAccounting extends CwmsDTOPaginated {
     @JsonProperty(required = true)
     private final String contractName;
     @JsonProperty(required = true)
@@ -56,6 +56,7 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
     private final Map<Instant, List<PumpTransfer>> pumpAccounting;
 
     private WaterSupplyAccounting(Builder builder) {
+        super(builder.page, builder.pageSize);
         this.contractName = builder.contractName;
         this.waterUser = builder.waterUser;
         this.pumpLocations = builder.pumpLocations;
@@ -84,6 +85,8 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
         private WaterUser waterUser;
         private Map<Instant, List<PumpTransfer>> pumpAccounting;
         private PumpLocation pumpLocations;
+        private int pageSize;
+        private String page;
 
         public Builder withContractName(String contractName) {
             this.contractName = contractName;
@@ -104,6 +107,16 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
         public Builder withPumpLocations(
                 PumpLocation pumpLocations) {
             this.pumpLocations = pumpLocations;
+            return this;
+        }
+
+        public Builder withPageSize(int pageSize) {
+            this.pageSize = pageSize;
+            return this;
+        }
+
+        public Builder withPage(String page) {
+            this.page = page;
             return this;
         }
 

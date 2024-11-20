@@ -22,28 +22,6 @@
       "name": "Sacramento River Delta-Dam Water Pump 3"
     }
   },
-  "data-columns": [
-    {
-      "name": "pump-type",
-      "ordinal": 1,
-      "datatype": "java.lang.String"
-    },
-    {
-      "name": "transfer-type-display",
-      "ordinal": 2,
-      "datatype": "java.lang.String"
-    },
-    {
-      "name": "flow",
-      "ordinal": 3,
-      "datatype": "java.lang.Double"
-    },
-    {
-      "name": "comment",
-      "ordinal": 4,
-      "datatype": "java.lang.String"
-    }
-  ],
   "pump-accounting": {
     "2022-11-20T21:17:28Z": [
       {
@@ -105,5 +83,6 @@
         "comment": "Water returned to the river"
       }
     ]
-  }
+  },
+  "page-size": 10
 }

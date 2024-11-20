@@ -38,7 +38,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -62,7 +61,10 @@ class WaterSupplyAccountingTest {
                         .withPumpOut(new CwmsId.Builder().withOfficeId(OFFICE).withName("Sacramento River Delta-Dam Water Pump 2").build())
                         .withPumpBelow(new CwmsId.Builder().withOfficeId(OFFICE).withName("Sacramento River Delta-Dam Water Pump 3").build())
                         .build())
-                .withPumpAccounting(buildTestPumpAccountingList()).build();
+                .withPumpAccounting(buildTestPumpAccountingList())
+                .withPageSize(10)
+                .withPage("testPage")
+                .build();
         String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterSupplyAccounting.class),
             waterSupplyAccounting);
         WaterSupplyAccounting deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
@@ -81,6 +83,7 @@ class WaterSupplyAccountingTest {
                 .withContractName("Sacramento River Water Contract")
                 .withPumpLocations(buildTestPumpLocation())
                 .withPumpAccounting(buildTestPumpAccountingList())
+                .withPageSize(10)
                 .build();
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/data/dto/watersupply/water_pump_accounting.json");
@@ -89,58 +92,6 @@ class WaterSupplyAccountingTest {
         WaterSupplyAccounting deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
                 WaterSupplyAccounting.class), serialized, WaterSupplyAccounting.class);
         assertMatch(waterSupplyAccounting, deserialized);
-    }
-
-    @Test
-    void testWaterSupplyAccountingListSerializationRoundTrip() {
-        WaterUser user = new WaterUser.Builder().withEntityName("California Department of Water Resources")
-                .withProjectId(new CwmsId.Builder()
-                        .withOfficeId(OFFICE)
-                        .withName("Sacramento River Delta")
-                        .build())
-                .withWaterRight("State of California Water Rights Permit #12345").build();
-        WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting.Builder()
-                .withWaterUser(user).withContractName("Sacramento River Water Contract").withPumpLocations(
-                        new PumpLocation.Builder()
-                                .withPumpIn(new CwmsId.Builder().withOfficeId(OFFICE).withName("Sacramento River Delta-Dam Water Pump 1").build())
-                                .withPumpOut(new CwmsId.Builder().withOfficeId(OFFICE).withName("Sacramento River Delta-Dam Water Pump 2").build())
-                                .withPumpBelow(new CwmsId.Builder().withOfficeId(OFFICE).withName("Sacramento River Delta-Dam Water Pump 3").build())
-                                .build())
-                .withPumpAccounting(buildTestPumpAccountingList()).build();
-        WaterSupplyAccountingList waterSupplyAccountingList = new WaterSupplyAccountingList.Builder()
-                .withPageSize(10)
-                .withWaterSupplyAccounting(Collections.singletonList(waterSupplyAccounting))
-                .build();
-        String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterSupplyAccountingList.class),
-                waterSupplyAccountingList);
-        WaterSupplyAccountingList deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
-                WaterSupplyAccountingList.class), serialized, WaterSupplyAccountingList.class);
-        assertMatch(waterSupplyAccountingList, deserialized);
-    }
-
-    @Test
-    void testWaterSupplyAccountingListSerializationRoundTripFromFile() throws Exception {
-        WaterSupplyAccounting waterSupplyAccounting = new WaterSupplyAccounting.Builder()
-                .withWaterUser(new WaterUser.Builder()
-                        .withEntityName("California Department of Water Resources")
-                        .withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
-                                .withName("Sacramento River Delta").build())
-                        .withWaterRight("State of California Water Rights Permit #12345").build())
-                .withContractName("Sacramento River Water Contract")
-                .withPumpLocations(buildTestPumpLocation())
-                .withPumpAccounting(buildTestPumpAccountingList())
-                .build();
-        WaterSupplyAccountingList waterSupplyAccountingList = new WaterSupplyAccountingList.Builder()
-                .withPageSize(20)
-                .withWaterSupplyAccounting(Collections.singletonList(waterSupplyAccounting))
-                .build();
-        InputStream resource = this.getClass().getResourceAsStream(
-                "/cwms/cda/data/dto/watersupply/water_pump_accounting_list.json");
-        assertNotNull(resource);
-        String serialized = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        WaterSupplyAccountingList deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV1,
-                WaterSupplyAccountingList.class), serialized, WaterSupplyAccountingList.class);
-        assertMatch(waterSupplyAccountingList, deserialized);
     }
 
     @Test
@@ -157,20 +108,15 @@ class WaterSupplyAccountingTest {
                 .withContractName("Sacramento River Water Contract")
                 .withPumpAccounting(buildTestPumpAccountingList())
                 .withWaterUser(user)
-                .build();
-
-        WaterSupplyAccountingList wsaList = new WaterSupplyAccountingList.Builder()
                 .withPageSize(10)
-                .withWaterSupplyAccounting(Collections.singletonList(wsa))
                 .build();
-
         assertAll(
-            () -> assertEquals(10, wsaList.getPageSize(), "Expected page size to be 10"),
-            () -> assertMatch(buildTestPumpLocation(), wsaList.getWaterSupplyAccounting().get(0).getPumpLocations()),
-            () -> assertMatch(buildTestPumpAccountingList(), wsaList.getWaterSupplyAccounting().get(0).getPumpAccounting()),
-            () -> assertMatch(user, wsaList.getWaterSupplyAccounting().get(0).getWaterUser())
+            () -> assertEquals(10, wsa.getPageSize(), "Expected page size to be 10"),
+            () -> assertMatch(buildTestPumpLocation(), wsa.getPumpLocations()),
+            () -> assertMatch(buildTestPumpAccountingList(), wsa.getPumpAccounting()),
+            () -> assertMatch(user, wsa.getWaterUser())
         );
-        assertDoesNotThrow(wsaList::validate, "Expected validation to pass");
+        assertDoesNotThrow(wsa::validate, "Expected validation to pass");
     }
 
 
