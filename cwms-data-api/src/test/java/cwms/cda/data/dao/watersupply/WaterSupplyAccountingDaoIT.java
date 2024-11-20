@@ -41,7 +41,6 @@ import cwms.cda.data.dto.watersupply.PumpLocation;
 import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.PumpType;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
-import cwms.cda.data.dto.watersupply.WaterSupplyAccountingList;
 import cwms.cda.data.dto.watersupply.WaterSupplyPump;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
@@ -253,12 +252,11 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterSupplyAccountingDao accountingDao = new WaterSupplyAccountingDao(ctx);
-            WaterSupplyAccountingList pumpAccounting = accountingDao.retrieveAccounting(contract.getContractId()
+            List<WaterSupplyAccounting> pumpAccounting = accountingDao.retrieveAccounting(contract.getContractId()
                             .getName(), contract.getWaterUser(), contract.getWaterUser().getProjectId(),
                     null, finalStartTime, finalEndTime, finalStartInclusive, endInclusive, headFlag, rowLimit);
-            assertFalse(pumpAccounting.getWaterSupplyAccounting().isEmpty());
-            assertEquals(rowLimit, pumpAccounting.getPageSize());
-            for (WaterSupplyAccounting returnedAccounting : pumpAccounting.getWaterSupplyAccounting()) {
+            assertFalse(pumpAccounting.isEmpty());
+            for (WaterSupplyAccounting returnedAccounting : pumpAccounting) {
                 assertNotNull(returnedAccounting.getPumpAccounting());
                 DTOMatch.assertMatch(accounting2, returnedAccounting);
             }
@@ -285,12 +283,11 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterSupplyAccountingDao accountingDao = new WaterSupplyAccountingDao(ctx);
-            WaterSupplyAccountingList pumpAccounting = accountingDao.retrieveAccounting(contract.getContractId()
+            List<WaterSupplyAccounting> pumpAccounting = accountingDao.retrieveAccounting(contract.getContractId()
                             .getName(), contract.getWaterUser(), contract.getWaterUser().getProjectId(),
                     null, finalStartTime1, finalEndTime1, finalStartInclusive1, endInclusive, headFlag, rowLimit);
-            assertFalse(pumpAccounting.getWaterSupplyAccounting().isEmpty());
-            assertEquals(rowLimit, pumpAccounting.getPageSize());
-            for (WaterSupplyAccounting returnedAccounting : pumpAccounting.getWaterSupplyAccounting()) {
+            assertFalse(pumpAccounting.isEmpty());
+            for (WaterSupplyAccounting returnedAccounting : pumpAccounting) {
                 assertNotNull(returnedAccounting.getPumpAccounting());
                 DTOMatch.assertMatch(accounting3, returnedAccounting);
             }
@@ -313,12 +310,11 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterSupplyAccountingDao accountingDao = new WaterSupplyAccountingDao(ctx);
             accountingDao.storeAccounting(accounting);
-            WaterSupplyAccountingList pumpAccounting = accountingDao.retrieveAccounting(contract.getContractId()
+            List<WaterSupplyAccounting> pumpAccounting = accountingDao.retrieveAccounting(contract.getContractId()
                             .getName(), contract.getWaterUser(), contract.getWaterUser().getProjectId(),
                     null, startTime, endTime, startInclusive, endInclusive, headFlag, rowLimit);
-            assertFalse(pumpAccounting.getWaterSupplyAccounting().isEmpty());
-            assertEquals(rowLimit, pumpAccounting.getPageSize());
-            for (WaterSupplyAccounting returnedAccounting : pumpAccounting.getWaterSupplyAccounting()) {
+            assertFalse(pumpAccounting.isEmpty());
+            for (WaterSupplyAccounting returnedAccounting : pumpAccounting) {
                 assertNotNull(returnedAccounting.getPumpAccounting());
                 DTOMatch.assertMatch(accounting, returnedAccounting);
             }
@@ -333,12 +329,11 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterSupplyAccountingDao accountingDao = new WaterSupplyAccountingDao(ctx);
-            WaterSupplyAccountingList pumpAccounting = accountingDao.retrieveAccounting(contract.getContractId()
+            List<WaterSupplyAccounting> pumpAccounting = accountingDao.retrieveAccounting(contract.getContractId()
                             .getName(), contract.getWaterUser(), contract.getWaterUser().getProjectId(),
                     null, startTime, endTime, startInclusive, endInclusive, headFlag, rowLimit);
-            assertFalse(pumpAccounting.getWaterSupplyAccounting().isEmpty());
-            assertEquals(rowLimit, pumpAccounting.getPageSize());
-            for (WaterSupplyAccounting returnedAccounting : pumpAccounting.getWaterSupplyAccounting()) {
+            assertFalse(pumpAccounting.isEmpty());
+            for (WaterSupplyAccounting returnedAccounting : pumpAccounting) {
                 assertNotNull(returnedAccounting.getPumpAccounting());
                 DTOMatch.assertMatch(buildTestAccounting(), returnedAccounting);
             }
@@ -352,12 +347,11 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterSupplyAccountingDao accountingDao = new WaterSupplyAccountingDao(ctx);
-            WaterSupplyAccountingList pumpAccounting = accountingDao.retrieveAccounting(contract.getContractId()
+            List<WaterSupplyAccounting> pumpAccounting = accountingDao.retrieveAccounting(contract.getContractId()
                             .getName(), contract.getWaterUser(), new CwmsId.Builder().withName(contract.getWaterUser()
                             .getProjectId().getName()).withOfficeId(OFFICE_ID).build(),
                     null, startTime, endTime, startInclusive, endInclusive, headFlag, rowLimit);
-            assertEquals(rowLimit, pumpAccounting.getPageSize());
-            for (WaterSupplyAccounting returnedAccounting : pumpAccounting.getWaterSupplyAccounting()) {
+            for (WaterSupplyAccounting returnedAccounting : pumpAccounting) {
                 assertTrue(returnedAccounting.getPumpAccounting().isEmpty());
             }
         }, CwmsDataApiSetupCallback.getWebUser());

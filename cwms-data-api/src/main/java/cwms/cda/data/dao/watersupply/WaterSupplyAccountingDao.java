@@ -30,7 +30,6 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
-import cwms.cda.data.dto.watersupply.WaterSupplyAccountingList;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import hec.lang.Const;
 import java.math.BigInteger;
@@ -85,7 +84,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
         });
     }
 
-    public WaterSupplyAccountingList retrieveAccounting(String contractName, WaterUser waterUser,
+    public List<WaterSupplyAccounting> retrieveAccounting(String contractName, WaterUser waterUser,
             CwmsId projectLocation, String units, Instant startTime, Instant endTime,
             boolean startInclusive, boolean endInclusive, boolean ascendingFlag, int rowLimit) {
 
@@ -100,22 +99,18 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
         String ascendingFlagStr = OracleTypeMap.formatBool(ascendingFlag);
         BigInteger rowLimitBigInt = BigInteger.valueOf(rowLimit);
 
-        return new WaterSupplyAccountingList.Builder()
-            .withWaterSupplyAccounting(
-                connectionResult(dsl, c -> {
-                    setOffice(c, projectLocation.getOfficeId());
-                    WAT_USR_CONTRACT_ACCT_TAB_T watUsrContractAcctObjTs
-                            = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_ACCOUNTING_SET(DSL.using(c).configuration(),
-                            contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
-                            endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
-                    if (!watUsrContractAcctObjTs.isEmpty()) {
-                        return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs);
-                    } else {
-                        return new ArrayList<>();
-                    }
-                }))
-                .withPageSize(rowLimit)
-                .build();
+        return connectionResult(dsl, c -> {
+            setOffice(c, projectLocation.getOfficeId());
+            WAT_USR_CONTRACT_ACCT_TAB_T watUsrContractAcctObjTs
+                    = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_ACCOUNTING_SET(DSL.using(c).configuration(),
+                    contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
+                    endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
+            if (!watUsrContractAcctObjTs.isEmpty()) {
+                return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs);
+            } else {
+                return new ArrayList<>();
+            }
+        });
     }
 
     private List<TimeWindowType> getTimeWindowTypeList(WaterSupplyAccounting accounting) {
