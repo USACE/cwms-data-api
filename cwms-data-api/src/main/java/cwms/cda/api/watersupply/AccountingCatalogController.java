@@ -48,7 +48,6 @@ import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dao.watersupply.WaterSupplyAccountingDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
-import cwms.cda.data.dto.watersupply.WaterSupplyAccountingList;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
@@ -154,7 +153,7 @@ public class AccountingCatalogController implements Handler {
             DSLContext dsl = getDslContext(ctx);
 
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
-            ContentType contentType = Formats.parseHeader(formatHeader, WaterSupplyAccountingList.class);
+            ContentType contentType = Formats.parseHeader(formatHeader, WaterSupplyAccounting.class);
             ctx.contentType(contentType.toString());
             CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();
 
@@ -191,11 +190,11 @@ public class AccountingCatalogController implements Handler {
             Instant endInstant = DateUtils.parseUserDate(endTime, "UTC").toInstant();
 
             WaterSupplyAccountingDao waterSupplyAccountingDao = getWaterSupplyAccountingDao(dsl);
-            WaterSupplyAccountingList accounting = waterSupplyAccountingDao.retrieveAccounting(contractId, waterUser,
+            List<WaterSupplyAccounting> accounting = waterSupplyAccountingDao.retrieveAccounting(contractId, waterUser,
                     projectLocation, null, startInstant, endInstant, startInclusive, endInclusive,
                     ascending, rowLimit);
 
-            String result = Formats.format(contentType, accounting);
+            String result = Formats.format(contentType, accounting, WaterSupplyAccounting.class);
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
         }

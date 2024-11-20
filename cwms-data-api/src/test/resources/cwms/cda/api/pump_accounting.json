@@ -1,25 +1,25 @@
 {
-  "contract-name": "Sac River Contract",
+  "contract-name": "Sac River",
   "water-user": {
-    "entity-name": "California Department of Water Resources",
+    "entity-name": "California DWR",
     "project-id": {
       "office-id": "SPK",
       "name": "Sacramento Delta"
     },
-    "water-right": "State of California Water Rights Permit #12345"
+    "water-right": "CA Water Rights Permit #12345"
   },
   "pump-locations": {
     "pump-in": {
       "office-id": "SPK",
-      "name": "Sacramento Delta-Pump 1"
+      "name": "Sac River-Pump 1"
     },
     "pump-out": {
       "office-id": "SPK",
-      "name": "Sacramento Delta-Pump 2"
+      "name": "Sac River-Pump 2"
     },
     "pump-below": {
       "office-id": "SPK",
-      "name": "Sacramento Delta-Pump 3"
+      "name": "Sac River-Pump 3"
     }
   },
   "pump-accounting": {
@@ -32,13 +32,13 @@
       },
       {
         "pump-type": "OUT",
-        "transfer-type-display": "Canal",
+        "transfer-type-display": "Pipeline",
         "flow": 2.0,
         "comment": "Removed excess water"
       },
       {
         "pump-type": "BELOW",
-        "transfer-type-display": "River",
+        "transfer-type-display": "Pipeline",
         "flow": 3.0,
         "comment": "Daily water release"
       }
@@ -46,19 +46,19 @@
     "2023-11-21T21:17:28Z": [
       {
         "pump-type": "IN",
-        "transfer-type-display": "Stream",
+        "transfer-type-display": "Pipeline",
         "flow": 4.0,
         "comment": "Pump transfer for the day"
       },
       {
         "pump-type": "OUT",
-        "transfer-type-display": "Aqueduct",
+        "transfer-type-display": "Pipeline",
         "flow": 5.0,
         "comment": "Excess water transfer"
       },
       {
         "pump-type": "BELOW",
-        "transfer-type-display": "Siphon",
+        "transfer-type-display": "Pipeline",
         "flow": 6.0,
         "comment": "Water returned to the river"
       }
@@ -72,13 +72,13 @@
       },
       {
         "pump-type": "OUT",
-        "transfer-type-display": "Conduit",
+        "transfer-type-display": "Pipeline",
         "flow": 8.0,
         "comment": "Excess water transfer"
       },
       {
         "pump-type": "BELOW",
-        "transfer-type-display": "River",
+        "transfer-type-display": "Pipeline",
         "flow": 9.0,
         "comment": "Water returned to the river"
       }

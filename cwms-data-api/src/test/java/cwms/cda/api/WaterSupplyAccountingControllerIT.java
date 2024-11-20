@@ -346,7 +346,6 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String json = JsonV1.buildObjectMapper().writeValueAsString(WATER_SUPPLY_ACCOUNTING);
 
-
         // create pump accounting
         given()
             .log().ifValidationFails(LogDetail.ALL, true)

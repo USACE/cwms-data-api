@@ -1,16 +1,16 @@
 {
   "office-id": "SPK",
   "water-user": {
-    "entity-name": "California Department of Water Resources",
+    "entity-name": "California DWR",
     "project-id": {
       "office-id": "SPK",
       "name": "Sacramento Delta"
     },
-    "water-right": "State of California Water Rights Permit #12345"
+    "water-right": "CA Water Rights Permit #12345"
   },
   "contract-id": {
     "office-id": "SPK",
-    "name": "Sac River Contract"
+    "name": "Sac River"
   },
   "contract-type": {
     "office-id": "SPK",
@@ -29,7 +29,7 @@
   "pump-out-location": {
     "pump-location": {
       "office-id": "SPK",
-      "name": "Sacramento Delta-Pump 2",
+      "name": "Sac River-Pump 2",
       "latitude": 0,
       "longitude": 0,
       "active": true,
@@ -57,7 +57,7 @@
   "pump-out-below-location": {
     "pump-location": {
       "office-id": "SPK",
-      "name": "Sacramento Delta-Pump 3",
+      "name": "Sac River-Pump 3",
       "latitude": 0,
       "longitude": 0,
       "active": true,
@@ -85,7 +85,7 @@
   "pump-in-location": {
     "pump-location": {
       "office-id": "SPK",
-      "name": "Sacramento Delta-Pump 1",
+      "name": "Sac River-Pump 1",
       "latitude": 0,
       "longitude": 0,
       "active": true,
