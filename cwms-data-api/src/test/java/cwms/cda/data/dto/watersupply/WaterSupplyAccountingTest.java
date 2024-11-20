@@ -62,7 +62,6 @@ class WaterSupplyAccountingTest {
                         .withPumpBelow(new CwmsId.Builder().withOfficeId(OFFICE).withName("Sacramento River Delta-Dam Water Pump 3").build())
                         .build())
                 .withPumpAccounting(buildTestPumpAccountingList())
-                .withPageSize(10)
                 .build();
         String serialized = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterSupplyAccounting.class),
             waterSupplyAccounting);
@@ -82,7 +81,6 @@ class WaterSupplyAccountingTest {
                 .withContractName("Sacramento River Water Contract")
                 .withPumpLocations(buildTestPumpLocation())
                 .withPumpAccounting(buildTestPumpAccountingList())
-                .withPageSize(10)
                 .build();
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/data/dto/watersupply/water_pump_accounting.json");
@@ -107,10 +105,8 @@ class WaterSupplyAccountingTest {
                 .withContractName("Sacramento River Water Contract")
                 .withPumpAccounting(buildTestPumpAccountingList())
                 .withWaterUser(user)
-                .withPageSize(10)
                 .build();
         assertAll(
-            () -> assertEquals(10, wsa.getPageSize(), "Expected page size to be 10"),
             () -> assertMatch(buildTestPumpLocation(), wsa.getPumpLocations()),
             () -> assertMatch(buildTestPumpAccountingList(), wsa.getPumpAccounting()),
             () -> assertMatch(user, wsa.getWaterUser())

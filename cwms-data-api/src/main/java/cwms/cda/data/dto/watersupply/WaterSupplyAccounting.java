@@ -54,14 +54,12 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
     private final PumpLocation pumpLocations;
     @Schema(name = "data-columns")
     private final Map<Instant, List<PumpTransfer>> pumpAccounting;
-    private final int pageSize;
 
     private WaterSupplyAccounting(Builder builder) {
         this.contractName = builder.contractName;
         this.waterUser = builder.waterUser;
         this.pumpLocations = builder.pumpLocations;
         this.pumpAccounting = builder.pumpAccounting;
-        this.pageSize = builder.pageSize;
     }
 
     public String getContractName() {
@@ -80,9 +78,6 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
         return this.pumpLocations;
     }
 
-    public int getPageSize() {
-        return this.pageSize;
-    }
 
     @JsonIgnoreProperties("data-columns")
     public static final class Builder {
@@ -90,7 +85,6 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
         private WaterUser waterUser;
         private Map<Instant, List<PumpTransfer>> pumpAccounting;
         private PumpLocation pumpLocations;
-        private int pageSize;
 
         public Builder withContractName(String contractName) {
             this.contractName = contractName;
@@ -111,11 +105,6 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
         public Builder withPumpLocations(
                 PumpLocation pumpLocations) {
             this.pumpLocations = pumpLocations;
-            return this;
-        }
-
-        public Builder withPageSize(int pageSize) {
-            this.pageSize = pageSize;
             return this;
         }
 
