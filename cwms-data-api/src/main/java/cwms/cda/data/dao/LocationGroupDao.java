@@ -100,28 +100,28 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         }
 
         List<Pair<LocationGroup, AssignedLocation>> assignments = dsl.select(
-                alcg.CAT_DB_OFFICE_ID,
-                alcg.LOC_CATEGORY_ID,
-                alcg.LOC_CATEGORY_DESC,
-                alcg.GRP_DB_OFFICE_ID,
-                alcg.LOC_GROUP_ID,
-                alcg.LOC_GROUP_DESC,
-                alcg.LOC_GROUP_ATTRIBUTE,
-                alcg.SHARED_LOC_ALIAS_ID,
-                alcg.SHARED_REF_LOCATION_ID,
-                alga.DB_OFFICE_ID,
-                alga.LOCATION_ID,
-                alga.ALIAS_ID,
-                alga.ATTRIBUTE,
-                alga.REF_LOCATION_ID)
+                    alcg.CAT_DB_OFFICE_ID,
+                    alcg.LOC_CATEGORY_ID,
+                    alcg.LOC_CATEGORY_DESC,
+                    alcg.GRP_DB_OFFICE_ID,
+                    alcg.LOC_GROUP_ID,
+                    alcg.LOC_GROUP_DESC,
+                    alcg.LOC_GROUP_ATTRIBUTE,
+                    alcg.SHARED_LOC_ALIAS_ID,
+                    alcg.SHARED_REF_LOCATION_ID,
+                    alga.DB_OFFICE_ID,
+                    alga.LOCATION_ID,
+                    alga.ALIAS_ID,
+                    alga.ATTRIBUTE,
+                    alga.REF_LOCATION_ID)
             .from(alcg).leftJoin(alga)
             .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
-                .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
+                    .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
             .where(alcg.LOC_CATEGORY_ID.eq(categoryId)
-                .and(alcg.LOC_GROUP_ID.eq(groupId))
-                .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
-                .and(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId))
-                .and(assignmentOffice)
+                    .and(alcg.LOC_GROUP_ID.eq(groupId))
+                    .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
+                    .and(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId))
+                    .and(assignmentOffice)
             )
             .orderBy(alga.ATTRIBUTE).fetchSize(1000).fetch(mapper);
 
@@ -186,7 +186,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @return A list of all location groups.
      */
     public List<LocationGroup> getLocationGroups() {
-        return getLocationGroups(null, null, null);
+        return getLocationGroups(null, null, null, null);
     }
 
     /**
@@ -195,7 +195,11 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @return A list of all location groups for the given office.
      */
     public List<LocationGroup> getLocationGroups(String officeId) {
-        return getLocationGroups(officeId, null, null);
+        return getLocationGroups(officeId, null, null, null);
+    }
+
+    public List<LocationGroup> getLocationGroups(String officeId, String categoryOfficeId, String locCategoryLike) {
+        return getLocationGroups(officeId, null, categoryOfficeId, locCategoryLike);
     }
 
     /**
@@ -205,11 +209,11 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @param locCategoryLike A regex to use to filter the location categories.  May be null.
      * @return A list of all location groups for the given office and category.
      */
-    public List<LocationGroup> getLocationGroups(@Nullable String officeId,
+    public List<LocationGroup> getLocationGroups(@Nullable String officeId, String groupOfficeId,
                                                  String categoryOfficeId, boolean includeAssigned,
                                                  @Nullable String locCategoryLike) {
         if (includeAssigned) {
-            return getLocationGroups(officeId, categoryOfficeId, locCategoryLike);
+            return getLocationGroups(officeId, groupOfficeId, categoryOfficeId, locCategoryLike);
         } else {
             return getGroupsWithoutAssignedLocations(officeId, categoryOfficeId, locCategoryLike);
         }
@@ -218,16 +222,15 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     /**
      * Get all location groups for a given office and category,
      * as well as a where clause to filter the shared_ref_location_id.
+     * @param locationOfficeId The office id to use for the query.
      * @param groupOfficeId The office id to use for the query.
      * @param locCategoryLike A regex to use to filter the location categories.  May be null.
      * @param sharedRefLocLike A where clause to filter the shared_loc_alias_id.  May be null.
      * @return A list of all location groups for the given parameters.
      */
 
-    public List<LocationGroup> getLocationGroups(String groupOfficeId, String categoryOfficeId, String locCategoryLike,
-            String sharedRefLocLike) {
-        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
-        AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
+    public List<LocationGroup> getLocationGroups(String locationOfficeId, String groupOfficeId, String categoryOfficeId,
+            String locCategoryLike, String sharedRefLocLike) {
 
         final RecordMapper<Record, Pair<LocationGroup, AssignedLocation>> mapper = grpRecord -> {
             LocationCategory category = buildLocationCategory(grpRecord);
@@ -237,6 +240,9 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
             return new Pair<>(group, loc);
         };
+
+        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
+        AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
         Condition condition = noCondition();
         if (locCategoryLike != null && !locCategoryLike.isEmpty()) {
@@ -255,29 +261,31 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
         SelectConnectByStep<? extends Record> connectBy;
         SelectOnConditionStep<? extends Record> onStep = dsl.select(
-                        alcg.CAT_DB_OFFICE_ID,
-                        alcg.LOC_CATEGORY_ID,
-                        alcg.LOC_CATEGORY_DESC,
-                        alcg.GRP_DB_OFFICE_ID,
-                        alcg.LOC_GROUP_ID,
-                        alcg.LOC_GROUP_DESC,
-                        alcg.LOC_GROUP_ATTRIBUTE,
-                        alcg.SHARED_LOC_ALIAS_ID,
-                        alcg.SHARED_REF_LOCATION_ID,
-                        alga.DB_OFFICE_ID,
-                        alga.LOCATION_ID,
-                        alga.ALIAS_ID,
-                        alga.ATTRIBUTE,
-                        alga.REF_LOCATION_ID)
-                .from(alcg).leftJoin(alga)
-                .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
-                        .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
+                    alcg.CAT_DB_OFFICE_ID,
+                    alcg.LOC_CATEGORY_ID,
+                    alcg.LOC_CATEGORY_DESC,
+                    alcg.GRP_DB_OFFICE_ID,
+                    alcg.LOC_GROUP_ID,
+                    alcg.LOC_GROUP_DESC,
+                    alcg.LOC_GROUP_ATTRIBUTE,
+                    alcg.SHARED_LOC_ALIAS_ID,
+                    alcg.SHARED_REF_LOCATION_ID,
+                    alga.DB_OFFICE_ID,
+                    alga.LOCATION_ID,
+                    alga.ALIAS_ID,
+                    alga.ATTRIBUTE,
+                    alga.REF_LOCATION_ID)
+            .from(alcg).leftJoin(alga)
+            .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
+                    .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
 
         if (groupOfficeId != null) {
-            connectBy = onStep.where(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(groupOfficeId.toUpperCase()).and(condition));
-        } else {
-            connectBy = onStep.where(condition);
+            condition = condition.and(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(groupOfficeId.toUpperCase()));
+        } else if (locationOfficeId != null) {
+            condition = condition.and(DSL.upper(alga.DB_OFFICE_ID).eq(locationOfficeId.toUpperCase()));
         }
+
+        connectBy = onStep.where(condition);
 
 
         Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
@@ -301,12 +309,13 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
     /**
      * Get all location groups for a given office and category.
+     * @param locationOfficeId The group office id to use for the query.
      * @param groupOfficeId The group office id to use for the query.
      * @param categoryOfficeId The category office id to use for the query.
      * @param locCategoryLike A regex to use to filter the location categories.  May be null.
      * @return A list of all location groups for the given office and category.
      */
-    public List<LocationGroup> getLocationGroups(String groupOfficeId,
+    public List<LocationGroup> getLocationGroups(String locationOfficeId, String groupOfficeId,
             String categoryOfficeId, String locCategoryLike) {
         AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
@@ -339,8 +348,8 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                         alga.ATTRIBUTE,
                         alga.REF_LOCATION_ID)
                 .from(alcg).leftJoin(alga)
-                            .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
-                            .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
+                .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
+                        .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
 
 
         Condition condition = noCondition();
@@ -352,18 +361,24 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             condition = condition.and(alcg.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
         }
 
-        if (groupOfficeId != null) {
-            if (CWMS.equalsIgnoreCase(groupOfficeId)) {
+        if (locationOfficeId != null) {
+            if (CWMS.equalsIgnoreCase(locationOfficeId)) {
                 connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.eq(CWMS)
                         .and(alcg.GRP_DB_OFFICE_ID.eq(CWMS))
                         .and(condition)
                 );
             } else {
-                connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, groupOfficeId)
-                        .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, groupOfficeId))
-                        .and(alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(groupOfficeId)))
-                        .and(condition)
-                );
+                if (groupOfficeId != null) {
+                    connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, locationOfficeId)
+                            .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, groupOfficeId))
+                            .and(alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(locationOfficeId)))
+                            .and(condition)
+                    );
+                } else {
+                    connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, locationOfficeId)
+                            .and(alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(locationOfficeId)))
+                            .and(condition));
+                }
             }
         } else {
             connectBy = onStep.where(alcg.LOC_GROUP_ID.isNotNull());
@@ -449,23 +464,23 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     }
 
     public FeatureCollection buildFeatureCollectionForLocationGroup(String locationOfficeId, String groupOfficeId,
-                                                                    String categoryOfficeId,
-                                                                    String categoryId,
-                                                                    String groupId, String units) {
+            String categoryOfficeId,
+            String categoryId,
+            String groupId, String units) {
         AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
         AV_LOC al = AV_LOC.AV_LOC;
 
         SelectSeekStep1<Record, BigDecimal> select = dsl.select(al.asterisk(), alga.CATEGORY_ID,
-                alga.GROUP_ID, alga.ATTRIBUTE, alga.ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
-                alga.SHARED_ALIAS_ID)
-            .from(al).join(alga).on(al.LOCATION_ID.eq(alga.LOCATION_ID))
-            .where(alga.DB_OFFICE_ID.eq(locationOfficeId)
-                .and(alga.CATEGORY_OFFICE_ID.eq(categoryOfficeId))
-                .and(alga.GROUP_OFFICE_ID.eq(groupOfficeId))
-                .and(alga.CATEGORY_ID.eq(categoryId)
-                    .and(alga.GROUP_ID.eq(groupId))
-                    .and(al.UNIT_SYSTEM.eq(units))))
-            .orderBy(alga.ATTRIBUTE);
+                        alga.GROUP_ID, alga.ATTRIBUTE, alga.ALIAS_ID, alga.SHARED_REF_LOCATION_ID,
+                        alga.SHARED_ALIAS_ID)
+                .from(al).join(alga).on(al.LOCATION_ID.eq(alga.LOCATION_ID))
+                .where(alga.DB_OFFICE_ID.eq(locationOfficeId)
+                        .and(alga.CATEGORY_OFFICE_ID.eq(categoryOfficeId))
+                        .and(alga.GROUP_OFFICE_ID.eq(groupOfficeId))
+                        .and(alga.CATEGORY_ID.eq(categoryId)
+                                .and(alga.GROUP_ID.eq(groupId))
+                                .and(al.UNIT_SYSTEM.eq(units))))
+                .orderBy(alga.ATTRIBUTE);
 
         List<Feature> features =
                 select.stream()
@@ -513,7 +528,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     private static LOC_ALIAS_TYPE3 convertToLocAliasType(AssignedLocation a) {
         BigDecimal attribute = toBigDecimal(a.getAttribute());
         return new LOC_ALIAS_TYPE3(a.getLocationId(),
-            attribute, a.getAliasId(), a.getRefLocationId());
+                attribute, a.getAliasId(), a.getRefLocationId());
     }
 
     /**
@@ -557,10 +572,10 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         List<AssignedLocation> assignedLocations = group.getAssignedLocations();
         if (assignedLocations != null) {
             List<LOC_ALIAS_TYPE3> collect = assignedLocations.stream()
-                .map(LocationGroupDao::convertToLocAliasType)
-                .collect(toList());
+                    .map(LocationGroupDao::convertToLocAliasType)
+                    .collect(toList());
             LOC_ALIAS_ARRAY3 assignedLocs = new LOC_ALIAS_ARRAY3(collect);
-            LocationCategory cat = group.getLocationCategory(); 
+            LocationCategory cat = group.getLocationCategory();
             CWMS_LOC_PACKAGE.call_ASSIGN_LOC_GROUPS3(dslContext.configuration(),
                     cat.getId(), group.getId(), assignedLocs, office);
         }

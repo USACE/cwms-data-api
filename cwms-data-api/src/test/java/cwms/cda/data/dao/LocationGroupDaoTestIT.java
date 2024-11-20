@@ -39,8 +39,8 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
                 LocationGroupDao dao = new LocationGroupDao(dslContext(c));
                 List<LocationGroup> groups = dao.getLocationGroups("SPK");
                 Optional<LocationGroup> group = groups.stream()
-                    .filter(g -> "Test Group2".equals(g.getId()))
-                    .findFirst();
+                        .filter(g -> "Test Group2".equals(g.getId()))
+                        .findFirst();
                 assertTrue(group.isPresent());
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -96,7 +96,7 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             try {
                 LocationGroupDao dao = new LocationGroupDao(dslContext(c));
-                List<LocationGroup> groups = dao.getLocationGroups("SPK", "SPK", "*Category4", "*Loc Ref");
+                List<LocationGroup> groups = dao.getLocationGroups(null, "SPK", "SPK","*Category4", "*Loc Ref");
                 Optional<LocationGroup> group2 = groups.stream()
                         .filter(g -> "Test Group2".equals(g.getId()))
                         .findFirst();
@@ -114,7 +114,7 @@ class LocationGroupDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             try {
                 LocationGroupDao dao = new LocationGroupDao(dslContext(c));
-                List<LocationGroup> groups = dao.getLocationGroups("SPK",  "SPK", "*Category*", "*Loc*");
+                List<LocationGroup> groups = dao.getLocationGroups(null,  "SPK", "SPK", "*Category*", "*Loc*");
                 Optional<LocationGroup> group2 = groups.stream()
                         .filter(g -> "Test Group2".equals(g.getId()))
                         .findFirst();
