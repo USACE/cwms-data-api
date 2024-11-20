@@ -104,8 +104,8 @@ public class LocationGroupDaoTest {
     void getLocationGroupAsGeojson() throws SQLException, JsonProcessingException {
         DSLContext lrl = getDslContext(getConnection(), "LRL");
         LocationGroupDao dao = new LocationGroupDao(lrl);
-        FeatureCollection fc = dao.buildFeatureCollectionForLocationGroup("LRL", "Basin",
-                "Green River Basin", "EN");
+        FeatureCollection fc = dao.buildFeatureCollectionForLocationGroup("LRL",
+                "LRL", "CWMS", "Basin", "Green River Basin", "EN");
         assertNotNull(fc);
 
         ObjectWriter ow = new ObjectMapper().writerWithDefaultPrettyPrinter();
