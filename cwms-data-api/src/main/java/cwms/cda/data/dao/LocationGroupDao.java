@@ -279,21 +279,13 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
                     .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
 
-        if (officeId != null) {
-            if (groupOfficeId != null) {
-                connectBy = onStep.where(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(groupOfficeId.toUpperCase())
-                        .and(DSL.upper(alga.DB_OFFICE_ID).eq(officeId.toUpperCase())).and(condition));
-            } else {
-                connectBy = onStep.where(DSL.upper(alga.DB_OFFICE_ID).eq(officeId.toUpperCase()).and(condition));
-            }
-        } else {
-            if (groupOfficeId != null) {
-                connectBy = onStep.where(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(groupOfficeId.toUpperCase())
-                        .and(condition));
-            } else {
-                connectBy = onStep.where(condition);
-            }
 
+        if (groupOfficeId != null) {
+            connectBy = onStep.where(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(groupOfficeId.toUpperCase()).and(condition));
+        } else if (officeId != null) {
+            connectBy = onStep.where(DSL.upper(alga.DB_OFFICE_ID).eq(officeId.toUpperCase())).and(condition);
+        } else {
+            connectBy = onStep.where(condition);
         }
 
 
@@ -318,13 +310,13 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
     /**
      * Get all location groups for a given office and category.
-     * @param officeId The group office id to use for the query.
+     * @param locationOfficeId The group office id to use for the query.
      * @param groupOfficeId The group office id to use for the query.
      * @param categoryOfficeId The category office id to use for the query.
      * @param locCategoryLike A regex to use to filter the location categories.  May be null.
      * @return A list of all location groups for the given office and category.
      */
-    public List<LocationGroup> getLocationGroups(String officeId, String groupOfficeId,
+    public List<LocationGroup> getLocationGroups(String locationOfficeId, String groupOfficeId,
             String categoryOfficeId, String locCategoryLike) {
         AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
@@ -370,22 +362,22 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             condition = condition.and(alcg.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
         }
 
-        if (officeId != null) {
-            if (CWMS.equalsIgnoreCase(officeId)) {
+        if (locationOfficeId != null) {
+            if (CWMS.equalsIgnoreCase(locationOfficeId)) {
                 connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.eq(CWMS)
                         .and(alcg.GRP_DB_OFFICE_ID.eq(CWMS))
                         .and(condition)
                 );
             } else {
                 if (groupOfficeId != null) {
-                    connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId)
+                    connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, locationOfficeId)
                             .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, groupOfficeId))
-                            .and(alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(officeId)))
+                            .and(alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(locationOfficeId)))
                             .and(condition)
                     );
                 } else {
-                    connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId)
-                            .and(alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(officeId)))
+                    connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, locationOfficeId)
+                            .and(alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(locationOfficeId)))
                             .and(condition));
                 }
             }

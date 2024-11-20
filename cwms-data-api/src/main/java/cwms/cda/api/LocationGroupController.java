@@ -59,6 +59,7 @@ import org.jooq.DSLContext;
 
 public class LocationGroupController implements CrudHandler {
     public static final Logger logger = Logger.getLogger(LocationGroupController.class.getName());
+    private static final String LOCATION_OFFICE_ID = "location-office-id";
 
     public static final String TAG = "Location Groups";
     private final MetricRegistry metrics;
@@ -79,7 +80,7 @@ public class LocationGroupController implements CrudHandler {
     @OpenApi(
         queryParams = {
             @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
-                + "locations assigned to the group whose data is to be included in the response. If this "
+                + "location group whose data is to be included in the response. If this "
                 + "field is not specified, matching location groups information from all "
                 + "offices shall be returned."),
             @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
@@ -89,8 +90,8 @@ public class LocationGroupController implements CrudHandler {
             @OpenApiParam(name = CATEGORY_OFFICE_ID, required = true, description = "Specifies the "
                 + "owning office of the category the location group belongs to "
                 + "whose data is to be included in the response."),
-            @OpenApiParam(name = GROUP_OFFICE_ID, required = true, description = "Specifies the "
-                + "owning office of the location group whose data is to be included in the response."),
+            @OpenApiParam(name = LOCATION_OFFICE_ID, required = true, description = "Specifies the "
+                + "owning office of the location assigned to the location group whose data is to be included in the response."),
         },
         responses = {
             @OpenApiResponse(status = STATUS_200,
@@ -108,9 +109,9 @@ public class LocationGroupController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LocationGroupDao cdm = new LocationGroupDao(dsl);
 
-            String officeId = requiredParam(ctx, OFFICE);
+            String groupOfficeId = requiredParam(ctx, OFFICE);
             String categoryOfficeId = requiredParam(ctx, CATEGORY_OFFICE_ID);
-            String groupOfficeId = ctx.queryParam(GROUP_OFFICE_ID);
+            String locationOfficeId = ctx.queryParam(LOCATION_OFFICE_ID);
 
             boolean includeAssigned = queryParamAsClass(ctx, new String[]{INCLUDE_ASSIGNED},
                     Boolean.class, false, metrics, name(LocationGroupController.class.getName(),
@@ -119,7 +120,7 @@ public class LocationGroupController implements CrudHandler {
             String locCategoryLike = queryParamAsClass(ctx, new String[]{LOCATION_CATEGORY_LIKE},
                     String.class, null, metrics, name(LocationGroupController.class.getName(), GET_ALL));
 
-            List<LocationGroup> grps = cdm.getLocationGroups(officeId, groupOfficeId, categoryOfficeId,
+            List<LocationGroup> grps = cdm.getLocationGroups(locationOfficeId, groupOfficeId, categoryOfficeId,
                     includeAssigned, locCategoryLike);
 
             if (!grps.isEmpty()) {
@@ -176,7 +177,7 @@ public class LocationGroupController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             LocationGroupDao cdm = new LocationGroupDao(dsl);
-            String office = requiredParam(ctx, OFFICE);
+            String locationOfficeId = requiredParam(ctx, OFFICE);
             String categoryId = requiredParam(ctx, CATEGORY_ID);
 
             // Not marked as required to maintain backwards compatibility with existing clients
@@ -188,13 +189,13 @@ public class LocationGroupController implements CrudHandler {
             ContentType contentType;
             if (formatHeader != null && formatHeader.contains(Formats.GEOJSON)) {
                 contentType = new ContentType(Formats.GEOJSON);
-                FeatureCollection fc = cdm.buildFeatureCollectionForLocationGroup(office,
+                FeatureCollection fc = cdm.buildFeatureCollectionForLocationGroup(locationOfficeId,
                         groupOfficeId, categoryOfficeId, categoryId, groupId, "EN");
                 ObjectMapper mapper = ctx.appAttribute("ObjectMapper");
                 result = mapper.writeValueAsString(fc);
             } else {
                 contentType = Formats.parseHeader(formatHeader, LocationGroup.class);
-                Optional<LocationGroup> grp = cdm.getLocationGroup(office, categoryId, groupId);
+                Optional<LocationGroup> grp = cdm.getLocationGroup(locationOfficeId, categoryId, groupId);
                 if (grp.isPresent()) {
                     result = Formats.format(contentType, grp.get());
                 } else {
