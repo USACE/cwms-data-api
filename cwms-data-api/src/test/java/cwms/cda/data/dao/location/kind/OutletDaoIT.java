@@ -213,7 +213,7 @@ class OutletDaoIT extends BaseOutletDaoIT {
                                    .build();
     }
 
-    private static void deleteLocationGroup(DSLContext context, Outlet outlet) {
+    public static void deleteLocationGroup(DSLContext context, Outlet outlet) {
         LocationGroupDao locationGroupDao = new LocationGroupDao(context);
         try {
             locationGroupDao.delete(outlet.getRatingCategoryId().getName(), outlet.getRatingGroupId().getName(), true, OFFICE_ID);

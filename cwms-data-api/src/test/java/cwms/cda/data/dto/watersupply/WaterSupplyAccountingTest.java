@@ -78,7 +78,7 @@ class WaterSupplyAccountingTest {
                 .withProjectId(new CwmsId.Builder().withOfficeId(OFFICE)
                         .withName("Sacramento River Delta").build())
                 .withWaterRight("State of California Water Rights Permit #12345").build())
-                .withContractName("Sacramento River Water Contract")
+                .withContractName("Sac. River Contract")
                 .withPumpLocations(buildTestPumpLocation())
                 .withPumpAccounting(buildTestPumpAccountingList())
                 .build();
