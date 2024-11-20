@@ -80,7 +80,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @return An optional location group.
      */
     public Optional<LocationGroup> getLocationGroup(@NotNull String officeId, @NotNull String categoryId,
-            @NotNull String groupId) {
+                                                    @NotNull String groupId) {
         AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
@@ -100,30 +100,30 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         }
 
         List<Pair<LocationGroup, AssignedLocation>> assignments = dsl.select(
-                        alcg.CAT_DB_OFFICE_ID,
-                        alcg.LOC_CATEGORY_ID,
-                        alcg.LOC_CATEGORY_DESC,
-                        alcg.GRP_DB_OFFICE_ID,
-                        alcg.LOC_GROUP_ID,
-                        alcg.LOC_GROUP_DESC,
-                        alcg.LOC_GROUP_ATTRIBUTE,
-                        alcg.SHARED_LOC_ALIAS_ID,
-                        alcg.SHARED_REF_LOCATION_ID,
-                        alga.DB_OFFICE_ID,
-                        alga.LOCATION_ID,
-                        alga.ALIAS_ID,
-                        alga.ATTRIBUTE,
-                        alga.REF_LOCATION_ID)
-                .from(alcg).leftJoin(alga)
-                .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
-                        .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
-                .where(alcg.LOC_CATEGORY_ID.eq(categoryId)
-                        .and(alcg.LOC_GROUP_ID.eq(groupId))
-                        .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
-                        .and(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId))
-                        .and(assignmentOffice)
-                )
-                .orderBy(alga.ATTRIBUTE).fetchSize(1000).fetch(mapper);
+                    alcg.CAT_DB_OFFICE_ID,
+                    alcg.LOC_CATEGORY_ID,
+                    alcg.LOC_CATEGORY_DESC,
+                    alcg.GRP_DB_OFFICE_ID,
+                    alcg.LOC_GROUP_ID,
+                    alcg.LOC_GROUP_DESC,
+                    alcg.LOC_GROUP_ATTRIBUTE,
+                    alcg.SHARED_LOC_ALIAS_ID,
+                    alcg.SHARED_REF_LOCATION_ID,
+                    alga.DB_OFFICE_ID,
+                    alga.LOCATION_ID,
+                    alga.ALIAS_ID,
+                    alga.ATTRIBUTE,
+                    alga.REF_LOCATION_ID)
+            .from(alcg).leftJoin(alga)
+            .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
+                    .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
+            .where(alcg.LOC_CATEGORY_ID.eq(categoryId)
+                    .and(alcg.LOC_GROUP_ID.eq(groupId))
+                    .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
+                    .and(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId))
+                    .and(assignmentOffice)
+            )
+            .orderBy(alga.ATTRIBUTE).fetchSize(1000).fetch(mapper);
 
         // Might want to verify that all the groups in the list are the same?
         LocationGroup locGroup =
@@ -131,9 +131,9 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
         if (locGroup != null) {
             List<AssignedLocation> assignedLocations = assignments.stream()
-                    .map(Pair::component2)
-                    .filter(Objects::nonNull)
-                    .collect(toList());
+                .map(Pair::component2)
+                .filter(Objects::nonNull)
+                .collect(toList());
             locGroup = new LocationGroup(locGroup, assignedLocations);
         }
         return Optional.ofNullable(locGroup);
@@ -157,7 +157,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     }
 
     private LocationGroup buildLocationGroup(Record resultRecord,
-            LocationCategory locationCategory) {
+                                             LocationCategory locationCategory) {
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
         String groupId = resultRecord.get(alcg.LOC_GROUP_ID);
@@ -210,8 +210,8 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @return A list of all location groups for the given office and category.
      */
     public List<LocationGroup> getLocationGroups(@Nullable String officeId, String groupOfficeId,
-            String categoryOfficeId, boolean includeAssigned,
-            @Nullable String locCategoryLike) {
+                                                 String categoryOfficeId, boolean includeAssigned,
+                                                 @Nullable String locCategoryLike) {
         if (includeAssigned) {
             return getLocationGroups(officeId, groupOfficeId, categoryOfficeId, locCategoryLike);
         } else {
@@ -261,23 +261,23 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
         SelectConnectByStep<? extends Record> connectBy;
         SelectOnConditionStep<? extends Record> onStep = dsl.select(
-                        alcg.CAT_DB_OFFICE_ID,
-                        alcg.LOC_CATEGORY_ID,
-                        alcg.LOC_CATEGORY_DESC,
-                        alcg.GRP_DB_OFFICE_ID,
-                        alcg.LOC_GROUP_ID,
-                        alcg.LOC_GROUP_DESC,
-                        alcg.LOC_GROUP_ATTRIBUTE,
-                        alcg.SHARED_LOC_ALIAS_ID,
-                        alcg.SHARED_REF_LOCATION_ID,
-                        alga.DB_OFFICE_ID,
-                        alga.LOCATION_ID,
-                        alga.ALIAS_ID,
-                        alga.ATTRIBUTE,
-                        alga.REF_LOCATION_ID)
-                .from(alcg).leftJoin(alga)
-                .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
-                        .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
+                    alcg.CAT_DB_OFFICE_ID,
+                    alcg.LOC_CATEGORY_ID,
+                    alcg.LOC_CATEGORY_DESC,
+                    alcg.GRP_DB_OFFICE_ID,
+                    alcg.LOC_GROUP_ID,
+                    alcg.LOC_GROUP_DESC,
+                    alcg.LOC_GROUP_ATTRIBUTE,
+                    alcg.SHARED_LOC_ALIAS_ID,
+                    alcg.SHARED_REF_LOCATION_ID,
+                    alga.DB_OFFICE_ID,
+                    alga.LOCATION_ID,
+                    alga.ALIAS_ID,
+                    alga.ATTRIBUTE,
+                    alga.REF_LOCATION_ID)
+            .from(alcg).leftJoin(alga)
+            .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
+                    .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
 
         if (officeId != null) {
             if (groupOfficeId != null) {
