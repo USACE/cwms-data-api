@@ -36,7 +36,6 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.TimeZone;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_WATER_SUPPLY_PACKAGE;
@@ -52,7 +51,6 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
     }
 
     public void storeAccounting(WaterSupplyAccounting accounting) {
-        TimeZone timeZone = TimeZone.getTimeZone("UTC");
         String volumeUnitId = null;
         String storeRule = Const.Delete_Insert;
         boolean overrideProtection = false;
@@ -64,7 +62,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
             WATER_USER_CONTRACT_REF_T contractRefT = WaterSupplyUtils
                     .toContractRef(accounting.getWaterUser(), accounting.getContractName());
             LOC_REF_TIME_WINDOW_TAB_T pumpTimeWindowTab = WaterSupplyUtils.toTimeWindowTabT(accounting);
-            String timeZoneId = timeZone == null ? null : timeZone.getID();
+            String timeZoneId = "UTC";
             String overrideProt = formatBool(overrideProtection);
             CWMS_WATER_SUPPLY_PACKAGE.call_STORE_ACCOUNTING_SET(DSL.using(c).configuration(), accountingTab,
                     contractRefT, pumpTimeWindowTab, timeZoneId, volumeUnitId, storeRule, overrideProt);
@@ -79,7 +77,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
         WATER_USER_CONTRACT_REF_T contractRefT = WaterSupplyUtils.toContractRef(waterUser, contractName);
         Timestamp startTimestamp = Timestamp.from(startTime);
         Timestamp endTimestamp = Timestamp.from(endTime);
-        String timeZoneId = null;
+        String timeZoneId = "UTC";
         String startInclusiveFlag = formatBool(startInclusive);
         String endInclusiveFlag = formatBool(endInclusive);
         String ascendingFlagStr = formatBool(ascendingFlag);
