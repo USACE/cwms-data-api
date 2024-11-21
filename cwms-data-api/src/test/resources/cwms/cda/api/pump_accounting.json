@@ -26,7 +26,7 @@
     "2022-11-20T21:17:28Z": [
       {
         "pump-type": "IN",
-        "transfer-type-display": "Pipeline",
+        "transfer-type-display": "Temporary Inlet",
         "flow": 1.0,
         "comment": "Added water to the system"
       },
