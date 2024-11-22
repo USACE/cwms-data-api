@@ -26,6 +26,7 @@
 
 package cwms.cda.api.watersupply;
 
+import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.END_TIME_INCLUSIVE;
@@ -37,7 +38,10 @@ import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.WATER_USER;
+import static cwms.cda.api.Controllers.requiredInstant;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -52,7 +56,6 @@ import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.helpers.DateUtils;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -71,7 +74,7 @@ import org.jooq.DSLContext;
 
 
 public class AccountingCatalogController implements Handler {
-    private final Logger LOGGER = Logger.getLogger(AccountingCatalogController.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(AccountingCatalogController.class.getName());
     private static final String TAG = "Pump Accounting";
     private static final String ROW_LIMIT = "row-limit";
     private static final String ASCENDING = "ascending";
@@ -93,9 +96,16 @@ public class AccountingCatalogController implements Handler {
     @OpenApi(
         queryParams = {
             @OpenApiParam(name = START, description = "The start time of the time window for "
-                + "pump accounting entries to retrieve. Defaults to the year 1800."),
+                + "pump accounting entries to retrieve. The format for this field is ISO 8601 extended, "
+                + "with optional offset and timezone", required = true),
             @OpenApiParam(name = END, description = "The end time of the time window for pump "
-                + "accounting entries to retrieve. Defaults to the year 3000"),
+                + "accounting entries to retrieve.", required = true),
+            @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone "
+                + "to be used if the format of the " + END + " or " + BEGIN
+                + " parameters do not include offset or time zone information. "
+                + "Defaults to UTC."),
+            @OpenApiParam(name = UNIT, description = "The unit of the flow rate of the accounting entries to "
+                + "retrieve. Defaults to 'cms'."),
             @OpenApiParam(name = START_TIME_INCLUSIVE, description = "Whether or not the start time is "
                 + "inclusive or not. Defaults to TRUE.", type = Boolean.class),
             @OpenApiParam(name = END_TIME_INCLUSIVE, description = "Whether or not the end time is inclusive "
@@ -106,8 +116,8 @@ public class AccountingCatalogController implements Handler {
                 + "Defaults to 0, which means no limit.", type = Integer.class)
         },
         pathParams = {
-            @OpenApiParam(name = OFFICE, description = "The office ID the pump accounting is associated with.",
-                required = true),
+            @OpenApiParam(name = OFFICE, description = "The office ID of the project the "
+                + "pump accounting is associated with.", required = true),
             @OpenApiParam(name = WATER_USER, description = "The water user the pump accounting is "
                 + "associated with.", required = true),
             @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract associated with "
@@ -140,9 +150,9 @@ public class AccountingCatalogController implements Handler {
             final String waterUserName = ctx.pathParam(WATER_USER);
             final String contractId = ctx.pathParam(CONTRACT_NAME);
             final String locationId = ctx.pathParam(PROJECT_ID);
-            final String startTime = ctx.queryParam(START) == null
-                    ? "1800-01-01T00:00:00Z" : ctx.queryParam(START);
-            final String endTime = ctx.queryParam(END) == null ? "3000-01-01T00:00:00Z" : ctx.queryParam(END);
+            final Instant startTime = requiredInstant(ctx, START);
+            final Instant endTime = requiredInstant(ctx, END);
+            final String units = ctx.queryParam(UNIT) != null ? ctx.queryParam(UNIT) : "cms";
             final boolean startInclusive = ctx.queryParam(START_TIME_INCLUSIVE) == null
                     || Boolean.parseBoolean(ctx.queryParam(START_TIME_INCLUSIVE));
             final boolean endInclusive = ctx.queryParam(END_TIME_INCLUSIVE) == null
@@ -186,12 +196,9 @@ public class AccountingCatalogController implements Handler {
                 return;
             }
 
-            Instant startInstant = DateUtils.parseUserDate(startTime, "UTC").toInstant();
-            Instant endInstant = DateUtils.parseUserDate(endTime, "UTC").toInstant();
-
             WaterSupplyAccountingDao waterSupplyAccountingDao = getWaterSupplyAccountingDao(dsl);
             List<WaterSupplyAccounting> accounting = waterSupplyAccountingDao.retrieveAccounting(contractId, waterUser,
-                    projectLocation, null, startInstant, endInstant, startInclusive, endInclusive,
+                    projectLocation, units, startTime, endTime, startInclusive, endInclusive,
                     ascending, rowLimit);
 
             String result = Formats.format(contentType, accounting, WaterSupplyAccounting.class);

@@ -28,7 +28,6 @@ package cwms.cda.api.watersupply;
 
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.CWMS_OFFICE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_204;
 import static cwms.cda.api.Controllers.STATUS_501;
@@ -119,31 +118,12 @@ public class AccountingCreateController implements Handler {
             List<LookupType> lookupList = lookupTypeDao
                     .retrieveLookupTypes("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE", office);
 
-            boolean notFound = false;
             for (Map.Entry<Instant, List<PumpTransfer>> entry : accounting.getPumpAccounting().entrySet()) {
                 for (PumpTransfer pumpTransfer : entry.getValue()) {
                     if (!searchForTransferType(pumpTransfer, lookupList)) {
                         ctx.status(HttpServletResponse.SC_BAD_REQUEST).json("No matching transfer type found "
                                 + "for an accounting entry.");
-                        notFound = true;
-                    }
-                }
-            }
-            if (notFound)
-            {
-                lookupList = lookupTypeDao
-                        .retrieveLookupTypes("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE", CWMS_OFFICE);
-
-                for(Map.Entry<Instant, List<PumpTransfer>> entry : accounting.getPumpAccounting().entrySet())
-                {
-                    for(PumpTransfer pumpTransfer : entry.getValue())
-                    {
-                        if(!searchForTransferType(pumpTransfer, lookupList))
-                        {
-                            ctx.status(HttpServletResponse.SC_BAD_REQUEST).json("No matching transfer type found "
-                                    + "for an accounting entry.");
-                            return;
-                        }
+                        return;
                     }
                 }
             }

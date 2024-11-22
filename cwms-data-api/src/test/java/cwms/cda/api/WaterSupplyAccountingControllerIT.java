@@ -63,6 +63,7 @@ import java.time.ZoneId;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
@@ -73,14 +74,15 @@ import static org.hamcrest.Matchers.is;
 class WaterSupplyAccountingControllerIT extends DataApiTestIT {
     private static final Logger LOGGER = Logger.getLogger(WaterSupplyAccountingControllerIT.class.getName());
     private static final String OFFICE_ID = "SPK";
-    private static WaterSupplyAccounting WATER_SUPPLY_ACCOUNTING;
+    private static WaterSupplyAccounting waterSupplyAccounting;
     private static final String START_TIME = "start";
     private static final String START_INCLUSIVE = "start-inclusive";
     private static final String END_INCLUSIVE = "end-inclusive";
     private static final String END_TIME = "end";
     private static final String ROW_LIMIT = "row-limit";
     private static final String ASCENDING = "ascending";
-    private static WaterUserContract CONTRACT;
+    private static final float ONE_CMS_IN_CFS = 35.314667F;
+    private static WaterUserContract contract;
     private static LookupType testTransferType;
     private static LookupType testContractType;
     private static Location pump1;
@@ -95,23 +97,23 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             assert accountStream != null;
             assert contractStream != null;
             String contractJson = org.apache.commons.io.IOUtils.toString(contractStream, StandardCharsets.UTF_8);
-            CONTRACT = Formats.parseContent(new ContentType(Formats.JSONV1), contractJson, WaterUserContract.class);
+            contract = Formats.parseContent(new ContentType(Formats.JSONV1), contractJson, WaterUserContract.class);
             String accountingJson = IOUtils.toString(accountStream, StandardCharsets.UTF_8);
-            WATER_SUPPLY_ACCOUNTING = Formats.parseContent(new ContentType(Formats.JSONV1),
+            waterSupplyAccounting = Formats.parseContent(new ContentType(Formats.JSONV1),
                     accountingJson, WaterSupplyAccounting.class);
             testTransferType = new LookupType.Builder()
                     .withOfficeId(OFFICE_ID)
                     .withActive(true)
-                    .withDisplayValue(WATER_SUPPLY_ACCOUNTING.getPumpAccounting()
+                    .withDisplayValue(waterSupplyAccounting.getPumpAccounting()
                             .get(Instant.parse("2022-11-20T21:17:28Z")).get(0).getTransferTypeDisplay())
                     .withTooltip("Test tooltip")
                     .build();
-            testContractType = CONTRACT.getContractType();
-            pump1 = buildTestLocation(WATER_SUPPLY_ACCOUNTING.getPumpLocations().getPumpIn().getName(),
+            testContractType = contract.getContractType();
+            pump1 = buildTestLocation(waterSupplyAccounting.getPumpLocations().getPumpIn().getName(),
                     "PUMP");
-            pump2 = buildTestLocation(WATER_SUPPLY_ACCOUNTING.getPumpLocations().getPumpOut().getName(),
+            pump2 = buildTestLocation(waterSupplyAccounting.getPumpLocations().getPumpOut().getName(),
                     "PUMP");
-            pump3 = buildTestLocation(WATER_SUPPLY_ACCOUNTING.getPumpLocations().getPumpBelow().getName(),
+            pump3 = buildTestLocation(waterSupplyAccounting.getPumpLocations().getPumpBelow().getName(),
                     "PUMP");
         } catch (Exception e) {
             LOGGER.log(Level.CONFIG, String.format("Unable to delete location: %s", e.getMessage()));
@@ -124,16 +126,16 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         // create water user
         // create water user contract
 
-        Location contractLocation = buildTestLocation(CONTRACT.getContractId().getName(), "SITE");
-        Location parentLocation = buildTestLocation(CONTRACT.getWaterUser().getProjectId().getName(), "PROJECT");
+        Location contractLocation = buildTestLocation(contract.getContractId().getName(), "SITE");
+        Location parentLocation = buildTestLocation(contract.getWaterUser().getProjectId().getName(), "PROJECT");
 
         Project project = new Project.Builder().withLocation(parentLocation)
                 .withFederalCost(BigDecimal.valueOf(123456789))
                 .withAuthorizingLaw("NEW LAW").withCostUnit("$")
-                .withProjectOwner(CONTRACT.getWaterUser().getEntityName())
+                .withProjectOwner(contract.getWaterUser().getEntityName())
                 .build();
 
-        WaterUser waterUser = CONTRACT.getWaterUser();
+        WaterUser waterUser = contract.getWaterUser();
         createLocation(parentLocation.getName(), true, OFFICE_ID);
         createLocation(contractLocation.getName(), true, OFFICE_ID);
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -181,7 +183,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
                 throw new RuntimeException(e);
             }
             try {
-                waterContractDao.storeWaterContract(CONTRACT, false, true);
+                waterContractDao.storeWaterContract(contract, false, true);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -194,8 +196,8 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         // delete water user
         // delete water contract parent location
 
-        Location contractLocation = buildTestLocation(CONTRACT.getContractId().getName(), "SITE");
-        Location parentLocation = buildTestLocation(CONTRACT.getWaterUser().getProjectId().getName(), "PROJECT");
+        Location contractLocation = buildTestLocation(contract.getContractId().getName(), "SITE");
+        Location parentLocation = buildTestLocation(contract.getWaterUser().getProjectId().getName(), "PROJECT");
 
         try
         {
@@ -209,7 +211,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
                 WaterContractDao waterContractDao = new WaterContractDao(ctx);
                 try
                 {
-                    waterContractDao.deleteWaterContract(CONTRACT, DeleteMethod.DELETE_ALL);
+                    waterContractDao.deleteWaterContract(contract, DeleteMethod.DELETE_ALL);
                 } catch (Exception e) {
                     LOGGER.log(Level.CONFIG, String.format("Unable to delete water contract: %s", e.getMessage()));
                 }
@@ -228,7 +230,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
                 }
                 try
                 {
-                    projectDao.delete(CONTRACT.getOfficeId(), CONTRACT.getWaterUser().getProjectId().getName(),
+                    projectDao.delete(contract.getOfficeId(), contract.getWaterUser().getProjectId().getName(),
                             DeleteRule.DELETE_ALL);
                 } catch (Exception e) {
                     LOGGER.log(Level.CONFIG, String.format("Unable to delete project: %s", e.getMessage()));
@@ -272,7 +274,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         // 4) Assert pump accounting is same as created
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        String json = JsonV1.buildObjectMapper().writeValueAsString(WATER_SUPPLY_ACCOUNTING);
+        String json = JsonV1.buildObjectMapper().writeValueAsString(waterSupplyAccounting);
 
         // create pump accounting
         given()
@@ -283,9 +285,9 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName() + "/water-user/"
-                + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
-                + CONTRACT.getContractId().getName() + "/accounting")
+            .post("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
+                + contract.getWaterUser().getEntityName() + "/contracts/"
+                + contract.getContractId().getName() + "/accounting")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -307,21 +309,21 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName() + "/water-user/"
-                + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
-                + CONTRACT.getContractId().getName() + "/accounting")
+            .get("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
+                + contract.getWaterUser().getEntityName() + "/contracts/"
+                + contract.getContractId().getName() + "/accounting")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("[0].contract-name", equalTo(WATER_SUPPLY_ACCOUNTING.getContractName()))
-            .body("[0].water-user.entity-name", equalTo(WATER_SUPPLY_ACCOUNTING.getWaterUser().getEntityName()))
-            .body("[0].water-user.project-id.name", equalTo(WATER_SUPPLY_ACCOUNTING.getWaterUser().getProjectId().getName()))
-            .body("[0].water-user.project-id.office-id", equalTo(WATER_SUPPLY_ACCOUNTING.getWaterUser().getProjectId().getOfficeId()))
-            .body("[0].water-user.water-right", equalTo(WATER_SUPPLY_ACCOUNTING.getWaterUser().getWaterRight()))
+            .body("[0].contract-name", equalTo(waterSupplyAccounting.getContractName()))
+            .body("[0].water-user.entity-name", equalTo(waterSupplyAccounting.getWaterUser().getEntityName()))
+            .body("[0].water-user.project-id.name", equalTo(waterSupplyAccounting.getWaterUser().getProjectId().getName()))
+            .body("[0].water-user.project-id.office-id", equalTo(waterSupplyAccounting.getWaterUser().getProjectId().getOfficeId()))
+            .body("[0].water-user.water-right", equalTo(waterSupplyAccounting.getWaterUser().getWaterRight()))
             .body("[0].pump-accounting[\"2022-11-20T21:17:28Z\"].pump-type[2]", equalTo(String.format("%s", PumpType.IN)))
             .body("[0].pump-accounting[\"2022-11-20T21:17:28Z\"].transfer-type-display[2]", equalTo(testTransferType.getDisplayValue()))
-            .body("[0].pump-locations.pump-in.name", equalTo(WATER_SUPPLY_ACCOUNTING.getPumpLocations().getPumpIn().getName()))
+            .body("[0].pump-locations.pump-in.name", equalTo(waterSupplyAccounting.getPumpLocations().getPumpIn().getName()))
         ;
     }
 
@@ -334,7 +336,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         // 3) Assert not found
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        String json = JsonV1.buildObjectMapper().writeValueAsString(WATER_SUPPLY_ACCOUNTING);
+        String json = JsonV1.buildObjectMapper().writeValueAsString(waterSupplyAccounting);
 
         // create pump accounting
         given()
@@ -345,9 +347,9 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName() + "/water-user/"
-                    + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
-                    + CONTRACT.getContractId().getName() + "/accounting")
+            .post("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
+                    + contract.getWaterUser().getEntityName() + "/contracts/"
+                    + contract.getContractId().getName() + "/accounting")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -365,14 +367,97 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName() + "/water-user/"
-                    + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
-                    + CONTRACT.getContractId().getName() + "/accounting")
+            .get("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
+                    + contract.getWaterUser().getEntityName() + "/contracts/"
+                    + contract.getContractId().getName() + "/accounting")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body(is("[]"))
+        ;
+    }
+
+    @Test
+    void testStoreRetrieveWithUnits() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String json = JsonV1.buildObjectMapper().writeValueAsString(waterSupplyAccounting);
+
+        // create pump accounting
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
+                    + contract.getWaterUser().getEntityName() + "/contracts/"
+                    + contract.getContractId().getName() + "/accounting")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // retrieve pump accounting
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .accept(Formats.JSONV1)
+            .queryParam(START_TIME, "2005-04-05T00:00:00Z")
+            .queryParam(END_TIME, "2335-04-06T00:00:00Z")
+            .queryParam(START_INCLUSIVE, "true")
+            .queryParam(END_INCLUSIVE, "true")
+            .queryParam(ASCENDING, "true")
+            .queryParam(ROW_LIMIT, 100)
+            .queryParam(UNIT, "cfs")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
+                    + contract.getWaterUser().getEntityName() + "/contracts/"
+                    + contract.getContractId().getName() + "/accounting")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("[0].contract-name", equalTo(waterSupplyAccounting.getContractName()))
+            .body("[0].water-user.entity-name", equalTo(waterSupplyAccounting.getWaterUser().getEntityName()))
+            .body("[0].water-user.project-id.name", equalTo(waterSupplyAccounting.getWaterUser().getProjectId().getName()))
+            .body("[0].water-user.project-id.office-id", equalTo(waterSupplyAccounting.getWaterUser().getProjectId().getOfficeId()))
+            .body("[0].water-user.water-right", equalTo(waterSupplyAccounting.getWaterUser().getWaterRight()))
+            .body("[0].pump-accounting[\"2022-11-20T21:17:28Z\"].pump-type[2]", equalTo(String.format("%s", PumpType.IN)))
+            .body("[0].pump-accounting[\"2022-11-20T21:17:28Z\"].flow[2]", equalTo(ONE_CMS_IN_CFS))
+            .body("[0].pump-accounting[\"2022-11-20T21:17:28Z\"].transfer-type-display[2]", equalTo(testTransferType.getDisplayValue()))
+            .body("[0].pump-locations.pump-in.name", equalTo(waterSupplyAccounting.getPumpLocations().getPumpIn().getName()))
+        ;
+    }
+
+    @Test
+    void testStoreNonExistentTransferType() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String json = JsonV1.buildObjectMapper().writeValueAsString(waterSupplyAccounting);
+
+        json = json.replace("Temporary Inlet", "NonExistentTransferType");
+        // create pump accounting
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
+                    + contract.getWaterUser().getEntityName() + "/contracts/"
+                    + contract.getContractId().getName() + "/accounting")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
         ;
     }
 
