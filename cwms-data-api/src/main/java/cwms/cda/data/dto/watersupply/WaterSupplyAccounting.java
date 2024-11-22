@@ -35,7 +35,6 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +50,6 @@ public final class WaterSupplyAccounting extends CwmsDTOBase {
     private final WaterUser waterUser;
     @JsonProperty(required = true)
     private final PumpLocation pumpLocations;
-    @Schema(name = "data-columns")
     private final Map<Instant, List<PumpTransfer>> pumpAccounting;
 
     private WaterSupplyAccounting(Builder builder) {
