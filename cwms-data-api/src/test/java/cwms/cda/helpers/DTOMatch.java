@@ -393,23 +393,29 @@ public final class DTOMatch {
     public static void assertMatch(PumpLocation first, PumpLocation second) {
         assertAll(
             () -> {
-                if (first != null && second != null) {
+                if (first != null && second != null && first.getPumpOut() != null && second.getPumpOut() != null) {
                     assertMatch(first.getPumpOut(), second.getPumpOut());
-                } else if (!(first == null && second == null)) {
+                } else if (!(first == null && second == null)
+                        && !((first != null && first.getPumpOut() == null)
+                            && (second != null && second.getPumpOut() == null))) {
                     fail("Pump out locations do not match");
                 }
             },
             () -> {
-                if (first != null && second != null) {
+                if (first != null && second != null && first.getPumpIn() != null && second.getPumpIn() != null) {
                     assertMatch(first.getPumpIn(), second.getPumpIn());
-                } else if (!(first == null && second == null)) {
+                } else if (!(first == null && second == null)
+                        && !((first != null && first.getPumpIn() == null)
+                            && (second != null && second.getPumpIn() == null))) {
                     fail("Pump in locations do not match");
                 }
             },
             () -> {
-                if (first != null && second != null) {
+                if (first != null && second != null && first.getPumpBelow() != null && second.getPumpBelow() != null) {
                     assertMatch(first.getPumpBelow(), second.getPumpBelow());
-                } else if (!(first == null && second == null)) {
+                } else if (!(first == null && second == null)
+                        && !((first != null && first.getPumpBelow() == null)
+                            && (second != null && second.getPumpBelow() == null))) {
                     fail("Pump below locations do not match");
                 }
             }
