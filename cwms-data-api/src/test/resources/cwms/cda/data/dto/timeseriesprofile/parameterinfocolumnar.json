@@ -1,0 +1,7 @@
+{
+  "type": "columnar-parameter-info",
+  "parameter": "Depth",
+  "unit": "m",
+  "start-column": 10,
+  "end-column": 20
+}

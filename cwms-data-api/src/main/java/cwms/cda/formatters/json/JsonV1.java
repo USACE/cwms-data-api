@@ -15,7 +15,6 @@ import cwms.cda.formatters.OfficeFormatV1;
 import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.annotations.FormattableWith;
 import io.javalin.http.BadRequestResponse;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;

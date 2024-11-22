@@ -1,0 +1,12 @@
+{
+  "location-id": {
+    "office-id": "SPK",
+    "name": "Beaverdam Ck Dam"
+  },
+  "description": "Dam near Durham",
+  "parameter-list": [
+    "Depth",
+    "Temp-Water"
+  ],
+  "key-parameter": "Depth"
+}

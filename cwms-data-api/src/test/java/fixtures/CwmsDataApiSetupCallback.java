@@ -28,6 +28,7 @@ import io.restassured.config.JsonConfig;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import javax.servlet.http.HttpServletResponse;
+import org.testcontainers.images.ImagePullPolicy;
 import org.testcontainers.images.PullPolicy;
 
 import static io.restassured.RestAssured.given;
