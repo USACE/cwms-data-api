@@ -114,10 +114,13 @@ public class AccountingCreateController implements Handler {
             WaterSupplyAccounting accounting = Formats.parseContent(contentType, ctx.body(),
                     WaterSupplyAccounting.class);
             WaterSupplyAccountingDao waterSupplyAccountingDao = getWaterSupplyAccountingDao(dsl);
+
+            // Check if the transfer type in the accounting entry is valid
+            // Relates to CWDB issue #316: https://jira.hecdev.net/browse/CWDB-316
+            // Transfer types that are not already in the database will cause the accounting entry to be dropped
             LookupTypeDao lookupTypeDao = new LookupTypeDao(dsl);
             List<LookupType> lookupList = lookupTypeDao
                     .retrieveLookupTypes("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE", office);
-
             for (Map.Entry<Instant, List<PumpTransfer>> entry : accounting.getPumpAccounting().entrySet()) {
                 for (PumpTransfer pumpTransfer : entry.getValue()) {
                     if (!searchForTransferType(pumpTransfer, lookupList)) {
