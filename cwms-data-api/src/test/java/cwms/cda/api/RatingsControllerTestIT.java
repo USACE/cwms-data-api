@@ -49,8 +49,10 @@ class RatingsControllerTestIT extends DataApiTestIT
 		String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
 		ratingXml = ratingXml.replaceAll("Zanesville", EXISTING_LOC);
 		String ratingXml2 = ratingXml.replaceAll("2002-04-09T13:53:01Z", "2016-06-06T00:00:00Z");
+		String ratingXml3 = ratingXml.replaceAll("2002-04-09T13:53:01Z", "2025-06-06T00:00:00Z");
 		RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
 		RatingSetContainer container2 = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml2);
+		RatingSetContainer container3 = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml3);
 		RatingSpecContainer specContainer = container.ratingSpecContainer;
 		specContainer.officeId = SPK;
 		specContainer.specOfficeId = SPK;
@@ -59,6 +61,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 		String templateXml = RatingSpecXmlFactory.toXml(specContainer, "", 0);
 		String setXml = RatingContainerXmlFactory.toXml(container, "", 0, true, false);
 		String setXml2 = RatingContainerXmlFactory.toXml(container2, "", 0, true, false);
+		String setXml3 = RatingContainerXmlFactory.toXml(container3, "", 0, true, false);
 		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
 		//Create Template
@@ -115,6 +118,23 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.log().ifValidationFails(LogDetail.ALL,true)
 			.contentType(Formats.XMLV2)
 			.body(setXml2)
+			.header("Authorization", user.toHeaderValue())
+			.queryParam(OFFICE, SPK)
+			.queryParam(STORE_TEMPLATE, false)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("/ratings")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL,true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_OK));
+
+		// Create the third set
+		given()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.contentType(Formats.XMLV2)
+			.body(setXml3)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, SPK)
 			.queryParam(STORE_TEMPLATE, false)
@@ -207,18 +227,15 @@ class RatingsControllerTestIT extends DataApiTestIT
 
 	@ParameterizedTest
 	@EnumSource(GetOneTest.class)
-	void test_get_one_match_date(GetOneTest test) {
-		String enable = "enable";
+	void test_get_one_latest(GetOneTest test) {
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL,true)
 			.accept(test.accept)
 			.queryParam(OFFICE, SPK)
-			.queryParam(EFFECTIVE_DATE, "2002-01-01T00:00:00Z")
-			.queryParam(enable, true)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
-			.get("/ratings/" + EXISTING_SPEC)
+			.get("/ratings/" + EXISTING_SPEC + "/latest")
 		.then()
 		.assertThat()
 			.log().ifValidationFails(LogDetail.ALL,true)
@@ -227,56 +244,6 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.extract();
 
 		String effectiveDate = response.path("ratings.simple-rating[0].effective-date");
-		if (effectiveDate == null) {
-			effectiveDate = response.path("simple-rating.effective-date");
-		}
-		assertNotNull(effectiveDate);
-		assertEquals("2002-04-09T13:53:00Z", effectiveDate);
-
-		response = given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(test.accept)
-			.queryParam(OFFICE, SPK)
-			.queryParam(enable, true)
-			.queryParam(EFFECTIVE_DATE, "2022-01-01T00:00:00Z")
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/ratings/" + EXISTING_SPEC)
-		.then()
-		.assertThat()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.contentType(is(test.expectedContentType))
-			.extract();
-
-		effectiveDate = response.path("ratings.simple-rating[0].effective-date");
-		if (effectiveDate == null) {
-			effectiveDate = response.path("simple-rating.effective-date");
-		}
-		assertNotNull(effectiveDate);
-		assertEquals("2016-06-06T00:00:00Z", effectiveDate);
-
-		response = given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(test.accept)
-			.queryParam(OFFICE, SPK)
-			.queryParam(enable, true)
-			.queryParam(EFFECTIVE_DATE, "2010-01-01T00:00:00-07:00")
-			.queryParam(START, "2000-01-01T00:00:00-07:00") // ignored parameter
-			.queryParam(END, "2020-01-01T00:00:00-07:00")	// ignored parameter
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/ratings/" + EXISTING_SPEC)
-		.then()
-			.log().ifValidationFails(LogDetail.ALL,true)
-		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.contentType(is(test.expectedContentType))
-			.extract();
-
-		effectiveDate = response.path("ratings.simple-rating[0].effective-date");
 		if (effectiveDate == null) {
 			effectiveDate = response.path("simple-rating.effective-date");
 		}

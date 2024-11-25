@@ -31,7 +31,6 @@ import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DATE_FORMAT;
 import static cwms.cda.api.Controllers.DATUM;
 import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.EFFECTIVE_DATE;
 import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.EXAMPLE_DATE;
 import static cwms.cda.api.Controllers.FORMAT;
@@ -338,10 +337,6 @@ public class RatingController implements CrudHandler {
                         + "otherwise specified), as well as the time zone of any times in the"
                         + " response. If this field is not specified, the default time zone "
                         + "of UTC shall be used."),
-                @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies the "
-                        + "date to find the closest match to for retrieving a specific rating curve. This date is used "
-                        + "instead of the time window specified by start and end. "
-                        + "The format for this field is ISO 8601 extended."),
                 @OpenApiParam(name = METHOD, description = "Specifies "
                         + "the retrieval method used.  If no method is provided EAGER will be used.",
                         type = RatingSet.DatabaseLoadMethod.class),
@@ -359,11 +354,6 @@ public class RatingController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
 
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-            Instant effectiveDate = null;
-            String effectiveDateParam = ctx.queryParam(EFFECTIVE_DATE);
-            if (effectiveDateParam != null) {
-                effectiveDate = DateUtils.parseUserDate(effectiveDateParam, timezone).toInstant();
-            }
 
             Instant beginInstant = null;
             String begin = ctx.queryParam(BEGIN);
@@ -383,7 +373,7 @@ public class RatingController implements CrudHandler {
                     RatingSet.DatabaseLoadMethod.class)
                     .getOrDefault(RatingSet.DatabaseLoadMethod.EAGER);
 
-            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant, effectiveDate);
+            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant, false);
             if (body != null) {
                 ctx.result(body);
                 ctx.status(HttpCode.OK);
@@ -391,11 +381,10 @@ public class RatingController implements CrudHandler {
         }
     }
 
-
     @Nullable
-    private String getRatingSetString(Context ctx, RatingSet.DatabaseLoadMethod method,
+    protected String getRatingSetString(Context ctx, RatingSet.DatabaseLoadMethod method,
                                       String officeId, String rating, Instant begin,
-                                      Instant end, Instant effectiveDate) {
+                                      Instant end, boolean latest) {
         String retval = null;
 
         try (final Timer.Context ignored = markAndTime("getRatingSetString")) {
@@ -408,7 +397,8 @@ public class RatingController implements CrudHandler {
             if (isJson || isXml) {
                 ctx.contentType(contentType.toString());
                 try {
-                    RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end, effectiveDate);
+                    RatingSet ratingSet = null;
+                    ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end, latest);
                     if (ratingSet != null) {
                         if (isJson) {
                             retval = JsonRatingUtils.toJson(ratingSet);
@@ -446,13 +436,18 @@ public class RatingController implements CrudHandler {
 
     private RatingSet getRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
                                    String officeId, String rating, Instant begin,
-                                   Instant end, Instant effectiveDate) throws IOException, RatingException {
-        RatingSet ratingSet;
+                                   Instant end, boolean latest) throws IOException, RatingException {
+        RatingSet ratingSet = null;
         try (final Timer.Context ignored = markAndTime("getRatingSet")) {
             DSLContext dsl = getDslContext(ctx);
 
             RatingDao ratingDao = getRatingDao(dsl);
-            ratingSet = ratingDao.retrieve(method, officeId, rating, begin, end, effectiveDate);
+
+            if (latest) {
+                ratingSet = ratingDao.retrieveLatest(method, officeId, rating);
+            } else {
+                ratingSet = ratingDao.retrieve(method, officeId, rating, begin, end);
+            }
         }
 
         return ratingSet;

@@ -26,7 +26,6 @@ package cwms.cda.data.dao;
 
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-
 import java.io.IOException;
 import java.time.Instant;
 import java.util.regex.Matcher;
@@ -39,7 +38,10 @@ public interface RatingDao {
     void create(String ratingSet, boolean storeTemplate) throws IOException, RatingException;
 
     RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId,
-                       Instant start, Instant end, Instant effectiveDate) throws IOException, RatingException;
+                       Instant start, Instant end) throws IOException, RatingException;
+
+    RatingSet retrieveLatest(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId)
+            throws IOException, RatingException;
 
     String retrieveRatings(String format, String names, String unit, String datum, String office,
                            String start, String end, String timezone);
@@ -52,7 +54,7 @@ public interface RatingDao {
     static String extractOfficeFromXml(String xml) {
         Matcher officeMatch = officeMatcher.matcher(xml);
 
-        if(officeMatch.find()) {
+        if (officeMatch.find()) {
             return officeMatch.group(1);
         } else {
             throw new RuntimeException("Unable to determine office for data set");

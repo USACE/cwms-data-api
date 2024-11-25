@@ -71,6 +71,7 @@ import cwms.cda.api.PoolController;
 import cwms.cda.api.ProjectController;
 import cwms.cda.api.PropertyController;
 import cwms.cda.api.RatingController;
+import cwms.cda.api.RatingLatestController;
 import cwms.cda.api.RatingMetadataController;
 import cwms.cda.api.RatingSpecController;
 import cwms.cda.api.RatingTemplateController;
@@ -504,6 +505,7 @@ public class ApiServlet extends HttpServlet {
                 new RatingSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/ratings/metadata/{rating-id}",
                 new RatingMetadataController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        get("/ratings/{rating-id}/latest", new RatingLatestController(metrics));
         cdaCrudCache("/ratings/{rating-id}",
                 new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/catalog/{dataset}",
