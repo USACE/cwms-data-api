@@ -1,0 +1,87 @@
+{
+  "contract-name": "Sac. River Contract",
+  "water-user": {
+    "entity-name": "California Department of Water Resources",
+    "project-id": {
+      "office-id": "SPK",
+      "name": "Sacramento River Delta"
+    },
+    "water-right": "State of California Water Rights Permit #12345"
+  },
+  "pump-locations": {
+    "pump-in": {
+      "office-id": "SPK",
+      "name": "Sacramento River Delta-Dam Water Pump 1"
+    },
+    "pump-out": {
+      "office-id": "SPK",
+      "name": "Sacramento River Delta-Dam Water Pump 2"
+    },
+    "pump-below": {
+      "office-id": "SPK",
+      "name": "Sacramento River Delta-Dam Water Pump 3"
+    }
+  },
+  "pump-accounting": {
+    "2022-11-20T21:17:28Z": [
+      {
+        "pump-type": "IN",
+        "transfer-type-display": "Pipeline",
+        "flow": 1.0,
+        "comment": "Added water to the system"
+      },
+      {
+        "pump-type": "OUT",
+        "transfer-type-display": "Pipeline",
+        "flow": 2.0,
+        "comment": "Removed excess water"
+      },
+      {
+        "pump-type": "BELOW",
+        "transfer-type-display": "River",
+        "flow": 3.0,
+        "comment": "Daily water release"
+      }
+    ],
+    "2022-11-21T21:17:28Z": [
+      {
+        "pump-type": "IN",
+        "transfer-type-display": "Pipeline",
+        "flow": 4.0,
+        "comment": "Pump transfer for the day"
+      },
+      {
+        "pump-type": "OUT",
+        "transfer-type-display": "Pipeline",
+        "flow": 5.0,
+        "comment": "Excess water transfer"
+      },
+      {
+        "pump-type": "BELOW",
+        "transfer-type-display": "River",
+        "flow": 6.0,
+        "comment": "Water returned to the river"
+      }
+    ],
+    "2022-11-22T21:17:28Z": [
+      {
+        "pump-type": "IN",
+        "transfer-type-display": "Pipeline",
+        "flow": 7.0,
+        "comment": "Pump transfer for the day"
+      },
+      {
+        "pump-type": "OUT",
+        "transfer-type-display": "Pipeline",
+        "flow": 8.0,
+        "comment": "Excess water transfer"
+      },
+      {
+        "pump-type": "BELOW",
+        "transfer-type-display": "River",
+        "flow": 9.0,
+        "comment": "Water returned to the river"
+      }
+    ]
+  }
+}

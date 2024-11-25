@@ -23,6 +23,7 @@ package cwms.cda.data.dao.location.kind;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
@@ -210,5 +211,15 @@ class OutletDaoIT extends BaseOutletDaoIT {
                                    .withLocation(outletLoc)
                                    .withRatingGroupId(ratingId)
                                    .build();
+    }
+
+    public static void deleteLocationGroup(DSLContext context, Outlet outlet) {
+        LocationGroupDao locationGroupDao = new LocationGroupDao(context);
+        try {
+            locationGroupDao.delete(outlet.getRatingCategoryId().getName(), outlet.getRatingGroupId().getName(), true, OFFICE_ID);
+        } catch (NotFoundException e) {
+            LOGGER.atFinest().withCause(e).log("No data found for category:" + outlet.getRatingCategoryId().getName()
+                    + ", group-id:" + outlet.getRatingGroupId().getName());
+        }
     }
 }
