@@ -155,7 +155,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
                 projectDao.store(project1, true);
                 projectDao.store(project2, true);
                 waterContractDao.storeWaterUser(CONTRACT.getWaterUser(), false);
-                waterContractDao.storeWaterContractTypes(CONTRACT.getContractType(), false);
+                waterContractDao.storeWaterContractType(CONTRACT.getContractType(), false);
                 waterContractDao.storeWaterUser(CONTRACT_NO_PUMP.getWaterUser(), false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -243,6 +243,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
             .redirects().max(3)

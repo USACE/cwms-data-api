@@ -30,6 +30,7 @@ import static java.util.stream.Collectors.toList;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
@@ -149,7 +150,7 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
             String newContractName) {
         connection(dsl, c -> {
             setOffice(c, waterUser.getProjectId().getOfficeId());
-            WATER_USER_OBJ_T waterUserT = WaterSupplyUtils.toWaterUser(waterUser);
+            WATER_USER_OBJ_T waterUserT = WaterSupplyUtils.toWaterUserObjT(waterUser);
             WATER_USER_CONTRACT_REF_T waterUserContract = new WATER_USER_CONTRACT_REF_T(waterUserT, oldContractName);
             CWMS_WATER_SUPPLY_PACKAGE.call_RENAME_CONTRACT(DSL.using(c).configuration(), waterUserContract,
                     oldContractName, newContractName);
@@ -168,7 +169,7 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
     public void deleteWaterContract(WaterUserContract contract, DeleteMethod deleteAction) {
         connection(dsl, c -> {
             setOffice(c, contract.getOfficeId());
-            WATER_USER_OBJ_T waterUserT = WaterSupplyUtils.toWaterUser(contract.getWaterUser());
+            WATER_USER_OBJ_T waterUserT = WaterSupplyUtils.toWaterUserObjT(contract.getWaterUser());
             String contractName = contract.getContractId().getName();
             WATER_USER_CONTRACT_REF_T waterUserContract = new WATER_USER_CONTRACT_REF_T(waterUserT, contractName);
             CWMS_WATER_SUPPLY_PACKAGE.call_DELETE_CONTRACT(DSL.using(c).configuration(), waterUserContract,
@@ -176,7 +177,17 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
         });
     }
 
-    public void storeWaterContractTypes(LookupType lookupType,
+    public void deleteWaterContractType(String office, String displayValue) {
+        connection(dsl, c -> {
+            setOffice(c, office);
+            LookupTypeDao lookupTypeDao = new LookupTypeDao(DSL.using(c));
+            String category = "AT_WS_CONTRACT_TYPE";
+            String prefix = "WS_CONTRACT_TYPE";
+            lookupTypeDao.deleteLookupType(category, prefix, office, displayValue);
+        });
+    }
+
+    public void storeWaterContractType(LookupType lookupType,
             boolean failIfExists) {
         connection(dsl, c -> {
             setOffice(c, lookupType.getOfficeId());

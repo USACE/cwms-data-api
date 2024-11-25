@@ -45,6 +45,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
@@ -72,6 +74,8 @@ public abstract class JooqDao<T> extends Dao<T> {
     public static final int DEFAULT_SMALL_FETCH_SIZE = 500;
 
     static ExecuteListener listener = new ExceptionWrappingListener();
+    private static Pattern INVALID_OFFICE_ID = Pattern.compile(
+        "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -241,6 +245,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildInvalidUnits(input);
         } else if (isUnsupportedOperationException(input)) {
             retVal = buildUnsupportedOperationException(input);
+        } else if (isInvalidOffice(input)) {
+            retVal = buildInvalidOffice(input);
         }
 
         return retVal;
@@ -303,7 +309,16 @@ public abstract class JooqDao<T> extends Dao<T> {
             }
         }
         return retVal;
-    }    
+    }
+
+    public static boolean isInvalidOffice(RuntimeException input) {
+        return getSqlException(input)
+            .map(sqlException -> {
+                return hasCodeOrMessage(sqlException, Collections.singletonList(20010),
+                    Collections.singletonList("INVALID_OFFICE_ID"));
+            })
+            .orElse(false);
+    }
 
     public static boolean isInvalidItem(RuntimeException input) {
         boolean retVal = false;
@@ -507,6 +522,25 @@ public abstract class JooqDao<T> extends Dao<T> {
             localizedMessage = "Invalid Units.";
         }
 
+        return new InvalidItemException(localizedMessage, cause);
+    }
+
+    private static InvalidItemException buildInvalidOffice(RuntimeException input) {
+
+        Throwable cause = (input instanceof DataAccessException) ? input.getCause() : input;
+        String localizedMessage = cause.getLocalizedMessage();
+        if (localizedMessage != null) {
+            Matcher matcher = INVALID_OFFICE_ID.matcher(localizedMessage);
+            if (matcher.find()) {
+                String office = sanitizeOrNull(matcher.group(1));
+                if(office != null) {
+                    localizedMessage = "\"" + office + "\" is not a valid CWMS office id";
+                }
+            }
+        }
+        if (localizedMessage == null || localizedMessage.isEmpty()) {
+            localizedMessage = "Invalid Office.";
+        }
         return new InvalidItemException(localizedMessage, cause);
     }
 

@@ -136,6 +136,28 @@ class WaterContractDaoTestIT extends DataApiTestIT {
     }
 
     @Test
+    void testStoreAndDeleteWaterContractType() throws Exception {
+        LookupType contractType = new LookupType.Builder()
+                .withTooltip("Test Tooltip Delete")
+                .withActive(true)
+                .withDisplayValue("Test Display Value Delete")
+                .withOfficeId(OFFICE_ID).build();
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection(c -> {
+            DSLContext ctx = getDslContext(c, OFFICE_ID);
+            WaterContractDao dao = new WaterContractDao(ctx);
+            dao.storeWaterContractType(contractType, false);
+            List<LookupType> retrievedType = dao.getAllWaterContractTypes(OFFICE_ID);
+            DTOMatch.assertContainsDto(retrievedType, contractType, WaterContractDaoTestIT::typeMatches,
+                    DTOMatch::assertMatch, "Contract Type not stored");
+            dao.deleteWaterContractType(contractType.getOfficeId(), contractType.getDisplayValue());
+            retrievedType = dao.getAllWaterContractTypes(OFFICE_ID);
+            DTOMatch.assertDoesNotContainDto(retrievedType, contractType, WaterContractDaoTestIT::typeMatches,
+                    "Contract Type not deleted");
+        }, CwmsDataApiSetupCallback.getWebUser());
+    }
+
+    @Test
     void testStoreAndRetrieveWaterUserList() throws Exception {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
@@ -243,7 +265,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                     .withActive(true)
                     .withDisplayValue("Test Display Value")
                     .withOfficeId(OFFICE_ID).build();
-            dao.storeWaterContractTypes(contractType, false);
+            dao.storeWaterContractType(contractType, false);
             List<LookupType> results = dao.getAllWaterContractTypes(OFFICE_ID);
             DTOMatch.assertMatch(contractType, results.get(0));
         }, CwmsDataApiSetupCallback.getWebUser());
@@ -354,6 +376,13 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             assertNotNull(retrievedContract);
             assertNull(retrievedContract.getPumpInLocation());
         }, CwmsDataApiSetupCallback.getWebUser());
+    }
+
+    private static boolean typeMatches(LookupType type, LookupType other) {
+        return type.getTooltip().equals(other.getTooltip()) &&
+                type.getDisplayValue().equals(other.getDisplayValue()) &&
+                type.getOfficeId().equals(other.getOfficeId()) &&
+                type.getActive() == other.getActive();
     }
 
     private static WaterUser buildTestWaterUser(String entityName) {

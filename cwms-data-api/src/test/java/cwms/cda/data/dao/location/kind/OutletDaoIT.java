@@ -23,6 +23,7 @@ package cwms.cda.data.dao.location.kind;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
@@ -100,12 +101,7 @@ class OutletDaoIT extends BaseOutletDaoIT {
             outletDao.deleteOutlet(TAINTER_GATE_2_LOC.getOfficeId(), TAINTER_GATE_2_LOC.getName(),
                                    DeleteRule.DELETE_ALL);
             outletDao.deleteOutlet(BOX_CULVERT_1_LOC.getOfficeId(), BOX_CULVERT_1_LOC.getName(), DeleteRule.DELETE_ALL);
-            deleteLocation(context, TAINTER_GATE_1_LOC.getOfficeId(), TAINTER_GATE_1_LOC.getName());
-            deleteLocation(context, TAINTER_GATE_2_LOC.getOfficeId(), TAINTER_GATE_2_LOC.getName());
-            deleteLocation(context, TAINTER_GATE_3_LOC.getOfficeId(), TAINTER_GATE_3_LOC.getName());
-            deleteLocation(context, BOX_CULVERT_1_LOC.getOfficeId(), BOX_CULVERT_1_LOC.getName());
         }, CwmsDataApiSetupCallback.getWebUser());
-        tearDownProject();
     }
 
     @Test
@@ -215,5 +211,15 @@ class OutletDaoIT extends BaseOutletDaoIT {
                                    .withLocation(outletLoc)
                                    .withRatingGroupId(ratingId)
                                    .build();
+    }
+
+    public static void deleteLocationGroup(DSLContext context, Outlet outlet) {
+        LocationGroupDao locationGroupDao = new LocationGroupDao(context);
+        try {
+            locationGroupDao.delete(outlet.getRatingCategoryId().getName(), outlet.getRatingGroupId().getName(), true, OFFICE_ID);
+        } catch (NotFoundException e) {
+            LOGGER.atFinest().withCause(e).log("No data found for category:" + outlet.getRatingCategoryId().getName()
+                    + ", group-id:" + outlet.getRatingGroupId().getName());
+        }
     }
 }

@@ -25,9 +25,11 @@ import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
 import io.restassured.config.JsonConfig;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
-
 import javax.servlet.http.HttpServletResponse;
+import org.testcontainers.images.ImagePullPolicy;
+import org.testcontainers.images.PullPolicy;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
@@ -43,7 +45,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private static final String ORACLE_IMAGE = System.getProperty("CDA.oracle.database.image",System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_19C));
     private static final String ORACLE_VOLUME = System.getProperty("CDA.oracle.database.volume",System.getProperty("RADAR.oracle.database.volume", "cwmsdb_data_api_volume"));
-    private static final String CWMS_DB_IMAGE = System.getProperty("CDA.cwms.database.image",System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms/schema_installer:99.99.99.2-CDA_STAGING"));
+    static final String CWMS_DB_IMAGE = System.getProperty("CDA.cwms.database.image",System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms/schema_installer:99.99.99.9-CDA_STAGING"));
 
 
     private static String webUser = null;
@@ -64,6 +66,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                             .withOfficeId("HQ")
                             .withVolumeName(TeamCityUtilities.cleanupBranchName(ORACLE_VOLUME))
                             .withSchemaImage(CWMS_DB_IMAGE);
+            cwmsDb.withImagePullPolicy(PullPolicy.alwaysPull());
             cwmsDb.start();
 
            
@@ -91,7 +94,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             logger.atInfo().log("Tomcat Listing on " + cdaInstance.getPort());
             RestAssured.baseURI=CwmsDataApiSetupCallback.httpUrl();
             RestAssured.port = CwmsDataApiSetupCallback.httpPort();
-            RestAssured.basePath = "/cwms-data";
+            RestAssured.basePath = System.getProperty("warContext");
             // we only use doubles
             RestAssured.config()
                        .jsonConfig(
@@ -110,6 +113,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                 .when()
                     .get("/offices/SPK")
                 .then()
+                    .log().ifValidationFails(LogDetail.ALL)
                     .assertThat()
                     .statusCode(is(HttpServletResponse.SC_OK));
                 logger.atInfo().log("Server is up!");
@@ -162,7 +166,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     private ArrayList<String> getDefaultList() {
         ArrayList<String> list = new ArrayList<>();
         InputStream listStream = getClass().getResourceAsStream("/cwms/cda/data/sql/defaultload.txt");
-        try( BufferedReader br = new BufferedReader( new InputStreamReader(listStream) );) {
+        try( BufferedReader br = new BufferedReader( new InputStreamReader(listStream) )) {
             String line = null;
             while( (line = br.readLine() ) != null){
                 if( line.trim().startsWith("#") ) continue;

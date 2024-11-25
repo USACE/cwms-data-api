@@ -24,9 +24,17 @@
 
 package cwms.cda.data.dao;
 
+import static java.util.stream.Collectors.toList;
+
 import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.TimeSeriesGroup;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.*;
@@ -38,14 +46,6 @@ import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_T;
 import usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_TAB_T;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-
-import static java.util.stream.Collectors.toList;
 
 public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     private static final Logger logger = Logger.getLogger(TimeSeriesGroupDao.class.getName());
@@ -56,19 +56,20 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public List<TimeSeriesGroup> getTimeSeriesGroups() {
-        return getTimeSeriesGroups(null);
+        return getTimeSeriesGroups(null, null, null);
     }
 
-    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId) {
+    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, String groupOfficeId, String categoryOfficeId) {
         Condition whereCond = DSL.noCondition();
         if (officeId != null) {
             whereCond = AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(officeId);
         }
 
-        return getTimeSeriesGroupsWhere(whereCond);
+        return getTimeSeriesGroupsWhere(whereCond, groupOfficeId, categoryOfficeId);
     }
 
-    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, boolean includeAssigned, String tsCategoryLike, String tsGroupLike) {
+    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, String groupOfficeId, String categoryOfficeId,
+            boolean includeAssigned, String tsCategoryLike, String tsGroupLike) {
 
         Condition whereCond = DSL.noCondition();
         if (officeId != null) {
@@ -76,17 +77,19 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         }
 
         if (tsCategoryLike != null) {
-            whereCond = whereCond.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID, tsCategoryLike));
+            whereCond = whereCond.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID,
+                    tsCategoryLike));
         }
 
         if (tsGroupLike != null) {
-            whereCond = whereCond.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID, tsGroupLike));
+            whereCond = whereCond.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID,
+                    tsGroupLike));
         } else {
             whereCond = whereCond.and(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID.isNotNull());
         }
 
-        if(includeAssigned){
-            return getTimeSeriesGroupsWhere(whereCond);
+        if (includeAssigned) {
+            return getTimeSeriesGroupsWhere(whereCond, groupOfficeId, categoryOfficeId);
         } else {
             return getTimeSeriesGroupsWithoutAssigned(whereCond);
         }
@@ -94,13 +97,15 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
 
-    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, String categoryId, String groupId) {
-        return getTimeSeriesGroupsWhere(buildWhereCondition(officeId, categoryId, groupId));
+    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, String groupOfficeId, String categoryOfficeId,
+            String categoryId, String groupId) {
+        return getTimeSeriesGroupsWhere(buildWhereCondition(groupOfficeId, categoryId, groupId), officeId,
+                categoryOfficeId);
     }
 
     @NotNull
-    private List<TimeSeriesGroup> getTimeSeriesGroupsWhere(Condition whereCond) {
-        List<TimeSeriesGroup> retval = new ArrayList<>();
+    private List<TimeSeriesGroup> getTimeSeriesGroupsWhere(Condition whereCond, String groupOfficeId,
+            String categoryOfficeId) {
         AV_TS_CAT_GRP catGrp = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
         AV_TS_GRP_ASSGN grpAssgn = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
 
@@ -112,22 +117,26 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                     return new Pair<>(group, loc);
                 };
 
-        SelectOnConditionStep<?> selectOn = dsl.select(catGrp.CAT_DB_OFFICE_ID,
+        Condition whereCondGrpCat = DSL.noCondition();
+        if (categoryOfficeId != null) {
+            whereCondGrpCat = whereCondGrpCat.and(catGrp.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
+        }
+        if (groupOfficeId != null) {
+            whereCondGrpCat = whereCondGrpCat.and(catGrp.GRP_DB_OFFICE_ID.eq(groupOfficeId.toUpperCase()));
+        }
+
+        SelectSeekStep1<?, BigDecimal> query = dsl.select(catGrp.CAT_DB_OFFICE_ID,
                         catGrp.TS_CATEGORY_ID, catGrp.TS_CATEGORY_DESC, catGrp.GRP_DB_OFFICE_ID,
                         catGrp.TS_GROUP_ID, catGrp.TS_GROUP_DESC, catGrp.SHARED_TS_ALIAS_ID,
                         catGrp.SHARED_REF_TS_ID, grpAssgn.CATEGORY_ID, grpAssgn.DB_OFFICE_ID,
                         grpAssgn.GROUP_ID, grpAssgn.TS_ID, grpAssgn.TS_CODE, grpAssgn.ATTRIBUTE,
-                        grpAssgn.ALIAS_ID, grpAssgn.REF_TS_ID)
+                        grpAssgn.ALIAS_ID, grpAssgn.REF_TS_ID, grpAssgn.CATEGORY_OFFICE_ID, grpAssgn.GROUP_OFFICE_ID)
                 .from(catGrp).leftJoin(grpAssgn)
                 .on(catGrp.TS_CATEGORY_ID.eq(grpAssgn.CATEGORY_ID)
-                        .and(catGrp.TS_GROUP_ID.eq(grpAssgn.GROUP_ID)));
-
-        SelectOrderByStep<?> select = selectOn;
-        if (whereCond != null) {
-            select = selectOn.where(whereCond);
-        }
-
-        final SelectSeekStep1<?, BigDecimal> query = select.orderBy(grpAssgn.ATTRIBUTE);
+                        .and(catGrp.TS_GROUP_ID.eq(grpAssgn.GROUP_ID)))
+            .where(whereCond)
+            .and(whereCondGrpCat)
+            .orderBy(grpAssgn.ATTRIBUTE);
 
         logger.fine(() -> query.getSQL(ParamType.INLINED));
 
@@ -144,6 +153,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             }
         }
 
+        List<TimeSeriesGroup> retval = new ArrayList<>();
         for (final Map.Entry<TimeSeriesGroup, List<AssignedTimeSeries>> entry : map.entrySet()) {
             List<AssignedTimeSeries> assigned = entry.getValue();
             retval.add(new TimeSeriesGroup(entry.getKey(), assigned));
@@ -246,33 +256,31 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public void create(TimeSeriesGroup group, boolean failIfExists) {
-        connection(dsl, c-> {
+        connection(dsl, c -> {
             Configuration configuration = getDslContext(c,group.getOfficeId()).configuration();
             String categoryId = group.getTimeSeriesCategory().getId();
             CWMS_TS_PACKAGE.call_STORE_TS_GROUP(configuration, categoryId,
-            group.getId(), group.getDescription(), formatBool(failIfExists),
-            "T", group.getSharedAliasId(),
-            group.getSharedRefTsId(), group.getOfficeId());
-            assignTs(configuration,group);
+                group.getId(), group.getDescription(), formatBool(failIfExists),
+                "T", group.getSharedAliasId(),
+                group.getSharedRefTsId(), group.getOfficeId());
+            assignTs(configuration,group, group.getOfficeId());
         });
-        
     }
 
-    private void assignTs(Configuration configuration,TimeSeriesGroup group) {
+    private void assignTs(Configuration configuration,TimeSeriesGroup group, String office) {
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
-        if(assignedTimeSeries != null)
-        {
+        if (assignedTimeSeries != null) {
             List<TS_ALIAS_T> collect = assignedTimeSeries.stream()
                 .map(TimeSeriesGroupDao::convertToTsAliasType)
                 .collect(toList());
             TS_ALIAS_TAB_T assignedLocs = new TS_ALIAS_TAB_T(collect);
             CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS(configuration, group.getTimeSeriesCategory().getId(),
-                group.getId(), assignedLocs, group.getOfficeId());
+                group.getId(), assignedLocs, office);
         }
     }
 
-    public void assignTs(TimeSeriesGroup group) {
-        connection(dsl, c->assignTs(getDslContext(c,group.getOfficeId()).configuration(),group));
+    public void assignTs(TimeSeriesGroup group, String office) {
+        connection(dsl, c -> assignTs(getDslContext(c, office).configuration(),group, office));
     }
 
     private static TS_ALIAS_T convertToTsAliasType(AssignedTimeSeries assignedTimeSeries) {
@@ -282,20 +290,20 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public void renameTimeSeriesGroup(String oldGroupId, TimeSeriesGroup group) {
-        connection(dsl, c->
+        connection(dsl, c ->
             CWMS_TS_PACKAGE.call_RENAME_TS_GROUP(
-                getDslContext(c,group.getOfficeId()).configuration(), 
+                getDslContext(c, group.getOfficeId()).configuration(),
                 group.getTimeSeriesCategory().getId(), oldGroupId, group.getId(),
                 group.getOfficeId())
         );
     }
 
-    public void unassignAllTs(TimeSeriesGroup group) {
+    public void unassignAllTs(TimeSeriesGroup group, String officeId) {
         connection(dsl, c ->
             CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(
-                getDslContext(c,group.getOfficeId()).configuration(), 
+                getDslContext(c,officeId).configuration(),
                 group.getTimeSeriesCategory().getId(), group.getId(),
-                null, "T", group.getOfficeId())
+                null, "T", officeId)
         );
     }
 

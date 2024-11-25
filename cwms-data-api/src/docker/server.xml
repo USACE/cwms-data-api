@@ -45,6 +45,8 @@
 
     <Connector port="7000" protocol="HTTP/1.1"
                connectionTimeout="20000" scheme="https" secure="true"
+               acceptCount="500" disableUploadTimeout="true" server="cwms-data-api"
+               maxThreads="200" relaxedPathChars="[]" relaxedQueryChars="[]"
                >
                <UpgradeProtocol className="org.apache.coyote.http2.Http2Protocol" />
      </Connector>

@@ -88,7 +88,7 @@ public class UnitsController implements CrudHandler {
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String header = ctx.header(ACCEPT);
 
-            ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, Unit.class);
+            ContentType contentType = Formats.parseQueryOrHeaderParam(header, format, Unit.class);
             String version = contentType.getParameters()
                                         .getOrDefault(VERSION, "");
 
