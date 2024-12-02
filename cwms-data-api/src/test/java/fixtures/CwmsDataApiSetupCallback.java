@@ -13,6 +13,7 @@ import org.apache.catalina.Manager;
 import org.apache.commons.io.IOUtils;
 
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainers;
 import mil.army.usace.hec.test.database.TeamCityUtilities;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -43,9 +44,21 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     private static TomcatServer cdaInstance;
     private static CwmsDatabaseContainer<?> cwmsDb;
 
-    private static final String ORACLE_IMAGE = System.getProperty("CDA.oracle.database.image",System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_19C));
-    private static final String ORACLE_VOLUME = System.getProperty("CDA.oracle.database.volume",System.getProperty("RADAR.oracle.database.volume", "cwmsdb_data_api_volume"));
-    static final String CWMS_DB_IMAGE = System.getProperty("CDA.cwms.database.image",System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms/schema_installer:99.99.99.9-CDA_STAGING"));
+    private static final String ORACLE_IMAGE =
+        System.getProperty("CDA.oracle.database.image",
+                                  System.getProperty("RADAR.oracle.database.image",
+                              "registry-public.hecdev.net/cwms/database-ready-ora-23.5:latest-dev")
+                          );
+    private static final String ORACLE_VOLUME =
+        System.getProperty("CDA.oracle.database.volume",
+                                  System.getProperty("RADAR.oracle.database.volume",
+                                  "cwmsdb_data_api_volume")
+                          );
+    static final String CWMS_DB_IMAGE =
+        System.getProperty("CDA.cwms.database.image",
+                                  System.getProperty("RADAR.cwms.database.image",
+                                  "registry.hecdev.net/cwms/schema_installer:99.99.99.9-CDA_STAGING")
+                          );
 
 
     private static String webUser = null;
@@ -61,7 +74,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     @SuppressWarnings("unchecked")
     public void beforeAll(ExtensionContext context) throws Exception {        
         if (cdaInstance == null ) {
-            cwmsDb = new CwmsDatabaseContainer(ORACLE_IMAGE)
+            cwmsDb = CwmsDatabaseContainers.createDatabaseContainer(ORACLE_IMAGE)
                             .withOfficeEroc("s0")
                             .withOfficeId("HQ")
                             .withVolumeName(TeamCityUtilities.cleanupBranchName(ORACLE_VOLUME))
