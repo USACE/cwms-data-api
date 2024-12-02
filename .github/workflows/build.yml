@@ -1,10 +1,9 @@
 ---
-name: Build CWMS Data API
+name: Build And Test CWMS Data API
 on:
   push:
     branches:
       - develop
-      - 'release/**'
   pull_request:
     branches:
       - develop
@@ -27,6 +26,8 @@ jobs:
       - name: build and test
         id: thebuild
         run: ./gradlew build --info --init-script init.gradle
+      - name: integration tests
+        run: ./gradlew integrationtest --info --init-script init.gradle
       - name: Upload WAR
         uses: actions/upload-artifact@v4.4.3
         with:
@@ -36,55 +37,3 @@ jobs:
           if-no-files-found: error
       - name: Build docker image
         run: docker build -t cda:build-latest .
-
-  release:
-    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/release')
-    name: Create and push releases
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout code
-        uses: actions/checkout@v4.2.2
-      - name: setup java
-        uses: actions/setup-java@v4.5.0
-        with:
-          distribution: 'temurin'
-          java-version: '8'
-          cache: 'gradle'
-      - name: Download all workflow run artifacts from build
-        id: artifacts
-        uses: actions/download-artifact@v4.1.8
-        with:
-          path: ./
-      - name: get version
-        id: get_version
-        run: .github/workflows/get_version.sh
-      - name: show version
-        run: echo ${VERSION}
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v2.1.0
-        with:
-          files: warfile/${{ needs.build.outputs.thewar}}
-          tag_name: ${{env.VERSION}}
-          generate_release_notes: true
-      - name: Login to Alt Registry
-        uses: docker/login-action@v3.3.0
-        id: login-alt
-        with:
-          registry: ${{ secrets.ALT_REGISTRY }}
-          username: ${{ secrets.ALT_REG_USER }}
-          password: ${{ secrets.ALT_REG_PASSWORD }}
-      - name: Build docker image
-        env:
-          IMAGE_TAG: ${{env.VERSION}}
-          ALT_REGISTRY: ${{secrets.ALT_REGISTRY}}
-        run: |
-          docker build -t cda:build-latest .
-          docker tag cda:build-latest $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
-          docker tag cda:build-latest $ALT_REGISTRY/cwms/data-api:latest
-          docker push $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
-          docker push $ALT_REGISTRY/cwms/data-api:latest
-      - name: Logout of ALT registry
-        if: ${{ always() }}
-        run: docker logout ${{ steps.login-alt.outputs.registry }}
