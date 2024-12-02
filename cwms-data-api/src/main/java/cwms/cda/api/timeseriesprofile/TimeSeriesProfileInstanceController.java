@@ -103,9 +103,9 @@ public final class TimeSeriesProfileInstanceController extends TimeSeriesProfile
                 + " date of the time series profile instance. Default is false. If no version date is provided, and"
                     + " maxVersion is false, the min version date will be used."),
             @OpenApiParam(name = START, type = Instant.class, description = "The start of the"
-                + " time series profile instance. Default is the year 1800"),
+                + " time series profile instance.", required = true),
             @OpenApiParam(name = END, type = Instant.class, description = "The end of the"
-                + " time series profile instance. Default is the year 3000"),
+                + " time series profile instance.", required = true),
             @OpenApiParam(name = PAGE, description = "The page of the"
                 + " time series profile instance."),
             @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "The page size of the"
