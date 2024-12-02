@@ -17,7 +17,6 @@ import cwms.cda.formatters.xml.XMLv2;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
-
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -91,7 +90,7 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     @Schema(
             accessMode = AccessMode.READ_ONLY,
-            description="Offset from top of interval"
+            description = "Offset from top of interval"
     )
     private Long intervalOffset;
 
@@ -196,10 +195,10 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     public boolean addValue(Timestamp dateTime, Double value, int qualityCode) {
         // Set the current page, if not set
-        if((page == null || page.isEmpty()) && values.isEmpty()) {
+        if ((page == null || page.isEmpty()) && values.isEmpty()) {
             page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
         }
-        if(pageSize > 0 && values.size() == pageSize) {
+        if (pageSize > 0 && values.size() == pageSize) {
             nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
             return false;
         } else {
@@ -256,7 +255,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         @SuppressWarnings("unused") // required so JAXB can initialize and marshal
         private Record() {}
 
-        protected Record(Timestamp dateTime, Double value, int qualityCode) {
+        public Record(Timestamp dateTime, Double value, int qualityCode) {
             this.dateTime = dateTime;
             this.value = value;
             this.qualityCode = qualityCode;

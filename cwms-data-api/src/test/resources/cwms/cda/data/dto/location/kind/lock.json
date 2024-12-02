@@ -1,0 +1,61 @@
+{
+  "project-id": {
+    "office-id": "LRD",
+    "name": "PROJECT"
+  },
+  "location": {
+    "office-id": "LRL",
+    "name": "TEST_LOCATION2",
+    "latitude": 50.0,
+    "longitude": 50.0,
+    "active": true,
+    "public-name": "TEST_LOCATION2",
+    "long-name": "TEST_LOCATION",
+    "description": "for testing",
+    "timezone-name": "UTC",
+    "location-type": "SITE",
+    "location-kind": "LOCK",
+    "nation": "US",
+    "state-initial": "CA",
+    "county-name": "Sacramento",
+    "horizontal-datum": "NVGD29",
+    "published-longitude": 50.0,
+    "published-latitude": 50.0,
+    "elevation": 10.0,
+    "elevation-units": "m",
+    "bounding-office-id": "LRL",
+    "nearest-city": "Davis"
+  },
+  "chamber-type": {
+    "display-value": "LOCK",
+    "tooltip": "Land Side Main",
+    "active": true,
+    "office-id": "LRL"
+  },
+  "lock-width": 50.0,
+  "lock-length": 50.0,
+  "normal-lock-lift": 10.0,
+  "volume-per-lockage": 10.0,
+  "minimum-draft": 25.5,
+  "maximum-lock-lift": 25.6,
+  "length-units": "ft",
+  "volume-units": "ft3",
+  "high-water-upper-pool-location-level": {
+    "level-value": 2.96,
+    "level-link":"/locks/TEST_LOCATION2.Elev-Closure.Inst.0.High Water Upper Pool?office=SPK"
+  },
+  "high-water-lower-pool-location-level": {
+    "level-value": 2.7,
+    "level-link":"/locks/TEST_LOCATION2.Elev-Closure.Inst.0.High Water Lower Pool?office=SPK"
+  },
+  "low-water-upper-pool-location-level": {
+    "level-value": 8.0,
+    "level-link":"/locks/TEST_LOCATION2.Elev-Closure.Inst.0.Low Water Upper Pool?office=SPK"
+  },
+  "low-water-lower-pool-location-level": {
+    "level-value": 5.0,
+    "level-link":"/locks/TEST_LOCATION2.Elev-Closure.Inst.0.Low Water Lower Pool?office=SPK"
+  },
+  "high-water-upper-pool-warning-level": 2,
+  "high-water-lower-pool-warning-level": 2
+}
