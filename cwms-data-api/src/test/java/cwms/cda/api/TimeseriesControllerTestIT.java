@@ -9,7 +9,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.isNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -163,6 +162,115 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[0][1]", closeTo(35, 0.0001))
         ;
 
+    }
+
+    @Test
+    void test_lrl_1day_max_version() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/lrl/1day_offset_version_date.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam("office",officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        String secondVersionDate = "1604786000000";
+        tsData = tsData.replace("1594786000000", secondVersionDate).replace("35,", "47.5,");
+        // inserting the second time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam("office",officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // get it back
+        String firstPoint = "2023-02-02T06:00:00-05:00"; //aka 2023-02-02T11:00:00.000Z or
+        String versionDate = "2020-07-15T04:06:40Z";
+        // 1675335600000
+        given()
+            .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", officeId)
+            .queryParam("units", "F")
+            .queryParam("name", ts.get("name").asText())
+            .queryParam("begin", firstPoint)
+            .queryParam("end", firstPoint)
+            .queryParam("version-date", versionDate)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("values.size()", equalTo(1))  // one point
+            .body("values[0].size()", equalTo(3))  // time, value, quality
+            .body("values[0][0]", equalTo(1675335600000L)) // time
+            .body("values[0][1]", closeTo(35, 0.0001))
+            .body("version-date", equalTo(versionDate))
+        ;
+
+        // get again as max version
+        given()
+            .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", officeId)
+            .queryParam("units", "F")
+            .queryParam("name", ts.get("name").asText())
+            .queryParam("begin", firstPoint)
+            .queryParam("end", firstPoint)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("values.size()", equalTo(1))  // one point
+            .body("values[0].size()", equalTo(3))  // time, value, quality
+            .body("values[0][0]", equalTo(1675335600000L)) // time
+            .body("values[0][1]", closeTo(47.5, 0.0001))
+        ;
     }
 
     @Test
