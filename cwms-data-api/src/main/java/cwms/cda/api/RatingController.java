@@ -398,7 +398,11 @@ public class RatingController implements CrudHandler {
                 ctx.contentType(contentType.toString());
                 try {
                     RatingSet ratingSet = null;
-                    ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end, latest);
+                    if (latest) {
+                        ratingSet = getLatestRatingSet(ctx, method, officeId, rating);
+                    } else {
+                        ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end);
+                    }
                     if (ratingSet != null) {
                         if (isJson) {
                             retval = JsonRatingUtils.toJson(ratingSet);
@@ -434,20 +438,28 @@ public class RatingController implements CrudHandler {
         return retval;
     }
 
-    private RatingSet getRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
-                                   String officeId, String rating, Instant begin,
-                                   Instant end, boolean latest) throws IOException, RatingException {
+    private RatingSet getLatestRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
+                                   String officeId, String rating) throws IOException, RatingException {
         RatingSet ratingSet = null;
+        try (final Timer.Context ignored = markAndTime("getLatestRatingSet")) {
+            DSLContext dsl = getDslContext(ctx);
+
+            RatingDao ratingDao = getRatingDao(dsl);
+            ratingSet = ratingDao.retrieveLatest(method, officeId, rating);
+        }
+
+        return ratingSet;
+    }
+
+    private RatingSet getRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
+            String officeId, String rating, Instant begin,
+            Instant end) throws IOException, RatingException {
+        RatingSet ratingSet;
         try (final Timer.Context ignored = markAndTime("getRatingSet")) {
             DSLContext dsl = getDslContext(ctx);
 
             RatingDao ratingDao = getRatingDao(dsl);
-
-            if (latest) {
-                ratingSet = ratingDao.retrieveLatest(method, officeId, rating);
-            } else {
-                ratingSet = ratingDao.retrieve(method, officeId, rating, begin, end);
-            }
+            ratingSet = ratingDao.retrieve(method, officeId, rating, begin, end);
         }
 
         return ratingSet;
