@@ -90,7 +90,7 @@ public class OutletDao extends JooqDao<Outlet> {
             LOCATION_REF_T locRef = LocationUtil.getLocationRef(locationId, officeId);
             Configuration config = DSL.using(conn).configuration();
             PROJECT_STRUCTURE_OBJ_T outletStruct = CWMS_OUTLET_PACKAGE.call_RETRIEVE_OUTLET(config, locRef);
-            
+            // TODO: This may be causing tests to fail with pool size = 1.
             LocationGroupDao locGroupDao = new LocationGroupDao(dsl);
             List<LocationGroup> groups = locGroupDao.getLocationGroups(officeId, null,
                     Outlet.RATING_LOC_GROUP_CATEGORY);

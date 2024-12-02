@@ -46,18 +46,15 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private static final String ORACLE_IMAGE =
         System.getProperty("CDA.oracle.database.image",
-                                  System.getProperty("RADAR.oracle.database.image",
-                              "registry-public.hecdev.net/cwms/database-ready-ora-23.5:latest-dev")
-                          );
+                           "registry-public.hecdev.net/cwms/database-ready-ora-23.5:latest-dev"
+                       );
     private static final String ORACLE_VOLUME =
         System.getProperty("CDA.oracle.database.volume",
-                                  System.getProperty("RADAR.oracle.database.volume",
-                                  "cwmsdb_data_api_volume")
+                           "cwmsdb_data_api_volume"
                           );
     static final String CWMS_DB_IMAGE =
         System.getProperty("CDA.cwms.database.image",
-                                  System.getProperty("RADAR.cwms.database.image",
-                                  "registry.hecdev.net/cwms/schema_installer:99.99.99.9-CDA_STAGING")
+                           "registry.hecdev.net/cwms/schema_installer:99.99.99.9-CDA_STAGING"
                           );
 
 
@@ -72,17 +69,16 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     @Override
     @SuppressWarnings("unchecked")
-    public void beforeAll(ExtensionContext context) throws Exception {        
+    public void beforeAll(ExtensionContext context) throws Exception {
         if (cdaInstance == null ) {
             cwmsDb = CwmsDatabaseContainers.createDatabaseContainer(ORACLE_IMAGE)
                             .withOfficeEroc("s0")
                             .withOfficeId("HQ")
                             .withVolumeName(TeamCityUtilities.cleanupBranchName(ORACLE_VOLUME))
                             .withSchemaImage(CWMS_DB_IMAGE);
-            cwmsDb.withImagePullPolicy(PullPolicy.alwaysPull());
+            cwmsDb.withImagePullPolicy(PullPolicy.defaultPolicy());
             cwmsDb.start();
 
-           
             final String jdbcUrl = cwmsDb.getJdbcUrl();
             webUser = cwmsDb.getPdUser().substring(0,2)+"webtest";
             final String pw = cwmsDb.getPassword();
