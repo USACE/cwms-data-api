@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import com.google.common.flogger.FluentLogger;
 
+import cwms.cda.data.dao.Dao;
 import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
@@ -59,6 +60,50 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
 
     private static String webUser = null;
+
+    public static final String VERSION_STRING;
+    public static final int VERSION_INT;
+
+    static
+    {
+        VERSION_STRING = schemaVersion();
+        VERSION_INT = versionInt();
+    }
+
+    private static String schemaVersion()
+    {
+        String ret = "Unknown";
+        if (!System.getProperty(CwmsDatabaseContainers.BYPASS_URL,"").isEmpty())
+        {
+            ret = "Bypass";
+        }
+        else if (ORACLE_IMAGE.contains("database-ready"))
+        {
+            ret = ORACLE_IMAGE.split(":")[1];
+        }
+        else
+        {
+            ret = CWMS_DB_IMAGE.split(":")[1];
+        }
+        return ret;
+    }
+
+    private static int versionInt()
+    {
+        int ret = -999999;
+        String tmp = schemaVersion();
+        if (tmp.equalsIgnoreCase("latest-dev")) {
+            ret = 999999;
+        }
+        else if(tmp.toLowerCase().endsWith("staging")) {
+            ret = 1009999;
+        }
+        else
+        {
+            ret = Dao.versionAsInteger(tmp);
+        }
+        return ret;
+    }
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {

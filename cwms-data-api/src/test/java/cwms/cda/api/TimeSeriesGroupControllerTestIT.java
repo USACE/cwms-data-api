@@ -38,6 +38,7 @@ import cwms.cda.data.dto.TimeSeriesGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.FunctionalSchemas;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
@@ -357,6 +358,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void test_create_read_delete_agency_aliases_same_name() throws Exception {
         // Create two location groups of the same name with an agency alias category
         String officeId = user.getOperatingOffice();
@@ -559,6 +561,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void test_create_read_delete_same_names_different_offices() throws Exception {
         // Create two location groups of the same name with an agency alias category
         String officeId = user.getOperatingOffice();

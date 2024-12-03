@@ -51,6 +51,7 @@ import cwms.cda.data.dto.location.kind.LockLocationLevelRef;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.FunctionalSchemas;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.io.IOException;
@@ -238,6 +239,7 @@ final class LockControllerIT extends DataApiTestIT {
     }
 
     @Test
+    @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void test_get_create_delete_EN() {
 
         // Structure of test:
@@ -358,6 +360,7 @@ final class LockControllerIT extends DataApiTestIT {
     }
 
     @Test
+    @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void test_get_create_delete_SI() throws Exception {
 
         // Structure of test:
@@ -524,6 +527,7 @@ final class LockControllerIT extends DataApiTestIT {
     }
 
     @Test
+    @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void storeRetrieveSameLockNameDifferentProject() throws Exception {
         // Structure of test:
         // 1)Create the two Locks
@@ -901,6 +905,7 @@ final class LockControllerIT extends DataApiTestIT {
     }
 
     @Test
+    @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void test_get_all() {
 
         // Structure of test:

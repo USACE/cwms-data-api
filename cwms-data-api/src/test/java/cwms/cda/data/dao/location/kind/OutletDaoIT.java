@@ -30,6 +30,8 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.location.kind.Outlet;
 import cwms.cda.helpers.DTOMatch;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.FunctionalSchemas;
+
 import java.io.IOException;
 import java.util.List;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -116,6 +118,7 @@ class OutletDaoIT extends BaseOutletDaoIT {
     }
 
     @Test
+    @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void test_outlet_crud() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -155,6 +158,7 @@ class OutletDaoIT extends BaseOutletDaoIT {
     }
 
     @Test
+    @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void test_retrieve_outlets_for_project() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {

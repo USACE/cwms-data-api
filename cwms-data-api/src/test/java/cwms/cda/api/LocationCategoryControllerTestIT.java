@@ -30,6 +30,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
+import fixtures.FunctionalSchemas;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 
@@ -144,6 +145,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 	}
 
 	@Test
+	@FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
 	void test_create_read_delete_same_category_different_office() {
 		String officeId = user.getOperatingOffice();
 		String officeId2 = user2.getOperatingOffice();

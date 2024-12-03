@@ -44,6 +44,7 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.FunctionalSchemas;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -64,7 +65,6 @@ import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.hasToString;
 
 
 @Tag("integration")
@@ -152,6 +152,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void test_create_get_delete_WaterUserContract() {
         // Test Structure:
         // 1) Create a Water Contract
@@ -403,6 +404,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
 
 
     @Test
+    @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void test_rename_WaterUserContract() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
         final String NEW_CONTRACT_NAME = "NEW CONTRACT NAME";
@@ -484,6 +486,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void test_getAllWaterContracts() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
         String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);

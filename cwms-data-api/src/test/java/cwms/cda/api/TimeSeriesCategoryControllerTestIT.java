@@ -24,6 +24,7 @@
 
 package cwms.cda.api;
 
+import fixtures.FunctionalSchemas;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 
@@ -157,6 +158,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
     }
 
     @Test
+    @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void test_create_read_delete_same_category_different_office() throws Exception {
         String officeId = user.getOperatingOffice();
         String officeId2 = user2.getOperatingOffice();

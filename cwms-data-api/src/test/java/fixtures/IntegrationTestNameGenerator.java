@@ -32,8 +32,7 @@ public final class IntegrationTestNameGenerator implements DisplayNameGenerator 
 
     static {
         // Fetch the schema version from a system property
-        String[] split = CwmsDataApiSetupCallback.CWMS_DB_IMAGE.split(":");
-        schemaVersion = split[split.length - 1];
+        schemaVersion = CwmsDataApiSetupCallback.VERSION_STRING;
     }
 
     @Override
