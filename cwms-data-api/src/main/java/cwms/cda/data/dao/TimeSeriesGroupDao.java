@@ -59,22 +59,19 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         return getTimeSeriesGroups(null, null, null);
     }
 
-    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, String groupOfficeId, String categoryOfficeId) {
+    public List<TimeSeriesGroup> getTimeSeriesGroups(String tsOfficeId, String groupOfficeId, String categoryOfficeId) {
         Condition whereCond = DSL.noCondition();
-        if (officeId != null) {
-            whereCond = AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(officeId);
+        if (tsOfficeId != null) {
+            whereCond = AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(tsOfficeId);
         }
 
-        return getTimeSeriesGroupsWhere(whereCond, officeId, groupOfficeId, categoryOfficeId);
+        return getTimeSeriesGroupsWhere(whereCond, tsOfficeId, groupOfficeId, categoryOfficeId);
     }
 
-    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, String groupOfficeId, String categoryOfficeId,
+    public List<TimeSeriesGroup> getTimeSeriesGroups(String tsOfficeId, String groupOfficeId, String categoryOfficeId,
             boolean includeAssigned, String tsCategoryLike, String tsGroupLike) {
 
         Condition whereCond = DSL.noCondition();
-        if (officeId != null) {
-            whereCond = whereCond.and(AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(officeId));
-        }
 
         if (tsCategoryLike != null) {
             whereCond = whereCond.and(JooqDao.caseInsensitiveLikeRegex(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID,
@@ -89,7 +86,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         }
 
         if (includeAssigned) {
-            return getTimeSeriesGroupsWhere(whereCond, officeId, groupOfficeId, categoryOfficeId);
+            return getTimeSeriesGroupsWhere(whereCond, tsOfficeId, groupOfficeId, categoryOfficeId);
         } else {
             return getTimeSeriesGroupsWithoutAssigned(whereCond);
         }
@@ -97,9 +94,9 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
 
-    public List<TimeSeriesGroup> getTimeSeriesGroups(String officeId, String groupOfficeId, String categoryOfficeId,
+    public List<TimeSeriesGroup> getTimeSeriesGroups(String tsOfficeId, String groupOfficeId, String categoryOfficeId,
             String categoryId, String groupId) {
-        return getTimeSeriesGroupsWhere(buildWhereCondition(categoryId, groupId), officeId, groupOfficeId,
+        return getTimeSeriesGroupsWhere(buildWhereCondition(categoryId, groupId), tsOfficeId, groupOfficeId,
                 categoryOfficeId);
     }
 

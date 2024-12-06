@@ -181,6 +181,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept("application/json")
+                .queryParam(OFFICE, CWMS_OFFICE)
                 .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
                 .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
             .when()

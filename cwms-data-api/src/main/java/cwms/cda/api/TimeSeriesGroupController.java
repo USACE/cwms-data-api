@@ -123,7 +123,7 @@ public class TimeSeriesGroupController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
-            String office = ctx.queryParam(OFFICE);
+            String tsOffice = ctx.queryParam(OFFICE);
             String groupOffice = ctx.queryParam(GROUP_OFFICE_ID);
             String categoryOffice = ctx.queryParam(CATEGORY_OFFICE_ID);
 
@@ -135,7 +135,7 @@ public class TimeSeriesGroupController implements CrudHandler {
             String tsGroupLike = queryParamAsClass(ctx, new String[]{TIMESERIES_GROUP_LIKE},
                     String.class, null, metrics, name(TimeSeriesGroupController.class.getName(), GET_ALL));
 
-            List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(office, groupOffice, categoryOffice,
+            List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(tsOffice, groupOffice, categoryOffice,
                     includeAssigned, tsCategoryLike, tsGroupLike);
             if (grps.isEmpty()) {
                 CdaError re = new CdaError("No data found for The provided office");
@@ -186,7 +186,7 @@ public class TimeSeriesGroupController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
-            String office = ctx.queryParam(OFFICE);
+            String tsOffice = ctx.queryParam(OFFICE);
             String categoryId = ctx.queryParam(CATEGORY_ID);
 
             // Not marked as required to maintain backwards compatibility with existing clients
@@ -197,7 +197,7 @@ public class TimeSeriesGroupController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
 
             TimeSeriesGroup group = null;
-            List<TimeSeriesGroup> timeSeriesGroups = dao.getTimeSeriesGroups(office, groupOffice, categoryOffice,
+            List<TimeSeriesGroup> timeSeriesGroups = dao.getTimeSeriesGroups(tsOffice, groupOffice, categoryOffice,
                     categoryId, groupId);
             if (timeSeriesGroups != null && !timeSeriesGroups.isEmpty()) {
                 if (timeSeriesGroups.size() == 1) {
@@ -208,7 +208,7 @@ public class TimeSeriesGroupController implements CrudHandler {
                             "Multiple TimeSeriesGroups returned from getTimeSeriesGroups "
                                     + "for:%s category:%s groupId:%s At most one match was "
                                     + "expected. Found:%s",
-                            office, categoryId, groupId, timeSeriesGroups);
+                            groupOffice, categoryId, groupId, timeSeriesGroups);
                     throw new IllegalArgumentException(message);
                 }
             }
