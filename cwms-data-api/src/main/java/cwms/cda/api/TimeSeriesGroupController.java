@@ -96,9 +96,8 @@ public class TimeSeriesGroupController implements CrudHandler {
     @OpenApi(
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
-                        + "timeseries group(s) whose data is to be included in the response. If this "
-                        + "field is not specified, matching timeseries groups information from all "
-                        + "offices shall be returned."),
+                        + "timeseries assigned to the group(s) whose data is to be included in the response. If this "
+                        + "field is not specified, group information for all assigned TS offices shall be returned."),
                 @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
                         + " the assigned timeseries in the returned timeseries groups. (default: true)"),
                 @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
@@ -164,8 +163,9 @@ public class TimeSeriesGroupController implements CrudHandler {
             },
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                        + "owning office of the timeseries group whose data is to be included"
-                        + " in the response."),
+                        + "owning office of the timeseries assigned to the group whose data is to be included"
+                        + " in the response. This will limit the assigned timeseries returned to only those"
+                        + " assigned to the specified office."),
                 @OpenApiParam(name = CATEGORY_OFFICE_ID, description = "Specifies the owning office of the "
                         + "timeseries group category", required = true),
                 @OpenApiParam(name = GROUP_OFFICE_ID, description = "Specifies the owning office of the "
