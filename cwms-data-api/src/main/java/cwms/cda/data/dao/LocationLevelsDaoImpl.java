@@ -328,6 +328,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     public LocationLevel retrieveLocationLevel(String locationLevelName, String pUnits,
                                                ZonedDateTime effectiveDate, String officeId) {
         Timestamp date = Timestamp.from(effectiveDate.toInstant());
+        if (locationLevelName.split("\\.").length <= 2) {
+            throw new IllegalArgumentException("Location level name is in an invalid format, must be separated by '.'");
+        }
         return connectionResult(dsl, c -> {
             String units = pUnits;
             Configuration configuration = getDslContext(c, officeId).configuration();

@@ -676,6 +676,25 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertThat(actual1, closeTo(2466.9636f, 1.0));
     }
 
+    @Test
+    void testRetrievalInvalidLevelName()
+    {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EFFECTIVE_DATE, "2023-06-01T00:00:00Z")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/invalid.level_name")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+    }
+
     @ParameterizedTest
     @EnumSource(GetAllTestNewAliases.class)
     void test_get_all_aliases_new(GetAllTestNewAliases test)
