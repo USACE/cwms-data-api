@@ -37,7 +37,6 @@ import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static cwms.cda.api.Controllers.*;
@@ -129,7 +128,6 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    @Disabled("Disabled due to a DB issue.  See https://jira.hecdev.net/browse/CWDB-296")
     @Test
     void test_outlet_rename() {
         String json = Formats.format(Formats.parseHeader(Formats.JSONV1, Outlet.class), NEW_CONDUIT_GATE_2_OUTLET);
