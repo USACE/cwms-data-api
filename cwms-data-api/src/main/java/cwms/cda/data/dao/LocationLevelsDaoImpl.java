@@ -95,6 +95,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     private static final String ATTRIBUTE_ID_PARSING_REGEXP = "(.*)\\.(.*)\\.(.*)";
     public static final Pattern attributeIdParsingPattern =
             Pattern.compile(ATTRIBUTE_ID_PARSING_REGEXP);
+    private static final String LOCATION_LEVEL_ID_PARSING_REGEXP = "\\.";
+    public static final Pattern locationLevelIdParsingPattern =
+            Pattern.compile(LOCATION_LEVEL_ID_PARSING_REGEXP);
 
     public LocationLevelsDaoImpl(DSLContext dsl) {
         super(dsl);
@@ -328,16 +331,18 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     public LocationLevel retrieveLocationLevel(String locationLevelName, String pUnits,
                                                ZonedDateTime effectiveDate, String officeId) {
         Timestamp date = Timestamp.from(effectiveDate.toInstant());
-        if (locationLevelName.split("\\.").length <= 2) {
+        String[] levelIdParts = locationLevelIdParsingPattern.split(locationLevelName);
+        if (levelIdParts.length <= 2) {
             throw new IllegalArgumentException("Location level name is in an invalid format, must be separated by '.'");
         }
+        String parameter = levelIdParts[1];
         return connectionResult(dsl, c -> {
             String units = pUnits;
             Configuration configuration = getDslContext(c, officeId).configuration();
             if (units != null && (units.equalsIgnoreCase("SI")
                     || units.equalsIgnoreCase("EN"))) {
                 units = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(configuration,
-                        locationLevelName.split("\\.")[1], units);
+                        parameter, units);
             }
             RETRIEVE_LOCATION_LEVEL3 level = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOCATION_LEVEL3(
                 configuration, locationLevelName, units, date,
@@ -345,7 +350,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 "F", officeId);
             List<SeasonalValueBean> seasonalValues = buildSeasonalValues(level);
             if (units == null) {
-                String parameter = locationLevelName.split("\\.")[1];
                 logger.info("Getting default units for " + parameter);
                 String defaultUnits = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
                     configuration, parameter, UnitSystem.SI.getValue());
