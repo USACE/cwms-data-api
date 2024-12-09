@@ -373,7 +373,7 @@ public class RatingController implements CrudHandler {
                     RatingSet.DatabaseLoadMethod.class)
                     .getOrDefault(RatingSet.DatabaseLoadMethod.EAGER);
 
-            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant, false);
+            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant);
             if (body != null) {
                 ctx.result(body);
                 ctx.status(HttpCode.OK);
@@ -384,7 +384,7 @@ public class RatingController implements CrudHandler {
     @Nullable
     protected String getRatingSetString(Context ctx, RatingSet.DatabaseLoadMethod method,
                                       String officeId, String rating, Instant begin,
-                                      Instant end, boolean latest) {
+                                      Instant end) {
         String retval = null;
 
         try (final Timer.Context ignored = markAndTime("getRatingSetString")) {
@@ -398,11 +398,8 @@ public class RatingController implements CrudHandler {
                 ctx.contentType(contentType.toString());
                 try {
                     RatingSet ratingSet = null;
-                    if (latest) {
-                        ratingSet = getLatestRatingSet(ctx, method, officeId, rating);
-                    } else {
-                        ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end);
-                    }
+                    ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end);
+
                     if (ratingSet != null) {
                         if (isJson) {
                             retval = JsonRatingUtils.toJson(ratingSet);
@@ -436,19 +433,6 @@ public class RatingController implements CrudHandler {
             addDeprecatedContentTypeWarning(ctx, contentType);
         }
         return retval;
-    }
-
-    private RatingSet getLatestRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
-                                   String officeId, String rating) throws IOException, RatingException {
-        RatingSet ratingSet = null;
-        try (final Timer.Context ignored = markAndTime("getLatestRatingSet")) {
-            DSLContext dsl = getDslContext(ctx);
-
-            RatingDao ratingDao = getRatingDao(dsl);
-            ratingSet = ratingDao.retrieveLatest(method, officeId, rating);
-        }
-
-        return ratingSet;
     }
 
     private RatingSet getRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,

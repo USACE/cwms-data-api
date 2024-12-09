@@ -26,21 +26,22 @@
 
 package cwms.cda.api;
 
-import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
 import cwms.cda.formatters.Formats;
-import cwms.cda.helpers.DateUtils;
+
+import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -49,17 +50,17 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.time.Instant;
+
+import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class RatingLatestController extends RatingController implements Handler {
+public class RatingLatestController implements Handler {
     private static final String TAG = "Ratings";
     private final MetricRegistry metrics;
 
     public RatingLatestController(MetricRegistry metrics) {
-        super(metrics);
         this.metrics = metrics;
     }
 
@@ -68,7 +69,6 @@ public class RatingLatestController extends RatingController implements Handler 
     }
 
     @NotNull
-	@Override
     protected RatingDao getRatingDao(DSLContext dsl) {
         return new RatingSetDao(dsl);
     }
@@ -93,8 +93,8 @@ public class RatingLatestController extends RatingController implements Handler 
         },
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
-                @OpenApiContent(type = Formats.JSONV2),
-                @OpenApiContent(type = Formats.XMLV2)})},
+                @OpenApiContent(type = Formats.JSONV2)})
+        },
         description = "Returns CWMS Rating Data",
         tags = {TAG})
     @Override
@@ -102,32 +102,32 @@ public class RatingLatestController extends RatingController implements Handler 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             String rating = ctx.pathParam(RATING_ID);
 
-            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-
-            Instant beginInstant = null;
-            String begin = ctx.queryParam(BEGIN);
-            if (begin != null) {
-                beginInstant = DateUtils.parseUserDate(begin, timezone).toInstant();
-            }
-
-            Instant endInstant = null;
-            String end = ctx.queryParam(END);
-            if (end != null) {
-                endInstant = DateUtils.parseUserDate(end, timezone).toInstant();
-            }
-
             String officeId = ctx.queryParam(OFFICE);
 
             RatingSet.DatabaseLoadMethod method = ctx.queryParamAsClass(METHOD,
                             RatingSet.DatabaseLoadMethod.class)
                     .getOrDefault(RatingSet.DatabaseLoadMethod.EAGER);
 
-            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant, true);
+            String body = getLatestRatingSet(ctx, method, officeId, rating);
             if (body != null) {
                 ctx.result(body);
+                ctx.contentType(Formats.JSONV2);
                 ctx.status(HttpCode.OK);
             }
         }
+    }
 
+    private String getLatestRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
+            String officeId, String rating) throws IOException, RatingException {
+        String ratingSet = null;
+        try (final Timer.Context ignored = markAndTime("getLatestRatingSet")) {
+            DSLContext dsl = getDslContext(ctx);
+
+            RatingDao ratingDao = getRatingDao(dsl);
+            RatingSet returnedSet = ratingDao.retrieveLatest(method, officeId, rating);
+            ratingSet = JsonRatingUtils.toJson(returnedSet);
+        }
+
+        return ratingSet;
     }
 }

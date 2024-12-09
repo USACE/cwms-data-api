@@ -21,6 +21,7 @@ import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -225,12 +226,11 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.contentType(is(test.expectedContentType));
 	}
 
-	@ParameterizedTest
-	@EnumSource(GetOneTest.class)
-	void test_get_one_latest(GetOneTest test) {
+	@Test
+	void test_get_one_latest() {
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(test.accept)
+			.contentType(Formats.JSONV2)
 			.queryParam(OFFICE, SPK)
 		.when()
 			.redirects().follow(true)
@@ -240,7 +240,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 		.assertThat()
 			.log().ifValidationFails(LogDetail.ALL,true)
 			.statusCode(is(HttpServletResponse.SC_OK))
-			.contentType(is(test.expectedContentType))
+			.contentType(is(Formats.JSONV2))
 			.extract();
 
 		String effectiveDate = response.path("ratings.simple-rating[0].effective-date");
