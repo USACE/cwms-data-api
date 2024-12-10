@@ -38,7 +38,6 @@ import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static cwms.cda.api.Controllers.*;
@@ -213,7 +212,6 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
     }
 
     @Test
-    @Disabled("Backed opens more than one connection.")
     void test_rating_spec_id_uncontrolled() {
         // Structure of test:
         // 1) Create the Outlet
@@ -363,7 +361,6 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
     }
 
     @Test
-    @Disabled("End point uses more than one connection.")
     void test_rating_spec_id_controlled() {
         // Structure of test:
         // 1) Create the Outlet
@@ -513,7 +510,7 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
     }
 
     @Test
-    @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
+    @FunctionalSchemas(values = {"latest-dev"})
     void test_outlet_get_all() {
         //Get the newly created outlet
         given()
@@ -542,7 +539,6 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
     }
 
     @Test
-    @Disabled("Backed opens two connections instead of using one.")
     void test_outlet_crud() throws Exception {
         // Structure of test:
         // 1)Create the Outlet - TG3 does not exist in the db.
