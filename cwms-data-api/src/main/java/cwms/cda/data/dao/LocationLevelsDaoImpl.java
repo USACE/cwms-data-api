@@ -97,6 +97,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     private static final String ATTRIBUTE_ID_PARSING_REGEXP = "(.*)\\.(.*)\\.(.*)";
     public static final Pattern attributeIdParsingPattern =
             Pattern.compile(ATTRIBUTE_ID_PARSING_REGEXP);
+    private static final String LOCATION_LEVEL_ID_PARSING_REGEXP = "\\.";
+    public static final Pattern locationLevelIdParsingPattern =
+            Pattern.compile(LOCATION_LEVEL_ID_PARSING_REGEXP);
 
     public LocationLevelsDaoImpl(DSLContext dsl) {
         super(dsl);
@@ -185,8 +188,10 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         private final JDomLocationLevelRef locationLevelRef;
         private final Date effectiveDate;
 
-        public LevelLookup(String officeId, String locLevelId, String attributeId, String attributeValue, String attributeUnits, Date effectiveDate) {
-            this(new JDomLocationLevelRef(officeId, locLevelId, attributeId, attributeValue, attributeUnits), effectiveDate);
+        public LevelLookup(String officeId, String locLevelId, String attributeId, String attributeValue,
+                String attributeUnits, Date effectiveDate) {
+            this(new JDomLocationLevelRef(officeId, locLevelId, attributeId, attributeValue, attributeUnits),
+                    effectiveDate);
         }
 
         public LevelLookup(JDomLocationLevelRef locationLevelRef, Date effectiveDate) {
@@ -204,7 +209,8 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             }
 
             LevelLookup that = (LevelLookup) o;
-            return Objects.equals(locationLevelRef, that.locationLevelRef) && Objects.equals(effectiveDate, that.effectiveDate);
+            return Objects.equals(locationLevelRef, that.locationLevelRef)
+                    && Objects.equals(effectiveDate, that.effectiveDate);
         }
 
         @Override
@@ -524,12 +530,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 //                offset.setDaysHoursMinutesString(dayToSecond.toString());
 //            }
 //            seasonalValuesImpl.setOffset(offset);
-           // TODO: LocationLevel is missing seasonal origin and offset.
+            // TODO: LocationLevel is missing seasonal origin and offset.
 
             String calOffset = r.get(view.CALENDAR_OFFSET);
             String timeOffset = r.get(view.TIME_OFFSET);
             JDomSeasonalIntervalImpl newSeasonalOffset = buildSeasonalOffset(calOffset, timeOffset);
-            SeasonalValueBean seasonalValue = buildSeasonalValueBean(seasonalLevel, newSeasonalOffset) ;
+            SeasonalValueBean seasonalValue = buildSeasonalValueBean(seasonalLevel, newSeasonalOffset);
             builder.withSeasonalValue(seasonalValue);
         }
     }

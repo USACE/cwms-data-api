@@ -63,6 +63,8 @@ public final class Controllers {
     public static final String SIZE = "size";
 
     public static final String OFFICE = "office";
+    public static final String CATEGORY_OFFICE_ID = "category-office-id";
+    public static final String GROUP_OFFICE_ID = "group-office-id";
     public static final String UNIT = "unit";
     public static final String COUNT = "count";
     public static final String TIME = "time";
@@ -88,6 +90,7 @@ public final class Controllers {
     public static final String DATE = "date";
     public static final String LEVEL_ID = "level-id";
     public static final String LEVEL_ID_MASK = "level-id-mask";
+    public static final String LOCATION_MASK = "location-mask";
     public static final String NAME = "name";
     public static final String CASCADE_DELETE = "cascade-delete";
     public static final String DATUM = "datum";
@@ -127,6 +130,12 @@ public final class Controllers {
     public static final String LOCATIONS = "locations";
     public static final String WATER_USER = "water-user";
     public static final String CONTRACT_NAME = "contract-name";
+    public static final String PARAMETER_ID = "parameter-id";
+    public static final String PARAMETER_ID_MASK = "parameter-id-mask";
+    public static final String VERSION_MASK = "version-mask";
+    public static final String PROFILE_DATA = "profile-data";
+    public static final String PREVIOUS = "previous";
+    public static final String NEXT = "next";
 
     public static final String LOCATION_ID = "location-id";
     public static final String SOURCE_ENTITY = "source-entity";

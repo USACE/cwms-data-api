@@ -208,10 +208,8 @@ public class LevelsController implements CrudHandler {
                         + " the default English units for their parameters."
                         + "\n* `SI`  "
                         + "Specifies the SI unit system.  Location level values will be in "
-                        + "the default SI units for their parameters."
-                        + "\n* `Other`  "
-                        + "Any unit returned in the response to the units URI request that is "
-                        + "appropriate for the requested parameters. "),
+                        + "the default SI units for their parameters. "
+                        + "\n\nThe default unit system is SI."),
                 @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
                         + " the response. This field affects only elevation location levels. "
                         + "Valid values for this field are:"
@@ -327,7 +325,8 @@ public class LevelsController implements CrudHandler {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "office of the Location Level to be returned"),
                 @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
-                        + "the effective date of Location Level to be returned"),
+                        + "the effective date of Location Level to be returned. "
+                        + "Expected formats are `YYYY-MM-DDTHH:MM` or `YYYY-MM-DDTHH:MM:SS`"),
                 @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
                         + "the values of the effective date field (unless otherwise "
                         + "specified), as well as the time zone of any times in the response."

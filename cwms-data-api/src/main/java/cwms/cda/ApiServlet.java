@@ -24,7 +24,6 @@
 
 package cwms.cda;
 
-
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.NAME;
@@ -105,9 +104,11 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
+import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.GateChangeDeleteController;
 import cwms.cda.api.location.kind.GateChangeGetAllController;
 import cwms.cda.api.location.kind.GateChangeCreateController;
+import cwms.cda.api.location.kind.LockController;
 import cwms.cda.api.location.kind.OutletController;
 import cwms.cda.api.location.kind.VirtualOutletController;
 import cwms.cda.api.location.kind.VirtualOutletCreateController;
@@ -122,6 +123,20 @@ import cwms.cda.api.project.ProjectLockRevokeDeny;
 import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
+import cwms.cda.api.watersupply.AccountingCatalogController;
+import cwms.cda.api.watersupply.AccountingCreateController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCatalogController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCreateController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileDeleteController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceCatalogController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceCreateController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileInstanceDeleteController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserCatalogController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserCreateController;
+import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserDeleteController;
 import cwms.cda.api.watersupply.WaterContractCatalogController;
 import cwms.cda.api.watersupply.WaterContractController;
 import cwms.cda.api.watersupply.WaterContractCreateController;
@@ -504,6 +519,35 @@ public class ApiServlet extends HttpServlet {
         get(textBinaryValuePath, new BinaryTimeSeriesValueController(metrics));
         addCacheControl(textBinaryValuePath, 1, TimeUnit.DAYS);
 
+        String timeSeriesProfilePath = "/timeseries/profile/";
+        get(format(timeSeriesProfilePath + "{%s}/{%s}", Controllers.LOCATION_ID, Controllers.PARAMETER_ID),
+                new TimeSeriesProfileController(metrics));
+        delete(format(timeSeriesProfilePath + "/{%s}/{%s}", Controllers.LOCATION_ID,
+                        Controllers.PARAMETER_ID), new TimeSeriesProfileDeleteController(metrics),
+                requiredRoles);
+        get(format(timeSeriesProfilePath, Controllers.LOCATION_ID, Controllers.PARAMETER_ID),
+                new TimeSeriesProfileCatalogController(metrics));
+        post(timeSeriesProfilePath, new TimeSeriesProfileCreateController(metrics), requiredRoles);
+
+        String timeSeriesProfileParserPath = "/timeseries/profile-parser/";
+        get(format(timeSeriesProfileParserPath + "{%s}/{%s}/", Controllers.LOCATION_ID,
+                Controllers.PARAMETER_ID), new TimeSeriesProfileParserController(metrics));
+        post(timeSeriesProfileParserPath, new TimeSeriesProfileParserCreateController(metrics), requiredRoles);
+        delete(format(timeSeriesProfileParserPath + "{%s}/{%s}/", Controllers.LOCATION_ID,
+                        Controllers.PARAMETER_ID), new TimeSeriesProfileParserDeleteController(metrics),
+                requiredRoles);
+        get(timeSeriesProfileParserPath, new TimeSeriesProfileParserCatalogController(metrics));
+
+        String timeSeriesProfileInstancePath = "/timeseries/profile-instance/";
+        get(format(timeSeriesProfileInstancePath + "{%s}/{%s}/{%s}/", Controllers.LOCATION_ID,
+                        Controllers.PARAMETER_ID, Controllers.VERSION),
+                new TimeSeriesProfileInstanceController(metrics));
+        post(timeSeriesProfileInstancePath, new TimeSeriesProfileInstanceCreateController(metrics), requiredRoles);
+        delete(format(timeSeriesProfileInstancePath + "{%s}/{%s}/{%s}/", Controllers.LOCATION_ID,
+                        Controllers.PARAMETER_ID, Controllers.VERSION),
+                new TimeSeriesProfileInstanceDeleteController(metrics), requiredRoles);
+        get(timeSeriesProfileInstancePath, new TimeSeriesProfileInstanceCatalogController(metrics));
+
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/identifier-descriptor/{name}",
@@ -565,6 +609,8 @@ public class ApiServlet extends HttpServlet {
         addWaterUserHandlers(format("/projects/{%s}/{%s}/water-user", OFFICE, PROJECT_ID), requiredRoles);
         addWaterContractHandlers(format("/projects/{%s}/{%s}/water-user/{%s}/contracts", OFFICE, PROJECT_ID,
                 WATER_USER), requiredRoles);
+        addAccountingHandlers(format("/projects/{%s}/{%s}/water-user/{%s}"
+                + "/contracts/{%s}/accounting", OFFICE, PROJECT_ID, WATER_USER, CONTRACT_NAME), requiredRoles);
         delete(format("/projects/{%s}/{%s}/water-user/{%s}/contracts/{%s}/pumps/{%s}", OFFICE, PROJECT_ID,
                         WATER_USER, CONTRACT_NAME, NAME), new WaterPumpDisassociateController(metrics), requiredRoles);
         addWaterContractTypeHandlers(format("/projects/{%s}/contract-types", OFFICE), requiredRoles);
@@ -573,7 +619,9 @@ public class ApiServlet extends HttpServlet {
             new EmbankmentController(metrics), requiredRoles,1, TimeUnit.DAYS);
         cdaCrudCache(format("/projects/turbines/{%s}", Controllers.NAME),
             new TurbineController(metrics), requiredRoles,1, TimeUnit.DAYS);
-        String turbineChanges = format("/projects/{%s}/{%s}/turbine-changes", OFFICE, Controllers.NAME);
+        cdaCrudCache(format("/projects/locks/{%s}", Controllers.NAME),
+            new LockController(metrics), requiredRoles,1, TimeUnit.DAYS);
+        String turbineChanges = format("/projects/{%s}/{%s}/turbine-changes", Controllers.OFFICE, Controllers.NAME);
         get(turbineChanges,new TurbineChangesGetController(metrics));
         addCacheControl(turbineChanges, 5, TimeUnit.MINUTES);
         post(turbineChanges, new TurbineChangesPostController(metrics), requiredRoles);
@@ -605,6 +653,10 @@ public class ApiServlet extends HttpServlet {
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
     }
 
+    private void addAccountingHandlers(String path, RouteRole[] requiredRoles) {
+        get(path, new AccountingCatalogController(metrics));
+        post(path, new AccountingCreateController(metrics), requiredRoles);
+    }
 
     private void addProjectLocksHandlers(String path, RouteRole[] requiredRoles) {
         String pathWithoutResource = path.replace(getResourceId(path), "");
@@ -873,7 +925,7 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+            throws IOException {
         totalRequests.mark();
         try {
             String office = officeFromContext(req.getContextPath());

@@ -75,8 +75,8 @@ public class OutletDao extends JooqDao<Outlet> {
             LOCATION_REF_T locRef = LocationUtil.getLocationRef(projectId, officeId);
 
             LocationGroupDao locGroupDao = new LocationGroupDao(dsl);
-            List<LocationGroup> groups = locGroupDao.getLocationGroups(officeId,
-                    Outlet.RATING_LOC_GROUP_CATEGORY, projectId);
+            List<LocationGroup> groups = locGroupDao.getLocationGroups(config, null, officeId,
+                    null, Outlet.RATING_LOC_GROUP_CATEGORY, projectId);
 
             return CWMS_OUTLET_PACKAGE.call_RETRIEVE_OUTLETS(config, locRef)
                                       .stream()
@@ -92,7 +92,8 @@ public class OutletDao extends JooqDao<Outlet> {
             PROJECT_STRUCTURE_OBJ_T outletStruct = CWMS_OUTLET_PACKAGE.call_RETRIEVE_OUTLET(config, locRef);
             
             LocationGroupDao locGroupDao = new LocationGroupDao(dsl);
-            List<LocationGroup> groups = locGroupDao.getLocationGroups(officeId, Outlet.RATING_LOC_GROUP_CATEGORY);
+            List<LocationGroup> groups = locGroupDao.getLocationGroups(config, null, officeId, null,
+                    Outlet.RATING_LOC_GROUP_CATEGORY, null);
 
             return mapToOutlet(outletStruct, groups);
         });
