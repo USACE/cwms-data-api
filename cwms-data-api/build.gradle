@@ -10,6 +10,7 @@ configurations {
     docker
     baseLibs
     tomcatLibs
+    testImplementation.extendsFrom(tomcatLibs)
 }
 
 configurations.implementation {
@@ -137,13 +138,12 @@ dependencies {
     testImplementation(libs.rest.assured)
     testImplementation(libs.hamcrest.all)
 
-    testImplementation(libs.bundles.tomcat.embedded)
-    testImplementation(libs.bundles.tomcat.support)
+    tomcatLibs(libs.bundles.tomcat.embedded)
+    tomcatLibs(libs.bundles.tomcat.support)
     tomcatLibs(libs.google.flogger.api)
     tomcatLibs(libs.google.flogger.backend)
 
     testImplementation(libs.bundles.testcontainers)
-    
 
     testImplementation(libs.apache.commons.csv)
     testImplementation(libs.cwms.tomcat.auth)
@@ -267,7 +267,6 @@ task integrationTests(type: Test) {
     }
     shouldRunAfter test
     classpath += configurations.baseLibs
-    classpath += configurations.tomcatLibs
     // The before all extension will take care of these properties
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }

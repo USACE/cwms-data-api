@@ -220,7 +220,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     private ArrayList<String> getDefaultList() {
         ArrayList<String> list = new ArrayList<>();
         InputStream listStream = getClass().getResourceAsStream("/cwms/cda/data/sql/defaultload.txt");
-        try( BufferedReader br = new BufferedReader( new InputStreamReader(listStream) )) {
+        try( BufferedReader br = new BufferedReader(new InputStreamReader(listStream))) {
             String line = null;
             while( (line = br.readLine() ) != null){
                 if( line.trim().startsWith("#") ) continue;
