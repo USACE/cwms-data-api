@@ -260,7 +260,8 @@ public class ApiServlet extends HttpServlet {
 
     // The VERSION should match the gradle version but not contain the patch version.
     // For example 2.4 not 2.4.13
-    public static final String VERSION = "3.0";
+    private static String VERSION;
+
     public static final String APPLICATION_TITLE = "CWMS Data API";
     public static final String PROVIDER_KEY_OLD = "radar.access.provider";
     public static final String PROVIDER_KEY = "cwms.dataapi.access.provider";
@@ -277,6 +278,9 @@ public class ApiServlet extends HttpServlet {
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
 
+    public static String getApiVersion() {
+        return VERSION;
+    }
 
 
     @Override
@@ -290,6 +294,17 @@ public class ApiServlet extends HttpServlet {
         metrics = (MetricRegistry)config.getServletContext()
                 .getAttribute(MetricsServlet.METRICS_REGISTRY);
         totalRequests = metrics.meter("cwms.dataapi.total_requests");
+        if (VERSION == null) {
+            try (InputStream manifestStream = 
+                    config.getServletContext().getResourceAsStream("META-INF/manifest.mf")) {
+                Manifest manifest = new Manifest(manifestStream);
+                VERSION = (String)manifest.getMainAttributes().get("build-version");
+            } catch (IOException ex) {
+                logger.atSevere().withCause(ex).log("Unable to retrieve version from WAR.");
+                VERSION = "Unknown";
+            }
+        }
+        
         super.init(config);
     }
 
