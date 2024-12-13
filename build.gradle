@@ -22,5 +22,5 @@ def static versionLabel(gitInfo) {
 allprojects {
     apply plugin: 'cda.java-conventions'
     group = 'mil.army.usace.hec.cwms'
-    version = versionLabel(versionDetails())
+    version = project.findProperty("versionOverride") ?: versionLabel(versionDetails())
 }

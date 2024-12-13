@@ -1,0 +1,19 @@
+name: Nightly Releases - Schedule
+on:
+  schedule:
+    - cron: "3 0 * * *"
+
+jobs:
+  main:
+    permissions:
+      packages: write
+      contents: write
+    uses: ./.github/workflows/release.yml
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+      registry: ${{ secrets.HEC_PUB_REGISTRY}}
+      registry_user: ${{ secrets.ALT_REG_USER }}
+      registry_password: ${{ secrets.ALT_REG_PASSWORD }}
+    with:
+      branch: "develop"
+      nightly: true
