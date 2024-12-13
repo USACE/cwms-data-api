@@ -53,7 +53,7 @@ jobs:
         if: inputs.nightly
         run: echo "VERSION=${{inputs.branch}}-nightly" >> $GITHUB_ENV
       - name: Set version
-        run: echo "VERSION=${{inputs.branch}}" >> $GITHUB_ENV"
+        run: echo "VERSION=${{inputs.branch}}" >> $GITHUB_ENV
       - name: show version
         run: echo ${VERSION}
       - name: build war
