@@ -86,7 +86,7 @@ jobs:
           ALT_REGISTRY: ${{secrets.ALT_REGISTRY}}
           HEC_PUB_REGISTRY: ${{secrets.HEC_PUB_REGISTRY}}
         run: |
-          HEC_PUB_REGISTRY="${{secrets.registry != null && secrets.registry ||secrets.HEC_PUB_REGISTRY}}""
+          HEC_PUB_REGISTRY="${{secrets.registry != null && secrets.registry ||secrets.HEC_PUB_REGISTRY}}"
           REPO=`echo "${{github.repository}}" | tr  '[:upper:]' '[:lower:]'`
           docker build -t cda:build-latest .
           docker tag cda:build-latest ghcr.io/${REPO}:$VERSION
