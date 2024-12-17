@@ -36,9 +36,9 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
+import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 
 import hec.data.RatingException;
@@ -52,6 +52,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
 import java.io.IOException;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -93,7 +94,8 @@ public class RatingLatestController implements Handler {
         },
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
-                @OpenApiContent(type = Formats.JSONV2)})
+                @OpenApiContent(type = Formats.JSONV2),
+                @OpenApiContent(type = Formats.XMLV2)})
         },
         description = "Returns CWMS Rating Data",
         tags = {TAG})
@@ -102,30 +104,46 @@ public class RatingLatestController implements Handler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             String rating = ctx.pathParam(RATING_ID);
 
+            ContentType contentType = new ContentType(ctx.contentType() != null ? ctx.contentType() : Formats.JSONV2);
+
             String officeId = ctx.queryParam(OFFICE);
 
             RatingSet.DatabaseLoadMethod method = ctx.queryParamAsClass(METHOD,
                             RatingSet.DatabaseLoadMethod.class)
                     .getOrDefault(RatingSet.DatabaseLoadMethod.EAGER);
 
-            String body = getLatestRatingSet(ctx, method, officeId, rating);
+            if (!contentType.toString().equals(Formats.JSONV2) && !contentType.toString().equals(Formats.XMLV2)) {
+                ctx.status(HttpCode.UNSUPPORTED_MEDIA_TYPE);
+            }
+
+            String body = getLatestRatingSet(ctx, method, officeId, rating, contentType);
+            ctx.contentType(contentType.toString());
             if (body != null) {
                 ctx.result(body);
-                ctx.contentType(Formats.JSONV2);
                 ctx.status(HttpCode.OK);
+            } else {
+                ctx.status(HttpCode.NOT_FOUND);
             }
         }
     }
 
     private String getLatestRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
-            String officeId, String rating) throws IOException, RatingException {
+            String officeId, String rating, ContentType contentType) throws IOException, RatingException {
         String ratingSet = null;
         try (final Timer.Context ignored = markAndTime("getLatestRatingSet")) {
             DSLContext dsl = getDslContext(ctx);
 
             RatingDao ratingDao = getRatingDao(dsl);
-            RatingSet returnedSet = ratingDao.retrieveLatest(method, officeId, rating);
-            ratingSet = JsonRatingUtils.toJson(returnedSet);
+
+            if (contentType.toString().equals(Formats.JSONV2)) {
+                ratingSet = ratingDao.retrieveLatestJSON(method, officeId, rating);
+
+            } else if (contentType.toString().equals(Formats.XMLV2)) {
+                ratingSet = ratingDao.retrieveLatestXML(officeId, rating);
+            } else {
+
+                return null;
+            }
         }
 
         return ratingSet;

@@ -24,17 +24,8 @@
 
 package cwms.cda.data.dao;
 
-import static org.jooq.impl.DSL.asterisk;
-import static org.jooq.impl.DSL.dateDiff;
 import static org.jooq.impl.DSL.field;
-import static org.jooq.impl.DSL.inline;
-import static org.jooq.impl.DSL.name;
-import static org.jooq.impl.DSL.partitionBy;
-import static org.jooq.impl.DSL.rank;
-import static org.jooq.impl.DSL.select;
-import static org.jooq.impl.DSL.toDate;
 import static org.jooq.impl.DSL.unquotedName;
-import static org.jooq.impl.DSL.val;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -43,21 +34,18 @@ import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import java.io.IOException;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
+
 import mil.army.usace.hec.cwms.rating.io.jdbc.ConnectionProvider;
 import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
 import org.jooq.DSLContext;
-import org.jooq.DatePart;
 import org.jooq.Name;
-import org.jooq.Record;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.AV_RATING_LOCAL;
+import usace.cwms.db.jooq.codegen.udt.records.RATING_T;
+import usace.cwms.db.jooq.codegen.udt.records.RATING_TAB_T;
 
 
 public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
@@ -101,90 +89,40 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
         return office;
     }
 
-    public RatingSet retrieveLatest(RatingSet.DatabaseLoadMethod method, String officeId,
-            String specificationId) throws IOException, RatingException {
-        AV_RATING_LOCAL view = AV_RATING_LOCAL.AV_RATING_LOCAL;
+    @Override
+    public String retrieveLatestXML(String officeId,
+            String specificationId) {
+        return connectionResult(dsl, c -> {
+            DSLContext context = getDslContext(c, officeId);
+            return CWMS_RATING_PACKAGE.call_RETRIEVE_EFF_RATINGS_XML_F(context.configuration(), specificationId,
+                    Timestamp.from(Instant.now()), Timestamp.from(Instant.now()), null, officeId);
+        });
+    }
 
-        final RatingSet[] retval = new RatingSet[1];
-        try {
+    @Override
+    public String retrieveLatestJSON(RatingSet.DatabaseLoadMethod method, String officeId,
+            String specificationId) throws RatingException {
 
-            if (method == null) {
-                method = RatingSet.DatabaseLoadMethod.EAGER;
-            }
+        RATING_TAB_T res = connectionResult(dsl, c -> {
+            DSLContext context = getDslContext(c, officeId);
+            return CWMS_RATING_PACKAGE.call_RETRIEVE_EFF_RATINGS_OBJ_F(context.configuration(), specificationId,
+                    Timestamp.from(Instant.now()), Timestamp.from(Instant.now()), null, officeId);
+        });
 
-            RatingSet.DatabaseLoadMethod finalMethod = method;
+        Name effectiveDateName = unquotedName("EFFECTIVE_DATE");
+        Name ratingIdName = unquotedName("RATING_SPEC_ID");
+        RATING_T rating = res.get(0);
 
-            ZoneId utcZone = ZoneId.of("UTC");
-            Name rank = unquotedName("rank");
-            Name alias1 = unquotedName("a");
-            Name alias2 = unquotedName("b");
-            Name alias3 = unquotedName("c");
-            Name alias4 = unquotedName("d");
-            Name diff = unquotedName("difference");
-            Name effectiveDateName = unquotedName("effective_date");
-            Name ratingIdName = unquotedName("rating_id");
-            Name activeFlag = unquotedName("active_flag");
-            String dateFormat = "dd-MMM-YYYY H:mm:ss";
-            String oracleDateFormat = "DD-MON-YYYY HH24:MI:SS";
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat)
-                    .withZone(utcZone);
-            String formattedDate = formatter.format(Instant.now());
-
-            String ratingId = null;
-            Record result = connectionResult(dsl, c ->
-                dsl.select(asterisk())
-                    .from(
-                        select(
-                            field(name(alias1, effectiveDateName)),
-                            field(name(alias1, ratingIdName)),
-                            field(name(alias1, activeFlag)),
-                            rank().over(partitionBy(field(alias3))
-                                        .orderBy(field(diff).asc()))
-                                .as(rank)
-                        )
-                        .from(
-                            select(
-                                field(name(effectiveDateName)),
-                                field(name(alias2, ratingIdName)),
-                                field(name(alias2, ratingIdName)).as(alias3),
-                                field(name(alias2, activeFlag)),
-                                dateDiff(DatePart.DAY,
-                                    field(name(effectiveDateName)).cast(Date.class),
-                                    toDate(formattedDate, inline(oracleDateFormat)))
-                                    .as(diff))
-                            .from(view.as(alias2))
-                            .asTable(alias1).where(field(diff).ge(val(0)))).asTable(alias4))
-                    .where(field(rank).eq(inline(1)).and(field(activeFlag).eq("T")))
-                    .fetchOne()
-            );
-            Timestamp effectiveDate = result.getValue(field(name(alias4, effectiveDateName).unquotedName()),
-                    Timestamp.class);
-            ratingId = result.getValue(field(name(alias4, ratingIdName).unquotedName()), String.class);
-
-            if (ratingId == null) {
-                return null;
-            }
-            Instant effectiveInstant = Instant.parse(
-                    String.format("%sZ", effectiveDate.toString().replace(" ", "T")));
-            final long finalStartTime = effectiveInstant.toEpochMilli();
-            final String ratingIdFinal = ratingId;
-            final long finalEndTime = effectiveInstant.toEpochMilli();
-            connection(dsl, c -> retval[0] =
-                    RatingJdbcFactory.ratingSet(finalMethod, new RatingConnectionProvider(c), officeId,
-                            ratingIdFinal, finalStartTime,
-                            finalEndTime, false));
-        } catch (DataAccessException ex) {
-            Throwable cause = ex.getCause();
-            if (cause instanceof RatingException) {
-                if (cause.getMessage().contains("contains no rating templates")) {
-                    return null;
-                }
-
-                throw (RatingException) cause;
-            }
-            throw new IOException("Failed to retrieve Rating", ex);
+        if (rating == null) {
+            return null;
         }
-        return retval[0];
+
+        String ratingIdFinal = rating.get(field(ratingIdName), String.class);
+        long finalTime = rating.get(field(effectiveDateName), Timestamp.class).toInstant().toEpochMilli();
+
+        return JsonRatingUtils.toJson(connectionResult(dsl, c ->
+                RatingJdbcFactory.ratingSet(method, new RatingConnectionProvider(c), officeId,
+                        ratingIdFinal, finalTime, finalTime, false)));
     }
 
     @Override

@@ -228,6 +228,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 
 	@Test
 	void test_get_one_latest() {
+		// get latest json
 		ExtractableResponse<Response> response = given()
 			.log().ifValidationFails(LogDetail.ALL,true)
 			.contentType(Formats.JSONV2)
@@ -244,6 +245,29 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.extract();
 
 		String effectiveDate = response.path("ratings.simple-rating[0].effective-date");
+		if (effectiveDate == null) {
+			effectiveDate = response.path("simple-rating.effective-date");
+		}
+		assertNotNull(effectiveDate);
+		assertEquals("2016-06-06T00:00:00Z", effectiveDate);
+
+		// get latest xml
+		response = given()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.contentType(Formats.XMLV2)
+			.queryParam(OFFICE, SPK)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("/ratings/" + EXISTING_SPEC + "/latest")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL,true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_OK))
+			.contentType(is(Formats.XMLV2))
+			.extract();
+
+		effectiveDate = response.path("ratings.simple-rating[0].effective-date");
 		if (effectiveDate == null) {
 			effectiveDate = response.path("simple-rating.effective-date");
 		}

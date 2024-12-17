@@ -40,8 +40,10 @@ public interface RatingDao {
     RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId,
                        Instant start, Instant end) throws IOException, RatingException;
 
-    RatingSet retrieveLatest(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId)
-            throws IOException, RatingException;
+    String retrieveLatestXML(String officeId, String specificationId);
+
+    String retrieveLatestJSON(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId)
+            throws RatingException;
 
     String retrieveRatings(String format, String names, String unit, String datum, String office,
                            String start, String end, String timezone);
