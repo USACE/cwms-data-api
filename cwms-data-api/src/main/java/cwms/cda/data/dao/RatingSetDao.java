@@ -90,8 +90,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     }
 
     @Override
-    public String retrieveLatestXML(String officeId,
-            String specificationId) {
+    public String retrieveLatestXML(String officeId, String specificationId) {
         return connectionResult(dsl, c -> {
             DSLContext context = getDslContext(c, officeId);
             return CWMS_RATING_PACKAGE.call_RETRIEVE_EFF_RATINGS_XML_F(context.configuration(), specificationId,

@@ -296,16 +296,19 @@ public class RatingController implements CrudHandler {
 
             ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, RatingAliasMarker.class);
 
-            if (format.isEmpty()) {
+            if (format.isEmpty())
+            {
                 //Use the full content type here (i.e. application/json;version=2)
                 ctx.contentType(contentType.toString());
-            } else {
+            }
+            else
+            {
                 //Legacy content type only includes the basic type (i.e. application/json)
                 ctx.contentType(contentType.getType());
             }
 
-            //At the moment, we still use the legacy formatting here, since we don't have a newer API for
-            // serializing/deserializing a collection of rating sets - unlike getOne.
+            //At the moment, we still use the legacy formatting here, since we don't have a newer API for serializing/deserializing
+            //a collection of rating sets - unlike getOne.
             String legacyFormat = Formats.getLegacyTypeFromContentType(contentType);
             String results = ratingDao.retrieveRatings(legacyFormat, names, unit, datum, office, start,
                     end, timezone);
@@ -319,8 +322,7 @@ public class RatingController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                @OpenApiParam(name = RATING_ID, required = true, description = "The rating-id of the effective "
-                        + "dates to be retrieve. "),
+                @OpenApiParam(name = RATING_ID, required = true, description = "The rating-id of the effective dates to be retrieve. "),
             },
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description =
@@ -352,7 +354,7 @@ public class RatingController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String rating) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-
+            String officeId = ctx.queryParam(OFFICE);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
 
             Instant beginInstant = null;
@@ -367,8 +369,6 @@ public class RatingController implements CrudHandler {
                 endInstant = DateUtils.parseUserDate(end, timezone).toInstant();
             }
 
-            String officeId = ctx.queryParam(OFFICE);
-
             RatingSet.DatabaseLoadMethod method = ctx.queryParamAsClass(METHOD,
                     RatingSet.DatabaseLoadMethod.class)
                     .getOrDefault(RatingSet.DatabaseLoadMethod.EAGER);
@@ -381,8 +381,9 @@ public class RatingController implements CrudHandler {
         }
     }
 
+
     @Nullable
-    protected String getRatingSetString(Context ctx, RatingSet.DatabaseLoadMethod method,
+    private String getRatingSetString(Context ctx, RatingSet.DatabaseLoadMethod method,
                                       String officeId, String rating, Instant begin,
                                       Instant end) {
         String retval = null;
@@ -397,9 +398,7 @@ public class RatingController implements CrudHandler {
             if (isJson || isXml) {
                 ctx.contentType(contentType.toString());
                 try {
-                    RatingSet ratingSet = null;
-                    ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end);
-
+                    RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end);
                     if (ratingSet != null) {
                         if (isJson) {
                             retval = JsonRatingUtils.toJson(ratingSet);
@@ -425,7 +424,8 @@ public class RatingController implements CrudHandler {
             } else {
                 CdaError re = new CdaError("Currently supporting only: " + Formats.JSONV2
                         + " and " + Formats.XMLV2);
-                logger.log(Level.WARNING, String.format("Provided accept header not recognized: %s", acceptHeader), re);
+                logger.log(Level.WARNING, "Provided accept header not recognized:"
+                                + acceptHeader, re);
                 ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
                 ctx.json(CdaError.notImplemented());
             }
@@ -436,8 +436,8 @@ public class RatingController implements CrudHandler {
     }
 
     private RatingSet getRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
-            String officeId, String rating, Instant begin,
-            Instant end) throws IOException, RatingException {
+                                   String officeId, String rating, Instant begin,
+                                   Instant end) throws IOException, RatingException {
         RatingSet ratingSet;
         try (final Timer.Context ignored = markAndTime("getRatingSet")) {
             DSLContext dsl = getDslContext(ctx);

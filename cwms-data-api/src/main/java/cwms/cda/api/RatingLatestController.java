@@ -31,7 +31,6 @@ import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -50,8 +49,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-
-import java.io.IOException;
 
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -83,11 +80,6 @@ public class RatingLatestController implements Handler {
             @OpenApiParam(name = OFFICE, required = true, description =
                 "Specifies the owning office of the ratingset to be included in the "
                 + "response."),
-            @OpenApiParam(name = TIMEZONE, description = "Specifies "
-                + "the time zone of the values of the begin and end fields (unless "
-                + "otherwise specified), as well as the time zone of any times in the"
-                + " response. If this field is not specified, the default time zone "
-                + "of UTC shall be used."),
             @OpenApiParam(name = METHOD, description = "Specifies "
                 + "the retrieval method used.  If no method is provided EAGER will be used.",
                 type = RatingSet.DatabaseLoadMethod.class),
@@ -128,7 +120,8 @@ public class RatingLatestController implements Handler {
     }
 
     private String getLatestRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
-            String officeId, String rating, ContentType contentType) throws IOException, RatingException {
+            String officeId, String rating, ContentType contentType)
+            throws RatingException {
         String ratingSet = null;
         try (final Timer.Context ignored = markAndTime("getLatestRatingSet")) {
             DSLContext dsl = getDslContext(ctx);
