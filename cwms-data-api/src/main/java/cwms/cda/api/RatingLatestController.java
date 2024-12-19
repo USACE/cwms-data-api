@@ -27,7 +27,6 @@
 package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
@@ -35,13 +34,12 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-
-import hec.data.RatingException;
-import hec.data.cwmsRating.RatingSet;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.HttpCode;
@@ -49,7 +47,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -80,9 +77,6 @@ public class RatingLatestController implements Handler {
             @OpenApiParam(name = OFFICE, required = true, description =
                 "Specifies the owning office of the ratingset to be included in the "
                 + "response."),
-            @OpenApiParam(name = METHOD, description = "Specifies "
-                + "the retrieval method used.  If no method is provided EAGER will be used.",
-                type = RatingSet.DatabaseLoadMethod.class),
         },
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
@@ -100,15 +94,11 @@ public class RatingLatestController implements Handler {
 
             String officeId = ctx.queryParam(OFFICE);
 
-            RatingSet.DatabaseLoadMethod method = ctx.queryParamAsClass(METHOD,
-                            RatingSet.DatabaseLoadMethod.class)
-                    .getOrDefault(RatingSet.DatabaseLoadMethod.EAGER);
-
             if (!contentType.toString().equals(Formats.JSONV2) && !contentType.toString().equals(Formats.XMLV2)) {
                 ctx.status(HttpCode.UNSUPPORTED_MEDIA_TYPE);
             }
 
-            String body = getLatestRatingSet(ctx, method, officeId, rating, contentType);
+            String body = getLatestRatingSet(ctx, officeId, rating, contentType);
             ctx.contentType(contentType.toString());
             if (body != null) {
                 ctx.result(body);
@@ -119,23 +109,18 @@ public class RatingLatestController implements Handler {
         }
     }
 
-    private String getLatestRatingSet(Context ctx, RatingSet.DatabaseLoadMethod method,
-            String officeId, String rating, ContentType contentType)
-            throws RatingException {
+    private String getLatestRatingSet(Context ctx, String officeId, String rating, ContentType contentType)
+            throws JsonProcessingException {
         String ratingSet = null;
         try (final Timer.Context ignored = markAndTime("getLatestRatingSet")) {
             DSLContext dsl = getDslContext(ctx);
 
             RatingDao ratingDao = getRatingDao(dsl);
 
+            ratingSet = ratingDao.retrieveLatestXML(officeId, rating);
+
             if (contentType.toString().equals(Formats.JSONV2)) {
-                ratingSet = ratingDao.retrieveLatestJSON(method, officeId, rating);
-
-            } else if (contentType.toString().equals(Formats.XMLV2)) {
-                ratingSet = ratingDao.retrieveLatestXML(officeId, rating);
-            } else {
-
-                return null;
+                ratingSet = JsonRatingUtils.xmlToJson(ratingSet);
             }
         }
 

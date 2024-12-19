@@ -42,9 +42,6 @@ public interface RatingDao {
 
     String retrieveLatestXML(String officeId, String specificationId);
 
-    String retrieveLatestJSON(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId)
-            throws RatingException;
-
     String retrieveRatings(String format, String names, String unit, String datum, String office,
                            String start, String end, String timezone);
 

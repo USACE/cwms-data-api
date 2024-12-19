@@ -24,9 +24,6 @@
 
 package cwms.cda.data.dao;
 
-import static org.jooq.impl.DSL.field;
-import static org.jooq.impl.DSL.unquotedName;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -37,19 +34,14 @@ import java.sql.Connection;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
-
 import mil.army.usace.hec.cwms.rating.io.jdbc.ConnectionProvider;
 import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
 import org.jooq.DSLContext;
-import org.jooq.Name;
 import org.jooq.exception.DataAccessException;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
-import usace.cwms.db.jooq.codegen.udt.records.RATING_T;
-import usace.cwms.db.jooq.codegen.udt.records.RATING_TAB_T;
 
 
 public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
-
 
     public RatingSetDao(DSLContext dsl) {
         super(dsl);
@@ -96,32 +88,6 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
             return CWMS_RATING_PACKAGE.call_RETRIEVE_EFF_RATINGS_XML_F(context.configuration(), specificationId,
                     Timestamp.from(Instant.now()), Timestamp.from(Instant.now()), null, officeId);
         });
-    }
-
-    @Override
-    public String retrieveLatestJSON(RatingSet.DatabaseLoadMethod method, String officeId,
-            String specificationId) throws RatingException {
-
-        RATING_TAB_T res = connectionResult(dsl, c -> {
-            DSLContext context = getDslContext(c, officeId);
-            return CWMS_RATING_PACKAGE.call_RETRIEVE_EFF_RATINGS_OBJ_F(context.configuration(), specificationId,
-                    Timestamp.from(Instant.now()), Timestamp.from(Instant.now()), null, officeId);
-        });
-
-        Name effectiveDateName = unquotedName("EFFECTIVE_DATE");
-        Name ratingIdName = unquotedName("RATING_SPEC_ID");
-        RATING_T rating = res.get(0);
-
-        if (rating == null) {
-            return null;
-        }
-
-        String ratingIdFinal = rating.get(field(ratingIdName), String.class);
-        long finalTime = rating.get(field(effectiveDateName), Timestamp.class).toInstant().toEpochMilli();
-
-        return JsonRatingUtils.toJson(connectionResult(dsl, c ->
-                RatingJdbcFactory.ratingSet(method, new RatingConnectionProvider(c), officeId,
-                        ratingIdFinal, finalTime, finalTime, false)));
     }
 
     @Override
