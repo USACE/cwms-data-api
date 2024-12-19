@@ -1,45 +1,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.CREATE_AS_LRTS;
-import static cwms.cda.api.Controllers.CURSOR;
-import static cwms.cda.api.Controllers.DATE_FORMAT;
-import static cwms.cda.api.Controllers.DATUM;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.END_TIME_INCLUSIVE;
-import static cwms.cda.api.Controllers.EXAMPLE_DATE;
-import static cwms.cda.api.Controllers.FORMAT;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.MAX_VERSION;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_400;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.STORE_RULE;
-import static cwms.cda.api.Controllers.TIMESERIES;
-import static cwms.cda.api.Controllers.TIMEZONE;
-import static cwms.cda.api.Controllers.UNIT;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.VERSION;
-import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
-import static cwms.cda.api.Controllers.queryParamAsClass;
-import static cwms.cda.api.Controllers.queryParamAsZdt;
-import static cwms.cda.api.Controllers.requiredParam;
-import static cwms.cda.api.Controllers.requiredZdt;
+import static cwms.cda.api.Controllers.*;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -53,6 +15,7 @@ import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dao.TimeSeriesDeleteOptions;
 import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.data.dto.TimeSeriesWithDataEntryDate;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
@@ -83,7 +46,6 @@ import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
-    private static final String INCLUDE_ENTRY_DATE = "include-entry-date";
     public static final String TAG = "TimeSeries";
     public static final String STORE_RULE_DESC = "The business rule to use "
             + "when merging the incoming with existing data\n"
@@ -201,6 +163,9 @@ public class TimeSeriesController implements CrudHandler {
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
+            if (timeSeries instanceof TimeSeriesWithDataEntryDate) {
+                throw new IllegalArgumentException("Data Entry Date is not allowed in the request when storing data");
+            }
             dao.create(timeSeries, createAsLrts, storeRule, overrideProtection);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException ex) {
@@ -382,7 +347,9 @@ public class TimeSeriesController implements CrudHandler {
                         + "\n* `wml2` (only if name field is specified)"
                         + "\n* `json` (default)"),
                 @OpenApiParam(name = INCLUDE_ENTRY_DATE, type = Boolean.class, description = "Specifies "
-                    + "whether to include the data entry date in the response.  Default is false."),
+                    + "whether to include the data entry date of each value in the response. Including the data entry "
+                    + "date will increase the size of the array containing each data value from three to four."
+                    + " Default is false."),
                 @OpenApiParam(name = PAGE, description = "This end point can return large amounts "
                         + "of data as a series of pages. This parameter is used to describes the "
                         + "current location in the response stream.  This is an opaque "
@@ -566,6 +533,9 @@ public class TimeSeriesController implements CrudHandler {
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
+            if (timeSeries instanceof TimeSeriesWithDataEntryDate) {
+                throw new IllegalArgumentException("Data Entry Date is not allowed in the request when storing data");
+            }
 
             boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class)
                     .getOrDefault(false);

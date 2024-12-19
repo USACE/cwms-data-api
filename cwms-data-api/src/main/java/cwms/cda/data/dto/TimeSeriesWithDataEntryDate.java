@@ -49,70 +49,56 @@ import java.util.Objects;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
-public final class TimeSeriesWithDate extends TimeSeries {
+public final class TimeSeriesWithDataEntryDate extends TimeSeries {
 
-    private List<TimeSeriesWithDate.Record> values;
-
-	// list of TimeSeriesWithDate.Record, uses raw to avoid typing errors
-    @Override
-    public List getValues() {
-        return values;
-    }
-
-    TimeSeriesWithDate() {
+    // Default constructor for Jackson Deserialization
+    public TimeSeriesWithDataEntryDate() {
         super();
-        values = new ArrayList<>();
+        valuesWithEntryDate = new ArrayList<>();
     }
 
-    public TimeSeriesWithDate(TimeSeries timeSeries) {
+    public TimeSeriesWithDataEntryDate(TimeSeries timeSeries) {
         this(timeSeries.getPage(), timeSeries.getPageSize(), timeSeries.getTotal(), timeSeries.getName(),
                 timeSeries.getOfficeId(), timeSeries.getBegin(), timeSeries.getEnd(), timeSeries.getUnits(),
                 timeSeries.getInterval(), timeSeries.getVerticalDatumInfo(), timeSeries.getIntervalOffset(),
                 timeSeries.getTimeZone(), timeSeries.getVersionDate(), timeSeries.getDateVersionType());
-        values = new ArrayList<>();
+        valuesWithEntryDate = new ArrayList<>();
     }
 
-    public TimeSeriesWithDate(String page, int pageSize, Integer total, String name, String officeId,
-            ZonedDateTime begin, ZonedDateTime end, String units, Duration interval) {
-        this(page, pageSize, total, name, officeId, begin, end, units, interval, null, null,
-                null, null, null);
-        values = new ArrayList<>();
-    }
-
-    public TimeSeriesWithDate(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin,
-            ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, ZonedDateTime versionDate,
-            VersionType dateVersionType) {
-        this(page, pageSize, total, name, officeId, begin, end,  units, interval, info, null,
-                null, versionDate, dateVersionType);
-        values = new ArrayList<>();
-    }
-
-    public TimeSeriesWithDate(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin,
+    public TimeSeriesWithDataEntryDate(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin,
             ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, Long intervalOffset,
             String timeZone, ZonedDateTime versionDate, VersionType dateVersionType) {
         super(page, pageSize, total, name, officeId, begin, end, units, interval, info, intervalOffset,
                 timeZone, versionDate, dateVersionType);
-        values = new ArrayList<>();
+        valuesWithEntryDate = new ArrayList<>();
+    }
+
+    @JsonProperty(value = "values")
+    private List<TimeSeriesWithDataEntryDate.Record> valuesWithEntryDate;
+
+    @Override
+    public List<TimeSeries.Record> getValues() {
+        return new ArrayList<>(valuesWithEntryDate);
     }
 
     public void addValue(Timestamp dateTime, Double value, int qualityCode, Timestamp dataEntryDate) {
         // Set the current page, if not set
-        if ((page == null || page.isEmpty()) && (values == null || values.isEmpty())) {
+        if ((page == null || page.isEmpty()) && (valuesWithEntryDate == null || valuesWithEntryDate.isEmpty())) {
             page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
         }
-        if (pageSize > 0 && values.size() == pageSize) {
+        if (pageSize > 0 && valuesWithEntryDate.size() == pageSize) {
             nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
         } else {
-            values.add(new Record(dateTime, value, qualityCode, dataEntryDate));
+            valuesWithEntryDate.add(new Record(dateTime, value, qualityCode, dataEntryDate));
         }
     }
 
     @Override
     public List<Column> getValueColumnsJSON() {
-        return getColumnDescriptor();
+        return getColumnDescriptorWithEntryDate();
     }
 
-    private List<Column> getColumnDescriptor() {
+    private List<Column> getColumnDescriptorWithEntryDate() {
         List<Column> columns = new ArrayList<>();
         for (Field f: TimeSeries.Record.class.getDeclaredFields()) {
             JsonProperty field = f.getAnnotation(JsonProperty.class);
@@ -138,7 +124,7 @@ public final class TimeSeriesWithDate extends TimeSeries {
         @JsonProperty(value = "data-entry-date", index = 3)
         @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch), always UTC")
         @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-        Timestamp dataEntryDate;
+        private Timestamp dataEntryDate;
 
         // Default constructor for Jackson Deserialization
         public Record() {

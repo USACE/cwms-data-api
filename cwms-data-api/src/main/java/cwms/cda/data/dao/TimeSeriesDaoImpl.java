@@ -24,7 +24,7 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.TimeSeriesExtents;
-import cwms.cda.data.dto.TimeSeriesWithDate;
+import cwms.cda.data.dto.TimeSeriesWithDataEntryDate;
 import cwms.cda.data.dto.Tsv;
 import cwms.cda.data.dto.TsvDqu;
 import cwms.cda.data.dto.TsvId;
@@ -354,7 +354,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         versionDate, finalDateVersionType
                 );
             } else {
-                return new TimeSeriesWithDate(recordCursor, recordPageSize, tsMetadata.getValue("TOTAL",
+                return new TimeSeriesWithDataEntryDate(recordCursor, recordPageSize, tsMetadata.getValue("TOTAL",
                         Integer.class), tsMetadata.getValue("NAME", String.class),
                         tsMetadata.getValue("office_id", String.class),
                         beginTime, endTime, tsMetadata.getValue("units", String.class),
@@ -369,7 +369,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         });
 
         if (includeEntryDate) {
-            timeseries = new TimeSeriesWithDate(timeseries);
+            timeseries = new TimeSeriesWithDataEntryDate(timeseries);
         }
 
         // Now we're going to call the retrieve_ts_out_tab function to get the data and build an
@@ -461,7 +461,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             if (includeEntryDate) {
                 logger.fine(() -> query2.getSQL(ParamType.INLINED));
-                final TimeSeriesWithDate timeSeries = new TimeSeriesWithDate(timeseries);
+                final TimeSeriesWithDataEntryDate timeSeries = new TimeSeriesWithDataEntryDate(timeseries);
                 query2.forEach(tsRecord -> timeSeries.addValue(
                         tsRecord.getValue(dateTimeCol),
                         tsRecord.getValue(valueCol),

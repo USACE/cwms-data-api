@@ -75,6 +75,7 @@ public final class Controllers {
     public static final String UNIT_SYSTEM = "unit-system";
 
     public static final String TIMESERIES_CATEGORY_LIKE = "timeseries-category-like";
+    public static final String INCLUDE_ENTRY_DATE = "include-entry-date";
 
     public static final String LOCATION_CATEGORY_LIKE = "location-category-like";
     public static final String LOCATION_GROUP_LIKE = "location-group-like";

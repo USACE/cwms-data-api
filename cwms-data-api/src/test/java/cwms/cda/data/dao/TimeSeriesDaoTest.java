@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import cwms.cda.data.dto.TimeSeriesWithDate;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import org.jooq.impl.DSL;
@@ -169,7 +168,9 @@ public class TimeSeriesDaoTest
 			int count = 60 / 15; // do I need a +1?  ie should this be 12 or 13?
 			// Also, should end be the last point or the next interval?
 
-			TimeSeriesWithDate ts = new TimeSeriesWithDate(null, -1, 0, tsId, officeId, start, end, "m", Duration.ofMinutes(minutes));
+			TimeSeries ts = new TimeSeries(null, -1, 0, tsId,
+					officeId, start, end, "m", Duration.ofMinutes(minutes), null,
+					null, null, null, null);
 
 			ZonedDateTime next = start;
 			for(int i = 0; i < count; i++)

@@ -352,7 +352,6 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     @Test
     void test_include_data_entry_date() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        final String includeDataEntryDate = "include-entry-date";
 
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/spk/num_ts_create2.json");
@@ -369,20 +368,21 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
 
         // inserting the time series
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .body(tsData)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+        ;
 
         //     1675335600000 is Thursday, February 2, 2023 11:00:00 AM
         // fyi 1675422000000 is Friday, February 3, 2023 11:00:00 AM
@@ -398,7 +398,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.BEGIN, "2007-02-02T11:00:00Z")
             .queryParam(Controllers.END, "2010-02-03T11:00:00Z")
             .queryParam(Controllers.VERSION_DATE, "2021-06-20T08:00:00-0000[UTC]")
-            .queryParam(includeDataEntryDate, true)
+            .queryParam(Controllers.INCLUDE_ENTRY_DATE, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
