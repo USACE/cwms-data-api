@@ -124,7 +124,8 @@ public class TimeSeriesController implements CrudHandler {
 
     @OpenApi(
             description = "Used to create and save time-series data. Data to be stored must have "
-                    + "time stamps in UTC represented as epoch milliseconds ",
+                    + "time stamps in UTC represented as epoch milliseconds. If data entry date is included in the "
+                    + "request, it will be dropped. ",
             requestBody = @OpenApiRequestBody(
                     content = {
                         @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2),
@@ -162,10 +163,8 @@ public class TimeSeriesController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-            TimeSeries timeSeries = deserializeTimeSeries(ctx);
-            if (timeSeries instanceof TimeSeriesWithDataEntryDate) {
-                throw new IllegalArgumentException("Data Entry Date is not allowed in the request when storing data");
-            }
+            TimeSeriesWithDataEntryDate timeSeries = deserializeTimeSeries(ctx);
+            checkForEntryDate(timeSeries);
             dao.create(timeSeries, createAsLrts, storeRule, overrideProtection);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException ex) {
@@ -348,8 +347,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "\n* `json` (default)"),
                 @OpenApiParam(name = INCLUDE_ENTRY_DATE, type = Boolean.class, description = "Specifies "
                     + "whether to include the data entry date of each value in the response. Including the data entry "
-                    + "date will increase the size of the array containing each data value from three to four."
-                    + " Default is false."),
+                    + "date will increase the size of the array containing each data value from three to four, "
+                    + "changing the format of the response. Default is false."),
                 @OpenApiParam(name = PAGE, description = "This end point can return large amounts "
                         + "of data as a series of pages. This parameter is used to describes the "
                         + "current location in the response stream.  This is an opaque "
@@ -532,11 +531,8 @@ public class TimeSeriesController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-            TimeSeries timeSeries = deserializeTimeSeries(ctx);
-            if (timeSeries instanceof TimeSeriesWithDataEntryDate) {
-                throw new IllegalArgumentException("Data Entry Date is not allowed in the request when storing data");
-            }
-
+            TimeSeriesWithDataEntryDate timeSeries = deserializeTimeSeries(ctx);
+            checkForEntryDate(timeSeries);
             boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class)
                     .getOrDefault(false);
             StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class)
@@ -554,10 +550,18 @@ public class TimeSeriesController implements CrudHandler {
         }
     }
 
-    private TimeSeries deserializeTimeSeries(Context ctx) {
+    private TimeSeriesWithDataEntryDate deserializeTimeSeries(Context ctx) {
         String contentTypeHeader = ctx.req.getContentType();
-        ContentType contentType = Formats.parseHeader(contentTypeHeader, TimeSeries.class);
-        return Formats.parseContent(contentType, ctx.bodyAsInputStream(), TimeSeries.class);
+        ContentType contentType = Formats.parseHeader(contentTypeHeader, TimeSeriesWithDataEntryDate.class);
+        return Formats.parseContent(contentType, ctx.bodyAsInputStream(), TimeSeriesWithDataEntryDate.class);
+    }
+
+    private void checkForEntryDate(TimeSeriesWithDataEntryDate timeSeries) {
+        for (TimeSeries.Record rec : timeSeries.getValues()) {
+            if (((TimeSeriesWithDataEntryDate.Record) rec).getDataEntryDate() != null) {
+                throw new IllegalArgumentException("Data Entry Date is not allowed in the request when storing data");
+            }
+        }
     }
 
     /**

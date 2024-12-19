@@ -65,9 +65,9 @@ public final class TimeSeriesWithDataEntryDate extends TimeSeries {
         valuesWithEntryDate = new ArrayList<>();
     }
 
-    public TimeSeriesWithDataEntryDate(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin,
-            ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, Long intervalOffset,
-            String timeZone, ZonedDateTime versionDate, VersionType dateVersionType) {
+    public TimeSeriesWithDataEntryDate(String page, int pageSize, Integer total, String name, String officeId,
+            ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info,
+            Long intervalOffset, String timeZone, ZonedDateTime versionDate, VersionType dateVersionType) {
         super(page, pageSize, total, name, officeId, begin, end, units, interval, info, intervalOffset,
                 timeZone, versionDate, dateVersionType);
         valuesWithEntryDate = new ArrayList<>();
@@ -93,6 +93,7 @@ public final class TimeSeriesWithDataEntryDate extends TimeSeries {
         }
     }
 
+    @JsonProperty(value = "value-columns")
     @Override
     public List<Column> getValueColumnsJSON() {
         return getColumnDescriptorWithEntryDate();

@@ -197,9 +197,10 @@ public class TimeSeries extends CwmsDTOPaginated {
             description = "The columns of the time-series data array returned, this property is used to describe "
                     + "the data structure of the records array. Contains [name, ordinal, datatype]. "
                     + "Name corresponds to the variable described by the data, "
-                    + "ordinal is the order of the column in the list returned (starting at index 1), "
+                    + "ordinal is the order of the column in the data value array returned (starts at index 1), "
                     + "and datatype is the class name of the data type for the variable. Since the records array "
-                    + "can be of variable length, the column index value is used to identify the data in the array.",
+                    + "can be of variable length, the column index value is used to identify the position of the "
+                    + "data in the array.",
             accessMode = AccessMode.READ_ONLY)
     public List<Column> getValueColumnsJSON() {
         return getColumnDescriptor();
