@@ -79,7 +79,7 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     @ArraySchema(
             schema = @Schema(
-                    description = "List of retrieved time-series values. Contains [dateTime, value, qualityCode]. "
+                    description = "List of retrieved time-series values. The values-columns property describes the structure of the data value array. "
                             + "Refer to the value-columns property for more information.",
                     implementation = Record.class
             )

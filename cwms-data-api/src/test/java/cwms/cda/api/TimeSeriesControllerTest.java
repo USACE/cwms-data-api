@@ -222,7 +222,7 @@ class TimeSeriesControllerTest extends ControllerTest {
     @Test
     void testDeserializeTimeSeriesWithEntryDateFromFile() {
         InputStream inputStream = this.getClass()
-                .getResourceAsStream("/cwms/cda/api/lrl/1day_offset_version_date_roundtrip.json");
+                .getResourceAsStream("/cwms/cda/api/lrl/timeseries_with_data_entry_dates.json");
         ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeriesWithDataEntryDate.class);
         TimeSeriesWithDataEntryDate fakeTs = Formats.parseContent(contentType, inputStream, TimeSeriesWithDataEntryDate.class);
         String formatted = Formats.format(contentType, fakeTs);

@@ -439,7 +439,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
-                "/cwms/cda/api/lrl/1day_offset_version_date_roundtrip.json");
+                "/cwms/cda/api/lrl/timeseries_with_data_entry_dates.json");
         assertNotNull(resource);
 
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
