@@ -116,7 +116,7 @@ public class Formats {
     private String getFormatted(ContentType type, CwmsDTOBase toFormat) throws FormattingException {
         Objects.requireNonNull(toFormat, "Object to be formatted should not be null");
         formatters.keySet().forEach(k -> logger.fine(k::toString));
-        OutputFormatter outputFormatter = getOutputFormatter(type, toFormat.getClass());
+        OutputFormatter outputFormatter = getOutputFormatterInternal(type, toFormat.getClass());
 
         if (outputFormatter != null) {
             return outputFormatter.format(toFormat);
@@ -134,7 +134,7 @@ public class Formats {
             logger.finest(() -> key.toString());
         }
 
-        OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
+        OutputFormatter outputFormatter = getOutputFormatterInternal(type, rootType);
 
         if (outputFormatter != null) {
             return outputFormatter.format(dtos);
@@ -147,7 +147,7 @@ public class Formats {
 
     private <T extends CwmsDTOBase> T parseContentFromType(ContentType type, String content, Class<T> rootType)
             throws FormattingException {
-        OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
+        OutputFormatter outputFormatter = getOutputFormatterInternal(type, rootType);
         if (outputFormatter != null) {
             T retval = outputFormatter.parseContent(content, rootType);
             retval.validate();
@@ -161,7 +161,7 @@ public class Formats {
 
     private <T extends CwmsDTOBase> T parseContentFromType(ContentType type, InputStream content, Class<T> rootType)
             throws FormattingException {
-        OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
+        OutputFormatter outputFormatter = getOutputFormatterInternal(type, rootType);
         if (outputFormatter != null) {
             T retval = outputFormatter.parseContent(content, rootType);
             retval.validate();
@@ -175,7 +175,7 @@ public class Formats {
 
     private <T extends CwmsDTOBase> List<T> parseContentListFromType(ContentType type, String content, Class<T> rootType)
         throws FormattingException {
-        OutputFormatter outputFormatter = getOutputFormatter(type, rootType);
+        OutputFormatter outputFormatter = getOutputFormatterInternal(type, rootType);
         if (outputFormatter != null) {
             List<T> retval = outputFormatter.parseContentList(content, rootType);
             if (retval == null) {
@@ -192,7 +192,7 @@ public class Formats {
         }
     }
 
-    private OutputFormatter getOutputFormatter(ContentType type,
+    private OutputFormatter getOutputFormatterInternal(ContentType type,
                                                Class<? extends CwmsDTOBase> klass) {
         OutputFormatter outputFormatter = null;
         Map<Class<? extends CwmsDTOBase>, OutputFormatter> contentFormatters = formatters.get(type);
@@ -217,6 +217,10 @@ public class Formats {
             }
         }
         return outputFormatter;
+    }
+
+    public static OutputFormatter getOutputFormatter(ContentType ct, Class<? extends CwmsDTOBase> klass) {
+            return formats.getOutputFormatterInternal(ct, klass);
     }
 
     public static String format(ContentType type, CwmsDTOBase toFormat) throws FormattingException {
