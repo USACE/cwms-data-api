@@ -14,41 +14,38 @@ import org.jetbrains.annotations.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 
-final class ContentTypeAliasMap
-{
-	private final Map<String, ContentType> _contentTypeMap = new HashMap<>();
-	private static final Map<Class<? extends CwmsDTOBase>, ContentTypeAliasMap> ALIAS_MAP = new HashMap<>();
+final class ContentTypeAliasMap {
+    private final Map<ContentType, ContentType> contentTypeMap = new HashMap<>();
+    private static final Map<Class<? extends CwmsDTOBase>, ContentTypeAliasMap> ALIAS_MAP = new HashMap<>();
 
-	private ContentTypeAliasMap()
-	{
-	}
+    private ContentTypeAliasMap()
+    {
+    }
 
-	private ContentTypeAliasMap(Class<? extends CwmsDTOBase> dtoClass)
-	{
-		FormattableWith[] formats = dtoClass.getAnnotationsByType(FormattableWith.class);
-		for (FormattableWith format : formats)
-		{
-			ContentType type = new ContentType(format.contentType());
+    private ContentTypeAliasMap(Class<? extends CwmsDTOBase> dtoClass) {
+        FormattableWith[] formats = dtoClass.getAnnotationsByType(FormattableWith.class);
+        for (FormattableWith format : formats) {
+            ContentType type = new ContentType(format.contentType());
 
-			for (String alias : format.aliases())
-			{
-				_contentTypeMap.put(alias, type);
-			}
-		}
-	}
+            for (String alias : format.aliases()) {
+                contentTypeMap.put(new ContentType(alias), type);
+            }
+        }
+    }
 
-	public static ContentTypeAliasMap forDtoClass(@NotNull Class<? extends CwmsDTOBase> dtoClass)
-	{
-		return ALIAS_MAP.computeIfAbsent(dtoClass, ContentTypeAliasMap::new);
-	}
+    public static ContentTypeAliasMap forDtoClass(@NotNull Class<? extends CwmsDTOBase> dtoClass) {
+        return ALIAS_MAP.computeIfAbsent(dtoClass, ContentTypeAliasMap::new);
+    }
 
-	public static ContentTypeAliasMap empty()
-	{
-		return new ContentTypeAliasMap();
-	}
+    public static ContentTypeAliasMap empty() {
+        return new ContentTypeAliasMap();
+    }
 
-	public ContentType getContentType(String alias)
-	{
-		return _contentTypeMap.get(alias);
-	}
+    public ContentType getContentType(ContentType alias) {
+        return contentTypeMap.get(alias);
+    }
+
+    public ContentType getContentType(String alias) {
+        return contentTypeMap.get(new ContentType(alias));
+    }
 }
