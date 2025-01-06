@@ -15,7 +15,6 @@ import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dao.TimeSeriesDeleteOptions;
 import cwms.cda.data.dto.TimeSeries;
-import cwms.cda.data.dto.TimeSeriesWithDataEntryDate;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
@@ -30,6 +29,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -40,6 +41,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
@@ -163,11 +165,10 @@ public class TimeSeriesController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-            TimeSeriesWithDataEntryDate timeSeries = deserializeTimeSeries(ctx);
-            checkForEntryDate(timeSeries);
+            TimeSeries timeSeries = deserializeTimeSeries(ctx);
             dao.create(timeSeries, createAsLrts, storeRule, overrideProtection);
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (DataAccessException ex) {
+        } catch (DataAccessException | IOException ex) {
             CdaError re = new CdaError("Internal Error");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
@@ -531,8 +532,7 @@ public class TimeSeriesController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-            TimeSeriesWithDataEntryDate timeSeries = deserializeTimeSeries(ctx);
-            checkForEntryDate(timeSeries);
+            TimeSeries timeSeries = deserializeTimeSeries(ctx);
             boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class)
                     .getOrDefault(false);
             StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class)
@@ -543,25 +543,24 @@ public class TimeSeriesController implements CrudHandler {
             dao.store(timeSeries, createAsLrts, storeRule, overrideProtection);
 
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (DataAccessException ex) {
+        } catch (DataAccessException | IOException ex) {
             CdaError re = new CdaError("Internal Error");
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
-    private TimeSeriesWithDataEntryDate deserializeTimeSeries(Context ctx) {
+    private TimeSeries deserializeTimeSeries(Context ctx) throws IOException
+	{
         String contentTypeHeader = ctx.req.getContentType();
-        ContentType contentType = Formats.parseHeader(contentTypeHeader, TimeSeriesWithDataEntryDate.class);
-        return Formats.parseContent(contentType, ctx.bodyAsInputStream(), TimeSeriesWithDataEntryDate.class);
-    }
-
-    private void checkForEntryDate(TimeSeriesWithDataEntryDate timeSeries) {
-        for (TimeSeries.Record rec : timeSeries.getValues()) {
-            if (((TimeSeriesWithDataEntryDate.Record) rec).getDataEntryDate() != null) {
-                throw new IllegalArgumentException("Data Entry Date is not allowed in the request when storing data");
-            }
+        StringWriter writer = new StringWriter();
+        IOUtils.copy(ctx.bodyAsInputStream(), writer, StandardCharsets.UTF_8);
+        if (writer.toString().contains("data-entry-date"))
+        {
+            throw new IllegalArgumentException("Data entry date is not allowed in the request");
         }
+        ContentType contentType = Formats.parseHeader(contentTypeHeader, TimeSeries.class);
+        return Formats.parseContent(contentType, writer.toString(), TimeSeries.class);
     }
 
     /**
