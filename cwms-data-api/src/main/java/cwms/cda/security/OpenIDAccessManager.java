@@ -32,6 +32,7 @@ import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +43,8 @@ import org.jetbrains.annotations.NotNull;
 public class OpenIDAccessManager extends CdaAccessManager {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
     public static final String AUTHORIZATION = "Authorization";
+    public static final String CREATE_USERS_KEY = "cda.openid.create_users";
+    private static final boolean createUsers = true;// Boolean.parseBoolean(System.getProperty(CREATE_USERS_KEY,"false"));
     private JwtParser jwtParser = null;
     private OpenIDConfig config = null;
 
@@ -69,15 +72,25 @@ public class OpenIDAccessManager extends CdaAccessManager {
     private DataApiPrincipal getUserFromToken(Context ctx) throws CwmsAuthException {
         try {
             Jws<Claims> token = jwtParser.parseClaimsJws(getToken(ctx));
-            String username = token.getBody().get("preferred_username",String.class);
+            Claims claims = token.getBody();
+            final String issuer = claims.getIssuer();
+            final String subject = claims.getSubject();
+            final String username = issuer + "::" + subject;
             AuthDao dao = AuthDao.getInstance(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
-            String edipiStr = username.substring(username.lastIndexOf(".") + 1);
-            long edipi = Long.parseLong(edipiStr);
-            return dao.getPrincipalFromEdipi(edipi);
+            Optional<DataApiPrincipal> principal = dao.getPrincipalFromPrincipal(username);
+            if (principal.isPresent()) {
+                return principal.get();
+            } else if (createUsers) {
+                final String preferredUserName = claims.get("preferred_username", String.class);
+                final String givenName = claims.get("given_name", String.class);
+                return dao.createUser(preferredUserName,username,givenName);
+            } else {
+                throw new CwmsAuthException("Not Authorized",HttpServletResponse.SC_UNAUTHORIZED);
+            }
         } catch (NumberFormatException | JwtException ex) {
             throw new CwmsAuthException("JWT not valid",ex,HttpServletResponse.SC_UNAUTHORIZED);
         }
-    }
+    }    
 
     private String getToken(Context ctx) {
         String header = ctx.header(AUTHORIZATION);

@@ -17,6 +17,8 @@ import cwms.cda.security.Role;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import usace.cwms.db.jooq.codegen.packages.cwms_sec.UPDATE_USER_DATA;
+
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.Connection;
@@ -24,6 +26,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -65,6 +68,13 @@ public class AuthDao extends Dao<DataApiPrincipal> {
 
     private static final String USER_FOR_EDIPI =
         "select userid from cwms_20.at_sec_cwms_users where edipi = ?";
+
+    // NOTE: the column name *should* be principal_name. It was spelled incorrectly and never changed for the life of the schema.
+    private static final String USER_EXISTS =
+        "select userid from cwms_20.at_sec_cwms_users where principle_name = ?";
+
+    private static final String ADD_CWMS_USER = "CALL cwms_sec.create_user(?,?,?,?)";
+    private static final String UPDATE_INFO = "CALL cwms_upass.update_user_data(?,?,null,null,null,null,?)";
 
     public static final String CREATE_API_KEY = "insert into cwms_20.at_api_keys"
             + "(userid, key_name, apikey, created, expires) values(UPPER(?),?,?,?,?)";
@@ -240,6 +250,27 @@ public class AuthDao extends Dao<DataApiPrincipal> {
             } else {
                 throw ex;
             }
+        }
+    }
+
+    private String userForPrincipal(String principal) throws CwmsAuthException {
+        try {
+            return dsl.connectionResult(c -> {
+                setSessionForAuthCheck(c);
+                try (PreparedStatement userForEdipi = c.prepareStatement(USER_EXISTS)) {
+                    userForEdipi.setString(1, principal);
+                    try (ResultSet rs = userForEdipi.executeQuery()) {
+                        if (rs.next()) {
+                            return rs.getString(1);
+                        } else {
+                            return null;
+                        }
+                    }
+                }
+            });
+        } catch (DataAccessException ex) {
+            logger.atInfo().withCause(ex).log("Unable to lookup user.");
+            throw new CwmsAuthException("Unable to lookup user.", ex);
         }
     }
 
@@ -492,5 +523,52 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      */
     public void resetContext(DSLContext dslContext) {
         this.dsl = dslContext;
+    }
+
+    /**
+     * Returns a principal from user if that user exists. otherwise empty optional
+     * @param principal provider + subject principal to lookup.
+     * @return
+     * @throws CwmsAuthException if anything goes wrong with the database query.
+     */
+    public Optional<DataApiPrincipal> getPrincipalFromPrincipal(String principal) throws CwmsAuthException {
+        String user = userForPrincipal(principal);
+        if (user != null) {
+            Set<RouteRole> roles = this.getRolesForUser(user);
+            return Optional.of(new DataApiPrincipal(user, roles));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+
+    public DataApiPrincipal createUser(String username, String principal, String fullname) throws CwmsAuthException {
+        try {
+            dsl.connection(c -> {
+                setSessionForAuthCheck(c);
+                try (PreparedStatement createUser = c.prepareStatement(ADD_CWMS_USER);
+                     PreparedStatement updateData = c.prepareStatement(UPDATE_INFO)) {
+                    createUser.setString(1, username);
+                    createUser.setNull(2, Types.VARCHAR);
+                    createUser.setNull(3, Types.ARRAY, "CWMS_T_CHAR_32_ARRAY");
+                    createUser.setNull(4, Types.VARCHAR);
+                    createUser.execute();
+
+                    updateData.setString(1, username);
+                    updateData.setString(2,fullname);
+                    updateData.setString(3, principal);
+                    updateData.execute();
+                } 
+            });
+            Optional<DataApiPrincipal> apiPrincipal = getPrincipalFromPrincipal(principal);
+            if (apiPrincipal.isPresent()) {
+                return apiPrincipal.get();
+            } else {
+                throw new CwmsAuthException("User " + username + " was created, however no principal object could be created.");
+            }
+        } catch (DataAccessException ex) {
+            logger.atInfo().withCause(ex).log("Unable to create user " + username);
+            throw new CwmsAuthException("Unable to create user " + username, ex);
+        }
     }
 }

@@ -455,6 +455,7 @@ public class ApiServlet extends HttpServlet {
                 })
                 .routes(this::configureRoutes)
                 .javalinServlet();
+        logger.atInfo().log("Javalin initialized.");
     }
 
     private String obtainFullVersion(ServletConfig servletConfig) throws ServletException {
@@ -477,7 +478,6 @@ public class ApiServlet extends HttpServlet {
         } catch (ServiceNotFoundException err) {
             throw new RuntimeException("Unable to initialize access manager",err);
         }
-
     }
 
     protected void configureRoutes() {

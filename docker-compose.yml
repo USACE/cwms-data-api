@@ -1,55 +1,34 @@
-#name: cwms
 volumes:
   oracle_data_1:
   auth_data:
 services:
   db:
-    # if using gvenzl/oracle-xe you'll need to adjust the environment below
-    image: ${ORACLE_DOCKER_IMAGE}
-    volumes:
-      - oracle_data_1:/opt/oracle/oradata
+    image: registry-public.hecdev.net/cwms/database-ready-ora-23.5:latest-dev
     environment:
-      - ORACLE_PDB=CWMS
-      - ORACLE_PWD=badSYSpassword
-      - ORACLE_EDITION=enterprise
+      #- ORACLE_DATABASE=FREEPDB1
+      - ORACLE_PASSWORD=badSYSpassword
+      - CWMS_PASSWORD=simplecwmspasswD1
+      - OFFICE_ID=HQ
+      - OFFICE_EROC=s0
     ports:
       - "1521:1521"
     healthcheck:
-      test: ["CMD","tnsping", "CWMS"]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
+      test: ["CMD","tnsping", "FREEPDB1"]
+      interval: 30s
+      timeout: 50s
+      retries: 50
       start_period: 40m
-  db_install:
-    depends_on:
-      db:
-        condition: service_healthy
-    image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry.hecdev.net/cwms/schema_installer:23.03.16}
-    pull_policy: always
-    tty: true
-    environment:
-      - DB_HOST_PORT=db:1521
-      - DB_NAME=/CWMS
-      - CWMS_PASSWORD=simplecwmspasswD1
-      - SYS_PASSWORD=badSYSpassword
-      # set to HEC/q0 for any national system work
-      - OFFICE_ID=HEC
-      - OFFICE_EROC=q0
-      - INSTALLONCE=1
-      - QUIET=1
-    restart: "no"
-
   db_webuser_permissions:
-    image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry.hecdev.net/cwms/schema_installer:23.03.16}
+    image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry-public.hecdev.net/cwms/schema_installer:latest-dev}
     restart: "no"
     environment:
       - DB_HOST_PORT=db:1521
-      - DB_NAME=/CWMS
+      - DB_NAME=/FREEPDB1
       - CWMS_PASSWORD=simplecwmspasswD1
       - SYS_PASSWORD=badSYSpassword
       # set to HQ/q0 for any national system work
       - OFFICE_ID=HQ
-      - OFFICE_EROC=q0
+      - OFFICE_EROC=s0
       - INSTALLONCE=1
       - QUIET=1
     command: >
@@ -59,21 +38,17 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      db_install:
-        condition: service_completed_successfully
 
 
   data-api:
     depends_on:
       db:
         condition: service_healthy
-      db_install:
-        condition: service_completed_successfully
       db_webuser_permissions:
         condition: service_completed_successfully
       traefik:
         condition: service_healthy
-    image: cwms-rest-api:3.0-compose
+    image: cwms-rest-api:local-dev
     build:
       target: api
       context: .
@@ -85,18 +60,17 @@ services:
       - ./compose_files/tomcat/logging.properties:/usr/local/tomcat/conf/logging.properties:ro
     environment:
       - CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
-      - CDA_JDBC_URL=jdbc:oracle:thin:@db/CWMS
-      - CDA_JDBC_USERNAME=q0webtest
+      - CDA_JDBC_URL=jdbc:oracle:thin:@db/FREEPDB1
+      - CDA_JDBC_USERNAME=s0webtest
       - CDA_JDBC_PASSWORD=simplecwmspasswD1
       - CDA_POOL_INIT_SIZE=5
       - CDA_POOL_MAX_ACTIVE=10
       - CDA_POOL_MAX_IDLE=5
       - CDA_POOL_MIN_IDLE=2
       - cwms.dataapi.access.provider=MultipleAccessManager
-      - cwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID
+      - cwms.dataapi.access.providers=KeyAccessManager,OpenID
       - cwms.dataapi.access.openid.wellKnownUrl=https://auth.test:8444/auth/realms/cwms/.well-known/openid-configuration
       - cwms.dataapi.access.openid.issuer=https://auth.test:8444/auth/realms/cwms
-      - cwms.dataapi.access.openid.altAuthUrl=https://authc.test:8444
     expose:
       - 7000
     healthcheck:
@@ -145,7 +119,7 @@ services:
 
   # Proxy for HTTPS for OpenID
   traefik:
-    image: "traefik:v2.9"
+    image: "traefik:v3.3.1"
     container_name: "traefik"
     ports:
       - "81:81"
