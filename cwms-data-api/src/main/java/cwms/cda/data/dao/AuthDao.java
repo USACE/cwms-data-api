@@ -73,8 +73,8 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     private static final String USER_EXISTS =
         "select userid from cwms_20.at_sec_cwms_users where principle_name = ?";
 
-    private static final String ADD_CWMS_USER = "CALL cwms_sec.create_user(?,?,?,?)";
-    private static final String UPDATE_INFO = "CALL cwms_upass.update_user_data(?,?,null,null,null,null,?)";
+    private static final String ADD_CWMS_USER = "CALL cwms_20.cwms_sec.create_user(?,?,?,?)";
+    private static final String UPDATE_INFO = "CALL cwms_20.cwms_upass.update_user_data(?,?,null,null,null,null,?)";
 
     public static final String CREATE_API_KEY = "insert into cwms_20.at_api_keys"
             + "(userid, key_name, apikey, created, expires) values(UPPER(?),?,?,?,?)";
@@ -535,6 +535,9 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         String user = userForPrincipal(principal);
         if (user != null) {
             Set<RouteRole> roles = this.getRolesForUser(user);
+            // In this case "cac_auth" just means the user is an actually user verify by some sort of
+            // identify management system. E.g. "not an apikey"
+            roles.add(new Role("cac_auth"));
             return Optional.of(new DataApiPrincipal(user, roles));
         } else {
             return Optional.empty();
