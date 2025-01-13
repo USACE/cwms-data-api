@@ -662,7 +662,8 @@
       "alwaysDisplayInConsole": true,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
-        "https://cwms-data.test:8444/*"
+        "https://cwms-data.test:8444/*",
+        "https://localhost:5010/*"
       ],
       "webOrigins": [
         "*"
@@ -2291,6 +2292,8 @@
     {
       "username": "m5hectest",
       "enabled": true,
+      "email": "noreply@data.test",
+      "email_verified": true,
       "credentials": [
         {
           "type": "password",
