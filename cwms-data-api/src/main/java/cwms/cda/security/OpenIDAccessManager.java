@@ -83,7 +83,8 @@ public class OpenIDAccessManager extends CdaAccessManager {
             } else if (createUsers) {
                 final String preferredUserName = claims.get("preferred_username", String.class);
                 final String givenName = claims.get("given_name", String.class);
-                return dao.createUser(preferredUserName,username,givenName);
+                final String email = claims.get("email", String.class);
+                return dao.createUser(preferredUserName,username,givenName, email);
             } else {
                 throw new CwmsAuthException("Not Authorized",HttpServletResponse.SC_UNAUTHORIZED);
             }

@@ -74,7 +74,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         "select userid from cwms_20.at_sec_cwms_users where principle_name = ?";
 
     private static final String ADD_CWMS_USER = "CALL cwms_20.cwms_sec.create_user(?,?,?,?)";
-    private static final String UPDATE_INFO = "CALL cwms_20.cwms_upass.update_user_data(?,?,null,null,null,null,?)";
+    private static final String UPDATE_INFO = "CALL cwms_20.cwms_upass.update_user_data(?,?,null,null,null,?,?)";
 
     public static final String CREATE_API_KEY = "insert into cwms_20.at_api_keys"
             + "(userid, key_name, apikey, created, expires) values(UPPER(?),?,?,?,?)";
@@ -545,7 +545,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     }
 
 
-    public DataApiPrincipal createUser(String username, String principal, String fullname) throws CwmsAuthException {
+    public DataApiPrincipal createUser(String username, String principal, String fullname, String email) throws CwmsAuthException {
         try {
             dsl.connection(c -> {
                 setSessionForAuthCheck(c);
@@ -559,7 +559,8 @@ public class AuthDao extends Dao<DataApiPrincipal> {
 
                     updateData.setString(1, username);
                     updateData.setString(2,fullname);
-                    updateData.setString(3, principal);
+                    updateData.setString(3, email);
+                    updateData.setString(4, principal);
                     updateData.execute();
                 } 
             });
