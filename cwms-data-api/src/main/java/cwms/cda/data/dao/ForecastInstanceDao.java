@@ -9,8 +9,13 @@ import cwms.cda.data.dto.forecast.ForecastSpec;
 import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.helpers.ReplaceUtils;
+import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
+import usace.cwms.db.jooq.codegen.udt.records.BLOB_FILE_T;
+
 import java.util.TimeZone;
 import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
+import org.jooq.impl.DefaultBinding;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -111,21 +116,25 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     }
 
     public void create(ForecastInstance forecastInst) {
-        throw new UnsupportedFormatException("The Forecast API is not yet implemented in CWMS");
-//        String officeId = forecastInst.getSpec().getOfficeId();
-//        Timestamp forecastDate = Timestamp.from(forecastInst.getDateTime());
-//        Timestamp issueDate = Timestamp.from(forecastInst.getIssueDateTime());
-//        String forecastInfo = mapToJson(forecastInst.getMetadata());
-//        byte[] fileData = forecastInst.getFileData();
-//        BLOB_FILE_T blob = new BLOB_FILE_T(forecastInst.getFilename(), forecastInst.getFileMediaType(), OffsetDateTime.now(), 0L, fileData);
-//        connection(dsl, conn -> {
-//            setOffice(conn, officeId);
-//            DefaultBinding.THREAD_LOCAL.set(UTC_CALENDAR);
-//            CWMS_FCST_PACKAGE.call_STORE_FCST(DSL.using(conn).configuration(), forecastInst.getSpec().getSpecId(),
-//                    forecastInst.getSpec().getDesignator(), forecastDate, issueDate,
-//                    "UTC", forecastInst.getMaxAge(), forecastInst.getNotes(), forecastInfo,
-//                    blob, "F", "T", officeId);
-//        });
+       String officeId = forecastInst.getSpec().getOfficeId();
+       Timestamp forecastDate = Timestamp.from(forecastInst.getDateTime());
+       Timestamp issueDate = Timestamp.from(forecastInst.getIssueDateTime());
+       String forecastInfo = mapToJson(forecastInst.getMetadata());
+       byte[] fileData = forecastInst.getFileData();
+       BLOB_FILE_T blob = new BLOB_FILE_T();
+       blob.setFILENAME(forecastInst.getFilename());
+       blob.setMEDIA_TYPE(forecastInst.getFileMediaType());
+       blob.setDATA_ENTRY_DATE(OffsetDateTime.now());
+       blob.setQUALITY_CODE(0L);
+       blob.setTHE_BLOB(fileData);
+       connection(dsl, conn -> {
+           setOffice(conn, officeId);
+           DefaultBinding.THREAD_LOCAL.set(UTC_CALENDAR);
+           CWMS_FCST_PACKAGE.call_STORE_FCST(DSL.using(conn).configuration(), forecastInst.getSpec().getSpecId(),
+                   forecastInst.getSpec().getDesignator(), forecastDate, issueDate,
+                   "UTC", forecastInst.getMaxAge(), forecastInst.getNotes(), forecastInfo,
+                   blob, "F", "T", officeId);
+       });
     }
 
     private static String mapToJson(Map<String, String> metadata) {
@@ -283,13 +292,13 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
 
     public void delete(String office, String name, String designator,
             Instant forecastDate, Instant issueDate) {
-        throw new UnsupportedFormatException("The Forecast API is not yet implemented in CWMS");
-//        connection(dsl, conn -> {
-//            setOffice(conn, office);
-//            DefaultBinding.THREAD_LOCAL.set(UTC_CALENDAR);
-//            CWMS_FCST_PACKAGE.call_DELETE_FCST(DSL.using(conn).configuration(), name, designator,
-//                    Timestamp.from(forecastDate), Timestamp.from(issueDate), "UTC", office);
-//        });
+       connection(dsl, conn -> {
+           setOffice(conn, office);
+           
+           DefaultBinding.THREAD_LOCAL.set(UTC_CALENDAR);
+           CWMS_FCST_PACKAGE.call_DELETE_FCST(getDslContext(conn, office).configuration(), name, designator,
+                   Timestamp.from(forecastDate), Timestamp.from(issueDate), "UTC", office);
+       });
     }
 
     public void getFileBlob(String office, String name, String designator,
