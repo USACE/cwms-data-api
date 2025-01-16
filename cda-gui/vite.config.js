@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+    basePath: "/cwms-data",
     plugins: [react()],
     experimental: {
         renderBuiltUrl(filename, { hostType }) {
