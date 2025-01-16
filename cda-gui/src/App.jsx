@@ -2,7 +2,7 @@ import { Container, SiteWrapper, Button } from "@usace/groundwork";
 import "@usace/groundwork/dist/style.css";
 import links from "./nav-links";
 import { FaGithub } from "react-icons/fa";
-import LoginButton from "./components/LoginButton";
+// import LoginButton from "./components/LoginButton";
 import { getBasePath } from "./utils/base";
 import {
   BrowserRouter,
@@ -29,7 +29,8 @@ function App() {
         aboutText="Deliver vital engineering solutions, in collaboration with our partners, to secure our Nation, energize our economy, and reduce disaster risk. The official public website of the U.S. Army Corps of Engineers Hydrologic Engineering Center (HEC). For website corrections, write to Webmaster-HEC@usace.army.mil."
         navRight={
           <>
-            <LoginButton />
+            {/* TODO: Mike will look into this later  */}
+            {/* <LoginButton /> */}
             <Button
               missiontext="Corps Water Management System API"
               style="plain"
