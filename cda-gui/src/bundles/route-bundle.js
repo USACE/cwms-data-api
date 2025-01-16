@@ -5,13 +5,15 @@ import SwaggerUI from "../pages/swagger-ui";
 import RegExp from "../pages/regexp";
 import DataQuery from "../pages/data-query";
 
+const BASE_PATH = import.meta.env.BASE_PATH
+console.log("Base path", BASE_PATH)
 export default createRouteBundle({
-    "/cwms-data/": Home,
-    "/cwms-data/swagger-ui": SwaggerUI,
-    "/cwms-data/swagger-ui.html": SwaggerUI,
-    "/cwms-data/regexp.html": RegExp,
-    "/cwms-data/regexp": RegExp,
-    "/cwms-data/data-query": DataQuery,
+    [`/${BASE_PATH}/`]: Home,
+    [`/${BASE_PATH}/swagger-ui`]: SwaggerUI,
+    [`/${BASE_PATH}/swagger-ui.html`]: SwaggerUI,
+    [`/${BASE_PATH}/regexp.html`]: RegExp,
+    [`/${BASE_PATH}/regexp`]: RegExp,
+    [`/${BASE_PATH}/data-query`]: DataQuery,
     // "/location/:location": Location,
     "*": NotFound,
 });
