@@ -4,14 +4,14 @@ import react from '@vitejs/plugin-react'
 
 // https://vitejs.dev/config/
 export default defineConfig(({mode}) => {
-    const env = loadEnv(mode, process.cwd(), "");
-    const BASE_PATH = env?.BASE_PATH ?? "/cwms-data";
+    // const env = loadEnv(mode, process.cwd(), "");
+    // const BASE_PATH = env?.BASE_PATH ?? "/cwms-data";
     return {
-        base: BASE_PATH,
+        base: "./",
         plugins: [react()],
-        define: {
-            "import.meta.env.BASE_PATH": JSON.stringify(BASE_PATH)
-        },
+        // define: {
+        //     "import.meta.env.BASE_PATH": JSON.stringify(BASE_PATH)
+        // },
         experimental: {
             renderBuiltUrl(filename, { hostType }) {
                 console.log('render url', filename)
