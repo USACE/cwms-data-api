@@ -16,7 +16,6 @@ import Regexp from "./pages/regexp/index";
 import Breadcrumbs from "./components/Breadcrumbs";
 
 
-const BASE_PATH = getBasePath();
 
 function App() {
   return (
@@ -45,7 +44,7 @@ function App() {
       >
         <Container className="mt-2">
           <Breadcrumbs />
-          <BrowserRouter basename={BASE_PATH}>
+          <BrowserRouter>
             <Routes>
               <Route path={`/`} element={<Home />} />
               <Route path={`/swagger-ui`} element={<SwaggerUI />} />
