@@ -1,23 +1,27 @@
+import { getBasePath } from "./utils/base";
+
+const BASE_PATH = getBasePath()
+
 export default [
     {
         id: "home",
         text: "Home",
-        href: "./",
+        href: "/",
     },
     {
         id: "swagger",
         text: "API Docs",
-        href: "./swagger-ui",
+        href: "swagger-ui",
         children: [
             {
                 id: "swagger-ui",
                 text: "Swagger UI",
-                href: "./swagger-ui",
+                href: "swagger-ui",
             },
             {
                 id: "swagger-schema",
                 text: "Swagger Docs Schema",
-                href: "./swagger-docs",
+                href: "swagger-docs",
             },
         ],
     },
@@ -39,7 +43,7 @@ export default [
             {
                 id: "regex",
                 text: "Regular Expressions",
-                href: "./regexp",
+                href: "regexp",
             }
         ],
     },

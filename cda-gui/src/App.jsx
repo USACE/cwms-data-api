@@ -20,8 +20,7 @@ const BASE_PATH = getBasePath();
 
 function App() {
   return (
-    <div
-    >
+    <div>
       <SiteWrapper
         links={links}
         usaBanner={true}

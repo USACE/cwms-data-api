@@ -1,4 +1,5 @@
 import { UsaceBox } from "@usace/groundwork";
+import { Link } from "react-router-dom";
 
 function Home() {
   return (
@@ -10,6 +11,7 @@ function Home() {
       </UsaceBox>
       <UsaceBox title="Some Quick Notes">
         <div>
+            <Link to="/swagger-ui">Swagger UI</Link>
           <ul className="pl-5 list-disc list-outside [&_ul]:list-[revert]">
             <li>
               Dates and Intervals/Durations are always in either the ISO 8601 or
