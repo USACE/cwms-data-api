@@ -10,7 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@usace/groundwork": "^2.3.1",
+    "@tanstack/react-query": "^5.64.1",
+    "@usace/groundwork": "^3.10.1",
+    "ag-grid-community": "^33.0.4",
+    "ag-grid-react": "^33.0.4",
+    "cwmsjs": "^2.3.0-2024.12.10",
+    "dayjs": "^1.11.13",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",

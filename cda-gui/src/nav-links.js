@@ -1,6 +1,5 @@
 import { getBasePath } from "./utils/base";
 
-const BASE_PATH = getBasePath()
 
 export default [
     {
@@ -22,6 +21,18 @@ export default [
                 id: "swagger-schema",
                 text: "Swagger Docs Schema",
                 href: "swagger-docs",
+            },
+        ],
+    },
+    {
+        id: "tools",
+        text: "Tools",
+        href: "tools",
+        children: [
+            {
+                id: "data-query",
+                text: "Data Query",
+                href: "/data-query",
             },
         ],
     },
