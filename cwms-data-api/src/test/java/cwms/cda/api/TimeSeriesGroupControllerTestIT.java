@@ -291,7 +291,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body("description", equalTo(group.getDescription()))
             .body("assigned-time-series[0].timeseries-id", equalTo(timeSeriesId))
             .body("assigned-time-series[0].alias-id", equalTo("AliasId"))
-            .body("assigned-time-series[0].ref-ts-id", equalTo(timeSeriesId));
+            .body("assigned-time-series[0].ref-ts-id", equalTo(timeSeriesId))
+            .body("assigned-time-series[0].ts-code", nullValue());
         //Clear Assigned TS
         group.getAssignedTimeSeries().clear();
         groupXml = Formats.format(contentType, group);

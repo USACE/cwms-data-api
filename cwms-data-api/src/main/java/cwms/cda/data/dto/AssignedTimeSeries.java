@@ -26,6 +26,9 @@ package cwms.cda.data.dto;
 
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(value = {"ts-code"})
 public class AssignedTimeSeries extends CwmsDTOBase {
     private String officeId;
     private String timeseriesId;
