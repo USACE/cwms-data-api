@@ -211,7 +211,7 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
             if (attributes != null) {
                 fileName = (String) attributes[0];
                 mediaType = (String) attributes[1];
-                Blob blob = (Blob) attributes[4];
+                Blob blob = (Blob) attributes[5];
                 if (blob.length() > byteLimit) {
                     String param = "&%s=%s";
                     String utf8 = "UTF-8";
@@ -322,7 +322,7 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                                 if (mediaType == null) {
                                     mediaType = "application/octet-stream";
                                 }
-                                Blob blob = (Blob) attributes[4];
+                                Blob blob = (Blob) attributes[5];
                                 consumer.accept(blob, mediaType);
                                 return;
                             }
