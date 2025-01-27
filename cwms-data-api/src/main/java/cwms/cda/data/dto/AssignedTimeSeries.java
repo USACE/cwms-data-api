@@ -24,15 +24,10 @@
 
 package cwms.cda.data.dto;
 
-import java.math.BigDecimal;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
-@JsonIgnoreProperties(value = {"ts-code"})
 public class AssignedTimeSeries extends CwmsDTOBase {
     private String officeId;
     private String timeseriesId;
-    private BigDecimal tsCode;
     private String aliasId;
     private String refTsId;
     private Integer attribute;
@@ -42,11 +37,10 @@ public class AssignedTimeSeries extends CwmsDTOBase {
     }
 
 
-    public AssignedTimeSeries(String officeId, String timeseriesId, BigDecimal tsCode,
+    public AssignedTimeSeries(String officeId, String timeseriesId,
                               String aliasId, String refTsId, Integer attr) {
         this.officeId = officeId;
         this.timeseriesId = timeseriesId;
-        this.tsCode = tsCode;
         this.aliasId = aliasId;
         this.refTsId = refTsId;
         this.attribute = attr;
@@ -58,10 +52,6 @@ public class AssignedTimeSeries extends CwmsDTOBase {
 
     public String getTimeseriesId() {
         return timeseriesId;
-    }
-
-    public BigDecimal getTsCode() {
-        return tsCode;
     }
 
     public String getAliasId() {

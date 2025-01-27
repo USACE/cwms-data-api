@@ -199,7 +199,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             if (attrBD != null) {
                 attr = attrBD.intValue();
             }
-            retval = new AssignedTimeSeries(officeId, timeseriesId, tsCode, aliasId, refTsId, attr);
+            retval = new AssignedTimeSeries(officeId, timeseriesId, aliasId, refTsId, attr);
         }
 
         return retval;
