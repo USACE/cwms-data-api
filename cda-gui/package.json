@@ -16,9 +16,11 @@
     "ag-grid-react": "^33.0.4",
     "cwmsjs": "^2.3.0-2024.12.10",
     "dayjs": "^1.11.13",
+    "plotly.js": "^3.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",
+    "react-plotly.js": "^2.6.0",
     "react-router-dom": "^7.1.2",
     "swagger-ui-dist": "^5.17.7"
   },
