@@ -160,7 +160,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
 
         group = new TimeSeriesGroup(category, OFFICE_ID, GROUP_ID, "USACE Include group", null, TS_ID);
         List<AssignedTimeSeries> tsList = Collections
-                .singletonList(new AssignedTimeSeries(OFFICE_ID, TS_ID, null, null, TS_ID, 0));
+                .singletonList(new AssignedTimeSeries(OFFICE_ID, TS_ID, null, TS_ID, 0));
         group = new TimeSeriesGroup(group, tsList);
         json = JsonV1.buildObjectMapper().writeValueAsString(group);
 
