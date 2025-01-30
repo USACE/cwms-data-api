@@ -1,9 +1,10 @@
 import { UsaceBox, Skeleton, Badge, Accordion } from "@usace/groundwork";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AgGridReact } from "ag-grid-react";
+import { CsvExportModule } from 'ag-grid-community';
 import { ClientSideRowModelModule } from "ag-grid-community";
-import Plot from 'react-plotly.js'; // Import Plotly component
+import Plot from 'react-plotly.js'; 
 
 import dayjs from "dayjs";
 import Controls from "./components/Controls";
@@ -22,13 +23,15 @@ export default function HydrologicQuery() {
   const [office, setOffice] = useState("SWF");
   const [beginDateTime, setBeginDateTime] = useState(dayjs().subtract(1, "day"));
   const [endDateTime, setEndDateTime] = useState(dayjs());
-  const [view, setView] = useState("table"); // Added view state (table or graph)
+  const [view, setView] = useState("table"); 
 
   const v2_config = new Configuration({
     headers: {
       accept: "application/json;version=2",
     },
   });
+
+  const gridApi = useRef(null);
 
   const ts_api = new TimeSeriesApi(v2_config);
 
@@ -117,6 +120,8 @@ export default function HydrologicQuery() {
       },
     ];
 
+    
+
     timeseriesData.tsids.forEach((series, index) => {
       const seriesName = tsids[index];
       columnDefs.push({
@@ -157,6 +162,14 @@ export default function HydrologicQuery() {
       };
     });
   }, [timeseriesData, tsids]);
+
+  const handleDownloadCSV = () => {
+  if (gridApi.current && gridApi.current.api) {
+    gridApi.current.api.exportDataAsCsv();
+  } else {
+    console.error("Grid API not available");
+  }
+  };
 
   if (error) return <div>Error: {error.message}</div>;
 
@@ -213,6 +226,7 @@ export default function HydrologicQuery() {
             >
               <option value="Elev">Elevation</option>
               <option value="Precip-INC">Precipitation</option>
+              <option value="Evap-Project">Evaporation</option>
               <option value="Flow-In">Inflow</option>
               <option value="Flow-Out">Outflow</option>
             </select>
@@ -300,7 +314,21 @@ export default function HydrologicQuery() {
             {isPending ? (
               <Skeleton type="card" className="w-full h-full" />
             ) : (
-              <AgGridReact columnDefs={columns} rowData={rowData} modules={[ClientSideRowModelModule]} />
+              <>
+                {/* Add a button to download the CSV when in table view */}
+                <button 
+                  onClick={handleDownloadCSV} 
+                  className="mb-4 bg-blue-500 text-white px-4 py-2 rounded"
+                >
+                  Download CSV
+                </button>
+                <AgGridReact 
+                  columnDefs={columns} 
+                  rowData={rowData} 
+                  modules={[ClientSideRowModelModule, CsvExportModule]} 
+                  ref={gridApi} // Ensure the ref is correctly attached
+                />
+              </>
             )}
           </div>
         )}

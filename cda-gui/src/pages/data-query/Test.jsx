@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AgGridReact } from "ag-grid-react";
 import { ClientSideRowModelModule } from "ag-grid-community";
+import Plot from 'react-plotly.js'; // Import Plotly component
 
 import dayjs from "dayjs";
 import Controls from "./components/Controls";
@@ -18,10 +19,10 @@ export default function HydrologicQuery() {
   const [location, setLocation] = useState("ALAT2");
   const [parameter, setParameter] = useState("Elev.Inst");
   const [interval, setInterval] = useState("Hourly"); 
-  
   const [office, setOffice] = useState("SWF");
   const [beginDateTime, setBeginDateTime] = useState(dayjs().subtract(1, "day"));
   const [endDateTime, setEndDateTime] = useState(dayjs());
+  const [view, setView] = useState("table"); // Added view state (table or graph)
 
   const v2_config = new Configuration({
     headers: {
@@ -31,7 +32,6 @@ export default function HydrologicQuery() {
 
   const ts_api = new TimeSeriesApi(v2_config);
 
-  // Define how different parameters should change based on the selected interval
   const parameterIntervalMapping = {
     "Elev": {
       Hourly: "Inst.1Hour.0.Decodes-Rev",
@@ -65,7 +65,6 @@ export default function HydrologicQuery() {
       Hourly: "Inst.1Hour.0.Decodes-Rev",
       Daily: "Inst.0.Rev-SCADA",
     },
-    // Add more mappings as necessary
   };
 
   useEffect(() => {
@@ -146,6 +145,19 @@ export default function HydrologicQuery() {
     return tableDates;
   }, [timeseriesData, tsids]);
 
+  const graphData = useMemo(() => {
+    if (!timeseriesData) return [];
+    return timeseriesData.tsids.map((series, index) => {
+      return {
+        x: timeseriesData.dates.map((date) => dayjs(date).format("YYYY-MM-DD HH:mm:ss")),
+        y: timeseriesData.dates.map((date) => timeseriesData.values[date]?.[index]),
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: `${tsids[index].split(".")[1]} (${series.units})`,
+      };
+    });
+  }, [timeseriesData, tsids]);
+
   if (error) return <div>Error: {error.message}</div>;
 
   return (
@@ -158,8 +170,8 @@ export default function HydrologicQuery() {
               id="location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              style={{ paddingLeft: '10px', paddingRight: '10px', minWidth: '150px', width: 'auto' }}
             >
-              
               <option value="ALAT2">Aquilla  </option>
               <option value="TBLT2">  BA Steinhagen</option>
               <option value="BDWT2">  Bardwell</option>
@@ -187,7 +199,7 @@ export default function HydrologicQuery() {
               <option value="TBRT2">  Twin Buttes</option>   
               <option value="ACTT2">  Waco</option>    
               <option value="WTYT2">  Whitney</option>   
-              <option value="TXKT2">  Wright Patman</option>   
+              <option value="TXKT2">  Wright Patman</option> 
             </select>
           </div>
 
@@ -197,6 +209,7 @@ export default function HydrologicQuery() {
               id="parameter"
               value={parameter}
               onChange={(e) => setParameter(e.target.value)}
+              style={{ paddingLeft: '10px', paddingRight: '10px', minWidth: '120px', width: 'auto' }}
             >
               <option value="Elev">Elevation</option>
               <option value="Precip-INC">Precipitation</option>
@@ -211,9 +224,23 @@ export default function HydrologicQuery() {
               id="interval"
               value={interval}
               onChange={(e) => setInterval(e.target.value)}
+              style={{ paddingLeft: '10px', paddingRight: '10px', minWidth: '100px', width: 'auto' }}
             >
               <option value="Hourly">Hourly</option>
               <option value="Daily">Daily</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="view">Select View: </label>
+            <select
+              id="view"
+              value={view}
+              onChange={(e) => setView(e.target.value)}
+              style={{ paddingLeft: '10px', paddingRight: '10px', minWidth: '90px', width: 'auto' }}
+            >
+              <option value="table">Table</option>
+              <option value="graph">Graph</option>
             </select>
           </div>
         </div>
@@ -250,15 +277,34 @@ export default function HydrologicQuery() {
           </div>
         )}
 
-        <div className="mt-2 ag-theme-quartz w-full" style={{ height: 500 }}>
-          {isPending ? (
-            <Skeleton type="card" className="w-full h-full" />
-          ) : (
-            <AgGridReact columnDefs={columns} rowData={rowData} modules={[ClientSideRowModelModule]} />
-          )}
-        </div>
+        {/* Conditional Rendering for Table or Graph */}
+        {view === "graph" ? (
+          <div className="mt-2" style={{ height: 500 }}>
+            {isPending ? (
+              <Skeleton type="card" className="w-full h-full" />
+            ) : (
+              <Plot
+                data={graphData}
+                layout={{
+                  title: "Time Series Data",
+                  xaxis: { title: "Date" },
+                  yaxis: { title: "Value" },
+                }}
+                useResizeHandler={true}
+                style={{ width: "100%", height: "100%" }}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="mt-2 ag-theme-quartz w-full" style={{ height: 500 }}>
+            {isPending ? (
+              <Skeleton type="card" className="w-full h-full" />
+            ) : (
+              <AgGridReact columnDefs={columns} rowData={rowData} modules={[ClientSideRowModelModule]} />
+            )}
+          </div>
+        )}
       </UsaceBox>
-      <br />
     </div>
   );
 }
