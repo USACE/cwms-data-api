@@ -290,8 +290,6 @@ export default function HydrologicQuery() {
             </Accordion>
           </div>
         )}
-
-        {/* Conditional Rendering for Table or Graph */}
         {view === "graph" ? (
           <div className="mt-2" style={{ height: 500 }}>
             {isPending ? (
@@ -315,7 +313,6 @@ export default function HydrologicQuery() {
               <Skeleton type="card" className="w-full h-full" />
             ) : (
               <>
-                {/* Add a button to download the CSV when in table view */}
                 <button 
                   onClick={handleDownloadCSV} 
                   className="mb-4 bg-blue-500 text-white px-4 py-2 rounded"
@@ -326,7 +323,7 @@ export default function HydrologicQuery() {
                   columnDefs={columns} 
                   rowData={rowData} 
                   modules={[ClientSideRowModelModule, CsvExportModule]} 
-                  ref={gridApi} // Ensure the ref is correctly attached
+                  ref={gridApi} 
                 />
               </>
             )}
