@@ -8,6 +8,8 @@ import cwms.cda.formatters.UnsupportedFormatException;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
+import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
+
 import org.apache.commons.io.IOUtils;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
@@ -31,7 +33,6 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
-@Disabled("Full implementation not in available database schemas.")
 public class ForecastSpecControllerTestIT extends DataApiTestIT {
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE = "SPK";
@@ -73,16 +74,15 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
     }
 
     static void deleteSpec() throws SQLException {
-        throw new UnsupportedFormatException("The Forecast API is not yet implemented in CWMS");
-//        try {
-//            CwmsDataApiSetupCallback.getDatabaseLink()
-//                    .connection(c -> {
-//                        CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), SPEC_ID, designator,
-//                                DeleteRule.DELETE_ALL.getRule(), OFFICE);
-//                    });
-//        } catch (DataAccessException e) {
-//            LOGGER.atFine().withCause(e).log("Couldn't clean up forecast spec before executing tests. Probably didn't exist");
-//        }
+       try {
+           CwmsDataApiSetupCallback.getDatabaseLink()
+                   .connection(c -> {
+                       CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), SPEC_ID, designator,
+                               DeleteRule.DELETE_ALL.getRule(), OFFICE);
+                   });
+       } catch (DataAccessException e) {
+           LOGGER.atFine().withCause(e).log("Couldn't clean up forecast spec before executing tests. Probably didn't exist");
+       }
     }
 
 
