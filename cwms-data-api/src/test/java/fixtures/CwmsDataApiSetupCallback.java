@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.security.KeyException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,11 +19,13 @@ import mil.army.usace.hec.test.database.TeamCityUtilities;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.data.dao.Dao;
+import cwms.cda.security.OpenIDAccessManagerProvider;
 import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
@@ -38,6 +41,7 @@ import static org.hamcrest.Matchers.is;
 
 
 @SuppressWarnings("rawtypes")
+@ExtendWith(KeyCloakExtension.class)
 public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallback {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -137,6 +141,11 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             System.setProperty("CDA_JDBC_URL", jdbcUrl);
             System.setProperty("CDA_JDBC_USERNAME", webUser);
             System.setProperty("CDA_JDBC_PASSWORD", pw);
+
+            // OIDC properties
+            System.setProperty("cwms.dataapi.access.providers","KeyAccessManager,OpenID,CwmsAccessManager");
+            System.setProperty(OpenIDAccessManagerProvider.WELL_KNOWN_PROPERTY,KeyCloakExtension.getOidcWellKnown());
+            System.setProperty(OpenIDAccessManagerProvider.ISSUER_PROPERTY,KeyCloakExtension.getIssuer());
 
             logger.atInfo().log("warFile property:" + System.getProperty("warFile"));
 

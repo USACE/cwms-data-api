@@ -2303,6 +2303,22 @@
       "realmRoles": [
           "cwms_user"
       ]
+    },
+    {
+      "username": "q0hecoidc",
+      "enabled": true,
+      "email": "noreply-oidc@data.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "q0hecoidc"
+      }
+      ],
+      "realmRoles": [
+          "cwms_user",
+          "new_user"
+      ]
     }
   ]
 }
