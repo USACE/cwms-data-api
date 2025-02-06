@@ -1,4 +1,4 @@
-import { UsaceBox, Skeleton, Badge, Accordion } from "@usace/groundwork";
+import { UsaceBox, Skeleton, Badge, Accordion, Button } from "@usace/groundwork";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AgGridReact } from "ag-grid-react";
@@ -135,7 +135,7 @@ export default function HydrologicQuery() {
           .then(async (r) => {
             if (r.raw.ok) {
                 let _data = await r.raw.json();
-                return fetchAllTSData(_data)
+                return await fetchAllTSData(_data)
             }
             else return { name: tsid, values: [], message: r.raw.text };
           })
@@ -356,26 +356,30 @@ export default function HydrologicQuery() {
             )}
           </div>
         ) : (
-          <div className="mt-2 ag-theme-quartz w-full" style={{ height: 500 }}>
+            <>
+                        <Button 
+                  onClick={handleDownloadCSV} 
+                  className={`mb-4 bg-blue-500 text-white px-4 py-2 rounded ${!timeseriesData?.tsids.length || isPending ? "hidden": ""}`}
+                >
+                  Download CSV
+             </Button>
+          <div className="mt-2 ag-theme-quartz w-full h-[70vh]">
+
             {isPending ? (
               <Skeleton type="card" className="w-full h-full" />
             ) : (
               <>
-                <button 
-                  onClick={handleDownloadCSV} 
-                  className="mb-4 bg-blue-500 text-white px-4 py-2 rounded"
-                >
-                  Download CSV
-                </button>
                 <AgGridReact 
                   columnDefs={columns} 
                   rowData={rowData} 
                   modules={[ClientSideRowModelModule, CsvExportModule]} 
                   ref={gridApi} 
+                  
                 />
               </>
             )}
           </div>
+          </>
         )}
       </UsaceBox>
     </div>
