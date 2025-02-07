@@ -181,6 +181,8 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.servers.Server;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -276,6 +278,7 @@ public class ApiServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     JavalinServlet javalin = null;
+    private String APP_CONTEXT;
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
@@ -315,10 +318,9 @@ public class ApiServlet extends HttpServlet {
         om.registerModule(new JavaTimeModule());
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
-        String context = this.getServletContext().getContextPath();
+        APP_CONTEXT = this.getServletContext().getContextPath();
         javalin = Javalin.createStandalone(config -> {
                     config.defaultContentType = "application/json";
-                    config.contextPath = context;
                     getOpenApiOptions(config);
                     config.autogenerateEtags = true;
                     config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
@@ -876,10 +878,12 @@ public class ApiServlet extends HttpServlet {
         });
 
         config.accessManager(am);
-
+        List<Server> servers = new ArrayList<>();
+        servers.add(new Server().url(APP_CONTEXT));
         OpenApiOptions ops =
             new OpenApiOptions(
                 () -> new OpenAPI().components(components)
+                                   .servers(servers)
                                    .info(applicationInfo)
                                    .addSecurityItem(new SecurityRequirement().addList(provider))
         );

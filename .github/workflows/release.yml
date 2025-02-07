@@ -50,9 +50,10 @@ jobs:
           java-version: '8'
           cache: 'gradle'
       - name: Set version
-        if: inputs.nightly
+        if: inputs.nightly == true
         run: echo "VERSION=${{inputs.branch}}-nightly" >> $GITHUB_ENV
       - name: Set version
+        if: inputs.nightly == false
         run: echo "VERSION=${{inputs.branch}}" >> $GITHUB_ENV
       - name: show version
         run: echo ${VERSION}

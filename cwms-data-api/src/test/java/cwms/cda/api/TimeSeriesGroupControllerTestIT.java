@@ -44,9 +44,7 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -59,15 +57,12 @@ import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matchers;
 import org.jooq.Configuration;
 import org.jooq.impl.DSL;
-import org.jooq.util.oracle.OracleDSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.formatBool;
@@ -231,8 +226,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             "sharedTsAliasId", timeSeriesId);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
-        BigDecimal tsCode = getTsCode(officeId, timeSeriesId);
-        assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, tsCode, "AliasId", timeSeriesId, 1));
+        assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, "AliasId", timeSeriesId, 1));
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
@@ -291,7 +285,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body("description", equalTo(group.getDescription()))
             .body("assigned-time-series[0].timeseries-id", equalTo(timeSeriesId))
             .body("assigned-time-series[0].alias-id", equalTo("AliasId"))
-            .body("assigned-time-series[0].ref-ts-id", equalTo(timeSeriesId));
+            .body("assigned-time-series[0].ref-ts-id", equalTo(timeSeriesId))
+            .body("assigned-time-series[0].ts-code", nullValue());
         //Clear Assigned TS
         group.getAssignedTimeSeries().clear();
         groupXml = Formats.format(contentType, group);
@@ -381,8 +376,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                 "sharedTsAliasId", timeSeriesId);
         TimeSeriesGroup group4 = new TimeSeriesGroup(group, null);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
-        BigDecimal tsCode = getTsCode(officeId, timeSeriesId);
-        assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, tsCode, "AliasId", timeSeriesId, 1));
+        assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, "AliasId", timeSeriesId, 1));
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
         String groupXml = Formats.format(contentType, group);
         groupsToCleanup.add(group);
@@ -707,15 +701,6 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    private static BigDecimal getTsCode(String officeId, String timeSeriesId) throws SQLException {
-        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        return db.connection(c -> {
-            Configuration configuration = OracleDSL.using(c).configuration();
-            BigDecimal officeCode = CWMS_UTIL_PACKAGE.call_GET_OFFICE_CODE(configuration, officeId);
-            return CWMS_TS_PACKAGE.call_GET_TS_CODE(configuration, timeSeriesId, officeCode);
-        }, db.getPdUser());
-    }
-
     @Test
     void test_rename_group() throws Exception {
         String officeId = user.getOperatingOffice();
@@ -728,8 +713,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             "sharedTsAliasId", timeSeriesId);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
-        BigDecimal tsCode = getTsCode(officeId, timeSeriesId);
-        assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, tsCode, "AliasId", timeSeriesId, 1));
+        assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, "AliasId", timeSeriesId, 1));
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
@@ -867,7 +851,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_add_assigned_locs() throws Exception {
+    void test_add_assigned_locs() {
         String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_add_assigned_locs", "IntegrationTesting");
@@ -875,8 +859,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             "sharedTsAliasId", timeSeriesId);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
-        BigDecimal tsCode = getTsCode(officeId, timeSeriesId);
-        assignedTimeSeries.add(new AssignedTimeSeries(officeId, timeSeriesId, tsCode, "AliasId", timeSeriesId, 1));
+        assignedTimeSeries.add(new AssignedTimeSeries(officeId, timeSeriesId, "AliasId", timeSeriesId, 1));
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
@@ -915,8 +898,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED));
         assignedTimeSeries.clear();
         String timeSeriesId2 = "Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda";
-        BigDecimal tsCode2 = getTsCode(officeId, timeSeriesId2);
-        assignedTimeSeries.add(new AssignedTimeSeries(officeId, timeSeriesId2, tsCode2, "AliasId2", timeSeriesId2, 2));
+        assignedTimeSeries.add(new AssignedTimeSeries(officeId, timeSeriesId2, "AliasId2", timeSeriesId2, 2));
         groupXml = Formats.format(contentType, group);
         //Add Assigned Locs
         given()
@@ -1056,7 +1038,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String tsId = ts.get("name").asText();
         TimeSeriesCategory category = new TimeSeriesCategory(CWMS_OFFICE, categoryName, "Default");
         TimeSeriesGroup group = new TimeSeriesGroup(category, CWMS_OFFICE, groupId, "All Time Series", null, null);
-        AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null, null);
+        AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
         TimeSeriesGroup newGroup = new TimeSeriesGroup(group, Collections.singletonList(assignedTimeSeries));
 
         String newGroupJson = Formats.format(new ContentType(Formats.JSONV1), newGroup);
@@ -1186,8 +1168,8 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String tsId2 = ts2.get("name").asText();
         TimeSeriesCategory category = new TimeSeriesCategory(CWMS_OFFICE, categoryName, "Default");
         TimeSeriesGroup group = new TimeSeriesGroup(category, CWMS_OFFICE, groupId, "All Time Series", null, null);
-        AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null, null);
-        AssignedTimeSeries assignedTimeSeries2 = new AssignedTimeSeries(officeId, tsId2, null, null, null, null);
+        AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
+        AssignedTimeSeries assignedTimeSeries2 = new AssignedTimeSeries(officeId, tsId2, null, null, null);
         TimeSeriesGroup newGroup = new TimeSeriesGroup(group, Arrays.asList(assignedTimeSeries2, assignedTimeSeries));
 
         String newGroupJson2 = Formats.format(new ContentType(Formats.JSONV1), newGroup);
@@ -1256,7 +1238,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
         TimeSeriesCategory category = new TimeSeriesCategory(CWMS_OFFICE, "Default", "Default");
         TimeSeriesGroup districtGroup = new TimeSeriesGroup(category, CWMS_OFFICE, "Default", "All Time Series", null, null);
-        AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null, null);
+        AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
         TimeSeriesGroup newDistrictGroup = new TimeSeriesGroup(districtGroup, Collections.singletonList(assignedTimeSeries));
         groupsToCleanup.add(newDistrictGroup);
 
@@ -1348,8 +1330,7 @@ class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                 "sharedTsAliasId", timeSeriesId);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
-        BigDecimal tsCode = getTsCode(officeId, timeSeriesId);
-        assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, tsCode, "AliasId", timeSeriesId, 1));
+        assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, "AliasId", timeSeriesId, 1));
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
         String groupXml = Formats.format(contentType, group);
         //Create Group
