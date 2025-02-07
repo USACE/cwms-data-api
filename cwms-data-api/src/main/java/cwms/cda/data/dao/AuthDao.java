@@ -527,6 +527,9 @@ public class AuthDao extends Dao<DataApiPrincipal> {
 
     /**
      * Returns a principal from user if that user exists. otherwise empty optional
+     *
+     * Uses the "principle" column directly with the provided value as-is.
+     *
      * @param principal provider + subject principal to lookup.
      * @return
      * @throws CwmsAuthException if anything goes wrong with the database query.

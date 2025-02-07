@@ -69,6 +69,7 @@ services:
       - CDA_POOL_MIN_IDLE=2
       - cwms.dataapi.access.provider=MultipleAccessManager
       - cwms.dataapi.access.providers=KeyAccessManager,OpenID
+      - cwms.dataapi.access.openid.create_users=true
       - cwms.dataapi.access.openid.wellKnownUrl=https://auth.test:8444/auth/realms/cwms/.well-known/openid-configuration
       - cwms.dataapi.access.openid.issuer=https://auth.test:8444/auth/realms/cwms
     expose:

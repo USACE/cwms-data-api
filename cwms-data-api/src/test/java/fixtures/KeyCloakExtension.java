@@ -123,7 +123,7 @@ public final class KeyCloakExtension implements BeforeAllCallback {
     }
     
     /**
-     * Retrieve the Access token for the user
+     * Retrieve the Access token for the user.
      * @param username
      * @param password
      * @return Access token only

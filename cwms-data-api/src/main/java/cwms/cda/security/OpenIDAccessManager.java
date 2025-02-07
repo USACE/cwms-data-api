@@ -43,8 +43,14 @@ import org.jetbrains.annotations.NotNull;
 public class OpenIDAccessManager extends CdaAccessManager {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
     public static final String AUTHORIZATION = "Authorization";
-    public static final String CREATE_USERS_KEY = "cda.openid.create_users";
-    private static final boolean createUsers = true;// Boolean.parseBoolean(System.getProperty(CREATE_USERS_KEY,"false"));
+    public static final String CREATE_USERS_KEY = "cwms.dataapi.access.openid.create_users";
+    public static final String EMAIL_CLAIM = "email";
+    public static final String PREFERRED_USERNAME_CLAIM = "preferred_username";
+    public static final String GIVEN_NAME_CLAIM = "given_name";
+
+
+    private static final boolean CREATE_USERS = Boolean.parseBoolean(System.getProperty(CREATE_USERS_KEY,"true"));
+
     private JwtParser jwtParser = null;
     private OpenIDConfig config = null;
 
@@ -75,23 +81,23 @@ public class OpenIDAccessManager extends CdaAccessManager {
             Claims claims = token.getBody();
             final String issuer = claims.getIssuer();
             final String subject = claims.getSubject();
-            final String username = issuer + "::" + subject;
-            AuthDao dao = AuthDao.getInstance(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
-            Optional<DataApiPrincipal> principal = dao.getPrincipalFromPrincipal(username);
+            final String oidcPrincipal = issuer + "::" + subject;
+            AuthDao dao = AuthDao.getInstance(JooqDao.getDslContext(ctx), ctx.attribute(ApiServlet.OFFICE_ID));
+            Optional<DataApiPrincipal> principal = dao.getPrincipalFromPrincipal(oidcPrincipal);
             if (principal.isPresent()) {
                 return principal.get();
-            } else if (createUsers) {
-                final String preferredUserName = claims.get("preferred_username", String.class);
-                final String givenName = claims.get("given_name", String.class);
-                final String email = claims.get("email", String.class);
-                return dao.createUser(preferredUserName,username,givenName, email);
+            } else if (CREATE_USERS) {
+                final String preferredUserName = claims.get(PREFERRED_USERNAME_CLAIM, String.class);
+                final String givenName = claims.get(GIVEN_NAME_CLAIM, String.class);
+                final String email = claims.get(EMAIL_CLAIM, String.class);
+                return dao.createUser(preferredUserName, oidcPrincipal, givenName, email);
             } else {
                 throw new CwmsAuthException("Not Authorized",HttpServletResponse.SC_UNAUTHORIZED);
             }
         } catch (NumberFormatException | JwtException ex) {
             throw new CwmsAuthException("JWT not valid",ex,HttpServletResponse.SC_UNAUTHORIZED);
         }
-    }    
+    }
 
     private String getToken(Context ctx) {
         String header = ctx.header(AUTHORIZATION);
