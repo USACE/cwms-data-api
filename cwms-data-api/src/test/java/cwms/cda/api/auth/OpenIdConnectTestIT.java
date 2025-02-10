@@ -56,7 +56,6 @@ public class OpenIdConnectTestIT extends DataApiTestIT {
             .get("/properties")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            // 403 here means the user was created, but has no privileges as the user was just created.
             .statusCode(is(HttpCode.OK.getStatus()));
     }
 }
