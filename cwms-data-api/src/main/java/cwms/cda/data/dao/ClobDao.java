@@ -42,29 +42,6 @@ public class ClobDao extends JooqDao<Clob> {
         super(dsl);
     }
 
-
-    // Yikes, I hate this method - it retrieves all the clobs?  That could be gigabytes of data.
-    // Not returning Value or Desc fields until a useful way of working with this method is
-    // figured out.
-    @Override
-    public List<Clob> getAll(String limitToOffice) {
-        AV_CLOB ac = AV_CLOB.AV_CLOB;
-        AV_OFFICE ao = AV_OFFICE.AV_OFFICE;
-
-        Condition whereCond = noCondition();
-        if (limitToOffice != null && !limitToOffice.isEmpty()) {
-            whereCond = ao.OFFICE_ID.eq(limitToOffice);
-        }
-
-        return dsl.select(ac.ID, ao.OFFICE_ID)
-                .from(ac.join(ao).on(ac.OFFICE_CODE.eq(ao.OFFICE_CODE)))
-                .where(whereCond)
-                .fetch(joinRecord ->
-                        new Clob(joinRecord.get(ao.OFFICE_ID),
-                                joinRecord.get(ac.ID), null, null));
-
-    }
-
     @Override
     public Optional<Clob> getByUniqueName(String uniqueName, String office) {
         AV_CLOB ac = AV_CLOB.AV_CLOB;

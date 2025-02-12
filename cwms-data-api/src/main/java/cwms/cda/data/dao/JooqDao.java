@@ -167,11 +167,6 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
     @Override
-    public List<T> getAll(String officeId) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
     public Optional<T> getByUniqueName(String uniqueName, String officeId) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
