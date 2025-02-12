@@ -77,7 +77,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
                 .header("Authorization",user.toHeaderValue())
                 .queryParam("office",officeId)
-                .queryParam("units","cfs")
+                .queryParam("unit","cfs")
                 .queryParam("name",ts.get("name").asText())
                 .queryParam("begin","2023-01-11T12:00:00-00:00")
                 .queryParam("end","2023-01-11T13:00:00-00:00")
@@ -144,7 +144,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", officeId)
-            .queryParam("units", "F")
+            .queryParam("unit", "F")
             .queryParam("name", ts.get("name").asText())
             .queryParam("begin", firstPoint)
             .queryParam("end", firstPoint)
@@ -227,7 +227,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", officeId)
-            .queryParam("units", "F")
+            .queryParam("unit", "F")
             .queryParam("name", ts.get("name").asText())
             .queryParam("begin", firstPoint)
             .queryParam("end", firstPoint)
@@ -254,7 +254,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", officeId)
-            .queryParam("units", "F")
+            .queryParam("unit", "F")
             .queryParam("name", ts.get("name").asText())
             .queryParam("begin", firstPoint)
             .queryParam("end", firstPoint)
@@ -268,6 +268,117 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("values.size()", equalTo(1))  // one point
             .body("values[0].size()", equalTo(3))  // time, value, quality
+            .body("values[0][0]", equalTo(1675335600000L)) // time
+            .body("values[0][1]", closeTo(47.5, 0.0001))
+        ;
+    }
+
+    @Test
+    void test_lrl_1day_max_version_with_entry_date() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/lrl/1day_offset_version_date_max.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam("office",officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        String secondVersionDate = "1604786000000";
+        tsData = tsData.replace("1594786000000", secondVersionDate).replace("35,", "47.5,");
+        // inserting the second time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam("office",officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // get it back
+        String firstPoint = "2023-02-02T06:00:00-05:00"; //aka 2023-02-02T11:00:00.000Z or
+        String versionDate = "2020-07-15T04:06:40Z";
+        // 1675335600000
+        given()
+            .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", officeId)
+            .queryParam("unit", "F")
+            .queryParam("name", ts.get("name").asText())
+            .queryParam("begin", firstPoint)
+            .queryParam("end", firstPoint)
+            .queryParam("version-date", versionDate)
+            .queryParam("include-entry-date", true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("values.size()", equalTo(1))  // one point
+            .body("values[0].size()", equalTo(4))  // time, value, quality, entry date
+            .body("values[0][0]", equalTo(1675335600000L)) // time
+            .body("values[0][1]", closeTo(35, 0.0001))
+            .body("version-date", equalTo(versionDate))
+        ;
+
+        // get again as max version
+        given()
+            .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", officeId)
+            .queryParam("unit", "F")
+            .queryParam("name", ts.get("name").asText())
+            .queryParam("begin", firstPoint)
+            .queryParam("end", firstPoint)
+            .queryParam("include-entry-date", true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("values.size()", equalTo(1))  // one point
+            .body("values[0].size()", equalTo(4))  // time, value, quality, entry date
             .body("values[0][0]", equalTo(1675335600000L)) // time
             .body("values[0][1]", closeTo(47.5, 0.0001))
         ;
@@ -533,7 +644,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
 //                .body(tsData)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", officeId)
-            .queryParam("units", "F")
+            .queryParam("unit", "F")
             .queryParam("name", ts.get("name").asText())
             .queryParam("begin", "2023-02-02T11:00:00+00:00")
             .queryParam("end", "2023-02-03T11:00:00+00:00")
@@ -627,7 +738,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
             .queryParam("office", officeId)
-            .queryParam("units", "F")
+            .queryParam("unit", "F")
             .queryParam("name", ts.get("name").asText())
             .queryParam("begin", firstPoint)
             .queryParam("end", firstPoint)
@@ -666,7 +777,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
             .queryParam("office", officeId)
-            .queryParam("units", "F")
+            .queryParam("unit", "F")
             .queryParam("name", ts.get("name").asText())
             .queryParam("begin", firstPoint)
             .queryParam("end", firstPoint)
@@ -703,7 +814,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .queryParam("office", officeId)
-            .queryParam("units", "F")
+            .queryParam("unit", "F")
             .queryParam("name", ts.get("name").asText())
             .queryParam("begin", firstPoint)
             .queryParam("end", firstPoint)
@@ -771,7 +882,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam("office", officeId)
-                .queryParam("units", "F")
+                .queryParam("unit", "F")
                 .queryParam("name", ts.get("name").asText())
                 .queryParam("begin", dayBeforeFirst.toInstant().toString())
                 .queryParam("end", firstPoint)
@@ -797,7 +908,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam("office", officeId)
-                .queryParam("units", "F")
+                .queryParam("unit", "F")
                 .queryParam("name", ts.get("name").asText())
                 .queryParam("begin", dayBeforeFirst.toInstant().toString())
                 .queryParam("end", firstPoint)
@@ -812,6 +923,109 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .body("values.size()", equalTo(1))
                 .body("values[0].size()", equalTo(3))  // time, value, quality
+                .body("values[0][0]", equalTo(1675335600000L)) // time
+                .body("values[0][1]", closeTo(35, 0.0001))
+            ;
+        } catch (SQLException ex) {
+            throw new RuntimeException("Unable to create location for TS", ex);
+        }
+    }
+
+    @Test
+    void test_lrl_trim_with_data_entry_date() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/lrl/1day_offset_with_data_entry_dates.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        try {
+            createLocation(location, true, officeId);
+
+            TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+            // inserting the time series
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam("office", officeId)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+
+            // The ts we created has   two values 1675335600000, 1675422000000,
+
+            // get it back
+            String firstPoint = "2023-02-02T06:00:00-05:00"; //aka 2023-02-02T11:00:00.000Z or
+            // 1675335600000
+
+            ZonedDateTime beginZdt = ZonedDateTime.parse(firstPoint);
+            ZonedDateTime dayBeforeFirst = beginZdt.minusDays(1);
+
+            // without trim we should get extra null point
+            given()
+                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam("office", officeId)
+                .queryParam("unit", "m2")
+                .queryParam("name", ts.get("name").asText())
+                .queryParam("begin", dayBeforeFirst.toInstant().toString())
+                .queryParam("end", firstPoint)
+                .queryParam("trim", false)
+                .queryParam("include-entry-date", true)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("values.size()", equalTo(2))
+                .body("values[0].size()", equalTo(4))  // time, value, quality, data entry date
+                .body("values[1][0]", equalTo(1675335600000L)) // time
+                .body("values[0][1]", nullValue())
+                .body("values[1][1]", closeTo(35, 0.0001));
+
+            // with trim the null should get trimmed.
+            given()
+                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam("office", officeId)
+                .queryParam("unit", "m2")
+                .queryParam("name", ts.get("name").asText())
+                .queryParam("begin", dayBeforeFirst.toInstant().toString())
+                .queryParam("end", firstPoint)
+                .queryParam("trim", true)
+                .queryParam("include-entry-date", true)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("values.size()", equalTo(1))
+                .body("values[0].size()", equalTo(4))  // time, value, quality, data entry date
                 .body("values[0][0]", equalTo(1675335600000L)) // time
                 .body("values[0][1]", closeTo(35, 0.0001))
             ;
@@ -968,7 +1182,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", officeId)
-            .queryParam("units","mm")
+            .queryParam("unit","mm")
             .queryParam("name", name)
             .queryParam("begin","2021-02-08T08:00:00Z")
             .queryParam("end","2021-03-08T08:00:00Z")
@@ -991,7 +1205,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", officeId)
-            .queryParam("units","mm")
+            .queryParam("unit","mm")
             .queryParam("name", name)
             .queryParam("begin","2021-03-08T08:00:00Z")
             .queryParam("end","2021-03-15T08:00:00Z")
@@ -1074,7 +1288,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", officeId)
-            .queryParam("units", "F")
+            .queryParam("unit", "F")
             .queryParam("name", ts.get("name").asText())
         .when()
             .redirects().follow(true)

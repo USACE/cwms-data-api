@@ -71,7 +71,6 @@ import org.jooq.SQL;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectHavingStep;
 import org.jooq.SelectJoinStep;
-import org.jooq.SelectSeekStep1;
 import org.jooq.SelectSeekStep2;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -376,7 +375,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         // internal table from it so we can manipulate it further
         // This code assumes the database timezone is in UTC (per Oracle recommendation)
         SQL retrieveSelectData = DSL.sql(
-                "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,"
+                "table(cwms_20.cwms_ts.retrieve_ts_entry_out_tab(?,?,"
                         + "cwms_20.cwms_util.to_timestamp(?), cwms_20.cwms_util.to_timestamp(?), 'UTC',"
                         + "?,?,?,?,?,"
                         + getVersionPart(versionDate) + ",?,?) ) retrieveTs",
@@ -388,54 +387,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Field<BigDecimal> qualityNormCol = CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(
                 DSL.nvl(qualityCol, DSL.inline(5))).as("QUALITY_NORM");
         Field<Timestamp> dataEntryDate = field("DATA_ENTRY_DATE", Timestamp.class).as("data_entry_date");
-        Condition whereCond = dateTimeCol
-                .greaterOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
-                        DSL.nvl(DSL.val(tsCursor == null ? null :
-                                        tsCursor.toInstant().toEpochMilli()),
-                                DSL.val(beginTime.toInstant().toEpochMilli()))))
-                .and(dateTimeCol
-                        .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
-                                DSL.val(endTime.toInstant().toEpochMilli())))
-                        .and(AV_TSV_DQU.AV_TSV_DQU.CWMS_TS_ID.equalIgnoreCase(names))
-                        .and(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID.eq(office))
-                        .and(AV_TSV_DQU.AV_TSV_DQU.UNIT_ID.equalIgnoreCase(unit)));
 
-        Field<Timestamp> versionDateCol = field("VERSION_DATE", Timestamp.class).as("VERSION_DATE");
         TimeSeries retVal = null;
         if (pageSize != 0) {
-            if (versionDate != null) {
-                whereCond = whereCond.and(AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE
-                        .eq(Timestamp.from(versionDate.toInstant())));
-            } else {
-                SelectSeekStep1<Record4<Timestamp, Double, BigDecimal, Timestamp>, Timestamp> verQuery =
-                        dsl.select(
-                                        dateTimeCol,
-                                        valueCol,
-                                        qualityNormCol,
-                                        versionDateCol
-                                )
-                                .from(AV_TSV_DQU.AV_TSV_DQU)
-                                .where(whereCond)
-                                .orderBy(versionDateCol.desc());
-                Result<Record4<Timestamp, Double, BigDecimal, Timestamp>> result = verQuery.fetch();
-                Timestamp lastVersionDate = null;
-                if (!result.isEmpty()) {
-                    lastVersionDate = result.get(0).getValue(versionDateCol);
-                }
-
-                if (lastVersionDate != null) {
-                    whereCond = whereCond.and(AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE.eq(lastVersionDate));
-                }
-            }
-
-            SelectConditionStep<Record4<Timestamp, Double, BigDecimal, Timestamp>> query2 = dsl.select(
+            SelectJoinStep<Record4<Timestamp, Double, BigDecimal, Timestamp>> query2 = dsl.select(
                             dateTimeCol,
                             valueCol,
                             qualityNormCol,
                             dataEntryDate
                     )
-                    .from(AV_TSV_DQU.AV_TSV_DQU)
-                    .where(whereCond);
+                    .from(retrieveSelectData);
 
             SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query =
                     dsl.select(
