@@ -32,7 +32,6 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTO;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.jooq.DSLContext;

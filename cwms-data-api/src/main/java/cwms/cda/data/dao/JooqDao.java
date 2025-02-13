@@ -314,10 +314,8 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     public static boolean isInvalidOffice(RuntimeException input) {
         return getSqlException(input)
-            .map(sqlException -> {
-                return hasCodeOrMessage(sqlException, Collections.singletonList(20010),
-                    Collections.singletonList("INVALID_OFFICE_ID"));
-            })
+            .map(sqlException -> hasCodeOrMessage(sqlException, Collections.singletonList(20010),
+                Collections.singletonList("INVALID_OFFICE_ID")))
             .orElse(false);
     }
 
