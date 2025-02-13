@@ -44,49 +44,46 @@ public class ClobDao extends JooqDao<Clob> {
 
     @Override
     public Optional<Clob> getByUniqueName(String uniqueName, String office) {
-        AV_CLOB ac = AV_CLOB.AV_CLOB;
-        AV_OFFICE ao = AV_OFFICE.AV_OFFICE;
+        AV_CLOB vClob = AV_CLOB.AV_CLOB;
+        AV_OFFICE vOffice = AV_OFFICE.AV_OFFICE;
 
-        Condition cond = ac.ID.eq(uniqueName);
+        Condition cond = vClob.ID.eq(uniqueName);
         if (office != null && !office.isEmpty()) {
-            cond = cond.and(ao.OFFICE_ID.eq(office));
+            cond = cond.and(vOffice.OFFICE_ID.eq(office));
         }
 
         RecordMapper<Record, Clob> mapper = joinRecord ->
-                new Clob(joinRecord.getValue(ao.OFFICE_ID),
-                        joinRecord.getValue(ac.ID),
-                        joinRecord.getValue(ac.DESCRIPTION),
-                        joinRecord.getValue(ac.VALUE)
+                new Clob(joinRecord.getValue(vOffice.OFFICE_ID),
+                        joinRecord.getValue(vClob.ID),
+                        joinRecord.getValue(vClob.DESCRIPTION),
+                        joinRecord.getValue(vClob.VALUE)
                 );
 
-        return dsl.select(ao.OFFICE_ID, ac.asterisk())
-                .from(ac.join(ao).on(ac.OFFICE_CODE.eq(ao.OFFICE_CODE)))
+        return dsl.select(vOffice.OFFICE_ID, vClob.asterisk())
+                .from(vClob.join(vOffice).on(vClob.OFFICE_CODE.eq(vOffice.OFFICE_CODE)))
                 .where(cond)
                 .fetchOptional(mapper);
     }
 
     public Clobs getClobs(String cursor, int pageSize, String officeLike,
-                          boolean includeValues) {
-        return getClobs(cursor, pageSize, officeLike, includeValues, ".*");
-    }
-
-    public Clobs getClobs(String cursor, int pageSize, String officeLike,
                           boolean includeValues, String idRegex) {
         int total = 0;
-        String clobCursor = "*";
-        AV_CLOB v_clob = AV_CLOB.AV_CLOB;
-        AV_OFFICE v_office = AV_OFFICE.AV_OFFICE;
+        String cursorOffice = null;
+        String cursorClobId = null;
+        AV_CLOB vClob = AV_CLOB.AV_CLOB;
+        AV_OFFICE vOffice = AV_OFFICE.AV_OFFICE;
 
+        Condition whereClause = JooqDao.caseInsensitiveLikeRegex(vClob.ID, idRegex)
+            .and(JooqDao.caseInsensitiveLikeRegexNullTrue(vOffice.OFFICE_ID, officeLike));
         if (cursor == null || cursor.isEmpty()) {
-
-            SelectConditionStep<Record1<Integer>> count =
-                    dsl.select(count(asterisk()))
-                            .from(v_clob)
-                            .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
-                            .where(JooqDao.caseInsensitiveLikeRegex(v_clob.ID, idRegex))
-                            .and(officeLike == null ? noCondition() : DSL.upper(v_office.OFFICE_ID).like(officeLike.toUpperCase()));
-
-            total = count.fetchOne().value1();
+            SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
+                .from(vClob)
+                .join(vOffice).on(vClob.OFFICE_CODE.eq(vOffice.OFFICE_CODE))
+                .where(whereClause);
+            Record1<Integer> rec = count.fetchOne();
+            if(rec != null) {
+                total = rec.value1();
+            }
         } else {
             final String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "||");
 
@@ -96,35 +93,41 @@ public class ClobDao extends JooqDao<Clob> {
             }
 
             if (parts.length > 1) {
-                clobCursor = parts[0].split(";")[0];
-                clobCursor = clobCursor.substring(clobCursor.indexOf("/") + 1); // ditch the
-                // officeId that's embedded in
+                cursorOffice = Clobs.getOffice(cursor);
+                cursorClobId = Clobs.getId(cursor);
                 total = Integer.parseInt(parts[1]);
                 pageSize = Integer.parseInt(parts[2]);
             }
         }
 
+        Condition moreInSameOffice = cursorClobId == null || cursorOffice == null ? noCondition() :
+                vOffice.OFFICE_ID.eq(cursorOffice.toUpperCase())
+                        .and(upper(vClob.ID).greaterThan(cursorClobId.toUpperCase()));
+        Condition nextOffices = cursorOffice == null ? noCondition():
+                upper(vOffice.OFFICE_ID).greaterThan(cursorOffice.toUpperCase());
+        Condition pagingCondition = moreInSameOffice.or(nextOffices);
+
         SelectLimitPercentStep<Record4<String, String, String, String>> query = dsl.select(
-                        v_office.OFFICE_ID,
-                        v_clob.ID,
-                        v_clob.DESCRIPTION,
-                        includeValues ? v_clob.VALUE : DSL.inline("").as(v_clob.VALUE)
-                )
-                .from(v_clob)
-                //.innerJoin(forLimit).on(forLimit.field(v_clob.ID).eq(v_clob.ID))
-                .join(v_office).on(v_clob.OFFICE_CODE.eq(v_office.OFFICE_CODE))
-                .where(JooqDao.caseInsensitiveLikeRegex(v_clob.ID,idRegex))
-                .and(DSL.upper(v_clob.ID).greaterThan(clobCursor))
-                .orderBy(v_clob.ID).limit(pageSize);
+                vOffice.OFFICE_ID,
+                vClob.ID,
+                vClob.DESCRIPTION,
+                includeValues ? vClob.VALUE : DSL.inline("").as(vClob.VALUE)
+            )
+            .from(vClob)
+            .join(vOffice).on(vClob.OFFICE_CODE.eq(vOffice.OFFICE_CODE))
+            .where(whereClause)
+            .and(pagingCondition)
+            .orderBy(vOffice.OFFICE_ID, vClob.ID)
+            .limit(pageSize);
 
 
-        Clobs.Builder builder = new Clobs.Builder(clobCursor, pageSize, total);
+        Clobs.Builder builder = new Clobs.Builder(cursor, pageSize, total);
 
         logger.atFine().log(query.getSQL(ParamType.INLINED));
 
         query.fetch().forEach(row -> {
-            usace.cwms.db.jooq.codegen.tables.records.AV_CLOB clob = row.into(v_clob);
-            usace.cwms.db.jooq.codegen.tables.records.AV_OFFICE clobOffice = row.into(v_office);
+            usace.cwms.db.jooq.codegen.tables.records.AV_CLOB clob = row.into(vClob);
+            usace.cwms.db.jooq.codegen.tables.records.AV_OFFICE clobOffice = row.into(vOffice);
             builder.addClob(new Clob(
                     clobOffice.getOFFICE_ID(),
                     clob.getID(),
@@ -139,35 +142,26 @@ public class ClobDao extends JooqDao<Clob> {
 
 
     public List<Clob> getClobsLike(String office, String idLike) {
-        AV_CLOB ac = AV_CLOB.AV_CLOB;
-        AV_OFFICE ao = AV_OFFICE.AV_OFFICE;
+        AV_CLOB vClob = AV_CLOB.AV_CLOB;
+        AV_OFFICE vOffice = AV_OFFICE.AV_OFFICE;
 
-        Condition cond = DSL.upper(ac.ID).like(idLike.toUpperCase());
+        Condition cond = DSL.upper(vClob.ID).like(idLike.toUpperCase());
         if (office != null && !office.isEmpty()) {
-            cond = cond.and(DSL.upper(ao.OFFICE_ID).eq(office.toUpperCase()));
+            cond = cond.and(DSL.upper(vOffice.OFFICE_ID).eq(office.toUpperCase()));
         }
 
         RecordMapper<Record, Clob> mapper = joinRecord ->
-                new Clob(joinRecord.get(ao.OFFICE_ID),
-                        joinRecord.get(ac.ID),
-                        joinRecord.get(ac.DESCRIPTION),
-                        joinRecord.get(ac.VALUE)
+                new Clob(joinRecord.get(vOffice.OFFICE_ID),
+                        joinRecord.get(vClob.ID),
+                        joinRecord.get(vClob.DESCRIPTION),
+                        joinRecord.get(vClob.VALUE)
                 );
 
-        return dsl.select(ac.asterisk(), ao.OFFICE_ID).from(
-                ac.join(ao).on(ac.OFFICE_CODE.eq(ao.OFFICE_CODE))).where(cond).fetch(mapper);
-    }
-
-    public String getClobValue(String office, String id) {
-        AV_CLOB ac = AV_CLOB.AV_CLOB;
-        AV_OFFICE ao = AV_OFFICE.AV_OFFICE;
-
-        Condition cond = ac.ID.eq(id).and(ao.OFFICE_ID.eq(office));
-
-        Record1<String> clobRecord = dsl.select(ac.VALUE).from(
-                ac.join(ao).on(ac.OFFICE_CODE.eq(ao.OFFICE_CODE))).where(cond).fetchOne();
-
-        return clobRecord.value1();
+        return dsl.select(vClob.asterisk(), vOffice.OFFICE_ID)
+                .from(vClob.join(vOffice).on(vClob.OFFICE_CODE.eq(vOffice.OFFICE_CODE)))
+                .where(cond)
+                .orderBy(vOffice.OFFICE_ID, vClob.ID)
+                .fetch(mapper);
     }
 
     public void create(Clob clob, boolean failIfExists) {
@@ -201,13 +195,13 @@ public class ClobDao extends JooqDao<Clob> {
 
     public void update(Clob clob, boolean ignoreNulls) {
 
-        String p_ignore_nulls = getBoolean(ignoreNulls);
+        String pIgnoreNulls = getBoolean(ignoreNulls);
 
-        // Note: when p_ignore_nulls == 'T' and the value or description is "" (not null)
+        // Note: when pIgnoreNulls == 'T' and the value or description is "" (not null)
         // the field is not updated.
-        // Also note: when p_ignore_nulls == 'F' and the value is null
+        // Also note: when pIgnoreNulls == 'F' and the value is null
         // it throws -  ORA-20244: NULL_ARGUMENT: Argument P_TEXT is not allowed to be null
-        // Also note: when p_ignore_nulls == 'F' and the value is "" (empty string)
+        // Also note: when pIgnoreNulls == 'F' and the value is "" (empty string)
         // it throws -  ORA-20244: NULL_ARGUMENT: Argument P_TEXT is not allowed to be null
         dsl.connection(c ->
             CWMS_TEXT_PACKAGE.call_UPDATE_TEXT(
@@ -215,7 +209,7 @@ public class ClobDao extends JooqDao<Clob> {
                 clob.getValue(),
                 clob.getId(),
                 clob.getDescription(),
-                p_ignore_nulls,
+                pIgnoreNulls,
                 clob.getOfficeId()
             )
         );
@@ -246,11 +240,7 @@ public class ClobDao extends JooqDao<Clob> {
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         java.sql.Clob clob = resultSet.getClob("VALUE");
-                        if (clob != null) {
-                            clobConsumer.accept(clob);
-                        } else {
-                            clobConsumer.accept(null);
-                        }
+                        clobConsumer.accept(clob);
                     } else {
                         throw new NotFoundException("Unable to find clob with id " + clobId + " in office " + officeId);
                     }
