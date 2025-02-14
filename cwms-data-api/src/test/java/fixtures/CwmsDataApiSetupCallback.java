@@ -145,7 +145,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
             // OIDC properties
             System.setProperty("cwms.dataapi.access.providers","KeyAccessManager,OpenID,CwmsAccessManager");
-            System.getProperty(OpenIDAccessManager.CREATE_USERS_KEY,":true");
+            System.setProperty(OpenIDAccessManager.CREATE_USERS_KEY,"true");
             System.setProperty(OpenIDAccessManagerProvider.WELL_KNOWN_PROPERTY,KeyCloakExtension.getOidcWellKnown());
             System.setProperty(OpenIDAccessManagerProvider.ISSUER_PROPERTY,KeyCloakExtension.getIssuer());
 
