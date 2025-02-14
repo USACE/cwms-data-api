@@ -371,7 +371,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             timeseries = new TimeSeriesWithDataEntryDate(timeseries);
         }
 
-        // Now we're going to call the retrieve_ts_out_tab function to get the data and build an
+        // Now we're going to call the retrieve_ts_entry_out_tab function to get the data and build an
         // internal table from it so we can manipulate it further
         // This code assumes the database timezone is in UTC (per Oracle recommendation)
         SQL retrieveSelectData = DSL.sql(
