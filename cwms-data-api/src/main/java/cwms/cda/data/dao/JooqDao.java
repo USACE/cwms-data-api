@@ -167,11 +167,6 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
     @Override
-    public List<T> getAll(String officeId) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
     public Optional<T> getByUniqueName(String uniqueName, String officeId) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
@@ -319,10 +314,8 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     public static boolean isInvalidOffice(RuntimeException input) {
         return getSqlException(input)
-            .map(sqlException -> {
-                return hasCodeOrMessage(sqlException, Collections.singletonList(20010),
-                    Collections.singletonList("INVALID_OFFICE_ID"));
-            })
+            .map(sqlException -> hasCodeOrMessage(sqlException, Collections.singletonList(20010),
+                Collections.singletonList("INVALID_OFFICE_ID")))
             .orElse(false);
     }
 
