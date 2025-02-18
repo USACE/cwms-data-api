@@ -44,19 +44,53 @@ public class Clobs extends CwmsDTOPaginated {
         clobs.add(clob);
     }
 
+    /**
+     * Extract the office from the cursor.
+     *
+     * @param cursor the cursor
+     * @return office
+     */
+    public static String getOffice(String cursor) {
+        String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
+        if (parts.length > 1) {
+            String[] idAndOffice = CwmsDTOPaginated.decodeCursor(parts[0]);
+            if (idAndOffice.length > 0) {
+                return idAndOffice[0];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Extract the id from the cursor.
+     *
+     * @param cursor the cursor
+     * @return id
+     */
+    public static String getId(String cursor) {
+        String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
+        if (parts.length > 1) {
+            String[] idAndOffice = CwmsDTOPaginated.decodeCursor(parts[0]);
+            if (idAndOffice.length > 1) {
+                return idAndOffice[1];
+            }
+        }
+        return null;
+    }
+
     public static class Builder {
-        private Clobs workingClobs;
+        private final Clobs workingClobs;
 
         public Builder(String cursor, int pageSize, int total) {
             workingClobs = new Clobs(cursor, pageSize, total);
         }
 
         public Clobs build() {
-            if (this.workingClobs.clobs.size() == this.workingClobs.pageSize) {
-                this.workingClobs.nextPage = encodeCursor(
-                        this.workingClobs.clobs.get(this.workingClobs.clobs.size() - 1).toString().toUpperCase(),
-                        this.workingClobs.pageSize,
-                        this.workingClobs.total);
+            if (this.workingClobs.clobs.size() == this.workingClobs.pageSize && !this.workingClobs.clobs.isEmpty()) {
+                Clob lastClob = this.workingClobs.clobs.get(this.workingClobs.clobs.size() - 1);
+                String cursor = encodeCursor(CwmsDTOPaginated.delimiter, lastClob.getOfficeId(),
+                    lastClob.getId());
+                this.workingClobs.nextPage = encodeCursor(cursor, this.workingClobs.pageSize, this.workingClobs.total);
             } else {
                 this.workingClobs.nextPage = null;
             }
