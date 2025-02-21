@@ -26,7 +26,7 @@ jjwt = "0.11.5"
 jstl = "1.2"
 junit = "5.11.1"
 junit-launcher = "1.11.2"
-testcontainers = "1.17.1"
+testcontainers = { strictly = "1.20.4" }
 cwms-testcontainers = "2.0.0"
 oracle-jdbc = "19.3.0.0"
 mockito = "4.6.1"
@@ -131,7 +131,8 @@ io-swagger-parser = { module = "io.swagger.parser.v3:swagger-parser", version.re
 junit = ["junit-jupiter-api", "junit-jupiter-params", "junit-jupiter-engine", "junit-platform-launcher"]
 tomcat-embedded = [ "tomcat-embedded-core", "tomcat-embedded-jasper" ]
 tomcat-support = [ "tomcat-juli", "tomcat-jdbc" ]
-testcontainers = [ "testcontainers-base", "testcontainers-database-commons", "testcontainers-jdbc", "testcontainers-junit-jupiter", "testcontainers-cwms"]
+testcontainers = [ "testcontainers-base", "testcontainers-database-commons", "testcontainers-jdbc",
+                   "testcontainers-junit-jupiter", "testcontainers-cwms"]
 metrics = ["metrics-core", "metrics-servlets", "metrics-prometheus-client", "metrics-prometheus-servlets" ]
 jackson = ["jackson-core", "jackson-dataformat-csv", "jackson-dataformat-xml", "jackson-datatype-jsr310" ]
 overrides = ["io-github.classgraph", "io-swagger-parser"]
