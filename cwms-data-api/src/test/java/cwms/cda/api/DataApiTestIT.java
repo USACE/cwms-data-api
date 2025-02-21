@@ -30,6 +30,7 @@ import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.IntegrationTestNameGenerator;
+import fixtures.KeyCloakExtension;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
 import java.io.File;
@@ -74,6 +75,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
  */
 @DisplayNameGeneration(IntegrationTestNameGenerator.class)
 @Tag("integration")
+@ExtendWith(KeyCloakExtension.class)
 @ExtendWith(CwmsDataApiSetupCallback.class)
 public class DataApiTestIT {
     private static FluentLogger logger = FluentLogger.forEnclosingClass();

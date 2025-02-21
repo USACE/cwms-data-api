@@ -1,7 +1,6 @@
 set define on
 define OFFICE_EROC=&1
-begin 
-
+begin
     cwms_sec.add_user_to_group('&&OFFICE_EROC.webtest','All Users', 'HQ');
     cwms_sec.add_user_to_group('&&OFFICE_EROC.webtest','All Users', 'SPK');
     cwms_sec.add_user_to_group('&&OFFICE_EROC.webtest','CWMS Users', 'HQ');
@@ -21,6 +20,7 @@ begin
     cwms_sec.add_cwms_user('m5hectest',NULL,'SWT');
     cwms_sec.add_user_to_group('m5hectest','All Users', 'SWT');
     cwms_sec.add_user_to_group('m5hectest','CWMS Users', 'SWT');
+    execute immediate 'grant excecute on cwms_upass to web_user';
 end;
 /
 quit;

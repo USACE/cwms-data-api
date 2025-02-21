@@ -1,11 +1,11 @@
-FROM gradle:8.5-jdk8 as builder
+FROM gradle:8.5-jdk8 AS builder
 USER $USER
 RUN --mount=type=cache,target=/home/gradle/.gradle
 WORKDIR /builddir
 COPY . /builddir/
-RUN  gradle clean prepareDockerBuild --info --no-daemon
+RUN  gradle prepareDockerBuild --info --no-daemon
 
-FROM alpine:3.21.0 as tomcat_base
+FROM alpine:3.21.0 AS tomcat_base
 RUN apk --no-cache upgrade && \
     apk --no-cache add \
         openjdk8-jre \
@@ -41,10 +41,10 @@ ENV CDA_POOL_MAX_ACTIVE "30"
 ENV CDA_POOL_MAX_IDLE "10"
 ENV CDA_POOL_MIN_IDLE "5"
 ENV cwms.dataapi.access.providers "KeyAccessManager,OpenID"
-ENV cwms.dataapi.access.openid.wellKnownUrl "https://identity-test.cwbi.us/auth/realms/cwbi/.well-known/openid-configuration"
-ENV cwms.dataapi.access.openid.issuer "https://identity-test.cwbi.us/auth/realms/cwbi"
+ENV cwms.dataapi.access.openid.wellKnownUrl "https://<prefix>/.well-known/openid-configuration"
+ENV cwms.dataapi.access.openid.issuer "<issuer>"
 ENV cwms.dataapi.access.openid.timeout "604800"
-ENV cwms.dataapi.access.openid.altAuthUrl "https://identityc-test.cwbi.us/auth/realms/cwbi"
+#ENV cwms.dataapi.access.openid.altAuthUrl "https://identityc-test.cwbi.us/auth/realms/cwbi"
 
 # used to simplify redeploy in certain contexts. Update to match -<marker> in image label
 ENV IMAGE_MARKER="a"

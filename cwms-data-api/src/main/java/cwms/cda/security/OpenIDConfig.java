@@ -18,7 +18,20 @@ import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 
 public class OpenIDConfig {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
+    private static final String ALT_WELL_KNOWN = "cwms.dataapi.access.openid.useAltWellKnown";
+    private static final boolean USE_ALT_WELLKNOWN;
+
+    static {
+        String altWellKnownStr = System.getProperty(ALT_WELL_KNOWN,System.getenv(ALT_WELL_KNOWN));
+        if (altWellKnownStr != null) {
+            USE_ALT_WELLKNOWN = Boolean.parseBoolean(altWellKnownStr);
+        } else {
+            USE_ALT_WELLKNOWN = false;
+        }
+    }
+
     private URL wellKnown;
+    private URL altWellKnown = null; // silly, but needed by the docker-compose setup so URLs match and work.
     private String issuer;
     private URL authUrl;
     private URL tokenUrl;
@@ -31,6 +44,10 @@ public class OpenIDConfig {
 
     public OpenIDConfig(URL wellKnown, String altAuthUrl) throws IOException {
         this.wellKnown = wellKnown;
+        if (USE_ALT_WELLKNOWN) {
+            this.altWellKnown = substituteBase(wellKnown, altAuthUrl);
+        }
+
         HttpURLConnection http = null;
         try
         {
@@ -96,8 +113,12 @@ public class OpenIDConfig {
     }
 
     public SecurityScheme getScheme() {
+        URL theUrl = wellKnown;
+        if (USE_ALT_WELLKNOWN) {
+            theUrl = altWellKnown;
+        }
         return new SecurityScheme().type(Type.OPENIDCONNECT)
-                                   .openIdConnectUrl(wellKnown.toString())
+                                   .openIdConnectUrl(theUrl.toString())
                                    .name("Authorization")
                                    .flows(flows)
                                    .in(In.HEADER);
