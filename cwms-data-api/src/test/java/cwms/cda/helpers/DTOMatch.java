@@ -24,9 +24,11 @@
 
 package cwms.cda.helpers;
 
+import cwms.cda.data.dto.AccessToWaterTimeSeriesIdentifier;
 import cwms.cda.data.dto.CwmsIdTimeExtentsEntry;
 import cwms.cda.data.dto.TimeExtents;
 import cwms.cda.data.dto.TimeSeriesExtents;
+import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.location.kind.GateChange;
@@ -599,6 +601,17 @@ public final class DTOMatch {
             () -> assertMatch(first.getId(), second.getId()),
             () -> assertMatch(first.getTimeExtents(), second.getTimeExtents())
         );
+    }
+
+    public static void assertMatch(AccessToWaterTimeSeriesIdentifier first, AccessToWaterTimeSeriesIdentifier second) {
+        assertAll(
+                () -> assertMatch(first.getTimeSeriesIdDescriptor(), second.getTimeSeriesIdDescriptor()),
+                () -> assertEquals(first.getTsType(), second.getTsType()),
+                () -> assertEquals(first.getLocationId(), second.getLocationId())
+        );
+    }
+
+    public static void assertMatch(TimeSeriesIdentifierDescriptor tsDescriptor, TimeSeriesIdentifierDescriptor timeSeriesIdDescriptor) {
     }
 
     @FunctionalInterface

@@ -1,0 +1,12 @@
+{
+  "office-id":"SWT",
+  "location-id": "VANL",
+  "time-series-id-descriptor": {
+    "office-id": "SWT",
+    "time-series-id": "VANL.Stage.Inst.15Minutes.0.Ccp-Rev",
+    "timezone-name": "UTC",
+    "interval-offset-minutes": 0,
+    "active": true
+  },
+  "ts-type": "STAGE"
+}
