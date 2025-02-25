@@ -29,7 +29,11 @@ import cwms.cda.data.dto.Entity;
 import cwms.cda.data.dto.ParameterLegacy;
 import cwms.cda.data.dto.TimeExtents;
 import cwms.cda.data.dto.TimeSeriesExtents;
+import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.data.dto.catalog.LocationAlias;
+import cwms.cda.data.dto.TimeSeriesIdentifiersByParameter;
+import cwms.cda.data.dto.TimeSeriesIdentifiersByParameterList;
+import cwms.cda.data.dto.TimeSeriesMetaData;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.location.kind.GateChange;
@@ -662,6 +666,61 @@ public final class DTOMatch {
             () -> assertEquals(first.getParentEntityId(), second.getParentEntityId(), "Entity parent Ids do not match"),
             () -> assertEquals(first.getLongName(), second.getLongName(), "Entity long names do not match")
         );
+    }
+
+    public static void assertMatch(TimeSeriesIdentifierDescriptor tsDescriptor, TimeSeriesIdentifierDescriptor timeSeriesIdDescriptor) {
+        assertAll(
+                () -> assertEquals(tsDescriptor.getIntervalOffsetMinutes(), timeSeriesIdDescriptor.getIntervalOffsetMinutes(), "Identifier does not match"),
+                () -> assertEquals(tsDescriptor.getTimeSeriesId(), timeSeriesIdDescriptor.getTimeSeriesId(), "Part does not match"),
+                () -> assertEquals(tsDescriptor.getOfficeId(), timeSeriesIdDescriptor.getOfficeId(), "Time series type does not match"),
+                () -> assertEquals(tsDescriptor.getTimezoneName(), timeSeriesIdDescriptor.getTimezoneName(), "Office ID does not match")
+        );
+    }
+
+    public static void assertMatch(TimeSeriesIdentifiersByParameter first, TimeSeriesIdentifiersByParameter second)
+    {
+        assertAll(
+                () -> assertMatch(first.getLocationId(), second.getLocationId()),
+                () -> assertEquals(first.getKind(), second.getKind(), "Kind does not match"),
+                () -> assertEquals(first.getBoundingOfficeId(), second.getBoundingOfficeId(), "Bounding office ID does not match"),
+                () -> assertEquals(first.getTimeSeriesIdsByParameter().size(), second.getTimeSeriesIdsByParameter().size(), "Type to TS ID map sizes do not match"),
+                () -> first.getTimeSeriesIdsByParameter().forEach((type, tsId) -> {
+                    if (!second.getTimeSeriesIdsByParameter().containsKey(type)) {
+                        fail("tsType " + type + " not found in both tsType to tsId maps");
+                    }
+                    assertMatch(tsId, second.getTimeSeriesIdsByParameter().get(type));
+                })
+        );
+    }
+
+    public static void assertMatch(TimeSeriesMetaData ts1, TimeSeriesMetaData ts2) {
+        assertAll(
+                () -> assertMatch(ts1.getTsId(), ts2.getTsId()),
+                () -> assertEquals(ts1.getDateRefreshed(), ts2.getDateRefreshed(), "Date-Refreshed does not match"),
+                () -> assertEquals(ts1.getNotes(), ts2.getNotes(), "Notes do not match")
+        );
+    }
+
+    public static void assertMatch(TimeSeriesIdentifiersByParameterList list, TimeSeriesIdentifiersByParameterList list2) {
+        assertAll(
+                () -> assertEquals(list.getPage(), list2.getPage(), "Page does not match"),
+                () -> assertEquals(list.getPageSize(), list2.getPageSize(), "Page size does not match"),
+                () -> assertEquals(list.getTotal(), list2.getTotal(), "Total does not match"),
+                () -> assertEquals(list.getNextPage(), list2.getNextPage(), "Next page does not match"),
+                () -> assertEquals(list.getTimeSeriesIdsForLocations().size(), list2.getTimeSeriesIdsForLocations().size(), "Time series identifiers sizes do not match"),
+                () -> list.getTimeSeriesIdsForLocations().forEach(tsIdsForLocation -> {
+                    TimeSeriesIdentifiersByParameter found = list2.getTimeSeriesIdsForLocations().stream()
+                            .filter(tsId1 -> isEqual(tsIdsForLocation.getLocationId(),tsId1.getLocationId()))
+                            .findFirst().orElse(null);
+                    assertNotNull(found, "Time series identifiers were expected but not found for locationId: " + tsIdsForLocation.getLocationId().getName());
+                    assertMatch(tsIdsForLocation, found);
+                })
+        );
+    }
+
+    private static boolean isEqual(CwmsId loc1, CwmsId loc2) {
+        return loc1.getName().equals(loc2.getName())
+                && loc1.getOfficeId().equals(loc2.getOfficeId());
     }
 
     @FunctionalInterface
