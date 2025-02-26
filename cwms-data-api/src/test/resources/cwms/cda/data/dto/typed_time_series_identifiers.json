@@ -1,0 +1,15 @@
+{
+  "location-id": {
+    "name": "VANL",
+    "office-id": "SWT"
+  },
+  "type-to-ts-id-map": {
+    "STAGE": {
+      "office-id": "SWT",
+      "time-series-id": "VANL.Stage.Inst.15Minutes.0.Ccp-Rev",
+      "timezone-name": "UTC",
+      "interval-offset-minutes": 0,
+      "active": true
+    }
+  }
+}

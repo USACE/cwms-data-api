@@ -25,6 +25,8 @@
 package cwms.cda.data.dto;
 
 import java.time.ZoneId;
+import java.util.HashMap;
+import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.api.errors.FieldException;
@@ -36,7 +38,7 @@ import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-final class AccessToWaterTimeSeriesIdentifierTest {
+final class TypedTimeSeriesIdentifierTest {
 
     @Test
     void createAccessToWaterTimeSeriesData_allFieldsProvided_success() {
@@ -47,16 +49,23 @@ final class AccessToWaterTimeSeriesIdentifierTest {
                 .withIntervalOffsetMinutes(0L)
                 .withZoneId(ZoneId.of("UTC"))
                 .build();
-        AccessToWaterTimeSeriesIdentifier item = new AccessToWaterTimeSeriesIdentifier.Builder()
+        TimeSeriesIdentifierDescriptor tsDescriptor2 = new TimeSeriesIdentifierDescriptor.Builder()
+                .withTimeSeriesId("VANL.Flow.Inst.15Minutes.0.Ccp-Rev")
+                .withOfficeId("SWT")
+                .withActive(true)
+                .withIntervalOffsetMinutes(0L)
+                .withZoneId(ZoneId.of("UTC"))
+                .build();
+        TypedTimeSeriesIdentifiers items = new TypedTimeSeriesIdentifiers.Builder()
                 .withLocationId(CwmsId.buildCwmsId("SWT", "VANL"))
-                .withTimeSeriesIdDescriptor(tsDescriptor)
-                .withTsType("STAGE")
+                .withTypeToTsId("STAGE", tsDescriptor)
+                .withTypeToTsId("OUTFLOW", tsDescriptor2)
                 .build();
 
         assertAll(
-                () -> DTOMatch.assertMatch(CwmsId.buildCwmsId("SWT", "VANL"), item.getLocationId(), "The location ID does not match the provided value"),
-                () -> DTOMatch.assertMatch(tsDescriptor, item.getTimeSeriesIdDescriptor()),
-                () -> assertEquals("STAGE", item.getTsType(), "The time series type does not match the provided value")
+                () -> DTOMatch.assertMatch(CwmsId.buildCwmsId("SWT", "VANL"), items.getLocationId(), "Location ID"),
+                () -> DTOMatch.assertMatch(tsDescriptor, items.getTypeToTsIdMap().get("STAGE")),
+                () -> DTOMatch.assertMatch(tsDescriptor2, items.getTypeToTsIdMap().get("OUTFLOW"))
         );
     }
 
@@ -69,30 +78,15 @@ final class AccessToWaterTimeSeriesIdentifierTest {
                 .withIntervalOffsetMinutes(0L)
                 .withZoneId(ZoneId.of("UTC"))
                 .build();
+        Map<String, TimeSeriesIdentifierDescriptor> typeToTsIdMap = new HashMap<>();
+        typeToTsIdMap.put("STAGE", tsDescriptor);
         assertAll(
                 () -> assertThrows(FieldException.class, () -> {
-                    AccessToWaterTimeSeriesIdentifier item = new AccessToWaterTimeSeriesIdentifier.Builder()
-                            .withTimeSeriesIdDescriptor(tsDescriptor)
-                            .withTsType("STAGE")
+                    TypedTimeSeriesIdentifiers item = new TypedTimeSeriesIdentifiers.Builder()
+                            .withTypeToTsIdMap(typeToTsIdMap)
                             .build();
                     item.validate();
-                }, "The validate method should have thrown a FieldException because the location ID is missing"),
-
-                () -> assertThrows(FieldException.class, () -> {
-                    AccessToWaterTimeSeriesIdentifier item = new AccessToWaterTimeSeriesIdentifier.Builder()
-                            .withLocationId(CwmsId.buildCwmsId("SWT", "VANL"))
-                            .withTsType("STAGE")
-                            .build();
-                    item.validate();
-                }, "The validate method should have thrown a FieldException because the TimeSeries ID is missing"),
-
-                () -> assertThrows(FieldException.class, () -> {
-                    AccessToWaterTimeSeriesIdentifier item = new AccessToWaterTimeSeriesIdentifier.Builder()
-                            .withLocationId(CwmsId.buildCwmsId("SWT", "VANL"))
-                            .withTimeSeriesIdDescriptor(tsDescriptor)
-                            .build();
-                    item.validate();
-                }, "The validate method should have thrown a FieldException because the time series type is missing")
+                }, "The validate method should have thrown a FieldException because the location ID is missing")
         );
     }
 
@@ -105,15 +99,14 @@ final class AccessToWaterTimeSeriesIdentifierTest {
                 .withIntervalOffsetMinutes(0L)
                 .withZoneId(ZoneId.of("UTC"))
                 .build();
-        AccessToWaterTimeSeriesIdentifier data = new AccessToWaterTimeSeriesIdentifier.Builder()
+        TypedTimeSeriesIdentifiers data = new TypedTimeSeriesIdentifiers.Builder()
                 .withLocationId(CwmsId.buildCwmsId("SWT", "VANL"))
-                .withTimeSeriesIdDescriptor(tsDescriptor)
-                .withTsType("STAGE")
+                .withTypeToTsId("STAGE", tsDescriptor)
                 .build();
 
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, data);
-        AccessToWaterTimeSeriesIdentifier deserialized = Formats.parseContent(contentType, json, AccessToWaterTimeSeriesIdentifier.class);
+        TypedTimeSeriesIdentifiers deserialized = Formats.parseContent(contentType, json, TypedTimeSeriesIdentifiers.class);
         DTOMatch.assertMatch(data, deserialized);
     }
 
@@ -126,17 +119,16 @@ final class AccessToWaterTimeSeriesIdentifierTest {
                 .withIntervalOffsetMinutes(0L)
                 .withZoneId(ZoneId.of("UTC"))
                 .build();
-        AccessToWaterTimeSeriesIdentifier expected = new AccessToWaterTimeSeriesIdentifier.Builder()
+        TypedTimeSeriesIdentifiers expected = new TypedTimeSeriesIdentifiers.Builder()
                 .withLocationId(CwmsId.buildCwmsId("SWT", "VANL"))
-                .withTimeSeriesIdDescriptor(tsDescriptor)
-                .withTsType("STAGE")
+                .withTypeToTsId("STAGE", tsDescriptor)
                 .build();
 
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/access_to_water_time_series_data.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/typed_time_series_identifiers.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = new ContentType(Formats.JSON);
-        AccessToWaterTimeSeriesIdentifier deserialized = Formats.parseContent(contentType, json, AccessToWaterTimeSeriesIdentifier.class);
+        TypedTimeSeriesIdentifiers deserialized = Formats.parseContent(contentType, json, TypedTimeSeriesIdentifiers.class);
         DTOMatch.assertMatch(expected, deserialized);
     }
 }

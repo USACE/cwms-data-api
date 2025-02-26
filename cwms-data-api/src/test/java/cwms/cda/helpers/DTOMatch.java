@@ -24,11 +24,12 @@
 
 package cwms.cda.helpers;
 
-import cwms.cda.data.dto.AccessToWaterTimeSeriesIdentifier;
 import cwms.cda.data.dto.CwmsIdTimeExtentsEntry;
 import cwms.cda.data.dto.TimeExtents;
 import cwms.cda.data.dto.TimeSeriesExtents;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
+import cwms.cda.data.dto.TypedTimeSeriesIdentifiers;
+import cwms.cda.data.dto.TypedTimeSeriesIdentifiersList;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.location.kind.GateChange;
@@ -603,20 +604,26 @@ public final class DTOMatch {
         );
     }
 
-    public static void assertMatch(AccessToWaterTimeSeriesIdentifier first, AccessToWaterTimeSeriesIdentifier second) {
-        assertAll(
-                () -> assertMatch(first.getTimeSeriesIdDescriptor(), second.getTimeSeriesIdDescriptor()),
-                () -> assertEquals(first.getTsType(), second.getTsType()),
-                () -> assertMatch(first.getLocationId(), second.getLocationId())
-        );
-    }
-
     public static void assertMatch(TimeSeriesIdentifierDescriptor tsDescriptor, TimeSeriesIdentifierDescriptor timeSeriesIdDescriptor) {
         assertAll(
                 () -> assertEquals(tsDescriptor.getIntervalOffsetMinutes(), timeSeriesIdDescriptor.getIntervalOffsetMinutes(), "Identifier does not match"),
                 () -> assertEquals(tsDescriptor.getTimeSeriesId(), timeSeriesIdDescriptor.getTimeSeriesId(), "Part does not match"),
                 () -> assertEquals(tsDescriptor.getOfficeId(), timeSeriesIdDescriptor.getOfficeId(), "Time series type does not match"),
                 () -> assertEquals(tsDescriptor.getTimezoneName(), timeSeriesIdDescriptor.getTimezoneName(), "Office ID does not match")
+        );
+    }
+
+    public static void assertMatch(TypedTimeSeriesIdentifiers first, TypedTimeSeriesIdentifiers second)
+    {
+        assertAll(
+                () -> assertMatch(first.getLocationId(), second.getLocationId()),
+                () -> assertEquals(first.getTypeToTsIdMap().size(), second.getTypeToTsIdMap().size(), "Type to TS ID map sizes do not match"),
+                () -> first.getTypeToTsIdMap().forEach((type, tsId) -> {
+                    if (!second.getTypeToTsIdMap().containsKey(type)) {
+                        fail("tsType " + type + " not found in both tsType to tsId maps");
+                    }
+                    assertMatch(tsId, second.getTypeToTsIdMap().get(type));
+                })
         );
     }
 

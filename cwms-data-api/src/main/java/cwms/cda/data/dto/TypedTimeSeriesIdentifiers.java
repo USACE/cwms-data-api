@@ -23,68 +23,64 @@
  */
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import java.util.HashMap;
+import java.util.Map;
 
-@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.JSON, Formats.DEFAULT})
-@JsonDeserialize(builder = AccessToWaterTimeSeriesIdentifier.Builder.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@JsonDeserialize(builder = TypedTimeSeriesIdentifiers.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class AccessToWaterTimeSeriesIdentifier extends CwmsDTOBase {
+public final class TypedTimeSeriesIdentifiers extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId locationId;
-    @JsonProperty(required = true)
-    private final TimeSeriesIdentifierDescriptor timeSeriesIdDescriptor;
-    @JsonProperty(required = true)
-    private final String tsType;
 
-    private AccessToWaterTimeSeriesIdentifier(Builder builder) {
+    private final Map<String, TimeSeriesIdentifierDescriptor> typeToTsIdMap;
+
+    private TypedTimeSeriesIdentifiers(Builder builder) {
         this.locationId = builder.locationId;
-        this.timeSeriesIdDescriptor = builder.timeSeriesIdDescriptor;
-        this.tsType = builder.tsType;
+        this.typeToTsIdMap = builder.typeToTsIdMap;
     }
 
     public CwmsId getLocationId() {
         return locationId;
     }
 
-    public TimeSeriesIdentifierDescriptor getTimeSeriesIdDescriptor() {
-        return timeSeriesIdDescriptor;
-    }
-
-    public String getTsType() {
-        return tsType;
+    public Map<String, TimeSeriesIdentifierDescriptor> getTypeToTsIdMap() {
+        return typeToTsIdMap;
     }
 
     public static class Builder {
         private CwmsId locationId;
-        private TimeSeriesIdentifierDescriptor timeSeriesIdDescriptor;
-        private String tsType;
+        private Map<String, TimeSeriesIdentifierDescriptor> typeToTsIdMap = new HashMap<>();
 
         public Builder withLocationId(CwmsId locationId) {
             this.locationId = locationId;
             return this;
         }
 
-        public Builder withTimeSeriesIdDescriptor(TimeSeriesIdentifierDescriptor timeSeriesIdDescriptor) {
-            this.timeSeriesIdDescriptor = timeSeriesIdDescriptor;
+        public Builder withTypeToTsIdMap(Map<String, TimeSeriesIdentifierDescriptor> typeToTsIdMap) {
+            this.typeToTsIdMap = typeToTsIdMap;
             return this;
         }
 
-        public Builder withTsType(String tsType) {
-            this.tsType = tsType;
+        @JsonIgnore
+        public Builder withTypeToTsId(String type, TimeSeriesIdentifierDescriptor tsId) {
+            this.typeToTsIdMap.put(type, tsId);
             return this;
         }
 
-        public AccessToWaterTimeSeriesIdentifier build() {
-            return new AccessToWaterTimeSeriesIdentifier(this);
+        public TypedTimeSeriesIdentifiers build() {
+            return new TypedTimeSeriesIdentifiers(this);
         }
-
     }
 }
