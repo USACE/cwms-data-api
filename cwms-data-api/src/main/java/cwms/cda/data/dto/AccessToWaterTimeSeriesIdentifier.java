@@ -36,22 +36,21 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = AccessToWaterTimeSeriesIdentifier.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class AccessToWaterTimeSeriesIdentifier extends CwmsDTO {
+public final class AccessToWaterTimeSeriesIdentifier extends CwmsDTOBase {
     @JsonProperty(required = true)
-    private final String locationId;
+    private final CwmsId locationId;
     @JsonProperty(required = true)
     private final TimeSeriesIdentifierDescriptor timeSeriesIdDescriptor;
     @JsonProperty(required = true)
     private final String tsType;
 
     private AccessToWaterTimeSeriesIdentifier(Builder builder) {
-        super(builder.officeId);
         this.locationId = builder.locationId;
         this.timeSeriesIdDescriptor = builder.timeSeriesIdDescriptor;
         this.tsType = builder.tsType;
     }
 
-    public String getLocationId() {
+    public CwmsId getLocationId() {
         return locationId;
     }
 
@@ -64,12 +63,11 @@ public final class AccessToWaterTimeSeriesIdentifier extends CwmsDTO {
     }
 
     public static class Builder {
-        private String locationId;
+        private CwmsId locationId;
         private TimeSeriesIdentifierDescriptor timeSeriesIdDescriptor;
         private String tsType;
-        private String officeId;
 
-        public Builder withLocationId(String locationId) {
+        public Builder withLocationId(CwmsId locationId) {
             this.locationId = locationId;
             return this;
         }
@@ -81,11 +79,6 @@ public final class AccessToWaterTimeSeriesIdentifier extends CwmsDTO {
 
         public Builder withTsType(String tsType) {
             this.tsType = tsType;
-            return this;
-        }
-
-        public Builder withOfficeId(String officeId) {
-            this.officeId = officeId;
             return this;
         }
 

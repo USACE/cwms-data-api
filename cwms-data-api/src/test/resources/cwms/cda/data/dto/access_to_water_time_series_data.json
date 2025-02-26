@@ -1,6 +1,8 @@
 {
-  "office-id":"SWT",
-  "location-id": "VANL",
+  "location-id": {
+    "name": "VANL",
+    "office-id":"SWT"
+  },
   "time-series-id-descriptor": {
     "office-id": "SWT",
     "time-series-id": "VANL.Stage.Inst.15Minutes.0.Ccp-Rev",

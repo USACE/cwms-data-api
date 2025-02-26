@@ -48,14 +48,13 @@ final class AccessToWaterTimeSeriesIdentifierTest {
                 .withZoneId(ZoneId.of("UTC"))
                 .build();
         AccessToWaterTimeSeriesIdentifier item = new AccessToWaterTimeSeriesIdentifier.Builder()
-                .withOfficeId("SWT")
-                .withLocationId("VANL")
+                .withLocationId(CwmsId.buildCwmsId("SWT", "VANL"))
                 .withTimeSeriesIdDescriptor(tsDescriptor)
                 .withTsType("STAGE")
                 .build();
 
         assertAll(
-                () -> assertEquals("VANL", item.getLocationId(), "The location ID does not match the provided value"),
+                () -> DTOMatch.assertMatch(CwmsId.buildCwmsId("SWT", "VANL"), item.getLocationId(), "The location ID does not match the provided value"),
                 () -> DTOMatch.assertMatch(tsDescriptor, item.getTimeSeriesIdDescriptor()),
                 () -> assertEquals("STAGE", item.getTsType(), "The time series type does not match the provided value")
         );
@@ -73,7 +72,6 @@ final class AccessToWaterTimeSeriesIdentifierTest {
         assertAll(
                 () -> assertThrows(FieldException.class, () -> {
                     AccessToWaterTimeSeriesIdentifier item = new AccessToWaterTimeSeriesIdentifier.Builder()
-                            .withOfficeId("SWT")
                             .withTimeSeriesIdDescriptor(tsDescriptor)
                             .withTsType("STAGE")
                             .build();
@@ -82,8 +80,7 @@ final class AccessToWaterTimeSeriesIdentifierTest {
 
                 () -> assertThrows(FieldException.class, () -> {
                     AccessToWaterTimeSeriesIdentifier item = new AccessToWaterTimeSeriesIdentifier.Builder()
-                            .withOfficeId("SWT")
-                            .withLocationId("VANL")
+                            .withLocationId(CwmsId.buildCwmsId("SWT", "VANL"))
                             .withTsType("STAGE")
                             .build();
                     item.validate();
@@ -91,21 +88,11 @@ final class AccessToWaterTimeSeriesIdentifierTest {
 
                 () -> assertThrows(FieldException.class, () -> {
                     AccessToWaterTimeSeriesIdentifier item = new AccessToWaterTimeSeriesIdentifier.Builder()
-                            .withOfficeId("SWT")
-                            .withLocationId("VANL")
+                            .withLocationId(CwmsId.buildCwmsId("SWT", "VANL"))
                             .withTimeSeriesIdDescriptor(tsDescriptor)
                             .build();
                     item.validate();
-                }, "The validate method should have thrown a FieldException because the time series type is missing"),
-
-                () -> assertThrows(FieldException.class, () -> {
-                    AccessToWaterTimeSeriesIdentifier item = new AccessToWaterTimeSeriesIdentifier.Builder()
-                            .withLocationId("VANL")
-                            .withTimeSeriesIdDescriptor(tsDescriptor)
-                            .withTsType("STAGE")
-                            .build();
-                    item.validate();
-                }, "The validate method should have thrown a FieldException because the office id is missing")
+                }, "The validate method should have thrown a FieldException because the time series type is missing")
         );
     }
 
@@ -119,8 +106,7 @@ final class AccessToWaterTimeSeriesIdentifierTest {
                 .withZoneId(ZoneId.of("UTC"))
                 .build();
         AccessToWaterTimeSeriesIdentifier data = new AccessToWaterTimeSeriesIdentifier.Builder()
-                .withOfficeId("SWT")
-                .withLocationId("VANL")
+                .withLocationId(CwmsId.buildCwmsId("SWT", "VANL"))
                 .withTimeSeriesIdDescriptor(tsDescriptor)
                 .withTsType("STAGE")
                 .build();
@@ -141,8 +127,7 @@ final class AccessToWaterTimeSeriesIdentifierTest {
                 .withZoneId(ZoneId.of("UTC"))
                 .build();
         AccessToWaterTimeSeriesIdentifier expected = new AccessToWaterTimeSeriesIdentifier.Builder()
-                .withOfficeId("SWT")
-                .withLocationId("VANL")
+                .withLocationId(CwmsId.buildCwmsId("SWT", "VANL"))
                 .withTimeSeriesIdDescriptor(tsDescriptor)
                 .withTsType("STAGE")
                 .build();

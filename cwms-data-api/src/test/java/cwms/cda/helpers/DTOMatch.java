@@ -607,11 +607,17 @@ public final class DTOMatch {
         assertAll(
                 () -> assertMatch(first.getTimeSeriesIdDescriptor(), second.getTimeSeriesIdDescriptor()),
                 () -> assertEquals(first.getTsType(), second.getTsType()),
-                () -> assertEquals(first.getLocationId(), second.getLocationId())
+                () -> assertMatch(first.getLocationId(), second.getLocationId())
         );
     }
 
     public static void assertMatch(TimeSeriesIdentifierDescriptor tsDescriptor, TimeSeriesIdentifierDescriptor timeSeriesIdDescriptor) {
+        assertAll(
+                () -> assertEquals(tsDescriptor.getIntervalOffsetMinutes(), timeSeriesIdDescriptor.getIntervalOffsetMinutes(), "Identifier does not match"),
+                () -> assertEquals(tsDescriptor.getTimeSeriesId(), timeSeriesIdDescriptor.getTimeSeriesId(), "Part does not match"),
+                () -> assertEquals(tsDescriptor.getOfficeId(), timeSeriesIdDescriptor.getOfficeId(), "Time series type does not match"),
+                () -> assertEquals(tsDescriptor.getTimezoneName(), timeSeriesIdDescriptor.getTimezoneName(), "Office ID does not match")
+        );
     }
 
     @FunctionalInterface
