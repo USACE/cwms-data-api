@@ -43,12 +43,33 @@ import java.util.List;
 public class TypedTimeSeriesIdentifiersList extends CwmsDTOPaginated {
 
     private final List<TypedTimeSeriesIdentifiers> typedTimeSeriesIdentifiers;
-    private final int offset;
 
-    private TypedTimeSeriesIdentifiersList(int offset, int pageSize, Integer total, List<TypedTimeSeriesIdentifiers> identifiersList) {
-        super(Integer.toString(offset), pageSize, total);
+    private TypedTimeSeriesIdentifiersList(String cursor, int pageSize, Integer total, List<TypedTimeSeriesIdentifiers> identifiersList) {
+        super(cursor, pageSize, total);
         this.typedTimeSeriesIdentifiers = new ArrayList<>(identifiersList);
-        this.offset = offset;
+    }
+
+    public static String getOffice(String cursor)
+    {
+        String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
+        if (parts.length > 1) {
+            String[] idAndOffice = CwmsDTOPaginated.decodeCursor(parts[0]);
+            if (idAndOffice.length > 0) {
+                return idAndOffice[0];
+            }
+        }
+        return null;
+    }
+
+    public static String getId(String cursor) {
+        String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
+        if (parts.length > 1) {
+            String[] idAndOffice = CwmsDTOPaginated.decodeCursor(parts[0]);
+            if (idAndOffice.length > 1) {
+                return idAndOffice[1];
+            }
+        }
+        return null;
     }
 
     public List<TypedTimeSeriesIdentifiers> getTypedTimeSeriesIdentifiers() {
@@ -56,14 +77,14 @@ public class TypedTimeSeriesIdentifiersList extends CwmsDTOPaginated {
     }
 
     public static class Builder {
-        private final int offset;
+        private final String cursor;
         private final int pageSize;
         private final Integer total;
 
         private List<TypedTimeSeriesIdentifiers> typedTimeSeriesIdentifiers = new ArrayList<>();
 
-        public Builder(int offset, int pageSize, Integer total) {
-            this.offset = offset;
+        public Builder(String cursor, int pageSize, Integer total) {
+            this.cursor = cursor;
             this.pageSize = pageSize;
             this.total = total;
         }
@@ -74,15 +95,17 @@ public class TypedTimeSeriesIdentifiersList extends CwmsDTOPaginated {
         }
 
         public TypedTimeSeriesIdentifiersList build() {
-            TypedTimeSeriesIdentifiersList retval = new TypedTimeSeriesIdentifiersList(offset, pageSize, total, typedTimeSeriesIdentifiers);
+            TypedTimeSeriesIdentifiersList retval = new TypedTimeSeriesIdentifiersList(cursor, pageSize, total, typedTimeSeriesIdentifiers);
 
-            if (this.typedTimeSeriesIdentifiers.size() == this.pageSize) {
-                String cursor = Integer.toString(retval.offset + retval.typedTimeSeriesIdentifiers.size());
-                retval.nextPage = encodeCursor(cursor, retval.pageSize, retval.total);
+            if (typedTimeSeriesIdentifiers.size() == pageSize && !typedTimeSeriesIdentifiers.isEmpty()) {
+                TypedTimeSeriesIdentifiers lastTypedTimeSeriesIdentifiers = typedTimeSeriesIdentifiers.get(typedTimeSeriesIdentifiers.size() - 1);
+                String cursor = encodeCursor(CwmsDTOPaginated.delimiter, lastTypedTimeSeriesIdentifiers.getLocationId().getOfficeId(),
+                        lastTypedTimeSeriesIdentifiers.getLocationId().getName());
+                retval.nextPage = encodeCursor(cursor, pageSize, total);
             } else {
                 retval.nextPage = null;
             }
-            return retval;
+           return retval;
         }
     }
 }
