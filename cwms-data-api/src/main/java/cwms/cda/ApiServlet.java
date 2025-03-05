@@ -24,6 +24,7 @@
 
 package cwms.cda;
 
+import cwms.cda.api.AccessToWaterController;
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.NAME;
@@ -235,6 +236,7 @@ import org.owasp.html.PolicyFactory;
     "/stream-locations/*",
     "/stream-reaches/*",
     "/measurements/*",
+    "/access-to-water/*",
     "/blobs/*",
     "/clobs/*",
     "/pools/*",
@@ -604,6 +606,8 @@ public class ApiServlet extends HttpServlet {
         addCacheControl(measTimeExtents, 5, TimeUnit.MINUTES);
         cdaCrudCache(format(measurements + "{%s}", LOCATION_ID),
                 new cwms.cda.api.MeasurementController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(format("/access-to-water/{%s}", LOCATION_ID),
+                new AccessToWaterController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
                 new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/clobs/{clob-id}",

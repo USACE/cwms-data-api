@@ -36,17 +36,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-@JsonDeserialize(builder = TypedTimeSeriesIdentifiersList.Builder.class)
+@JsonDeserialize(builder = TimeSeriesIdentifiersByTypeList.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
-public class TypedTimeSeriesIdentifiersList extends CwmsDTOPaginated {
+public class TimeSeriesIdentifiersByTypeList extends CwmsDTOPaginated {
 
-    private final List<TypedTimeSeriesIdentifiers> typedTimeSeriesIdentifiers;
+    private final List<TimeSeriesIdentifiersByType> timeSeriesIdsForLocations;
 
-    private TypedTimeSeriesIdentifiersList(String cursor, int pageSize, Integer total, List<TypedTimeSeriesIdentifiers> identifiersList) {
-        super(cursor, pageSize, total);
-        this.typedTimeSeriesIdentifiers = new ArrayList<>(identifiersList);
+    private TimeSeriesIdentifiersByTypeList(Builder builder) {
+        super(builder.cursor, builder.pageSize, builder.total);
+        this.timeSeriesIdsForLocations = new ArrayList<>(builder.timeSeriesIdsForLocations);
     }
 
     public static String getOffice(String cursor)
@@ -72,35 +72,50 @@ public class TypedTimeSeriesIdentifiersList extends CwmsDTOPaginated {
         return null;
     }
 
-    public List<TypedTimeSeriesIdentifiers> getTypedTimeSeriesIdentifiers() {
-        return Collections.unmodifiableList(typedTimeSeriesIdentifiers);
+    public List<TimeSeriesIdentifiersByType> getTimeSeriesIdsForLocations() {
+        return Collections.unmodifiableList(timeSeriesIdsForLocations);
     }
 
     public static class Builder {
-        private final String cursor;
-        private final int pageSize;
-        private final Integer total;
+        private String cursor;
+        private int pageSize;
+        private Integer total;
+        private String nextPage;
 
-        private List<TypedTimeSeriesIdentifiers> typedTimeSeriesIdentifiers = new ArrayList<>();
+        private List<TimeSeriesIdentifiersByType> timeSeriesIdsForLocations = new ArrayList<>();
 
-        public Builder(String cursor, int pageSize, Integer total) {
+        public Builder withCursor(String cursor) {
             this.cursor = cursor;
-            this.pageSize = pageSize;
-            this.total = total;
-        }
-
-        public Builder withTypedTimeSeriesIdentifiers(Collection<TypedTimeSeriesIdentifiers> identifiersList) {
-            this.typedTimeSeriesIdentifiers = new ArrayList<>(identifiersList);
             return this;
         }
 
-        public TypedTimeSeriesIdentifiersList build() {
-            TypedTimeSeriesIdentifiersList retval = new TypedTimeSeriesIdentifiersList(cursor, pageSize, total, typedTimeSeriesIdentifiers);
+        public Builder withPageSize(int pageSize) {
+            this.pageSize = pageSize;
+            return this;
+        }
 
-            if (typedTimeSeriesIdentifiers.size() == pageSize && !typedTimeSeriesIdentifiers.isEmpty()) {
-                TypedTimeSeriesIdentifiers lastTypedTimeSeriesIdentifiers = typedTimeSeriesIdentifiers.get(typedTimeSeriesIdentifiers.size() - 1);
-                String cursor = encodeCursor(CwmsDTOPaginated.delimiter, lastTypedTimeSeriesIdentifiers.getLocationId().getOfficeId(),
-                        lastTypedTimeSeriesIdentifiers.getLocationId().getName());
+        public Builder withTotal(Integer total) {
+            this.total = total;
+            return this;
+        }
+
+        public Builder withNextPage(String nextPage) {
+            this.nextPage = nextPage;
+            return this;
+        }
+
+        public Builder withTimeSeriesIdsForLocations(Collection<TimeSeriesIdentifiersByType> timeSeriesIdsForLocations) {
+            this.timeSeriesIdsForLocations = new ArrayList<>(timeSeriesIdsForLocations);
+            return this;
+        }
+
+        public TimeSeriesIdentifiersByTypeList build() {
+            TimeSeriesIdentifiersByTypeList retval = new TimeSeriesIdentifiersByTypeList(this);
+
+            if (timeSeriesIdsForLocations.size() == pageSize && !timeSeriesIdsForLocations.isEmpty()) {
+                TimeSeriesIdentifiersByType lastTimeSeriesIdentifiersByType = timeSeriesIdsForLocations.get(timeSeriesIdsForLocations.size() - 1);
+                String cursor = encodeCursor(CwmsDTOPaginated.delimiter, lastTimeSeriesIdentifiersByType.getLocationId().getOfficeId(),
+                        lastTimeSeriesIdentifiersByType.getLocationId().getName());
                 retval.nextPage = encodeCursor(cursor, pageSize, total);
             } else {
                 retval.nextPage = null;

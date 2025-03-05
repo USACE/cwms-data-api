@@ -37,50 +37,50 @@ import java.util.HashMap;
 import java.util.Map;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
-@JsonDeserialize(builder = TypedTimeSeriesIdentifiers.Builder.class)
+@JsonDeserialize(builder = TimeSeriesIdentifiersByType.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class TypedTimeSeriesIdentifiers extends CwmsDTOBase {
+public final class TimeSeriesIdentifiersByType extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId locationId;
 
-    private final Map<String, TimeSeriesIdentifierDescriptor> typeToTsIdMap;
+    private final Map<String, TimeSeriesMetaData> timeSeriesIds;
 
-    private TypedTimeSeriesIdentifiers(Builder builder) {
+    private TimeSeriesIdentifiersByType(Builder builder) {
         this.locationId = builder.locationId;
-        this.typeToTsIdMap = builder.typeToTsIdMap;
+        this.timeSeriesIds = builder.timeSeriesIds;
     }
 
     public CwmsId getLocationId() {
         return locationId;
     }
 
-    public Map<String, TimeSeriesIdentifierDescriptor> getTypeToTsIdMap() {
-        return typeToTsIdMap;
+    public Map<String, TimeSeriesMetaData> getTimeSeriesIds() {
+        return timeSeriesIds;
     }
 
     public static class Builder {
         private CwmsId locationId;
-        private Map<String, TimeSeriesIdentifierDescriptor> typeToTsIdMap = new HashMap<>();
+        private Map<String, TimeSeriesMetaData> timeSeriesIds = new HashMap<>();
 
         public Builder withLocationId(CwmsId locationId) {
             this.locationId = locationId;
             return this;
         }
 
-        public Builder withTypeToTsIdMap(Map<String, TimeSeriesIdentifierDescriptor> typeToTsIdMap) {
-            this.typeToTsIdMap = typeToTsIdMap;
+        public Builder withTimeSeriesIds(Map<String, TimeSeriesMetaData> timeSeriesIds) {
+            this.timeSeriesIds = timeSeriesIds;
             return this;
         }
 
         @JsonIgnore
-        public Builder withTypeToTsId(String type, TimeSeriesIdentifierDescriptor tsId) {
-            this.typeToTsIdMap.put(type, tsId);
+        public Builder withTimeSeriesId(String type, TimeSeriesMetaData tsId) {
+            this.timeSeriesIds.put(type, tsId);
             return this;
         }
 
-        public TypedTimeSeriesIdentifiers build() {
-            return new TypedTimeSeriesIdentifiers(this);
+        public TimeSeriesIdentifiersByType build() {
+            return new TimeSeriesIdentifiersByType(this);
         }
     }
 }

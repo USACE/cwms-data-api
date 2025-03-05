@@ -1,0 +1,126 @@
+{
+  "cursor": "cursor",
+  "page-size": 20,
+  "total": 100,
+  "next-page": "",
+  "time-series-ids-for-locations": [
+    {
+      "location-id": {
+        "name": "AARK",
+        "office-id": "SWT",
+        "bounding-office-id": "SWT",
+        "kind": "SITE"
+      },
+      "time-series-ids": {
+        "STAGE": {
+          "ts-id": {
+            "office-id": "SWT",
+            "time-series-id": "AARK.Stage.Inst.15Minutes.0.Ccp-Rev",
+            "timezone-name": "UTC",
+            "interval-offset-minutes": 0,
+            "active": true
+          },
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Stage data for AARK"
+        },
+        "OUTFLOW": {
+          "ts-id": {
+            "office-id": "SWT",
+            "time-series-id": "AARK.Flow.Inst.1Hour.0.Ccp-Rev",
+            "timezone-name": "UTC",
+            "interval-offset-minutes": 0,
+            "active": true
+          },
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Flow data for AARK"
+        }
+      }
+    },
+    {
+      "location-id": {
+        "name": "AUGU",
+        "office-id": "SWT",
+        "bounding-office-id": "SWT",
+        "kind": "SITE"
+      },
+      "time-series-ids": {
+        "PRECIP": {
+          "ts-id": {
+            "office-id": "SWT",
+            "time-series-id": "AUGU.Precip-Inc.Total.1Hour.1Hour.Ccp-Rev",
+            "timezone-name": "UTC",
+            "interval-offset-minutes": 0,
+            "active": true
+          },
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Precipitation data for AUGU"
+        },
+        "STAGE": {
+          "ts-id": {
+            "office-id": "SWT",
+            "time-series-id": "AUGU.Stage.Inst.1Hour.0.Ccp-Rev",
+            "timezone-name": "UTC",
+            "interval-offset-minutes": 0,
+            "active": true
+          },
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Stage data for AUGU"
+        },
+        "OUTFLOW": {
+          "ts-id": {
+            "office-id": "SWT",
+            "time-series-id": "AUGU.Flow.Inst.1Hour.0.Ccp-Rev",
+            "timezone-name": "UTC",
+            "interval-offset-minutes": 0,
+            "active": true
+          },
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Flow data for AUGU"
+        }
+      }
+    },
+    {
+      "location-id": {
+        "name": "ALTU",
+        "office-id": "SWT",
+        "bounding-office-id": "SWT",
+        "kind": "SITE"
+      },
+      "time-series-ids": {
+        "OUTFLOW": {
+          "ts-id": {
+            "office-id": "SWT",
+            "time-series-id": "ALTU.Flow-Res Out.Ave.1Hour.1Hour.Rev-Regi-Flowgroup",
+            "timezone-name": "UTC",
+            "interval-offset-minutes": 0,
+            "active": true
+          },
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Outflow data for ALTU"
+        },
+        "FLOOD STORAGE": {
+          "ts-id": {
+            "office-id": "SWT",
+            "time-series-id": "ALTU.Stor-Flood Pool.Inst.1Hour.0.Ccp-Rev",
+            "timezone-name": "UTC",
+            "interval-offset-minutes": 0,
+            "active": true
+          },
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Flood storage data for ALTU"
+        },
+        "CONSERVATION STORAGE": {
+          "ts-id": {
+            "office-id": "SWT",
+            "time-series-id": "ALTU.Stor-Conservation Pool.Inst.1Hour.0.Ccp-Rev",
+            "timezone-name": "UTC",
+            "interval-offset-minutes": 0,
+            "active": true
+          },
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Conservation storage data for ALTU"
+        }
+      }
+    }
+  ]
+}
