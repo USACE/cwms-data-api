@@ -442,7 +442,12 @@ public class ApiServlet extends HttpServlet {
                     if (logger.atFine().isEnabled()) {
                         logger.atFine().withCause(e).log(e.getMessage());
                     } else {
-                        logger.atInfo().log(e.getMessage());
+                        Throwable cause = e.getCause();
+                        String extra = "";
+                        if (cause != null) {
+                            extra = ": "+ cause.getMessage();
+                        }
+                        logger.atInfo().log(e.getMessage() + extra);
                     }
 
                     ctx.status(e.getAuthFailCode()).json(re);
