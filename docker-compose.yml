@@ -11,7 +11,7 @@ services:
       - OFFICE_ID=HQ
       - OFFICE_EROC=s0
     ports:
-      - "1521:1521"
+      - "1525:1521"
     healthcheck:
       test: ["CMD","tnsping", "FREEPDB1"]
       interval: 30s
@@ -75,7 +75,7 @@ services:
       - cwms.dataapi.access.openid.wellKnownUrl=http://auth:${APP_PORT:-8081}/auth/realms/cwms/.well-known/openid-configuration
       - cwms.dataapi.access.openid.altAuthUrl=http://localhost:${APP_PORT:-8081}
       - cwms.dataapi.access.openid.useAltWellKnown=true
-      - cwms.dataapi.access.openid.issuer=http://auth:${APP_PORT:-8081}/auth/realms/cwms
+      - cwms.dataapi.access.openid.issuer=http://localhost:${APP_PORT:-8081}/auth/realms/cwms
     expose:
       - 7000
     healthcheck:
