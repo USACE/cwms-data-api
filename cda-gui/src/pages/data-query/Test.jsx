@@ -3,13 +3,16 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AgGridReact } from "ag-grid-react";
 import { ClientSideRowModelModule } from "ag-grid-community";
-import Plot from 'react-plotly.js'; // Import Plotly component
+import Plot from 'react-plotly.js'; 
+import { useQueryClient } from "@tanstack/react-query";
+
 
 import dayjs from "dayjs";
 import Controls from "./components/Controls";
 import { Configuration, TimeSeriesApi } from "cwmsjs";
 import { getPrecision, mergeTimeseries } from "../../utils/timeseries";
 import { IoWarning } from "react-icons/io5";
+
 
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
 
@@ -22,7 +25,7 @@ export default function HydrologicQuery() {
   const [office, setOffice] = useState("SWF");
   const [beginDateTime, setBeginDateTime] = useState(dayjs().subtract(1, "day"));
   const [endDateTime, setEndDateTime] = useState(dayjs());
-  const [view, setView] = useState("table"); // Added view state (table or graph)
+  const [view, setView] = useState("table"); 
 
   const v2_config = new Configuration({
     headers: {
