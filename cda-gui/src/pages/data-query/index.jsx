@@ -1,4 +1,4 @@
-import { UsaceBox, Skeleton, Badge, Accordion } from "@usace/groundwork";
+import { UsaceBox, Skeleton, Badge, Accordion, Button } from "@usace/groundwork";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AgGridReact } from "ag-grid-react";
@@ -70,6 +70,46 @@ export default function HydrologicQuery() {
     },
   };
 
+  
+
+    async function fetchAllTSData(data) {
+        let startDate = data?.begin
+        let endDate = data?.end
+        let values = data?.values
+        let { name, "office-id": office, "next-page": nextPage } = data
+        const maxPages = 1000
+        let pageCount = 0
+        while (nextPage) {
+            let _result = await ts_api.getTimeSeries({
+                begin: startDate,
+                end: endDate,
+                name,
+                office,
+                page: nextPage,
+                pageSize: 1500
+                // begin: beginDateTime.format(CDA_DATE_FORMAT),
+                // end: endDateTime.format(CDA_DATE_FORMAT),
+            })
+            // if (!_result?.page) page = false
+            nextPage = _result?.nextPage
+            endDate = _result?.end
+            values = values.concat(_result?.values)
+            pageCount++
+            if (pageCount > maxPages) {
+                alert("Max recursion reached, stopping")
+                break
+            }
+        }
+        return {
+            begin: startDate,
+            end: endDate,
+            values,
+            name,
+            units: data?.units,
+            total: data?.total,
+        }
+
+    }
   useEffect(() => {
     const intervalValue = parameterIntervalMapping[parameter]?.[interval] || "1Hour.0.Decodes-Rev";
     setTsids([`${location}.${parameter}.${intervalValue}`]);
@@ -81,6 +121,7 @@ export default function HydrologicQuery() {
     error,
   } = useQuery({
     queryKey: ["cdaTimeSeries", tsids, office, beginDateTime, endDateTime],
+
     queryFn: async () => {
       const promises = tsids.map((tsid) => {
         return ts_api
@@ -89,12 +130,17 @@ export default function HydrologicQuery() {
             office: office,
             begin: beginDateTime.format(CDA_DATE_FORMAT),
             end: endDateTime.format(CDA_DATE_FORMAT),
+            pageSize: 1500
           })
-          .then((r) => {
-            if (r.raw.ok) return r.raw.json();
+          .then(async (r) => {
+            if (r.raw.ok) {
+                let _data = await r.raw.json();
+                return await fetchAllTSData(_data)
+            }
             else return { name: tsid, values: [], message: r.raw.text };
           })
           .catch((e) => {
+            console.error(e)
             return { name: tsid, values: [], message: e?.message };
           });
       });
@@ -105,6 +151,7 @@ export default function HydrologicQuery() {
     enabled: tsids.length > 0 && office !== undefined,
   });
 
+  // Build the table columns
   const columns = useMemo(() => {
     if (!timeseriesData || timeseriesData.length === 0) return [];
 
@@ -137,6 +184,7 @@ export default function HydrologicQuery() {
     return columnDefs;
   }, [timeseriesData, tsids]);
 
+  // Build the table row data
   const rowData = useMemo(() => {
     if (!timeseriesData || timeseriesData.length === 0) return [];
     let tableDates = [];
@@ -308,26 +356,30 @@ export default function HydrologicQuery() {
             )}
           </div>
         ) : (
-          <div className="mt-2 ag-theme-quartz w-full" style={{ height: 500 }}>
+            <>
+                        <Button 
+                  onClick={handleDownloadCSV} 
+                  className={`mb-4 bg-blue-500 text-white px-4 py-2 rounded ${!timeseriesData?.tsids.length || isPending ? "hidden": ""}`}
+                >
+                  Download CSV
+             </Button>
+          <div className="mt-2 ag-theme-quartz w-full h-[70vh]">
+
             {isPending ? (
               <Skeleton type="card" className="w-full h-full" />
             ) : (
               <>
-                <button 
-                  onClick={handleDownloadCSV} 
-                  className="mb-4 bg-blue-500 text-white px-4 py-2 rounded"
-                >
-                  Download CSV
-                </button>
                 <AgGridReact 
                   columnDefs={columns} 
                   rowData={rowData} 
                   modules={[ClientSideRowModelModule, CsvExportModule]} 
                   ref={gridApi} 
+                  
                 />
               </>
             )}
           </div>
+          </>
         )}
       </UsaceBox>
     </div>

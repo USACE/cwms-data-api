@@ -84,7 +84,6 @@ export function mergeTimeseries(timeseriesList) {
         } else {
             merged.values[_d].push(_v);
         }
-        console.log("pushing", _v)
       });
     } else {
       merged.failed.push(ts.name);
