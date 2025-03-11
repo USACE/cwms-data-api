@@ -2,7 +2,7 @@ import { UsaceBox, Skeleton, Badge, Accordion } from "@usace/groundwork";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AgGridReact } from "ag-grid-react";
-import { ClientSideRowModelModule } from "ag-grid-community";
+
 import Plot from 'react-plotly.js'; 
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -106,6 +106,7 @@ export default function HydrologicQuery() {
   });
 
   const columns = useMemo(() => {
+    console.log("cols")
     if (!timeseriesData || timeseriesData.length === 0) return [];
 
     const columnDefs = [
@@ -128,10 +129,11 @@ export default function HydrologicQuery() {
         sortable: true,
         filter: true,
         editable: true,
-        valueFormatter: ({ value }) => value?.toFixed(getPrecision(series.units)),
+        valueFormatter: ({ value }) => (value !== undefined ? value.toFixed(getPrecision(series.units)) : ""),
       });
     });
 
+    console.log({columnDefs})
     return columnDefs;
   }, [timeseriesData, tsids]);
 
@@ -303,7 +305,7 @@ export default function HydrologicQuery() {
             {isPending ? (
               <Skeleton type="card" className="w-full h-full" />
             ) : (
-              <AgGridReact columnDefs={columns} rowData={rowData} modules={[ClientSideRowModelModule]} />
+              <AgGridReact columnDefs={columns} rowData={rowData} />
             )}
           </div>
         )}

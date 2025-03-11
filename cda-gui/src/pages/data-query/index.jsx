@@ -5,7 +5,8 @@ import { AgGridReact } from "ag-grid-react";
 import { CsvExportModule } from 'ag-grid-community';
 import { ClientSideRowModelModule } from "ag-grid-community";
 import Plot from 'react-plotly.js'; 
-
+import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'; 
+ModuleRegistry.registerModules([AllCommunityModule]);
 import dayjs from "dayjs";
 import Controls from "./components/Controls";
 import { Configuration, TimeSeriesApi } from "cwmsjs";
@@ -180,7 +181,7 @@ export default function HydrologicQuery() {
         valueFormatter: ({ value }) => value?.toFixed(getPrecision(series.units)),
       });
     });
-
+    console.log({columnDefs})
     return columnDefs;
   }, [timeseriesData, tsids]);
 

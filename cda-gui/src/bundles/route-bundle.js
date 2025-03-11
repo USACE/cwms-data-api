@@ -4,6 +4,7 @@ import NotFound from "../pages/NotFound";
 import SwaggerUI from "../pages/swagger-ui";
 import RegExp from "../pages/regexp";
 import DataQuery from "../pages/data-query";
+import Example from "../pages/data-query/example";
 
 const BASE_PATH = import.meta.env.BASE_PATH
 console.log("Base path", BASE_PATH)
@@ -14,6 +15,7 @@ export default createRouteBundle({
     [`/${BASE_PATH}/regexp.html`]: RegExp,
     [`/${BASE_PATH}/regexp`]: RegExp,
     [`/${BASE_PATH}/data-query`]: DataQuery,
+    [`/${BASE_PATH}/data-query/example`]: Example,
     // "/location/:location": Location,
     "*": NotFound,
 });
