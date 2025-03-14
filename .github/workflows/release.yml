@@ -18,6 +18,10 @@ on:
         required: false
       registry_password:
         required: false
+    outputs:
+      image_tag:
+        description: GHCR.io image tag for downstream consumption
+        value: ${{ jobs.release.outputs.image_tag }}
   workflow_dispatch:
     inputs:
       branch:
@@ -33,11 +37,13 @@ on:
         default: true
 
 jobs:
-  release-nightly:
+  release:
     runs-on: ubuntu-latest
     permissions:
         packages: write
         contents: write
+    outputs:
+      image_tag: ${{steps.build_image.image_tag}}
     steps:
       - name: checkout code
         uses: actions/checkout@v4.2.2
@@ -82,6 +88,7 @@ jobs:
           username: ${{ secrets.registry_user != null && secrets.registry_user || secrets.ALT_REG_USER }}
           password: ${{ secrets.registry_password != null && secrets.registry_password || secrets.ALT_REG_PASSWORD }}
       - name: Build docker image
+        id: build_image
         env:
           IMAGE_TAG: ${{env.VERSION}}
           ALT_REGISTRY: ${{secrets.ALT_REGISTRY}}
@@ -94,6 +101,7 @@ jobs:
           docker tag cda:build-latest $HEC_PUB_REGISTRY/cwms/data-api:$VERSION
           docker push $HEC_PUB_REGISTRY/cwms/data-api:$VERSION
           docker push ghcr.io/${REPO}:$VERSION
+          echo "image_tag=$ghcr.io/${REPO}:$VERSION" >> $GITHUB_OUTPUT
       - name: Logout of HEC pub registry
         if: ${{ always() }}
         run: |
