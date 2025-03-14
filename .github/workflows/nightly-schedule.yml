@@ -4,7 +4,7 @@ on:
     - cron: "3 0 * * *"
 
 jobs:
-  main:
+  develop:
     permissions:
       packages: write
       contents: write
@@ -17,3 +17,17 @@ jobs:
     with:
       branch: "develop"
       nightly: true
+  # Deploy CDA nightly. Keeps everyone on their toes with new updates and keeps the containers 
+  # Updated
+  deploy-develop:
+    permissions:
+      id-token: write
+      contents: read
+    needs: develop
+    uses: /.github/workflows/deploy.yml
+    secrets:
+      token: ${{ secrets.GITHUB_TOKEN }}
+    with:
+      api_image: ${{develop.outputs.image_tag}}
+      region: us-gov-west-1
+      iam_role: arn:aws-us-gov:iam::718787032875:role/github-actions-ecr-cwms-data-api
