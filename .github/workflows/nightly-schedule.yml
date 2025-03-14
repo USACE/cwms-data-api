@@ -24,7 +24,7 @@ jobs:
       id-token: write
       contents: read
     needs: develop
-    uses: /.github/workflows/deploy.yml
+    uses: ./.github/workflows/deploy.yml
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
     with:
