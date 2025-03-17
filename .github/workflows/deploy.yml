@@ -44,9 +44,9 @@ jobs:
           ECR_REPOSITORY: cwms-wmes-data-api
           IMAGE_TAG: latest
         run: |
-          docker pull ${{api.image}}
-          docker tag ${{api.image}} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
-          docker tag ${{api.image}} $ECR_REGISTRY/$ECR_REPOSITORY::dev 
+          docker pull ${{inputs.api_image}}
+          docker tag ${{inputs.api_image}} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+          docker tag ${{inputs.api_image}} $ECR_REGISTRY/$ECR_REPOSITORY:dev 
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev
       - name: ECR Logout
