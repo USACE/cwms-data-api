@@ -21,7 +21,7 @@ on:
     outputs:
       api_image:
         description: GHCR.io image tag for downstream consumption
-        value: ${{ jobs.release.outputs.image_tag }}
+        value: ${{ jobs.release.outputs.api_image }}
   workflow_dispatch:
     inputs:
       branch:
