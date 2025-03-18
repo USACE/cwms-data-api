@@ -19,7 +19,7 @@ on:
       registry_password:
         required: false
     outputs:
-      image_tag:
+      api_image:
         description: GHCR.io image tag for downstream consumption
         value: ${{ jobs.release.outputs.image_tag }}
   workflow_dispatch:
@@ -43,7 +43,7 @@ jobs:
         packages: write
         contents: write
     outputs:
-      image_tag: ${{steps.build_image.image_tag}}
+      api_image: ${{steps.build_image.outputs.api_image}}
     steps:
       - name: checkout code
         uses: actions/checkout@v4.2.2
@@ -101,7 +101,7 @@ jobs:
           docker tag cda:build-latest $HEC_PUB_REGISTRY/cwms/data-api:$VERSION
           docker push $HEC_PUB_REGISTRY/cwms/data-api:$VERSION
           docker push ghcr.io/${REPO}:$VERSION
-          echo "image_tag=$ghcr.io/${REPO}:$VERSION" >> $GITHUB_OUTPUT
+          echo "api_image=ghcr.io/${REPO}:$VERSION" >> $GITHUB_OUTPUT
       - name: Logout of HEC pub registry
         if: ${{ always() }}
         run: |
