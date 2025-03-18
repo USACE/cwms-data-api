@@ -29,6 +29,6 @@ jobs:
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
     with:
-      api_image: ${{needs.develop.outputs.image_tag}}
+      api_image: ${{needs.develop.outputs.api_image}}
       region: us-gov-west-1
       iam_role: arn:aws-us-gov:iam::718787032875:role/github-actions-ecr-cwms-data-api
