@@ -1,0 +1,28 @@
+name: 'Database Migration Container'
+inputs:
+  base-image:
+    type: string
+    description: Image name without tag
+    required: true
+  tag:
+    type: string
+    description: Image Tag
+    required: true
+outputs:
+  image:
+    description: Created Output Image
+    value: ${{steps.create.outputs.image}}
+runs:
+  using: "composite"
+  steps:
+    - name: Pull Image
+      shell: bash
+      run: |
+        docker pull ${{inputs.base-image}}:${{inputs.tag}}
+    - name: Create
+      id: create
+      shell: bash
+      run: |
+        IMAGE_NAME=migration-container:${{inputs.tag}}
+        docker build --build-arg IMAGE=${{inputs.base-image}}:${{inputs.tag}} -t $IMAGE_NAME ${{ github.action_path }}/
+        echo "image=$IMAGE_NAME" >> $GITHUB_OUTPUT
