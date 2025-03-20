@@ -49,6 +49,22 @@ jobs:
           docker tag ${{inputs.api_image}} $ECR_REGISTRY/$ECR_REPOSITORY:dev 
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev
+      - name: Setup Database Migration Image
+        id: migration
+        uses: ./github/actions/database-migration-image
+        with:
+          base-image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer
+          tag: latest-dev
+      - name: Push API Migration Image to ECR Repo
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: cwms-wmes-schema_installer
+          IMAGE_TAG: latest
+        run: |          
+          docker tag ${{steps.migration.outputs.image}} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag ${{steps.migration.outputs.image}} $ECR_REGISTRY/$ECR_REPOSITORY:dev 
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev
       - name: ECR Logout
         if: always()
         run: docker logout ${{ steps.login-ecr.outputs.registry }}
