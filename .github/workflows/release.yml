@@ -116,7 +116,7 @@ jobs:
           IMAGE=ghcr.io/${REPO}-schema-migration:$VERSION
           docker tag ${{steps.migration.outputs.image}} $IMAGE
           docker push $IMAGE
-          echo "migration_image=$IMAGE" >> $GITHUB_OUTPUT
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
       - name: Logout of HEC pub registry
         if: ${{ always() }}
         run: |
