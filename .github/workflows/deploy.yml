@@ -53,7 +53,7 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev
       - name: Setup Database Migration Image
         id: migration
-        uses: ./github/actions/database-migration-image
+        uses: ././github/actions/database-migration-image
         with:
           base-image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer
           tag: latest-dev
