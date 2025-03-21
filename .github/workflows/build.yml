@@ -37,6 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build Migration image
+        uses: ./.github/actions/database-migration-image
         with:
           base-image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer
           # TODO get current target image from build information
