@@ -113,7 +113,7 @@ jobs:
       - name: Publish migration container
         id: migration-publish
         run: |
-          IMAGE=gchr.io/${REPO}-schema-migration:$VERSION
+          IMAGE=ghcr.io/${REPO}-schema-migration:$VERSION
           docker tag ${{steps.migration.outputs.image}} $IMAGE
           docker push $IMAGE
           echo "image=$IMAGE" >> $GITHUB_OUTPUT
