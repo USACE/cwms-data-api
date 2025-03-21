@@ -44,6 +44,7 @@ jobs:
         contents: write
     outputs:
       api_image: ${{steps.build_image.outputs.api_image}}
+      migration_image: ${{steps.migration-publish.outputs.image}}
     steps:
       - name: checkout code
         uses: actions/checkout@v4.2.2
@@ -96,12 +97,26 @@ jobs:
         run: |
           HEC_PUB_REGISTRY="${{secrets.registry != null && secrets.registry ||secrets.HEC_PUB_REGISTRY}}"
           REPO=`echo "${{github.repository}}" | tr  '[:upper:]' '[:lower:]'`
+          echo "REPO=$REPO" >> $GITHUB_ENV
           docker build -t cda:build-latest .
           docker tag cda:build-latest ghcr.io/${REPO}:$VERSION
           docker tag cda:build-latest $HEC_PUB_REGISTRY/cwms/data-api:$VERSION
           docker push $HEC_PUB_REGISTRY/cwms/data-api:$VERSION
           docker push ghcr.io/${REPO}:$VERSION
           echo "api_image=ghcr.io/${REPO}:$VERSION" >> $GITHUB_OUTPUT
+      - name: Setup Database Migration Image
+        id: migration
+        uses: ./.github/actions/database-migration-image
+        with:
+          base-image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer
+          tag: latest-dev
+      - name: Publish migration container
+        id: migration-publish
+        run: |
+          IMAGE=gchr.io/${REPO}/schema-migration:$VERSION
+          docker tag ${{migration.steps.outputs.image}} $IMAGE          
+          docker push $IMAGE
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
       - name: Logout of HEC pub registry
         if: ${{ always() }}
         run: |

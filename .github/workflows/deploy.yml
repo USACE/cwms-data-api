@@ -6,6 +6,9 @@ on:
       api_image:
         type: string
         required: true
+      migration_image:
+        type: string
+        required: true
       region:
         type: string
         required: true
@@ -23,8 +26,6 @@ jobs:
       id-token: write # This is required for requesting the JWT
       contents: read # This is required for actions/checkout
     steps:
-      - name: checkout code
-        uses: actions/checkout@v4.2.2
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -51,20 +52,14 @@ jobs:
           docker tag ${{inputs.api_image}} $ECR_REGISTRY/$ECR_REPOSITORY:dev 
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev
-      - name: Setup Database Migration Image
-        id: migration
-        uses: ././github/actions/database-migration-image
-        with:
-          base-image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer
-          tag: latest-dev
       - name: Push API Migration Image to ECR Repo
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: cwms-wmes-schema_installer
           IMAGE_TAG: latest
         run: |          
-          docker tag ${{steps.migration.outputs.image}} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker tag ${{steps.migration.outputs.image}} $ECR_REGISTRY/$ECR_REPOSITORY:dev 
+          docker tag ${{inputs.migration_image}} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag ${{inputs.migration_image}} $ECR_REGISTRY/$ECR_REPOSITORY:dev 
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev
       - name: ECR Logout
