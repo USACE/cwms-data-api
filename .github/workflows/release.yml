@@ -22,6 +22,9 @@ on:
       api_image:
         description: GHCR.io image tag for downstream consumption
         value: ${{ jobs.release.outputs.api_image }}
+      migration_image:
+        description: Modified CWMS Schema installer image
+        value: ${{ jobs.release.outputs.migration_image }}
   workflow_dispatch:
     inputs:
       branch:
