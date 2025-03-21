@@ -28,6 +28,23 @@ jobs:
         run: ./gradlew build --info --init-script init.gradle
       - name: integration tests
         run: ./gradlew integrationtest --info --init-script init.gradle
+  build-docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4.2.2
       - name: Build docker image
         run: docker build -t cda:build-latest .
-        # No upload, we're just verifying that nothing broke the docker image.
+  build-schema-migration-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4.2.2
+      - name: Build Migration image
+        uses: ./.github/actions/database-migration-image
+        with:
+          base-image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer
+          # TODO get current target image from build information
+          tag: latest-dev
+
+      # No uploads, we're just verifying that nothing broke the docker image.
