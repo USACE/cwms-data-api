@@ -106,15 +106,17 @@ jobs:
           echo "api_image=ghcr.io/${REPO}:$VERSION" >> $GITHUB_OUTPUT
       - name: Setup Database Migration Image
         id: migration
-        uses: ././github/actions/database-migration-image
+        uses: ./.github/actions/database-migration-image
         with:
           base-image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer
           tag: latest-dev
       - name: Publish migration container
         id: migration-publish
         run: |
-          docker tag ${{migration.steps.outputs.image}} gchr.io/${REPO}/schema-migration:$VERSION
-          docker push gchr.io/${REPO}/schema-migration:$VERSION
+          IMAGE=gchr.io/${REPO}/schema-migration:$VERSION
+          docker tag ${{migration.steps.outputs.image}} $IMAGE          
+          docker push $IMAGE
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
       - name: Logout of HEC pub registry
         if: ${{ always() }}
         run: |
