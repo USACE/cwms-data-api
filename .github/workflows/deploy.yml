@@ -23,6 +23,8 @@ jobs:
       id-token: write # This is required for requesting the JWT
       contents: read # This is required for actions/checkout
     steps:
+      - name: checkout code
+        uses: actions/checkout@v4.2.2
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
