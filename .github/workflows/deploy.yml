@@ -57,7 +57,8 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: cwms-wmes-schema_installer
           IMAGE_TAG: latest
-        run: |          
+        run: |
+          docker pull ${{inputs.migration_image}}
           docker tag ${{inputs.migration_image}} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker tag ${{inputs.migration_image}} $ECR_REGISTRY/$ECR_REPOSITORY:dev 
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
