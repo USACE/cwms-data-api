@@ -4,7 +4,7 @@ cat > /tmp/create-app-user.sql <<EOF
 declare
     user_count integer;
 begin
-    select count(*) into user_count from dba_users where username='&1';
+    select count(*) into user_count from dba_users where upper(username)=upper('&1');
     if (user_count = 0) then
         execute immediate 'create user &1 identified by "&2"';
     else
