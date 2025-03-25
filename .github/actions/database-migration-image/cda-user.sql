@@ -1,6 +1,7 @@
 set define on
 @/tmp/cda-user-info
 grant web_user to &&cda_user;
+grant execute on cwms_20.cwms_upass to web_user;
 begin
     -- create user
     cwms_sec.add_cwms_user('&&cda_user', NULL, 'HQ');
