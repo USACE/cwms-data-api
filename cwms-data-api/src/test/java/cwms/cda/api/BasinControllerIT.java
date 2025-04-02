@@ -43,7 +43,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.KeyAccessManagerProvider.AUTH_HEADER;
 
 import javax.servlet.http.HttpServletResponse;
 

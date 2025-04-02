@@ -160,8 +160,7 @@ import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
-import cwms.cda.spi.AccessManagers;
-import cwms.cda.spi.CdaAccessManager;
+import cwms.cda.spi.CdaIdentityProviders;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
@@ -324,6 +323,7 @@ public class ApiServlet extends HttpServlet {
                     getOpenApiOptions(config);
                     config.autogenerateEtags = true;
                     config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
+                    config.accessManager(new CdaAccessManager());
                 })
                 .attribute("PolicyFactory", sanitizer)
                 .attribute("ObjectMapper", om)
@@ -475,15 +475,6 @@ public class ApiServlet extends HttpServlet {
             return manifest.getMainAttributes().getValue("build-version");
         } catch (IOException e) {
             throw new ServletException("Error obtaining servlet version", e);
-        }
-    }
-
-    private CdaAccessManager buildAccessManager(String provider) {
-        try {
-            AccessManagers ams = new AccessManagers();
-            return ams.get(provider);
-        } catch (ServiceNotFoundException err) {
-            throw new RuntimeException("Unable to initialize access manager",err);
         }
     }
 
@@ -868,21 +859,20 @@ public class ApiServlet extends HttpServlet {
         Info applicationInfo = new Info().title(APPLICATION_TITLE).version(ApiServlet.getApiVersion())
                 .description("CWMS REST API for Data Retrieval");
 
-        String provider = getAccessManagerName();
+        String provider = CdaAccessManager.class.getSimpleName();
 
-        CdaAccessManager am = buildAccessManager(provider);
+    
         Components components = new Components();
         final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
-        am.getContainedManagers().forEach(manager -> {
-            components.addSecuritySchemes(manager.getName(),manager.getScheme());
+        CdaIdentityProviders.providers().forEachRemaining(identityProvider -> {
+            components.addSecuritySchemes(identityProvider.getName(),identityProvider.getScheme());
             SecurityRequirement req = new SecurityRequirement();
-            if (!manager.getName().equalsIgnoreCase("guestauth") && !manager.getName().equalsIgnoreCase("noauth")) {
-                req.addList(manager.getName());
+            if (!identityProvider.getName().equalsIgnoreCase("guestauth") && !identityProvider.getName().equalsIgnoreCase("noauth")) {
+                req.addList(identityProvider.getName());
                 secReqs.add(req);
             }
         });
 
-        config.accessManager(am);
         List<Server> servers = new ArrayList<>();
         servers.add(new Server().url(APP_CONTEXT));
         OpenApiOptions ops =
@@ -927,24 +917,6 @@ public class ApiServlet extends HttpServlet {
         if (op != null) {
             op.setSecurity(reqs);
         }
-    }
-
-    private static String getAccessManagerName() {
-        // Default to CwmsAccessManager
-        String defProvider = DEFAULT_PROVIDER;
-
-        // If something is set in the environment, make that the new default.
-        // This is useful because Docker makes it easy to set environment variables.
-        String envProvider = System.getenv(PROVIDER_KEY_OLD);
-        if (envProvider == null) {
-            envProvider = System.getenv(PROVIDER_KEY);
-        }
-        if (envProvider != null) {
-            defProvider = envProvider;
-        }
-
-        // Return the value from properties or the default
-        return System.getProperty(PROVIDER_KEY, System.getProperty(PROVIDER_KEY_OLD,defProvider));
     }
 
     @Override

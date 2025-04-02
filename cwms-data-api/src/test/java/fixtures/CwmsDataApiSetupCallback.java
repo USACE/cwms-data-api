@@ -25,7 +25,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.data.dao.Dao;
-import cwms.cda.security.OpenIDAccessManager;
 import cwms.cda.security.OpenIDAccessManagerProvider;
 import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
@@ -34,7 +33,6 @@ import io.restassured.config.JsonConfig;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import javax.servlet.http.HttpServletResponse;
-import org.testcontainers.images.ImagePullPolicy;
 import org.testcontainers.images.PullPolicy;
 
 import static io.restassured.RestAssured.given;
@@ -145,7 +143,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
             // OIDC properties
             System.setProperty("cwms.dataapi.access.providers","KeyAccessManager,OpenID,CwmsAccessManager");
-            System.setProperty(OpenIDAccessManager.CREATE_USERS_KEY,"true");
+            System.setProperty(OpenIDAccessManagerProvider.CREATE_USERS_KEY,"true");
             System.setProperty(OpenIDAccessManagerProvider.WELL_KNOWN_PROPERTY,KeyCloakExtension.getOidcWellKnown());
             System.setProperty(OpenIDAccessManagerProvider.ISSUER_PROPERTY,KeyCloakExtension.getIssuer());
 

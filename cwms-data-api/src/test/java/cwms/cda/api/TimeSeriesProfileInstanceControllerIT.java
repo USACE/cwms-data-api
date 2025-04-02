@@ -44,7 +44,7 @@ import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.VERSION;
 import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.KeyAccessManagerProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static cwms.cda.api.Controllers.PROFILE_DATA;
 import static org.hamcrest.Matchers.*;
