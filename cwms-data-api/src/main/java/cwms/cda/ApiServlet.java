@@ -157,6 +157,7 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.UnsupportedFormatException;
+import cwms.cda.security.Authenticator;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
@@ -327,6 +328,7 @@ public class ApiServlet extends HttpServlet {
                 })
                 .attribute("PolicyFactory", sanitizer)
                 .attribute("ObjectMapper", om)
+                .before(new Authenticator())
                 .before(ctx -> {
                     ctx.attribute("sanitizer", sanitizer);
                     ctx.header("X-Content-Type-Options", "nosniff");

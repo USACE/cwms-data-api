@@ -1,5 +1,6 @@
 package cwms.cda.security;
 
+import com.google.auto.service.AutoService;
 import cwms.cda.spi.IdentityProvider;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
@@ -20,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 
 import cwms.auth.CwmsUserPrincipal;
 
+@AutoService(IdentityProvider.class)
 public class CwmsAccessManagerProvider implements IdentityProvider {
 
     private static final Logger logger = Logger.getLogger(CwmsAccessManagerProvider.class.getName());

@@ -37,6 +37,8 @@ import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.Context;
+import io.javalin.http.HandlerType;
+
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
@@ -155,7 +157,11 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static Connection setClientInfo(Context ctx, Connection connection) {
         try {
             connection.setClientInfo("OCSID.ECID", ApiServlet.APPLICATION_TITLE + " " + ApiServlet.getApiVersion().substring(0,22));
-            connection.setClientInfo("OCSID.MODULE", ctx.endpointHandlerPath());
+            if (ctx.handlerType() == HandlerType.BEFORE) {
+                connection.setClientInfo("OCSID.MODULE", "BEFORE-HANDLER");
+            } else {
+                connection.setClientInfo("OCSID.MODULE", ctx.endpointHandlerPath());
+            }
             connection.setClientInfo("OCSID.ACTION", ctx.method());
             connection.setClientInfo("OCSID.CLIENTID", ctx.url().replace(ctx.path(), "") + ctx.contextPath());
         } catch (SQLClientInfoException ex) {

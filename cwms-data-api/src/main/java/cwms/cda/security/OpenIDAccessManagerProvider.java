@@ -1,10 +1,10 @@
 package cwms.cda.security;
 
+import com.google.auto.service.AutoService;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.spi.IdentityProvider;
-import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -40,7 +40,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
 
 
-
+@AutoService(IdentityProvider.class)
 public class OpenIDAccessManagerProvider implements IdentityProvider {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
 

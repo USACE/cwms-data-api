@@ -1,5 +1,6 @@
 package cwms.cda.security;
 
+import com.google.auto.service.AutoService;
 import cwms.cda.spi.IdentityProvider;
 import io.javalin.http.Context;
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -12,6 +13,7 @@ import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 
+@AutoService(IdentityProvider.class)
 public class KeyAccessManagerProvider implements IdentityProvider {
 
     public static final String AUTH_HEADER = "Authorization";
