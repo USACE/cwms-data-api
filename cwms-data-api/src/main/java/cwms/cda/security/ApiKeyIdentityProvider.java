@@ -14,7 +14,7 @@ import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 
 @AutoService(IdentityProvider.class)
-public class KeyAccessManagerProvider implements IdentityProvider {
+public class ApiKeyIdentityProvider implements IdentityProvider {
 
     public static final String AUTH_HEADER = "Authorization";
     private static AuthDao authDao;

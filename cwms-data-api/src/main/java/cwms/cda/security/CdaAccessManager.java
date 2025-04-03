@@ -1,10 +1,10 @@
-package cwms.cda;
+package cwms.cda.security;
 
 import java.util.Set;
 
+import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.security.DataApiPrincipal;
 import io.javalin.core.security.AccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;

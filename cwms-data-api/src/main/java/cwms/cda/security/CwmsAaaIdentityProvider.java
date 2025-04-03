@@ -22,9 +22,9 @@ import org.jetbrains.annotations.NotNull;
 import cwms.auth.CwmsUserPrincipal;
 
 @AutoService(IdentityProvider.class)
-public class CwmsAccessManagerProvider implements IdentityProvider {
+public class CwmsAaaIdentityProvider implements IdentityProvider {
 
-    private static final Logger logger = Logger.getLogger(CwmsAccessManagerProvider.class.getName());
+    private static final Logger logger = Logger.getLogger(CwmsAaaIdentityProvider.class.getName());
     private static final String SESSION_COOKIE_NAME = "JSESSIONIDSSO";    
 
     private DataApiPrincipal getApiPrincipal(Context ctx) {
@@ -73,7 +73,7 @@ public class CwmsAccessManagerProvider implements IdentityProvider {
                 CwmsUserPrincipal cup = (CwmsUserPrincipal) principal;
                 roleNames = cup.getRoles();
                 if (roleNames != null) {
-                    roleNames.stream().map(CwmsAccessManagerProvider::buildRole).forEach(retval::add);
+                    roleNames.stream().map(CwmsAaaIdentityProvider::buildRole).forEach(retval::add);
                 }
                 logger.log(Level.FINE, "Principal had roles: {0}", retval);
             } catch (ClassCastException e) {

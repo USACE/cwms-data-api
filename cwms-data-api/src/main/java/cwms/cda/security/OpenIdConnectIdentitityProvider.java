@@ -41,7 +41,7 @@ import com.google.common.flogger.FluentLogger;
 
 
 @AutoService(IdentityProvider.class)
-public class OpenIDAccessManagerProvider implements IdentityProvider {
+public class OpenIdConnectIdentitityProvider implements IdentityProvider {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
     public static final String WELL_KNOWN_PROPERTY = "cwms.dataapi.access.openid.wellKnownUrl";
@@ -60,7 +60,7 @@ public class OpenIDAccessManagerProvider implements IdentityProvider {
     private JwtParser jwtParser = null;
     private OpenIDConfig config = null;
 
-    public OpenIDAccessManagerProvider() {
+    public OpenIdConnectIdentitityProvider() {
         String wellKnownUrl = System.getProperty(WELL_KNOWN_PROPERTY,System.getenv(WELL_KNOWN_PROPERTY));
         String issuer = System.getProperty(ISSUER_PROPERTY,System.getenv(ISSUER_PROPERTY));
         String timeoutStr = System.getProperty(TIMEOUT_PROPERTY,System.getenv(TIMEOUT_PROPERTY));

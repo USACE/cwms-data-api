@@ -28,7 +28,7 @@ import java.util.Objects;
 import java.util.Random;
 
 import static cwms.cda.api.ForecastSpecControllerTestIT.*;
-import static cwms.cda.security.KeyAccessManagerProvider.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.Matchers.*;

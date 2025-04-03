@@ -158,6 +158,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.security.Authenticator;
+import cwms.cda.security.CdaAccessManager;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
