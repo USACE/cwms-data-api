@@ -159,7 +159,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             final String apiVersion = ApiServlet.getApiVersion();
             connection.setClientInfo("OCSID.ECID",
                                      ApiServlet.APPLICATION_TITLE + " " + 
-                                     apiVersion.substring(0,Math.max(22,apiVersion.length())));
+                                     apiVersion.substring(0,Math.min(22,apiVersion.length())));
             if (ctx.handlerType() == HandlerType.BEFORE) {
                 connection.setClientInfo("OCSID.MODULE", "BEFORE-HANDLER");
             } else {
