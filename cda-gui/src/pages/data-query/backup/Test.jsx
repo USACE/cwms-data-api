@@ -8,9 +8,9 @@ import { useQueryClient } from "@tanstack/react-query";
 
 
 import dayjs from "dayjs";
-import Controls from "./components/Controls";
+import Controls from "../components/Controls";
 import { Configuration, TimeSeriesApi } from "cwmsjs";
-import { getPrecision, mergeTimeseries } from "../../utils/timeseries";
+import { getPrecision, mergeTimeseries } from "../../../utils/timeseries";
 import { IoWarning } from "react-icons/io5";
 
 

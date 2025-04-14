@@ -1,5 +1,5 @@
 import { UsaceBox, Skeleton, Badge, Accordion } from "@usace/groundwork";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AgGridReact } from "ag-grid-react";
 import { ClientSideRowModelModule } from "ag-grid-community";
@@ -14,12 +14,16 @@ const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
 
 export default function HydrologicQuery() {
   const [failedTsids, setFailedTsids] = useState([]);
-  const [tsids, setTsids] = useState([ "KEYS.Elev-Tailwater.Inst.15Minutes.0.Rev-SCADA" ]);
-  const [location, setLocation] = useState("KEYS");
-  const [parameter, setParameter] = useState("Elev.Inst");
-  const [interval, setInterval] = useState("Hourly"); 
-  
-  const [office, setOffice] = useState("SWT");
+  const [tsids, setTsids] = useState([
+    "KEYS.Elev-Tailwater.Inst.0.Rev-SCADA",
+    "KEYS.Elev.Inst.1Hour.0.Ccp-Rev",
+    "KEYS.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev",
+    "KEYS.%-Conservation Pool Full.Inst.1Hour.0.Ccp-Rev",
+    "KEYS.Precip-Cuml.Inst.1Hour.0.Ccp-Rev",
+    "KEYS.%-Humidity.Ave.~1Day.1Day.Ccp-Rev",
+  ]);
+
+  const [office, setOffice] = useState("SWT"); // Added state for office
   const [beginDateTime, setBeginDateTime] = useState(dayjs().subtract(1, "day"));
   const [endDateTime, setEndDateTime] = useState(dayjs());
 
@@ -31,36 +35,7 @@ export default function HydrologicQuery() {
 
   const ts_api = new TimeSeriesApi(v2_config);
 
-  // Define how different parameters should change based on the selected interval
-  const parameterIntervalMapping = {
-    "Elev": {
-      Hourly: "Inst.1Hour.0.Ccp-Rev",
-      Daily: "Inst.~1Day.0.Ccp-Rev",
-    },
-    "Precip-Cuml": {
-      Hourly: "Inst.1Hour.0.Ccp-Rev",
-      Daily: "Inst.1Day.0.Ccp-Rev",  // For Precipitation, Daily is just 1Day, not ~1Day
-    },
-    "%-Humidity": {
-      Hourly: "Ave.1Hour.0.Ccp-Rev",
-      Daily: "Ave.~1Day.1Day.Ccp-Rev",
-    },
-    "Elev-Tailwater": {
-      Hourly: "Inst.1Hour.0.Ccp-Rev",
-      Daily: "Inst.0.Rev-SCADA",
-    },
-    // Add more mappings as necessary
-  };
-
-  // Dynamically update the tsids when location, parameter, or interval changes
-  useEffect(() => {
-    // Get the interval part from parameterIntervalMapping
-    const intervalValue = parameterIntervalMapping[parameter]?.[interval] || "1Hour.0.Ccp-Rev";
-
-    // Construct the correct time series string
-    setTsids([`${location}.${parameter}.${intervalValue}`]);
-  }, [location, parameter, interval]);
-
+  // Fetch timeseries data
   const {
     data: timeseriesData,
     isPending,
@@ -72,7 +47,7 @@ export default function HydrologicQuery() {
         return ts_api
           .getTimeSeriesRaw({
             name: tsid,
-            office: office,
+            office: office, // Using dynamic office
             begin: beginDateTime.format(CDA_DATE_FORMAT),
             end: endDateTime.format(CDA_DATE_FORMAT),
           })
@@ -87,10 +62,14 @@ export default function HydrologicQuery() {
       const data = await Promise.all(promises);
       return data;
     },
-    select: (data) => mergeTimeseries(data),
+    select: (data) => {
+      // Merge the timeseries data by epoch
+      return mergeTimeseries(data);
+    },
     enabled: tsids.length > 0 && office !== undefined,
   });
 
+  // Define column structure dynamically based on the timeseries
   const columns = useMemo(() => {
     if (!timeseriesData || timeseriesData.length === 0) return [];
 
@@ -114,13 +93,16 @@ export default function HydrologicQuery() {
         sortable: true,
         filter: true,
         editable: true,
-        valueFormatter: ({ value }) => value?.toFixed(getPrecision(series.units)),
+        valueFormatter: ({ value }) => {
+          return value?.toFixed(getPrecision(series.units));
+        },
       });
     });
 
     return columnDefs;
   }, [timeseriesData, tsids]);
 
+  // Prepare row data based on the timeseries data
   const rowData = useMemo(() => {
     if (!timeseriesData || timeseriesData.length === 0) return [];
     let tableDates = [];
@@ -141,41 +123,43 @@ export default function HydrologicQuery() {
       <UsaceBox title="Hydrologic Query">
         <div className="flex gap-4">
           <div>
-            <label htmlFor="location">Select Lake Location: </label>
+            <label htmlFor="office">Select Office: </label>
             <select
-              id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
+              id="office"
+              value={office}
+              onChange={(e) => setOffice(e.target.value)}
             >
-              <option value="KEYS">KEYS</option>
-              <option value="LAKE1">LAKE1</option>
-              <option value="LAKE2">LAKE2</option>
+              <option value="SWT">SWT</option>
+              <option value="SWF">SWF</option>
             </select>
           </div>
 
           <div>
-            <label htmlFor="parameter">Select Parameter: </label>
+            <label htmlFor="tsids">Select Time Series: </label>
             <select
-              id="parameter"
-              value={parameter}
-              onChange={(e) => setParameter(e.target.value)}
+              id="tsids"
+              multiple
+              value={tsids}
+              onChange={(e) =>
+                setTsids(Array.from(e.target.selectedOptions, (option) => option.value))
+              }
             >
-              <option value="Elev">Elevation</option>
-              <option value="Precip-Cuml">Precipitation</option>
-              <option value="%-Humidity">Humidity</option>
-              <option value="Elev-Tailwater">Tailwater</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="interval">Select Interval: </label>
-            <select
-              id="interval"
-              value={interval}
-              onChange={(e) => setInterval(e.target.value)}
-            >
-              <option value="Hourly">Hourly</option>
-              <option value="Daily">Daily</option>
+              <option value="KEYS.Elev-Tailwater.Inst.15Minutes.0.Rev-SCADA">
+                Elev-Tailwater
+              </option>
+              <option value="KEYS.Elev.Inst.1Hour.0.Ccp-Rev">Elevation 1Hour</option>
+              <option value="KEYS.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev">
+                Elev-Tailwater 1Hour
+              </option>
+              <option value="KEYS.%-Conservation Pool Full.Inst.1Hour.0.Ccp-Rev">
+                % Conservation Pool Full
+              </option>
+              <option value="KEYS.Precip-Cuml.Inst.1Hour.0.Ccp-Rev">
+                Precipitation
+              </option>
+              <option value="KEYS.%-Humidity.Ave.~1Day.1Day.Ccp-Rev">
+                % Humidity
+              </option>
             </select>
           </div>
         </div>
@@ -186,7 +170,7 @@ export default function HydrologicQuery() {
           beginDateTime={beginDateTime}
           endDateTime={endDateTime}
         />
-
+        
         {timeseriesData?.failed.length > 0 && (
           <div className="flex flex-col gap-2 mx-2">
             <Accordion
@@ -202,11 +186,17 @@ export default function HydrologicQuery() {
               }
             >
               <div className="py-3">
-                {timeseriesData?.failed.map((tsid) => (
-                  <Badge key={"failed-" + tsid} color="yellow" className="ms-5">
-                    <b>{tsid}</b>
-                  </Badge>
-                ))}
+                {timeseriesData?.failed.map((tsid) => {
+                  return (
+                    <Badge
+                      key={"failed-" + tsid}
+                      color="yellow"
+                      className="ms-5"
+                    >
+                      <b>{tsid}</b>
+                    </Badge>
+                  );
+                })}
               </div>
             </Accordion>
           </div>
@@ -216,7 +206,11 @@ export default function HydrologicQuery() {
           {isPending ? (
             <Skeleton type="card" className="w-full h-full" />
           ) : (
-            <AgGridReact columnDefs={columns} rowData={rowData} modules={[ClientSideRowModelModule]} />
+            <AgGridReact
+              columnDefs={columns}
+              rowData={rowData}
+              modules={[ClientSideRowModelModule]}
+            />
           )}
         </div>
       </UsaceBox>

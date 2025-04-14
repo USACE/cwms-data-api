@@ -1,6 +1,7 @@
 import { UsaceBox, Skeleton, Badge, Accordion, Button } from "@usace/groundwork";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { CWMSTable } from "@usace-watermanagement/groundwork-water";
 import { AgGridReact } from "ag-grid-react";
 import { CsvExportModule } from 'ag-grid-community';
 import { ClientSideRowModelModule } from "ag-grid-community";
@@ -35,6 +36,38 @@ export default function HydrologicQuery() {
   const gridApi = useRef(null);
 
   const ts_api = new TimeSeriesApi(v2_config);
+
+  const locationNames = {
+    ALAT2: "Aquilla",
+    TBLT2: "BA Steinhagen",
+    BDWT2: "Bardwell",
+    BLNT2: "Belton",
+    BSLT2: "Bob Sandlin",
+    SMCT2: "Canyon",
+    CLDL1: "Caddo",
+    SCLT2: "Cooper",
+    GGLT2: "Georgetown",
+    GNGT2: "Granger",
+    GPVT2: "Grapevine",
+    HORT2: "Hords Creek",
+    JPLT2: "Joe Pool",
+    JFNT2: "Lake O Pines",
+    LVNT2: "Lavon",
+    LEWT2: "Lewisville",
+    DAWT2: "Navarro Mills",
+    SAGT2: "O.C. Fisher",
+    PCTT2: "Proctor",
+    RRLT2: "Ray Roberts",
+    FFLT2: "Richland Chambers",
+    JSPT2: "Sam Rayburn",
+    SOMT2: "Somerville",
+    STIT2: "Stillhouse Hollow",
+    TBRT2: "Twin Buttes",
+    ACTT2: "Waco",
+    WTYT2: "Whitney",
+    TXKT2: "Wright Patman",
+  };
+  
 
   const parameterIntervalMapping = {
     "Elev": {
@@ -152,6 +185,11 @@ export default function HydrologicQuery() {
     enabled: tsids.length > 0 && office !== undefined,
   });
 
+  useEffect(() => {
+    console.log("timeseriesData updated", timeseriesData);
+  }, [timeseriesData]);
+  
+
   // Build the table columns
   const columns = useMemo(() => {
     if (!timeseriesData || timeseriesData.length === 0) return [];
@@ -183,7 +221,7 @@ export default function HydrologicQuery() {
     });
     console.log({columnDefs})
     return columnDefs;
-  }, [timeseriesData, tsids]);
+  }, [timeseriesData, tsids, beginDateTime, endDateTime]);
 
   // Build the table row data
   const rowData = useMemo(() => {
@@ -197,7 +235,7 @@ export default function HydrologicQuery() {
       });
     }
     return tableDates;
-  }, [timeseriesData, tsids]);
+  }, [timeseriesData, tsids, beginDateTime, endDateTime]);
 
   const graphData = useMemo(() => {
     if (!timeseriesData) return [];
@@ -210,15 +248,55 @@ export default function HydrologicQuery() {
         name: `${tsids[index].split(".")[1]} (${series.units})`,
       };
     });
-  }, [timeseriesData, tsids]);
+  }, [timeseriesData, tsids, beginDateTime, endDateTime]);
 
+  const timeseriesParams = useMemo(() => {
+    if (!timeseriesData) return [];
+    return timeseriesData.tsids.map((series, index) => ({
+      tsid: tsids[index],
+      header: `${tsids[index].split(".")[1]} (${series.units})`,
+      rounding: getPrecision(series.units),
+    }));
+  }, [timeseriesData, tsids, beginDateTime, endDateTime]);
+  
+
+  const cdaParams = useMemo(() => ({
+    begin: beginDateTime.format("YYYY-MM-DDTHH:mm:ssZZ"),
+    end: endDateTime.format("YYYY-MM-DDTHH:mm:ssZZ"),
+    office: office,
+  }), [beginDateTime, endDateTime, office]);
+  
   const handleDownloadCSV = () => {
-  if (gridApi.current && gridApi.current.api) {
-    gridApi.current.api.exportDataAsCsv();
-  } else {
-    console.error("Grid API not available");
-  }
+    if (!timeseriesData || timeseriesData.dates.length === 0) {
+      console.warn("No data to export");
+      return;
+    }
+  
+    const header = ["Date", parameter]; // CSV headers
+    const rows = timeseriesData.dates.map((date) => {
+      const formattedDate = dayjs(date).format("YYYY-MM-DD HH:mm:ss");
+      const value = timeseriesData.values[date]?.[0] ?? "";
+      return [formattedDate, value];
+    });
+  
+    const csvContent = [header, ...rows]
+      .map((row) => row.join(","))
+      .join("\n");
+  
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+  
+    const link = document.createElement("a");
+    const locName = locationNames[location] ?? location;
+    const paramName = parameter.split("-")[0].split(".")[0]; // simplify e.g. Elev.Inst -> Elev
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${locName} ${paramName} Date.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
+  
 
   if (error) return <div>Error: {error.message}</div>;
 
@@ -364,19 +442,29 @@ export default function HydrologicQuery() {
                 >
                   Download CSV
              </Button>
-          <div className="mt-2 ag-theme-quartz w-full h-[70vh]">
-
+          <div className="ag-theme-quartz w-full">
             {isPending ? (
               <Skeleton type="card" className="w-full h-full" />
             ) : (
               <>
-                <AgGridReact 
-                  columnDefs={columns} 
-                  rowData={rowData} 
-                  modules={[ClientSideRowModelModule, CsvExportModule]} 
-                  ref={gridApi} 
-                  
-                />
+                {timeseriesData && (
+                  <div
+                    key={`cwms-${tsids.join(",")}-${beginDateTime.toISOString()}-${endDateTime.toISOString()}`}
+                    className="relative z-10 bg-white"
+                  >
+                    <CWMSTable
+                      begin={cdaParams.begin}
+                      end={cdaParams.end}
+                      office={cdaParams.office}
+                      tsids={timeseriesParams.map((item) => item.tsid)}
+                      timeseriesParams={timeseriesParams}
+                      interval="5"
+                      missingString="---"
+                      sortAscending={true}
+                      trim={true}
+                    />
+                  </div>
+                )}
               </>
             )}
           </div>
