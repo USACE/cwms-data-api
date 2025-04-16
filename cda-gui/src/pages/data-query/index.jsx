@@ -1,11 +1,8 @@
 import { UsaceBox, Skeleton, Badge, Accordion, Button } from "@usace/groundwork";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CWMSTable } from "@usace-watermanagement/groundwork-water";
-import { AgGridReact } from "ag-grid-react";
-import { CsvExportModule } from 'ag-grid-community';
-import { ClientSideRowModelModule } from "ag-grid-community";
-import Plot from 'react-plotly.js'; 
+import { CWMSTable, CWMSPlot } from "@usace-watermanagement/groundwork-water";
+import { cwmsConfigs } from "./components/cwmsConfig";
 import { AllCommunityModule, ModuleRegistry } from 'ag-grid-community'; 
 ModuleRegistry.registerModules([AllCommunityModule]);
 import dayjs from "dayjs";
@@ -15,6 +12,8 @@ import { getPrecision, mergeTimeseries } from "../../utils/timeseries";
 import { IoWarning } from "react-icons/io5";
 
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
+const config = cwmsConfigs["SWF"];
+
 
 export default function HydrologicQuery() {
   const [failedTsids, setFailedTsids] = useState([]);
@@ -37,74 +36,10 @@ export default function HydrologicQuery() {
 
   const ts_api = new TimeSeriesApi(v2_config);
 
-  const locationNames = {
-    ALAT2: "Aquilla",
-    TBLT2: "BA Steinhagen",
-    BDWT2: "Bardwell",
-    BLNT2: "Belton",
-    BSLT2: "Bob Sandlin",
-    SMCT2: "Canyon",
-    CLDL1: "Caddo",
-    SCLT2: "Cooper",
-    GGLT2: "Georgetown",
-    GNGT2: "Granger",
-    GPVT2: "Grapevine",
-    HORT2: "Hords Creek",
-    JPLT2: "Joe Pool",
-    JFNT2: "Lake O Pines",
-    LVNT2: "Lavon",
-    LEWT2: "Lewisville",
-    DAWT2: "Navarro Mills",
-    SAGT2: "O.C. Fisher",
-    PCTT2: "Proctor",
-    RRLT2: "Ray Roberts",
-    FFLT2: "Richland Chambers",
-    JSPT2: "Sam Rayburn",
-    SOMT2: "Somerville",
-    STIT2: "Stillhouse Hollow",
-    TBRT2: "Twin Buttes",
-    ACTT2: "Waco",
-    WTYT2: "Whitney",
-    TXKT2: "Wright Patman",
-  };
+  const locationNames = config.locationNames;
   
 
-  const parameterIntervalMapping = {
-    "Elev": {
-      Hourly: "Inst.1Hour.0.Decodes-Rev",
-      Daily: "Inst.~1Day.0.Decodes-Rev",
-    },
-    "Precip-INC": {
-      Hourly: "Total.1Hour.1Hour.Decodes-Rev",
-      Daily: "Total.~1Day.1Day.Best-SWF",  
-    },
-    "Evap-Project": {
-      Hourly: "Total.1Hour.1Hour.Decodes-Rev",
-      Daily: "Total.~1Day.1Day.Best-SWF",  
-    },
-    "Flow-In": {
-      Hourly: "Inst.1Hour.0.Decodes-Comp",
-      Daily: "Ave.~1Day.1Day.Computed-SWF-REGI",
-    },
-    "Flow-Out": {
-      Hourly: "Inst.1Hour.0.Rev-SWF-REGI",
-      Daily: "Ave.~1Day.1Day.Rev-SWF-REGI",
-    },
-    "Gated-Out": {
-      Hourly: "Inst.1Hour.0.Decodes-Comp",
-      Daily: "Ave.~1Day.1Day.Computed-SWF-REGI",
-    },
-    "%-Humidity": {
-      Hourly: "Ave.1Hour.0.Decodes-Rev",
-      Daily: "Ave.~1Day.1Day.Decodes-Rev",
-    },
-    "Elev-Tailwater": {
-      Hourly: "Inst.1Hour.0.Decodes-Rev",
-      Daily: "Inst.0.Rev-SCADA",
-    },
-  };
-
-  
+  const parameterIntervalMapping = config.parameterIntervalMapping;
 
     async function fetchAllTSData(data) {
         let startDate = data?.begin
@@ -237,18 +172,18 @@ export default function HydrologicQuery() {
     return tableDates;
   }, [timeseriesData, tsids, beginDateTime, endDateTime]);
 
-  const graphData = useMemo(() => {
-    if (!timeseriesData) return [];
-    return timeseriesData.tsids.map((series, index) => {
-      return {
-        x: timeseriesData.dates.map((date) => dayjs(date).format("YYYY-MM-DD HH:mm:ss")),
-        y: timeseriesData.dates.map((date) => timeseriesData.values[date]?.[index]),
-        type: 'scatter',
-        mode: 'lines+markers',
-        name: `${tsids[index].split(".")[1]} (${series.units})`,
-      };
-    });
-  }, [timeseriesData, tsids, beginDateTime, endDateTime]);
+  // const graphData = useMemo(() => {
+  //   if (!timeseriesData) return [];
+  //   return timeseriesData.tsids.map((series, index) => {
+  //     return {
+  //       x: timeseriesData.dates.map((date) => dayjs(date).format("YYYY-MM-DD HH:mm:ss")),
+  //       y: timeseriesData.dates.map((date) => timeseriesData.values[date]?.[index]),
+  //       type: 'scatter',
+  //       mode: 'lines+markers',
+  //       name: `${tsids[index].split(".")[1]} (${series.units})`,
+  //     };
+  //   });
+  // }, [timeseriesData, tsids, beginDateTime, endDateTime]);
 
   const timeseriesParams = useMemo(() => {
     if (!timeseriesData) return [];
@@ -272,7 +207,7 @@ export default function HydrologicQuery() {
       return;
     }
   
-    const header = ["Date", parameter]; // CSV headers
+    const header = ["Date", parameter]; 
     const rows = timeseriesData.dates.map((date) => {
       const formattedDate = dayjs(date).format("YYYY-MM-DD HH:mm:ss");
       const value = timeseriesData.values[date]?.[0] ?? "";
@@ -287,14 +222,15 @@ export default function HydrologicQuery() {
     const url = URL.createObjectURL(blob);
   
     const link = document.createElement("a");
-    const locName = locationNames[location] ?? location;
-    const paramName = parameter.split("-")[0].split(".")[0]; // simplify e.g. Elev.Inst -> Elev
+    const locName = cwmsConfigs[office]?.locationNames?.[location] ?? location;
+    const paramName = parameter.split("-")[0].split(".")[0];
     link.setAttribute("href", url);
     link.setAttribute("download", `${locName} ${paramName} Date.csv`);
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
   };
   
 
@@ -304,44 +240,41 @@ export default function HydrologicQuery() {
     <div className="px-5">
       <UsaceBox title="Hydrologic Query">
         <div className="flex gap-4">
-          <div>
-            <label htmlFor="location">Select Lake Location: </label>
-            <select
-              id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              style={{ paddingLeft: '10px', paddingRight: '10px', minWidth: '150px', width: 'auto' }}
-            >
-              <option value="ALAT2">Aquilla  </option>
-              <option value="TBLT2">  BA Steinhagen</option>
-              <option value="BDWT2">  Bardwell</option>
-              <option value="BLNT2">  Belton</option> 
-              <option value="BSLT2">  Bob Sandlin</option>  
-              <option value="SMCT2">  Canyon</option>    
-              <option value="CLDL1">  Caddo</option>    
-              <option value="SCLT2">  Cooper</option>    
-              <option value="GGLT2">  Georgetown</option>   
-              <option value="GNGT2">  Granger</option>   
-              <option value="GPVT2">  Grapevine</option>  
-              <option value="HORT2">  Hords Creek</option> 
-              <option value="JPLT2">  Joe Pool</option>   
-              <option value="JFNT2">  Lake O Pines</option>  
-              <option value="LVNT2">  Lavon</option>   
-              <option value="LEWT2">  Lewisville</option>   
-              <option value="DAWT2">  Navarro Mills</option> 
-              <option value="SAGT2">  O.C. Fisher</option>    
-              <option value="PCTT2">  Proctor</option>    
-              <option value="RRLT2">  Ray Roberts</option>  
-              <option value="FFLT2">  Richland Chambers</option>
-              <option value="JSPT2">  Sam Rayburn</option>                                                            
-              <option value="SOMT2">  Somerville</option>    
-              <option value="STIT2">  Stillhouse Hollow</option>  
-              <option value="TBRT2">  Twin Buttes</option>   
-              <option value="ACTT2">  Waco</option>    
-              <option value="WTYT2">  Whitney</option>   
-              <option value="TXKT2">  Wright Patman</option> 
-            </select>
-          </div>
+        <div>
+        <label htmlFor="office">Select Office: </label>
+        <select
+          id="office"
+          value={office}
+          onChange={(e) => {
+            setOffice(e.target.value);
+            setLocation(cwmsConfigs[e.target.value].locationOptions[0].value);
+          }}
+          style={{ paddingLeft: '10px', paddingRight: '10px', minWidth: '120px', width: 'auto' }}
+        >
+          {Object.keys(cwmsConfigs).map((key) => (
+            <option key={key} value={key}>
+              {key}
+            </option>
+          ))}
+        </select>
+      </div>
+
+        <div>
+        <label htmlFor="location">Select Lake Location: </label>
+        <select
+          id="location"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          style={{ paddingLeft: '10px', paddingRight: '10px', minWidth: '150px', width: 'auto' }}
+        >
+          {cwmsConfigs[office]?.locationOptions.map(({ value, label }) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+        </div>
+      
 
           <div>
             <label htmlFor="parameter">Select Parameter: </label>
@@ -418,19 +351,39 @@ export default function HydrologicQuery() {
           </div>
         )}
         {view === "graph" ? (
-          <div className="mt-2" style={{ height: 500 }}>
+          <div className="mt-2">
             {isPending ? (
-              <Skeleton type="card" className="w-full h-full" />
+              <Skeleton type="card" className="w-full h-[500px]" />
             ) : (
-              <Plot
-                data={graphData}
-                layout={{
-                  title: "Time Series Data",
-                  xaxis: { title: "Date" },
-                  yaxis: { title: "Value" },
+              <CWMSPlot
+                timeSeries={tsids.map((tsid, index) => ({
+                  id: tsid,
+                  traceOptions: {
+                    name: `${tsid.split(".")[1]} (${timeseriesData?.tsids?.[index]?.units || "unit"})`,
+                    yaxis: "y1",
+                  },
+                }))}
+                locationLevels={[]} // Optional static levels like top of flood, etc.
+                layoutOptions={{
+                  height: 500,
+                  yaxis: {
+                    title: {
+                      text: "Value",
+                    },
+                  },
+                  showlegend: true,
+                  legend: {
+                    font: {
+                      family: "Arial, sans-serif",
+                      size: 10,
+                    },
+                  },
+                  responsive: true,
                 }}
-                useResizeHandler={true}
-                style={{ width: "100%", height: "100%" }}
+                unit="EN"
+                office={office}
+                begin={beginDateTime.format("YYYY-MM-DDTHH:mm:ssZZ")}
+                end={endDateTime.format("YYYY-MM-DDTHH:mm:ssZZ")}
               />
             )}
           </div>

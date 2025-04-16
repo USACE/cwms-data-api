@@ -1,11 +1,11 @@
 CheckList
 
-Create branch with the custom table code
-Jump back to default branch and remove all custom table code
-Setup to use the simple groundwork-water table
-Setup to use CWMSPlot (I think we have this)
+Create branch with the custom table code ----
+Jump back to default branch and remove all custom table code ----
+Setup to use the simple groundwork-water table ---100%
+Setup to use CWMSPlot (I think we have this) ----100%
 Create the tab selection below the dropdowns to select plot and table (we might have this)
 Setup office select dropdown that queries the offices endpoint for all DISTRICT offices 
-Load timeseries from that office, config we have setup - load the config from BLOB????
-Setup download button for CSV and JSON
+Load timeseries from that office, config we have setup - load the config from BLOB???? ----Haven't made a blob yet but testing it with a config js
+Setup download button for CSV and JSON-------1/2
 Add datum toggle
