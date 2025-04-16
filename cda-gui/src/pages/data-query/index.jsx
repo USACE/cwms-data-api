@@ -19,7 +19,7 @@ export default function HydrologicQuery() {
   const [failedTsids, setFailedTsids] = useState([]);
   const [tsids, setTsids] = useState([ "ALAT2.Elev.Inst.1Hour.0.Decodes-Rev" ]);
   const [location, setLocation] = useState("ALAT2");
-  const [parameter, setParameter] = useState("Elev.Inst");
+  const [parameter, setParameter] = useState("Elev");
   const [interval, setInterval] = useState("Hourly"); 
   const [office, setOffice] = useState("SWF");
   const [beginDateTime, setBeginDateTime] = useState(dayjs().subtract(1, "day"));
@@ -82,6 +82,7 @@ export default function HydrologicQuery() {
   useEffect(() => {
     const intervalValue = parameterIntervalMapping[parameter]?.[interval] || "1Hour.0.Decodes-Rev";
     setTsids([`${location}.${parameter}.${intervalValue}`]);
+
   }, [location, parameter, interval]);
 
   const {
