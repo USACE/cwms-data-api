@@ -465,7 +465,7 @@ public final class Controllers {
         return retval;
     }
 
-    static void addDeprecatedContentTypeWarning(Context ctx, ContentType type) {
+    public static void addDeprecatedContentTypeWarning(Context ctx, ContentType type) {
         if (type.getType().equalsIgnoreCase(Formats.TAB)) {
             ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_TAB);
         } else if (type.getType().equalsIgnoreCase(Formats.CSV)) {

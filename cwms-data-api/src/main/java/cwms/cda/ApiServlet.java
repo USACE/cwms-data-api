@@ -71,11 +71,13 @@ import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
 import cwms.cda.api.ProjectController;
 import cwms.cda.api.PropertyController;
-import cwms.cda.api.RatingController;
-import cwms.cda.api.RatingLatestController;
-import cwms.cda.api.RatingMetadataController;
-import cwms.cda.api.RatingSpecController;
-import cwms.cda.api.RatingTemplateController;
+import cwms.cda.api.errors.RateException;
+import cwms.cda.api.rating.RateController;
+import cwms.cda.api.rating.RatingController;
+import cwms.cda.api.rating.RatingLatestController;
+import cwms.cda.api.rating.RatingMetadataController;
+import cwms.cda.api.rating.RatingSpecController;
+import cwms.cda.api.rating.RatingTemplateController;
 import cwms.cda.api.SpecifiedLevelController;
 import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
@@ -109,7 +111,6 @@ import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.GateChangeDeleteController;
 import cwms.cda.api.location.kind.GateChangeGetAllController;
-import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.LockController;
 import cwms.cda.api.location.kind.OutletController;
 import cwms.cda.api.location.kind.VirtualOutletController;
@@ -125,6 +126,7 @@ import cwms.cda.api.project.ProjectLockRevokeDeny;
 import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
+import cwms.cda.api.rating.ReverseRateController;
 import cwms.cda.api.watersupply.AccountingCatalogController;
 import cwms.cda.api.watersupply.AccountingCreateController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCatalogController;
@@ -320,6 +322,7 @@ public class ApiServlet extends HttpServlet {
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         APP_CONTEXT = this.getServletContext().getContextPath();
         javalin = Javalin.createStandalone(config -> {
+                    config.enableDevLogging();
                     config.defaultContentType = "application/json";
                     getOpenApiOptions(config);
                     config.autogenerateEtags = true;
@@ -401,6 +404,11 @@ public class ApiServlet extends HttpServlet {
                     CdaError re = new CdaError("Not Found.");
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
+                })
+                .exception(RateException.class, (e, ctx) -> {
+                    CdaError re = new CdaError("Error performing rate function: " + e.getMessage());
+                    logger.atInfo().withCause(e).log(re.toString());
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(FieldException.class, (e, ctx) -> {
                     CdaError re = new CdaError(e.getMessage(), e.getDetails(), true);
@@ -574,15 +582,7 @@ public class ApiServlet extends HttpServlet {
                 new TimeSeriesGroupController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/{timeseries}",
                 new TimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/ratings/template/{template-id}",
-                new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/ratings/spec/{rating-id}",
-                new RatingSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/ratings/metadata/{rating-id}",
-                new RatingMetadataController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        get("/ratings/{rating-id}/latest", new RatingLatestController(metrics));
-        cdaCrudCache("/ratings/{rating-id}",
-                new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        addRatingHandlers(requiredRoles);
         cdaCrudCache("/catalog/{dataset}",
                 new CatalogController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/basins/{name}",
@@ -673,6 +673,20 @@ public class ApiServlet extends HttpServlet {
 
         addProjectLocksHandlers("/project-locks/{name}", requiredRoles);
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
+    }
+
+    private void addRatingHandlers(RouteRole[] requiredRoles) {
+        get("/ratings/rate/{office-id}/{rating-id}", new RateController(metrics), requiredRoles);
+        get("/ratings/reverse-rate/{office-id}/{rating-id}", new ReverseRateController(metrics), requiredRoles);
+        cdaCrudCache("/ratings/template/{template-id}",
+                new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/ratings/spec/{rating-id}",
+                new RatingSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/ratings/metadata/{rating-id}",
+                new RatingMetadataController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        get("/ratings/{rating-id}/latest", new RatingLatestController(metrics));
+        cdaCrudCache("/ratings/{rating-id}",
+                new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
     }
 
     private void addAccountingHandlers(String path, RouteRole[] requiredRoles) {

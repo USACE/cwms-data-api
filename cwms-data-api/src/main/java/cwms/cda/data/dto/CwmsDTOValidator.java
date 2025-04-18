@@ -176,12 +176,12 @@ public final class CwmsDTOValidator {
     /**
      * Validates a given Callable by executing it and capturing any exceptions thrown.
      *
-     * @param callable the Callable to be validated
+     * @param runnable the Callable to be validated
      */
-    public void validate(Callable<?> callable) {
+    public void validate(Runnable runnable) {
         try {
-            callable.call();
-        } catch (Exception e) {
+            runnable.run();
+        } catch (RuntimeException e) {
             validationExceptions.add(e);
         }
     }

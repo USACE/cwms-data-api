@@ -206,7 +206,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         }
     }
 
-    private List<Column> getColumnDescriptor() {
+    public static List<Column> getColumnDescriptor() {
         List<Column> columns = new ArrayList<>();
 
         for (Field f: Record.class.getDeclaredFields()) {
@@ -316,7 +316,7 @@ public class TimeSeries extends CwmsDTOPaginated {
     }
 
     @Schema(hidden = true, name = "TimeSeries.Column", accessMode = Schema.AccessMode.READ_ONLY)
-    private static class Column {
+    public static class Column {
         public final String name;
         public final int ordinal;
         public final Class<?> datatype;

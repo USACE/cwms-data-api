@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2025 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-package cwms.cda.api;
+package cwms.cda.api.rating;
 
 import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.OFFICE;
@@ -30,6 +30,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
+import cwms.cda.api.DataApiTestIT;
 import fixtures.TestAccounts;
 import hec.data.cwmsRating.io.RatingTemplateContainer;
 import io.restassured.filter.log.LogDetail;
