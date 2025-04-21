@@ -106,6 +106,26 @@ export default function HydrologicQuery() {
     setTsids([`${location}.${parameter}.${intervalValue}`]);
   }, [location, parameter, interval, config]);
 
+  useEffect(() => {
+    if (!config) return;
+
+    if (!location && config.locationOptions?.length > 0) {
+      setLocation(config.locationOptions[0].value);
+    }
+
+    if (!parameter && Object.keys(config.parameterIntervalMapping).length > 0) {
+      setParameter(Object.keys(config.parameterIntervalMapping)[0]);
+    }
+
+    if (!interval && parameter && config.parameterIntervalMapping[parameter]) {
+      const intervals = Object.keys(config.parameterIntervalMapping[parameter]);
+      if (intervals.length > 0) {
+        setInterval(intervals[0]);
+      }
+    }
+  }, [config, location, parameter, interval]);
+
+
   const {
     data: timeseriesData,
     isPending,
