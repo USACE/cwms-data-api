@@ -1,4 +1,4 @@
-import { UsaceBox, Skeleton, Button, Badge } from "@usace/groundwork";
+import { UsaceBox, Skeleton, Button, Badge, H3 } from "@usace/groundwork";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 // import { CWMSPlot, CWMSTable} from "@usace-watermanagement/groundwork-water";
@@ -16,22 +16,17 @@ import useConfigList from "./hooks/useConfigList";
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
 
 const v2_config = new Configuration({
-    headers: {
-      accept: "application/json;version=2",
-    },
-  });
-  const ts_api = new TimeSeriesApi(v2_config);
-
+  headers: {
+    accept: "application/json;version=2",
+  },
+});
+const ts_api = new TimeSeriesApi(v2_config);
 
 // const config = cwmsConfigs["SWF"];
 async function fetchConfig(configUrl) {
   return fetch(configUrl)
     .then((response) => response.json())
     .then((d) => d)
-    .catch((error) => {
-      console.error("Error fetching config:", error);
-      return null; // Return null or handle the error as needed
-    });
 }
 
 export default function HydrologicQuery() {
@@ -49,7 +44,9 @@ export default function HydrologicQuery() {
   } = useConfigList({
     like: "CDA_QUERY_TOOL.*JSON",
     cacheDuration: 1000 * 60 * 60 * 24,
-    props: {select: (data) => data?.blobs?.map((blob) => blob?.officeId) || null},
+    props: {
+      select: (data) => data?.blobs?.map((blob) => blob?.officeId) || null,
+    },
   });
   const [configUrl, setConfigUrl] = useState(null);
   const [beginDateTime, setBeginDateTime] = useState(
@@ -59,7 +56,7 @@ export default function HydrologicQuery() {
   const [view, setView] = useState("table");
   const {
     data: config,
-    isLoading: configPending,
+    isLoading: configLoading,
     error: configError,
     refetch: refetchConfig,
   } = useQuery({
@@ -120,15 +117,15 @@ export default function HydrologicQuery() {
   useEffect(() => {
     if (!config) return;
 
-    if (!location && config.locationOptions?.length > 0) {
+    if (config?.locationOptions?.length > 0) {
       setLocation(config.locationOptions[0].value);
     }
 
-    if (!parameter && Object.keys(config.parameterIntervalMapping).length > 0) {
+    if (config?.parameterIntervalMapping && Object.keys(config?.parameterIntervalMapping).length > 0) {
       setParameter(Object.keys(config.parameterIntervalMapping)[0]);
     }
 
-    if (!interval && parameter && config.parameterIntervalMapping[parameter]) {
+    if (parameter && config.parameterIntervalMapping[parameter]) {
       const intervals = Object.keys(config.parameterIntervalMapping[parameter]);
       if (intervals.length > 0) {
         setInterval(intervals[0]);
@@ -138,7 +135,7 @@ export default function HydrologicQuery() {
 
   const {
     data: timeseriesData,
-    isPending,
+    isLoading: timeseriesLoading,
     error,
   } = useQuery({
     queryKey: ["cdaTimeSeries", tsids, office, beginDateTime, endDateTime],
@@ -172,9 +169,6 @@ export default function HydrologicQuery() {
     },
     enabled: tsids.length > 0 && office !== undefined,
   });
-  useEffect(() => {
-    console.log("timeseriesData updated", { timeseriesData });
-  }, [timeseriesData]);
 
   const timeseriesParams = useMemo(() => {
     if (!timeseriesData) return [];
@@ -221,43 +215,52 @@ export default function HydrologicQuery() {
     link.click();
     document.body.removeChild(link);
   };
-  console.log({officesError, officesLoading, configPending });
-  if (error) return <div>Error: {error.message}</div>;
-  if (configError || officesError)
-    return <div>File Error: {configError?.message || officesError?.message }</div>;
-  if (officesLoading || configPending)
+  if (configError || officesError || error)
+    return (
+      <div><Badge color="red" className="me-2">Error:</Badge>{configError?.message || officesError?.message || error.message}</div>
+    );
+  if (officesLoading || configLoading)
     return <Skeleton type="card" className="w-full h-[500px]" />;
   return (
     <div className="px-5">
       <UsaceBox title="Hydrologic Query">
-        <Badge color="blue" className="mb-2 text-base">
+        <div className={!office ? "text-lg m-auto text-center": ""}>
+        <Badge color="blue" className={!office ? "text-lg m-auto text-center mb-4": "mb-2"}>
           <FaInfoCircle /> If Office ID is not present in dropdown. Office has
           not created a configuration file.
         </Badge>
+        </div>
 
         <div className="flex gap-4">
-          <div>
+          <div className={!office ? "text-lg m-auto": ""}>
             <label htmlFor="office">Select Office: </label>
             <select
               id="office"
               value={office}
               onChange={(e) => {
-                const office = e.target.value;
-                setOffice(office);
+                const _office = e.target.value;
+                if (!_office) {
+                    setConfigUrl(null);
+                    setOffice(null);
+                    setLocation(null);
+                    setParameter(null);
+                    setInterval(null);
+                    setTsids([]);
+                    return;
+                }
+                setOffice(_office);
                 setConfigUrl(
-                  `https://cwms-data.usace.army.mil/cwms-data/blobs/CDA_QUERY_TOOL_${office}.JSON?office=${office}`
+                  `https://cwms-data.usace.army.mil/cwms-data/blobs/CDA_QUERY_TOOL_${_office}.JSON?office=${_office}`
                 );
                 refetchConfig();
-                setLocation();
+                setTsids([]);
                 // cwmsConfigs[e.target.value].locationOptions[0].value
               }}
-              style={{
-                paddingLeft: "10px",
-                paddingRight: "10px",
-                minWidth: "120px",
-                width: "auto",
-              }}
+              className="px-3 min-w-[150px] w-auto"
             >
+              <option key="select" value="">
+                Select Office
+              </option>
               {offices.map((key) => (
                 <option key={key} value={key}>
                   {key}
@@ -265,98 +268,114 @@ export default function HydrologicQuery() {
               ))}
             </select>
           </div>
+          {config && office && (
+            <>
+              <div>
+                <label htmlFor="location">Select Lake Location: </label>
+                <select
+                  id="location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  style={{
+                    paddingLeft: "10px",
+                    paddingRight: "10px",
+                    minWidth: "150px",
+                    width: "auto",
+                  }}
+                >
+                  {config?.locationOptions.map(({ value, label }) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <div>
-            <label htmlFor="location">Select Lake Location: </label>
-            <select
-              id="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              style={{
-                paddingLeft: "10px",
-                paddingRight: "10px",
-                minWidth: "150px",
-                width: "auto",
-              }}
-            >
-              {config?.locationOptions.map(({ value, label }) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </div>
+              <div>
+                <label htmlFor="parameter">Select Parameter: </label>
+                <select
+                  id="parameter"
+                  value={parameter}
+                  onChange={(e) => setParameter(e.target.value)}
+                  style={{
+                    paddingLeft: "10px",
+                    paddingRight: "10px",
+                    minWidth: "120px",
+                    width: "auto",
+                  }}
+                >
+                  {config?.parameterIntervalMapping &&
+                    Object.keys(config?.parameterIntervalMapping).map((key) => (
+                      <option key={key} value={key}>
+                        {key}
+                      </option>
+                    ))}
+                </select>
+              </div>
 
-          <div>
-            <label htmlFor="parameter">Select Parameter: </label>
-            <select
-              id="parameter"
-              value={parameter}
-              onChange={(e) => setParameter(e.target.value)}
-              style={{
-                paddingLeft: "10px",
-                paddingRight: "10px",
-                minWidth: "120px",
-                width: "auto",
-              }}
-            >
-              <option value="Elev">Elevation</option>
-              <option value="Precip-INC">Precipitation</option>
-              <option value="Evap-Project">Evaporation</option>
-              <option value="Flow-In">Inflow</option>
-              <option value="Flow-Out">Outflow</option>
-            </select>
-          </div>
+              <div>
+                <label htmlFor="interval">Select Interval: </label>
+                <select
+                  id="interval"
+                  value={interval}
+                  onChange={(e) => setInterval(e.target.value)}
+                  style={{
+                    paddingLeft: "10px",
+                    paddingRight: "10px",
+                    minWidth: "100px",
+                    width: "auto",
+                  }}
+                >
+                  {config?.parameterIntervalMapping &&
+                    Object.keys(
+                      config?.parameterIntervalMapping[parameter] || {}
+                    ).map((key) => (
+                      <option key={key} value={key}>
+                        {key}
+                      </option>
+                    ))}
+                </select>
+              </div>
 
-          <div>
-            <label htmlFor="interval">Select Interval: </label>
-            <select
-              id="interval"
-              value={interval}
-              onChange={(e) => setInterval(e.target.value)}
-              style={{
-                paddingLeft: "10px",
-                paddingRight: "10px",
-                minWidth: "100px",
-                width: "auto",
-              }}
-            >
-              <option value="Hourly">Hourly</option>
-              <option value="Daily">Daily</option>
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="view">Select View: </label>
-            <select
-              id="view"
-              value={view}
-              onChange={(e) => setView(e.target.value)}
-              style={{
-                paddingLeft: "10px",
-                paddingRight: "10px",
-                minWidth: "90px",
-                width: "auto",
-              }}
-            >
-              <option value="table">Table</option>
-              <option value="graph">Graph</option>
-            </select>
-          </div>
+              <div>
+                <label htmlFor="view">Select View: </label>
+                <select
+                  id="view"
+                  value={view}
+                  onChange={(e) => setView(e.target.value)}
+                  style={{
+                    paddingLeft: "10px",
+                    paddingRight: "10px",
+                    minWidth: "90px",
+                    width: "auto",
+                  }}
+                >
+                  <option value="table">Table</option>
+                  <option value="graph">Graph</option>
+                </select>
+              </div>
+            </>
+          )}
         </div>
-
+        {config && office && (
+        <>
         <Controls
           setBeginDateTime={setBeginDateTime}
           setEndDateTime={setEndDateTime}
           beginDateTime={beginDateTime}
           endDateTime={endDateTime}
-        />
-
-        <FailedTimeSeries failedTS={timeseriesData?.failed} />
-
+          />
+          <FailedTimeSeries failedTS={timeseriesData?.failed} />
+          </>
+        )}
+        {!config && !office && (
+            <H3 className="text-center mt-4">
+                Select an office to begin
+            </H3>
+        )}
         {view === "graph" ? (
           <div className="mt-2">
-            {isPending ? (
+            {timeseriesLoading ? (
               <Skeleton type="card" className="w-full h-[500px]" />
             ) : (
               <CWMSPlot
@@ -399,13 +418,13 @@ export default function HydrologicQuery() {
             <Button
               onClick={handleDownloadCSV}
               className={`mb-4 bg-blue-500 text-white px-4 py-2 rounded ${
-                !timeseriesData?.tsids.length || isPending ? "hidden" : ""
+                !timeseriesData?.tsids.length || timeseriesLoading ? "hidden" : ""
               }`}
             >
               Download CSV
             </Button>
             <div className="ag-theme-quartz w-full">
-              {isPending ? (
+              {timeseriesLoading ? (
                 <Skeleton type="card" className="w-full h-full" />
               ) : (
                 <>

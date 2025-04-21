@@ -40,7 +40,6 @@ function getMinInterval(tsids) {
   let tsIdx;
   for (let i = 0; i < tsids.length; i++) {
       const { value, unit } = parseInterval(tsids[i]);
-      console.log(value, unit)
       const intervalInMinutes = value * (timeMap[unit] || Infinity); // Convert to minutes
 
       // Check for the minimum interval
@@ -51,7 +50,6 @@ function getMinInterval(tsids) {
           tsIdx = i
       }
   }
-  console.log("min interval:", minInterval, minValue)
   return {
       tsIdx,
       minValue,
@@ -75,17 +73,14 @@ export default function MultiTSTable({ basePath, cdaParams, cdaHeaders, classNam
 function combineData(tsData) {
   const {tsIdx, minValue, minInterval} = getMinInterval(cdaParams?.tsids)
   const minTs = tsData[tsIdx]
-  console.log({minTs})
   const minTSValues = minTs?.values
 
   // Loop the minimum TS values and create an array of dates with the values for each of the other arrays
   // in the row with their rsepective timestamps
   let tableDates = []
-  console.log("minvallen", minTSValues.length)
   for (let i = 0; i < minTSValues.length; i++) {
     const date = dayjs(minTSValues[i][0])
     const rowValues = []
-    console.log("tsDatalen", tsData.length)
     for (let j = 0; j < tsData.length; j++) {
       if (j == tsIdx) continue
       const ts = tsData[j]
@@ -96,7 +91,6 @@ function combineData(tsData) {
     }
     tableDates.push({date, rowValues})
   }
-  console.log({tableDates})
   return tableDates
 }
 
@@ -118,13 +112,11 @@ function combineData(tsData) {
       return data;
     },
     select: (data) => {
-      console.log(data)
       data = combineData(data)
       return data
     },
     enabled: cdaParams?.tsids.length > 0 && cdaParams?.office !== undefined,
   });
-  console.log(data)
   // If the user passes in a single tsid, convert it to an array
   if (cdaParams?.tsid) cdaParams.tsids = [cdaParams.tsid];
   if (!cdaParams?.office) 
@@ -142,7 +134,6 @@ function combineData(tsData) {
       <tbody>
         {
           data.map((d, r_idx)=>{
-            console.log(r_idx)
             return <tr key={d?.date.unix()}>
               <td>{d?.date.format("YYYY-MM-DD HH:mm:ss")}</td>
               {

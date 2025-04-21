@@ -81,7 +81,6 @@ function CWMSTable({
       }
       let data = { ts: {}, dates: [] };
       let dates = [];
-      console.log({values})
       values.forEach((result) => {
         if (result && result.values) {
           if (!data.ts[result.values]) {
