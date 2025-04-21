@@ -1,20 +1,15 @@
-import {
-  UsaceBox,
-  Skeleton,
-  Badge,
-  Accordion,
-  Button,
-} from "@usace/groundwork";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { UsaceBox, Skeleton, Button } from "@usace/groundwork";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CWMSTable, CWMSPlot } from "@usace-watermanagement/groundwork-water";
+import { CWMSPlot } from "@usace-watermanagement/groundwork-water";
+import { CWMSTable } from "./components/CWMSTable";
 // import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 // ModuleRegistry.registerModules([AllCommunityModule]);
 import dayjs from "dayjs";
 import Controls from "./components/Controls";
 import { Configuration, TimeSeriesApi } from "cwmsjs";
 import { getPrecision, mergeTimeseries } from "../../utils/timeseries";
-import { IoWarning } from "react-icons/io5";
+import FailedTimeSeries from "./components/FailedTimeSeries";
 const OFFICES = ["SWT", "SWF"];
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
 // const config = cwmsConfigs["SWF"];
@@ -34,13 +29,20 @@ export default function HydrologicQuery() {
   const [parameter, setParameter] = useState(null);
   const [interval, setInterval] = useState(null);
   const [office, setOffice] = useState("SWF");
-  const [configUrl, setConfigUrl] = useState(`https://cwms-data.usace.army.mil/cwms-data/blobs/CDA_QUERY_TOOL_${office}.JSON?office=${office}`);
+  const [configUrl, setConfigUrl] = useState(
+    `https://cwms-data.usace.army.mil/cwms-data/blobs/CDA_QUERY_TOOL_${office}.JSON?office=${office}`
+  );
   const [beginDateTime, setBeginDateTime] = useState(
     dayjs().subtract(1, "day")
   );
   const [endDateTime, setEndDateTime] = useState(dayjs());
   const [view, setView] = useState("table");
-  const { data: config, isPending:configPending, error: configError, refetch: refetchConfig } = useQuery({
+  const {
+    data: config,
+    isPending: configPending,
+    error: configError,
+    refetch: refetchConfig,
+  } = useQuery({
     queryKey: ["config"],
     staleTime: 1000 * 60 * 60 * 24, // 1 day
     queryFn: () => fetchConfig(configUrl),
@@ -56,9 +58,6 @@ export default function HydrologicQuery() {
     },
   });
   const ts_api = new TimeSeriesApi(v2_config);
-
-
-  
 
   async function fetchAllTSData(data) {
     let startDate = data?.begin;
@@ -97,12 +96,11 @@ export default function HydrologicQuery() {
       total: data?.total,
     };
   }
-  
+
   useEffect(() => {
-    if (!config) return;
+    if (!config || !parameter || !location || !interval) return;
     const parameterIntervalMapping = config.parameterIntervalMapping;
-    const intervalValue =
-      parameterIntervalMapping[parameter]?.[interval] || "1Hour.0.Decodes-Rev";
+    const intervalValue = parameterIntervalMapping[parameter]?.[interval];
     setTsids([`${location}.${parameter}.${intervalValue}`]);
   }, [location, parameter, interval, config]);
 
@@ -124,7 +122,6 @@ export default function HydrologicQuery() {
       }
     }
   }, [config, location, parameter, interval]);
-
 
   const {
     data: timeseriesData,
@@ -157,14 +154,14 @@ export default function HydrologicQuery() {
       const data = await Promise.all(promises);
       return data;
     },
-    select: (data) => mergeTimeseries(data),
+    select: (data) => {
+      return { ...mergeTimeseries(data), raw: data };
+    },
     enabled: tsids.length > 0 && office !== undefined,
   });
-
   useEffect(() => {
-    console.log("timeseriesData updated", timeseriesData);
+    console.log("timeseriesData updated", { timeseriesData });
   }, [timeseriesData]);
-
 
   const timeseriesParams = useMemo(() => {
     if (!timeseriesData) return [];
@@ -173,7 +170,7 @@ export default function HydrologicQuery() {
       header: `${tsids[index].split(".")[1]} (${series.units})`,
       rounding: getPrecision(series.units),
     }));
-  }, [timeseriesData, tsids, beginDateTime, endDateTime]);
+  }, [timeseriesData, tsids]);
 
   const cdaParams = useMemo(
     () => ({
@@ -183,7 +180,7 @@ export default function HydrologicQuery() {
     }),
     [beginDateTime, endDateTime, office]
   );
-
+console.log({timeseriesData})
   const handleDownloadCSV = () => {
     if (!timeseriesData || timeseriesData.dates.length === 0) {
       console.warn("No data to export");
@@ -214,8 +211,10 @@ export default function HydrologicQuery() {
   };
 
   if (error) return <div>Error: {error.message}</div>;
-  if (configError) return <div>Configuration File Error: {configError?.message}</div>;
-  if (configPending) return <Skeleton type="card" className="w-full h-[500px]" />;
+  if (configError)
+    return <div>Configuration File Error: {configError?.message}</div>;
+  if (configPending)
+    return <Skeleton type="card" className="w-full h-[500px]" />;
   return (
     <div className="px-5">
       <UsaceBox title="Hydrologic Query">
@@ -229,11 +228,11 @@ export default function HydrologicQuery() {
                 const office = e.target.value;
                 setOffice(office);
                 setConfigUrl(
-                  `https://cwms-data.usace.army.mil/cwms-data/blobs/CDA_QUERY_TOOL_${office}.JSON?office=${office}`)
-                  refetchConfig();
-                setLocation(
-                  // cwmsConfigs[e.target.value].locationOptions[0].value
+                  `https://cwms-data.usace.army.mil/cwms-data/blobs/CDA_QUERY_TOOL_${office}.JSON?office=${office}`
                 );
+                refetchConfig();
+                setLocation();
+                // cwmsConfigs[e.target.value].locationOptions[0].value
               }}
               style={{
                 paddingLeft: "10px",
@@ -336,30 +335,8 @@ export default function HydrologicQuery() {
           endDateTime={endDateTime}
         />
 
-        {timeseriesData?.failed.length > 0 && (
-          <div className="flex flex-col gap-2 mx-2">
-            <Accordion
-              heading={
-                <div className="flex justify-between items-center w-full">
-                  <div className="text-xl font-bold">
-                    <IoWarning className="inline" /> Failed Timeseries
-                  </div>
-                  <Badge color="red">
-                    <b>{timeseriesData?.failed.length} Failed</b>
-                  </Badge>
-                </div>
-              }
-            >
-              <div className="py-3">
-                {timeseriesData?.failed.map((tsid) => (
-                  <Badge key={"failed-" + tsid} color="yellow" className="ms-5">
-                    <b>{tsid}</b>
-                  </Badge>
-                ))}
-              </div>
-            </Accordion>
-          </div>
-        )}
+        <FailedTimeSeries failedTS={timeseriesData?.failed} />
+
         {view === "graph" ? (
           <div className="mt-2">
             {isPending ? (
@@ -432,6 +409,8 @@ export default function HydrologicQuery() {
                         missingString="---"
                         sortAscending={true}
                         trim={true}
+                        inputValues={timeseriesData?.raw}
+                    
                       />
                     </div>
                   )}
