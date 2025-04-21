@@ -61,7 +61,7 @@ public class RateDao extends JooqDao<RatingSet> {
             if (!input.getValueTimes().isEmpty()) {
 
                 ratingDates = new DATE_TABLE_TYPE();
-                input.getValueTimes().stream().map(Timestamp::from).forEach(ratingDates::add);
+                input.getValueTimes().stream().map(Timestamp::new).forEach(ratingDates::add);
             }
             DOUBLE_TAB_TAB_T inputValues = new DOUBLE_TAB_TAB_T();
             input.getValues().stream().map(DOUBLE_TAB_T::new).forEach(inputValues::add);
@@ -103,7 +103,7 @@ public class RateDao extends JooqDao<RatingSet> {
             if (!input.getValueTimes().isEmpty()) {
 
                 ratingDates = new DATE_TABLE_TYPE();
-                input.getValueTimes().stream().map(Timestamp::from).forEach(ratingDates::add);
+                input.getValueTimes().stream().map(Timestamp::new).forEach(ratingDates::add);
             }
             DOUBLE_TAB_T inputValues = new DOUBLE_TAB_T(input.getValues().get(0));
             STR_TAB_T unitsTab = new STR_TAB_T(input.getInputUnits());

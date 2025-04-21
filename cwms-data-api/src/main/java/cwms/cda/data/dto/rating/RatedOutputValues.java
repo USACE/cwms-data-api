@@ -24,11 +24,21 @@
 
 package cwms.cda.data.dto.rating;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class RatedOutputValues extends RatedOutput {
 
     @ArraySchema(
@@ -36,10 +46,15 @@ public final class RatedOutputValues extends RatedOutput {
             description = "List of rated values"
         )
     )
+    @JsonProperty(required = true)
     private final List<Double> values;
 
     public RatedOutputValues(CwmsId ratingId, List<Double> values, String units) {
         super(ratingId, units);
         this.values = values;
+    }
+
+    public List<Double> getValues() {
+        return values;
     }
 }

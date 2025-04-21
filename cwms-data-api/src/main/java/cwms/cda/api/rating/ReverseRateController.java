@@ -79,10 +79,10 @@ public final class ReverseRateController extends BaseHandler {
             required = true),
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
-                @OpenApiContent(type = Formats.JSON, from = RatedOutputValues.class),
-                @OpenApiContent(type = Formats.JSONV1, from = RatedOutputValues.class),
                 @OpenApiContent(type = Formats.JSON, from = RatedOutputTimeSeries.class),
-                @OpenApiContent(type = Formats.JSONV1, from = RatedOutputTimeSeries.class)
+                @OpenApiContent(type = Formats.JSONV1, from = RatedOutputTimeSeries.class),
+                @OpenApiContent(type = Formats.JSON, from = RatedOutputValues.class),
+                @OpenApiContent(type = Formats.JSONV1, from = RatedOutputValues.class)
             })
         },
         security = {
@@ -100,22 +100,24 @@ public final class ReverseRateController extends BaseHandler {
             String office = ctx.pathParam(OFFICE);
             String ratingId = ctx.pathParam(RATING_ID);
             String contentTypeHeader = ctx.req.getContentType();
-            RatedOutput output;
             String body = ctx.body();
+            String result;
             if(isRateTimeSeries(body)) {
                 ContentType contentType = Formats.parseHeader(contentTypeHeader, RateInputTimeSeries.class);
                 RateInputTimeSeries input = Formats.parseContent(contentType, body, RateInputTimeSeries.class);
-                output = ratingDao.reverseRate(office, ratingId, input);
+                RatedOutput output = ratingDao.reverseRate(office, ratingId, input);
+                String acceptFormatHeader = ctx.header(Header.ACCEPT);
+                ContentType acceptContentType = Formats.parseHeader(acceptFormatHeader, RatedOutputTimeSeries.class);
+                result = Formats.format(acceptContentType, output);
             } else {
                 ContentType contentType = Formats.parseHeader(contentTypeHeader, RateInputValues.class);
                 RateInputValues input = Formats.parseContent(contentType, body, RateInputValues.class);
-                output = ratingDao.reverseRate(office, ratingId, input);
+                RatedOutput output = ratingDao.reverseRate(office, ratingId, input);
+                String acceptFormatHeader = ctx.header(Header.ACCEPT);
+                ContentType acceptContentType = Formats.parseHeader(acceptFormatHeader, RatedOutputValues.class);
+                result = Formats.format(acceptContentType, output);
             }
-            String acceptFormatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(acceptFormatHeader, RateInput.class);
-            String result = Formats.format(contentType, output);
-            ctx.result(result);
-            ctx.status(HttpServletResponse.SC_OK).json("Created RatingSet");
+            ctx.status(HttpServletResponse.SC_OK).result(result);
         } catch (DataAccessException ex) {
             handleRatingDbError(ex);
         }

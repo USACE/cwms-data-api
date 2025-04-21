@@ -27,12 +27,16 @@ package cwms.cda.data.dto.rating;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import cwms.cda.data.dto.CwmsDTOValidator;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = RateInputValues.RateInputValuesBuilder.class)
 public final class RateInputValues extends RateInput {
 
@@ -49,11 +53,13 @@ public final class RateInputValues extends RateInput {
     @ArraySchema(
         schema = @Schema(
             description = "The date/time for each independent parameter value. " +
+                "Represents milliseconds since 1970-01-01 (Unix Epoch), always UTC" +
                 "Must be of the same length as each values array.",
-            requiredMode = Schema.RequiredMode.NOT_REQUIRED
+            requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+            implementation = Long.class
         )
     )
-    private final List<Instant> valueTimes;
+    private final List<Long> valueTimes;
 
     @ArraySchema(
         schema = @Schema(
@@ -76,7 +82,7 @@ public final class RateInputValues extends RateInput {
         return values;
     }
 
-    public List<Instant> getValueTimes() {
+    public List<Long> getValueTimes() {
         return valueTimes;
     }
 
@@ -100,14 +106,14 @@ public final class RateInputValues extends RateInput {
             if(getInputUnits().size() != getValues().size()){
                 throw new IllegalArgumentException("The number of input units must match the number of values");
             }
-            if (getValueTimes() != null && getValues().get(0).size() != getValueTimes().size()) {
+            if (!getValueTimes().isEmpty() && getValues().get(0).size() != getValueTimes().size()) {
                 throw new IllegalArgumentException("The number of values must match the number of value times");
             }
         });
     }
 
     public static final class RateInputValuesBuilder extends RateInputBuilder<RateInputValuesBuilder> {
-        private List<Instant> valueTimes = new ArrayList<>();
+        private List<Long> valueTimes = new ArrayList<>();
         private List<List<Double>> values;
         private List<String> inputUnits;
 
@@ -126,7 +132,7 @@ public final class RateInputValues extends RateInput {
             return self();
         }
 
-        public RateInputValuesBuilder withValueTimes(List<Instant> valueTimes) {
+        public RateInputValuesBuilder withValueTimes(List<Long> valueTimes) {
             this.valueTimes = valueTimes;
             return self();
         }

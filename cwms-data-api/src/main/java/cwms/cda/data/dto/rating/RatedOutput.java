@@ -25,6 +25,8 @@
 package cwms.cda.data.dto.rating;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.CwmsDTOBase;
@@ -37,17 +39,31 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = RatedOutputValues.class, name = "RatedOutputValues"),
+    @JsonSubTypes.Type(value = RatedOutputTimeSeries.class, name = "RatedOutputTimeSeries")
+})
 public abstract class RatedOutput extends CwmsDTOBase {
 
     @Schema(description = "The rating specification identifier",
         implementation = CwmsId.class)
+    @JsonProperty(required = true)
     private final CwmsId ratingId;
 
     @Schema(description = "The units of the rated output data")
+    @JsonProperty(required = true)
     private final String units;
 
     protected RatedOutput(CwmsId ratingId, String units) {
         this.ratingId = ratingId;
         this.units = units;
+    }
+
+    public CwmsId getRatingId() {
+        return ratingId;
+    }
+
+    public String getUnits() {
+        return units;
     }
 }

@@ -83,10 +83,11 @@ public final class RateController extends BaseHandler {
             required = true),
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
+                @OpenApiContent(type = Formats.JSON, from = RatedOutput.class,
+                discriminator = @OpenApiDiscrim),
+                @OpenApiContent(type = Formats.JSONV1, from = RatedOutputTimeSeries.class),
                 @OpenApiContent(type = Formats.JSON, from = RatedOutputValues.class),
-                @OpenApiContent(type = Formats.JSONV1, from = RatedOutputValues.class),
-                @OpenApiContent(type = Formats.JSON, from = RatedOutputTimeSeries.class),
-                @OpenApiContent(type = Formats.JSONV1, from = RatedOutputTimeSeries.class)
+                @OpenApiContent(type = Formats.JSONV1, from = RatedOutputValues.class)
             })
         },
         security = {
@@ -104,26 +105,26 @@ public final class RateController extends BaseHandler {
             String office = ctx.pathParam(OFFICE);
             String ratingId = ctx.pathParam(RATING_ID);
             String contentTypeHeader = ctx.req.getContentType();
-            RatedOutput output;
             String body = ctx.body();
+            String result;
             if(isRateTimeSeries(body)) {
                 ContentType contentType = Formats.parseHeader(contentTypeHeader, RateInputTimeSeries.class);
                 RateInputTimeSeries input = Formats.parseContent(contentType, body, RateInputTimeSeries.class);
-                output = ratingDao.rate(office, ratingId, input);
+                RatedOutput output = ratingDao.rate(office, ratingId, input);
+                String acceptFormatHeader = ctx.header(Header.ACCEPT);
+                ContentType acceptContentType = Formats.parseHeader(acceptFormatHeader, RatedOutputTimeSeries.class);
+                result = Formats.format(acceptContentType, output);
             } else {
                 ContentType contentType = Formats.parseHeader(contentTypeHeader, RateInputValues.class);
                 RateInputValues input = Formats.parseContent(contentType, body, RateInputValues.class);
-                output = ratingDao.rate(office, ratingId, input);
+                RatedOutput output = ratingDao.rate(office, ratingId, input);
+                String acceptFormatHeader = ctx.header(Header.ACCEPT);
+                ContentType acceptContentType = Formats.parseHeader(acceptFormatHeader, RatedOutputValues.class);
+                result = Formats.format(acceptContentType, output);
             }
-
-            String acceptFormatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(acceptFormatHeader, RateInput.class);
-            String result = Formats.format(contentType, output);
-            ctx.result(result);
-            ctx.status(HttpServletResponse.SC_OK).json("Created RatingSet");
-        } catch (DataException ex) {
-            CdaError re = new CdaError("Failed to process create request");
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+            ctx.status(HttpServletResponse.SC_OK).result(result);
+        } catch (DataAccessException ex) {
+            handleRatingDbError(ex);
         }
     }
 
@@ -136,13 +137,16 @@ public final class RateController extends BaseHandler {
         Throwable cause = ex.getCause();
         if(cause instanceof SQLException) {
             int errorCode = ((SQLException) cause).getErrorCode();
-            if(errorCode == -20019 || errorCode == -20998) {
+            if(errorCode == 20019 || errorCode == 20998) {
                 String localizedMessage = cause.getLocalizedMessage();
                 if (localizedMessage != null) {
                     String[] parts = localizedMessage.split("\n");
                     if (parts.length > 1) {
                         String message = parts[0];
-                        throw new RateException(message, (SQLException) cause);
+                        int index = message.indexOf(":");
+                        if(index >= 0) {
+                            throw new RateException(message.substring(index + 1),(SQLException) cause);
+                        }
                     }
                 }
             }

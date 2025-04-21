@@ -26,6 +26,7 @@ package cwms.cda.data.dto.rating;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -42,6 +43,10 @@ import java.util.Optional;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = RateInputValues.class, name = "RateInputValues"),
+    @JsonSubTypes.Type(value = RateInputTimeSeries.class, name = "RateInputTimeSeries")
+})
 public abstract class RateInput extends CwmsDTOBase {
 
     @Schema(description = "The units of the output values",

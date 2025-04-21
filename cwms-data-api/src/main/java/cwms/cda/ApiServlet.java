@@ -29,6 +29,7 @@ import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
 import cwms.cda.api.MeasurementTimeExtentsGetController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
@@ -676,8 +677,8 @@ public class ApiServlet extends HttpServlet {
     }
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {
-        get("/ratings/rate/{office-id}/{rating-id}", new RateController(metrics), requiredRoles);
-        get("/ratings/reverse-rate/{office-id}/{rating-id}", new ReverseRateController(metrics), requiredRoles);
+        post(format("/ratings/rate/{%s}/{%s}", OFFICE, RATING_ID), new RateController(metrics), requiredRoles);
+        post(format("/ratings/reverse-rate/{%s}/{%s}", OFFICE, RATING_ID), new ReverseRateController(metrics), requiredRoles);
         cdaCrudCache("/ratings/template/{template-id}",
                 new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/ratings/spec/{rating-id}",
