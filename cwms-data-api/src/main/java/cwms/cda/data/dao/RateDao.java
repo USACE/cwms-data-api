@@ -26,6 +26,7 @@ package cwms.cda.data.dao;
 
 import static java.util.stream.Collectors.toList;
 
+import cwms.cda.api.errors.RateException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.rating.RateInput;
@@ -35,11 +36,14 @@ import cwms.cda.data.dto.rating.RatedOutput;
 import cwms.cda.data.dto.rating.RatedOutputTimeSeries;
 import cwms.cda.data.dto.rating.RatedOutputValues;
 import hec.data.cwmsRating.RatingSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.jooq.ConnectionCallable;
 import org.jooq.DSLContext;
+import org.jooq.exception.DataAccessException;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.DATE_TABLE_TYPE;
 import usace.cwms.db.jooq.codegen.udt.records.DOUBLE_TAB_T;
@@ -55,7 +59,7 @@ public class RateDao extends JooqDao<RatingSet> {
     }
 
     public RatedOutput rate(String officeId, String ratingId, RateInputValues input) {
-        DOUBLE_TAB_T outputValues = connectionResult(dsl, c -> {
+        DOUBLE_TAB_T outputValues = connectionResult(c -> {
             DSLContext context = getDslContext(c, officeId);
             DATE_TABLE_TYPE ratingDates = null;
             if (!input.getValueTimes().isEmpty()) {
@@ -97,7 +101,7 @@ public class RateDao extends JooqDao<RatingSet> {
 
     public RatedOutput reverseRate(String officeId, String ratingId, RateInputValues input) {
         validateReverseRateInput(input);
-        DOUBLE_TAB_T outputValues = connectionResult(dsl, c -> {
+        DOUBLE_TAB_T outputValues = connectionResult(c -> {
             DSLContext context = getDslContext(c, officeId);
             DATE_TABLE_TYPE ratingDates = null;
             if (!input.getValueTimes().isEmpty()) {
@@ -115,7 +119,7 @@ public class RateDao extends JooqDao<RatingSet> {
     }
 
     public RatedOutput rate(String officeId, String ratingId, RateInputTimeSeries input) {
-        ZTSV_ARRAY ztsvTypes = connectionResult(dsl, c -> {
+        ZTSV_ARRAY ztsvTypes = connectionResult(c -> {
             DSLContext context = getDslContext(c, officeId);
             Timestamp version = input.getVersionDate().map(Timestamp::from).orElse(null);
             Timestamp ratingTimstamp = input.getRatingTime().map(Timestamp::from).orElse(null);
@@ -136,7 +140,7 @@ public class RateDao extends JooqDao<RatingSet> {
     public RatedOutput reverseRate(String officeId, String ratingId, RateInputTimeSeries input) {
         //Performing early simple validation in order to avoid validation within the database
         validateReverseRateInput(input);
-        ZTSV_ARRAY ztsvTypes = connectionResult(dsl, c -> {
+        ZTSV_ARRAY ztsvTypes = connectionResult(c -> {
             DSLContext context = getDslContext(c, officeId);
             Timestamp version = input.getVersionDate().map(Timestamp::from).orElse(null);
             Timestamp ratingTimstamp = input.getRatingTime().map(Timestamp::from).orElse(null);
@@ -152,5 +156,31 @@ public class RateDao extends JooqDao<RatingSet> {
             .map(z -> new TimeSeries.Record(z.getDATE_TIME(), z.getVALUE(), z.getQUALITY_CODE().intValue()))
             .collect(toList());
         return new RatedOutputTimeSeries(CwmsId.buildCwmsId(officeId, ratingId), records, input.getOutputUnits());
+    }
+
+    private <R> R connectionResult(ConnectionCallable<R> callable) {
+        try {
+            return connectionResult(dsl, callable);
+        } catch(DataAccessException ex) {
+            throw handleRateDbError(ex);
+        }
+    }
+
+    static RuntimeException handleRateDbError(DataAccessException ex) {
+        RuntimeException retval = ex;
+        Throwable cause = ex.getCause();
+        if (cause instanceof SQLException) {
+            int errorCode = ((SQLException) cause).getErrorCode();
+            if (errorCode == 20019 || errorCode == 20998) {
+                String localizedMessage = cause.getLocalizedMessage();
+                String[] parts = localizedMessage.split("\n");
+                String message = parts[0];
+                int index = message.indexOf(":");
+                if (index >= 0) {
+                    retval = new RateException(message.substring(index + 1), (SQLException) cause);
+                }
+            }
+        }
+        return retval;
     }
 }

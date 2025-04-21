@@ -27,21 +27,18 @@ package cwms.cda.api.rating;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.rating.RateController.TAG;
-import static cwms.cda.api.rating.RateController.handleRatingDbError;
-import static cwms.cda.api.rating.RateController.isRateTimeSeries;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.data.dao.RateDao;
-import cwms.cda.data.dto.rating.RateInput;
 import cwms.cda.data.dto.rating.RateInputTimeSeries;
-import cwms.cda.data.dto.rating.RateInputValues;
 import cwms.cda.data.dto.rating.RatedOutput;
 import cwms.cda.data.dto.rating.RatedOutputTimeSeries;
-import cwms.cda.data.dto.rating.RatedOutputValues;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
@@ -56,13 +53,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
 
-public final class ReverseRateController extends BaseHandler {
+public final class RateTimeSeriesController extends BaseHandler {
 
-    private static final String REVERSE_RATE = "ReverseRate";
+    static final String TAG = "Ratings";
+    private static final String RATE = "Rate";
 
-    public ReverseRateController(MetricRegistry metrics) {
+    public RateTimeSeriesController(MetricRegistry metrics) {
         super(metrics);
     }
 
@@ -72,54 +69,45 @@ public final class ReverseRateController extends BaseHandler {
             @OpenApiParam(name = RATING_ID, description = "Rating Specification identifier"),
         },
         requestBody = @OpenApiRequestBody(content = {
-            @OpenApiContent(type = Formats.JSON, from = RateInputValues.class),
-            @OpenApiContent(type = Formats.JSONV1, from = RateInputValues.class),
             @OpenApiContent(type = Formats.JSON, from = RateInputTimeSeries.class),
-            @OpenApiContent(type = Formats.JSONV1, from = RateInputTimeSeries.class)},
-            required = true),
+            @OpenApiContent(type = Formats.JSONV1, from = RateInputTimeSeries.class)
+        }, required = true),
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
                 @OpenApiContent(type = Formats.JSON, from = RatedOutputTimeSeries.class),
-                @OpenApiContent(type = Formats.JSONV1, from = RatedOutputTimeSeries.class),
-                @OpenApiContent(type = Formats.JSON, from = RatedOutputValues.class),
-                @OpenApiContent(type = Formats.JSONV1, from = RatedOutputValues.class)
-            })
+                @OpenApiContent(type = Formats.JSONV1, from = RatedOutputTimeSeries.class)
+            }),
+            @OpenApiResponse(status = STATUS_400, description = "Invalid input parameters."),
+            @OpenApiResponse(status = STATUS_404, description = "The rating curve was not found."),
+            @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
         security = {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
-        description = "Returns rated values.",
+        description = "Rates input values using CWMS ratings. The input formats include a two dimensional " +
+            "array with each dimension corresponding to an independent parameter in the rating curve. " +
+            "Another option is to use the `RatedOutputTimeSeries` DTO, " +
+            "which supports an array of CWMS time series ids, " +
+            "each corresponding to an independent parameter in the rating curve.",
         method = HttpMethod.POST,
         tags = {TAG}
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
-        try (final Timer.Context ignored = markAndTime(REVERSE_RATE)) {
+        try (final Timer.Context ignored = markAndTime(RATE)) {
             DSLContext dsl = getDslContext(ctx);
             RateDao ratingDao = new RateDao(dsl);
             String office = ctx.pathParam(OFFICE);
             String ratingId = ctx.pathParam(RATING_ID);
             String contentTypeHeader = ctx.req.getContentType();
             String body = ctx.body();
-            String result;
-            if(isRateTimeSeries(body)) {
-                ContentType contentType = Formats.parseHeader(contentTypeHeader, RateInputTimeSeries.class);
-                RateInputTimeSeries input = Formats.parseContent(contentType, body, RateInputTimeSeries.class);
-                RatedOutput output = ratingDao.reverseRate(office, ratingId, input);
-                String acceptFormatHeader = ctx.header(Header.ACCEPT);
-                ContentType acceptContentType = Formats.parseHeader(acceptFormatHeader, RatedOutputTimeSeries.class);
-                result = Formats.format(acceptContentType, output);
-            } else {
-                ContentType contentType = Formats.parseHeader(contentTypeHeader, RateInputValues.class);
-                RateInputValues input = Formats.parseContent(contentType, body, RateInputValues.class);
-                RatedOutput output = ratingDao.reverseRate(office, ratingId, input);
-                String acceptFormatHeader = ctx.header(Header.ACCEPT);
-                ContentType acceptContentType = Formats.parseHeader(acceptFormatHeader, RatedOutputValues.class);
-                result = Formats.format(acceptContentType, output);
-            }
+            ContentType contentType = Formats.parseHeader(contentTypeHeader, RateInputTimeSeries.class);
+            RateInputTimeSeries input = Formats.parseContent(contentType, body, RateInputTimeSeries.class);
+            RatedOutput output = ratingDao.rate(office, ratingId, input);
+            String acceptFormatHeader = ctx.header(Header.ACCEPT);
+            ContentType acceptContentType = Formats.parseHeader(acceptFormatHeader, RatedOutputTimeSeries.class);
+            String result = Formats.format(acceptContentType, output);
             ctx.status(HttpServletResponse.SC_OK).result(result);
-        } catch (DataAccessException ex) {
-            handleRatingDbError(ex);
         }
     }
 }

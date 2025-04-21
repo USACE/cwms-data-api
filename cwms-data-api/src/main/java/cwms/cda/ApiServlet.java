@@ -73,7 +73,8 @@ import cwms.cda.api.PoolController;
 import cwms.cda.api.ProjectController;
 import cwms.cda.api.PropertyController;
 import cwms.cda.api.errors.RateException;
-import cwms.cda.api.rating.RateController;
+import cwms.cda.api.rating.RateTimeSeriesController;
+import cwms.cda.api.rating.RateValuesController;
 import cwms.cda.api.rating.RatingController;
 import cwms.cda.api.rating.RatingLatestController;
 import cwms.cda.api.rating.RatingMetadataController;
@@ -127,7 +128,8 @@ import cwms.cda.api.project.ProjectLockRevokeDeny;
 import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
-import cwms.cda.api.rating.ReverseRateController;
+import cwms.cda.api.rating.ReverseRateTimeSeriesController;
+import cwms.cda.api.rating.ReverseRateValuesController;
 import cwms.cda.api.watersupply.AccountingCatalogController;
 import cwms.cda.api.watersupply.AccountingCreateController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCatalogController;
@@ -677,8 +679,14 @@ public class ApiServlet extends HttpServlet {
     }
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {
-        post(format("/ratings/rate/{%s}/{%s}", OFFICE, RATING_ID), new RateController(metrics), requiredRoles);
-        post(format("/ratings/reverse-rate/{%s}/{%s}", OFFICE, RATING_ID), new ReverseRateController(metrics), requiredRoles);
+        post(format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID),
+            new RateValuesController(metrics), requiredRoles);
+        post(format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID),
+            new RateTimeSeriesController(metrics), requiredRoles);
+        post(format("/ratings/reverse-rate-values/{%s}/{%s}", OFFICE, RATING_ID),
+            new ReverseRateValuesController(metrics), requiredRoles);
+        post(format("/ratings/reverse-rate-ts/{%s}/{%s}", OFFICE, RATING_ID),
+            new ReverseRateTimeSeriesController(metrics), requiredRoles);
         cdaCrudCache("/ratings/template/{template-id}",
                 new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/ratings/spec/{rating-id}",

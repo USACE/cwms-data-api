@@ -27,24 +27,20 @@ package cwms.cda.api.rating;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import cwms.cda.api.BaseHandler;
-import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.RateException;
 import cwms.cda.data.dao.RateDao;
-import cwms.cda.data.dto.rating.RateInput;
-import cwms.cda.data.dto.rating.RateInputTimeSeries;
 import cwms.cda.data.dto.rating.RateInputValues;
 import cwms.cda.data.dto.rating.RatedOutput;
-import cwms.cda.data.dto.rating.RatedOutputTimeSeries;
 import cwms.cda.data.dto.rating.RatedOutputValues;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV1;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -54,19 +50,16 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
-import java.sql.SQLException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
-import org.jooq.exception.DataException;
 
-public final class RateController extends BaseHandler {
+public final class RateValuesController extends BaseHandler {
 
     static final String TAG = "Ratings";
     private static final String RATE = "Rate";
 
-    public RateController(MetricRegistry metrics) {
+    public RateValuesController(MetricRegistry metrics) {
         super(metrics);
     }
 
@@ -77,23 +70,25 @@ public final class RateController extends BaseHandler {
         },
         requestBody = @OpenApiRequestBody(content = {
             @OpenApiContent(type = Formats.JSON, from = RateInputValues.class),
-            @OpenApiContent(type = Formats.JSONV1, from = RateInputValues.class),
-            @OpenApiContent(type = Formats.JSON, from = RateInputTimeSeries.class),
-            @OpenApiContent(type = Formats.JSONV1, from = RateInputTimeSeries.class)},
-            required = true),
+            @OpenApiContent(type = Formats.JSONV1, from = RateInputValues.class)
+        }, required = true),
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
-                @OpenApiContent(type = Formats.JSON, from = RatedOutput.class,
-                discriminator = @OpenApiDiscrim),
-                @OpenApiContent(type = Formats.JSONV1, from = RatedOutputTimeSeries.class),
                 @OpenApiContent(type = Formats.JSON, from = RatedOutputValues.class),
                 @OpenApiContent(type = Formats.JSONV1, from = RatedOutputValues.class)
-            })
+            }),
+            @OpenApiResponse(status = STATUS_400, description = "Invalid input parameters."),
+            @OpenApiResponse(status = STATUS_404, description = "The rating curve was not found."),
+            @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
         security = {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
-        description = "Returns rated values.",
+        description = "Rates input values using CWMS ratings. The input formats include a two dimensional " +
+            "array with each dimension corresponding to an independent parameter in the rating curve. " +
+            "Another option is to use the `RatedOutputTimeSeries` DTO, " +
+            "which supports an array of CWMS time series ids, " +
+            "each corresponding to an independent parameter in the rating curve.",
         method = HttpMethod.POST,
         tags = {TAG}
     )
@@ -106,51 +101,13 @@ public final class RateController extends BaseHandler {
             String ratingId = ctx.pathParam(RATING_ID);
             String contentTypeHeader = ctx.req.getContentType();
             String body = ctx.body();
-            String result;
-            if(isRateTimeSeries(body)) {
-                ContentType contentType = Formats.parseHeader(contentTypeHeader, RateInputTimeSeries.class);
-                RateInputTimeSeries input = Formats.parseContent(contentType, body, RateInputTimeSeries.class);
-                RatedOutput output = ratingDao.rate(office, ratingId, input);
-                String acceptFormatHeader = ctx.header(Header.ACCEPT);
-                ContentType acceptContentType = Formats.parseHeader(acceptFormatHeader, RatedOutputTimeSeries.class);
-                result = Formats.format(acceptContentType, output);
-            } else {
-                ContentType contentType = Formats.parseHeader(contentTypeHeader, RateInputValues.class);
-                RateInputValues input = Formats.parseContent(contentType, body, RateInputValues.class);
-                RatedOutput output = ratingDao.rate(office, ratingId, input);
-                String acceptFormatHeader = ctx.header(Header.ACCEPT);
-                ContentType acceptContentType = Formats.parseHeader(acceptFormatHeader, RatedOutputValues.class);
-                result = Formats.format(acceptContentType, output);
-            }
+            ContentType contentType = Formats.parseHeader(contentTypeHeader, RateInputValues.class);
+            RateInputValues input = Formats.parseContent(contentType, body, RateInputValues.class);
+            RatedOutput output = ratingDao.rate(office, ratingId, input);
+            String acceptFormatHeader = ctx.header(Header.ACCEPT);
+            ContentType acceptContentType = Formats.parseHeader(acceptFormatHeader, RatedOutputValues.class);
+            String result = Formats.format(acceptContentType, output);
             ctx.status(HttpServletResponse.SC_OK).result(result);
-        } catch (DataAccessException ex) {
-            handleRatingDbError(ex);
         }
-    }
-
-    static boolean isRateTimeSeries(String body) throws JsonProcessingException {
-        return JsonV1.buildObjectMapper().readTree(body)
-            .has("time-series-ids");
-    }
-
-    static void handleRatingDbError(DataAccessException ex) {
-        Throwable cause = ex.getCause();
-        if(cause instanceof SQLException) {
-            int errorCode = ((SQLException) cause).getErrorCode();
-            if(errorCode == 20019 || errorCode == 20998) {
-                String localizedMessage = cause.getLocalizedMessage();
-                if (localizedMessage != null) {
-                    String[] parts = localizedMessage.split("\n");
-                    if (parts.length > 1) {
-                        String message = parts[0];
-                        int index = message.indexOf(":");
-                        if(index >= 0) {
-                            throw new RateException(message.substring(index + 1),(SQLException) cause);
-                        }
-                    }
-                }
-            }
-        }
-        throw ex;
     }
 }
