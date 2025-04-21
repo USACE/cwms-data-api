@@ -48,22 +48,26 @@ public abstract class RatedOutput extends CwmsDTOBase {
     @Schema(description = "The rating specification identifier",
         implementation = CwmsId.class)
     @JsonProperty(required = true)
-    private final CwmsId ratingId;
+    private CwmsId ratingId;
 
-    @Schema(description = "The units of the rated output data")
+    @Schema(description = "The unit of the rated output data")
     @JsonProperty(required = true)
-    private final String units;
+    private String unit;
 
-    protected RatedOutput(CwmsId ratingId, String units) {
-        this.ratingId = ratingId;
-        this.units = units;
+    protected RatedOutput() {
+        //empty for serialization
     }
 
-    public CwmsId getRatingId() {
+    protected RatedOutput(CwmsId ratingId, String unit) {
+        this.ratingId = ratingId;
+        this.unit = unit;
+    }
+
+    public final CwmsId getRatingId() {
         return ratingId;
     }
 
-    public String getUnits() {
-        return units;
+    public final String getUnit() {
+        return unit;
     }
 }

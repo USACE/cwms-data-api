@@ -44,9 +44,6 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-/**
- *
- */
 final class RateInputValuesTest {
 
     @Test

@@ -24,6 +24,7 @@
 
 package cwms.cda.data.dto.rating;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -35,6 +36,7 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.ArrayList;
 import java.util.List;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
@@ -48,7 +50,11 @@ public final class RatedOutputTimeSeries extends RatedOutput {
             implementation = TimeSeries.Record.class
         )
     )
-    List<TimeSeries.Record> values;
+    private List<TimeSeries.Record> values = new ArrayList<>();
+
+    public RatedOutputTimeSeries() {
+         //Empty for deserialization
+    }
 
     public RatedOutputTimeSeries(CwmsId ratingId, List<TimeSeries.Record> values, String units) {
         super(ratingId, units);
@@ -61,6 +67,7 @@ public final class RatedOutputTimeSeries extends RatedOutput {
         return TimeSeries.getColumnDescriptor();
     }
 
+    @JsonFormat(shape=JsonFormat.Shape.ARRAY)
     public List<TimeSeries.Record> getValues() {
         return values;
     }

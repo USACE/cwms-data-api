@@ -47,7 +47,11 @@ public final class RatedOutputValues extends RatedOutput {
         )
     )
     @JsonProperty(required = true)
-    private final List<Double> values;
+    private List<Double> values;
+
+    public RatedOutputValues() {
+        //Empty for serialization
+    }
 
     public RatedOutputValues(CwmsId ratingId, List<Double> values, String units) {
         super(ratingId, units);
