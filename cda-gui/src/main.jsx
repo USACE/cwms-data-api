@@ -5,8 +5,8 @@ import ReactDOM from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App.jsx";
 import "./css/index.css";
-import "ag-grid-community/styles/ag-grid.css"; 
-import "ag-grid-community/styles/ag-theme-quartz.css";
+// import "ag-grid-community/styles/ag-grid.css"; 
+// import "ag-grid-community/styles/ag-theme-quartz.css";
 
 const queryClient = new QueryClient();
 

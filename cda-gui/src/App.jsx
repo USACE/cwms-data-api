@@ -15,7 +15,7 @@ import SwaggerUI from "./pages/swagger-ui/index";
 import Regexp from "./pages/regexp/index";
 import Breadcrumbs from "./components/Breadcrumbs";
 import DataQuery from "./pages/data-query";
-import Example from "./pages/data-query/example";
+// import Example from "./pages/data-query/example";
 
 
 
@@ -51,7 +51,7 @@ function App() {
               <Route path={`/`} element={<Home />} />
               <Route path={`/swagger-ui`} element={<SwaggerUI />} />
               <Route path={`/data-query`} element={<DataQuery />} />
-              <Route path={`/data-query/example`} element={<Example />} />
+              {/* <Route path={`/data-query/example`} element={<Example />} /> */}
               <Route path={`/regexp`} element={<Regexp />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

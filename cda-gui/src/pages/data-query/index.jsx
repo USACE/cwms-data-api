@@ -8,8 +8,8 @@ import {
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CWMSTable, CWMSPlot } from "@usace-watermanagement/groundwork-water";
-import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
-ModuleRegistry.registerModules([AllCommunityModule]);
+// import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
+// ModuleRegistry.registerModules([AllCommunityModule]);
 import dayjs from "dayjs";
 import Controls from "./components/Controls";
 import { Configuration, TimeSeriesApi } from "cwmsjs";
@@ -40,7 +40,7 @@ export default function HydrologicQuery() {
   );
   const [endDateTime, setEndDateTime] = useState(dayjs());
   const [view, setView] = useState("table");
-  const { data: config, isPending:configPending, refetch: refetchConfig } = useQuery({
+  const { data: config, isPending:configPending, error: configError, refetch: refetchConfig } = useQuery({
     queryKey: ["config"],
     staleTime: 1000 * 60 * 60 * 24, // 1 day
     queryFn: () => fetchConfig(configUrl),
@@ -214,7 +214,7 @@ export default function HydrologicQuery() {
   };
 
   if (error) return <div>Error: {error.message}</div>;
-  if (!config) return <div>Error: Config</div>;
+  if (configError) return <div>Configuration File Error: {configError?.message}</div>;
   if (configPending) return <Skeleton type="card" className="w-full h-[500px]" />;
   return (
     <div className="px-5">
