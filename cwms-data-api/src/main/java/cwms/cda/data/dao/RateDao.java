@@ -70,11 +70,11 @@ public class RateDao extends JooqDao<RatingSet> {
             DOUBLE_TAB_TAB_T inputValues = new DOUBLE_TAB_TAB_T();
             input.getValues().stream().map(DOUBLE_TAB_T::new).forEach(inputValues::add);
             STR_TAB_T unitsTab = new STR_TAB_T(input.getInputUnits());
-            unitsTab.add(input.getOutputUnits());
+            unitsTab.add(input.getOutputUnit());
             return CWMS_RATING_PACKAGE.call_RATE(context.configuration(), ratingId,
                 inputValues, unitsTab, formatBool(input.getRound()), ratingDates, null, "UTC", officeId);
         });
-        return new RatedOutputValues(CwmsId.buildCwmsId(officeId, ratingId), outputValues, input.getOutputUnits());
+        return new RatedOutputValues(CwmsId.buildCwmsId(officeId, ratingId), outputValues, input.getOutputUnit());
     }
 
     private void validateReverseRateInput(RateInput input) {
@@ -111,11 +111,11 @@ public class RateDao extends JooqDao<RatingSet> {
             }
             DOUBLE_TAB_T inputValues = new DOUBLE_TAB_T(input.getValues().get(0));
             STR_TAB_T unitsTab = new STR_TAB_T(input.getInputUnits());
-            unitsTab.add(input.getOutputUnits());
+            unitsTab.add(input.getOutputUnit());
             return CWMS_RATING_PACKAGE.call_REVERSE_RATE(context.configuration(), ratingId,
                 inputValues, unitsTab, formatBool(input.getRound()), ratingDates, null, "UTC", officeId);
         });
-        return new RatedOutputValues(CwmsId.buildCwmsId(officeId, ratingId), outputValues, input.getOutputUnits());
+        return new RatedOutputValues(CwmsId.buildCwmsId(officeId, ratingId), outputValues, input.getOutputUnit());
     }
 
     public RatedOutput rate(String officeId, String ratingId, RateInputTimeSeries input) {
@@ -125,7 +125,7 @@ public class RateDao extends JooqDao<RatingSet> {
             Timestamp ratingTimstamp = input.getRatingTime().map(Timestamp::from).orElse(null);
             STR_TAB_T independentTsIds = new STR_TAB_T(input.getTimeSeriesIds());
             return CWMS_RATING_PACKAGE.call_RETRIEVE_RATED_TS(context.configuration(), independentTsIds, ratingId,
-                input.getOutputUnits(), Timestamp.from(input.getStartTime()), Timestamp.from(input.getEndTime()),
+                input.getOutputUnit(), Timestamp.from(input.getStartTime()), Timestamp.from(input.getEndTime()),
                 ratingTimstamp, "UTC", formatBool(input.getRound()), formatBool(input.getTrim()),
                 formatBool(input.getStartInclusive()), formatBool(input.getEndInclusive()),
                 formatBool(input.getPrevious()), formatBool(input.getNext()), version, "T", officeId,
@@ -134,7 +134,7 @@ public class RateDao extends JooqDao<RatingSet> {
         List<TimeSeries.Record> records = ztsvTypes.stream()
             .map(z -> new TimeSeries.Record(z.getDATE_TIME(), z.getVALUE(), z.getQUALITY_CODE().intValue()))
             .collect(toList());
-        return new RatedOutputTimeSeries(CwmsId.buildCwmsId(officeId, ratingId), records, input.getOutputUnits());
+        return new RatedOutputTimeSeries(CwmsId.buildCwmsId(officeId, ratingId), records, input.getOutputUnit());
     }
 
     public RatedOutput reverseRate(String officeId, String ratingId, RateInputTimeSeries input) {
@@ -146,7 +146,7 @@ public class RateDao extends JooqDao<RatingSet> {
             Timestamp ratingTimstamp = input.getRatingTime().map(Timestamp::from).orElse(null);
             String timeseriesId = input.getTimeSeriesIds().get(0);
             return CWMS_RATING_PACKAGE.call_RETRIEVE_REVERSE_RATED_TS(context.configuration(), timeseriesId, ratingId,
-                input.getOutputUnits(), Timestamp.from(input.getStartTime()), Timestamp.from(input.getEndTime()),
+                input.getOutputUnit(), Timestamp.from(input.getStartTime()), Timestamp.from(input.getEndTime()),
                 ratingTimstamp, "UTC", formatBool(input.getRound()), formatBool(input.getTrim()),
                 formatBool(input.getStartInclusive()), formatBool(input.getEndInclusive()),
                 formatBool(input.getPrevious()), formatBool(input.getNext()), version, "T", officeId,
@@ -155,7 +155,7 @@ public class RateDao extends JooqDao<RatingSet> {
         List<TimeSeries.Record> records = ztsvTypes.stream()
             .map(z -> new TimeSeries.Record(z.getDATE_TIME(), z.getVALUE(), z.getQUALITY_CODE().intValue()))
             .collect(toList());
-        return new RatedOutputTimeSeries(CwmsId.buildCwmsId(officeId, ratingId), records, input.getOutputUnits());
+        return new RatedOutputTimeSeries(CwmsId.buildCwmsId(officeId, ratingId), records, input.getOutputUnit());
     }
 
     private <R> R connectionResult(ConnectionCallable<R> callable) {

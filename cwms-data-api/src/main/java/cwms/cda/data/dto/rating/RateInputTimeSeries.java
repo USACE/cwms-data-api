@@ -26,14 +26,15 @@ package cwms.cda.data.dto.rating;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsDTOValidator;
-import cwms.cda.data.dto.basin.Basin;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,37 +51,45 @@ public final class RateInputTimeSeries extends RateInput {
     @JsonProperty(required = true)
     private final List<String> timeSeriesIds;
 
-    @Schema(description = "The start of the time window to rate.",
+    @Schema(description = "The start of the time window to rate." +
+        "Represents milliseconds since 1970-01-01 (Unix Epoch), always UTC.",
         requiredMode = Schema.RequiredMode.REQUIRED)
     @JsonProperty(required = true)
-    private final Instant startTime;
+    private final Long startTime;
 
-    @Schema(description = "The end of the time window to rate.",
+    @Schema(description = "The end of the time window to rate." +
+        "Represents milliseconds since 1970-01-01 (Unix Epoch), always UTC.",
         requiredMode = Schema.RequiredMode.REQUIRED)
     @JsonProperty(required = true)
-    private final Instant endTime;
+    private final Long endTime;
 
-    @Schema(description = "Specifies the version date of the retrieve time series.",
+    @Schema(description = "Specifies the version date of the retrieve time series. " +
+        "Represents milliseconds since 1970-01-01 (Unix Epoch), always UTC.",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    private final Instant versionDate;
+    private final Long versionDate;
 
-    @Schema(description = "Specifies whether to trim missing values from the ends of the retrieved time series.",
+    @Schema(description = "Specifies whether to trim missing values from the ends of the retrieved time series. " +
+        "Defaults to false.",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private final boolean trim;
 
-    @Schema(description = "Specifies whether the time window starts on or after the specified time.",
+    @Schema(description = "Specifies whether the time window starts on or after the specified time. " +
+        "Defaults to true.",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private final boolean startInclusive;
 
-    @Schema(description = "Specifies whether the time window ends on or before the specified time.",
+    @Schema(description = "Specifies whether the time window ends on or before the specified time. " +
+        "Defaults to true;",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private final boolean endInclusive;
 
-    @Schema(description = "Specifies whether to retrieve the latest value before the start of the time window.",
+    @Schema(description = "Specifies whether to retrieve the latest value before the start of the time window. " +
+        "Defaults to false.",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private final boolean previous;
 
-    @Schema(description = "Specifies whether to retrieve the earliest value after the end of the time window.",
+    @Schema(description = "Specifies whether to retrieve the earliest value after the end of the time window. " +
+        "Defaults to false.",
         requiredMode = Schema.RequiredMode.NOT_REQUIRED)
     private final boolean next;
 
@@ -102,15 +111,17 @@ public final class RateInputTimeSeries extends RateInput {
     }
 
     public Instant getStartTime() {
-        return startTime;
+        return Optional.ofNullable(startTime).map(Instant::ofEpochMilli)
+            .orElseThrow(() -> new RequiredFieldException(Collections.singletonList("start-time")));
     }
 
     public Instant getEndTime() {
-        return endTime;
+        return Optional.ofNullable(endTime).map(Instant::ofEpochMilli)
+            .orElseThrow(() -> new RequiredFieldException(Collections.singletonList("end-time")));
     }
 
     public Optional<Instant> getVersionDate() {
-        return Optional.ofNullable(versionDate);
+        return Optional.ofNullable(versionDate).map(Instant::ofEpochMilli);
     }
 
     public boolean getTrim() {
@@ -145,9 +156,9 @@ public final class RateInputTimeSeries extends RateInput {
 
     public static class RateInputTimeSeriesBuilder extends RateInputBuilder<RateInputTimeSeriesBuilder> {
         private List<String> timeSeriesIds;
-        private Instant startTime;
-        private Instant endTime;
-        private Instant versionDate;
+        private Long startTime;
+        private Long endTime;
+        private Long versionDate;
         private boolean trim = false;
         private boolean startInclusive = true;
         private boolean endInclusive = true;
@@ -169,17 +180,17 @@ public final class RateInputTimeSeries extends RateInput {
             return this;
         }
 
-        public RateInputTimeSeriesBuilder withStartTime(Instant startTime) {
+        public RateInputTimeSeriesBuilder withStartTime(Long startTime) {
             this.startTime = startTime;
             return this;
         }
 
-        public RateInputTimeSeriesBuilder withEndTime(Instant endTime) {
+        public RateInputTimeSeriesBuilder withEndTime(Long endTime) {
             this.endTime = endTime;
             return this;
         }
 
-        public RateInputTimeSeriesBuilder withVersionDate(Instant versionDate) {
+        public RateInputTimeSeriesBuilder withVersionDate(Long versionDate) {
             this.versionDate = versionDate;
             return this;
         }
