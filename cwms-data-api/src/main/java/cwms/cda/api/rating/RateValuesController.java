@@ -84,11 +84,11 @@ public final class RateValuesController extends BaseHandler {
         security = {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
-        description = "Rates input values using CWMS ratings. The input formats include a two dimensional " +
-            "array with each dimension corresponding to an independent parameter in the rating curve. " +
-            "Another option is to use the `RatedOutputTimeSeries` DTO, " +
-            "which supports an array of CWMS time series ids, " +
-            "each corresponding to an independent parameter in the rating curve.",
+        description = "Rates input values using CWMS ratings. The input format `RatingInputValues` includes " +
+            "a two dimensional array with each dimension corresponding to an independent parameter " +
+            "in the rating curve. " +
+            "The output format `RatedOutputTimeSeries` will contain a singular double array corresponding to the " +
+            "dependent parameter of the rating curve. ",
         method = HttpMethod.POST,
         tags = {TAG}
     )

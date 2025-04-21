@@ -84,11 +84,10 @@ public final class ReverseRateTimeSeriesController extends BaseHandler {
         security = {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
-        description = "Reverse rates input values using CWMS ratings. The input formats include a one dimensional " +
-            "array of doubles corresponding to the dependent parameter in the rating curve. " +
-            "Another option is to use the `RatedOutputTimeSeries` DTO, " +
-            "which requires a single CWMS time series ids, " +
-            "corresponding to the dependent parameter in the rating curve. " +
+        description = "Reverse rates input values using CWMS ratings. The input format `RateInputTimeSeries` requires " +
+            "a singular time series id corresponding to the dependent parameter in the rating curve. " +
+            "The output format `RatedOutputTimeSeries` will contain a singular double array corresponding to the " +
+            "independent parameter of the rating curve. " +
             "Note: This endpoint only works on monotonically increase/decreasing table ratings with " +
             "a single independent parameter.",
         method = HttpMethod.POST,
