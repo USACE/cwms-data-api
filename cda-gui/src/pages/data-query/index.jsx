@@ -1,8 +1,9 @@
 import { UsaceBox, Skeleton, Button } from "@usace/groundwork";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CWMSPlot } from "@usace-watermanagement/groundwork-water";
+// import { CWMSPlot, CWMSTable} from "@usace-watermanagement/groundwork-water";
 import { CWMSTable } from "./components/CWMSTable";
+import { CWMSPlot } from "./components/CWMSPlot"
 // import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 // ModuleRegistry.registerModules([AllCommunityModule]);
 import dayjs from "dayjs";
@@ -343,6 +344,7 @@ console.log({timeseriesData})
               <Skeleton type="card" className="w-full h-[500px]" />
             ) : (
               <CWMSPlot
+                inputTSValues={timeseriesData?.raw}
                 timeSeries={tsids.map((tsid, index) => ({
                   id: tsid,
                   traceOptions: {
@@ -409,8 +411,7 @@ console.log({timeseriesData})
                         missingString="---"
                         sortAscending={true}
                         trim={true}
-                        inputValues={timeseriesData?.raw}
-                    
+                        inputTSValues={timeseriesData?.raw}
                       />
                     </div>
                   )}

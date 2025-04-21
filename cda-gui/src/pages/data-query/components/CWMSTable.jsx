@@ -18,7 +18,7 @@ function CWMSTable({
   begin,
   end,
   timezone,
-  inputValues,
+  inputTSValues,
   trim = true,
   pageSize,
   interval = 1,
@@ -51,7 +51,7 @@ function CWMSTable({
 
     const fetchData = async () => {
       let values = [];
-      if (!inputValues) {
+      if (!inputTSValues) {
         let promises = tsids.map(async (name) => {
           try {
             return await ts_api.getTimeSeries({
@@ -77,7 +77,7 @@ function CWMSTable({
 
         values = await Promise.all(promises);
       } else {
-        values = inputValues;
+        values = inputTSValues;
       }
       let data = { ts: {}, dates: [] };
       let dates = [];
