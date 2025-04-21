@@ -1,9 +1,9 @@
-import { UsaceBox, Skeleton, Button } from "@usace/groundwork";
+import { UsaceBox, Skeleton, Button, Badge } from "@usace/groundwork";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 // import { CWMSPlot, CWMSTable} from "@usace-watermanagement/groundwork-water";
 import { CWMSTable } from "./components/CWMSTable";
-import { CWMSPlot } from "./components/CWMSPlot"
+import { CWMSPlot } from "./components/CWMSPlot";
 // import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 // ModuleRegistry.registerModules([AllCommunityModule]);
 import dayjs from "dayjs";
@@ -11,8 +11,18 @@ import Controls from "./components/Controls";
 import { Configuration, TimeSeriesApi } from "cwmsjs";
 import { getPrecision, mergeTimeseries } from "../../utils/timeseries";
 import FailedTimeSeries from "./components/FailedTimeSeries";
-const OFFICES = ["SWT", "SWF"];
+import { FaInfoCircle } from "react-icons/fa";
+import useConfigList from "./hooks/useConfigList";
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
+
+const v2_config = new Configuration({
+    headers: {
+      accept: "application/json;version=2",
+    },
+  });
+  const ts_api = new TimeSeriesApi(v2_config);
+
+
 // const config = cwmsConfigs["SWF"];
 async function fetchConfig(configUrl) {
   return fetch(configUrl)
@@ -29,10 +39,19 @@ export default function HydrologicQuery() {
   const [location, setLocation] = useState(null);
   const [parameter, setParameter] = useState(null);
   const [interval, setInterval] = useState(null);
-  const [office, setOffice] = useState("SWF");
-  const [configUrl, setConfigUrl] = useState(
-    `https://cwms-data.usace.army.mil/cwms-data/blobs/CDA_QUERY_TOOL_${office}.JSON?office=${office}`
-  );
+  const [office, setOffice] = useState(null);
+
+  //   const {data: offices, isLoading: officesLoading, error: officesError} = useOffices({cacheDuration: 1000 * 60 * 60 * 24});
+  const {
+    data: offices,
+    isLoading: officesLoading,
+    error: officesError,
+  } = useConfigList({
+    like: "CDA_QUERY_TOOL.*JSON",
+    cacheDuration: 1000 * 60 * 60 * 24,
+    props: {select: (data) => data?.blobs?.map((blob) => blob?.officeId) || null},
+  });
+  const [configUrl, setConfigUrl] = useState(null);
   const [beginDateTime, setBeginDateTime] = useState(
     dayjs().subtract(1, "day")
   );
@@ -40,25 +59,18 @@ export default function HydrologicQuery() {
   const [view, setView] = useState("table");
   const {
     data: config,
-    isPending: configPending,
+    isLoading: configPending,
     error: configError,
     refetch: refetchConfig,
   } = useQuery({
-    queryKey: ["config"],
+    queryKey: ["config", configUrl, office],
     staleTime: 1000 * 60 * 60 * 24, // 1 day
     queryFn: () => fetchConfig(configUrl),
     onSuccess: (data) => {
       return data;
     },
-    enabled: !!configUrl && office !== null,
+    enabled: !!configUrl && !!office,
   });
-  console.log("config", config);
-  const v2_config = new Configuration({
-    headers: {
-      accept: "application/json;version=2",
-    },
-  });
-  const ts_api = new TimeSeriesApi(v2_config);
 
   async function fetchAllTSData(data) {
     let startDate = data?.begin;
@@ -181,7 +193,6 @@ export default function HydrologicQuery() {
     }),
     [beginDateTime, endDateTime, office]
   );
-console.log({timeseriesData})
   const handleDownloadCSV = () => {
     if (!timeseriesData || timeseriesData.dates.length === 0) {
       console.warn("No data to export");
@@ -210,15 +221,20 @@ console.log({timeseriesData})
     link.click();
     document.body.removeChild(link);
   };
-
+  console.log({officesError, officesLoading, configPending });
   if (error) return <div>Error: {error.message}</div>;
-  if (configError)
-    return <div>Configuration File Error: {configError?.message}</div>;
-  if (configPending)
+  if (configError || officesError)
+    return <div>File Error: {configError?.message || officesError?.message }</div>;
+  if (officesLoading || configPending)
     return <Skeleton type="card" className="w-full h-[500px]" />;
   return (
     <div className="px-5">
       <UsaceBox title="Hydrologic Query">
+        <Badge color="blue" className="mb-2 text-base">
+          <FaInfoCircle /> If Office ID is not present in dropdown. Office has
+          not created a configuration file.
+        </Badge>
+
         <div className="flex gap-4">
           <div>
             <label htmlFor="office">Select Office: </label>
@@ -242,7 +258,7 @@ console.log({timeseriesData})
                 width: "auto",
               }}
             >
-              {OFFICES.map((key) => (
+              {offices.map((key) => (
                 <option key={key} value={key}>
                   {key}
                 </option>
