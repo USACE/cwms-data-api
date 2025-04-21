@@ -1,0 +1,97 @@
+{
+  "office": "SWF",
+  "locationNames": {
+    "ALAT2": "Aquilla",
+    "TBLT2": "BA Steinhagen",
+    "BDWT2": "Bardwell",
+    "BLNT2": "Belton",
+    "BSLT2": "Bob Sandlin",
+    "SMCT2": "Canyon",
+    "CLDL1": "Caddo",
+    "SCLT2": "Cooper",
+    "GGLT2": "Georgetown",
+    "GNGT2": "Granger",
+    "GPVT2": "Grapevine",
+    "HORT2": "Hords Creek",
+    "JPLT2": "Joe Pool",
+    "JFNT2": "Lake O Pines",
+    "LVNT2": "Lavon",
+    "LEWT2": "Lewisville",
+    "DAWT2": "Navarro Mills",
+    "SAGT2": "O.C. Fisher",
+    "PCTT2": "Proctor",
+    "RRLT2": "Ray Roberts",
+    "FFLT2": "Richland Chambers",
+    "JSPT2": "Sam Rayburn",
+    "SOMT2": "Somerville",
+    "STIT2": "Stillhouse Hollow",
+    "TBRT2": "Twin Buttes",
+    "ACTT2": "Waco",
+    "WTYT2": "Whitney",
+    "TXKT2": "Wright Patman"
+  },
+  "parameterIntervalMapping": {
+    "Elev": {
+      "Hourly": "Inst.1Hour.0.Decodes-Rev",
+      "Daily": "Inst.~1Day.0.Decodes-Rev"
+    },
+    "Precip-INC": {
+      "Hourly": "Total.1Hour.1Hour.Decodes-Rev",
+      "Daily": "Total.~1Day.1Day.Best-SWF"
+    },
+    "Evap-Project": {
+      "Hourly": "Total.1Hour.1Hour.Decodes-Rev",
+      "Daily": "Total.~1Day.1Day.Best-SWF"
+    },
+    "Flow-In": {
+      "Hourly": "Inst.1Hour.0.Decodes-Comp",
+      "Daily": "Ave.~1Day.1Day.Computed-SWF-REGI"
+    },
+    "Flow-Out": {
+      "Hourly": "Inst.1Hour.0.Rev-SWF-REGI",
+      "Daily": "Ave.~1Day.1Day.Rev-SWF-REGI"
+    },
+    "Gated-Out": {
+      "Hourly": "Inst.1Hour.0.Decodes-Comp",
+      "Daily": "Ave.~1Day.1Day.Computed-SWF-REGI"
+    },
+    "%-Humidity": {
+      "Hourly": "Ave.1Hour.0.Decodes-Rev",
+      "Daily": "Ave.~1Day.1Day.Decodes-Rev"
+    },
+    "Elev-Tailwater": {
+      "Hourly": "Inst.1Hour.0.Decodes-Rev",
+      "Daily": "Inst.0.Rev-SCADA"
+    }
+  },
+  "locationOptions": [
+    { "value": "ALAT2", "label": "Aquilla" },
+    { "value": "TBLT2", "label": "BA Steinhagen" },
+    { "value": "BDWT2", "label": "Bardwell" },
+    { "value": "BLNT2", "label": "Belton" },
+    { "value": "BSLT2", "label": "Bob Sandlin" },
+    { "value": "SMCT2", "label": "Canyon" },
+    { "value": "CLDL1", "label": "Caddo" },
+    { "value": "SCLT2", "label": "Cooper" },
+    { "value": "GGLT2", "label": "Georgetown" },
+    { "value": "GNGT2", "label": "Granger" },
+    { "value": "GPVT2", "label": "Grapevine" },
+    { "value": "HORT2", "label": "Hords Creek" },
+    { "value": "JPLT2", "label": "Joe Pool" },
+    { "value": "JFNT2", "label": "Lake O Pines" },
+    { "value": "LVNT2", "label": "Lavon" },
+    { "value": "LEWT2", "label": "Lewisville" },
+    { "value": "DAWT2", "label": "Navarro Mills" },
+    { "value": "SAGT2", "label": "O.C. Fisher" },
+    { "value": "PCTT2", "label": "Proctor" },
+    { "value": "RRLT2", "label": "Ray Roberts" },
+    { "value": "FFLT2", "label": "Richland Chambers" },
+    { "value": "JSPT2", "label": "Sam Rayburn" },
+    { "value": "SOMT2", "label": "Somerville" },
+    { "value": "STIT2", "label": "Stillhouse Hollow" },
+    { "value": "TBRT2", "label": "Twin Buttes" },
+    { "value": "ACTT2", "label": "Waco" },
+    { "value": "WTYT2", "label": "Whitney" },
+    { "value": "TXKT2", "label": "Wright Patman" }
+  ]
+}
