@@ -28,6 +28,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_401;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -78,6 +79,7 @@ public final class RateValuesController extends BaseHandler {
                 @OpenApiContent(type = Formats.JSONV1, from = RatedOutputValues.class)
             }),
             @OpenApiResponse(status = STATUS_400, description = "Invalid input parameters."),
+            @OpenApiResponse(status = STATUS_401, description = "Client is not authorized."),
             @OpenApiResponse(status = STATUS_404, description = "The rating curve was not found."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },

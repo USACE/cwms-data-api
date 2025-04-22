@@ -179,6 +179,7 @@ public final class Controllers {
     public static final String STATUS_404 = "404";
     public static final String STATUS_501 = "501";
     public static final String STATUS_400 = "400";
+    public static final String STATUS_401 = "401";
     public static final String TEXT_MASK = "text-mask";
     public static final String DELETE_MODE = "delete-mode";
     public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
