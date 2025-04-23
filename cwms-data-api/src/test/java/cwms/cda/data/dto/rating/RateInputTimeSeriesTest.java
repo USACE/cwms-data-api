@@ -55,6 +55,8 @@ final class RateInputTimeSeriesTest {
         RateInputTimeSeries rateInputValues = new RateInputTimeSeries.RateInputTimeSeriesBuilder()
             .withTimeSeriesIds(testTimeSeriesIds)
             .withOutputUnit("cfs")
+            .withStartTime(Instant.now().toEpochMilli())
+            .withEndTime(Instant.now().toEpochMilli())
             .build();
         rateInputValues.validate();
         assertNotNull(rateInputValues.getTimeSeriesIds(), "getValues should not return null.");
@@ -72,7 +74,7 @@ final class RateInputTimeSeriesTest {
                 .build()
                 .validate();
         }, "Builder should throw an exception when time series ids are null.");
-        assertThrows(RequiredFieldException.class, () -> {
+        assertThrows(FieldException.class, () -> {
             new RateInputTimeSeries.RateInputTimeSeriesBuilder()
                 .withTimeSeriesIds(new ArrayList<>())
                 .withOutputUnit("cfs")

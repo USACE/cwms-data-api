@@ -24,6 +24,7 @@
 
 package cwms.cda.data.dto.rating;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -44,6 +45,7 @@ import java.util.Optional;
     @JsonSubTypes.Type(value = RateInputValues.class, name = "RateInputValues"),
     @JsonSubTypes.Type(value = RateInputTimeSeries.class, name = "RateInputTimeSeries")
 })
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE)
 public abstract class RateInput extends CwmsDTOBase {
 
     @Schema(description = "The units of the output values",

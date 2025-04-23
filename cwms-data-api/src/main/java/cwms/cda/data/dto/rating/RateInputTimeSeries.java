@@ -24,6 +24,7 @@
 
 package cwms.cda.data.dto.rating;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import cwms.cda.api.errors.RequiredFieldException;
@@ -40,6 +41,7 @@ import java.util.Optional;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = RateInputTimeSeries.RateInputTimeSeriesBuilder.class)
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE)
 public final class RateInputTimeSeries extends RateInput {
 
     @ArraySchema(

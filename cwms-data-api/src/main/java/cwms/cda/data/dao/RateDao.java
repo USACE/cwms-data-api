@@ -110,8 +110,8 @@ public class RateDao extends JooqDao<RatingSet> {
                 input.getValueTimes().stream().map(Timestamp::new).forEach(ratingDates::add);
             }
             DOUBLE_TAB_T inputValues = new DOUBLE_TAB_T(input.getValues().get(0));
-            STR_TAB_T unitsTab = new STR_TAB_T(input.getInputUnits());
-            unitsTab.add(input.getOutputUnit());
+            STR_TAB_T unitsTab = new STR_TAB_T(input.getOutputUnit());
+            unitsTab.addAll(input.getInputUnits());
             return CWMS_RATING_PACKAGE.call_REVERSE_RATE(context.configuration(), ratingId,
                 inputValues, unitsTab, formatBool(input.getRound()), ratingDates, null, "UTC", officeId);
         });

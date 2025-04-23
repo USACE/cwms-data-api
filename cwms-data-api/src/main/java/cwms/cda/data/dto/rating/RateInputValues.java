@@ -24,6 +24,7 @@
 
 package cwms.cda.data.dto.rating;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import cwms.cda.data.dto.CwmsDTOValidator;
@@ -37,6 +38,7 @@ import java.util.List;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = RateInputValues.RateInputValuesBuilder.class)
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE)
 public final class RateInputValues extends RateInput {
 
     @ArraySchema(
