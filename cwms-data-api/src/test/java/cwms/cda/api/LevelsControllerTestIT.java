@@ -132,6 +132,44 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    void test_retrieve_effective_date() throws Exception {
+        createLocation("level_with_effect", true, OFFICE);
+        String levelId = "level_with_effect.Flow.Ave.1Day.Regulating";
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            LocationLevel level = new LocationLevel.Builder(levelId, time)
+                    .withOfficeId(OFFICE)
+                    .withConstantValue(1.0)
+                    .withLevelUnitsId("cms")
+                    .build();
+            levelList.add(level);
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level);
+        });
+
+        ExtractableResponse<Response> response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LEVEL_ID_MASK, "level_with_effect*")
+            .queryParam(BEGIN, "2020-06-01T00:00:00Z")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
+
+        assertEquals("2023-06-01T07:00:00Z", response.path("levels[0].level-date"));
+    }
+
+
+    @Test
     void test_retrieve_time_window() throws Exception {
         createLocation("level_get_all_loc_1", true, OFFICE);
         String levelId = "level_get_all_loc_1.Flow.Ave.1Day.Regulating";

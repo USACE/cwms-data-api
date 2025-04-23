@@ -356,7 +356,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 logger.info("Default units are " + defaultUnits);
                 units = defaultUnits;
             }
-            return new LocationLevel.Builder(locationLevelName, effectiveDate)
+            Timestamp pEffectiveDate = level.getP_EFFECTIVE_DATE();
+            ZonedDateTime realEffectiveDate = ZonedDateTime.ofInstant(pEffectiveDate.toInstant(), effectiveDate.getZone());
+            return new LocationLevel.Builder(locationLevelName, realEffectiveDate)
                 .withLevelUnitsId(units)
                 .withAttributeUnitsId(units)
                 .withInterpolateString(level.getP_INTERPOLATE())
