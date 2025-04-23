@@ -108,30 +108,41 @@ export default function HydrologicQuery() {
   }
 
   useEffect(() => {
-    if (!config || !parameter || !location || !interval) return;
-    const parameterIntervalMapping = config.parameterIntervalMapping;
-    const intervalValue = parameterIntervalMapping[parameter]?.[interval];
-    setTsids([`${location}.${parameter}.${intervalValue}`]);
-  }, [location, parameter, interval, config]);
+    setLocation(null);
+    setParameter(null);
+    setInterval(null);
+    setTsids([]);
+  }, [office]);
 
   useEffect(() => {
     if (!config) return;
-
-    if (config?.locationOptions?.length > 0) {
-      setLocation(config.locationOptions[0].value);
-    }
-
-    if (config?.parameterIntervalMapping && Object.keys(config?.parameterIntervalMapping).length > 0) {
-      setParameter(Object.keys(config.parameterIntervalMapping)[0]);
-    }
-
-    if (parameter && config.parameterIntervalMapping[parameter]) {
-      const intervals = Object.keys(config.parameterIntervalMapping[parameter]);
-      if (intervals.length > 0) {
-        setInterval(intervals[0]);
-      }
-    }
-  }, [config, location, parameter, interval]);
+  
+    const firstLocation = config.locationOptions?.[0]?.value;
+    const firstParam = Object.keys(config.parameterIntervalMapping || {})[0];
+    const firstInterval = config.parameterIntervalMapping?.[firstParam]
+      ? Object.keys(config.parameterIntervalMapping[firstParam])[0]
+      : null;
+  
+    if (firstLocation) setLocation(firstLocation);
+    if (firstParam) setParameter(firstParam);
+    if (firstInterval) setInterval(firstInterval);
+  }, [config]);
+  useEffect(() => {
+    if (!location || !parameter || !interval || !config) return;
+  
+    const intervalValue = config.parameterIntervalMapping?.[parameter]?.[interval];
+    if (!intervalValue) return;
+  
+    const newTsid = `${location}.${parameter}.${intervalValue}`;
+    setTsids((prev) => {
+      if (prev.length === 1 && prev[0] === newTsid) return prev;
+      return [newTsid];
+    });
+  }, [location, parameter, interval, config]);
+  
+  
+  
+  
 
   const {
     data: timeseriesData,
