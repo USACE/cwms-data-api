@@ -25,6 +25,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import javax.servlet.http.HttpServletResponse;
+
+import io.restassured.response.ExtractableResponse;
+import io.restassured.response.Response;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Disabled;
@@ -497,7 +500,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         // fyi 1675422000000 is Friday, February 3, 2023 11:00:00 AM
 
         // get it back with the data entry date
-        given()
+        ExtractableResponse<Response> response = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
@@ -518,7 +521,10 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("values.size()", equalTo(4))
             .body("values[0][1]", equalTo(4.0F))
-            .body("values[0].size()", equalTo(4));
+            .body("values[0].size()", equalTo(4))
+            .extract();
+
+        assertNotNull(response.body().path("values[0][3]"));
 
         // get it back without the data entry date
         given()
