@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
-import java.security.KeyException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +33,6 @@ import io.restassured.config.JsonConfig;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import javax.servlet.http.HttpServletResponse;
-import org.testcontainers.images.ImagePullPolicy;
 import org.testcontainers.images.PullPolicy;
 
 import static io.restassured.RestAssured.given;
@@ -77,7 +75,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private static String schemaVersion()
     {
-        String ret = "Unknown";
+        String ret;
         if (!System.getProperty(CwmsDatabaseContainers.BYPASS_URL,"").isEmpty())
         {
             ret = "Bypass";
@@ -95,9 +93,9 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private static int versionInt()
     {
-        int ret = -999999;
+        int ret;
         String tmp = schemaVersion();
-        if (tmp.equalsIgnoreCase("latest-dev")) {
+        if (tmp.equalsIgnoreCase("latest-dev") || tmp.equalsIgnoreCase("Bypass")) {
             ret = 999999;
         }
         else if(tmp.toLowerCase().endsWith("staging")) {
@@ -198,7 +196,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         StringReader reader = new StringReader(csv);
         try {
             List<TsRandomSampler.TsSample> samples = TsRandomSampler.load_data(reader);
-            cwmsDb2.connection( (c) -> {
+            cwmsDb2.connection( c -> {
                 TsRandomSampler.save_to_db(samples, c);
             },"cwms_20");
         } catch (IOException e) {
@@ -213,7 +211,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     private void loadDefaultData(CwmsDatabaseContainer cwmsDb) throws SQLException {
         ArrayList<String> defaultList = getDefaultList();
         for( String data: defaultList){
-            String user_resource[] = data.split(":");
+            String[] user_resource = data.split(":");
             String user = user_resource[0];
             if( user.equalsIgnoreCase("dba")){
                 user = cwmsDb.getDbaUser();
