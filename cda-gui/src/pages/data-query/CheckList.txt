@@ -9,3 +9,5 @@ Setup office select dropdown that queries the offices endpoint for all DISTRICT 
 Load timeseries from that office, config we have setup - load the config from BLOB???? ----Haven't made a blob yet but testing it with a config js
 Setup download button for CSV and JSON-------1/2
 Add datum toggle
+
+CONVERT to using input with smart dropdown
