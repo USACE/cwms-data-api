@@ -26,7 +26,6 @@ package cwms.cda.api;
 
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.LocationLevel;
-import cwms.cda.data.dto.SeasonalValueBean;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
@@ -43,7 +42,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import javax.servlet.http.HttpServletResponse;
-import java.math.BigInteger;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -743,14 +741,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         createLocation("virtual_level_value", true, OFFICE);
         String levelId = "virtual_level_value.Stor.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
-        List<String> constituents = new ArrayList<>();
-        constituents.add("level_get_all_loc1.Stor.Ave.1Day.Regulating");
-        LocationLevel level = new LocationLevel.Builder(levelId, time)
-                .withOfficeId(OFFICE)
-                .withConstantValue(1.0)
-                .withLevelUnitsId("ac-ft")
-                .withSeasonalValue(new SeasonalValueBean.Builder().withValue(12.0).withOffsetMinutes(BigInteger.ONE).build())
-                .build();
         String levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_1.json");
 
         // Store the virtual level

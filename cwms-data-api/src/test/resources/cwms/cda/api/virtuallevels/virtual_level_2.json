@@ -1,12 +1,19 @@
 {
   "office-id" : "SPK",
   "location-level-id" : "virtual_level_value_1.Stor.Ave.1Day.Regulating",
-  "constant-value" : 1.0,
   "level-units-id" : "ac-ft",
   "level-date" : "2023-06-01T00:00:00-07:00",
   "expiration-date" : 1685689200000,
-  "constituents" : [ "virtual_level_value.Stor.Ave.1Day.Regulating" ],
-  "seasonal-values": [
-
-  ]
+  "constituents" : [
+    {
+      "abbr": "virt_lev2",
+      "type": "virtual_level",
+      "name": "virtual_level_value.Stor.Ave.1Day.Regulating"
+    }
+  ],
+  "seasonal-values" : [ {
+    "value" : 12.0,
+    "offset-minutes" : 1
+  } ],
+  "constituent-connections": "virtual_level_value.Stor.Ave.1Day.Regulating"
 }

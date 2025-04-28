@@ -330,8 +330,8 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         Timestamp date = Timestamp.from(locationLevel.getLevelDate().toInstant());
         Timestamp expirationDate = Timestamp.from(locationLevel.getExpirationDate().toInstant());
         STR_TAB_TAB_T constituentTab = new STR_TAB_TAB_T();
-        for (String constituent : locationLevel.getConstituents()) {
-            constituentTab.add(new STR_TAB_T(constituent));
+        for (VirtualLocationLevel.Constituent constituent : locationLevel.getConstituents()) {
+            constituentTab.add(new STR_TAB_T(constituent.getConstituentList()));
         }
         connection(dsl, c -> {
             String officeId = locationLevel.getOfficeId();
@@ -527,10 +527,23 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             Timestamp pEffectiveDate = level.getLEVEL_DATE();
             ZonedDateTime realEffectiveDate = ZonedDateTime.ofInstant(pEffectiveDate.toInstant(), effectiveDate.getZone());
             ZonedDateTime expirationDate = ZonedDateTime.ofInstant(level.getEXPIRATION_DATE().toInstant(), effectiveDate.getZone());
-            List<String> constituents = new ArrayList<>();
+            List<VirtualLocationLevel.Constituent> constituents = new ArrayList<>();
             STR_TAB_TAB_T constituentTab = level.getCONSTITUENTS();
             if (constituentTab != null) {
-                constituentTab.forEach(constituent -> constituents.add(constituent.get(0)));
+                constituentTab.forEach(constituent -> {
+                    VirtualLocationLevel.Constituent.Builder constituentBuilder = new VirtualLocationLevel.Constituent.Builder(constituent.get(0), constituent.get(1), constituent.get(2));
+                    if (constituent.get(3) != null) {
+                        constituentBuilder.withAttributeId(constituent.get(3));
+                    }
+                    if (constituent.get(4) != null) {
+                        constituentBuilder.withAttributeValue(Double.valueOf(constituent.get(4)));
+                    }
+                    if (constituent.get(5) != null) {
+                        constituentBuilder.withAttributeUnits(constituent.get(5));
+                    }
+
+                    constituents.add(constituentBuilder.build());
+                });
             }
             return new VirtualLocationLevel.Builder(locationLevelName, realEffectiveDate)
                     .withConstituents(constituents)

@@ -58,10 +58,10 @@ import rma.util.RMAConst;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
-public class VirtualLocationLevel extends LocationLevel {
+public final class VirtualLocationLevel extends LocationLevel {
 	private final ZonedDateTime expirationDate;
 
-	private final List<String> constituents;
+	private final List<Constituent> constituents;
 
 	private final String constituentConnections;
 
@@ -77,7 +77,7 @@ public class VirtualLocationLevel extends LocationLevel {
 		return expirationDate;
 	}
 
-	public List<String> getConstituents()
+	public List<Constituent> getConstituents()
 	{
 		return constituents;
 	}
@@ -89,10 +89,10 @@ public class VirtualLocationLevel extends LocationLevel {
 
 	@JsonPOJOBuilder
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-	public static class Builder extends LocationLevel.Builder
+	public static final class Builder extends LocationLevel.Builder
 	{
 		private ZonedDateTime expirationDate;
-		private List<String> constituents;
+		private List<Constituent> constituents;
 		private String constituentConnections;
 
 		@JsonCreator
@@ -106,7 +106,7 @@ public class VirtualLocationLevel extends LocationLevel {
 			return this;
 		}
 
-		public Builder withConstituents(List<String> constituents) {
+		public Builder withConstituents(List<Constituent> constituents) {
 			this.constituents = constituents;
 			return this;
 		}
@@ -306,6 +306,127 @@ public class VirtualLocationLevel extends LocationLevel {
 		public VirtualLocationLevel build()
 		{
 			return new VirtualLocationLevel(this);
+		}
+	}
+
+	@JsonPOJOBuilder
+	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+	@JsonDeserialize(builder = Constituent.Builder.class)
+	@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+	public static final class Constituent
+	{
+		private final String abbr;
+		private final String type;
+		private final String name;
+		private final String attributeId;
+		private final Double attributeValue;
+		private final String attributeUnits;
+
+		private Constituent(Builder builder)
+		{
+			this.abbr = builder.abbr;
+			this.type = builder.type;
+			this.name = builder.name;
+			this.attributeId = builder.attributeId;
+			this.attributeValue = builder.attributeValue;
+			this.attributeUnits = builder.attributeUnits;
+		}
+
+		public String getAbbr()
+		{
+			return abbr;
+		}
+
+		public String getType()
+		{
+			return type;
+		}
+
+		public String getName()
+		{
+			return name;
+		}
+
+		public String getAttributeId()
+		{
+			return attributeId;
+		}
+
+		public Double getAttributeValue()
+		{
+			return attributeValue;
+		}
+
+		public String getAttributeUnits()
+		{
+			return attributeUnits;
+		}
+
+		public List<String> getConstituentList()
+		{
+			List<String> retVal = new ArrayList<>();
+			retVal.add(abbr);
+			retVal.add(type);
+			retVal.add(name);
+			if(attributeId != null)
+			{
+				retVal.add(attributeId);
+			}
+			if(attributeValue != null)
+			{
+				retVal.add(attributeValue.toString());
+			}
+			if(attributeUnits != null)
+			{
+				retVal.add(attributeUnits);
+			}
+			return retVal;
+		}
+
+		@JsonPOJOBuilder
+		@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+		@JsonInclude(JsonInclude.Include.NON_NULL)
+		public static final class Builder
+		{
+			private final String abbr;
+			private final String type;
+			private final String name;
+			private String attributeId;
+			private Double attributeValue;
+			private String attributeUnits;
+
+			@JsonCreator
+			public Builder(@JsonProperty(value = "abbr", required = true) String abbr,
+					@JsonProperty(value = "type", required = true) String type,
+					@JsonProperty(value = "name", required = true) String name)
+			{
+				this.abbr = abbr;
+				this.type = type;
+				this.name = name;
+			}
+
+			public Builder withAttributeId(String constituentAttributeId)
+			{
+				this.attributeId = constituentAttributeId;
+				return this;
+			}
+
+			public Builder withAttributeValue(Double constituentAttributeValue)
+			{
+				this.attributeValue = constituentAttributeValue;
+				return this;
+			}
+
+			public Builder withAttributeUnits(String constituentAttributeUnits)
+			{
+				this.attributeUnits = constituentAttributeUnits;
+				return this;
+			}
+
+			public Constituent build()
+			{
+				return new Constituent(this);
+			}
 		}
 	}
 }
