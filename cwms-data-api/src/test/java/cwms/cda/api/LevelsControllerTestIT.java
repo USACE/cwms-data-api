@@ -26,6 +26,7 @@ package cwms.cda.api;
 
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.LocationLevel;
+import cwms.cda.data.dto.SeasonalValueBean;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
@@ -42,6 +43,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import javax.servlet.http.HttpServletResponse;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -51,6 +53,7 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 
 import static cwms.cda.api.Controllers.*;
+import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static helpers.FloatCloseTo.floatCloseTo;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -731,6 +734,243 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL, true)
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+    }
+
+    @Test
+    void testStoreRetrieveVirtualLevels() throws Exception
+    {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        createLocation("virtual_level_value", true, OFFICE);
+        String levelId = "virtual_level_value.Stor.Ave.1Day.Regulating";
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        List<String> constituents = new ArrayList<>();
+        constituents.add("level_get_all_loc1.Stor.Ave.1Day.Regulating");
+        LocationLevel level = new LocationLevel.Builder(levelId, time)
+                .withOfficeId(OFFICE)
+                .withConstantValue(1.0)
+                .withLevelUnitsId("ac-ft")
+                .withSeasonalValue(new SeasonalValueBean.Builder().withValue(12.0).withOffsetMinutes(BigInteger.ONE).build())
+                .build();
+        String levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_1.json");
+
+        // Store the virtual level
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .body(levelJson)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        //Read level with unit
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("m3"))
+            // I think we need to create a custom matcher.
+            // This really shouldn't use equals but due to a quirk in
+            // RestAssured it appears to be necessary.
+            .body("constant-value", equalTo(1233.4818f)); // 1 ac-ft to m3
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(UNIT, "ac-ft")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("ac-ft"))
+            .body("constant-value", equalTo(1.0F));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(UNIT, "EN")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("ac-ft"))
+            .body("constant-value", equalTo(1.0F));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(UNIT, "ft3")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("ft3"))
+            .body("constant-value", equalTo(43560.0F));
+
+        // Read virtual level
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(UNIT, "ft3")
+            .queryParam(VIRTUAL, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("ft3"))
+            .body("constant-value", equalTo(43560.0F))
+            .body("constituents", notNullValue());
+    }
+
+    @Test
+    void testStoreRetrieveAllVirtualLevels() throws Exception
+    {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        createLocation("virtual_level_value_1", true, OFFICE);
+        String levelId = "virtual_level_value_1.Stor.Ave.1Day.Regulating";
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        List<String> constituents = new ArrayList<>();
+        constituents.add("level_get_all_loc1.Stor.Ave.1Day.Regulating");
+        String levelJson = readResourceFile("virtuallevels/virtual_level_1.json");
+
+        // Store the virtual level
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .body(levelJson)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        levelJson = readResourceFile("virtuallevels/virtual_level_2.json");
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .body(levelJson)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        levelJson = readResourceFile("virtuallevels/virtual_level_3.json");
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .body(levelJson)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        //Read level with unit
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("m3"))
+            // I think we need to create a custom matcher.
+            // This really shouldn't use equals but due to a quirk in
+            // RestAssured it appears to be necessary.
+            .body("constant-value", equalTo(1233.4818f)); // 1 ac-ft to m3
+
+        // retrieve all virtual levels
+        ExtractableResponse<Response> response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(BEGIN, time.toInstant().toString())
+            .queryParam(VIRTUAL, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
+
+        assertThat(response.path("levels.size()"),is(3));
+
     }
 
     @ParameterizedTest

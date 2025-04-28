@@ -28,10 +28,11 @@ import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.LocationLevels;
 import cwms.cda.data.dto.TimeSeries;
 import hec.data.level.ILocationLevelRef;
+
+import cwms.cda.data.dto.VirtualLocationLevel;
 import mil.army.usace.hec.metadata.Interval;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 public interface LocationLevelsDao {
@@ -40,10 +41,15 @@ public interface LocationLevelsDao {
 
     void storeLocationLevel(LocationLevel level);
 
+    void storeVirtualLocationLevel(VirtualLocationLevel locationLevel);
+
     void renameLocationLevel(String oldLocationLevelName, String newLocationLevelName, String officeId);
 
     LocationLevel retrieveLocationLevel(String locationLevelName, String unitSystem,
                                         ZonedDateTime effectiveDate, String officeId);
+
+    VirtualLocationLevel retrieveVirtualLocationLevel(String locationLevelName, String unitSystem,
+                                                      ZonedDateTime effectiveDate, String officeId);
 
     String getLocationLevels(String format, String names, String office, String unit,
                              String datum, String begin,
@@ -52,6 +58,10 @@ public interface LocationLevelsDao {
     LocationLevels getLocationLevels(String cursor, int pageSize,
                                      String names, String office, String unit, String datum,
                                      ZonedDateTime beginZdt, ZonedDateTime endZdt);
+
+    LocationLevels getVirtualLocationLevels(String cursor, int pageSize,
+                                            String names, String office, String unit, String datum,
+                                            ZonedDateTime beginZdt, ZonedDateTime endZdt);
 
     TimeSeries retrieveLocationLevelAsTimeSeries(ILocationLevelRef levelRef, Instant start, Instant end, Interval interval, String units);
 }

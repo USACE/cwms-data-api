@@ -42,7 +42,7 @@ import java.util.function.Consumer;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
-public final class LocationLevel extends CwmsDTO {
+public class LocationLevel extends CwmsDTO {
     @JsonProperty(required = true)
     @Schema(description = "Name of the location level")
     
@@ -113,7 +113,7 @@ public final class LocationLevel extends CwmsDTO {
     
     private final List<SeasonalValueBean> seasonalValues;
 
-    private LocationLevel(Builder builder) {
+    LocationLevel(Builder builder) {
         super(builder.officeId);
         seasonalTimeSeriesId = builder.seasonalTimeSeriesId;
         seasonalValues = builder.seasonalValues;
@@ -225,29 +225,29 @@ public final class LocationLevel extends CwmsDTO {
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
-        private String seasonalTimeSeriesId;
-        private List<SeasonalValueBean> seasonalValues;
-        private String specifiedLevelId;
-        private String parameterTypeId;
-        private String parameterId;
-        private Double constantValue;
-        private String levelUnitsId;
-        private ZonedDateTime levelDate;
-        private String levelComment;
-        private ZonedDateTime intervalOrigin;
-        private Integer intervalMonths;
-        private Integer intervalMinutes;
-        private String interpolateString;
-        private String durationId;
-        private BigDecimal attributeValue;
-        private String attributeUnitsId;
-        private String attributeParameterTypeId;
-        private String attributeParameterId;
-        private String attributeDurationId;
-        private String attributeComment;
-        private String locationId;
-        private String officeId;
-        private final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
+        String seasonalTimeSeriesId;
+        List<SeasonalValueBean> seasonalValues;
+        String specifiedLevelId;
+        String parameterTypeId;
+        String parameterId;
+        Double constantValue;
+        String levelUnitsId;
+        ZonedDateTime levelDate;
+        String levelComment;
+        ZonedDateTime intervalOrigin;
+        Integer intervalMonths;
+        Integer intervalMinutes;
+        String interpolateString;
+        String durationId;
+        BigDecimal attributeValue;
+        String attributeUnitsId;
+        String attributeParameterTypeId;
+        String attributeParameterId;
+        String attributeDurationId;
+        String attributeComment;
+        String locationId;
+        String officeId;
+        final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
         @JsonCreator
         public Builder(@JsonProperty(value = "location-level-id", required = true) String name,

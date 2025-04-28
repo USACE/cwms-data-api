@@ -1,0 +1,12 @@
+{
+  "office-id" : "SPK",
+  "location-level-id" : "virtual_level_value_1.Stor.Ave.1Day.Regulating",
+  "constant-value" : 1.0,
+  "level-units-id" : "ac-ft",
+  "level-date" : "2023-06-01T00:00:00-07:00",
+  "expiration-date" : 1685689200000,
+  "constituents" : [ "virtual_level_value.Stor.Ave.1Day.Regulating" ],
+  "seasonal-values": [
+
+  ]
+}

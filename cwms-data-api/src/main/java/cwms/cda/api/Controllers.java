@@ -107,6 +107,7 @@ public final class Controllers {
     public static final String TEMPLATE_ID = "template-id";
     public static final String TEMPLATE_ID_MASK = "template-id-mask";
     public static final String STORE_TEMPLATE = "store-template";
+    public static final String VIRTUAL = "virtual";
 
     public static final String TIMESERIES_ID_REGEX = "timeseries-id-regex";
     public static final String TIMESERIES_ID = "timeseries-id";

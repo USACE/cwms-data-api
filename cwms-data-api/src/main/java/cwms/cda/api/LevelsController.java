@@ -25,34 +25,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.CASCADE_DELETE;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DATE;
-import static cwms.cda.api.Controllers.DATUM;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.EFFECTIVE_DATE;
-import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.FORMAT;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.LEVEL_ID;
-import static cwms.cda.api.Controllers.LEVEL_ID_MASK;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.TIMEZONE;
-import static cwms.cda.api.Controllers.UNIT;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.VERSION;
-import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
-import static cwms.cda.api.Controllers.queryParamAsClass;
-import static cwms.cda.api.Controllers.queryParamAsZdt;
-import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -73,6 +46,7 @@ import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.LocationLevels;
 import cwms.cda.data.dto.SeasonalValueBean;
+import cwms.cda.data.dto.VirtualLocationLevel;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -89,11 +63,17 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+
+import java.io.IOException;
+import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -122,7 +102,9 @@ public class LevelsController implements CrudHandler {
             requestBody = @OpenApiRequestBody(
                     content = {
                         @OpenApiContent(from = LocationLevel.class, type = Formats.JSON),
-                        @OpenApiContent(from = LocationLevel.class, type = Formats.XML)
+                        @OpenApiContent(from = LocationLevel.class, type = Formats.XML),
+                        @OpenApiContent(from = VirtualLocationLevel.class, type = Formats.JSON),
+                        @OpenApiContent(from = VirtualLocationLevel.class, type = Formats.XML)
                     },
                     required = true),
             method = HttpMethod.POST,
@@ -133,15 +115,31 @@ public class LevelsController implements CrudHandler {
     public void create(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime(CREATE)) {
-            String formatHeader = ctx.req.getContentType();
-            ContentType contentType = Formats.parseHeader(formatHeader, LocationLevel.class);
-            LocationLevel level = Formats.parseContent(contentType, ctx.body(), LocationLevel.class);
+            LocationLevel level = deserializeLocationLevel(ctx);
             level.validate();
 
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
-            levelsDao.storeLocationLevel(level);
+            if (level instanceof VirtualLocationLevel) {
+                levelsDao.storeVirtualLocationLevel((VirtualLocationLevel) level);
+            } else {
+                levelsDao.storeLocationLevel(level);
+            }
             ctx.status(HttpServletResponse.SC_OK).json("Created Location Level");
+        } catch(IOException e) {
+            throw new IllegalArgumentException("Unable to parse the request body", e);
+        }
+    }
+
+    private LocationLevel deserializeLocationLevel(Context ctx) throws IOException {
+        String formatHeader = ctx.req.getContentType();
+        ContentType contentType = Formats.parseHeader(formatHeader, LocationLevel.class);
+        StringWriter writer = new StringWriter();
+        IOUtils.copy(ctx.bodyAsInputStream(), writer, StandardCharsets.UTF_8);
+        if (writer.toString().contains("constituent")) {
+            return Formats.parseContent(contentType, writer.toString(), VirtualLocationLevel.class);
+        } else {
+            return Formats.parseContent(contentType, writer.toString(), LocationLevel.class);
         }
     }
 
@@ -240,12 +238,16 @@ public class LevelsController implements CrudHandler {
                         + "request you are. This is an opaque value, and can be obtained from "
                         + "the 'next-page' value in the response."),
                 @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "How "
-                        + "many entries per page returned. Default " + DEFAULT_PAGE_SIZE + ".")},
+                        + "many entries per page returned. Default " + DEFAULT_PAGE_SIZE + "."),
+                @OpenApiParam(name = VIRTUAL, type = Boolean.class, description = "Should virtual levels be returned." +
+                        " Default: False.")
+            },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
                     @OpenApiContent(type = Formats.JSON),
                     @OpenApiContent(type = ""),
-                    @OpenApiContent(from = LocationLevels.class, type = Formats.JSONV2)
+                    @OpenApiContent(from = LocationLevels.class, type = Formats.JSONV2),
+                    @OpenApiContent(from = VirtualLocationLevel.class, type = Formats.JSONV2),
                 })
             },
             tags = TAG)
@@ -286,8 +288,17 @@ public class LevelsController implements CrudHandler {
                 ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
                 ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
 
-                LocationLevels levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
-                        office, unit, datum, beginZdt, endZdt);
+                boolean virtual = ctx.queryParamAsClass(VIRTUAL, Boolean.class)
+                        .getOrDefault(false);
+
+                LocationLevels levels;
+                if (virtual) {
+                    levels = levelsDao.getVirtualLocationLevels(cursor, pageSize, levelIdMask,
+                            office, unit, datum, beginZdt, endZdt);
+                } else {
+                    levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
+                            office, unit, datum, beginZdt, endZdt);
+                }
                 String result = Formats.format(contentType, levels);
 
                 ctx.result(result);
@@ -341,6 +352,8 @@ public class LevelsController implements CrudHandler {
                         + "\n* `Other`  "
                         + "Any unit returned in the response to the units URI request that is "
                         + "appropriate for the requested parameters. "),
+                @OpenApiParam(name = VIRTUAL, type = Boolean.class, description = "Should virtual levels be returned." +
+                        " Default: False.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,content = {
@@ -360,14 +373,24 @@ public class LevelsController implements CrudHandler {
         String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
                 .getOrDefault("UTC");
 
+        boolean virtual = ctx.queryParamAsClass(VIRTUAL, Boolean.class)
+                .getOrDefault(false);
+
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             ZonedDateTime unmarshalledDateTime = DateUtils.parseUserDate(dateString, timezone);
 
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
-            LocationLevel locationLevel = levelsDao.retrieveLocationLevel(levelId,
-                    units, unmarshalledDateTime, office);
-            ctx.json(locationLevel);
+            if (virtual) {
+                VirtualLocationLevel virtualLocationLevel = levelsDao.retrieveVirtualLocationLevel(levelId,
+                        units, unmarshalledDateTime, office);
+                ctx.json(virtualLocationLevel);
+            } else {
+                //retrieveLocationLevel will throw an error if level does not exist
+                LocationLevel locationLevel = levelsDao.retrieveLocationLevel(levelId,
+                        units, unmarshalledDateTime, office);
+                ctx.json(locationLevel);
+            }
             ctx.status(HttpServletResponse.SC_OK);
         }
     }
