@@ -1,6 +1,7 @@
 set define on;
 def builduser = 'DBAdmin'
-dbms_output.put_line('Apply corrections to admin checks');
+def CWMS_SCHEMA = 'CWMS_20'
+set echo on;
 @/cwmsdb/schema/src/cwms/create_sec_triggers.sql
 @/cwmsdb/schema/src/cwms/cwms_sec_pkg_body.sql
 @/cwmsdb/schema/src/cwms/tables/at_ts_extents.sql
