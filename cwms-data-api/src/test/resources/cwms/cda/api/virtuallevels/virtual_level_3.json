@@ -6,17 +6,19 @@
   "expiration-date" : 1685689200000,
   "constituents" : [
     {
-      "abbr": "virt_lev1",
-      "type": "virtual_level",
-      "name": "level_get_all_loc1.Stor.Ave.1Day.Regulating"
+      "abbr": "L1",
+      "type": "LOCATION_LEVEL",
+      "name": "level_get_all_loc3.Elev.Ave.1Day.Regulating",
+      "attribute-id": "Elev",
+      "attribute-value": 78.99
     },
     {
-      "abbr": "virt_lev2",
-      "type": "virtual_level",
-      "name": "virtual_level_value_1.Stor.Ave.1Day.Regulating"
+      "abbr": "R1",
+      "type": "RATING",
+      "name": "LevelsControllerTestIT.Stage;Flow.COE.Production"
     }
   ],
-  "constituent-connections": "virtual_level_value.Stor.Ave.1Day.Regulating",
+  "constituent-connections": "L1=R1I1",
   "seasonal-values" : [
     {
       "value" : 12.0,

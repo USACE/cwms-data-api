@@ -1,27 +1,29 @@
 {
   "office-id" : "SPK",
-  "location-level-id" : "virtual_level_value.Stor.Ave.1Day.Regulating",
+  "location-level-id" : "virtual_level_value.Elev.Ave.1Day.Regulating",
   "specified-level-id" : "Total",
-  "parameter-id" : "Stor",
+  "parameter-id" : "Elev",
   "attribute-value" : 12500.0,
-  "attribute-units-id" : "ac-ft",
-  "attribute-parameter-id" : "Stor",
+  "attribute-units-id" : "ft",
+  "attribute-parameter-id" : "Elev",
   "attribute-parameter-type-id" : "Inst",
   "constant-value" : 10.0,
-  "level-units-id" : "ac-ft",
+  "level-units-id" : "ft",
   "level-date" : "2023-06-01T00:00:00-07:00",
   "expiration-date" : 1685689200000,
   "constituents" : [
     {
-      "abbr": "LOC1",
+      "abbr": "L1",
       "type": "LOCATION_LEVEL",
-      "name": "level_get_all_loc1"
+      "name": "level_get_all_loc1.Elev.Ave.1Day.Regulating",
+      "attribute-id": "Elev",
+      "attribute-value": 1650.0
     },
     {
-      "abbr": "LOC2",
-      "type": "LOCATION_LEVEL",
-      "name": "level_get_all_loc2"
+      "abbr": "R1",
+      "type": "RATING",
+      "name": "LevelsControllerTestIT.Stage;Flow.COE.Production"
     }
   ],
-  "constituent-connections": "LOC1=LOC1,LOC2=LOC2"
+  "constituent-connections": "L1=R1I1"
 }

@@ -105,7 +105,7 @@ public class LocationLevel extends CwmsDTO {
     
     private final String attributeComment;
 
-    @Schema(description = "List of Repeating seasonal values. The values repeater after the "
+    @Schema(description = "List of Repeating seasonal values. The values repeat after the "
             + "specified interval."
             + " A yearly interval seasonable could have 12 different values, one for each month for"
             + " example. Mutually exclusive with seasonalTimeSeriesId and "

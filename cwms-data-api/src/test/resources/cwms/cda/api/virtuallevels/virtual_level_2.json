@@ -4,16 +4,20 @@
   "level-units-id" : "ac-ft",
   "level-date" : "2023-06-01T00:00:00-07:00",
   "expiration-date" : 1685689200000,
+  "constant-value": 10.0,
   "constituents" : [
     {
-      "abbr": "virt_lev2",
-      "type": "virtual_level",
-      "name": "virtual_level_value.Stor.Ave.1Day.Regulating"
+      "abbr": "L1",
+      "type": "LOCATION_LEVEL",
+      "name": "level_get_all_loc2.Elev.Ave.1Day.Regulating",
+      "attribute-id": "Elev",
+      "attribute-value": 17650.0
+    },
+    {
+      "abbr": "R1",
+      "type": "RATING",
+      "name": "LevelsControllerTestIT.Stage;Flow.COE.Production"
     }
   ],
-  "seasonal-values" : [ {
-    "value" : 12.0,
-    "offset-minutes" : 1
-  } ],
-  "constituent-connections": "virtual_level_value.Stor.Ave.1Day.Regulating"
+  "constituent-connections": "L1=R1I1"
 }

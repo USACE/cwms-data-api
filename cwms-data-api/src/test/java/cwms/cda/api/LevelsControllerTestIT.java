@@ -25,6 +25,8 @@
 package cwms.cda.api;
 
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
+import cwms.cda.data.dao.RatingDao;
+import cwms.cda.data.dao.RatingSetDao;
 import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
@@ -32,8 +34,12 @@ import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 
+import io.restassured.path.json.JsonPath;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
+import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
+import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
@@ -42,13 +48,19 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+
+import hec.data.RatingException;
+import hec.data.cwmsRating.io.RatingSetContainer;
+import hec.data.cwmsRating.io.RatingSpecContainer;
 
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
@@ -57,6 +69,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("integration")
 public class LevelsControllerTestIT extends DataApiTestIT {
@@ -737,37 +750,54 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     @Test
     void testStoreRetrieveVirtualLevels() throws Exception
     {
+        // Virtual levels do not include constant or seasonal values
+
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String existingLoc = "LevelsControllerTestIT";
+        String virtualLoc = "level_get_all_loc1";
+        String levelIdPart2 = ".Stor.Ave.1Day.Regulating";
+        String existingSpec = existingLoc + ".Stage;Flow.COE.Production";
         createLocation("virtual_level_value", true, OFFICE);
-        createLocation("level_get_all_loc1", true, OFFICE);
-        createLocation("level_get_all_loc2", true, OFFICE);
-        String levelId = "virtual_level_value.Stor.Ave.1Day.Regulating";
+        createLocation(virtualLoc, true, OFFICE);
+        createLocation(existingLoc, true, OFFICE);
+        String levelId = "virtual_level_value.Elev.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         String levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_1.json");
+        String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
+        ratingXml = ratingXml.replaceAll("Zanesville", existingLoc);
+        RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
+        RatingSpecContainer specContainer = container.ratingSpecContainer;
+        String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
+        String setXml = RatingContainerXmlFactory.toXml(container, "", 0, true, false);
 
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            String locId = "level_get_all_loc1";
-            String levelIdLocal = locId + ".Stor.Ave.1Day.Regulating";
+            DSLContext dsl = dslContext(c, OFFICE);
+            RatingDao ratingDao = new RatingSetDao(dsl);
+            try
+            {
+                ratingDao.create(specXml, false);
+            } catch (RatingException | IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
+            try
+            {
+                ratingSetDao.create(setXml, false);
+            } catch (RatingException | IOException e) {
+                throw new RuntimeException(e);
+            }
+            String locId = virtualLoc;
+            String levelIdLocal = locId + levelIdPart2;
             LocationLevel level = new LocationLevel.Builder(levelIdLocal, time)
                     .withOfficeId(OFFICE)
                     .withConstantValue(1.0)
                     .withLevelUnitsId("ac-ft")
                     .build();
             levelList.add(level);
-            DSLContext dsl = dslContext(c, OFFICE);
             LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
             dao.storeLocationLevel(level);
-            locId = "level_get_all_loc2";
-            levelIdLocal = locId + ".Stor.Ave.1Day.Regulating";
-            level = new LocationLevel.Builder(levelIdLocal, time)
-                    .withOfficeId(OFFICE)
-                    .withConstantValue(1.0)
-                    .withLevelUnitsId("ac-ft")
-                    .build();
-            levelList.add(level);
-            dao.storeLocationLevel(level);
         });
-
 
         // Store the virtual level
         given()
@@ -793,6 +823,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(VIRTUAL, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -801,11 +832,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("level-units-id", equalTo("m3"))
-            // I think we need to create a custom matcher.
-            // This really shouldn't use equals but due to a quirk in
-            // RestAssured it appears to be necessary.
-            .body("constant-value", equalTo(1233.4818f)); // 1 ac-ft to m3
+            .body("level-units-id", equalTo("m"));
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -813,7 +840,8 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .queryParam("office", OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
-            .queryParam(UNIT, "ac-ft")
+            .queryParam(UNIT, "ft")
+            .queryParam(VIRTUAL, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -822,8 +850,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("level-units-id", equalTo("ac-ft"))
-            .body("constant-value", equalTo(1.0F));
+            .body("level-units-id", equalTo("ft"));
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -832,6 +859,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam("office", OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
             .queryParam(UNIT, "EN")
+            .queryParam(VIRTUAL, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -840,29 +868,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("level-units-id", equalTo("ac-ft"))
-            .body("constant-value", equalTo(1.0F));
-
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
-            .queryParam("office", OFFICE)
-            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
-            .queryParam(UNIT, "ft3")
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/levels/{level-id}", levelId)
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .body("level-units-id", equalTo("ft3"))
-            .body("constant-value", equalTo(43560.0F));
+            .body("level-units-id", equalTo("ft"));
 
         // Read virtual level
-        given()
+        ExtractableResponse<Response> response = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
@@ -879,21 +888,99 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("level-units-id", equalTo("ft3"))
-            .body("constant-value", equalTo(43560.0F))
-            .body("constituents", notNullValue());
+            .body("constituents", notNullValue())
+            .extract();
+
+        assertThat(response.path("constituents.size()"), is(2));
+        assertThat(response.path("constituents[0].name"), equalTo(virtualLoc +  ".Elev.Ave.1Day.Regulating"));
+        assertThat(response.path("constituents[0].type"), equalTo("LOCATION_LEVEL"));
+        assertThat(response.path("constituents[0].attribute-id"), equalTo("Elev"));
+        assertThat(response.path("constituents[1].name"), equalTo(existingSpec));
+        assertThat(response.path("constituents[1].type"), equalTo("RATING"));
+
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            RatingDao ratingDao = new RatingSetDao(dsl);
+            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
+            ratingSetDao.delete(user.getOperatingOffice(), existingSpec,
+                    Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"));
+            ratingDao.delete(user.getOperatingOffice(), existingSpec,
+                    Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"));
+        });
     }
 
     @Test
     void testStoreRetrieveAllVirtualLevels() throws Exception
     {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        createLocation("virtual_level_value_1", true, OFFICE);
-        String levelId = "virtual_level_value_1.Stor.Ave.1Day.Regulating";
+        String existingLoc = "LevelsControllerTestIT";
+        String levelLoc1 = "level_get_all_loc1";
+        String levelLoc2 = "level_get_all_loc2";
+        String levelLoc3 = "level_get_all_loc3";
+        String virtualLoc = "virtual_level_value";
+        String virtualLoc1 = "virtual_level_value_1";
+        String virtualLoc2 = "virtual_level_value_2";
+        String levelIdStor = ".Stor.Ave.1Day.Regulating";
+        String levelIdElev = ".Elev.Ave.1Day.Regulating";
+        String existingSpec = existingLoc + ".Stage;Flow.COE.Production";
+        createLocation(virtualLoc, true, OFFICE);
+        createLocation(virtualLoc2, true, OFFICE);
+        createLocation(virtualLoc1, true, OFFICE);
+        createLocation(levelLoc1, true, OFFICE);
+        createLocation(levelLoc2, true, OFFICE);
+        createLocation(levelLoc3, true, OFFICE);
+        createLocation(existingLoc, true, OFFICE);
+        String levelId = virtualLoc + levelIdElev;
+        String level1Id = virtualLoc1 + levelIdStor;
+        String level2Id = virtualLoc2 + levelIdStor;
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
-        List<String> constituents = new ArrayList<>();
-        constituents.add("level_get_all_loc1.Stor.Ave.1Day.Regulating");
-        String levelJson = readResourceFile("virtuallevels/virtual_level_1.json");
 
+        String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
+        ratingXml = ratingXml.replaceAll("Zanesville", existingLoc);
+        RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
+        RatingSpecContainer specContainer = container.ratingSpecContainer;
+        String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
+        String setXml = RatingContainerXmlFactory.toXml(container, "", 0, true, false);
+
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            RatingDao ratingDao = new RatingSetDao(dsl);
+            try
+            {
+                ratingDao.create(specXml, false);
+            } catch (RatingException | IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
+            try
+            {
+                ratingSetDao.create(setXml, false);
+            } catch (RatingException | IOException e) {
+                throw new RuntimeException(e);
+            }
+            String locId = levelLoc1;
+            String levelIdLocal = locId + levelIdStor;
+            LocationLevel level = new LocationLevel.Builder(levelIdLocal, time)
+                    .withOfficeId(OFFICE)
+                    .withConstantValue(1.0)
+                    .withLevelUnitsId("ac-ft")
+                    .build();
+            levelList.add(level);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level);
+            locId = levelLoc2;
+            levelIdLocal = locId + levelIdStor;
+            level = new LocationLevel.Builder(levelIdLocal, time)
+                    .withOfficeId(OFFICE)
+                    .withConstantValue(10.0)
+                    .withLevelUnitsId("ac-ft")
+                    .build();
+            levelList.add(level);
+            dao.storeLocationLevel(level);
+        });
+
+        String levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_1.json");
         // Store the virtual level
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -910,7 +997,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
-        levelJson = readResourceFile("virtuallevels/virtual_level_2.json");
+        levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_2.json");
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -927,7 +1014,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
-        levelJson = readResourceFile("virtuallevels/virtual_level_3.json");
+        levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_3.json");
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -952,6 +1039,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(VIRTUAL, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -960,11 +1048,43 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("level-units-id", equalTo("m3"))
-            // I think we need to create a custom matcher.
-            // This really shouldn't use equals but due to a quirk in
-            // RestAssured it appears to be necessary.
-            .body("constant-value", equalTo(1233.4818f)); // 1 ac-ft to m3
+            .body("level-units-id", equalTo("m"));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(VIRTUAL, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", level1Id)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("m3"));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(VIRTUAL, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", level2Id)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("m3"));
 
         // retrieve all virtual levels
         ExtractableResponse<Response> response = given()
@@ -985,38 +1105,88 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .extract();
 
-        assertThat(response.path("levels.size()"),is(3));
+        JsonPath path = JsonPath.from(response.body().asInputStream());
+        List<Map<String, Object>> levels = path.getList("levels");
+        boolean foundLevel1 = false;
+        boolean foundLevel2 = false;
+        boolean foundLevel3 = false;
+        for (Map<String, Object> item : levels) {
+            if (item.get("location-level-id").equals(levelId)) {
+                foundLevel1 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(level1Id)) {
+                foundLevel2 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(level2Id)) {
+                foundLevel3 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            }
+        }
 
+        assertTrue(foundLevel1, "Did not find levelId: " + levelId);
+        assertTrue(foundLevel2, "Did not find levelId: " + level1Id);
+        assertTrue(foundLevel3, "Did not find levelId: " + level2Id);
+
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            RatingDao ratingDao = new RatingSetDao(dsl);
+            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
+            ratingSetDao.delete(user.getOperatingOffice(), existingSpec,
+                    Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"));
+            ratingDao.delete(user.getOperatingOffice(), existingSpec,
+                    Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"));
+        });
     }
 
     @Test
     void testStoreDeleteVirtualLocationLevel() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        createLocation("virtual_level_value_1", true, OFFICE);
-        String levelId = "virtual_level_value_1.Stor.Ave.1Day.Regulating";
+        String existingLoc = "LevelsControllerTestIT";
+        String virtualLoc = "level_get_all_loc1";
+        String levelIdPart2 = ".Stor.Ave.1Day.Regulating";
+        String existingSpec = existingLoc + ".Stage;Flow.COE.Production";
+        createLocation("virtual_level_value", true, OFFICE);
+        createLocation(virtualLoc, true, OFFICE);
+        createLocation(existingLoc, true, OFFICE);
+        String levelId = "virtual_level_value.Elev.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
-        List<String> constituents = new ArrayList<>();
-        constituents.add("level_get_all_loc1.Stor.Ave.1Day.Regulating");
-        String levelJson = readResourceFile("/cwms/cda/virtuallevels/virtual_level_1.json");
+        String levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_1.json");
+        String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
+        ratingXml = ratingXml.replaceAll("Zanesville", existingLoc);
+        RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
+        RatingSpecContainer specContainer = container.ratingSpecContainer;
+        String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
+        String setXml = RatingContainerXmlFactory.toXml(container, "", 0, true, false);
+
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            RatingDao ratingDao = new RatingSetDao(dsl);
+            try
+            {
+                ratingDao.create(specXml, false);
+            } catch (RatingException | IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
+            try
+            {
+                ratingSetDao.create(setXml, false);
+            } catch (RatingException | IOException e) {
+                throw new RuntimeException(e);
+            }
+            String levelIdLocal = virtualLoc + levelIdPart2;
+            LocationLevel level = new LocationLevel.Builder(levelIdLocal, time)
+                    .withOfficeId(OFFICE)
+                    .withConstantValue(1.0)
+                    .withLevelUnitsId("ac-ft")
+                    .build();
+            levelList.add(level);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level);
+        });
 
         // Store the virtual level
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
-            .header(AUTH_HEADER, user.toHeaderValue())
-            .body(levelJson)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/levels/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-        levelJson = readResourceFile("virtuallevels/virtual_level_2.json");
-
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -1040,6 +1210,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(VIRTUAL, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1048,11 +1219,35 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("level-units-id", equalTo("m3"))
-            // I think we need to create a custom matcher.
-            // This really shouldn't use equals but due to a quirk in
-            // RestAssured it appears to be necessary.
-            .body("constant-value", equalTo(1233.4818f)); // 1 ac-ft to m3
+            .body("level-units-id", equalTo("m"));
+
+        // Read virtual level
+        ExtractableResponse<Response> response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(UNIT, "ft3")
+            .queryParam(VIRTUAL, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("ft3"))
+            .body("constituents", notNullValue())
+            .extract();
+
+        assertThat(response.path("constituents.size()"), is(2));
+        assertThat(response.path("constituents[0].name"), equalTo(virtualLoc +  ".Elev.Ave.1Day.Regulating"));
+        assertThat(response.path("constituents[0].type"), equalTo("LOCATION_LEVEL"));
+        assertThat(response.path("constituents[0].attribute-id"), equalTo("Elev"));
+        assertThat(response.path("constituents[1].name"), equalTo(existingSpec));
+        assertThat(response.path("constituents[1].type"), equalTo("RATING"));
 
         // Delete the level
         given()
@@ -1060,6 +1255,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(VIRTUAL, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1077,6 +1273,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(VIRTUAL, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1085,6 +1282,16 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            RatingDao ratingDao = new RatingSetDao(dsl);
+            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
+            ratingSetDao.delete(user.getOperatingOffice(), existingSpec,
+                    Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"));
+            ratingDao.delete(user.getOperatingOffice(), existingSpec,
+                    Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"));
+        });
     }
 
     @ParameterizedTest
