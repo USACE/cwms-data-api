@@ -739,9 +739,35 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         createLocation("virtual_level_value", true, OFFICE);
+        createLocation("level_get_all_loc1", true, OFFICE);
+        createLocation("level_get_all_loc2", true, OFFICE);
         String levelId = "virtual_level_value.Stor.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         String levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_1.json");
+
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            String locId = "level_get_all_loc1";
+            String levelIdLocal = locId + ".Stor.Ave.1Day.Regulating";
+            LocationLevel level = new LocationLevel.Builder(levelIdLocal, time)
+                    .withOfficeId(OFFICE)
+                    .withConstantValue(1.0)
+                    .withLevelUnitsId("ac-ft")
+                    .build();
+            levelList.add(level);
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level);
+            locId = "level_get_all_loc2";
+            levelIdLocal = locId + ".Stor.Ave.1Day.Regulating";
+            level = new LocationLevel.Builder(levelIdLocal, time)
+                    .withOfficeId(OFFICE)
+                    .withConstantValue(1.0)
+                    .withLevelUnitsId("ac-ft")
+                    .build();
+            levelList.add(level);
+            dao.storeLocationLevel(level);
+        });
+
 
         // Store the virtual level
         given()
@@ -961,6 +987,104 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
         assertThat(response.path("levels.size()"),is(3));
 
+    }
+
+    @Test
+    void testStoreDeleteVirtualLocationLevel() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        createLocation("virtual_level_value_1", true, OFFICE);
+        String levelId = "virtual_level_value_1.Stor.Ave.1Day.Regulating";
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        List<String> constituents = new ArrayList<>();
+        constituents.add("level_get_all_loc1.Stor.Ave.1Day.Regulating");
+        String levelJson = readResourceFile("/cwms/cda/virtuallevels/virtual_level_1.json");
+
+        // Store the virtual level
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .body(levelJson)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        levelJson = readResourceFile("virtuallevels/virtual_level_2.json");
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .body(levelJson)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        //Read level with unit
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("m3"))
+            // I think we need to create a custom matcher.
+            // This really shouldn't use equals but due to a quirk in
+            // RestAssured it appears to be necessary.
+            .body("constant-value", equalTo(1233.4818f)); // 1 ac-ft to m3
+
+        // Delete the level
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // Read and assert that the level is deleted
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
     @ParameterizedTest

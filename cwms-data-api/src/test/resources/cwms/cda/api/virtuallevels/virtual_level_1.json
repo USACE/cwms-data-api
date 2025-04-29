@@ -1,6 +1,12 @@
 {
   "office-id" : "SPK",
   "location-level-id" : "virtual_level_value.Stor.Ave.1Day.Regulating",
+  "specified-level-id" : "Total",
+  "parameter-id" : "Stor",
+  "attribute-value" : 12500.0,
+  "attribute-units-id" : "ac-ft",
+  "attribute-parameter-id" : "Stor",
+  "attribute-parameter-type-id" : "Inst",
   "constant-value" : 10.0,
   "level-units-id" : "ac-ft",
   "level-date" : "2023-06-01T00:00:00-07:00",
@@ -17,5 +23,5 @@
       "name": "level_get_all_loc2"
     }
   ],
-  "constituent-connections": "virt=LOC1,virt=LOC2"
+  "constituent-connections": "LOC1=LOC1,LOC2=LOC2"
 }

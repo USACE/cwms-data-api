@@ -163,6 +163,8 @@ public class LevelsController implements CrudHandler {
                         + "the value of the effective date field (unless otherwise "
                         + "specified).If this field is not specified, the default time zone of UTC "
                         + "shall be used."),
+                @OpenApiParam(name = VIRTUAL, type = Boolean.class,
+                        description = "Whether to delete only virtual location levels. Default: False.")
             },
             method = HttpMethod.DELETE,
             path = "/levels",
@@ -183,7 +185,9 @@ public class LevelsController implements CrudHandler {
             ZonedDateTime unmarshalledDateTime = dateString != null
                     ? DateUtils.parseUserDate(dateString, timezone) : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
-            levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete);
+            boolean virtual = ctx.queryParamAsClass(VIRTUAL, Boolean.class)
+                    .getOrDefault(false);
+            levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete, virtual);
             ctx.status(HttpServletResponse.SC_OK).json(levelId + " Deleted");
         }
     }

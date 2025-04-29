@@ -402,7 +402,14 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     @Override
     public void deleteLocationLevel(String locationLevelName, ZonedDateTime zonedDateTime,
-                                    String officeId, Boolean cascadeDelete) {
+            String officeId, Boolean cascadeDelete)
+    {
+        deleteLocationLevel(locationLevelName, zonedDateTime, officeId, cascadeDelete, false);
+    }
+
+    @Override
+    public void deleteLocationLevel(String locationLevelName, ZonedDateTime zonedDateTime,
+                                    String officeId, Boolean cascadeDelete, boolean virtualOnly) {
         try {
             Timestamp date;
             if (zonedDateTime != null) {
@@ -416,9 +423,15 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     if (cascadeDelete != null && cascadeDelete) {
                         cascade = "T";
                     }
-                    CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL(getDslContext(c, officeId).configuration(),
-                            locationLevelName, date, "UTC", null,
-                            null, null, cascade, officeId, "VN");
+                    if (virtualOnly) {
+                        CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL(getDslContext(c, officeId).configuration(),
+                                locationLevelName, date, "UTC", null,
+                                null, null, cascade, officeId, "V");
+                    } else {
+                        CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL(getDslContext(c, officeId).configuration(),
+                                locationLevelName, date, "UTC", null,
+                                null, null, cascade, officeId, "VN");
+                    }
                 });
             } else {
                 Record1<Long> levelCode = dsl.selectDistinct(AV_LOCATION_LEVEL.LOCATION_LEVEL_CODE)

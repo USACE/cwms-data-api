@@ -39,6 +39,9 @@ public interface LocationLevelsDao {
     void deleteLocationLevel(String locationLevelName, ZonedDateTime date, String officeId,
                              Boolean cascadeDelete);
 
+    void deleteLocationLevel(String locationLevelName, ZonedDateTime date, String officeId,
+                             Boolean cascadeDelete, boolean virtualOnly);
+
     void storeLocationLevel(LocationLevel level);
 
     void storeVirtualLocationLevel(VirtualLocationLevel locationLevel);
