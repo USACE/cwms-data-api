@@ -431,15 +431,23 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     }
                 });
             } else {
-                Record1<Long> levelCode = dsl.selectDistinct(AV_LOCATION_LEVEL.LOCATION_LEVEL_CODE)
-
-                        .from(AV_LOCATION_LEVEL)
-                        .where(AV_LOCATION_LEVEL.LOCATION_LEVEL_ID.eq(locationLevelName))
-                        .and(AV_LOCATION_LEVEL.OFFICE_ID.eq(officeId)
-                        )
-                        .fetchOne();
-                CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL__2(dsl.configuration(),
-                        BigInteger.valueOf(levelCode.value1()), cascadeDelete ? "T" : "F");
+                if (virtualOnly) {
+                    connection(dsl, c ->
+                        CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL3(getDslContext(c, officeId).configuration(), locationLevelName,
+                                date, "UTC", null, null,
+                                null, cascadeDelete ? "T" : "F", "F", "F",
+                                officeId, "V", "F", "T", "T")
+                    );
+                } else {
+                    Record1<Long> levelCode = dsl.selectDistinct(AV_LOCATION_LEVEL.LOCATION_LEVEL_CODE)
+                            .from(AV_LOCATION_LEVEL)
+                            .where(AV_LOCATION_LEVEL.LOCATION_LEVEL_ID.eq(locationLevelName))
+                            .and(AV_LOCATION_LEVEL.OFFICE_ID.eq(officeId)
+                            )
+                            .fetchOne();
+                    CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL__2(dsl.configuration(),
+                            BigInteger.valueOf(levelCode.value1()), cascadeDelete ? "T" : "F");
+                }
             }
 
         } catch (DataAccessException ex) {

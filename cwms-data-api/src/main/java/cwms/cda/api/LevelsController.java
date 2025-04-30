@@ -164,7 +164,8 @@ public class LevelsController implements CrudHandler {
                         + "specified).If this field is not specified, the default time zone of UTC "
                         + "shall be used."),
                 @OpenApiParam(name = VIRTUAL, type = Boolean.class,
-                        description = "Whether to delete only virtual location levels. Default: False.")
+                        description = "Whether to delete only virtual location levels. "
+                                + "Requires effective date and office when true. Default: False.")
             },
             method = HttpMethod.DELETE,
             path = "/levels",

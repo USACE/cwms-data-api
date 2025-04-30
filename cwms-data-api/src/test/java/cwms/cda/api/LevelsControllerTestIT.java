@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -70,6 +71,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag("integration")
 public class LevelsControllerTestIT extends DataApiTestIT {
@@ -748,7 +750,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void testStoreRetrieveVirtualLevels() throws Exception
+    void testStoreRetrieveVirtualLocationLevels() throws Exception
     {
         // Virtual levels do not include constant or seasonal values
 
@@ -910,7 +912,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void testStoreRetrieveAllVirtualLevels() throws Exception
+    void testStoreRetrieveAllVirtualLocationLevels() throws Exception
     {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String existingLoc = "LevelsControllerTestIT";
@@ -1138,8 +1140,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         });
     }
 
-    @Test
-    void testStoreDeleteVirtualLocationLevel() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"both", "no_date"})
+    void testStoreDeleteVirtualLocationLevel(String deletionMethod) throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String existingLoc = "LevelsControllerTestIT";
         String virtualLoc = "level_get_all_loc1";
@@ -1250,20 +1253,45 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertThat(response.path("constituents[1].type"), equalTo("RATING"));
 
         // Delete the level
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
-            .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(VIRTUAL, true)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .delete("/levels/{level-id}", levelId)
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
+        switch (deletionMethod) {
+            case "both":
+                given()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .accept(Formats.JSONV2)
+                    .contentType(Formats.JSONV2)
+                    .header(AUTH_HEADER, user.toHeaderValue())
+                    .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+                    .queryParam(Controllers.OFFICE, OFFICE)
+                    .queryParam(VIRTUAL, true)
+                .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .delete("/levels/{level-id}", levelId)
+                .then()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK));
+                break;
+            case "no_date":
+                given()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .accept(Formats.JSONV2)
+                    .contentType(Formats.JSONV2)
+                    .header(AUTH_HEADER, user.toHeaderValue())
+                    .queryParam(Controllers.OFFICE, OFFICE)
+                    .queryParam(VIRTUAL, true)
+                .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .delete("/levels/{level-id}", levelId)
+                .then()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK));
+                break;
+            default:
+                fail("Invalid deletion method: " + deletionMethod);
+        }
 
         // Read and assert that the level is deleted
         given()
