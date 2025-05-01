@@ -164,7 +164,7 @@ function CWMSTable({
   }, [tsData, timeseriesParams]);
 
   return (
-    <Table striped dense>
+    <Table striped dense className="">
       <TableHead>
         <TableRow>
           <TableHeader>Date & Time (Local)</TableHeader>
