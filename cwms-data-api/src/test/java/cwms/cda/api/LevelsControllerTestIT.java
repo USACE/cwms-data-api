@@ -50,16 +50,20 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
 import hec.data.RatingException;
+import hec.data.cwmsRating.RatingSet;
+import hec.data.cwmsRating.RatingSpec;
 import hec.data.cwmsRating.io.RatingSetContainer;
 import hec.data.cwmsRating.io.RatingSpecContainer;
 
@@ -78,14 +82,28 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
     private final List<LocationLevel> levelList = new ArrayList<>();
+    private final List<RatingSpec> ratingsList = new ArrayList<>();
+    private final Map<RatingSpec, Instant[]> ratingSpecDates = new HashMap<>();
+    private final List<RatingSet> ratingSetList = new ArrayList<>();
+    private final Map<RatingSet, Instant[]> ratingSetDates = new HashMap<>();
 
     @AfterEach
     void cleanup() throws Exception {
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
             DSLContext dsl = dslContext(c, OFFICE);
             LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
+            RatingDao ratingDao = new RatingSetDao(dsl);
             for (LocationLevel level : levelList) {
                 dao.deleteLocationLevel(level.getLocationLevelId(), level.getLevelDate(), level.getOfficeId(), false);
+            }
+            for (RatingSet ratingSet : ratingSetList) {
+                ratingSetDao.delete(OFFICE, ratingSet.getName(), ratingSetDates.get(ratingSet)[0],
+                        ratingSetDates.get(ratingSet)[1]);
+            }
+            for (RatingSpec rating : ratingsList) {
+                ratingDao.delete(rating.getOfficeId(), rating.getRatingSpecId(), ratingSpecDates.get(rating)[0],
+                        ratingSpecDates.get(rating)[1]);
             }
         });
     }
@@ -765,41 +783,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String levelId = "virtual_level_value.Elev.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         String levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_1.json");
-        String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
-        ratingXml = ratingXml.replaceAll("Zanesville", existingLoc);
-        RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
-        RatingSpecContainer specContainer = container.ratingSpecContainer;
-        String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
-        String setXml = RatingContainerXmlFactory.toXml(container, "", 0, true, false);
-
-        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            DSLContext dsl = dslContext(c, OFFICE);
-            RatingDao ratingDao = new RatingSetDao(dsl);
-            try
-            {
-                ratingDao.create(specXml, false);
-            } catch (RatingException | IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
-            try
-            {
-                ratingSetDao.create(setXml, false);
-            } catch (RatingException | IOException e) {
-                throw new RuntimeException(e);
-            }
-            String locId = virtualLoc;
-            String levelIdLocal = locId + levelIdPart2;
-            LocationLevel level = new LocationLevel.Builder(levelIdLocal, time)
-                    .withOfficeId(OFFICE)
-                    .withConstantValue(1.0)
-                    .withLevelUnitsId("ac-ft")
-                    .build();
-            levelList.add(level);
-            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
-            dao.storeLocationLevel(level);
-        });
+        String specXml = createRatingSpec(existingLoc);
+        String setXml = createRatingSet(existingLoc);
+        String levelIdLocal = virtualLoc + levelIdPart2;
+        createVirtualLocation(specXml, setXml, time, levelIdLocal, null);
 
         // Store the virtual level
         given()
@@ -899,16 +886,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertThat(response.path("constituents[0].attribute-id"), equalTo("Elev"));
         assertThat(response.path("constituents[1].name"), equalTo(existingSpec));
         assertThat(response.path("constituents[1].type"), equalTo("RATING"));
-
-        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            DSLContext dsl = dslContext(c, OFFICE);
-            RatingDao ratingDao = new RatingSetDao(dsl);
-            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
-            ratingSetDao.delete(user.getOperatingOffice(), existingSpec,
-                    Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"));
-            ratingDao.delete(user.getOperatingOffice(), existingSpec,
-                    Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"));
-        });
     }
 
     @Test
@@ -924,7 +901,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String virtualLoc2 = "virtual_level_value_2";
         String levelIdStor = ".Stor.Ave.1Day.Regulating";
         String levelIdElev = ".Elev.Ave.1Day.Regulating";
-        String existingSpec = existingLoc + ".Stage;Flow.COE.Production";
         createLocation(virtualLoc, true, OFFICE);
         createLocation(virtualLoc2, true, OFFICE);
         createLocation(virtualLoc1, true, OFFICE);
@@ -936,51 +912,11 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String level1Id = virtualLoc1 + levelIdStor;
         String level2Id = virtualLoc2 + levelIdStor;
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
-
-        String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
-        ratingXml = ratingXml.replaceAll("Zanesville", existingLoc);
-        RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
-        RatingSpecContainer specContainer = container.ratingSpecContainer;
-        String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
-        String setXml = RatingContainerXmlFactory.toXml(container, "", 0, true, false);
-
-        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            DSLContext dsl = dslContext(c, OFFICE);
-            RatingDao ratingDao = new RatingSetDao(dsl);
-            try
-            {
-                ratingDao.create(specXml, false);
-            } catch (RatingException | IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
-            try
-            {
-                ratingSetDao.create(setXml, false);
-            } catch (RatingException | IOException e) {
-                throw new RuntimeException(e);
-            }
-            String locId = levelLoc1;
-            String levelIdLocal = locId + levelIdStor;
-            LocationLevel level = new LocationLevel.Builder(levelIdLocal, time)
-                    .withOfficeId(OFFICE)
-                    .withConstantValue(1.0)
-                    .withLevelUnitsId("ac-ft")
-                    .build();
-            levelList.add(level);
-            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
-            dao.storeLocationLevel(level);
-            locId = levelLoc2;
-            levelIdLocal = locId + levelIdStor;
-            level = new LocationLevel.Builder(levelIdLocal, time)
-                    .withOfficeId(OFFICE)
-                    .withConstantValue(10.0)
-                    .withLevelUnitsId("ac-ft")
-                    .build();
-            levelList.add(level);
-            dao.storeLocationLevel(level);
-        });
+        String specXml = createRatingSpec(existingLoc);
+        String setXml = createRatingSet(existingLoc);
+        String levelIdLocal = levelLoc1 + levelIdStor;
+        String levelId2Local = levelLoc2 + levelIdStor;
+        createVirtualLocation(specXml, setXml, time, levelIdLocal, levelId2Local);
 
         String levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_1.json");
         // Store the virtual level
@@ -1128,16 +1064,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertTrue(foundLevel1, "Did not find levelId: " + levelId);
         assertTrue(foundLevel2, "Did not find levelId: " + level1Id);
         assertTrue(foundLevel3, "Did not find levelId: " + level2Id);
-
-        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            DSLContext dsl = dslContext(c, OFFICE);
-            RatingDao ratingDao = new RatingSetDao(dsl);
-            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
-            ratingSetDao.delete(user.getOperatingOffice(), existingSpec,
-                    Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"));
-            ratingDao.delete(user.getOperatingOffice(), existingSpec,
-                    Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"));
-        });
     }
 
     @ParameterizedTest
@@ -1154,40 +1080,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String levelId = "virtual_level_value.Elev.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         String levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_1.json");
-        String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
-        ratingXml = ratingXml.replaceAll("Zanesville", existingLoc);
-        RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
-        RatingSpecContainer specContainer = container.ratingSpecContainer;
-        String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
-        String setXml = RatingContainerXmlFactory.toXml(container, "", 0, true, false);
-
-        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            DSLContext dsl = dslContext(c, OFFICE);
-            RatingDao ratingDao = new RatingSetDao(dsl);
-            try
-            {
-                ratingDao.create(specXml, false);
-            } catch (RatingException | IOException e) {
-                throw new RuntimeException(e);
-            }
-
-            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
-            try
-            {
-                ratingSetDao.create(setXml, false);
-            } catch (RatingException | IOException e) {
-                throw new RuntimeException(e);
-            }
-            String levelIdLocal = virtualLoc + levelIdPart2;
-            LocationLevel level = new LocationLevel.Builder(levelIdLocal, time)
-                    .withOfficeId(OFFICE)
-                    .withConstantValue(1.0)
-                    .withLevelUnitsId("ac-ft")
-                    .build();
-            levelList.add(level);
-            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
-            dao.storeLocationLevel(level);
-        });
+        String specXml = createRatingSpec(existingLoc);
+        String setXml = createRatingSet(existingLoc);
+        String levelIdLocal = virtualLoc + levelIdPart2;
+        createVirtualLocation(specXml, setXml, time, levelIdLocal, null);
 
         // Store the virtual level
         given()
@@ -1310,16 +1206,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
-
-        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            DSLContext dsl = dslContext(c, OFFICE);
-            RatingDao ratingDao = new RatingSetDao(dsl);
-            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
-            ratingSetDao.delete(user.getOperatingOffice(), existingSpec,
-                    Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"));
-            ratingDao.delete(user.getOperatingOffice(), existingSpec,
-                    Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2025-01-01T00:00:00Z"));
-        });
     }
 
     @ParameterizedTest
@@ -1396,5 +1282,70 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             _accept = accept;
             _expectedContentType = expectedContentType;
         }
+    }
+
+    private String createRatingSpec(String locationName) throws Exception
+    {
+        String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
+        ratingXml = ratingXml.replaceAll("Zanesville", locationName);
+        RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
+        RatingSpecContainer specContainer = container.ratingSpecContainer;
+        RatingSpec spec = new RatingSpec(specContainer);
+
+        ratingsList.add(spec);
+        ratingSpecDates.put(spec, new Instant[]{Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2023-06-01T00:00:00Z")});
+        return RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
+    }
+
+    private String createRatingSet(String locationName) throws Exception
+    {
+        String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
+        ratingXml = ratingXml.replaceAll("Zanesville", locationName);
+        RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
+        RatingSet ratingSet = new RatingSet(container);
+
+        ratingSetList.add(ratingSet);
+        ratingSetDates.put(ratingSet, new Instant[]{Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2023-06-01T00:00:00Z")});
+        return RatingContainerXmlFactory.toXml(container, "", 0, true, false);
+    }
+
+    private void createVirtualLocation(String specXml, String setXml, ZonedDateTime time, String levelId, String levelId2) throws SQLException
+    {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            RatingDao ratingDao = new RatingSetDao(dsl);
+            try
+            {
+                ratingDao.create(specXml, false);
+            } catch (RatingException | IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
+            try
+            {
+                ratingSetDao.create(setXml, false);
+            } catch (RatingException | IOException e) {
+                throw new RuntimeException(e);
+            }
+            LocationLevel level = new LocationLevel.Builder(levelId, time)
+                    .withOfficeId(OFFICE)
+                    .withConstantValue(1.0)
+                    .withLevelUnitsId("ac-ft")
+                    .build();
+            levelList.add(level);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level);
+            if (levelId2 != null)
+            {
+                level = new LocationLevel.Builder(levelId2, time)
+                        .withOfficeId(OFFICE)
+                        .withConstantValue(10.0)
+                        .withLevelUnitsId("ac-ft")
+                        .build();
+                levelList.add(level);
+                dao.storeLocationLevel(level);
+            }
+        });
     }
 }
