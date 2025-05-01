@@ -24,10 +24,19 @@
 
 package cwms.cda.api;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import cwms.cda.data.dto.AssignedLocation;
+import cwms.cda.data.dto.LocationCategory;
+import cwms.cda.data.dto.LocationGroup;
+import cwms.cda.formatters.ContentType;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +49,8 @@ import org.junit.jupiter.params.provider.EnumSource;
 import javax.servlet.http.HttpServletResponse;
 
 import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
@@ -48,6 +59,62 @@ import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
 class LocationControllerTestIT extends DataApiTestIT {
+
+    private List<LocationCategory> categoriesToCleanup = new ArrayList<>();
+    private List<LocationGroup> groupsToCleanup = new ArrayList<>();
+
+    @AfterEach
+    void cleanup()
+    {
+        KeyUser user = KeyUser.SPK_NORMAL;
+
+        for (LocationCategory category : categoriesToCleanup) {
+            try {
+                //Delete Category
+                given()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .accept(Formats.JSON)
+                    .contentType(Formats.JSON)
+                    .header("Authorization", user.toHeaderValue())
+                    .queryParam(OFFICE, category.getOfficeId())
+                    .queryParam(CASCADE_DELETE, "true")
+                .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .delete("/location/category/" + category.getId())
+                .then()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+            } catch (Exception ex) {
+                // ignore
+            }
+        }
+
+        for (LocationGroup group : groupsToCleanup) {
+            try {
+                // Delete Group
+                given()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .accept(Formats.JSON)
+                    .contentType(Formats.JSON)
+                    .header("Authorization", user.toHeaderValue())
+                    .queryParam(OFFICE, group.getOfficeId())
+                    .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
+                    .queryParam(CASCADE_DELETE, "true")
+                .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .delete("/location/group/" + group.getId())
+                .then()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+            } catch (Exception ex) {
+                // ignore
+            }
+        }
+    }
 
     @Test
     void test_location_create_get_delete() throws Exception {
@@ -148,7 +215,9 @@ class LocationControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_location_create_get_delete_failure() throws Exception {
+        // Tests for https://github.com/USACE/cwms-data-api/issues/1080
         String officeId = "SPK";
+        KeyUser user = KeyUser.SPK_NORMAL;
         String json = loadResourceAsString("cwms/cda/api/location_failure_test_spk.json");
         Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
                 json, Location.class))
@@ -157,23 +226,69 @@ class LocationControllerTestIT extends DataApiTestIT {
                 .build();
         String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
 
-        KeyUser user = KeyUser.SPK_NORMAL;
         // create location
+        String locationId = "Test_Location_1080";
+        createLocation(locationId, true, officeId);
+
+        // create location group with location
+        AssignedLocation assignLoc = new AssignedLocation(locationId, officeId, location.getName(), 1, locationId);
+        LocationCategory cat = new LocationCategory(officeId, "TestCategory", "IntegrationTesting");
+        LocationGroup group = new LocationGroup(new LocationGroup(cat, officeId, LocationGroupControllerTestIT.class.getSimpleName(), "IntegrationTesting",
+                "sharedLocAliasId", locationId, 123), Collections.singletonList(assignLoc));
+        ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
+        String categoryXml = Formats.format(contentType, cat);
+        String groupXml = Formats.format(contentType, group);
+        groupsToCleanup.add(group);
+        categoriesToCleanup.add(cat);
+        //Create Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(categoryXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/category")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+        //Create Group
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(groupXml)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // create location of the same name as alias
         ExtractableResponse<Response> response = given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSON)
-                .contentType(Formats.JSON)
-                .body(serializedLocation)
-                .header("Authorization", user.toHeaderValue())
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/locations")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .extract();
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(serializedLocation)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/locations")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
 
         //Create associated time series so delete fails without cascade
         try {
@@ -184,65 +299,65 @@ class LocationControllerTestIT extends DataApiTestIT {
 
         // get it back
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSON)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/locations/" + location.getName())
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + location.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
 
         // delete without cascade should fail
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSON)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam(OFFICE, officeId)
-                .queryParam(CASCADE_DELETE, false)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/locations/" + location.getName())
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CONFLICT));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + location.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CONFLICT));
 
         // delete with cascade should succeed
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSON)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam(OFFICE, officeId)
-                .queryParam(CASCADE_DELETE, true)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/locations/" + location.getName())
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + location.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
 
-        // get it back
+        // get it back, assert not found
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSON)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/locations/" + location.getName())
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + location.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
     @Test
