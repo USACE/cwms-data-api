@@ -55,15 +55,12 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
 import hec.data.RatingException;
-import hec.data.cwmsRating.RatingSet;
-import hec.data.cwmsRating.RatingSpec;
 import hec.data.cwmsRating.io.RatingSetContainer;
 import hec.data.cwmsRating.io.RatingSpecContainer;
 
@@ -82,28 +79,14 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
     private final List<LocationLevel> levelList = new ArrayList<>();
-    private final List<RatingSpec> ratingsList = new ArrayList<>();
-    private final Map<RatingSpec, Instant[]> ratingSpecDates = new HashMap<>();
-    private final List<RatingSet> ratingSetList = new ArrayList<>();
-    private final Map<RatingSet, Instant[]> ratingSetDates = new HashMap<>();
 
     @AfterEach
     void cleanup() throws Exception {
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
             DSLContext dsl = dslContext(c, OFFICE);
             LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
-            RatingSetDao ratingSetDao = new RatingSetDao(dsl);
-            RatingDao ratingDao = new RatingSetDao(dsl);
             for (LocationLevel level : levelList) {
                 dao.deleteLocationLevel(level.getLocationLevelId(), level.getLevelDate(), level.getOfficeId(), false);
-            }
-            for (RatingSet ratingSet : ratingSetList) {
-                ratingSetDao.delete(OFFICE, ratingSet.getName(), ratingSetDates.get(ratingSet)[0],
-                        ratingSetDates.get(ratingSet)[1]);
-            }
-            for (RatingSpec rating : ratingsList) {
-                ratingDao.delete(rating.getOfficeId(), rating.getRatingSpecId(), ratingSpecDates.get(rating)[0],
-                        ratingSpecDates.get(rating)[1]);
             }
         });
     }
@@ -1290,10 +1273,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         ratingXml = ratingXml.replaceAll("Zanesville", locationName);
         RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
         RatingSpecContainer specContainer = container.ratingSpecContainer;
-        RatingSpec spec = new RatingSpec(specContainer);
 
-        ratingsList.add(spec);
-        ratingSpecDates.put(spec, new Instant[]{Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2023-06-01T00:00:00Z")});
         return RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
     }
 
@@ -1302,10 +1282,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
         ratingXml = ratingXml.replaceAll("Zanesville", locationName);
         RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
-        RatingSet ratingSet = new RatingSet(container);
 
-        ratingSetList.add(ratingSet);
-        ratingSetDates.put(ratingSet, new Instant[]{Instant.parse("2000-01-01T00:00:00Z"), Instant.parse("2023-06-01T00:00:00Z")});
         return RatingContainerXmlFactory.toXml(container, "", 0, true, false);
     }
 
