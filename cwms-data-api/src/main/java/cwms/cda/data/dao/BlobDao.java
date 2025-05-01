@@ -151,11 +151,11 @@ public class BlobDao extends JooqDao<Blob> {
     }
 
     public void update(Blob blob, boolean ignoreNulls) {
-        String pFailIfExists = OracleTypeMap.formatBool(false);
-        String pIgnoreNulls = OracleTypeMap.formatBool(ignoreNulls);
+        String pFailIfExists = formatBool(false);
+        String pIgnoreNulls = formatBool(ignoreNulls);
 
         if(blob == null){
-            throw new NotFoundException("null blob provided to update");
+            throw new NotFoundException("Null blob provided to update");
         }
 
         if (!blobExists(blob.getOfficeId(), blob.getId())) {

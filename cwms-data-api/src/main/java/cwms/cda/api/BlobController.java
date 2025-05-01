@@ -6,7 +6,6 @@ import static cwms.cda.api.Controllers.*;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.BlobDao;
 import cwms.cda.data.dao.JooqDao;
@@ -39,7 +38,6 @@ import org.jooq.DSLContext;
  *
  */
 public class BlobController implements CrudHandler {
-    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final int DEFAULT_PAGE_SIZE = 20;
     public static final String TAG = "Blob";
 
@@ -197,6 +195,9 @@ public class BlobController implements CrudHandler {
 
     @OpenApi(
             description = "Update an existing Blob",
+            pathParams = {
+                    @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
+            },
             requestBody = @OpenApiRequestBody(
                     content = {
                         @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
@@ -214,7 +215,7 @@ public class BlobController implements CrudHandler {
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
 
-            ContentType contentType = Formats.parseHeader(formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
             Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
 
             if (blob.getOfficeId() == null) {
@@ -258,5 +259,4 @@ public class BlobController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
-
 }
