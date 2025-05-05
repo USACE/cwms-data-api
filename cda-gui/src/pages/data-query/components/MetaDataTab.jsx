@@ -22,7 +22,6 @@ export default function MetaDataTab({ office, tsids }) {
         },
       });
 
-      console.log(metaData.data, tsids, office)
 
     if (metaData.isLoading)
         return <Skeleton type="card" className="w-full h-[500px]" />;

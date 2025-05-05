@@ -8,6 +8,7 @@ import {
   TableHead,
   TableHeader,
   TableCell,
+  Badge,
 } from "@usace/groundwork";
 
 function CWMSTable({
@@ -37,15 +38,9 @@ function CWMSTable({
     }
   });
   const ts_api = new TimeSeriesApi(config);
++
 
   useEffect(() => {
-    const tsids = timeseriesParams.map((item) => item.tsid);
-
-    if (!tsids.length)
-      throw Error("You must specify one or more Timeseries IDs to table.");
-
-    if (!office) throw Error("You must specify a 3 letter ID for the office");
-
     // Need support for page size, either defined or set with time delta
     // And then code to page thru each page and append into ts data
 
@@ -162,7 +157,16 @@ function CWMSTable({
     });
     setTableData(table);
   }, [tsData, timeseriesParams]);
+  const tsids = timeseriesParams.map((item) => item.tsid);
 
+  if (!tsids.length) {
+      return <div className="text-center m-auto"><Badge color="red" className="w-full">No Data Found</Badge></div>
+    
+  }
+  
+  if (!office) return <div className="text-center m-auto"><Badge color="red" className="w-full">No Office Selected</Badge></div>
+
+  
   return (
     <Table striped dense className="">
       <TableHead>

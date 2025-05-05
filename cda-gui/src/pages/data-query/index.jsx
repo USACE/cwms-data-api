@@ -32,7 +32,7 @@ export default function HydrologicQuery() {
   //   const [location, setLocation] = useState(null);
   //   const [parameter, setParameter] = useState(null);
   //   const [interval, setInterval] = useState(null);
-  const [office, setOffice] = useState(null);
+  const [office, setOffice] = useState("");
 
   const offices = useQuery({
     queryKey: ["offices"],
@@ -40,8 +40,6 @@ export default function HydrologicQuery() {
         const entries = await offices_api.getOffices({
             hasData: true
         }) 
-        console.log(entries)
-
         return [...new Set(entries.map((e) => e.name))];
         },
     retry: 1,
@@ -184,7 +182,6 @@ export default function HydrologicQuery() {
         {error.message}
       </div>
     );
-console.log(offices.data)
   if (offices.isLoading) return <Skeleton type="card" className="w-full h-[500px] mb-5" />;
   return (
     <div className="px-5">

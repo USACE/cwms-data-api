@@ -26,6 +26,10 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
         <Combobox
           value={tsids[0] || ""}
           onChange={(value) => {
+            if (!value) {
+                setTsids([]);
+                return;
+              }
             if ((value.match(/\./g) || []).length === 5) {
               setTsids([value]);
             } else {
