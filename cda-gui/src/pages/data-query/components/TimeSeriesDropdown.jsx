@@ -6,6 +6,7 @@ import {
   ComboboxOption,
 } from "@headlessui/react";
 import { CatalogApi, Configuration } from "cwmsjs";
+import dayjs from "dayjs";
 
 const catalogApi = new CatalogApi(
   new Configuration({
@@ -13,6 +14,25 @@ const catalogApi = new CatalogApi(
     headers: { accept: "application/json;version=2" },
   })
 );
+
+function getFreshnessColor(lastUpdateIso) {
+    if (!lastUpdateIso) return "gray";
+  
+    const now = dayjs();
+    const updated = dayjs(lastUpdateIso);
+  
+    const diffHours = now.diff(updated, "hour");
+    const diffDays = now.diff(updated, "day");
+    
+    console.log({ diffHours, diffDays });
+    // Data is current if updated within the last hour
+    if (diffHours <= 24) return "green";
+    // Data is semi-current if updated within the last 7 days
+    if (diffDays <= 7) return "yellow";
+    // Data is stale if older than 7 days
+    return "red";
+  }
+  
 
 export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,19 +50,19 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
         setLoading(true);
         const { entries } = await catalogApi.getCatalogWithDataset({
           dataset: "TIMESERIES",
-          excludeEmpty: true,
+          excludeEmpty: false,
           like: `*${searchTerm}*`,
           office,
           pageSize: 20,
         });
-        setSuggestions(entries.map((e) => e.name));
+        setSuggestions(entries);
       } catch (e) {
         console.error("Catalog fetch failed", e);
         setSuggestions([]);
       } finally {
         setLoading(false);
       }
-    }, 400); // ⏱ debounce delay
+    }, 400);
 
     return () => clearTimeout(timeout);
   }, [searchTerm, office]);
@@ -76,19 +96,37 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
             {loading ? (
               <li className="p-2 text-gray-500 italic">Searching...</li>
             ) : (
-              suggestions.map((s, idx) => (
-                <ComboboxOption key={idx} value={s} as={Fragment}>
-                  {({ active }) => (
-                    <li
-                      className={`${
-                        active ? "bg-blue-100" : ""
-                      } p-2 cursor-pointer`}
-                    >
-                      {s}
-                    </li>
-                  )}
-                </ComboboxOption>
-              ))
+              suggestions.map((entry, idx) => {
+                console.log({entry})
+                const suggestion_color = getFreshnessColor(
+                  entry.extents?.[0]?.lastUpdate
+                );
+                console.log(suggestion_color)
+                return (
+                  <ComboboxOption key={idx} value={entry.name} as={Fragment}>
+                    {({ active }) => (
+                      <li
+                        className={`flex items-center gap-2 ${
+                          active ? "bg-blue-100" : ""
+                        } p-2 cursor-pointer`}
+                      >
+                        <span
+                          className={`inline-block w-2 h-2 rounded-full ${
+                            suggestion_color === "green"
+                              ? "bg-green-500"
+                              : suggestion_color === "yellow"
+                              ? "bg-yellow-400"
+                              : suggestion_color === "gray"
+                                ? "bg-gray-500"
+                              : "bg-red-500"
+                          }`}
+                        />
+                        {entry.name}
+                      </li>
+                    )}
+                  </ComboboxOption>
+                );
+              })
             )}
           </ComboboxOptions>
         </Combobox>
