@@ -160,7 +160,7 @@ function CWMSTable({
   const tsids = timeseriesParams.map((item) => item.tsid);
 
   if (!tsids.length) {
-      return <div className="text-center m-auto"><Badge color="red" className="w-full">No Data Found</Badge></div>
+      return <div className="text-center m-auto p-2 gap-2 flex justify-center"><Badge color="red" className="w-1/12">No Data Found</Badge><Badge color="blue">Try A Larger Time Window?</Badge></div>
     
   }
   

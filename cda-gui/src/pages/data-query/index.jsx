@@ -10,6 +10,7 @@ import FailedTimeSeries from "./components/FailedTimeSeries";
 import TimeSeriesDropdown from "./components/TimeSeriesDropdown";
 import DataTabs from "./components/DataTabs";
 import Toggle from "./components/Toggle";
+import TimeSeriesBuilder from "./components/TimeSeriesBuilder";
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
 
 const v2_config = new Configuration({
@@ -123,7 +124,11 @@ export default function HydrologicQuery() {
     select: (data) => {
       return { ...mergeTimeseries(data), raw: data };
     },
-    enabled: tsids.length > 0 && office !== undefined,
+    enabled:
+      tsids.length === 1 &&
+      tsids[0].split(".").length === 6 &&
+      tsids[0].split(".").every((part) => part.trim() !== "") &&
+      office !== undefined,
   });
 
   const timeseriesParams = useMemo(() => {
@@ -249,11 +254,10 @@ export default function HydrologicQuery() {
           </div>
           <Toggle
             checked={mode === "advanced"}
-            onChange={() => {
-                setMode((prev) => (prev === "basic" ? "advanced" : "basic"))
+            onChange={() =>
+              setMode((prev) => (prev === "basic" ? "advanced" : "basic"))
             }
-            }
-            label={mode === "basic" ? "Standard Mode" : "Expert Mode"}
+            label={mode === "basic" ? "Guided Mode" : "Manual Mode"}
           />
         </div>
         {office && (
@@ -265,7 +269,11 @@ export default function HydrologicQuery() {
                 tsids={tsids}
               />
             ) : (
-              <div>not so adv</div>
+              <TimeSeriesBuilder
+                office={office}
+                setTsids={setTsids}
+                tsids={tsids}
+              />
             )}
 
             <Controls

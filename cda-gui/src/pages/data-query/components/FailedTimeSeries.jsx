@@ -4,6 +4,7 @@ import { IoWarning } from "react-icons/io5";
 export default function FailedTimeSeries({ failedTS }) {
   if (!failedTS || failedTS.length === 0) return null;
 
+ //   TODO: fetch the extents if the timeseries error is not 404 to let the user know valid dates
   return (
     <div className="flex flex-col gap-2 mx-2 my-5">
       <Accordion
