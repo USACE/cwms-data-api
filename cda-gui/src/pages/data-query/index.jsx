@@ -245,16 +245,25 @@ export default function HydrologicQuery() {
           >
             Download CSV
           </Button>
-          <DataTabs
-            begin={beginDateTime}
-            end={endDateTime}
-            office={office}
-            tsids={tsids}
-            timeseriesData={timeseriesData}
-            isLoading={timeseriesLoading}
-            cdaParams={cdaParams}
-            timeseriesParams={timeseriesParams}
-          />
+          {timeseriesLoading ? (
+            <Skeleton type="card" className="w-full h-[500px]" />
+          ) : tsids.length > 0 &&
+            timeseriesData?.raw?.every((ts) => ts?.values?.length === 0) ? (
+            <div className="text-center text-red-600 font-semibold mt-4">
+              Time series is empty.
+            </div>
+          ) : (
+            <DataTabs
+              begin={beginDateTime}
+              end={endDateTime}
+              office={office}
+              tsids={tsids}
+              timeseriesData={timeseriesData}
+              isLoading={timeseriesLoading}
+              cdaParams={cdaParams}
+              timeseriesParams={timeseriesParams}
+            />
+          )}
         </div>
       </UsaceBox>
     </div>
