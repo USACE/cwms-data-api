@@ -173,6 +173,32 @@ export default function HydrologicQuery() {
     link.click();
     document.body.removeChild(link);
   };
+  const handleDownloadJSON = () => {
+    if (!timeseriesData || timeseriesData.dates.length === 0) {
+      console.warn("No data to export");
+      return;
+    }
+  
+    const jsonContent = JSON.stringify(timeseriesData.raw, null, 2);
+    const blob = new Blob([jsonContent], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+  
+    const parameter = tsids[0].split(".")[1];
+    const locName = tsids[0].split(".")[0];
+    const paramName = parameter.split("-")[0].split(".")[0];
+  
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `${locName}_${paramName}_${beginDateTime.format("YYYY-MM-DD")}_${endDateTime.format("YYYY-MM-DD")}.json`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
   if (error)
     return (
       <div>
@@ -245,6 +271,15 @@ export default function HydrologicQuery() {
           >
             Download CSV
           </Button>
+          <Button
+            onClick={handleDownloadJSON}
+            className={`mb-4 bg-green-600 text-white px-4 py-2 rounded ms-2 ${
+              !timeseriesData?.tsids.length || timeseriesLoading ? "hidden" : ""
+            }`}
+          >
+            Download JSON
+          </Button>
+
           {timeseriesLoading ? (
             <Skeleton type="card" className="w-full h-[500px]" />
           ) : tsids.length > 0 &&
