@@ -245,7 +245,7 @@ export default function HydrologicQuery() {
               <option key="select" value="">
                 Select Office
               </option>
-              {offices.data.map((key) => (
+              {offices.data?.map((key) => (
                 <option key={key} value={key}>
                   {key}
                 </option>

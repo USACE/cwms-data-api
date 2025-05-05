@@ -24,7 +24,6 @@ function getFreshnessColor(lastUpdateIso) {
     const diffHours = now.diff(updated, "hour");
     const diffDays = now.diff(updated, "day");
     
-    console.log({ diffHours, diffDays });
     // Data is current if updated within the last hour
     if (diffHours <= 24) return "green";
     // Data is semi-current if updated within the last 7 days
@@ -97,11 +96,9 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
               <li className="p-2 text-gray-500 italic">Searching...</li>
             ) : (
               suggestions.map((entry, idx) => {
-                console.log({entry})
                 const suggestion_color = getFreshnessColor(
                   entry.extents?.[0]?.lastUpdate
                 );
-                console.log(suggestion_color)
                 return (
                   <ComboboxOption key={idx} value={entry.name} as={Fragment}>
                     {({ active }) => (
