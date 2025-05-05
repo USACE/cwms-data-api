@@ -9,8 +9,8 @@ import FailedTimeSeries from "./components/FailedTimeSeries";
 // import useConfigList from "./hooks/useConfigList";
 import TimeSeriesDropdown from "./components/TimeSeriesDropdown";
 import DataTabs from "./components/DataTabs";
+import Toggle from "./components/Toggle";
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
-
 
 const v2_config = new Configuration({
   headers: {
@@ -33,23 +33,23 @@ export default function HydrologicQuery() {
   //   const [parameter, setParameter] = useState(null);
   //   const [interval, setInterval] = useState(null);
   const [office, setOffice] = useState("");
+  const [mode, setMode] = useState("basic");
 
   const offices = useQuery({
     queryKey: ["offices"],
     queryFn: async () => {
-        const entries = await offices_api.getOffices({
-            hasData: true
-        }) 
-        return [...new Set(entries.map((e) => e.name))];
-        },
+      const entries = await offices_api.getOffices({
+        hasData: true,
+      });
+      return [...new Set(entries.map((e) => e.name))];
+    },
     retry: 1,
-    staleTime: 1000 * 60 * 60 * 24
-  })
+    staleTime: 1000 * 60 * 60 * 24,
+  });
   const [beginDateTime, setBeginDateTime] = useState(
     dayjs().subtract(1, "day")
   );
   const [endDateTime, setEndDateTime] = useState(dayjs());
-  const [view, setView] = useState("table");
 
   async function fetchAllTSData(data) {
     let startDate = data?.begin;
@@ -167,7 +167,12 @@ export default function HydrologicQuery() {
     const locName = tsids[0].split(".")[0];
     const paramName = parameter.split("-")[0].split(".")[0];
     link.setAttribute("href", url);
-    link.setAttribute("download", `${locName}_${paramName}_${beginDateTime.format("YYYY-MM-DD")}_${endDateTime.format("YYYY-MM-DD")}.csv`);
+    link.setAttribute(
+      "download",
+      `${locName}_${paramName}_${beginDateTime.format(
+        "YYYY-MM-DD"
+      )}_${endDateTime.format("YYYY-MM-DD")}.csv`
+    );
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
@@ -208,7 +213,8 @@ export default function HydrologicQuery() {
         {error.message}
       </div>
     );
-  if (offices.isLoading) return <Skeleton type="card" className="w-full h-[500px] mb-5" />;
+  if (offices.isLoading)
+    return <Skeleton type="card" className="w-full h-[500px] mb-5" />;
   return (
     <div className="px-5">
       <UsaceBox title="Hydrologic Query">
@@ -241,14 +247,26 @@ export default function HydrologicQuery() {
               ))}
             </select>
           </div>
+          <Toggle
+            checked={mode === "advanced"}
+            onChange={() => {
+                setMode((prev) => (prev === "basic" ? "advanced" : "basic"))
+            }
+            }
+            label={mode === "basic" ? "Standard Mode" : "Expert Mode"}
+          />
         </div>
         {office && (
           <>
-            <TimeSeriesDropdown
-              office={office}
-              setTsids={setTsids}
-              tsids={tsids}
-            />
+            {mode == "advanced" ? (
+              <TimeSeriesDropdown
+                office={office}
+                setTsids={setTsids}
+                tsids={tsids}
+              />
+            ) : (
+              <div>not so adv</div>
+            )}
 
             <Controls
               setBeginDateTime={setBeginDateTime}
