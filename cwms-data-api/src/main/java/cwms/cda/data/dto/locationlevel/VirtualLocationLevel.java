@@ -217,6 +217,12 @@ public final class VirtualLocationLevel extends LocationLevel {
 		}
 
 		@Override
+		public VirtualLocationLevel.Builder withInterpolateString(String interpolateString) {
+			this.interpolateString = interpolateString;
+			return this;
+		}
+
+		@Override
 		public VirtualLocationLevel build()
 		{
 			return new VirtualLocationLevel(this);

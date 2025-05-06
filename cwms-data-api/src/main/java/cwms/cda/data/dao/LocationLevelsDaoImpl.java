@@ -519,13 +519,13 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     .withLevelComment(level.getLEVEL_COMMENT())
                     .withOfficeId(officeId)
                     .withAttributeParameterId(level.getATTRIBUTE_PARAMETER_ID())
+                    .withInterpolateString(level.getINTERPOLATE())
                     .build();
             }
             else if (!seasonalValues.isEmpty()) {
                 return new SeasonalLocationLevel.Builder(locationLevelName, realEffectiveDate)
                         .withLevelUnitsId(units)
                         .withAttributeUnitsId(units)
-                        .withInterpolateString(level.getINTERPOLATE())
                         .withIntervalMinutes(Optional.ofNullable(level.getINTERVAL_MINUTES())
                                 .map(BigInteger::intValue).orElse(null))
                         .withIntervalMonths(Optional.ofNullable(level.getINTERVAL_MONTHS())
@@ -540,6 +540,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                         .withIntervalOrigin(level.getINTERVAL_ORIGIN(), effectiveDate)
                         .withAttributeParameterId(level.getATTRIBUTE_PARAMETER_ID())
                         .withSeasonalValues(seasonalValues)
+                        .withInterpolateString(level.getINTERPOLATE())
                         .build();
             } else if (constantValue != null) {
                 return new ConstantLocationLevel.Builder(locationLevelName, realEffectiveDate)
@@ -549,6 +550,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                         .withOfficeId(officeId)
                         .withAttributeParameterId(level.getATTRIBUTE_PARAMETER_ID())
                         .withConstantValue(constantValue)
+                        .withInterpolateString(level.getINTERPOLATE())
                         .build();
             } else if (seasonalTimeSeriesId != null) {
                 return new TimeSeriesLocationLevel.Builder(locationLevelName, realEffectiveDate)
@@ -558,6 +560,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                         .withOfficeId(officeId)
                         .withAttributeParameterId(level.getATTRIBUTE_PARAMETER_ID())
                         .withSeasonalTimeSeriesId(level.getTSID())
+                        .withInterpolateString(level.getINTERPOLATE())
                         .build();
             } else {
                 throw new IllegalArgumentException("Location level does not match expected level type: " + locationLevelName);

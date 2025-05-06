@@ -83,6 +83,10 @@ public class LocationLevel extends CwmsDTO
             allowableValues = {"Inst", "Ave", "Min", "Max", "Total"})
 
     private final String parameterTypeId;
+    @Schema(description = "Indicating whether or not to interpolate between seasonal values.",
+            allowableValues = {"T", "F"})
+
+    private final String interpolateString;
 
     @Schema(description = "Units the provided levels are in")
 
@@ -127,6 +131,7 @@ public class LocationLevel extends CwmsDTO
         attributeComment = builder.attributeComment;
         locationLevelId = builder.locationId;
         parameterId = builder.parameterId;
+        interpolateString = builder.interpolateString;
     }
 
     public String getSpecifiedLevelId()
@@ -152,6 +157,11 @@ public class LocationLevel extends CwmsDTO
     public String getLevelComment()
     {
         return levelComment;
+    }
+
+    public String getInterpolateString()
+    {
+        return interpolateString;
     }
 
     public String getDurationId()
@@ -218,6 +228,7 @@ public class LocationLevel extends CwmsDTO
         String attributeComment;
         String locationId;
         String officeId;
+        String interpolateString;
         final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
         @JsonCreator
@@ -360,6 +371,11 @@ public class LocationLevel extends CwmsDTO
         public LocationLevel.Builder withLevelComment(String levelComment)
         {
             this.levelComment = levelComment;
+            return this;
+        }
+
+        public LocationLevel.Builder withInterpolateString(String interpolateString) {
+            this.interpolateString = interpolateString;
             return this;
         }
 

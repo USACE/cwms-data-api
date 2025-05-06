@@ -80,10 +80,7 @@ public class SeasonalLocationLevel extends LocationLevel
 	private final Integer intervalMonths;
 
 	private final Integer intervalMinutes;
-	@Schema(description = "Indicating whether or not to interpolate between seasonal values.",
-			allowableValues = {"T", "F"})
 
-	private final String interpolateString;
 
 	@Schema(description = "List of Repeating seasonal values. The values repeat after the "
 			+ "specified interval."
@@ -99,7 +96,6 @@ public class SeasonalLocationLevel extends LocationLevel
 		intervalOrigin = builder.intervalOrigin;
 		intervalMonths = builder.intervalMonths;
 		intervalMinutes = builder.intervalMinutes;
-		interpolateString = builder.interpolateString;
 	}
 
 	public List<SeasonalValueBean> getSeasonalValues() {
@@ -118,10 +114,6 @@ public class SeasonalLocationLevel extends LocationLevel
 		return intervalMinutes;
 	}
 
-	public String getInterpolateString() {
-		return interpolateString;
-	}
-
 	@JsonPOJOBuilder
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 	@JsonIgnoreProperties(ignoreUnknown = true)
@@ -130,7 +122,6 @@ public class SeasonalLocationLevel extends LocationLevel
 		ZonedDateTime intervalOrigin;
 		Integer intervalMonths;
 		Integer intervalMinutes;
-		String interpolateString;
 		final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
 		@JsonCreator
@@ -325,11 +316,6 @@ public class SeasonalLocationLevel extends LocationLevel
 			return this;
 		}
 
-		public SeasonalLocationLevel.Builder withInterpolateString(String interpolateString) {
-			this.interpolateString = interpolateString;
-			return this;
-		}
-
 		@Override
 		public SeasonalLocationLevel.Builder withSpecifiedLevelId(String specifiedLevelId) {
 			this.specifiedLevelId = specifiedLevelId;
@@ -405,6 +391,12 @@ public class SeasonalLocationLevel extends LocationLevel
 		@Override
 		public SeasonalLocationLevel.Builder withAttributeComment(String attributeComment) {
 			this.attributeComment = attributeComment;
+			return this;
+		}
+
+		@Override
+		public SeasonalLocationLevel.Builder withInterpolateString(String interpolateString) {
+			this.interpolateString = interpolateString;
 			return this;
 		}
 

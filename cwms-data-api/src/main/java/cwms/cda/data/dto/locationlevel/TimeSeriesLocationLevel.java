@@ -238,6 +238,12 @@ public class TimeSeriesLocationLevel extends LocationLevel
 		}
 
 		@Override
+		public TimeSeriesLocationLevel.Builder withInterpolateString(String interpolateString) {
+			this.interpolateString = interpolateString;
+			return this;
+		}
+
+		@Override
 		public TimeSeriesLocationLevel.Builder withAttributeComment(String attributeComment) {
 			this.attributeComment = attributeComment;
 			return this;

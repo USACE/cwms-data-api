@@ -232,6 +232,12 @@ public final class ConstantLocationLevel extends LocationLevel
 		}
 
 		@Override
+		public ConstantLocationLevel.Builder withInterpolateString(String interpolateString) {
+			this.interpolateString = interpolateString;
+			return this;
+		}
+
+		@Override
 		public ConstantLocationLevel.Builder withAttributeDurationId(String attributeDurationId) {
 			this.attributeDurationId = attributeDurationId;
 			return this;

@@ -134,6 +134,12 @@ public class LevelsController implements CrudHandler {
         IOUtils.copy(ctx.bodyAsInputStream(), writer, StandardCharsets.UTF_8);
         if (writer.toString().contains("constituent")) {
             return Formats.parseContent(contentType, writer.toString(), VirtualLocationLevel.class);
+        } else if (writer.toString().contains("seasonal-timeseries-id")) {
+            return Formats.parseContent(contentType, writer.toString(), TimeSeriesLocationLevel.class);
+        } else if (writer.toString().contains("seasonal-values")) {
+            return Formats.parseContent(contentType, writer.toString(), SeasonalLocationLevel.class);
+        } else if (writer.toString().contains("constant-value")) {
+            return Formats.parseContent(contentType, writer.toString(), ConstantLocationLevel.class);
         } else {
             return Formats.parseContent(contentType, writer.toString(), LocationLevel.class);
         }
