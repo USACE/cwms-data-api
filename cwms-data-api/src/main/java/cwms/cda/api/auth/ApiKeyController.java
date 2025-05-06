@@ -29,6 +29,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.formatters.Formats;
@@ -89,6 +90,8 @@ public class ApiKeyController implements CrudHandler {
         } catch (CwmsAuthException ex) {
             if (ex.getMessage().equals(AuthDao.ONLY_OWN_KEY_MESSAGE)) {
                 ctx.json(new CdaError(ex.getMessage(), true)).status(ex.getAuthFailCode());
+            } else if (ex.getMessage().contains("too large for column")) {
+                throw new ValueTooLongException("Key name is too long. Max length is 64 characters.");
             } else {
                 throw ex;
             }

@@ -2,6 +2,7 @@ package cwms.cda.data.dao;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.ApiServlet;
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.datasource.ConnectionPreparer;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
@@ -17,7 +18,6 @@ import cwms.cda.security.Role;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
-import usace.cwms.db.jooq.codegen.packages.cwms_sec.UPDATE_USER_DATA;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -435,6 +435,12 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                         createKey.setDate(5,null);
                     }
                     createKey.execute();
+                }
+                catch (SQLException e)
+                {
+                    if (e.getMessage().contains("value too large for column")) {
+                        throw new ValueTooLongException("Key name is too long. Max length is 64 characters.");
+                    }
                 }
             });
             return newKey;
