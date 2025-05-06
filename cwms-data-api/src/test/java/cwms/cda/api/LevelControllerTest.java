@@ -1,8 +1,10 @@
 package cwms.cda.api;
 
+import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
+import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
+import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
 import org.junit.jupiter.api.Test;
 
-import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 
@@ -18,7 +20,7 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String xml = loadResourceAsString("cwms/cda/api/levels_seasonal_create.xml");
         assertNotNull(xml);
-        LocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.XML, LocationLevel.class), xml, LocationLevel.class);
+        SeasonalLocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.XML, SeasonalLocationLevel.class), xml, SeasonalLocationLevel.class);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
@@ -33,7 +35,7 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String json = loadResourceAsString("cwms/cda/api/levels_seasonal_create.json");
         assertNotNull(json);
-        LocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, LocationLevel.class), json, LocationLevel.class);
+        SeasonalLocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, SeasonalLocationLevel.class), json, SeasonalLocationLevel.class);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
@@ -48,7 +50,7 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String xml = loadResourceAsString("cwms/cda/api/levels_constant_create.xml");
         assertNotNull(xml);
-        LocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.XML, LocationLevel.class), xml, LocationLevel.class);
+        ConstantLocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.XML, ConstantLocationLevel.class), xml, ConstantLocationLevel.class);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
@@ -63,7 +65,7 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String json = loadResourceAsString("cwms/cda/api/levels_constant_create.json");
         assertNotNull(json);
-        LocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, LocationLevel.class), json, LocationLevel.class);
+        ConstantLocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, ConstantLocationLevel.class), json, ConstantLocationLevel.class);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
@@ -78,8 +80,8 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String xml = loadResourceAsString("cwms/cda/api/levels_timeseries_create.xml");
         assertNotNull(xml);
-        LocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.XML, LocationLevel.class),
-            xml, LocationLevel.class);
+        TimeSeriesLocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.XML, TimeSeriesLocationLevel.class),
+            xml, TimeSeriesLocationLevel.class);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());
@@ -95,7 +97,7 @@ class LevelControllerTest extends ControllerTest
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String json = loadResourceAsString("cwms/cda/api/levels_timeseries_create.json");
         assertNotNull(json);
-        LocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, LocationLevel.class), json, LocationLevel.class);
+        TimeSeriesLocationLevel level = Formats.parseContent(Formats.parseHeader(Formats.JSONV1, TimeSeriesLocationLevel.class), json, TimeSeriesLocationLevel.class);
         assertNotNull(level);
         assertEquals("LOC_TEST.Elev.Inst.0.Bottom of Inlet", level.getLocationLevelId());
         assertEquals(OFFICE_ID, level.getOfficeId());

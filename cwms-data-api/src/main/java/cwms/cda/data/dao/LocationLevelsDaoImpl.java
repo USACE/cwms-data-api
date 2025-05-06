@@ -34,9 +34,11 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
-import cwms.cda.data.dto.LocationLevel;
-import cwms.cda.data.dto.LocationLevels;
-import cwms.cda.data.dto.SeasonalValueBean;
+import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevels;
+import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
+import cwms.cda.data.dto.locationlevel.SeasonalValueBean;
 import cwms.cda.data.dto.TimeSeries;
 import hec.data.Duration;
 import hec.data.Parameter;
@@ -68,7 +70,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import cwms.cda.data.dto.VirtualLocationLevel;
+import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
+import cwms.cda.data.dto.locationlevel.VirtualLocationLevel;
 import mil.army.usace.hec.metadata.Interval;
 import mil.army.usace.hec.metadata.IntervalFactory;
 import mil.army.usace.hec.metadata.constants.NumericalConstants;
@@ -77,12 +80,13 @@ import org.jooq.Condition;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.jooq.Record1;
 import org.jooq.SelectLimitPercentAfterOffsetStep;
 import org.jooq.TableField;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
+import org.jooq.types.DayToSecond;
+
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
@@ -175,83 +179,63 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .offset(offset)
                 .limit(pageSize);
 
-        logger.info(() -> "getLocationLevels query: " + query.getSQL(ParamType.INLINED));
+        final SelectLimitPercentAfterOffsetStep<Record> queryFinal = query;
 
-        query.stream().forEach(r -> addSeasonalValue(r, builderMap));
+        logger.info(() -> "getLocationLevels query: " + queryFinal.getSQL(ParamType.INLINED));
 
-        List<LocationLevel> levels = new java.util.ArrayList<>();
-        for (LocationLevel.Builder builder : builderMap.values()) {
-            levels.add(builder.build());
-        }
+        query.stream().forEach(r -> parseLevels(r, builderMap));
 
-        LocationLevels.Builder builder = new LocationLevels.Builder(offset, pageSize, total);
-        builder.addAll(levels);
-        return builder.build();
-    }
+        // Virtual Levels
+        usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL virtView = AV_VIRTUAL_LOCATION_LEVEL;
 
-    @Override
-    public LocationLevels getVirtualLocationLevels(String cursor, int pageSize,
-            String levelIdMask, String office, @NotNull String unit,
-            String datum, ZonedDateTime beginZdt, ZonedDateTime endZdt) {
-        Integer total = null;
-        int offset = 0;
-
-        if (cursor != null && !cursor.isEmpty()) {
-            String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
-
-            if (parts.length > 2) {
-                offset = Integer.parseInt(parts[0]);
-                if (!"null".equals(parts[1])) {
-                    try {
-                        total = Integer.valueOf(parts[1]);
-                    } catch (NumberFormatException e) {
-                        logger.log(Level.INFO, "Could not parse {0}", parts[1]);
-                    }
-                }
-                pageSize = Integer.parseInt(parts[2]);
-            }
-        }
-
-        usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL view = AV_VIRTUAL_LOCATION_LEVEL;
-
-        Condition whereCondition = DSL.noCondition();
+        whereCondition = DSL.noCondition();
 
         if (office != null && !office.isEmpty()) {
-            whereCondition = whereCondition.and(DSL.upper(view.OFFICE_ID).eq(office.toUpperCase()));
+            whereCondition = whereCondition.and(DSL.upper(virtView.OFFICE_ID).eq(office.toUpperCase()));
         }
 
         if (levelIdMask != null && !levelIdMask.isEmpty()) {
             whereCondition = whereCondition.and(JooqDao.caseInsensitiveLikeRegex(
-                    view.LOCATION_LEVEL_ID, levelIdMask));
+                    virtView.LOCATION_LEVEL_ID, levelIdMask));
         }
 
         if (beginZdt != null) {
-            whereCondition = whereCondition.and(view.EFFECTIVE_DATE_UTC.greaterOrEqual(
+            whereCondition = whereCondition.and(virtView.EFFECTIVE_DATE_UTC.greaterOrEqual(
                     Timestamp.from(beginZdt.toInstant())));
         }
         if (endZdt != null) {
-            whereCondition = whereCondition.and(view.EFFECTIVE_DATE_UTC.lessThan(
+            whereCondition = whereCondition.and(virtView.EFFECTIVE_DATE_UTC.lessThan(
                     Timestamp.from(endZdt.toInstant())));
         }
 
-        Map<LevelLookup, VirtualLocationLevel.Builder> builderMap = new LinkedHashMap<>();
-
-        SelectLimitPercentAfterOffsetStep<Record> query = dsl.selectDistinct(getAddVirtualFields())
-                .from(view)
+        query = dsl.selectDistinct(getAddVirtualFields())
+                .from(virtView)
                 .where(whereCondition)
-                .orderBy(DSL.upper(view.OFFICE_ID), DSL.upper(view.LOCATION_LEVEL_ID),
-                        view.EFFECTIVE_DATE_UTC, view.EXPIRATION_DATE_UTC
+                .orderBy(DSL.upper(virtView.OFFICE_ID), DSL.upper(virtView.LOCATION_LEVEL_ID),
+                        virtView.EFFECTIVE_DATE_UTC
                 )
                 .offset(offset)
                 .limit(pageSize);
 
-        logger.info(() -> "getLocationLevels query: " + query.getSQL(ParamType.INLINED));
+        final SelectLimitPercentAfterOffsetStep<Record> virtQueryFinal = query;
 
-        query.stream().forEach(r -> addVirtualSeasonalValue(r, builderMap, unit));
+        logger.info(() -> "getLocationLevels query: " + virtQueryFinal.getSQL(ParamType.INLINED));
 
-        List<VirtualLocationLevel> levels = new java.util.ArrayList<>();
-        for (VirtualLocationLevel.Builder builder : builderMap.values()) {
-            levels.add(builder.build());
+        query.stream().forEach(r -> parseVirtualLevels(r, builderMap, unit));
+
+        List<LocationLevel> levels = new java.util.ArrayList<>();
+        for (LocationLevel.Builder builder : builderMap.values()) {
+            if (builder instanceof TimeSeriesLocationLevel.Builder) {
+                levels.add(((TimeSeriesLocationLevel.Builder) builder).build());
+            } else if (builder instanceof SeasonalLocationLevel.Builder) {
+                levels.add(((SeasonalLocationLevel.Builder) builder).build());
+            } else if (builder instanceof ConstantLocationLevel.Builder) {
+                levels.add(((ConstantLocationLevel.Builder) builder).build());
+            } else if (builder instanceof VirtualLocationLevel.Builder) {
+                levels.add(((VirtualLocationLevel.Builder) builder).build());
+            } else {
+                throw new IllegalArgumentException("Unknown builder type: " + builder.getClass().getName());
+            }
         }
 
         LocationLevels.Builder builder = new LocationLevels.Builder(offset, pageSize, total);
@@ -299,52 +283,83 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     @Override
     public void storeLocationLevel(LocationLevel locationLevel)
     {
-        BigInteger months = locationLevel.getIntervalMonths() == null ? null :
-                BigInteger.valueOf(locationLevel.getIntervalMonths());
-        BigInteger minutes = locationLevel.getIntervalMinutes() == null ? null :
-                BigInteger.valueOf(locationLevel.getIntervalMinutes());
-        Timestamp date = Timestamp.from(locationLevel.getLevelDate().toInstant());
-        Timestamp intervalOrigin = locationLevel.getIntervalOrigin() == null ? null :
-                Timestamp.from(locationLevel.getIntervalOrigin().toInstant());
-        SEASONAL_VALUE_TAB_T seasonalValues = getSeasonalValues(locationLevel);
-        connection(dsl, c ->
-        {
-            String officeId = locationLevel.getOfficeId();
-            setOffice(c, officeId);
-            CWMS_LEVEL_PACKAGE.call_STORE_LOCATION_LEVEL3(DSL.using(c).configuration(),
-                    locationLevel.getLocationLevelId(), locationLevel.getConstantValue(), locationLevel.getLevelUnitsId(),
-                    locationLevel.getLevelComment(),
-                    date, "UTC", locationLevel.getAttributeValue(), locationLevel.getAttributeUnitsId(),
-                    locationLevel.getAttributeDurationId(), locationLevel.getAttributeComment(), intervalOrigin, months,
-                    minutes, locationLevel.getInterpolateString(), locationLevel.getSeasonalTimeSeriesId(), seasonalValues,
-                    "F",
-                    officeId);
-        });
-    }
+        if (locationLevel instanceof VirtualLocationLevel) {
+            VirtualLocationLevel virtualLocationLevel = (VirtualLocationLevel) locationLevel;
+            Timestamp date = Timestamp.from(locationLevel.getLevelDate().toInstant());
+            Timestamp expirationDate = Timestamp.from(virtualLocationLevel.getExpirationDate().toInstant());
+            STR_TAB_TAB_T constituentTab = new STR_TAB_TAB_T();
+            for (VirtualLocationLevel.Constituent constituent : virtualLocationLevel.getConstituents()) {
+                constituentTab.add(new STR_TAB_T(constituent.getConstituentList()));
+            }
+            connection(dsl, c -> {
+                String officeId = locationLevel.getOfficeId();
+                setOffice(c, officeId);
+                CWMS_LEVEL_PACKAGE.call_STORE_VIRTUAL_LOCATION_LEVEL(DSL.using(c).configuration(),
+                        locationLevel.getLocationLevelId(), constituentTab, virtualLocationLevel.getConstituentConnections(),
+                        locationLevel.getLevelComment(), locationLevel.getAttributeDurationId(),
+                        locationLevel.getAttributeValue(), locationLevel.getAttributeUnitsId(),
+                        locationLevel.getAttributeComment(), date, expirationDate,
+                        "UTC", "F", "F",
+                        officeId);
+            });
+        } else {
+            BigInteger months = null;
+            BigInteger minutes = null;
+            Timestamp intervalOrigin = null;
+            Timestamp date = Timestamp.from(locationLevel.getLevelDate().toInstant());
+            SEASONAL_VALUE_TAB_T seasonalValues = null;
+            Number constantValue = null;
+            String seasonalTimeSeriesId = null;
+            String interpolateString = null;
 
-    @Override
-    public void storeVirtualLocationLevel(VirtualLocationLevel locationLevel) {
-        Timestamp date = Timestamp.from(locationLevel.getLevelDate().toInstant());
-        Timestamp expirationDate = Timestamp.from(locationLevel.getExpirationDate().toInstant());
-        STR_TAB_TAB_T constituentTab = new STR_TAB_TAB_T();
-        for (VirtualLocationLevel.Constituent constituent : locationLevel.getConstituents()) {
-            constituentTab.add(new STR_TAB_T(constituent.getConstituentList()));
+            if(locationLevel instanceof SeasonalLocationLevel)
+            {
+                SeasonalLocationLevel seasonalLocationLevel = (SeasonalLocationLevel) locationLevel;
+                months = seasonalLocationLevel.getIntervalMonths() == null ? null :
+                        BigInteger.valueOf(seasonalLocationLevel.getIntervalMonths());
+                minutes = seasonalLocationLevel.getIntervalMinutes() == null ? null :
+                        BigInteger.valueOf(seasonalLocationLevel.getIntervalMinutes());
+                intervalOrigin = seasonalLocationLevel.getIntervalOrigin() == null ? null :
+                        Timestamp.from(seasonalLocationLevel.getIntervalOrigin().toInstant());
+                interpolateString = seasonalLocationLevel.getInterpolateString();
+
+                seasonalValues = getSeasonalValues(seasonalLocationLevel);
+            }
+            else if(locationLevel instanceof ConstantLocationLevel)
+            {
+                constantValue = ((ConstantLocationLevel) locationLevel).getConstantValue();
+            }
+            else if(locationLevel instanceof TimeSeriesLocationLevel)
+            {
+                seasonalTimeSeriesId = ((TimeSeriesLocationLevel) locationLevel).getSeasonalTimeSeriesId();
+            }
+
+            final Number constantValueFinal = constantValue;
+            final Timestamp dateFinal = date;
+            final Timestamp intervalOriginFinal = intervalOrigin;
+            final BigInteger monthsFinal = months;
+            final BigInteger minutesFinal = minutes;
+            final SEASONAL_VALUE_TAB_T seasonalValuesFinal = seasonalValues;
+            final String seasonalTimeSeriesIdFinal = seasonalTimeSeriesId;
+            final String interpolateStringFinal = interpolateString;
+
+            connection(dsl, c ->
+            {
+                String officeId = locationLevel.getOfficeId();
+                setOffice(c, officeId);
+                CWMS_LEVEL_PACKAGE.call_STORE_LOCATION_LEVEL3(DSL.using(c).configuration(),
+                        locationLevel.getLocationLevelId(), constantValueFinal, locationLevel.getLevelUnitsId(),
+                        locationLevel.getLevelComment(),
+                        dateFinal, "UTC", locationLevel.getAttributeValue(), locationLevel.getAttributeUnitsId(),
+                        locationLevel.getAttributeDurationId(), locationLevel.getAttributeComment(), intervalOriginFinal, monthsFinal,
+                        minutesFinal, interpolateStringFinal, seasonalTimeSeriesIdFinal, seasonalValuesFinal,
+                        "F",
+                        officeId);
+            });
         }
-        connection(dsl, c -> {
-            String officeId = locationLevel.getOfficeId();
-            setOffice(c, officeId);
-            CWMS_LEVEL_PACKAGE.call_STORE_VIRTUAL_LOCATION_LEVEL(DSL.using(c).configuration(),
-                    locationLevel.getLocationLevelId(), constituentTab, locationLevel.getConstituentConnections(),
-                    locationLevel.getLevelComment(), locationLevel.getAttributeDurationId(),
-                    locationLevel.getAttributeValue(), locationLevel.getAttributeUnitsId(),
-                    locationLevel.getAttributeComment(), date, expirationDate,
-                    "UTC", "F", "F",
-                    officeId);
-        });
-
     }
 
-    private static SEASONAL_VALUE_TAB_T getSeasonalValues(LocationLevel locationLevel) {
+    private static SEASONAL_VALUE_TAB_T getSeasonalValues(SeasonalLocationLevel locationLevel) {
         List<SeasonalValueBean> seasonalValues = locationLevel.getSeasonalValues();
 
         SEASONAL_VALUE_TAB_T pSeasonalValues = null;
@@ -399,14 +414,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     @Override
     public void deleteLocationLevel(String locationLevelName, ZonedDateTime zonedDateTime,
-            String officeId, Boolean cascadeDelete)
-    {
-        deleteLocationLevel(locationLevelName, zonedDateTime, officeId, cascadeDelete, false);
-    }
-
-    @Override
-    public void deleteLocationLevel(String locationLevelName, ZonedDateTime zonedDateTime,
-                                    String officeId, Boolean cascadeDelete, boolean virtualOnly) {
+                                    String officeId, Boolean cascadeDelete) {
         try {
             Timestamp date;
             if (zonedDateTime != null) {
@@ -420,34 +428,17 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     if (cascadeDelete != null && cascadeDelete) {
                         cascade = "T";
                     }
-                    if (virtualOnly) {
-                        CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL(getDslContext(c, officeId).configuration(),
-                                locationLevelName, date, "UTC", null,
-                                null, null, cascade, officeId, "V");
-                    } else {
-                        CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL(getDslContext(c, officeId).configuration(),
-                                locationLevelName, date, "UTC", null,
-                                null, null, cascade, officeId, "VN");
-                    }
+                    CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL(getDslContext(c, officeId).configuration(),
+                            locationLevelName, date, "UTC", null,
+                            null, null, cascade, officeId, "VN");
                 });
             } else {
-                if (virtualOnly) {
-                    connection(dsl, c ->
-                        CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL3(getDslContext(c, officeId).configuration(), locationLevelName,
-                                date, "UTC", null, null,
-                                null, cascadeDelete ? "T" : "F", "F", "F",
-                                officeId, "V", "F", "T", "T")
-                    );
-                } else {
-                    Record1<Long> levelCode = dsl.selectDistinct(AV_LOCATION_LEVEL.LOCATION_LEVEL_CODE)
-                            .from(AV_LOCATION_LEVEL)
-                            .where(AV_LOCATION_LEVEL.LOCATION_LEVEL_ID.eq(locationLevelName))
-                            .and(AV_LOCATION_LEVEL.OFFICE_ID.eq(officeId)
-                            )
-                            .fetchOne();
-                    CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL__2(dsl.configuration(),
-                            BigInteger.valueOf(levelCode.value1()), cascadeDelete ? "T" : "F");
-                }
+                connection(dsl, c ->
+                    CWMS_LEVEL_PACKAGE.call_DELETE_LOCATION_LEVEL3(getDslContext(c, officeId).configuration(), locationLevelName,
+                            date, "UTC", null, null,
+                            null, cascadeDelete ? "T" : "F", "F", "F",
+                            officeId, "VN", "F", "T", "T")
+                );
             }
 
         } catch (DataAccessException ex) {
@@ -472,84 +463,38 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
         String parameter = levelIdParts[1];
         return connectionResult(dsl, c -> {
+
             String units = pUnits;
             Configuration configuration = getDslContext(c, officeId).configuration();
             if (units != null && (units.equalsIgnoreCase("SI")
                     || units.equalsIgnoreCase("EN"))) {
                 units = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(configuration,
                         parameter, units);
-            }
-            RETRIEVE_LOCATION_LEVEL3 level = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOCATION_LEVEL3(
-                configuration, locationLevelName, units, date,
-                "UTC", null, null, units,
-                "F", officeId);
-            List<SeasonalValueBean> seasonalValues = buildSeasonalValues(level);
-            if (units == null) {
-                logger.info("Getting default units for " + parameter);
-                String defaultUnits = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
-                    configuration, parameter, UnitSystem.SI.getValue());
-                logger.info("Default units are " + defaultUnits);
-                units = defaultUnits;
-            }
-            Timestamp pEffectiveDate = level.getP_EFFECTIVE_DATE();
-            ZonedDateTime realEffectiveDate = ZonedDateTime.ofInstant(pEffectiveDate.toInstant(), effectiveDate.getZone());
-            return new LocationLevel.Builder(locationLevelName, realEffectiveDate)
-                .withLevelUnitsId(units)
-                .withAttributeUnitsId(units)
-                .withInterpolateString(level.getP_INTERPOLATE())
-                .withIntervalMinutes(Optional.ofNullable(level.getP_INTERVAL_MINUTES())
-                    .map(BigInteger::intValue).orElse(null))
-                .withIntervalMonths(Optional.ofNullable(level.getP_INTERVAL_MONTHS())
-                    .map(BigInteger::intValue).orElse(null))
-                .withIntervalOrigin(level.getP_INTERVAL_ORIGIN(), effectiveDate)
-                .withLevelComment(level.getP_LEVEL_COMMENT())
-                .withOfficeId(officeId)
-                .withAttributeParameterId(level.get(RETRIEVE_LOCATION_LEVEL3.P_ATTRIBUTE_ID))
-                .withSeasonalTimeSeriesId(level.get(RETRIEVE_LOCATION_LEVEL3.P_TSID))
-                .withSeasonalValues(seasonalValues)
-                .withConstantValue(Optional.ofNullable(level.getP_LEVEL_VALUE())
-                    .map(BigDecimal::doubleValue).orElse(null))
-                .build();
-        });
-    }
-
-    @Override
-    public VirtualLocationLevel retrieveVirtualLocationLevel(String locationLevelName, String unitSystem,
-            ZonedDateTime effectiveDate, String officeId) {
-        Timestamp date = Timestamp.from(effectiveDate.toInstant());
-        String[] levelIdParts = locationLevelIdParsingPattern.split(locationLevelName);
-        if (levelIdParts.length <= 2) {
-            throw new IllegalArgumentException("Location level name is in an invalid format, must be separated by '.'");
-        }
-        String parameter = levelIdParts[1];
-        return connectionResult(dsl, c -> {
-            String units = unitSystem;
-            Configuration configuration = getDslContext(c, officeId).configuration();
-            if (units != null && (units.equalsIgnoreCase("SI")
-                    || units.equalsIgnoreCase("EN"))) {
-                units = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(configuration,
-                        parameter, units);
-            }
-            LOCATION_LEVEL_T level = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOCATION_LEVEL__2(
-                    configuration, locationLevelName, units, date,
-                    "UTC", null, null,
-                    null, "T", officeId, "V");
-            if (units == null) {
+            } else if (units == null) {
                 logger.info("Getting default units for " + parameter);
                 String defaultUnits = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
                         configuration, parameter, UnitSystem.SI.getValue());
                 logger.info("Default units are " + defaultUnits);
                 units = defaultUnits;
             }
+            LOCATION_LEVEL_T level = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOCATION_LEVEL__2(
+                    configuration, locationLevelName, units, date,
+                    "UTC", null, null,
+                    null, "T", officeId, "VN");
             if (level == null) {
                 throw new NotFoundException("Location level not found: " + locationLevelName);
             }
             Timestamp pEffectiveDate = level.getLEVEL_DATE();
             ZonedDateTime realEffectiveDate = ZonedDateTime.ofInstant(pEffectiveDate.toInstant(), effectiveDate.getZone());
-            ZonedDateTime expirationDate = ZonedDateTime.ofInstant(level.getEXPIRATION_DATE().toInstant(), effectiveDate.getZone());
             List<VirtualLocationLevel.Constituent> constituents = new ArrayList<>();
             STR_TAB_TAB_T constituentTab = level.getCONSTITUENTS();
+            Double constantValue = Optional.ofNullable(level.getLEVEL_VALUE())
+                    .map(BigDecimal::doubleValue).orElse(null);
+            List<SeasonalValueBean> seasonalValues = buildSeasonalValues(level);
+            String seasonalTimeSeriesId = level.getTSID();
             if (constituentTab != null) {
+                ZonedDateTime expirationDate = ZonedDateTime.ofInstant(level.getEXPIRATION_DATE().toInstant(), effectiveDate.getZone());
+
                 constituentTab.forEach(constituent -> {
                     VirtualLocationLevel.Constituent.Builder constituentBuilder = new VirtualLocationLevel.Constituent.Builder(constituent.get(0), constituent.get(1), constituent.get(2));
                     if (constituent.size() > 3 && constituent.get(3) != null) {
@@ -564,24 +509,59 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
                     constituents.add(constituentBuilder.build());
                 });
-            }
-            return new VirtualLocationLevel.Builder(locationLevelName, realEffectiveDate)
+
+                return new VirtualLocationLevel.Builder(locationLevelName, realEffectiveDate)
                     .withConstituents(constituents)
                     .withConstituentConnections(level.getCONNECTIONS())
                     .withExpirationDate(expirationDate)
                     .withLevelUnitsId(units)
                     .withAttributeUnitsId(units)
-                    .withInterpolateString(level.getINTERPOLATE())
-                    .withIntervalMinutes(Optional.ofNullable(level.getINTERVAL_MINUTES())
-                            .map(BigInteger::intValue).orElse(null))
-                    .withIntervalMonths(Optional.ofNullable(level.getINTERVAL_MONTHS())
-                            .map(BigInteger::intValue).orElse(null))
-                    .withIntervalOrigin(level.getINTERVAL_ORIGIN(), effectiveDate)
                     .withLevelComment(level.getLEVEL_COMMENT())
                     .withOfficeId(officeId)
                     .withAttributeParameterId(level.getATTRIBUTE_PARAMETER_ID())
-                    .withSeasonalTimeSeriesId(level.getTSID())
                     .build();
+            }
+            else if (!seasonalValues.isEmpty()) {
+                return new SeasonalLocationLevel.Builder(locationLevelName, realEffectiveDate)
+                        .withLevelUnitsId(units)
+                        .withAttributeUnitsId(units)
+                        .withInterpolateString(level.getINTERPOLATE())
+                        .withIntervalMinutes(Optional.ofNullable(level.getINTERVAL_MINUTES())
+                                .map(BigInteger::intValue).orElse(null))
+                        .withIntervalMonths(Optional.ofNullable(level.getINTERVAL_MONTHS())
+                                .map(BigInteger::intValue).orElse(null))
+                        .withIntervalOrigin(level.getINTERVAL_ORIGIN(), effectiveDate)
+                        .withLevelComment(level.getLEVEL_COMMENT())
+                        .withOfficeId(officeId)
+                        .withIntervalMinutes(Optional.ofNullable(level.getINTERVAL_MINUTES())
+                                .map(BigInteger::intValue).orElse(null))
+                        .withIntervalMonths(Optional.ofNullable(level.getINTERVAL_MONTHS())
+                                .map(BigInteger::intValue).orElse(null))
+                        .withIntervalOrigin(level.getINTERVAL_ORIGIN(), effectiveDate)
+                        .withAttributeParameterId(level.getATTRIBUTE_PARAMETER_ID())
+                        .withSeasonalValues(seasonalValues)
+                        .build();
+            } else if (constantValue != null) {
+                return new ConstantLocationLevel.Builder(locationLevelName, realEffectiveDate)
+                        .withLevelUnitsId(units)
+                        .withAttributeUnitsId(units)
+                        .withLevelComment(level.getLEVEL_COMMENT())
+                        .withOfficeId(officeId)
+                        .withAttributeParameterId(level.getATTRIBUTE_PARAMETER_ID())
+                        .withConstantValue(constantValue)
+                        .build();
+            } else if (seasonalTimeSeriesId != null) {
+                return new TimeSeriesLocationLevel.Builder(locationLevelName, realEffectiveDate)
+                        .withLevelUnitsId(units)
+                        .withAttributeUnitsId(units)
+                        .withLevelComment(level.getLEVEL_COMMENT())
+                        .withOfficeId(officeId)
+                        .withAttributeParameterId(level.getATTRIBUTE_PARAMETER_ID())
+                        .withSeasonalTimeSeriesId(level.getTSID())
+                        .build();
+            } else {
+                throw new IllegalArgumentException("Location level does not match expected level type: " + locationLevelName);
+            }
         });
     }
 
@@ -630,7 +610,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
 
-    private void addSeasonalValue(Record r,
+    private void parseLevels(Record r,
                                   Map<LevelLookup, LocationLevel.Builder> builderMap) {
         usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
 
@@ -655,70 +635,82 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         JDomLocationLevelRef locationLevelRef = new JDomLocationLevelRef(officeId, locLevelId, attrId, attrStr, attrUnit);
         LevelLookup levelLookup = new LevelLookup(locationLevelRef, levelDate);
 
-        LocationLevel.Builder builder;
-        if (builderMap.containsKey(levelLookup)) {
-            builder = builderMap.get(levelLookup);
-        } else {
-            ZonedDateTime levelZdt = null;
-            if (levelDate != null) {
-                levelZdt = ZonedDateTime.ofInstant(levelDate.toInstant(), ZoneId.of("UTC"));
-            }
-            builder = new LocationLevel.Builder(locLevelId, levelZdt);
-            builder = withLocationLevelRef(builder, locationLevelRef);
+        ZonedDateTime levelZdt = null;
+        if (levelDate != null) {
+            levelZdt = ZonedDateTime.ofInstant(levelDate.toInstant(), ZoneId.of("UTC"));
+        }
 
+        Double seasonalLevel = r.get(view.SEASONAL_LEVEL);
+        Double constantLevel = r.get(view.CONSTANT_LEVEL);
+        String tsId = r.get(view.TSID);
+        String interp = r.get(view.INTERPOLATE);
+        String calOffset = r.get(view.CALENDAR_OFFSET);
+        String timeOffset = r.get(view.TIME_OFFSET);
+        String levelComment = r.get(view.LEVEL_COMMENT);
+        String attributeComment = r.get(view.ATTRIBUTE_COMMENT);
+        DayToSecond timeInterval = r.get(view.TIME_INTERVAL);
+        String calendarInterval = r.get(view.CALENDAR_INTERVAL);
+        Timestamp intervalOrigin = r.get(view.INTERVAL_ORIGIN);
+
+        if (constantLevel != null) {
+            ConstantLocationLevel.Builder constantBuilder = new ConstantLocationLevel.Builder(locLevelId, levelZdt);
+            constantBuilder.withConstantValue(constantLevel);
+            constantBuilder = withLocationLevelRef(constantBuilder, locationLevelRef);
+
+            constantBuilder.withAttributeParameterId(attrId);
+            constantBuilder.withAttributeUnitsId(attrUnit);
+            constantBuilder.withLevelUnitsId(levelUnit);
+
+            if (oattrVal != null) {
+                constantBuilder.withAttributeValue(BigDecimal.valueOf(oattrVal));
+            }
+            constantBuilder.withLevelComment(levelComment);
+            constantBuilder.withAttributeComment(attributeComment);
+            builderMap.put(levelLookup, constantBuilder);
+        } else if (seasonalLevel != null) {
+
+            JDomSeasonalIntervalImpl newSeasonalOffset = buildSeasonalOffset(calOffset, timeOffset);
+            SeasonalValueBean seasonalValue = buildSeasonalValueBean(seasonalLevel, newSeasonalOffset);
+            SeasonalLocationLevel.Builder seasonalBuilder = new SeasonalLocationLevel.Builder(locLevelId, levelZdt);
+            seasonalBuilder.withSeasonalValue(seasonalValue);
+            seasonalBuilder.withInterpolateString(interp);
+            seasonalBuilder.withIntervalMinutes(timeInterval.getMinutes());
+            seasonalBuilder.withAttributeParameterId(attrId);
+            seasonalBuilder.withAttributeUnitsId(attrUnit);
+            seasonalBuilder.withLevelUnitsId(levelUnit);
+            seasonalBuilder.withLevelComment(levelComment);
+            seasonalBuilder.withAttributeComment(attributeComment);
+            seasonalBuilder = withLocationLevelRef(seasonalBuilder, locationLevelRef);
+            JDomSeasonalIntervalImpl offset = new JDomSeasonalIntervalImpl();
+            offset.setYearMonthString(calendarInterval);
+            seasonalBuilder.withIntervalMonths(offset.getMonths());
+            seasonalBuilder.withIntervalOrigin(intervalOrigin, levelZdt);
+
+            builderMap.put(levelLookup, seasonalBuilder);
+        } else if (tsId != null) {
+            TimeSeriesLocationLevel.Builder timeSeriesBuilder = new TimeSeriesLocationLevel.Builder(locLevelId, levelZdt);
+            timeSeriesBuilder.withSeasonalTimeSeriesId(tsId);
+            timeSeriesBuilder.withAttributeParameterId(attrId);
+            timeSeriesBuilder.withAttributeUnitsId(attrUnit);
+            timeSeriesBuilder.withLevelUnitsId(levelUnit);
+            timeSeriesBuilder.withLevelComment(levelComment);
+            timeSeriesBuilder.withAttributeComment(attributeComment);
+            timeSeriesBuilder = withLocationLevelRef(timeSeriesBuilder, locationLevelRef);
+            builderMap.put(levelLookup, timeSeriesBuilder);
+        } else {
+            LocationLevel.Builder builder = new LocationLevel.Builder(locLevelId, levelZdt);
             builder.withAttributeParameterId(attrId);
             builder.withAttributeUnitsId(attrUnit);
             builder.withLevelUnitsId(levelUnit);
-
-            if (oattrVal != null) {
-                builder.withAttributeValue(BigDecimal.valueOf(oattrVal));
-            }
-            builder.withLevelComment(r.get(view.LEVEL_COMMENT));
-            builder.withAttributeComment(r.get(view.ATTRIBUTE_COMMENT));
-            builder.withConstantValue(r.get(view.CONSTANT_LEVEL));
-            builder.withSeasonalTimeSeriesId(r.get(view.TSID));
-
+            builder.withLevelComment(levelComment);
+            builder.withAttributeComment(attributeComment);
+            builder = withLocationLevelRef(builder, locationLevelRef);
             builderMap.put(levelLookup, builder);
-        }
-
-
-        String interp = r.get(view.INTERPOLATE);
-        builder.withInterpolateString(interp);
-
-        Double seasonalLevel = r.get(view.SEASONAL_LEVEL);
-
-        if (seasonalLevel != null) {
-//            JDomSeasonalValuesImpl  seasonalValuesImpl = new JDomSeasonalValuesImpl();
-//
-//            Timestamp intervalOriginDateTimeStamp = r.get(view.INTERVAL_ORIGIN);
-//            // seasonal stuff
-//            Date intervalOriginDate = null;
-//            if (intervalOriginDateTimeStamp != null) {
-//                intervalOriginDate = new Date(intervalOriginDateTimeStamp.getTime());
-//            }
-//
-//            seasonalValuesImpl.setOrigin(intervalOriginDate);
-//
-//            String calInterval = r.get(view.CALENDAR_INTERVAL);
-//            DayToSecond dayToSecond = r.get(view.TIME_INTERVAL);
-//            JDomSeasonalIntervalImpl offset = new JDomSeasonalIntervalImpl();
-//            offset.setYearMonthString(calInterval);
-//            if (dayToSecond != null) {
-//                offset.setDaysHoursMinutesString(dayToSecond.toString());
-//            }
-//            seasonalValuesImpl.setOffset(offset);
-            // TODO: LocationLevel is missing seasonal origin and offset.
-
-            String calOffset = r.get(view.CALENDAR_OFFSET);
-            String timeOffset = r.get(view.TIME_OFFSET);
-            JDomSeasonalIntervalImpl newSeasonalOffset = buildSeasonalOffset(calOffset, timeOffset);
-            SeasonalValueBean seasonalValue = buildSeasonalValueBean(seasonalLevel, newSeasonalOffset);
-            builder.withSeasonalValue(seasonalValue);
         }
     }
 
-    private void addVirtualSeasonalValue(Record r,
-            Map<LevelLookup, VirtualLocationLevel.Builder> builderMap, String unit) {
+    private void parseVirtualLevels(Record r,
+            Map<LevelLookup, LocationLevel.Builder> builderMap, String unit) {
         usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL view = AV_VIRTUAL_LOCATION_LEVEL;
 
         Timestamp levelDateTimestamp = r.get(view.EFFECTIVE_DATE_UTC);
@@ -774,29 +766,29 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
     }
 
-    private LocationLevel.Builder withLocationLevelRef(LocationLevel.Builder builder, JDomLocationLevelRef locationLevelRef) {
+    private <T extends LocationLevel.Builder> T withLocationLevelRef(T builder, JDomLocationLevelRef locationLevelRef) {
         ISpecifiedLevel specifiedLevel = locationLevelRef.getSpecifiedLevel();
         if (specifiedLevel != null) {
-            builder = builder.withSpecifiedLevelId(specifiedLevel.getId());
+            builder = (T) builder.withSpecifiedLevelId(specifiedLevel.getId());
         }
 
         Parameter parameter = locationLevelRef.getParameter();
         if (parameter != null) {
-            builder = builder.withParameterId(parameter.toString());
+            builder = (T) builder.withParameterId(parameter.toString());
         }
 
         ParameterType parameterType = locationLevelRef.getParameterType();
         if (parameterType != null) {
-            builder = builder.withParameterTypeId(parameterType.toString());
+            builder = (T) builder.withParameterTypeId(parameterType.toString());
         }
 
         Duration duration = locationLevelRef.getDuration();
         if (duration != null) {
-            builder = builder.withDurationId(duration.toString());
+            builder = (T) builder.withDurationId(duration.toString());
         }
 
 
-        return builder
+        return (T) builder
                 .withOfficeId(locationLevelRef.getOfficeId())
                 ;
     }

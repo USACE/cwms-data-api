@@ -43,10 +43,13 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.LocationLevelsDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
-import cwms.cda.data.dto.LocationLevel;
-import cwms.cda.data.dto.LocationLevels;
-import cwms.cda.data.dto.SeasonalValueBean;
-import cwms.cda.data.dto.VirtualLocationLevel;
+import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevels;
+import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
+import cwms.cda.data.dto.locationlevel.SeasonalValueBean;
+import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
+import cwms.cda.data.dto.locationlevel.VirtualLocationLevel;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
@@ -102,9 +105,6 @@ public class LevelsController implements CrudHandler {
             requestBody = @OpenApiRequestBody(
                     content = {
                         @OpenApiContent(from = LocationLevel.class, type = Formats.JSON),
-                        @OpenApiContent(from = LocationLevel.class, type = Formats.XML),
-                        @OpenApiContent(from = VirtualLocationLevel.class, type = Formats.JSON),
-                        @OpenApiContent(from = VirtualLocationLevel.class, type = Formats.XML)
                     },
                     required = true),
             method = HttpMethod.POST,
@@ -120,11 +120,7 @@ public class LevelsController implements CrudHandler {
 
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
-            if (level instanceof VirtualLocationLevel) {
-                levelsDao.storeVirtualLocationLevel((VirtualLocationLevel) level);
-            } else {
-                levelsDao.storeLocationLevel(level);
-            }
+            levelsDao.storeLocationLevel(level);
             ctx.status(HttpServletResponse.SC_OK).json("Created Location Level");
         } catch(IOException e) {
             throw new IllegalArgumentException("Unable to parse the request body", e);
@@ -163,9 +159,6 @@ public class LevelsController implements CrudHandler {
                         + "the value of the effective date field (unless otherwise "
                         + "specified).If this field is not specified, the default time zone of UTC "
                         + "shall be used."),
-                @OpenApiParam(name = VIRTUAL, type = Boolean.class,
-                        description = "Whether to delete only virtual location levels. "
-                                + "Requires effective date and office when true. Default: False.")
             },
             method = HttpMethod.DELETE,
             path = "/levels",
@@ -186,9 +179,7 @@ public class LevelsController implements CrudHandler {
             ZonedDateTime unmarshalledDateTime = dateString != null
                     ? DateUtils.parseUserDate(dateString, timezone) : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
-            boolean virtual = ctx.queryParamAsClass(VIRTUAL, Boolean.class)
-                    .getOrDefault(false);
-            levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete, virtual);
+            levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete);
             ctx.status(HttpServletResponse.SC_OK).json(levelId + " Deleted");
         }
     }
@@ -244,15 +235,12 @@ public class LevelsController implements CrudHandler {
                         + "the 'next-page' value in the response."),
                 @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "How "
                         + "many entries per page returned. Default " + DEFAULT_PAGE_SIZE + "."),
-                @OpenApiParam(name = VIRTUAL, type = Boolean.class, description = "Should virtual levels be returned." +
-                        " Default: False.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
                     @OpenApiContent(type = Formats.JSON),
                     @OpenApiContent(type = ""),
                     @OpenApiContent(from = LocationLevels.class, type = Formats.JSONV2),
-                    @OpenApiContent(from = VirtualLocationLevel.class, type = Formats.JSONV2),
                 })
             },
             tags = TAG)
@@ -293,17 +281,9 @@ public class LevelsController implements CrudHandler {
                 ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
                 ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
 
-                boolean virtual = ctx.queryParamAsClass(VIRTUAL, Boolean.class)
-                        .getOrDefault(false);
-
                 LocationLevels levels;
-                if (virtual) {
-                    levels = levelsDao.getVirtualLocationLevels(cursor, pageSize, levelIdMask,
-                            office, unit, datum, beginZdt, endZdt);
-                } else {
-                    levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
-                            office, unit, datum, beginZdt, endZdt);
-                }
+                levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
+                        office, unit, datum, beginZdt, endZdt);
                 String result = Formats.format(contentType, levels);
 
                 ctx.result(result);
@@ -357,8 +337,6 @@ public class LevelsController implements CrudHandler {
                         + "\n* `Other`  "
                         + "Any unit returned in the response to the units URI request that is "
                         + "appropriate for the requested parameters. "),
-                @OpenApiParam(name = VIRTUAL, type = Boolean.class, description = "Should virtual levels be returned." +
-                        " Default: False.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,content = {
@@ -378,24 +356,15 @@ public class LevelsController implements CrudHandler {
         String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
                 .getOrDefault("UTC");
 
-        boolean virtual = ctx.queryParamAsClass(VIRTUAL, Boolean.class)
-                .getOrDefault(false);
-
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             ZonedDateTime unmarshalledDateTime = DateUtils.parseUserDate(dateString, timezone);
 
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
-            if (virtual) {
-                VirtualLocationLevel virtualLocationLevel = levelsDao.retrieveVirtualLocationLevel(levelId,
-                        units, unmarshalledDateTime, office);
-                ctx.json(virtualLocationLevel);
-            } else {
-                //retrieveLocationLevel will throw an error if level does not exist
-                LocationLevel locationLevel = levelsDao.retrieveLocationLevel(levelId,
-                        units, unmarshalledDateTime, office);
-                ctx.json(locationLevel);
-            }
+            //retrieveLocationLevel will throw an error if level does not exist
+            LocationLevel locationLevel = levelsDao.retrieveLocationLevel(levelId,
+                    units, unmarshalledDateTime, office);
+            ctx.json(locationLevel);
             ctx.status(HttpServletResponse.SC_OK);
         }
     }
@@ -412,7 +381,6 @@ public class LevelsController implements CrudHandler {
             requestBody = @OpenApiRequestBody(
                     content = {
                         @OpenApiContent(from = LocationLevel.class, type = Formats.JSON),
-                        @OpenApiContent(from = LocationLevel.class, type = Formats.XML)
                     },
                     required = true),
             description = "Update CWMS Location Level",
@@ -470,32 +438,21 @@ public class LevelsController implements CrudHandler {
 
     private LocationLevel getUpdatedLocationLevel(LocationLevel existingLevel,
                                                   LocationLevel updatedLevel) {
-        String seasonalTimeSeriesId = (updatedLevel.getSeasonalTimeSeriesId() == null
-                ? existingLevel.getSeasonalTimeSeriesId() : updatedLevel.getSeasonalTimeSeriesId());
-        List<SeasonalValueBean> seasonalValues = (updatedLevel.getSeasonalValues() == null
-                ? existingLevel.getSeasonalValues() : updatedLevel.getSeasonalValues());
+
         String specifiedLevelId = (updatedLevel.getSpecifiedLevelId() == null
                 ? existingLevel.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
         String parameterTypeId = (updatedLevel.getParameterTypeId() == null
                 ? existingLevel.getParameterTypeId() : updatedLevel.getParameterTypeId());
         String parameterId = (updatedLevel.getParameterId() == null
                 ? existingLevel.getParameterId() : updatedLevel.getParameterId());
-        Double siParameterUnitsConstantValue = (updatedLevel.getConstantValue() == null
-                ? existingLevel.getConstantValue() : updatedLevel.getConstantValue());
+
         String levelUnitsId = (updatedLevel.getLevelUnitsId() == null
                 ? existingLevel.getLevelUnitsId() : updatedLevel.getLevelUnitsId());
         ZonedDateTime levelDate = (updatedLevel.getLevelDate() == null
                 ? existingLevel.getLevelDate() : updatedLevel.getLevelDate());
         String levelComment = (updatedLevel.getLevelComment() == null
                 ? existingLevel.getLevelComment() : updatedLevel.getLevelComment());
-        ZonedDateTime intervalOrigin = (updatedLevel.getIntervalOrigin() == null
-                ? existingLevel.getIntervalOrigin() : updatedLevel.getIntervalOrigin());
-        Integer intervalMinutes = (updatedLevel.getIntervalMinutes() == null
-                ? existingLevel.getIntervalMinutes() : updatedLevel.getIntervalMinutes());
-        Integer intervalMonths = (updatedLevel.getIntervalMonths() == null
-                ? existingLevel.getIntervalMonths() : updatedLevel.getIntervalMonths());
-        String interpolateString = (updatedLevel.getInterpolateString() == null
-                ? existingLevel.getInterpolateString() : updatedLevel.getInterpolateString());
+
         String durationId = (updatedLevel.getDurationId() == null
                 ? existingLevel.getDurationId() : updatedLevel.getDurationId());
         BigDecimal attributeValue = (updatedLevel.getAttributeValue() == null
@@ -515,44 +472,141 @@ public class LevelsController implements CrudHandler {
                 ? existingLevel.getLocationLevelId() : updatedLevel.getLocationLevelId());
         String officeId = (updatedLevel.getOfficeId() == null
                 ? existingLevel.getOfficeId() : updatedLevel.getOfficeId());
-        if (existingLevel.getIntervalMonths() != null && existingLevel.getIntervalMonths() > 0) {
-            intervalMinutes = null;
-        } else if (existingLevel.getIntervalMinutes() != null
-                && existingLevel.getIntervalMinutes() > 0) {
-            intervalMonths = null;
-        }
+
         if (existingLevel.getAttributeValue() == null) {
             attributeUnitsId = null;
         }
-        if (!existingLevel.getSeasonalValues().isEmpty()) {
-            siParameterUnitsConstantValue = null;
-            seasonalTimeSeriesId = null;
-        } else if (existingLevel.getSeasonalTimeSeriesId() != null
-                && !existingLevel.getSeasonalTimeSeriesId().isEmpty()) {
-            siParameterUnitsConstantValue = null;
-            seasonalValues = null;
+
+        if (existingLevel instanceof VirtualLocationLevel) {
+
+            VirtualLocationLevel virtualLevel = (VirtualLocationLevel) existingLevel;
+            VirtualLocationLevel updatedVirtualLevel = (VirtualLocationLevel) updatedLevel;
+
+            String constituentConnections = (updatedVirtualLevel.getConstituentConnections() == null
+                    ? virtualLevel.getConstituentConnections() : updatedVirtualLevel.getConstituentConnections());
+            List<VirtualLocationLevel.Constituent> constituents = updatedVirtualLevel.getConstituents() == null
+                    ? virtualLevel.getConstituents() : updatedVirtualLevel.getConstituents();
+
+            return new VirtualLocationLevel.Builder(locationId, levelDate)
+                    .withConstituents(constituents)
+                    .withConstituentConnections(constituentConnections)
+                    .withSpecifiedLevelId(specifiedLevelId)
+                    .withParameterTypeId(parameterTypeId)
+                    .withParameterId(parameterId)
+                    .withLevelUnitsId(levelUnitsId)
+                    .withLevelComment(levelComment)
+                    .withDurationId(durationId)
+                    .withAttributeValue(attributeValue)
+                    .withAttributeUnitsId(attributeUnitsId)
+                    .withAttributeParameterTypeId(attributeParameterTypeId)
+                    .withAttributeParameterId(attributeParameterId)
+                    .withAttributeDurationId(attributeDurationId)
+                    .withAttributeComment(attributeComment)
+                    .withOfficeId(officeId).build();
+        } else if (existingLevel instanceof ConstantLocationLevel) {
+            ConstantLocationLevel constantLevel = (ConstantLocationLevel) existingLevel;
+            ConstantLocationLevel updatedConstantLevel = (ConstantLocationLevel) updatedLevel;
+
+            Double siParameterUnitsConstantValue = (updatedConstantLevel.getConstantValue() == null
+                    ? constantLevel.getConstantValue() : updatedConstantLevel.getConstantValue());
+
+            return new ConstantLocationLevel.Builder(locationId, levelDate)
+                    .withSpecifiedLevelId(specifiedLevelId)
+                    .withParameterTypeId(parameterTypeId)
+                    .withParameterId(parameterId)
+                    .withConstantValue(siParameterUnitsConstantValue)
+                    .withLevelUnitsId(levelUnitsId)
+                    .withLevelComment(levelComment)
+                    .withDurationId(durationId)
+                    .withAttributeValue(attributeValue)
+                    .withAttributeUnitsId(attributeUnitsId)
+                    .withAttributeParameterTypeId(attributeParameterTypeId)
+                    .withAttributeParameterId(attributeParameterId)
+                    .withAttributeDurationId(attributeDurationId)
+                    .withAttributeComment(attributeComment)
+                    .withOfficeId(officeId).build();
+
+        } else if (existingLevel instanceof TimeSeriesLocationLevel) {
+            TimeSeriesLocationLevel timeSeriesLevel = (TimeSeriesLocationLevel) existingLevel;
+            TimeSeriesLocationLevel updatedTimeSeriesLevel = (TimeSeriesLocationLevel) updatedLevel;
+
+            String seasonalTimeSeriesId = (updatedTimeSeriesLevel.getSeasonalTimeSeriesId() == null
+                    ? timeSeriesLevel.getSeasonalTimeSeriesId() : updatedTimeSeriesLevel.getSeasonalTimeSeriesId());
+
+            return new TimeSeriesLocationLevel.Builder(locationId, levelDate)
+                    .withSeasonalTimeSeriesId(seasonalTimeSeriesId)
+                    .withSpecifiedLevelId(specifiedLevelId)
+                    .withParameterTypeId(parameterTypeId)
+                    .withParameterId(parameterId)
+                    .withLevelUnitsId(levelUnitsId)
+                    .withLevelComment(levelComment)
+                    .withDurationId(durationId)
+                    .withAttributeValue(attributeValue)
+                    .withAttributeUnitsId(attributeUnitsId)
+                    .withAttributeParameterTypeId(attributeParameterTypeId)
+                    .withAttributeParameterId(attributeParameterId)
+                    .withAttributeDurationId(attributeDurationId)
+                    .withAttributeComment(attributeComment)
+                    .withOfficeId(officeId).build();
+
+        } else if (existingLevel instanceof SeasonalLocationLevel) {
+            SeasonalLocationLevel seasonalLevel = (SeasonalLocationLevel) existingLevel;
+            SeasonalLocationLevel updatedSeasonalLevel = (SeasonalLocationLevel) updatedLevel;
+
+            ZonedDateTime intervalOrigin = (updatedSeasonalLevel.getIntervalOrigin() == null
+                    ? seasonalLevel.getIntervalOrigin() : updatedSeasonalLevel.getIntervalOrigin());
+            Integer intervalMinutes = (updatedSeasonalLevel.getIntervalMinutes() == null
+                    ? seasonalLevel.getIntervalMinutes() : updatedSeasonalLevel.getIntervalMinutes());
+            Integer intervalMonths = (updatedSeasonalLevel.getIntervalMonths() == null
+                    ? seasonalLevel.getIntervalMonths() : updatedSeasonalLevel.getIntervalMonths());
+            String interpolateString = (updatedSeasonalLevel.getInterpolateString() == null
+                    ? seasonalLevel.getInterpolateString() : updatedSeasonalLevel.getInterpolateString());
+
+            List<SeasonalValueBean> seasonalValues = (updatedSeasonalLevel.getSeasonalValues() == null
+                    ? seasonalLevel.getSeasonalValues() : updatedSeasonalLevel.getSeasonalValues());
+
+            if (seasonalLevel.getIntervalMonths() != null && seasonalLevel.getIntervalMonths() > 0) {
+                intervalMinutes = null;
+            } else if (seasonalLevel.getIntervalMinutes() != null
+                    && seasonalLevel.getIntervalMinutes() > 0) {
+                intervalMonths = null;
+            }
+
+            return new SeasonalLocationLevel.Builder(locationId, levelDate)
+                    .withSeasonalValues(seasonalValues)
+                    .withSpecifiedLevelId(specifiedLevelId)
+                    .withParameterTypeId(parameterTypeId)
+                    .withParameterId(parameterId)
+                    .withLevelUnitsId(levelUnitsId)
+                    .withLevelComment(levelComment)
+                    .withIntervalOrigin(intervalOrigin)
+                    .withIntervalMinutes(intervalMinutes)
+                    .withIntervalMonths(intervalMonths)
+                    .withInterpolateString(interpolateString)
+                    .withDurationId(durationId)
+                    .withAttributeValue(attributeValue)
+                    .withAttributeUnitsId(attributeUnitsId)
+                    .withAttributeParameterTypeId(attributeParameterTypeId)
+                    .withAttributeParameterId(attributeParameterId)
+                    .withAttributeDurationId(attributeDurationId)
+                    .withAttributeComment(attributeComment)
+                    .withOfficeId(officeId).build();
+        } else {
+            return new LocationLevel.Builder(locationId, levelDate)
+                    .withSpecifiedLevelId(specifiedLevelId)
+                    .withParameterTypeId(parameterTypeId)
+                    .withParameterId(parameterId)
+                    .withLevelUnitsId(levelUnitsId)
+                    .withLevelComment(levelComment)
+                    .withDurationId(durationId)
+                    .withAttributeValue(attributeValue)
+                    .withAttributeUnitsId(attributeUnitsId)
+                    .withAttributeParameterTypeId(attributeParameterTypeId)
+                    .withAttributeParameterId(attributeParameterId)
+                    .withAttributeDurationId(attributeDurationId)
+                    .withAttributeComment(attributeComment)
+                    .withOfficeId(officeId).build();
         }
-        return new LocationLevel.Builder(locationId, levelDate)
-                .withSeasonalValues(seasonalValues)
-                .withSeasonalTimeSeriesId(seasonalTimeSeriesId)
-                .withSpecifiedLevelId(specifiedLevelId)
-                .withParameterTypeId(parameterTypeId)
-                .withParameterId(parameterId)
-                .withConstantValue(siParameterUnitsConstantValue)
-                .withLevelUnitsId(levelUnitsId)
-                .withLevelComment(levelComment)
-                .withIntervalOrigin(intervalOrigin)
-                .withIntervalMinutes(intervalMinutes)
-                .withIntervalMonths(intervalMonths)
-                .withInterpolateString(interpolateString)
-                .withDurationId(durationId)
-                .withAttributeValue(attributeValue)
-                .withAttributeUnitsId(attributeUnitsId)
-                .withAttributeParameterTypeId(attributeParameterTypeId)
-                .withAttributeParameterId(attributeParameterId)
-                .withAttributeDurationId(attributeDurationId)
-                .withAttributeComment(attributeComment)
-                .withOfficeId(officeId).build();
     }
 
     public static LocationLevelsDao getLevelsDao(DSLContext dsl) {

@@ -24,17 +24,17 @@
  * SOFTWARE.
  */
 
-package cwms.cda.data.dto;
+package cwms.cda.data.dto.locationlevel;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -47,9 +47,6 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
-
-import hec.data.level.ISeasonalValues;
-import rma.util.RMAConst;
 
 @JsonRootName("VirtualLocationLevel")
 @JsonDeserialize(builder = VirtualLocationLevel.Builder.class)
@@ -89,6 +86,7 @@ public final class VirtualLocationLevel extends LocationLevel {
 
 	@JsonPOJOBuilder
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static final class Builder extends LocationLevel.Builder
 	{
 		private ZonedDateTime expirationDate;
@@ -129,175 +127,91 @@ public final class VirtualLocationLevel extends LocationLevel {
 		}
 
 		@Override
-		public Builder withSeasonalTimeSeriesId(String seasonalTimeSeriesId) {
-			this.seasonalTimeSeriesId = seasonalTimeSeriesId;
-			return this;
-		}
-
-		@Override
-		public Builder withSeasonalValues(List<SeasonalValueBean> seasonalValues) {
-			this.seasonalValues = seasonalValues;
-			return this;
-		}
-
-		@Override
-		@JsonIgnore
-		public Builder withISeasonalValues(ISeasonalValues values) {
-			if (values != null) {
-				// TODO: handle values.offset and values.origin
-				withSeasonalValues(buildSeasonalValues(values));
-			} else {
-				this.seasonalValues = null;
-			}
-
-			return this;
-		}
-
-		@Override
-		public Builder withSeasonalValue(SeasonalValueBean seasonalValue) {
-			if (seasonalValues == null) {
-				seasonalValues = new ArrayList<>();
-			}
-			seasonalValues.add(seasonalValue);
-			return this;
-		}
-
-		@Override
-		public Builder withSpecifiedLevelId(String specifiedLevelId) {
+		public VirtualLocationLevel.Builder withSpecifiedLevelId(String specifiedLevelId) {
 			this.specifiedLevelId = specifiedLevelId;
 			return this;
 		}
 
 		@Override
-		public Builder withParameterTypeId(String parameterTypeId) {
+		public VirtualLocationLevel.Builder withParameterTypeId(String parameterTypeId) {
 			this.parameterTypeId = parameterTypeId;
 			return this;
 		}
 
 		@Override
-		public Builder withParameterId(String parameterId) {
+		public VirtualLocationLevel.Builder withParameterId(String parameterId) {
 			this.parameterId = parameterId;
 			return this;
 		}
 
 		@Override
-		public Builder withConstantValue(Double value) {
-			if (value != null && RMAConst.isUndefinedValue(value)) {
-				value = null;
-			}
-			this.constantValue = value;
-			return this;
-		}
-
-		@Override
-		public Builder withLevelUnitsId(String levelUnitsId) {
+		public VirtualLocationLevel.Builder withLevelUnitsId(String levelUnitsId) {
 			this.levelUnitsId = levelUnitsId;
 			return this;
 		}
 
 		@Override
-		public Builder withLevelDate(ZonedDateTime levelDate) {
+		public VirtualLocationLevel.Builder withLevelDate(ZonedDateTime levelDate) {
 			this.levelDate = levelDate;
 			return this;
 		}
 
 		@Override
-		public Builder withLevelComment(String levelComment) {
+		public VirtualLocationLevel.Builder withLevelComment(String levelComment) {
 			this.levelComment = levelComment;
 			return this;
 		}
 
 		@Override
-		public Builder withIntervalOrigin(ZonedDateTime intervalOrigin) {
-			this.intervalOrigin = intervalOrigin;
-			return this;
-		}
-
-		@Override
-		public Builder withIntervalOrigin(Date intervalOriginDate, ZonedDateTime effectiveDate) {
-			if (intervalOriginDate != null && effectiveDate != null) {
-				return withIntervalOrigin(ZonedDateTime.ofInstant(intervalOriginDate.toInstant(),
-						effectiveDate.getZone()));
-			} else {
-				this.intervalOrigin = null;
-				return this;
-			}
-		}
-
-		@Override
-		public Builder withIntervalMonths(Integer months) {
-			if (months != null && RMAConst.isUndefinedValue(months)) {
-				months = null;
-			}
-			this.intervalMonths = months;
-			return this;
-		}
-
-		@Override
-		public Builder withIntervalMinutes(Integer minutes) {
-			if (minutes != null && RMAConst.isUndefinedValue(minutes)) {
-				minutes = null;
-			}
-			this.intervalMinutes = minutes;
-			return this;
-		}
-
-		@Override
-		public Builder withInterpolateString(String interpolateString) {
-			this.interpolateString = interpolateString;
-			return this;
-		}
-
-		@Override
-		public Builder withDurationId(String durationId) {
+		public VirtualLocationLevel.Builder withDurationId(String durationId) {
 			this.durationId = durationId;
 			return this;
 		}
 
 		@Override
-		public Builder withAttributeValue(BigDecimal attributeValue) {
+		public VirtualLocationLevel.Builder withAttributeValue(BigDecimal attributeValue) {
 			this.attributeValue = attributeValue;
 			return this;
 		}
 
 		@Override
-		public Builder withAttributeUnitsId(String attributeUnitsId) {
+		public VirtualLocationLevel.Builder withAttributeUnitsId(String attributeUnitsId) {
 			this.attributeUnitsId = attributeUnitsId;
 			return this;
 		}
 
 		@Override
-		public Builder withAttributeParameterTypeId(String attributeParameterTypeId) {
+		public VirtualLocationLevel.Builder withAttributeParameterTypeId(String attributeParameterTypeId) {
 			this.attributeParameterTypeId = attributeParameterTypeId;
 			return this;
 		}
 
 		@Override
-		public Builder withAttributeParameterId(String attributeParameterId) {
+		public VirtualLocationLevel.Builder withAttributeParameterId(String attributeParameterId) {
 			this.attributeParameterId = attributeParameterId;
 			return this;
 		}
 
 		@Override
-		public Builder withAttributeDurationId(String attributeDurationId) {
+		public VirtualLocationLevel.Builder withAttributeDurationId(String attributeDurationId) {
 			this.attributeDurationId = attributeDurationId;
 			return this;
 		}
 
 		@Override
-		public Builder withAttributeComment(String attributeComment) {
+		public VirtualLocationLevel.Builder withAttributeComment(String attributeComment) {
 			this.attributeComment = attributeComment;
 			return this;
 		}
 
 		@Override
-		public Builder withLocationLevelId(String locationId) {
+		public VirtualLocationLevel.Builder withLocationLevelId(String locationId) {
 			this.locationId = locationId;
 			return this;
 		}
 
 		@Override
-		public Builder withOfficeId(String officeId) {
+		public VirtualLocationLevel.Builder withOfficeId(String officeId) {
 			this.officeId = officeId;
 			return this;
 		}

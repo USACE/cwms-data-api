@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.ZonedDateTime;
 import org.junit.jupiter.api.Test;
 
-import cwms.cda.data.dto.LocationLevel;
-import cwms.cda.data.dto.LocationLevels;
+import cwms.cda.data.dto.locationlevel.LocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevels;
 import cwms.cda.formatters.json.JsonV2;
 
 class JsonV2Test extends TimeSeriesTestBase {
