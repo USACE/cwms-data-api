@@ -31,11 +31,11 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -86,6 +86,8 @@ public final class WaterUserCreateController extends WaterSupplyControllerBase i
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.storeWaterUser(user, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED).json(user.getEntityName() + " user created successfully.");
+        } catch (ValueTooLongException ex) {
+            ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(ex.getMessage());
         }
     }
 }

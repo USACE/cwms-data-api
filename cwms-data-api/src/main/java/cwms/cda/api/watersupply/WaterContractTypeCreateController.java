@@ -32,6 +32,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.ContentType;
@@ -85,8 +86,12 @@ public final class WaterContractTypeCreateController extends WaterSupplyControll
             ctx.contentType(contentType.toString());
             LookupType contractType = Formats.parseContent(contentType, ctx.body(), LookupType.class);
             WaterContractDao contractDao = getContractDao(dsl);
-            contractDao.storeWaterContractType(contractType, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Contract type successfully stored to CWMS.");
+            try {
+                contractDao.storeWaterContractType(contractType, failIfExists);
+                ctx.status(HttpServletResponse.SC_CREATED).json("Contract type successfully stored to CWMS.");
+            } catch (ValueTooLongException ex) {
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(ex.getMessage());
+            }
         }
     }
 

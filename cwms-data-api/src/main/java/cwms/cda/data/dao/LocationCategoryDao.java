@@ -24,6 +24,7 @@
 
 package cwms.cda.data.dao;
 
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dto.LocationCategory;
 import java.util.List;
 import java.util.Optional;
@@ -86,7 +87,15 @@ public final class LocationCategoryDao extends JooqDao<LocationCategory> {
         String office = category.getOfficeId();
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
-            CWMS_LOC_PACKAGE.call_CREATE_LOC_CATEGORY(dslContext.configuration(), category.getId(), category.getDescription(), office);
+            try {
+                CWMS_LOC_PACKAGE.call_CREATE_LOC_CATEGORY(dslContext.configuration(), category.getId(), category.getDescription(), office);
+            } catch (Exception e) {
+                if (e.getMessage().contains("character string buffer too small")) {
+                    throw new ValueTooLongException("Location category ID or description is too long", e);
+                } else {
+                    throw e;
+                }
+            }
         });
     }
 

@@ -1,6 +1,7 @@
 package cwms.cda.data.dao;
 
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dto.Blob;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -139,15 +140,27 @@ public class BlobDao extends JooqDao<Blob> {
     public void create(Blob blob, boolean failIfExists, boolean ignoreNulls) {
         String pFailIfExists = formatBool(failIfExists);
         String pIgnoreNulls = formatBool(ignoreNulls);
-        dsl.connection(c -> CWMS_TEXT_PACKAGE.call_STORE_BINARY(
-                getDslContext(c, blob.getOfficeId()).configuration(),
-                blob.getValue(),
-                blob.getId(),
-                blob.getMediaTypeId(),
-                blob.getDescription(),
-                pFailIfExists,
-                pIgnoreNulls,
-                blob.getOfficeId()));
+
+        dsl.connection(c -> {
+            try
+            {
+            CWMS_TEXT_PACKAGE.call_STORE_BINARY(
+                    getDslContext(c, blob.getOfficeId()).configuration(),
+                    blob.getValue(),
+                    blob.getId(),
+                    blob.getMediaTypeId(),
+                    blob.getDescription(),
+                    pFailIfExists,
+                    pIgnoreNulls,
+                    blob.getOfficeId());
+            } catch (Exception e) {
+                if (e.getCause().getMessage().contains("character string buffer too small")) {
+                    throw new ValueTooLongException("Blob ID size is too long for column", e);
+                } else {
+                    throw e;
+                }
+            }
+        });
     }
 
     public void update(Blob blob, boolean ignoreNulls) {

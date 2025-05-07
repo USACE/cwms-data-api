@@ -1252,7 +1252,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         boolean found = false;
         for (AssignedLocation assignedLocation : assignedLocations) {
             if (assignedLocation.getLocationId().equals(locationId)) {
-                assertEquals(assignedLocation.getLocationId(), locationId);
+                assertEquals(locationId, assignedLocation.getLocationId());
                 assertNull(assignedLocation.getAliasId());
                 assertNull(assignedLocation.getRefLocationId());
                 found = true;
@@ -1381,7 +1381,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         boolean found = false;
         for (AssignedLocation assignedLocation : assignedLocations) {
             if (assignedLocation.getLocationId().equals(locationId)) {
-                assertEquals(assignedLocation.getLocationId(), locationId);
+                assertEquals(locationId, assignedLocation.getLocationId());
                 assertNull(assignedLocation.getAliasId());
                 assertNull(assignedLocation.getRefLocationId());
                 found = true;
@@ -1425,5 +1425,32 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("assigned-locations.size()", equalTo(expectedSize));
+    }
+
+    @Test
+    void test_ID_too_long()
+    {
+        String officeId = user.getOperatingOffice();
+        String invalidId = "ThisIsAnInvalidIdThatIsWayTooLongForTheDatabaseSinceTheMaximumLengthIs65Characters";
+        LocationCategory cat = new LocationCategory(officeId, invalidId, "IntegrationTesting");
+        ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
+        String categoryXml = Formats.format(contentType, cat);
+        //Create Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(categoryXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/category")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body(is("Location category ID or description is too long"));
     }
 }

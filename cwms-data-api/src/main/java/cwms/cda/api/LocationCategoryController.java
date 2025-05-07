@@ -32,6 +32,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dao.LocationCategoryDao;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.formatters.ContentType;
@@ -199,8 +200,12 @@ public class LocationCategoryController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, LocationCategory.class);
             LocationCategory deserialize = Formats.parseContent(contentType, body, LocationCategory.class);
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
-            dao.create(deserialize);
-            ctx.status(HttpServletResponse.SC_CREATED);
+            try {
+                dao.create(deserialize);
+                ctx.status(HttpServletResponse.SC_CREATED);
+            } catch (ValueTooLongException ex) {
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(ex.getMessage());
+            }
         }
     }
 

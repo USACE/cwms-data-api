@@ -2,6 +2,7 @@ package cwms.cda.data.dao;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dto.Clob;
 import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -167,13 +168,23 @@ public class ClobDao extends JooqDao<Clob> {
     public void create(Clob clob, boolean failIfExists) {
 
         String pFailIfExists = getBoolean(failIfExists);
-        dsl.connection(c -> CWMS_TEXT_PACKAGE.call_STORE_TEXT(
-            getDslContext(c, clob.getOfficeId()).configuration(),
-            clob.getValue(),
-            clob.getId(),
-            clob.getDescription(),
-            pFailIfExists,
-            clob.getOfficeId()));
+        dsl.connection(c -> {
+            try {
+                CWMS_TEXT_PACKAGE.call_STORE_TEXT(
+                        getDslContext(c, clob.getOfficeId()).configuration(),
+                        clob.getValue(),
+                        clob.getId(),
+                        clob.getDescription(),
+                        pFailIfExists,
+                        clob.getOfficeId());
+            } catch (Exception e) {
+                if(e.getCause().getMessage().contains("character string buffer too small")) {
+                    throw new ValueTooLongException("Length of one or more clob values is too long.", e);
+                } else {
+                    throw e;
+                }
+            }
+        });
     }
 
     @NotNull

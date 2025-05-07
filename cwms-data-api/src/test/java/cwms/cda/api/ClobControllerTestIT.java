@@ -200,6 +200,39 @@ public class ClobControllerTestIT extends DataApiTestIT {
                 .contentType(is(test._expectedContentType));
     }
 
+    @Test
+    void test_create_with_long_name() throws Exception
+    {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        ObjectMapper om = JsonV2.buildObjectMapper();
+
+        String invalidClobId = "ThisIsAVeryLongClobIdThatExceedsTheMaximumAllowedLengthForClobIdsInTheSystemWhichIs"
+                + "TwoHundredFiftySixCharactersAndWillCauseAnErrorWhenAttemptingToCreateTheClobInTheDatabaseBecause"
+                + "ItIsTooLongAndWillNotBeAcceptedByTheSystemAsAValidClobId.ThisClobIdIsFarTooLongAndWillNotBeAccepted"
+                + "ByTheSystemAsAValidClobId";
+
+        Clob clob = new Clob(SPK, invalidClobId, EXISTING_CLOB_DESC, EXISTING_CLOB_VALUE);
+        String serializedClob = om.writeValueAsString(clob);
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(serializedClob)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam("office", clob.getOfficeId())
+            .queryParam("fail-if-exists",false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/clobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body(is("Length of one or more clob values is too long."));
+    }
+
+
     enum GetAllTest
     {
         DEFAULT(Formats.DEFAULT, Formats.JSONV2),

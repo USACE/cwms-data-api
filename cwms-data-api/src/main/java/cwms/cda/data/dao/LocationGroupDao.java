@@ -27,6 +27,7 @@ package cwms.cda.data.dao;
 import static java.util.stream.Collectors.toList;
 import static org.jooq.impl.DSL.noCondition;
 
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
@@ -606,10 +607,19 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
-            CWMS_LOC_PACKAGE.call_CREATE_LOC_GROUP2(dslContext.configuration(), categoryId,
-                    group.getId(), group.getDescription(), group.getOfficeId(), group.getSharedLocAliasId(),
-                    group.getSharedRefLocationId());
-            assignLocs(dslContext, group, office);
+            try
+            {
+                CWMS_LOC_PACKAGE.call_CREATE_LOC_GROUP2(dslContext.configuration(), categoryId,
+                        group.getId(), group.getDescription(), group.getOfficeId(), group.getSharedLocAliasId(),
+                        group.getSharedRefLocationId());
+                assignLocs(dslContext, group, office);
+            } catch (Exception e) {
+                if (e.getMessage().contains("character string buffer too small")) {
+                    throw new ValueTooLongException("Location group ID or description is too long", e);
+                } else {
+                    throw e;
+                }
+            }
         });
     }
 

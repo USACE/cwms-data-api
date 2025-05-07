@@ -429,4 +429,41 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
         ;
     }
+
+    @Test
+    void test_create_values_too_long() throws Exception
+    {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+
+        String invalidEntityName = "ThisIsAnEntityNameThatIsWayTooLongAndShouldNotBeAllowed";
+        String invalidWaterRight = "ThisIsAWaterRightThatIsWayTooLongAndShouldNotBeAllowedBecauseItExceedsTheMaxLength" +
+                "Of255CharactersAndShouldCauseAnErrorWhenTryingToCreateTheWaterUserInTheDatabaseThisIsAWaterRight" +
+                "ThatIsWayTooLongAndShouldNotBeAllowedBecauseItExceedsTheMaxLengthOf255CharactersAndShouldCauseAnError" +
+                "WhenTryingToCreateTheWaterUserInTheDatabase";
+
+        WaterUser invalidUser = new WaterUser.Builder().withEntityName(invalidEntityName)
+                .withProjectId(WATER_USER.getProjectId())
+                .withWaterRight(invalidWaterRight)
+                .build();
+
+        String json = JsonV1.buildObjectMapper().writeValueAsString(invalidUser);
+
+        // create WaterUser, assert that it fails with long values
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .accept(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + OFFICE_ID + "/" + WATER_USER.getProjectId().getName() + "/water-user")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body(is("Water user name is too long: ThisIsAnEntityNameThatIsWayTooLongAndShouldNotBeAllowed"))
+        ;
+    }
 }

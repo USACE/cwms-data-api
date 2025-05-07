@@ -1,6 +1,5 @@
 package cwms.cda.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dto.Blob;
 import cwms.cda.formatters.Formats;
@@ -247,6 +246,41 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .contentType(is(test._expectedContentType));
+    }
+
+    @Test
+    void test_create_too_long_name() throws Exception
+    {
+        String blobId = "ThisIsAVeryLongBlobIdThatExceedsTheMaximumAllowedLengthForBlobIdsInTheSystemWhichIs"
+                + "TwoHundredFiftySixCharactersAndWillCauseAnErrorWhenAttemptingToCreateTheBlobInTheDatabaseBecause"
+                + "ItIsTooLongAndWillNotBeAcceptedByTheSystemAsAValidBlobId.ThisBlobIdIsFarTooLongAndWillNotBeAccepted"
+                + "ByTheSystemAsAValidBlobId";
+        String blobValue = "test value";
+        String origDesc = "test description";
+        byte[] origBytes = blobValue.getBytes();
+
+        String mediaType = "application/octet-stream";
+        Blob blob = new Blob(SPK, blobId, origDesc, mediaType, origBytes);
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        String serializedBlob = om.writeValueAsString(blob);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam("office",SPK)
+            .queryParam("fail-if-exists",false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/blobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body(is("Blob ID size is too long for column"));
     }
 
     enum GetAllTest

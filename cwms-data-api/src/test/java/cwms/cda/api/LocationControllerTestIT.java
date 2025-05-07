@@ -45,7 +45,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
-public class LocationControllerTestIT extends DataApiTestIT {
+class LocationControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_location_create_get_delete() throws Exception {
@@ -219,6 +219,38 @@ public class LocationControllerTestIT extends DataApiTestIT {
             _accept = accept;
             _expectedContentType = expectedContentType;
         }
+    }
+
+    @Test
+    void test_name_too_long() throws Exception
+    {
+        String officeId = "SPK";
+        String invalidLongName = "This is a very long name that exceeds the maximum length allowed for a location name "
+                + "in the system. It should trigger an error when we try to create a location with this name.";
+        String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
+        Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
+                json, Location.class))
+                .withOfficeId(officeId)
+                .withName(invalidLongName)
+                .build();
+        String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
+
+        KeyUser user = KeyUser.SPK_NORMAL;
+        // create location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(serializedLocation)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/locations")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
     }
 
     enum GetAllTest

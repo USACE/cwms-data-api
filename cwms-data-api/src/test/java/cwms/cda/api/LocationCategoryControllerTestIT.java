@@ -281,4 +281,32 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
 	}
+
+	@Test
+	void test_id_too_long()
+	{
+		String officeId = user.getOperatingOffice();
+		String invalidCatId = "ThisIsAnInvalidCategoryIdThatIsWayTooLongAndShouldNotBeAllowed";
+		LocationCategory cat = new LocationCategory(officeId, invalidCatId,
+				"IntegrationTesting");
+		ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
+		String xml = Formats.format(contentType, cat);
+		registerCategory(cat);
+		//Create Category
+		given()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.accept(Formats.JSON)
+			.contentType(Formats.JSON)
+			.body(xml)
+			.header("Authorization", user.toHeaderValue())
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("/location/category")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL,true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+			.body(is("Location category ID or description is too long"));
+	}
 }

@@ -198,6 +198,38 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
                 (i, s) -> i.getDisplayValue().equalsIgnoreCase(s.getDisplayValue()), "Contract Type not deleted");
     }
 
+    @Test
+    void test_create_WaterContractType_values_too_long() throws Exception
+    {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        String invalidDisplayValue = "TEST Contract Type with a very long display value that "
+                + "exceeds the maximum length of 25 chars";
+        String invalidTooltip = "This is a TEST LOOKUP type tooltip with a very long value that "
+                + "exceeds the maximum length of 255 chars and should cause a failure when storing to the database. "
+                + "This is a TEST LOOKUP type tooltip with a very long value that exceeds the maximum length of 255 "
+                + "chars and should cause a failure when storing to the database";
+        LookupType type = new LookupType.Builder().withActive(true).withOfficeId(OFFICE_ID)
+                .withDisplayValue(invalidDisplayValue).withTooltip(invalidTooltip).build();
+        String json = JsonV1.buildObjectMapper().writeValueAsString(type);
+
+        // create water contract type
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .queryParam("fail-if-exists", false)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + OFFICE_ID + "/contract-types")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+        ;
+    }
+
     private void cleanupType() throws SQLException {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {

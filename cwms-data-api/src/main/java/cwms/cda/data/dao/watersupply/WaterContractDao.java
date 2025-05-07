@@ -29,6 +29,7 @@ package cwms.cda.data.dao.watersupply;
 import static java.util.stream.Collectors.toList;
 
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.location.kind.LocationUtil;
@@ -122,8 +123,17 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
             String paramFailIfExists = formatBool(failIfExists);
             String paramIgnoreNulls = formatBool(ignoreNulls);
             WATER_USER_CONTRACT_TAB_T paramContracts = WaterSupplyUtils.toWaterUserContractTs(waterContract);
-            CWMS_WATER_SUPPLY_PACKAGE.call_STORE_CONTRACTS2(DSL.using(c).configuration(), paramContracts,
-                    paramFailIfExists, paramIgnoreNulls);
+            try
+            {
+                CWMS_WATER_SUPPLY_PACKAGE.call_STORE_CONTRACTS2(DSL.using(c).configuration(), paramContracts,
+                        paramFailIfExists, paramIgnoreNulls);
+            } catch (Exception e) {
+                if (e.getCause().getCause().getMessage().contains("too large for column")) {
+                    throw new ValueTooLongException("One or more water contract values is too long");
+                } else {
+                    throw e;
+                }
+            }
         });
     }
 
@@ -141,8 +151,16 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
             setOffice(c, waterUser.getProjectId().getOfficeId());
             WATER_USER_OBJ_T waterUsers = WaterSupplyUtils.toWaterUserObjT(waterUser);
             String paramFailIfExists = formatBool(failIfExists);
-            CWMS_WATER_SUPPLY_PACKAGE.call_STORE_WATER_USER(DSL.using(c).configuration(),
-                    waterUsers, paramFailIfExists);
+            try {
+                CWMS_WATER_SUPPLY_PACKAGE.call_STORE_WATER_USER(DSL.using(c).configuration(),
+                        waterUsers, paramFailIfExists);
+            } catch(Exception e) {
+                if (e.getCause().getCause().getMessage().contains("too large for column")) {
+                    throw new ValueTooLongException("Water user name is too long: " + waterUser.getEntityName());
+                } else {
+                    throw e;
+                }
+            }
         });
     }
 
@@ -193,8 +211,16 @@ public final class WaterContractDao extends JooqDao<WaterUserContract> {
             setOffice(c, lookupType.getOfficeId());
             LOOKUP_TYPE_TAB_T contractTypes = WaterSupplyUtils.toLookupTypeT(lookupType);
             String paramFailIfExists = formatBool(failIfExists);
-            CWMS_WATER_SUPPLY_PACKAGE.call_SET_CONTRACT_TYPES(DSL.using(c).configuration(),
-                    contractTypes, paramFailIfExists);
+            try {
+                CWMS_WATER_SUPPLY_PACKAGE.call_SET_CONTRACT_TYPES(DSL.using(c).configuration(),
+                        contractTypes, paramFailIfExists);
+            } catch (Exception e) {
+                if (e.getCause().getCause().getMessage().contains("too large for column")) {
+                    throw new ValueTooLongException("One or more water contract type values is too long");
+                } else {
+                    throw e;
+                }
+            }
         });
     }
 
