@@ -1,25 +1,19 @@
 # CWMS-Data-Api Docker Compose environment.
 
-Due to the nature of the needs of this system it is not possible to just up and run `docker-compose up`, some manual setup will be required.
-
-## Here are the following pre-steps
-1. Add `<real host ip> cwms-data.test auth.test traefik.test` to the /etc/hosts file  (**Warning: 127.0.0.1 doesn't work!**)
-2. Install java.  It is needed for the keytool command used in the next step.
-3. In the compose_files/pki directory run `./genall.sh`. This will create the initial PKI infrastructure
-4. Create an environment file with appropriate references for your environment and testing.
-
-
 ## Starting the system
 
-run `docker-compose --env-file <env file> up -d --force-recreate`
+run `docker-compose  up -d --force-recreate`
 
 on newer docker you may need to use 'docker compose' (without the dash -).
 
-`docker compose --env-file ../cda.env up --force-recreate`
+`docker compose up -d --force-recreate`
 
-The first time this is run it will take ~40 minutes while Oracle Initializes and the schema is installed. Subsequent runs will be faster.
-The force recreate is required as we are dumping our local rootca into the java keystore of the data-api image so the query to keycloak 
-can be verified correctly.
+By default the oracle-free faststart image is used. Be aware that this means that data will not 
+be persistent between restarts or if you call `docker-compose down`. 
+
+As this docker-compose file is intended for local development, changing to a persistent data is left
+as an excercise to the reader. It should not be difficult, you will need to verify all the oracle database
+(SID, Service Names) match in the various services.
 
 ## What is provided.
 
@@ -29,11 +23,12 @@ can be verified correctly.
 
 The following users and permissions are available:
 
-| User                  | Password    | Office | Permissions    |
-| --------------------- | ----------- | ------ | ------------   |
-| l2hectest.1234567890  | l2hectest   | SPK    | General User   |
-| l1hectest             | l1hectest   | SPL    | No permissions |
-| m5hectest             | m5hectest   | SWT    | General User   |
+| User                  | Password    | Office | Permissions            |
+| --------------------- | ----------- | ------ | ---------------------- |
+| l2hectest.1234567890  | l2hectest   | SPK    | General User           |
+| l1hectest             | l1hectest   | SPL    | No permissions         |
+| m5hectest             | m5hectest   | SWT    | General User           |
+| q0hecoidc             | q0hecoidc   | N/A    | Only exists in keycloak|
 
 
 ## Inventory of services
@@ -41,9 +36,13 @@ The following users and permissions are available:
 
 |service|host-port|container-port|description|test urls|
 |----|--|---|--|--|
-|[traefik](./compose_files/traefik/traefik.yml)|8444|8443|entry point - web traffic|https://cwms-data.test:8444/cwms-data/ https://auth.test:8444/auth/realms/cwms https://auth.test:8444/auth/realms/cwms/.well-known/openid-configuration|
+|[traefik]()|8081|8081|entry point - web traffic|http://localhost:8081
 |db||1521|oracle database|
 |[api](./cwms-data-api/src/docker/Dockerfile)||7000|tomcat CWMS Data API |
 |[auth](./compose_files/keycloak/Dockerfile)||8080|authentication-token service (keycloak)|
 |db_install|||connects to db and installs CWMS schema|
 |db_webuser_ permissions|||connects to db and sets permissions |
+
+
+Traefik uses port 8081 by default, if this conflicts with existing services on your machine it can
+be changed by setting the APP_PORT variable.

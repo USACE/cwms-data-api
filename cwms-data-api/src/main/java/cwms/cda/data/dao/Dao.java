@@ -32,7 +32,6 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTO;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.jooq.DSLContext;
@@ -106,9 +105,6 @@ public abstract class Dao<T> {
     protected void setOffice(Connection c, String office) throws SQLException {
         CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
     }
-
-
-    public abstract List<T> getAll(String office);
 
     public abstract Optional<T> getByUniqueName(String uniqueName, String office);
 
