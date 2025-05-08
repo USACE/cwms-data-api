@@ -6,23 +6,9 @@ Design
    :depth: 3
 
 
-What is the LRGS?
+What is CWMS Data API?
 #################
 
-Installation - Linux
-====================
-
-
-Install Java
-------------
-.. code-block:: bash
-    
-    sudo dnf install java-11-openjdk-headless
-
-
-
-Hello
-#####
 
 Install 
 ------------
