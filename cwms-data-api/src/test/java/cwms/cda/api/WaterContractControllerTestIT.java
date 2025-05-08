@@ -68,7 +68,7 @@ import static org.hamcrest.Matchers.*;
 
 @Tag("integration")
 class WaterContractControllerTestIT extends DataApiTestIT {
-    private static final String OFFICE_ID = "SWT";
+    private static final String OFFICE_ID = "SPK";
     private static final WaterUserContract CONTRACT;
 
     static {
@@ -159,7 +159,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         // 3) Delete the WaterUserContract
         // 4) Get the WaterUserContract, assert that it is not found
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
 
         // Create contract
@@ -405,7 +405,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
     @Test
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void test_rename_WaterUserContract() {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         final String NEW_CONTRACT_NAME = "NEW CONTRACT NAME";
         String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
 
@@ -487,7 +487,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
     @Test
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
     void test_getAllWaterContracts() throws Exception {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
 
         // create contract
@@ -601,7 +601,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_too_long_WaterUserContract()
     {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
 
         // create contract with too long name
