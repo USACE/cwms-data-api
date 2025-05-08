@@ -63,12 +63,11 @@ import rma.util.RMAConst;
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 public final class ConstantLocationLevel extends LocationLevel
 {
-	@Schema(description = "Single value for this location level. Mutually exclusive with "
-			+ "seasonableTimeSeriesId and seasonValues.")
+	@Schema(description = "Single value for this location level.")
 
 	private final Double constantValue;
 
-	ConstantLocationLevel(ConstantLocationLevel.Builder builder) {
+	private ConstantLocationLevel(ConstantLocationLevel.Builder builder) {
 		super(builder);
 		constantValue = builder.constantValue;
 	}
@@ -81,7 +80,7 @@ public final class ConstantLocationLevel extends LocationLevel
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class Builder extends LocationLevel.Builder {
-		Double constantValue;
+		private Double constantValue;
 		final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
 		@JsonCreator
@@ -105,7 +104,6 @@ public final class ConstantLocationLevel extends LocationLevel
 			}
 			buildPropertyFunctions();
 		}
-
 
 		@JsonIgnore
 		private void buildPropertyFunctions() {
@@ -261,7 +259,6 @@ public final class ConstantLocationLevel extends LocationLevel
 			return this;
 		}
 
-		@Override
 		public ConstantLocationLevel build() {
 			return new ConstantLocationLevel(this);
 		}

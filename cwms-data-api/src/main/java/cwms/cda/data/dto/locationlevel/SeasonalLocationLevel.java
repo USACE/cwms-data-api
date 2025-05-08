@@ -70,7 +70,7 @@ import rma.util.RMAConst;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
-public class SeasonalLocationLevel extends LocationLevel
+public final class SeasonalLocationLevel extends LocationLevel
 {
 	@Schema(description = "The start point of provided seasonal values")
 	@JsonFormat(shape = JsonFormat.Shape.STRING)
@@ -90,7 +90,7 @@ public class SeasonalLocationLevel extends LocationLevel
 
 	private final List<SeasonalValueBean> seasonalValues;
 
-	SeasonalLocationLevel(SeasonalLocationLevel.Builder builder) {
+	private SeasonalLocationLevel(SeasonalLocationLevel.Builder builder) {
 		super(builder);
 		seasonalValues = builder.seasonalValues;
 		intervalOrigin = builder.intervalOrigin;
@@ -118,11 +118,11 @@ public class SeasonalLocationLevel extends LocationLevel
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class Builder extends LocationLevel.Builder {
-		List<SeasonalValueBean> seasonalValues;
-		ZonedDateTime intervalOrigin;
-		Integer intervalMonths;
-		Integer intervalMinutes;
-		final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
+		private List<SeasonalValueBean> seasonalValues;
+		private ZonedDateTime intervalOrigin;
+		private Integer intervalMonths;
+		private Integer intervalMinutes;
+		private final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
 		@JsonCreator
 		public Builder(@JsonProperty(value = "location-level-id", required = true) String name,
@@ -412,7 +412,6 @@ public class SeasonalLocationLevel extends LocationLevel
 			return this;
 		}
 
-		@Override
 		public SeasonalLocationLevel build() {
 			return new SeasonalLocationLevel(this);
 		}

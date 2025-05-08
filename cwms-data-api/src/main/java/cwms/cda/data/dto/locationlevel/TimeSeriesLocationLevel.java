@@ -29,7 +29,6 @@ package cwms.cda.data.dto.locationlevel;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -60,7 +59,7 @@ import hec.data.level.JDomLocationLevelImpl;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
-public class TimeSeriesLocationLevel extends LocationLevel
+public final class TimeSeriesLocationLevel extends LocationLevel
 {
 	@JsonProperty(required = true)
 	@Schema(description = "Timeseries ID (e.g. from the times series catalog) to use as the "
@@ -69,7 +68,7 @@ public class TimeSeriesLocationLevel extends LocationLevel
 
 	private final String seasonalTimeSeriesId;
 
-	TimeSeriesLocationLevel(TimeSeriesLocationLevel.Builder builder) {
+	private TimeSeriesLocationLevel(TimeSeriesLocationLevel.Builder builder) {
 		super(builder);
 		seasonalTimeSeriesId = builder.seasonalTimeSeriesId;
 	}
@@ -81,32 +80,30 @@ public class TimeSeriesLocationLevel extends LocationLevel
 	@JsonPOJOBuilder
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 	@JsonIgnoreProperties(ignoreUnknown = true)
-	public static class Builder extends LocationLevel.Builder {
-		String seasonalTimeSeriesId;
-		List<SeasonalValueBean> seasonalValues;
-		ZonedDateTime intervalOrigin;
-		Integer intervalMonths;
-		Integer intervalMinutes;
-		final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
+	public static final class Builder extends LocationLevel.Builder {
+		@JsonProperty(required = true)
+		private String seasonalTimeSeriesId;
+		private final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
 		@JsonCreator
 		public Builder(@JsonProperty(value = "location-level-id", required = true) String name,
-				@JsonProperty(value = "level-date", required = true) ZonedDateTime lvlDate) {
+				@JsonProperty(value = "level-date", required = true) ZonedDateTime lvlDate,
+				@JsonProperty(value = "seasonal-timeseries-id", required = true) String seasonalTimeSeriesId) {
 			super(name, lvlDate);
-			locationId = name;
+			this.seasonalTimeSeriesId = seasonalTimeSeriesId;
 			buildPropertyFunctions();
 		}
 
 		public Builder(TimeSeriesLocationLevel copyFrom) {
 			super(copyFrom);
-			withSeasonalTimeSeriesId(copyFrom.getSeasonalTimeSeriesId());
+			this.seasonalTimeSeriesId = copyFrom.getSeasonalTimeSeriesId();
 			withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
 			buildPropertyFunctions();
 		}
 
 		public Builder(JDomLocationLevelImpl copyFrom) {
 			super(copyFrom);
-			withSeasonalTimeSeriesId(copyFrom.getSeasonalTimeSeriesId());
+			this.seasonalTimeSeriesId = copyFrom.getSeasonalTimeSeriesId();
 			buildPropertyFunctions();
 		}
 
@@ -262,7 +259,6 @@ public class TimeSeriesLocationLevel extends LocationLevel
 			return this;
 		}
 
-		@Override
 		public TimeSeriesLocationLevel build() {
 			return new TimeSeriesLocationLevel(this);
 		}

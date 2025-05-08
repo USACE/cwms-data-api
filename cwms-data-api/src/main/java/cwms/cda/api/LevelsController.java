@@ -132,16 +132,17 @@ public class LevelsController implements CrudHandler {
         ContentType contentType = Formats.parseHeader(formatHeader, LocationLevel.class);
         StringWriter writer = new StringWriter();
         IOUtils.copy(ctx.bodyAsInputStream(), writer, StandardCharsets.UTF_8);
-        if (writer.toString().contains("constituent")) {
-            return Formats.parseContent(contentType, writer.toString(), VirtualLocationLevel.class);
-        } else if (writer.toString().contains("seasonal-timeseries-id")) {
-            return Formats.parseContent(contentType, writer.toString(), TimeSeriesLocationLevel.class);
-        } else if (writer.toString().contains("seasonal-values")) {
-            return Formats.parseContent(contentType, writer.toString(), SeasonalLocationLevel.class);
-        } else if (writer.toString().contains("constant-value")) {
-            return Formats.parseContent(contentType, writer.toString(), ConstantLocationLevel.class);
+        String body = writer.toString();
+        if (body.contains("constituent")) {
+            return Formats.parseContent(contentType, body, VirtualLocationLevel.class);
+        } else if (body.contains("seasonal-timeseries-id")) {
+            return Formats.parseContent(contentType, body, TimeSeriesLocationLevel.class);
+        } else if (body.contains("seasonal-values")) {
+            return Formats.parseContent(contentType, body, SeasonalLocationLevel.class);
+        } else if (body.contains("constant-value")) {
+            return Formats.parseContent(contentType, body, ConstantLocationLevel.class);
         } else {
-            return Formats.parseContent(contentType, writer.toString(), LocationLevel.class);
+            throw new UnsupportedFormatException("Unsupported format for Location Level data");
         }
     }
 
@@ -432,9 +433,29 @@ public class LevelsController implements CrudHandler {
                 //only store (update) if level does exist
                 LocationLevel updatedLocationLevel = getUpdatedLocationLevel(existingLevelLevel,
                     levelFromBody);
-                updatedLocationLevel = new LocationLevel.Builder(updatedLocationLevel)
-                    .withLevelDate(unmarshalledDateTime).build();
-                levelsDao.storeLocationLevel(updatedLocationLevel);
+                if (updatedLocationLevel instanceof SeasonalLocationLevel) {
+                    SeasonalLocationLevel seasonalLevel = (SeasonalLocationLevel) updatedLocationLevel;
+                    new SeasonalLocationLevel.Builder(seasonalLevel)
+                            .withLevelDate(unmarshalledDateTime);
+                    levelsDao.storeLocationLevel(seasonalLevel);
+                } else if (updatedLocationLevel instanceof TimeSeriesLocationLevel) {
+                    TimeSeriesLocationLevel timeSeriesLevel = (TimeSeriesLocationLevel) updatedLocationLevel;
+                    new TimeSeriesLocationLevel.Builder(timeSeriesLevel)
+                            .withLevelDate(unmarshalledDateTime);
+                    levelsDao.storeLocationLevel(timeSeriesLevel);
+                } else if (updatedLocationLevel instanceof ConstantLocationLevel) {
+                    ConstantLocationLevel constantLevel = (ConstantLocationLevel) updatedLocationLevel;
+                    new ConstantLocationLevel.Builder(constantLevel)
+                            .withLevelDate(unmarshalledDateTime);
+                    levelsDao.storeLocationLevel(constantLevel);
+                } else if (updatedLocationLevel instanceof VirtualLocationLevel) {
+                    VirtualLocationLevel virtualLevel = (VirtualLocationLevel) updatedLocationLevel;
+                    new VirtualLocationLevel.Builder(virtualLevel)
+                        .withLevelDate(unmarshalledDateTime);
+                    levelsDao.storeLocationLevel(virtualLevel);
+                } else {
+                    throw new IllegalArgumentException("Unsupported location level type");
+                }
                 ctx.status(HttpServletResponse.SC_OK).json("Updated Location Level");
             }
         } catch (JsonProcessingException ex) {
@@ -539,8 +560,7 @@ public class LevelsController implements CrudHandler {
             String seasonalTimeSeriesId = (updatedTimeSeriesLevel.getSeasonalTimeSeriesId() == null
                     ? timeSeriesLevel.getSeasonalTimeSeriesId() : updatedTimeSeriesLevel.getSeasonalTimeSeriesId());
 
-            return new TimeSeriesLocationLevel.Builder(locationId, levelDate)
-                    .withSeasonalTimeSeriesId(seasonalTimeSeriesId)
+            return new TimeSeriesLocationLevel.Builder(locationId, levelDate, seasonalTimeSeriesId)
                     .withSpecifiedLevelId(specifiedLevelId)
                     .withParameterTypeId(parameterTypeId)
                     .withParameterId(parameterId)
@@ -598,20 +618,7 @@ public class LevelsController implements CrudHandler {
                     .withAttributeComment(attributeComment)
                     .withOfficeId(officeId).build();
         } else {
-            return new LocationLevel.Builder(locationId, levelDate)
-                    .withSpecifiedLevelId(specifiedLevelId)
-                    .withParameterTypeId(parameterTypeId)
-                    .withParameterId(parameterId)
-                    .withLevelUnitsId(levelUnitsId)
-                    .withLevelComment(levelComment)
-                    .withDurationId(durationId)
-                    .withAttributeValue(attributeValue)
-                    .withAttributeUnitsId(attributeUnitsId)
-                    .withAttributeParameterTypeId(attributeParameterTypeId)
-                    .withAttributeParameterId(attributeParameterId)
-                    .withAttributeDurationId(attributeDurationId)
-                    .withAttributeComment(attributeComment)
-                    .withOfficeId(officeId).build();
+            throw new UnsupportedFormatException("Unsupported location level type");
         }
     }
 
@@ -641,20 +648,76 @@ public class LevelsController implements CrudHandler {
         JavaType javaType = om.getTypeFactory().constructType(LocationLevel.class);
         BeanDescription beanDescription = om.getSerializationConfig().introspect(javaType);
         List<BeanPropertyDefinition> properties = beanDescription.findProperties();
-        LocationLevel retVal = new LocationLevel.Builder(existingLevel).build();
-        try {
-            for (BeanPropertyDefinition propertyDefinition : properties) {
-                String propertyName = propertyDefinition.getName();
-                JsonNode propertyValue = root.findValue(propertyName);
-                if (propertyValue != null && "".equals(propertyValue.textValue())) {
-                    retVal = new LocationLevel.Builder(retVal)
-                                    .withProperty(propertyName, null).build();
+        if (existingLevel instanceof ConstantLocationLevel) {
+            ConstantLocationLevel constantLevel = (ConstantLocationLevel) existingLevel;
+            ConstantLocationLevel retVal = new ConstantLocationLevel.Builder(constantLevel).build();
+            try {
+                for (BeanPropertyDefinition propertyDefinition : properties) {
+                    String propertyName = propertyDefinition.getName();
+                    JsonNode propertyValue = root.findValue(propertyName);
+                    if (propertyValue != null && "".equals(propertyValue.textValue())) {
+                        retVal = new ConstantLocationLevel.Builder(retVal)
+                                .withProperty(propertyName, null).build();
+                    }
                 }
+            } catch (NullPointerException e) {
+                //gets thrown if required field is null
+                throw new IllegalArgumentException(e.getMessage());
             }
-        } catch (NullPointerException e) {
-            //gets thrown if required field is null
-            throw new IllegalArgumentException(e.getMessage());
+            return retVal;
+        } else if (existingLevel instanceof VirtualLocationLevel) {
+            VirtualLocationLevel virtualLevel = (VirtualLocationLevel) existingLevel;
+            VirtualLocationLevel retVal = new VirtualLocationLevel.Builder(virtualLevel).build();
+            try {
+                for (BeanPropertyDefinition propertyDefinition : properties) {
+                    String propertyName = propertyDefinition.getName();
+                    JsonNode propertyValue = root.findValue(propertyName);
+                    if (propertyValue != null && "".equals(propertyValue.textValue())) {
+                        retVal = new VirtualLocationLevel.Builder(retVal)
+                                .withProperty(propertyName, null).build();
+                    }
+                }
+            } catch (NullPointerException e) {
+                //gets thrown if required field is null
+                throw new IllegalArgumentException(e.getMessage());
+            }
+            return retVal;
+        } else if (existingLevel instanceof TimeSeriesLocationLevel) {
+            TimeSeriesLocationLevel timeSeriesLevel = (TimeSeriesLocationLevel) existingLevel;
+            TimeSeriesLocationLevel retVal = new TimeSeriesLocationLevel.Builder(timeSeriesLevel).build();
+            try {
+                for (BeanPropertyDefinition propertyDefinition : properties) {
+                    String propertyName = propertyDefinition.getName();
+                    JsonNode propertyValue = root.findValue(propertyName);
+                    if (propertyValue != null && "".equals(propertyValue.textValue())) {
+                        retVal = new TimeSeriesLocationLevel.Builder(retVal)
+                                .withProperty(propertyName, null).build();
+                    }
+                }
+            } catch (NullPointerException e) {
+                //gets thrown if required field is null
+                throw new IllegalArgumentException(e.getMessage());
+            }
+            return retVal;
+        } else if (existingLevel instanceof SeasonalLocationLevel) {
+            SeasonalLocationLevel seasonalLevel = (SeasonalLocationLevel) existingLevel;
+            SeasonalLocationLevel retVal = new SeasonalLocationLevel.Builder(seasonalLevel).build();
+            try {
+                for (BeanPropertyDefinition propertyDefinition : properties) {
+                    String propertyName = propertyDefinition.getName();
+                    JsonNode propertyValue = root.findValue(propertyName);
+                    if (propertyValue != null && "".equals(propertyValue.textValue())) {
+                        retVal = new SeasonalLocationLevel.Builder(retVal)
+                                .withProperty(propertyName, null).build();
+                    }
+                }
+            } catch (NullPointerException e) {
+                //gets thrown if required field is null
+                throw new IllegalArgumentException(e.getMessage());
+            }
+            return retVal;
+        } else {
+            throw new UnsupportedFormatException("Unsupported location level type");
         }
-        return retVal;
     }
 }

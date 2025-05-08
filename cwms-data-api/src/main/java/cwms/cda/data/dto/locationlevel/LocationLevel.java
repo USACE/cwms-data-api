@@ -65,7 +65,7 @@ import hec.data.level.JDomLocationLevelImpl;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class LocationLevel extends CwmsDTO
+public abstract class LocationLevel extends CwmsDTO
 {
     @JsonProperty(required = true)
     @Schema(description = "Name of the location level")
@@ -76,6 +76,9 @@ public class LocationLevel extends CwmsDTO
             + "siParameterUnitsConstantValue")
 
     private final String specifiedLevelId;
+
+    private ZonedDateTime expirationDate;
+
     @Schema(description = "Data Type such as Stage, Elevation, or others.")
 
     private final String parameterId;
@@ -132,6 +135,7 @@ public class LocationLevel extends CwmsDTO
         locationLevelId = builder.locationId;
         parameterId = builder.parameterId;
         interpolateString = builder.interpolateString;
+        expirationDate = builder.expirationDate;
     }
 
     public String getSpecifiedLevelId()
@@ -152,6 +156,10 @@ public class LocationLevel extends CwmsDTO
     public ZonedDateTime getLevelDate()
     {
         return levelDate;
+    }
+
+    public ZonedDateTime getExpirationDate() {
+        return expirationDate;
     }
 
     public String getLevelComment()
@@ -229,6 +237,7 @@ public class LocationLevel extends CwmsDTO
         String locationId;
         String officeId;
         String interpolateString;
+        ZonedDateTime expirationDate;
         final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
         @JsonCreator
@@ -325,7 +334,7 @@ public class LocationLevel extends CwmsDTO
         }
 
         @JsonIgnore
-        public LocationLevel.Builder withProperty(String propertyName, Object value)
+        public <T extends LocationLevel.Builder> T withProperty(String propertyName, Object value)
         {
             Consumer<Object> function = propertyFunctionMap.get(propertyName);
             if(function == null)
@@ -334,108 +343,107 @@ public class LocationLevel extends CwmsDTO
                         + "Level");
             }
             function.accept(value);
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withSpecifiedLevelId(String specifiedLevelId)
+        public <T extends LocationLevel.Builder> T withSpecifiedLevelId(String specifiedLevelId)
         {
             this.specifiedLevelId = specifiedLevelId;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withParameterTypeId(String parameterTypeId)
+        public <T extends LocationLevel.Builder> T withParameterTypeId(String parameterTypeId)
         {
             this.parameterTypeId = parameterTypeId;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withParameterId(String parameterId)
+        public <T extends LocationLevel.Builder> T withParameterId(String parameterId)
         {
             this.parameterId = parameterId;
-            return this;
+            return (T) this;
         }
 
+        public <T extends LocationLevel.Builder> T withExpirationDate(ZonedDateTime expirationDate) {
+            this.expirationDate = expirationDate;
+            return (T) this;
+        }
 
-        public LocationLevel.Builder withLevelUnitsId(String levelUnitsId)
+        public <T extends LocationLevel.Builder> T withLevelUnitsId(String levelUnitsId)
         {
             this.levelUnitsId = levelUnitsId;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withLevelDate(ZonedDateTime levelDate)
+        public <T extends LocationLevel.Builder> T withLevelDate(ZonedDateTime levelDate)
         {
             this.levelDate = levelDate;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withLevelComment(String levelComment)
+        public <T extends LocationLevel.Builder> T withLevelComment(String levelComment)
         {
             this.levelComment = levelComment;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withInterpolateString(String interpolateString) {
+        public <T extends LocationLevel.Builder> T withInterpolateString(String interpolateString) {
             this.interpolateString = interpolateString;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withDurationId(String durationId)
+        public <T extends LocationLevel.Builder> T withDurationId(String durationId)
         {
             this.durationId = durationId;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withAttributeValue(BigDecimal attributeValue)
+        public <T extends LocationLevel.Builder> T withAttributeValue(BigDecimal attributeValue)
         {
             this.attributeValue = attributeValue;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withAttributeUnitsId(String attributeUnitsId)
+        public <T extends LocationLevel.Builder> T withAttributeUnitsId(String attributeUnitsId)
         {
             this.attributeUnitsId = attributeUnitsId;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withAttributeParameterTypeId(String attributeParameterTypeId)
+        public <T extends LocationLevel.Builder> T withAttributeParameterTypeId(String attributeParameterTypeId)
         {
             this.attributeParameterTypeId = attributeParameterTypeId;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withAttributeParameterId(String attributeParameterId)
+        public <T extends LocationLevel.Builder> T withAttributeParameterId(String attributeParameterId)
         {
             this.attributeParameterId = attributeParameterId;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withAttributeDurationId(String attributeDurationId)
+        public <T extends LocationLevel.Builder> T withAttributeDurationId(String attributeDurationId)
         {
             this.attributeDurationId = attributeDurationId;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withAttributeComment(String attributeComment)
+        public <T extends LocationLevel.Builder> T withAttributeComment(String attributeComment)
         {
             this.attributeComment = attributeComment;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withLocationLevelId(String locationId)
+        public <T extends LocationLevel.Builder> T withLocationLevelId(String locationId)
         {
             this.locationId = locationId;
-            return this;
+            return (T) this;
         }
 
-        public LocationLevel.Builder withOfficeId(String officeId)
+        public <T extends LocationLevel.Builder> T withOfficeId(String officeId)
         {
             this.officeId = officeId;
-            return this;
-        }
-
-        public LocationLevel build()
-        {
-            return new LocationLevel(this);
+            return (T) this;
         }
     }
 

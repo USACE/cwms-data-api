@@ -35,12 +35,9 @@ import cwms.cda.api.enums.Nation;
 import cwms.cda.api.enums.Unit;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
 import cwms.cda.data.dto.locationlevel.SeasonalValueBean;
-import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
-import cwms.cda.data.dto.locationlevel.VirtualLocationLevel;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 
@@ -104,8 +101,8 @@ public class LocationLevelsDaoTest extends DaoTest
     @Disabled
     void testUpdate() throws Exception
     {
-        LocationLevel updatedLocationLevel = null;
-        LocationLevel existingLocationLevel = null;
+        SeasonalLocationLevel updatedLocationLevel = null;
+        SeasonalLocationLevel existingLocationLevel = null;
         LocationLevel levelToStore = buildExampleLevel("TEST_LOC6");
         LocationsDao locationsDao = new LocationsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
         LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
@@ -116,12 +113,12 @@ public class LocationLevelsDaoTest extends DaoTest
             String body = getRenamedExampleJSON();
             String format = Formats.JSON;
 
-            LocationLevel levelFromBody = deserializeLocationLevel(body, Formats.JSON, OFFICE_ID);
-            existingLocationLevel = levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelFromBody.getLevelDate(), OFFICE_ID);
+            SeasonalLocationLevel levelFromBody = deserializeLocationLevel(body, Formats.JSON, OFFICE_ID);
+            existingLocationLevel = (SeasonalLocationLevel) levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelFromBody.getLevelDate(), OFFICE_ID);
             existingLocationLevel = updatedClearedFields(body, format, existingLocationLevel);
             //only store (update) if level does exist
             updatedLocationLevel = getUpdatedLocationLevel(existingLocationLevel, levelFromBody);
-            updatedLocationLevel = new LocationLevel.Builder(updatedLocationLevel).withLevelDate(levelFromBody.getLevelDate()).build();
+            updatedLocationLevel = new SeasonalLocationLevel.Builder(updatedLocationLevel).withLevelDate(levelFromBody.getLevelDate()).build();
             if (!updatedLocationLevel.getLocationLevelId().equalsIgnoreCase(existingLocationLevel.getLocationLevelId())) //if name changed then delete location with old name
             {
                 levelsDao.renameLocationLevel(levelToStore.getLocationLevelId(), updatedLocationLevel.getLocationLevelId(), OFFICE_ID);
@@ -139,14 +136,14 @@ public class LocationLevelsDaoTest extends DaoTest
         }
     }
 
-        private LocationLevel deserializeLocationLevel(String body, String format, String office) throws IOException
+        private SeasonalLocationLevel deserializeLocationLevel(String body, String format, String office) throws IOException
     {
         ObjectMapper om = getObjectMapperForFormat(format);
-        LocationLevel retVal;
+        SeasonalLocationLevel retVal;
         try
         {
-            retVal = om.readValue(body, LocationLevel.class);
-            retVal = new LocationLevel.Builder(retVal).withOfficeId(office).build();
+            retVal = om.readValue(body, SeasonalLocationLevel.class);
+            retVal = new SeasonalLocationLevel.Builder(retVal).withOfficeId(office).build();
         }
         catch(Exception e)
         {
@@ -209,21 +206,21 @@ public class LocationLevelsDaoTest extends DaoTest
                 "}";
     }
 
-    private LocationLevel updatedClearedFields(String body, String format, LocationLevel existingLocation) throws IOException
+    private SeasonalLocationLevel updatedClearedFields(String body, String format, SeasonalLocationLevel existingLocation) throws IOException
     {
         ObjectMapper om = getObjectMapperForFormat(format);
         JsonNode root = om.readTree(body);
-        JavaType javaType = om.getTypeFactory().constructType(LocationLevel.class);
+        JavaType javaType = om.getTypeFactory().constructType(SeasonalLocationLevel.class);
         BeanDescription beanDescription = om.getSerializationConfig().introspect(javaType);
         List<BeanPropertyDefinition> properties = beanDescription.findProperties();
-        LocationLevel retVal = new LocationLevel.Builder(existingLocation).build();
+        SeasonalLocationLevel retVal = new SeasonalLocationLevel.Builder(existingLocation).build();
         try
         {
             for (BeanPropertyDefinition propertyDefinition : properties) {
                 String propertyName = propertyDefinition.getName();
                 JsonNode propertyValue = root.findValue(propertyName);
                 if (propertyValue != null && "".equals(propertyValue.textValue())) {
-                    retVal = new LocationLevel.Builder(retVal).withProperty(propertyName, null).build();
+                    retVal = new SeasonalLocationLevel.Builder(retVal).withProperty(propertyName, null).build();
                 }
             }
         }
@@ -234,7 +231,7 @@ public class LocationLevelsDaoTest extends DaoTest
         return retVal;
     }
 
-    private LocationLevel getUpdatedLocationLevel(LocationLevel existinglocation, LocationLevel updatedLevel)
+    private SeasonalLocationLevel getUpdatedLocationLevel(SeasonalLocationLevel existinglocation, SeasonalLocationLevel updatedLevel)
     {
         String specifiedLevelId = (updatedLevel.getSpecifiedLevelId() == null
                 ? existinglocation.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
@@ -274,136 +271,44 @@ public class LocationLevelsDaoTest extends DaoTest
             attributeUnitsId = null;
         }
 
-        if (existinglocation instanceof VirtualLocationLevel) {
+        ZonedDateTime intervalOrigin = (updatedLevel.getIntervalOrigin() == null
+                ? existinglocation.getIntervalOrigin() : updatedLevel.getIntervalOrigin());
+        Integer intervalMinutes = (updatedLevel.getIntervalMinutes() == null
+                ? existinglocation.getIntervalMinutes() : updatedLevel.getIntervalMinutes());
+        Integer intervalMonths = (updatedLevel.getIntervalMonths() == null
+                ? existinglocation.getIntervalMonths() : updatedLevel.getIntervalMonths());
+        String interpolateString = (updatedLevel.getInterpolateString() == null
+                ? existinglocation.getInterpolateString() : updatedLevel.getInterpolateString());
 
-            VirtualLocationLevel virtualLevel = (VirtualLocationLevel) existinglocation;
-            VirtualLocationLevel updatedVirtualLevel = (VirtualLocationLevel) updatedLevel;
+        List<SeasonalValueBean> seasonalValues = (updatedLevel.getSeasonalValues() == null
+                ? existinglocation.getSeasonalValues() : updatedLevel.getSeasonalValues());
 
-            String constituentConnections = (updatedVirtualLevel.getConstituentConnections() == null
-                    ? virtualLevel.getConstituentConnections() : updatedVirtualLevel.getConstituentConnections());
-            List<VirtualLocationLevel.Constituent> constituents = updatedVirtualLevel.getConstituents() == null
-                    ? virtualLevel.getConstituents() : updatedVirtualLevel.getConstituents();
-
-            return new VirtualLocationLevel.Builder(locationId, levelDate)
-                    .withConstituents(constituents)
-                    .withConstituentConnections(constituentConnections)
-                    .withSpecifiedLevelId(specifiedLevelId)
-                    .withParameterTypeId(parameterTypeId)
-                    .withParameterId(parameterId)
-                    .withLevelUnitsId(levelUnitsId)
-                    .withLevelComment(levelComment)
-                    .withDurationId(durationId)
-                    .withAttributeValue(attributeValue)
-                    .withAttributeUnitsId(attributeUnitsId)
-                    .withAttributeParameterTypeId(attributeParameterTypeId)
-                    .withAttributeParameterId(attributeParameterId)
-                    .withAttributeDurationId(attributeDurationId)
-                    .withAttributeComment(attributeComment)
-                    .withOfficeId(officeId).build();
-        } else if (existinglocation instanceof ConstantLocationLevel) {
-            ConstantLocationLevel constantLevel = (ConstantLocationLevel) existinglocation;
-            ConstantLocationLevel updatedConstantLevel = (ConstantLocationLevel) updatedLevel;
-
-            Double siParameterUnitsConstantValue = (updatedConstantLevel.getConstantValue() == null
-                    ? constantLevel.getConstantValue() : updatedConstantLevel.getConstantValue());
-
-            return new ConstantLocationLevel.Builder(locationId, levelDate)
-                    .withSpecifiedLevelId(specifiedLevelId)
-                    .withParameterTypeId(parameterTypeId)
-                    .withParameterId(parameterId)
-                    .withConstantValue(siParameterUnitsConstantValue)
-                    .withLevelUnitsId(levelUnitsId)
-                    .withLevelComment(levelComment)
-                    .withDurationId(durationId)
-                    .withAttributeValue(attributeValue)
-                    .withAttributeUnitsId(attributeUnitsId)
-                    .withAttributeParameterTypeId(attributeParameterTypeId)
-                    .withAttributeParameterId(attributeParameterId)
-                    .withAttributeDurationId(attributeDurationId)
-                    .withAttributeComment(attributeComment)
-                    .withOfficeId(officeId).build();
-
-        } else if (existinglocation instanceof TimeSeriesLocationLevel) {
-            TimeSeriesLocationLevel timeSeriesLevel = (TimeSeriesLocationLevel) existinglocation;
-            TimeSeriesLocationLevel updatedTimeSeriesLevel = (TimeSeriesLocationLevel) updatedLevel;
-
-            String seasonalTimeSeriesId = (updatedTimeSeriesLevel.getSeasonalTimeSeriesId() == null
-                    ? timeSeriesLevel.getSeasonalTimeSeriesId() : updatedTimeSeriesLevel.getSeasonalTimeSeriesId());
-
-            return new TimeSeriesLocationLevel.Builder(locationId, levelDate)
-                    .withSeasonalTimeSeriesId(seasonalTimeSeriesId)
-                    .withSpecifiedLevelId(specifiedLevelId)
-                    .withParameterTypeId(parameterTypeId)
-                    .withParameterId(parameterId)
-                    .withLevelUnitsId(levelUnitsId)
-                    .withLevelComment(levelComment)
-                    .withDurationId(durationId)
-                    .withAttributeValue(attributeValue)
-                    .withAttributeUnitsId(attributeUnitsId)
-                    .withAttributeParameterTypeId(attributeParameterTypeId)
-                    .withAttributeParameterId(attributeParameterId)
-                    .withAttributeDurationId(attributeDurationId)
-                    .withAttributeComment(attributeComment)
-                    .withOfficeId(officeId).build();
-
-        } else if (existinglocation instanceof SeasonalLocationLevel) {
-            SeasonalLocationLevel seasonalLevel = (SeasonalLocationLevel) existinglocation;
-            SeasonalLocationLevel updatedSeasonalLevel = (SeasonalLocationLevel) updatedLevel;
-
-            ZonedDateTime intervalOrigin = (updatedSeasonalLevel.getIntervalOrigin() == null
-                    ? seasonalLevel.getIntervalOrigin() : updatedSeasonalLevel.getIntervalOrigin());
-            Integer intervalMinutes = (updatedSeasonalLevel.getIntervalMinutes() == null
-                    ? seasonalLevel.getIntervalMinutes() : updatedSeasonalLevel.getIntervalMinutes());
-            Integer intervalMonths = (updatedSeasonalLevel.getIntervalMonths() == null
-                    ? seasonalLevel.getIntervalMonths() : updatedSeasonalLevel.getIntervalMonths());
-            String interpolateString = (updatedSeasonalLevel.getInterpolateString() == null
-                    ? seasonalLevel.getInterpolateString() : updatedSeasonalLevel.getInterpolateString());
-
-            List<SeasonalValueBean> seasonalValues = (updatedSeasonalLevel.getSeasonalValues() == null
-                    ? seasonalLevel.getSeasonalValues() : updatedSeasonalLevel.getSeasonalValues());
-
-            if (seasonalLevel.getIntervalMonths() != null && seasonalLevel.getIntervalMonths() > 0) {
-                intervalMinutes = null;
-            } else if (seasonalLevel.getIntervalMinutes() != null
-                    && seasonalLevel.getIntervalMinutes() > 0) {
-                intervalMonths = null;
-            }
-
-            return new SeasonalLocationLevel.Builder(locationId, levelDate)
-                    .withSeasonalValues(seasonalValues)
-                    .withSpecifiedLevelId(specifiedLevelId)
-                    .withParameterTypeId(parameterTypeId)
-                    .withParameterId(parameterId)
-                    .withLevelUnitsId(levelUnitsId)
-                    .withLevelComment(levelComment)
-                    .withIntervalOrigin(intervalOrigin)
-                    .withIntervalMinutes(intervalMinutes)
-                    .withIntervalMonths(intervalMonths)
-                    .withInterpolateString(interpolateString)
-                    .withDurationId(durationId)
-                    .withAttributeValue(attributeValue)
-                    .withAttributeUnitsId(attributeUnitsId)
-                    .withAttributeParameterTypeId(attributeParameterTypeId)
-                    .withAttributeParameterId(attributeParameterId)
-                    .withAttributeDurationId(attributeDurationId)
-                    .withAttributeComment(attributeComment)
-                    .withOfficeId(officeId).build();
-        } else {
-            return new LocationLevel.Builder(locationId, levelDate)
-                    .withSpecifiedLevelId(specifiedLevelId)
-                    .withParameterTypeId(parameterTypeId)
-                    .withParameterId(parameterId)
-                    .withLevelUnitsId(levelUnitsId)
-                    .withLevelComment(levelComment)
-                    .withDurationId(durationId)
-                    .withAttributeValue(attributeValue)
-                    .withAttributeUnitsId(attributeUnitsId)
-                    .withAttributeParameterTypeId(attributeParameterTypeId)
-                    .withAttributeParameterId(attributeParameterId)
-                    .withAttributeDurationId(attributeDurationId)
-                    .withAttributeComment(attributeComment)
-                    .withOfficeId(officeId).build();
+        if (existinglocation.getIntervalMonths() != null && existinglocation.getIntervalMonths() > 0) {
+            intervalMinutes = null;
+        } else if (existinglocation.getIntervalMinutes() != null
+                && existinglocation.getIntervalMinutes() > 0) {
+            intervalMonths = null;
         }
+
+        return new SeasonalLocationLevel.Builder(locationId, levelDate)
+                .withSeasonalValues(seasonalValues)
+                .withSpecifiedLevelId(specifiedLevelId)
+                .withParameterTypeId(parameterTypeId)
+                .withParameterId(parameterId)
+                .withLevelUnitsId(levelUnitsId)
+                .withLevelComment(levelComment)
+                .withIntervalOrigin(intervalOrigin)
+                .withIntervalMinutes(intervalMinutes)
+                .withIntervalMonths(intervalMonths)
+                .withInterpolateString(interpolateString)
+                .withDurationId(durationId)
+                .withAttributeValue(attributeValue)
+                .withAttributeUnitsId(attributeUnitsId)
+                .withAttributeParameterTypeId(attributeParameterTypeId)
+                .withAttributeParameterId(attributeParameterId)
+                .withAttributeDurationId(attributeDurationId)
+                .withAttributeComment(attributeComment)
+                .withOfficeId(officeId).build();
     }
 
     private void deleteLevel(LocationLevel level) throws Exception
@@ -429,14 +334,13 @@ public class LocationLevelsDaoTest extends DaoTest
         seasonalValues.add(0, seasonalVal);
         ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
         ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
-        SeasonalLocationLevel retval = new SeasonalLocationLevel.Builder(locationName + ".Elev.Inst.0.Bottom of Inlet", unmarshalledDateTime)
+        return new SeasonalLocationLevel.Builder(locationName + ".Elev.Inst.0.Bottom of Inlet", unmarshalledDateTime)
                 .withOfficeId(OFFICE_ID)
                 .withLevelComment("For testing")
                 .withLevelUnitsId(Unit.FEET.getValue())
                 .withSeasonalValues(seasonalValues)
                 .withIntervalMonths(1)
                 .build();
-        return retval;
     }
 
     private Location buildTestLocation(String name) {

@@ -4,18 +4,17 @@
   "level-units-id" : "ac-ft",
   "level-date" : "2023-06-01T00:00:00-07:00",
   "expiration-date" : 1685689200000,
-  "constant-value": 10.0,
   "constituents" : [
     {
-      "abbr": "L1",
       "type": "LOCATION_LEVEL",
+      "abbr": "L1",
       "name": "level_get_all_loc2.Elev.Ave.1Day.Regulating",
       "attribute-id": "Elev",
       "attribute-value": 17650.0
     },
     {
-      "abbr": "R1",
       "type": "RATING",
+      "abbr": "R1",
       "name": "LevelsControllerTestIT.Stage;Flow.COE.Production"
     }
   ],
