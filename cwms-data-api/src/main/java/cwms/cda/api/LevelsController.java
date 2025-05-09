@@ -402,8 +402,7 @@ public class LevelsController implements CrudHandler {
 
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, LocationLevel.class);
-            LocationLevel levelFromBody = Formats.parseContent(contentType, ctx.body(),
-                LocationLevel.class);
+            LocationLevel levelFromBody = deserializeLocationLevel(ctx);
             String officeId = levelFromBody.getOfficeId();
             if (officeId == null) {
                 throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
@@ -460,6 +459,8 @@ public class LevelsController implements CrudHandler {
             }
         } catch (JsonProcessingException ex) {
             throw new FormattingException("Failed to format location level update request", ex);
+        } catch (IOException ex) {
+            throw new IllegalArgumentException("Unable to parse the request body", ex);
         }
     }
 
@@ -514,9 +515,7 @@ public class LevelsController implements CrudHandler {
             List<VirtualLocationLevel.Constituent> constituents = updatedVirtualLevel.getConstituents() == null
                     ? virtualLevel.getConstituents() : updatedVirtualLevel.getConstituents();
 
-            return new VirtualLocationLevel.Builder(locationId, levelDate)
-                    .withConstituents(constituents)
-                    .withConstituentConnections(constituentConnections)
+            return ((VirtualLocationLevel.Builder) new VirtualLocationLevel.Builder(locationId, levelDate)
                     .withSpecifiedLevelId(specifiedLevelId)
                     .withParameterTypeId(parameterTypeId)
                     .withParameterId(parameterId)
@@ -529,7 +528,9 @@ public class LevelsController implements CrudHandler {
                     .withAttributeParameterId(attributeParameterId)
                     .withAttributeDurationId(attributeDurationId)
                     .withAttributeComment(attributeComment)
-                    .withOfficeId(officeId).build();
+                    .withOfficeId(officeId))
+                    .withConstituents(constituents)
+                    .withConstituentConnections(constituentConnections).build();
         } else if (existingLevel instanceof ConstantLocationLevel) {
             ConstantLocationLevel constantLevel = (ConstantLocationLevel) existingLevel;
             ConstantLocationLevel updatedConstantLevel = (ConstantLocationLevel) updatedLevel;
@@ -537,11 +538,10 @@ public class LevelsController implements CrudHandler {
             Double siParameterUnitsConstantValue = (updatedConstantLevel.getConstantValue() == null
                     ? constantLevel.getConstantValue() : updatedConstantLevel.getConstantValue());
 
-            return new ConstantLocationLevel.Builder(locationId, levelDate)
+            return ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(locationId, levelDate)
                     .withSpecifiedLevelId(specifiedLevelId)
                     .withParameterTypeId(parameterTypeId)
                     .withParameterId(parameterId)
-                    .withConstantValue(siParameterUnitsConstantValue)
                     .withLevelUnitsId(levelUnitsId)
                     .withLevelComment(levelComment)
                     .withDurationId(durationId)
@@ -551,7 +551,9 @@ public class LevelsController implements CrudHandler {
                     .withAttributeParameterId(attributeParameterId)
                     .withAttributeDurationId(attributeDurationId)
                     .withAttributeComment(attributeComment)
-                    .withOfficeId(officeId).build();
+                    .withOfficeId(officeId))
+                    .withConstantValue(siParameterUnitsConstantValue)
+                    .build();
 
         } else if (existingLevel instanceof TimeSeriesLocationLevel) {
             TimeSeriesLocationLevel timeSeriesLevel = (TimeSeriesLocationLevel) existingLevel;
@@ -560,7 +562,7 @@ public class LevelsController implements CrudHandler {
             String seasonalTimeSeriesId = (updatedTimeSeriesLevel.getSeasonalTimeSeriesId() == null
                     ? timeSeriesLevel.getSeasonalTimeSeriesId() : updatedTimeSeriesLevel.getSeasonalTimeSeriesId());
 
-            return new TimeSeriesLocationLevel.Builder(locationId, levelDate, seasonalTimeSeriesId)
+            return ((TimeSeriesLocationLevel.Builder) new TimeSeriesLocationLevel.Builder(locationId, levelDate, seasonalTimeSeriesId)
                     .withSpecifiedLevelId(specifiedLevelId)
                     .withParameterTypeId(parameterTypeId)
                     .withParameterId(parameterId)
@@ -573,7 +575,8 @@ public class LevelsController implements CrudHandler {
                     .withAttributeParameterId(attributeParameterId)
                     .withAttributeDurationId(attributeDurationId)
                     .withAttributeComment(attributeComment)
-                    .withOfficeId(officeId).build();
+                    .withOfficeId(officeId))
+                    .build();
 
         } else if (existingLevel instanceof SeasonalLocationLevel) {
             SeasonalLocationLevel seasonalLevel = (SeasonalLocationLevel) existingLevel;
@@ -598,16 +601,13 @@ public class LevelsController implements CrudHandler {
                 intervalMonths = null;
             }
 
-            return new SeasonalLocationLevel.Builder(locationId, levelDate)
+            return ((SeasonalLocationLevel.Builder) new SeasonalLocationLevel.Builder(locationId, levelDate)
                     .withSeasonalValues(seasonalValues)
                     .withSpecifiedLevelId(specifiedLevelId)
                     .withParameterTypeId(parameterTypeId)
                     .withParameterId(parameterId)
                     .withLevelUnitsId(levelUnitsId)
                     .withLevelComment(levelComment)
-                    .withIntervalOrigin(intervalOrigin)
-                    .withIntervalMinutes(intervalMinutes)
-                    .withIntervalMonths(intervalMonths)
                     .withInterpolateString(interpolateString)
                     .withDurationId(durationId)
                     .withAttributeValue(attributeValue)
@@ -616,7 +616,11 @@ public class LevelsController implements CrudHandler {
                     .withAttributeParameterId(attributeParameterId)
                     .withAttributeDurationId(attributeDurationId)
                     .withAttributeComment(attributeComment)
-                    .withOfficeId(officeId).build();
+                    .withOfficeId(officeId))
+                    .withIntervalOrigin(intervalOrigin)
+                    .withIntervalMinutes(intervalMinutes)
+                    .withIntervalMonths(intervalMonths)
+                    .build();
         } else {
             throw new UnsupportedFormatException("Unsupported location level type");
         }
@@ -656,13 +660,13 @@ public class LevelsController implements CrudHandler {
                     String propertyName = propertyDefinition.getName();
                     JsonNode propertyValue = root.findValue(propertyName);
                     if (propertyValue != null && "".equals(propertyValue.textValue())) {
-                        retVal = new ConstantLocationLevel.Builder(retVal)
-                                .withProperty(propertyName, null).build();
+                        retVal = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(retVal)
+                                .withProperty(propertyName, null)).build();
                     }
                 }
             } catch (NullPointerException e) {
                 //gets thrown if required field is null
-                throw new IllegalArgumentException(e.getMessage());
+                throw new IllegalArgumentException(e);
             }
             return retVal;
         } else if (existingLevel instanceof VirtualLocationLevel) {
@@ -673,13 +677,13 @@ public class LevelsController implements CrudHandler {
                     String propertyName = propertyDefinition.getName();
                     JsonNode propertyValue = root.findValue(propertyName);
                     if (propertyValue != null && "".equals(propertyValue.textValue())) {
-                        retVal = new VirtualLocationLevel.Builder(retVal)
-                                .withProperty(propertyName, null).build();
+                        retVal = ((VirtualLocationLevel.Builder) new VirtualLocationLevel.Builder(retVal)
+                                .withProperty(propertyName, null)).build();
                     }
                 }
             } catch (NullPointerException e) {
                 //gets thrown if required field is null
-                throw new IllegalArgumentException(e.getMessage());
+                throw new IllegalArgumentException(e);
             }
             return retVal;
         } else if (existingLevel instanceof TimeSeriesLocationLevel) {
@@ -690,13 +694,13 @@ public class LevelsController implements CrudHandler {
                     String propertyName = propertyDefinition.getName();
                     JsonNode propertyValue = root.findValue(propertyName);
                     if (propertyValue != null && "".equals(propertyValue.textValue())) {
-                        retVal = new TimeSeriesLocationLevel.Builder(retVal)
-                                .withProperty(propertyName, null).build();
+                        retVal = ((TimeSeriesLocationLevel.Builder) new TimeSeriesLocationLevel.Builder(retVal)
+                                .withProperty(propertyName, null)).build();
                     }
                 }
             } catch (NullPointerException e) {
                 //gets thrown if required field is null
-                throw new IllegalArgumentException(e.getMessage());
+                throw new IllegalArgumentException(e);
             }
             return retVal;
         } else if (existingLevel instanceof SeasonalLocationLevel) {
@@ -707,13 +711,13 @@ public class LevelsController implements CrudHandler {
                     String propertyName = propertyDefinition.getName();
                     JsonNode propertyValue = root.findValue(propertyName);
                     if (propertyValue != null && "".equals(propertyValue.textValue())) {
-                        retVal = new SeasonalLocationLevel.Builder(retVal)
-                                .withProperty(propertyName, null).build();
+                        retVal = ((SeasonalLocationLevel.Builder) new SeasonalLocationLevel.Builder(retVal)
+                                .withProperty(propertyName, null)).build();
                     }
                 }
             } catch (NullPointerException e) {
                 //gets thrown if required field is null
-                throw new IllegalArgumentException(e.getMessage());
+                throw new IllegalArgumentException(e);
             }
             return retVal;
         } else {

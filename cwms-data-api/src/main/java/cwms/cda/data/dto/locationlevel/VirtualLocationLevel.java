@@ -26,14 +26,11 @@
 
 package cwms.cda.data.dto.locationlevel;
 
-import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -81,8 +78,7 @@ public final class VirtualLocationLevel extends LocationLevel {
 	@JsonPOJOBuilder
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 	@JsonIgnoreProperties(ignoreUnknown = true)
-	public static final class Builder extends LocationLevel.Builder
-	{
+	public static final class Builder extends LocationLevel.Builder {
 		private List<Constituent> constituents;
 		private String constituentConnections;
 
@@ -108,114 +104,6 @@ public final class VirtualLocationLevel extends LocationLevel {
 			return this;
 		}
 
-		@Override
-		@JsonIgnore
-		public Builder withProperty(String propertyName, Object value) {
-			Consumer<Object> function = propertyFunctionMap.get(propertyName);
-			if (function == null) {
-				throw new IllegalArgumentException("Property Name does not exist for Location "
-						+ "Level");
-			}
-			function.accept(value);
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withSpecifiedLevelId(String specifiedLevelId) {
-			this.specifiedLevelId = specifiedLevelId;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withParameterTypeId(String parameterTypeId) {
-			this.parameterTypeId = parameterTypeId;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withParameterId(String parameterId) {
-			this.parameterId = parameterId;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withLevelUnitsId(String levelUnitsId) {
-			this.levelUnitsId = levelUnitsId;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withLevelDate(ZonedDateTime levelDate) {
-			this.levelDate = levelDate;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withLevelComment(String levelComment) {
-			this.levelComment = levelComment;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withDurationId(String durationId) {
-			this.durationId = durationId;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withAttributeValue(BigDecimal attributeValue) {
-			this.attributeValue = attributeValue;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withAttributeUnitsId(String attributeUnitsId) {
-			this.attributeUnitsId = attributeUnitsId;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withAttributeParameterTypeId(String attributeParameterTypeId) {
-			this.attributeParameterTypeId = attributeParameterTypeId;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withAttributeParameterId(String attributeParameterId) {
-			this.attributeParameterId = attributeParameterId;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withAttributeDurationId(String attributeDurationId) {
-			this.attributeDurationId = attributeDurationId;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withAttributeComment(String attributeComment) {
-			this.attributeComment = attributeComment;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withLocationLevelId(String locationId) {
-			this.locationId = locationId;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withOfficeId(String officeId) {
-			this.officeId = officeId;
-			return this;
-		}
-
-		@Override
-		public VirtualLocationLevel.Builder withInterpolateString(String interpolateString) {
-			this.interpolateString = interpolateString;
-			return this;
-		}
-
 		public VirtualLocationLevel build()
 		{
 			return new VirtualLocationLevel(this);
@@ -232,14 +120,12 @@ public final class VirtualLocationLevel extends LocationLevel {
 			@JsonSubTypes.Type(value = Constituent.class, name = "RATING")
 	})
 	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", visible = true)
-	public static class Constituent
-	{
+	public static class Constituent {
 		private final String abbr;
 		private final String type;
 		private final String name;
 
-		private Constituent(Builder builder)
-		{
+		private Constituent(Builder builder) {
 			this.abbr = builder.abbr;
 			this.type = builder.type;
 			this.name = builder.name;
@@ -260,8 +146,7 @@ public final class VirtualLocationLevel extends LocationLevel {
 			return name;
 		}
 
-		public List<String> getConstituentList()
-		{
+		public List<String> getConstituentList() {
 			List<String> retVal = new ArrayList<>();
 			retVal.add(abbr);
 			retVal.add(type);
@@ -272,8 +157,7 @@ public final class VirtualLocationLevel extends LocationLevel {
 		@JsonPOJOBuilder
 		@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 		@JsonInclude(JsonInclude.Include.NON_NULL)
-		public static class Builder
-		{
+		public static class Builder {
 			private final String abbr;
 			private final String type;
 			private final String name;
@@ -281,8 +165,7 @@ public final class VirtualLocationLevel extends LocationLevel {
 			@JsonCreator
 			public Builder(@JsonProperty(value = "abbr", required = true) String abbr,
 					@JsonProperty(value = "type", required = true) String type,
-					@JsonProperty(value = "name", required = true) String name)
-			{
+					@JsonProperty(value = "name", required = true) String name) {
 				this.abbr = abbr;
 				this.type = type;
 				this.name = name;
@@ -299,14 +182,12 @@ public final class VirtualLocationLevel extends LocationLevel {
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 	@JsonDeserialize(builder = LocationLevelConstituent.Builder.class)
 	@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
-	public static final class LocationLevelConstituent extends Constituent
-	{
+	public static final class LocationLevelConstituent extends Constituent {
 		private final String attributeId;
 		private final Double attributeValue;
 		private final String attributeUnits;
 
-		private LocationLevelConstituent(Builder builder)
-		{
+		private LocationLevelConstituent(Builder builder) {
 			super(builder);
 			this.attributeId = builder.attributeId;
 			this.attributeValue = builder.attributeValue;
@@ -329,22 +210,18 @@ public final class VirtualLocationLevel extends LocationLevel {
 		}
 
 		@Override
-		public List<String> getConstituentList()
-		{
+		public List<String> getConstituentList() {
 			List<String> retVal = new ArrayList<>();
 			retVal.add(super.getAbbr());
 			retVal.add(super.getType());
 			retVal.add(super.getName());
-			if(attributeId != null)
-			{
+			if(attributeId != null) {
 				retVal.add(attributeId);
 			}
-			if(attributeValue != null)
-			{
+			if(attributeValue != null) {
 				retVal.add(attributeValue.toString());
 			}
-			if(attributeUnits != null)
-			{
+			if(attributeUnits != null) {
 				retVal.add(attributeUnits);
 			}
 			return retVal;
@@ -353,8 +230,7 @@ public final class VirtualLocationLevel extends LocationLevel {
 		@JsonPOJOBuilder
 		@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 		@JsonInclude(JsonInclude.Include.NON_NULL)
-		public static final class Builder extends Constituent.Builder
-		{
+		public static final class Builder extends Constituent.Builder {
 			@JsonProperty(required = true)
 			private final String attributeId;
 			private final Double attributeValue;
@@ -365,15 +241,13 @@ public final class VirtualLocationLevel extends LocationLevel {
 					@JsonProperty(value = "type", required = true) String type,
 					@JsonProperty(value = "name", required = true) String name,
 					@JsonProperty(value = "attribute-id", required = true) String attributeId,
-					@JsonProperty(value = "attribute-value", required = true) Double attributeValue)
-			{
+					@JsonProperty(value = "attribute-value", required = true) Double attributeValue) {
 				super(abbr, type, name);
 				this.attributeId = attributeId;
 				this.attributeValue = attributeValue;
 			}
 
-			public Builder withAttributeUnits(String constituentAttributeUnits)
-			{
+			public Builder withAttributeUnits(String constituentAttributeUnits) {
 				this.attributeUnits = constituentAttributeUnits;
 				return this;
 			}
@@ -385,6 +259,4 @@ public final class VirtualLocationLevel extends LocationLevel {
 			}
 		}
 	}
-
-
 }

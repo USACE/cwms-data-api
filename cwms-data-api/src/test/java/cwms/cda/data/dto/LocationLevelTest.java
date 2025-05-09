@@ -5,6 +5,7 @@ import java.time.ZonedDateTime;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
@@ -16,6 +17,7 @@ import cwms.cda.formatters.json.JsonV2;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LocationLevelTest
@@ -45,6 +47,9 @@ class LocationLevelTest
 		ContentType contentType = Formats.parseHeader(Formats.JSONV2, LocationLevel.class);
 		String jsonStr = Formats.format(contentType, level);
 
+		// If JSONv2 isn't annotated correctly it will serialize the level like:
+		// {"location-level-id":"Test","level-date":1624287600.000000000}
+
 		assertTrue(jsonStr.contains("2021"));
 	}
 
@@ -57,6 +62,9 @@ class LocationLevelTest
 		ContentType contentType = Formats.parseHeader(Formats.JSONV2, LocationLevel.class);
 		String jsonStr = Formats.format(contentType, level);
 
+		// If JSONv2 isn't annotated correctly it will serialize the level like:
+		// {"location-level-id":"Test","level-date":1624287600.000000000}
+
 		assertTrue(jsonStr.contains("2021"));
 	}
 
@@ -68,6 +76,9 @@ class LocationLevelTest
 
 		ContentType contentType = Formats.parseHeader(Formats.JSONV2, LocationLevel.class);
 		String jsonStr = Formats.format(contentType, level);
+
+		// If JSONv2 isn't annotated correctly it will serialize the level like:
+		// {"location-level-id":"Test","level-date":1624287600.000000000}
 
 		assertTrue(jsonStr.contains("2021"));
 	}
@@ -82,7 +93,7 @@ class LocationLevelTest
 		String jsonStr = om.writeValueAsString(level);
 
 		// If JSONv2 isn't annotated correctly it will serialize the level like:
-//		{"location-level-id":"Test","level-date":1624287600.000000000}
+		// {"location-level-id":"Test","level-date":1624287600.000000000}
 
 		assertTrue(jsonStr.contains("2021"));
 	}
@@ -95,6 +106,9 @@ class LocationLevelTest
 		ObjectMapper om = JsonV2.buildObjectMapper();
 		String jsonStr = om.writeValueAsString(level);
 
+		// If JSONv2 isn't annotated correctly it will serialize the level like:
+		// {"location-level-id":"Test","level-date":1624287600.000000000}
+
 		assertTrue(jsonStr.contains("2021"));
 	}
 
@@ -105,6 +119,9 @@ class LocationLevelTest
 
 		ObjectMapper om = JsonV2.buildObjectMapper();
 		String jsonStr = om.writeValueAsString(level);
+
+		// If JSONv2 isn't annotated correctly it will serialize the level like:
+		// {"location-level-id":"Test","level-date":1624287600.000000000}
 
 		assertTrue(jsonStr.contains("2021"));
 	}
@@ -117,7 +134,17 @@ class LocationLevelTest
 		ObjectMapper om = JsonV2.buildObjectMapper();
 		String jsonStr = om.writeValueAsString(level);
 
+		// If JSONv2 isn't annotated correctly it will serialize the level like:
+		// {"location-level-id":"Test","level-date":1624287600.000000000}
+
 		assertTrue(jsonStr.contains("2021"));
+	}
+
+	@Test
+	void test_mutual_exclusivity_seasonal() {
+		assertThrows(RequiredFieldException.class, () -> new SeasonalLocationLevel.Builder("Test", ZonedDateTime.now()).build());
+		assertThrows(RequiredFieldException.class, () -> new SeasonalLocationLevel.Builder("Test", ZonedDateTime.now())
+						.withIntervalMinutes(25).withIntervalMonths(12).build());
 	}
 
 }

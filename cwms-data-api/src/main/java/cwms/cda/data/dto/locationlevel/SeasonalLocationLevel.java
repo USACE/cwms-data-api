@@ -48,6 +48,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -70,8 +71,7 @@ import rma.util.RMAConst;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
-public final class SeasonalLocationLevel extends LocationLevel
-{
+public final class SeasonalLocationLevel extends LocationLevel {
 	@Schema(description = "The start point of provided seasonal values")
 	@JsonFormat(shape = JsonFormat.Shape.STRING)
 
@@ -96,6 +96,7 @@ public final class SeasonalLocationLevel extends LocationLevel
 		intervalOrigin = builder.intervalOrigin;
 		intervalMonths = builder.intervalMonths;
 		intervalMinutes = builder.intervalMinutes;
+		validate();
 	}
 
 	public List<SeasonalValueBean> getSeasonalValues() {
@@ -218,18 +219,6 @@ public final class SeasonalLocationLevel extends LocationLevel
 					attributeCommentVal -> withAttributeComment((String) attributeCommentVal));
 		}
 
-		@Override
-		@JsonIgnore
-		public SeasonalLocationLevel.Builder withProperty(String propertyName, Object value) {
-			Consumer<Object> function = propertyFunctionMap.get(propertyName);
-			if (function == null) {
-				throw new IllegalArgumentException("Property Name does not exist for Location "
-						+ "Level");
-			}
-			function.accept(value);
-			return this;
-		}
-
 		public SeasonalLocationLevel.Builder withSeasonalValues(List<SeasonalValueBean> seasonalValues) {
 			this.seasonalValues = seasonalValues;
 			return this;
@@ -309,106 +298,10 @@ public final class SeasonalLocationLevel extends LocationLevel
 		}
 
 		public SeasonalLocationLevel.Builder withIntervalMinutes(Integer minutes) {
-			if (minutes != null && RMAConst.isUndefinedValue(minutes)) {
+			if(minutes != null && RMAConst.isUndefinedValue(minutes)) {
 				minutes = null;
 			}
 			this.intervalMinutes = minutes;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withSpecifiedLevelId(String specifiedLevelId) {
-			this.specifiedLevelId = specifiedLevelId;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withParameterTypeId(String parameterTypeId) {
-			this.parameterTypeId = parameterTypeId;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withParameterId(String parameterId) {
-			this.parameterId = parameterId;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withLevelUnitsId(String levelUnitsId) {
-			this.levelUnitsId = levelUnitsId;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withLevelDate(ZonedDateTime levelDate) {
-			this.levelDate = levelDate;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withLevelComment(String levelComment) {
-			this.levelComment = levelComment;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withDurationId(String durationId) {
-			this.durationId = durationId;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withAttributeValue(BigDecimal attributeValue) {
-			this.attributeValue = attributeValue;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withAttributeUnitsId(String attributeUnitsId) {
-			this.attributeUnitsId = attributeUnitsId;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withAttributeParameterTypeId(String attributeParameterTypeId) {
-			this.attributeParameterTypeId = attributeParameterTypeId;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withAttributeParameterId(String attributeParameterId) {
-			this.attributeParameterId = attributeParameterId;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withAttributeDurationId(String attributeDurationId) {
-			this.attributeDurationId = attributeDurationId;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withAttributeComment(String attributeComment) {
-			this.attributeComment = attributeComment;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withInterpolateString(String interpolateString) {
-			this.interpolateString = interpolateString;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withLocationLevelId(String locationId) {
-			this.locationId = locationId;
-			return this;
-		}
-
-		@Override
-		public SeasonalLocationLevel.Builder withOfficeId(String officeId) {
-			this.officeId = officeId;
 			return this;
 		}
 
@@ -423,5 +316,15 @@ public final class SeasonalLocationLevel extends LocationLevel
 		validator.required(getOfficeId(), "office-id");
 		validator.required(getLocationLevelId(), "location-level-id");
 		validator.required(getSeasonalValues(), "seasonal-values");
+		if (getIntervalMonths() == null) {
+			validator.required(getIntervalMinutes(), "interval-minutes");
+		} else if (getIntervalMinutes() == null) {
+			validator.required(getIntervalMonths(), "interval-months");
+		} else {
+			throw new RequiredFieldException("Either interval-minutes or interval-months must be set, but not both");
+		}
+		validator.mutuallyExclusive("Only one of the following can be defined at once for a seasonal location level: "
+				+ "interval-minutes, interval-months",
+				getIntervalMinutes(), getIntervalMonths());
 	}
 }

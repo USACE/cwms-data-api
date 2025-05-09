@@ -97,10 +97,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         createLocation("level_as_single_value", true, OFFICE);
         String levelId = "level_as_single_value.Stor.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
-        LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
+        LocationLevel level = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(levelId, time)
                 .withOfficeId(OFFICE)
+                .withLevelUnitsId("ac-ft"))
                 .withConstantValue(1.0)
-                .withLevelUnitsId("ac-ft")
                 .build();
         levelList.add(level);
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
@@ -155,10 +155,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String levelId = "level_with_effect.Flow.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
+            LocationLevel level = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(levelId, time)
                     .withOfficeId(OFFICE)
+                    .withLevelUnitsId("cms"))
                     .withConstantValue(1.0)
-                    .withLevelUnitsId("cms")
                     .build();
             levelList.add(level);
             DSLContext dsl = dslContext(c, OFFICE);
@@ -193,10 +193,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String levelId = "level_get_all_loc_1.Flow.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
+            LocationLevel level = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(levelId, time)
                     .withOfficeId(OFFICE)
+                    .withLevelUnitsId("cms"))
                     .withConstantValue(1.0)
-                    .withLevelUnitsId("cms")
                     .build();
             levelList.add(level);
             DSLContext dsl = dslContext(c, OFFICE);
@@ -209,10 +209,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         createLocation(locId2, true, OFFICE);
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
 
-            LocationLevel level = new ConstantLocationLevel.Builder(levelId2, time)
+            LocationLevel level = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(levelId2, time)
                     .withOfficeId(OFFICE)
+                    .withLevelUnitsId("ac-ft"))
                     .withConstantValue(2.0)
-                    .withLevelUnitsId("ac-ft")
                     .build();
             levelList.add(level);
             DSLContext dsl = dslContext(c, OFFICE);
@@ -301,10 +301,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         int effectiveDateCount = 10;
         NavigableMap<Instant, LocationLevel> levels = new TreeMap<>();
         for (int i = 0; i < effectiveDateCount; i++) {
-            LocationLevel level = new ConstantLocationLevel.Builder(levelId, time.plusDays(i))
+            LocationLevel level = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(levelId, time.plusDays(i))
                     .withOfficeId(OFFICE)
+                    .withLevelUnitsId("cfs"))
                     .withConstantValue((double) i)
-                    .withLevelUnitsId("cfs")
                     .build();
             levelList.add(level);
             levels.put(level.getLevelDate().toInstant(), level);
@@ -364,10 +364,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         final ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America"
                 + "/Los_Angeles"));
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
+            LocationLevel level = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(levelId, time)
                     .withOfficeId(OFFICE)
+                    .withLevelUnitsId("ac-ft"))
                     .withConstantValue(1.0)
-                    .withLevelUnitsId("ac-ft")
                     .build();
             levelList.add(level);
             DSLContext dsl = dslContext(c, OFFICE);
@@ -380,10 +380,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         createLocation(locId2, true, OFFICE);
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
 
-            LocationLevel level = new ConstantLocationLevel.Builder(levelId2, time)
+            LocationLevel level = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(levelId2, time)
                     .withOfficeId(OFFICE)
+                    .withLevelUnitsId("ac-ft"))
                     .withConstantValue(2.0)
-                    .withLevelUnitsId("ac-ft")
                     .build();
             levelList.add(level);
             DSLContext dsl = dslContext(c, OFFICE);
@@ -525,10 +525,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         createLocation("level_as_single_value", true, OFFICE);
         String levelId = "level_as_single_value.Stor.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
-        LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
+        LocationLevel level = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(levelId, time)
                 .withOfficeId(OFFICE)
+                .withLevelUnitsId("ac-ft"))
                 .withConstantValue(1.0)
-                .withLevelUnitsId("ac-ft")
                 .build();
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
             DSLContext dsl = dslContext(c, OFFICE);
@@ -621,10 +621,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         final ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America"
                 + "/Los_Angeles"));
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
+            LocationLevel level = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(levelId, time)
                     .withOfficeId(OFFICE)
+                    .withLevelUnitsId("ac-ft"))
                     .withConstantValue(1.0)
-                    .withLevelUnitsId("ac-ft")
                     .build();
             levelList.add(level);
             DSLContext dsl = dslContext(c, OFFICE);
@@ -637,10 +637,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         createLocation(locId2, true, OFFICE);
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
 
-            LocationLevel level = new ConstantLocationLevel.Builder(levelId2, time)
+            LocationLevel level = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(levelId2, time)
                     .withOfficeId(OFFICE)
+                    .withLevelUnitsId("ac-ft"))
                     .withConstantValue(2.0)
-                    .withLevelUnitsId("ac-ft")
                     .build();
             levelList.add(level);
             DSLContext dsl = dslContext(c, OFFICE);
@@ -1214,8 +1214,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @EnumSource(GetAllTestLegacy.class)
-    void test_get_all_aliases_legacy(GetAllTestLegacy test)
-    {
+    void test_get_all_aliases_legacy(GetAllTestLegacy test) {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(FORMAT, test._format)
@@ -1234,8 +1233,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .contentType(is(test._expectedContentType));
     }
 
-    enum GetAllTestLegacy
-    {
+    enum GetAllTestLegacy {
         JSON(Formats.JSON_LEGACY, Formats.JSON),
         XML(Formats.XML_LEGACY, Formats.XML),
         TAB(Formats.TAB_LEGACY, Formats.TAB),
@@ -1251,8 +1249,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         }
     }
 
-    enum GetAllTestNewAliases
-    {
+    enum GetAllTestNewAliases {
         DEFAULT(Formats.DEFAULT, Formats.JSONV2),
         JSON(Formats.JSON, Formats.JSONV2),
         JSONV1(Formats.JSONV1, Formats.JSONV1),
@@ -1261,15 +1258,13 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         final String _accept;
         final String _expectedContentType;
 
-        GetAllTestNewAliases(String accept, String expectedContentType)
-        {
+        GetAllTestNewAliases(String accept, String expectedContentType) {
             _accept = accept;
             _expectedContentType = expectedContentType;
         }
     }
 
-    private String createRatingSpec(String locationName) throws Exception
-    {
+    private String createRatingSpec(String locationName) throws Exception {
         String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
         ratingXml = ratingXml.replaceAll("Zanesville", locationName);
         RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
@@ -1278,8 +1273,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         return RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
     }
 
-    private String createRatingSet(String locationName) throws Exception
-    {
+    private String createRatingSet(String locationName) throws Exception {
         String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
         ratingXml = ratingXml.replaceAll("Zanesville", locationName);
         RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
@@ -1287,39 +1281,35 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         return RatingContainerXmlFactory.toXml(container, "", 0, true, false);
     }
 
-    private void createVirtualLocation(String specXml, String setXml, ZonedDateTime time, String levelId, String levelId2) throws SQLException
-    {
+    private void createVirtualLocation(String specXml, String setXml, ZonedDateTime time, String levelId, String levelId2) throws SQLException {
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
             DSLContext dsl = dslContext(c, OFFICE);
             RatingDao ratingDao = new RatingSetDao(dsl);
-            try
-            {
+            try {
                 ratingDao.create(specXml, false);
             } catch (RatingException | IOException e) {
                 throw new RuntimeException(e);
             }
 
             RatingSetDao ratingSetDao = new RatingSetDao(dsl);
-            try
-            {
+            try {
                 ratingSetDao.create(setXml, false);
             } catch (RatingException | IOException e) {
                 throw new RuntimeException(e);
             }
-            LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
+            LocationLevel level = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(levelId, time)
                     .withOfficeId(OFFICE)
+                    .withLevelUnitsId("ac-ft"))
                     .withConstantValue(1.0)
-                    .withLevelUnitsId("ac-ft")
                     .build();
             levelList.add(level);
             LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
             dao.storeLocationLevel(level);
-            if (levelId2 != null)
-            {
-                level = new ConstantLocationLevel.Builder(levelId2, time)
+            if (levelId2 != null) {
+                level = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(levelId2, time)
                         .withOfficeId(OFFICE)
+                        .withLevelUnitsId("ac-ft"))
                         .withConstantValue(10.0)
-                        .withLevelUnitsId("ac-ft")
                         .build();
                 levelList.add(level);
                 dao.storeLocationLevel(level);

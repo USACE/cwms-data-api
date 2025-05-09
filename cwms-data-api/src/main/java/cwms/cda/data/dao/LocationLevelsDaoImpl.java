@@ -574,49 +574,44 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     private ConstantLocationLevel buildConstantLocationLevel(LOCATION_LEVEL_T level, String officeId, String units,
             String locationLevelName, ZonedDateTime realEffectiveDate, Double constantValue) {
-        return new ConstantLocationLevel.Builder(locationLevelName, realEffectiveDate)
+        return ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(locationLevelName, realEffectiveDate)
                 .withLevelUnitsId(units)
                 .withAttributeUnitsId(units)
                 .withLevelComment(level.getLEVEL_COMMENT())
                 .withOfficeId(officeId)
                 .withAttributeParameterId(level.getATTRIBUTE_PARAMETER_ID())
+                .withInterpolateString(level.getINTERPOLATE()))
                 .withConstantValue(constantValue)
-                .withInterpolateString(level.getINTERPOLATE())
                 .build();
     }
 
     private SeasonalLocationLevel buildSeasonalLocationLevel(LOCATION_LEVEL_T level, String officeId, String units,
             String locationLevelName, ZonedDateTime effectiveDate, ZonedDateTime realEffectiveDate, List<SeasonalValueBean> seasonalValues) {
-        return new SeasonalLocationLevel.Builder(locationLevelName, realEffectiveDate)
+        return ((SeasonalLocationLevel.Builder) new SeasonalLocationLevel.Builder(locationLevelName, realEffectiveDate)
                 .withLevelUnitsId(units)
                 .withAttributeUnitsId(units)
-                .withIntervalMinutes(Optional.ofNullable(level.getINTERVAL_MINUTES())
-                        .map(BigInteger::intValue).orElse(null))
-                .withIntervalMonths(Optional.ofNullable(level.getINTERVAL_MONTHS())
-                        .map(BigInteger::intValue).orElse(null))
-                .withIntervalOrigin(level.getINTERVAL_ORIGIN(), effectiveDate)
+                .withInterpolateString(level.getINTERPOLATE())
                 .withLevelComment(level.getLEVEL_COMMENT())
                 .withOfficeId(officeId)
+                .withAttributeParameterId(level.getATTRIBUTE_PARAMETER_ID()))
+                .withSeasonalValues(seasonalValues)
                 .withIntervalMinutes(Optional.ofNullable(level.getINTERVAL_MINUTES())
                         .map(BigInteger::intValue).orElse(null))
                 .withIntervalMonths(Optional.ofNullable(level.getINTERVAL_MONTHS())
                         .map(BigInteger::intValue).orElse(null))
                 .withIntervalOrigin(level.getINTERVAL_ORIGIN(), effectiveDate)
-                .withAttributeParameterId(level.getATTRIBUTE_PARAMETER_ID())
-                .withSeasonalValues(seasonalValues)
-                .withInterpolateString(level.getINTERPOLATE())
                 .build();
     }
 
     private TimeSeriesLocationLevel buildTimeSeriesLocationLevel(LOCATION_LEVEL_T level, String officeId, String units,
             String locationLevelName, ZonedDateTime realEffectiveDate) {
-        return new TimeSeriesLocationLevel.Builder(locationLevelName, realEffectiveDate, level.getTSID())
+        return ((TimeSeriesLocationLevel.Builder) new TimeSeriesLocationLevel.Builder(locationLevelName, realEffectiveDate, level.getTSID())
                 .withLevelUnitsId(units)
                 .withAttributeUnitsId(units)
                 .withLevelComment(level.getLEVEL_COMMENT())
                 .withOfficeId(officeId)
                 .withAttributeParameterId(level.getATTRIBUTE_PARAMETER_ID())
-                .withInterpolateString(level.getINTERPOLATE())
+                .withInterpolateString(level.getINTERPOLATE()))
                 .build();
     }
 

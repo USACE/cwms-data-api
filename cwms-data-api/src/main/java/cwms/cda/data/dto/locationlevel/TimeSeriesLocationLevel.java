@@ -59,8 +59,7 @@ import hec.data.level.JDomLocationLevelImpl;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
-public final class TimeSeriesLocationLevel extends LocationLevel
-{
+public final class TimeSeriesLocationLevel extends LocationLevel {
 	@JsonProperty(required = true)
 	@Schema(description = "Timeseries ID (e.g. from the times series catalog) to use as the "
 			+ "location level. Mutually exclusive with seasonalValues and "
@@ -145,117 +144,8 @@ public final class TimeSeriesLocationLevel extends LocationLevel
 					attributeCommentVal -> withAttributeComment((String) attributeCommentVal));
 		}
 
-		@Override
-		@JsonIgnore
-		public TimeSeriesLocationLevel.Builder withProperty(String propertyName, Object value) {
-			Consumer<Object> function = propertyFunctionMap.get(propertyName);
-			if (function == null) {
-				throw new IllegalArgumentException("Property Name does not exist for Location "
-						+ "Level");
-			}
-			function.accept(value);
-			return this;
-		}
-
 		public TimeSeriesLocationLevel.Builder withSeasonalTimeSeriesId(String seasonalTimeSeriesId) {
 			this.seasonalTimeSeriesId = seasonalTimeSeriesId;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withSpecifiedLevelId(String specifiedLevelId) {
-			this.specifiedLevelId = specifiedLevelId;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withParameterTypeId(String parameterTypeId) {
-			this.parameterTypeId = parameterTypeId;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withParameterId(String parameterId) {
-			this.parameterId = parameterId;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withLevelUnitsId(String levelUnitsId) {
-			this.levelUnitsId = levelUnitsId;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withLevelDate(ZonedDateTime levelDate) {
-			this.levelDate = levelDate;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withLevelComment(String levelComment) {
-			this.levelComment = levelComment;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withDurationId(String durationId) {
-			this.durationId = durationId;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withAttributeValue(BigDecimal attributeValue) {
-			this.attributeValue = attributeValue;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withAttributeUnitsId(String attributeUnitsId) {
-			this.attributeUnitsId = attributeUnitsId;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withAttributeParameterTypeId(String attributeParameterTypeId) {
-			this.attributeParameterTypeId = attributeParameterTypeId;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withAttributeParameterId(String attributeParameterId) {
-			this.attributeParameterId = attributeParameterId;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withAttributeDurationId(String attributeDurationId) {
-			this.attributeDurationId = attributeDurationId;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withInterpolateString(String interpolateString) {
-			this.interpolateString = interpolateString;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withAttributeComment(String attributeComment) {
-			this.attributeComment = attributeComment;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withLocationLevelId(String locationId)
-		{
-			this.locationId = locationId;
-			return this;
-		}
-
-		@Override
-		public TimeSeriesLocationLevel.Builder withOfficeId(String officeId) {
-			this.officeId = officeId;
 			return this;
 		}
 

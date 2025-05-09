@@ -118,7 +118,8 @@ public class LocationLevelsDaoTest extends DaoTest
             existingLocationLevel = updatedClearedFields(body, format, existingLocationLevel);
             //only store (update) if level does exist
             updatedLocationLevel = getUpdatedLocationLevel(existingLocationLevel, levelFromBody);
-            updatedLocationLevel = new SeasonalLocationLevel.Builder(updatedLocationLevel).withLevelDate(levelFromBody.getLevelDate()).build();
+            updatedLocationLevel = ((SeasonalLocationLevel.Builder) new SeasonalLocationLevel.Builder(updatedLocationLevel)
+                    .withLevelDate(levelFromBody.getLevelDate())).build();
             if (!updatedLocationLevel.getLocationLevelId().equalsIgnoreCase(existingLocationLevel.getLocationLevelId())) //if name changed then delete location with old name
             {
                 levelsDao.renameLocationLevel(levelToStore.getLocationLevelId(), updatedLocationLevel.getLocationLevelId(), OFFICE_ID);
@@ -143,7 +144,7 @@ public class LocationLevelsDaoTest extends DaoTest
         try
         {
             retVal = om.readValue(body, SeasonalLocationLevel.class);
-            retVal = new SeasonalLocationLevel.Builder(retVal).withOfficeId(office).build();
+            retVal = ((SeasonalLocationLevel.Builder) new SeasonalLocationLevel.Builder(retVal).withOfficeId(office)).build();
         }
         catch(Exception e)
         {
@@ -220,7 +221,8 @@ public class LocationLevelsDaoTest extends DaoTest
                 String propertyName = propertyDefinition.getName();
                 JsonNode propertyValue = root.findValue(propertyName);
                 if (propertyValue != null && "".equals(propertyValue.textValue())) {
-                    retVal = new SeasonalLocationLevel.Builder(retVal).withProperty(propertyName, null).build();
+                    retVal = ((SeasonalLocationLevel.Builder) new SeasonalLocationLevel.Builder(retVal)
+                            .withProperty(propertyName, null)).build();
                 }
             }
         }
@@ -290,16 +292,14 @@ public class LocationLevelsDaoTest extends DaoTest
             intervalMonths = null;
         }
 
-        return new SeasonalLocationLevel.Builder(locationId, levelDate)
+        return ((SeasonalLocationLevel.Builder) new SeasonalLocationLevel.Builder(locationId, levelDate)
                 .withSeasonalValues(seasonalValues)
                 .withSpecifiedLevelId(specifiedLevelId)
                 .withParameterTypeId(parameterTypeId)
                 .withParameterId(parameterId)
                 .withLevelUnitsId(levelUnitsId)
                 .withLevelComment(levelComment)
-                .withIntervalOrigin(intervalOrigin)
-                .withIntervalMinutes(intervalMinutes)
-                .withIntervalMonths(intervalMonths)
+                .withOfficeId(officeId)
                 .withInterpolateString(interpolateString)
                 .withDurationId(durationId)
                 .withAttributeValue(attributeValue)
@@ -307,8 +307,11 @@ public class LocationLevelsDaoTest extends DaoTest
                 .withAttributeParameterTypeId(attributeParameterTypeId)
                 .withAttributeParameterId(attributeParameterId)
                 .withAttributeDurationId(attributeDurationId)
-                .withAttributeComment(attributeComment)
-                .withOfficeId(officeId).build();
+                .withAttributeComment(attributeComment))
+                .withIntervalOrigin(intervalOrigin)
+                .withIntervalMinutes(intervalMinutes)
+                .withIntervalMonths(intervalMonths)
+                .build();
     }
 
     private void deleteLevel(LocationLevel level) throws Exception
@@ -334,10 +337,10 @@ public class LocationLevelsDaoTest extends DaoTest
         seasonalValues.add(0, seasonalVal);
         ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
         ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
-        return new SeasonalLocationLevel.Builder(locationName + ".Elev.Inst.0.Bottom of Inlet", unmarshalledDateTime)
+        return ((SeasonalLocationLevel.Builder) new SeasonalLocationLevel.Builder(locationName + ".Elev.Inst.0.Bottom of Inlet", unmarshalledDateTime)
                 .withOfficeId(OFFICE_ID)
                 .withLevelComment("For testing")
-                .withLevelUnitsId(Unit.FEET.getValue())
+                .withLevelUnitsId(Unit.FEET.getValue()))
                 .withSeasonalValues(seasonalValues)
                 .withIntervalMonths(1)
                 .build();

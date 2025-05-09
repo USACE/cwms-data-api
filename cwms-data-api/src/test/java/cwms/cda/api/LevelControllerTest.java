@@ -15,8 +15,7 @@ class LevelControllerTest extends ControllerTest
 {
     private static final String OFFICE_ID = "LRL";
     @Test
-    void testDeserializeSeasonalLevelXml() throws Exception
-    {
+    void testDeserializeSeasonalLevelXml() throws Exception {
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String xml = loadResourceAsString("cwms/cda/api/levels_seasonal_create.xml");
         assertNotNull(xml);
@@ -30,8 +29,7 @@ class LevelControllerTest extends ControllerTest
     }
 
     @Test
-    void testDeserializeSeasonalLevelJSON() throws Exception
-    {
+    void testDeserializeSeasonalLevelJSON() throws Exception {
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String json = loadResourceAsString("cwms/cda/api/levels_seasonal_create.json");
         assertNotNull(json);
@@ -45,8 +43,7 @@ class LevelControllerTest extends ControllerTest
     }
 
     @Test
-    void testDeserializeConstantLevelXml() throws Exception
-    {
+    void testDeserializeConstantLevelXml() throws Exception {
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String xml = loadResourceAsString("cwms/cda/api/levels_constant_create.xml");
         assertNotNull(xml);
@@ -60,8 +57,7 @@ class LevelControllerTest extends ControllerTest
     }
 
     @Test
-    void testDeserializeConstantLevelJSON() throws Exception
-    {
+    void testDeserializeConstantLevelJSON() throws Exception {
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String json = loadResourceAsString("cwms/cda/api/levels_constant_create.json");
         assertNotNull(json);
@@ -75,8 +71,7 @@ class LevelControllerTest extends ControllerTest
     }
 
     @Test
-    void testDeserializeTimeSeriesLevelXml() throws Exception
-    {
+    void testDeserializeTimeSeriesLevelXml() throws Exception {
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String xml = loadResourceAsString("cwms/cda/api/levels_timeseries_create.xml");
         assertNotNull(xml);
@@ -92,8 +87,7 @@ class LevelControllerTest extends ControllerTest
     }
 
     @Test
-    void testDeserializeTimeSeriesLevelJSON() throws Exception
-    {
+    void testDeserializeTimeSeriesLevelJSON() throws Exception {
         ZonedDateTimeAdapter dateTimeAdapter = new ZonedDateTimeAdapter();
         String json = loadResourceAsString("cwms/cda/api/levels_timeseries_create.json");
         assertNotNull(json);
