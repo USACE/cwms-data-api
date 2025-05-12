@@ -4,7 +4,6 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dao.ClobDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.Clob;
@@ -224,13 +223,8 @@ public class ClobController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Clob.class);
             Clob clob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Clob.class);
             ClobDao dao = new ClobDao(dsl);
-            try
-            {
-                dao.create(clob, failIfExists);
-                ctx.status(HttpCode.CREATED);
-            } catch (ValueTooLongException ex) {
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(ex.getMessage());
-            }
+            dao.create(clob, failIfExists);
+            ctx.status(HttpCode.CREATED);
         }
     }
 

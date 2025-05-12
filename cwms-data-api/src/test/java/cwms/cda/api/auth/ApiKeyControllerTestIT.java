@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Forced order is used here to allow better error reporting
@@ -312,7 +313,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     @ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)
 	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
-    public void test_api_key_delete_key(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+    void test_api_key_delete_key(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
         for(ApiKey key: realKeys) {
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -372,7 +373,8 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpCode.BAD_REQUEST.getStatus()));
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("message", is("One or more provided values exceeds the maximum length for the parameter."));
     }
 
     private void assertContainsKey(ApiKey expectedKey, List<ApiKey> returnedSet) {

@@ -7,7 +7,6 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dao.BlobDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.Blob;
@@ -189,12 +188,8 @@ public class BlobController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
             Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
             BlobDao dao = new BlobDao(dsl);
-            try {
-                dao.create(blob, failIfExists, false);
-                ctx.status(HttpCode.CREATED);
-            } catch (ValueTooLongException ex) {
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(ex.getMessage());
-            }
+            dao.create(blob, failIfExists, false);
+            ctx.status(HttpCode.CREATED);
         }
     }
 

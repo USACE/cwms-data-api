@@ -106,10 +106,10 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.GateChangeDeleteController;
 import cwms.cda.api.location.kind.GateChangeGetAllController;
-import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.LockController;
 import cwms.cda.api.location.kind.OutletController;
 import cwms.cda.api.location.kind.VirtualOutletController;
@@ -408,6 +408,11 @@ public class ApiServlet extends HttpServlet {
                 })
                 .exception(DateTimeException.class, (e, ctx) -> {
                     CdaError re = new CdaError(e.getMessage());
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
+                .exception(ValueTooLongException.class, (e, ctx) -> {
+                    CdaError re = new CdaError("One or more provided values exceeds the maximum length for the parameter.");
+                    logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(JsonFieldsException.class, (e, ctx) -> {
@@ -753,7 +758,7 @@ public class ApiServlet extends HttpServlet {
      * forget to set their own.
      * @param path where to register the routes.
      * @param crudHandler the handler requests should be forwarded to.
-     * @param getRequriesAuth if the get handlers should have an authoriation check
+     * @param getRequiresAuth if the get handlers should have an authorization check
      * @param roles the required these roles are present to access post, patch
      * @param duration the number of TimeUnit to cache GET responses.
      * @param timeUnit the TimeUnit to use for duration.

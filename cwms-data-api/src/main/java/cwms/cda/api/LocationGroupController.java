@@ -34,7 +34,6 @@ import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.formatters.ContentType;
@@ -249,12 +248,8 @@ public class LocationGroupController implements CrudHandler {
             }
 
             LocationGroupDao dao = new LocationGroupDao(dsl);
-            try {
-                dao.create(deserialize);
-                ctx.status(HttpServletResponse.SC_CREATED);
-            } catch (ValueTooLongException ex) {
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(ex.getMessage());
-            }
+            dao.create(deserialize);
+            ctx.status(HttpServletResponse.SC_CREATED);
         }
     }
 

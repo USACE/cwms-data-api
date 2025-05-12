@@ -1451,6 +1451,6 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-            .body(is("Location category ID or description is too long"));
+            .body("message", is("One or more provided values exceeds the maximum length for the parameter."));
     }
 }

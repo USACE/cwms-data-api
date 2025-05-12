@@ -280,7 +280,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-            .body(is("Blob ID size is too long for column"));
+            .body("message", is("One or more provided values exceeds the maximum length for the parameter."));
     }
 
     enum GetAllTest

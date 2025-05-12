@@ -34,6 +34,7 @@ import cwms.cda.ApiServlet;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.Context;
@@ -248,6 +249,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildUnsupportedOperationException(input);
         } else if (isInvalidOffice(input)) {
             retVal = buildInvalidOffice(input);
+        } else if (isValueTooLargeException(input)) {
+            retVal = buildValueTooLongException(input);
         }
 
         return retVal;
@@ -317,6 +320,12 @@ public abstract class JooqDao<T> extends Dao<T> {
             .map(sqlException -> hasCodeOrMessage(sqlException, Collections.singletonList(20010),
                 Collections.singletonList("INVALID_OFFICE_ID")))
             .orElse(false);
+    }
+
+    public static boolean isValueTooLargeException(RuntimeException input) {
+        return getSqlException(input.getCause()).map(sqlException -> hasCodeOrMessage(sqlException,
+                Arrays.asList(6502, 12899),
+                Arrays.asList("value too large for column", "character string buffer too small"))).orElse(false);
     }
 
     public static boolean isInvalidItem(RuntimeException input) {
@@ -522,6 +531,24 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
 
         return new InvalidItemException(localizedMessage, cause);
+    }
+
+    private static ValueTooLongException buildValueTooLongException(RuntimeException input)
+    {
+        Throwable cause = input.getCause();
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        String localizedMessage = cause.getLocalizedMessage();
+        if (localizedMessage != null) {
+            String[] parts = localizedMessage.split("\n");
+            if (parts.length > 1) {
+                localizedMessage = parts[0];
+            }
+        }
+        return new ValueTooLongException(localizedMessage, cause);
     }
 
     private static InvalidItemException buildInvalidOffice(RuntimeException input) {

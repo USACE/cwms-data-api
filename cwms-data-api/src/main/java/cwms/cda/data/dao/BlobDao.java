@@ -1,7 +1,6 @@
 package cwms.cda.data.dao;
 
 import cwms.cda.api.errors.NotFoundException;
-import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dto.Blob;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -153,12 +152,8 @@ public class BlobDao extends JooqDao<Blob> {
                     pFailIfExists,
                     pIgnoreNulls,
                     blob.getOfficeId());
-            } catch (Exception e) {
-                if (e.getCause().getMessage().contains("character string buffer too small")) {
-                    throw new ValueTooLongException("Blob ID size is too long for column", e);
-                } else {
-                    throw e;
-                }
+            } catch (RuntimeException e) {
+                throw JooqDao.wrapException(e);
             }
         });
     }
