@@ -45,7 +45,6 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.formatters.xml.XMLv2;
 
 @JsonRootName("VirtualLocationLevel")
 @JsonDeserialize(builder = VirtualLocationLevel.Builder.class)
@@ -53,7 +52,6 @@ import cwms.cda.formatters.xml.XMLv2;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
-@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 public final class VirtualLocationLevel extends LocationLevel {
 	private final List<Constituent> constituents;
 

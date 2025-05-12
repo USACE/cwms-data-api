@@ -199,12 +199,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         final SelectLimitPercentAfterOffsetStep<Record> queryFinal = query;
 
-        logger.info(() -> "getLocationLevels query: " + queryFinal.getSQL(ParamType.INLINED));
+        logger.fine(() -> "getLocationLevels query: " + queryFinal.getSQL(ParamType.INLINED));
 
         query.stream().forEach(r -> parseLevels(r, builderMap));
 
-        int newPageSize = pageSize - builderMap.size();
-        int newOffset = offset - builderMap.size(); // TODO: check if this is correct, this may cause issues with paging
+        int virtualPageSize = pageSize - builderMap.size();
+        int virtualOffset = offset - builderMap.size(); // TODO: check if this is correct, this may cause issues with paging
 
         // Virtual Levels
         usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL virtView = AV_VIRTUAL_LOCATION_LEVEL;
@@ -235,12 +235,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .orderBy(DSL.upper(virtView.OFFICE_ID), DSL.upper(virtView.LOCATION_LEVEL_ID),
                         virtView.EFFECTIVE_DATE_UTC
                 )
-                .offset(newOffset)
-                .limit(newPageSize);
+                .offset(virtualOffset)
+                .limit(virtualPageSize);
 
         final SelectLimitPercentAfterOffsetStep<Record> virtQueryFinal = query;
 
-        logger.log(Level.FINE, () -> "getLocationLevels query: " + virtQueryFinal.getSQL(ParamType.INLINED));
+        logger.fine(() -> "getLocationLevels query: " + virtQueryFinal.getSQL(ParamType.INLINED));
 
         query.stream().forEach(r -> parseVirtualLevels(r, builderMap, unit));
 
@@ -797,28 +797,25 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     private <T extends LocationLevel.Builder> T withLocationLevelRef(T builder, JDomLocationLevelRef locationLevelRef) {
         ISpecifiedLevel specifiedLevel = locationLevelRef.getSpecifiedLevel();
         if (specifiedLevel != null) {
-            builder = (T) builder.withSpecifiedLevelId(specifiedLevel.getId());
+            builder = builder.withSpecifiedLevelId(specifiedLevel.getId());
         }
 
         Parameter parameter = locationLevelRef.getParameter();
         if (parameter != null) {
-            builder = (T) builder.withParameterId(parameter.toString());
+            builder = builder.withParameterId(parameter.toString());
         }
 
         ParameterType parameterType = locationLevelRef.getParameterType();
         if (parameterType != null) {
-            builder = (T) builder.withParameterTypeId(parameterType.toString());
+            builder = builder.withParameterTypeId(parameterType.toString());
         }
 
         Duration duration = locationLevelRef.getDuration();
         if (duration != null) {
-            builder = (T) builder.withDurationId(duration.toString());
+            builder = builder.withDurationId(duration.toString());
         }
 
-
-        return (T) builder
-                .withOfficeId(locationLevelRef.getOfficeId())
-                ;
+        return builder.withOfficeId(locationLevelRef.getOfficeId());
     }
 
     private VirtualLocationLevel.Builder withVirtualLocationLevelRef(VirtualLocationLevel.Builder builder, JDomLocationLevelRef locationLevelRef) {

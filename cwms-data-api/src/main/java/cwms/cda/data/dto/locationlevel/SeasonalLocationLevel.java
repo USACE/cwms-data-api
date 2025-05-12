@@ -118,7 +118,7 @@ public final class SeasonalLocationLevel extends LocationLevel {
 	@JsonPOJOBuilder
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 	@JsonIgnoreProperties(ignoreUnknown = true)
-	public static class Builder extends LocationLevel.Builder {
+	public static final class Builder extends LocationLevel.Builder {
 		private List<SeasonalValueBean> seasonalValues;
 		private ZonedDateTime intervalOrigin;
 		private Integer intervalMonths;
