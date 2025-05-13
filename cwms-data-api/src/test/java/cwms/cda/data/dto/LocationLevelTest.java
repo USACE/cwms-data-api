@@ -9,6 +9,7 @@ import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
+import cwms.cda.data.dto.locationlevel.SeasonalValueBean;
 import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
 import cwms.cda.data.dto.locationlevel.VirtualLocationLevel;
 import cwms.cda.formatters.ContentType;
@@ -53,7 +54,11 @@ class LocationLevelTest {
 	@Test
 	void test_serialization_formats_Seasonal() {
 		ZonedDateTime zdt = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
-		final SeasonalLocationLevel level = new SeasonalLocationLevel.Builder("Test", zdt).build();
+		final SeasonalLocationLevel level = ((SeasonalLocationLevel.Builder) new SeasonalLocationLevel.Builder("Test", zdt)
+				.withSeasonalValue(new SeasonalValueBean.Builder().withValue(34.9).build())
+				.withIntervalMinutes(23)
+				.withOfficeId("SPK"))
+				.build();
 
 		ContentType contentType = Formats.parseHeader(Formats.JSONV2, LocationLevel.class);
 		String jsonStr = Formats.format(contentType, level);
@@ -96,7 +101,11 @@ class LocationLevelTest {
 	@Test
 	void test_serialization_om_Seasonal() throws JsonProcessingException {
 		ZonedDateTime zdt = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
-		final SeasonalLocationLevel level = new SeasonalLocationLevel.Builder("Test", zdt).build();
+		final SeasonalLocationLevel level = ((SeasonalLocationLevel.Builder) new SeasonalLocationLevel.Builder("Test", zdt)
+				.withSeasonalValue(new SeasonalValueBean.Builder().withValue(21.0).build())
+				.withIntervalMonths(12)
+				.withOfficeId("SPK"))
+				.build();
 
 		ObjectMapper om = JsonV2.buildObjectMapper();
 		String jsonStr = om.writeValueAsString(level);

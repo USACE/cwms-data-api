@@ -87,7 +87,7 @@ public final class TimeSeriesLocationLevel extends LocationLevel {
 		@JsonCreator
 		public Builder(@JsonProperty(value = "location-level-id", required = true) String name,
 				@JsonProperty(value = "level-date", required = true) ZonedDateTime lvlDate,
-				@JsonProperty(value = "seasonal-timeseries-id", required = true) String seasonalTimeSeriesId) {
+				@JsonProperty(value = "seasonal-time-series-id", required = true) String seasonalTimeSeriesId) {
 			super(name, lvlDate);
 			this.seasonalTimeSeriesId = seasonalTimeSeriesId;
 			buildPropertyFunctions();
@@ -159,6 +159,6 @@ public final class TimeSeriesLocationLevel extends LocationLevel {
 		super.validateInternal(validator);
 		validator.required(getOfficeId(), "office-id");
 		validator.required(getLocationLevelId(), "location-level-id");
-		validator.required(getSeasonalTimeSeriesId(), "seasonable-time-series-id");
+		validator.required(getSeasonalTimeSeriesId(), "seasonal-time-series-id");
 	}
 }
