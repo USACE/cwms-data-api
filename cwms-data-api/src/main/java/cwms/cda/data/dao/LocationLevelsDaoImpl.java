@@ -333,13 +333,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             interpolateString = seasonalLocationLevel.getInterpolateString();
 
             seasonalValues = getSeasonalValues(seasonalLocationLevel);
-        }
-        else if(locationLevel instanceof ConstantLocationLevel)
-        {
+        } else if(locationLevel instanceof ConstantLocationLevel) {
             constantValue = ((ConstantLocationLevel) locationLevel).getConstantValue();
-        }
-        else if(locationLevel instanceof TimeSeriesLocationLevel)
-        {
+        } else if(locationLevel instanceof TimeSeriesLocationLevel) {
             seasonalTimeSeriesId = ((TimeSeriesLocationLevel) locationLevel).getSeasonalTimeSeriesId();
         }
 
@@ -352,8 +348,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         final String seasonalTimeSeriesIdFinal = seasonalTimeSeriesId;
         final String interpolateStringFinal = interpolateString;
 
-        connection(dsl, c ->
-        {
+        connection(dsl, c -> {
             String officeId = locationLevel.getOfficeId();
             setOffice(c, officeId);
             CWMS_LEVEL_PACKAGE.call_STORE_LOCATION_LEVEL3(DSL.using(c).configuration(),

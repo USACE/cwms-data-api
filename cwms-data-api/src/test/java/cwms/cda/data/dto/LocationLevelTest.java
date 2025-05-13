@@ -20,11 +20,9 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class LocationLevelTest
-{
+class LocationLevelTest {
 	@Test
-	void test_serialization_formats_TimeSeries()
-	{
+	void test_serialization_formats_TimeSeries() {
 		ZonedDateTime zdt = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
 		String tsId = "Test.Elev.Ave.1Day.Regulating";
 		final TimeSeriesLocationLevel level = new TimeSeriesLocationLevel.Builder("Test", zdt, tsId).build();
@@ -33,14 +31,13 @@ class LocationLevelTest
 		String jsonStr = Formats.format(contentType, level);
 
 		// If JSONv2 isn't setup correctly it will serialize the level like:
-//		{"location-level-id":"Test","level-date":1624287600.000000000}
+		// {"location-level-id":"Test","level-date":1624287600.000000000}
 
 		assertTrue(jsonStr.contains("2021"));
 	}
 
 	@Test
-	void test_serialization_formats_Constant()
-	{
+	void test_serialization_formats_Constant() {
 		ZonedDateTime zdt = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
 		final ConstantLocationLevel level = new ConstantLocationLevel.Builder("Test", zdt).build();
 
@@ -54,8 +51,7 @@ class LocationLevelTest
 	}
 
 	@Test
-	void test_serialization_formats_Seasonal()
-	{
+	void test_serialization_formats_Seasonal() {
 		ZonedDateTime zdt = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
 		final SeasonalLocationLevel level = new SeasonalLocationLevel.Builder("Test", zdt).build();
 
@@ -69,8 +65,7 @@ class LocationLevelTest
 	}
 
 	@Test
-	void test_serialization_formats_Virtual()
-	{
+	void test_serialization_formats_Virtual() {
 		ZonedDateTime zdt = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
 		final VirtualLocationLevel level = new VirtualLocationLevel.Builder("Test", zdt).build();
 

@@ -733,8 +733,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void testRetrievalInvalidLevelName()
-    {
+    void testRetrievalInvalidLevelName() {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -752,8 +751,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void testStoreRetrieveVirtualLocationLevels() throws Exception
-    {
+    void testStoreRetrieveVirtualLocationLevels() throws Exception {
         // Virtual levels do not include constant or seasonal values
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
@@ -869,8 +867,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void testStoreRetrieveAllVirtualLocationLevels() throws Exception
-    {
+    void testStoreRetrieveAllVirtualLocationLevels() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String existingLoc = "LevelsControllerTestIT";
         String levelLoc1 = "level_get_all_loc1";
@@ -1181,8 +1178,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @EnumSource(GetAllTestNewAliases.class)
-    void test_get_all_aliases_new(GetAllTestNewAliases test)
-    {
+    void test_get_all_aliases_new(GetAllTestNewAliases test) {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(test._accept)
