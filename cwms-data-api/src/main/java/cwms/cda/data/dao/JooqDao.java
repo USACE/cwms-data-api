@@ -76,6 +76,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final int DEFAULT_FETCH_SIZE = 1000;
     public static final int DEFAULT_SMALL_FETCH_SIZE = 500;
+    public static final int ORACLE_ECID_MAX_LENGTH = 22;
 
     static ExecuteListener listener = new ExceptionWrappingListener();
     private static Pattern INVALID_OFFICE_ID = Pattern.compile(
@@ -159,7 +160,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             final String apiVersion = ApiServlet.getApiVersion();
             connection.setClientInfo("OCSID.ECID",
                                      ApiServlet.APPLICATION_TITLE + " " + 
-                                     apiVersion.substring(0,Math.min(22,apiVersion.length())));
+                                     apiVersion.substring(0,Math.min(ORACLE_ECID_MAX_LENGTH,apiVersion.length())));
             if (ctx.handlerType() == HandlerType.BEFORE) {
                 connection.setClientInfo("OCSID.MODULE", "BEFORE-HANDLER");
             } else {

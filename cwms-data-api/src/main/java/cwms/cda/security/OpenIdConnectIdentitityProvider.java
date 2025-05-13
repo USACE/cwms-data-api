@@ -41,7 +41,7 @@ import com.google.common.flogger.FluentLogger;
 
 
 @AutoService(IdentityProvider.class)
-public class OpenIdConnectIdentitityProvider implements IdentityProvider {
+public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
     public static final String WELL_KNOWN_PROPERTY = "cwms.dataapi.access.openid.wellKnownUrl";

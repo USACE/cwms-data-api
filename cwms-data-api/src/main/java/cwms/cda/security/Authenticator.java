@@ -8,8 +8,7 @@ import cwms.cda.spi.IdentityProvider;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 
-public class Authenticator implements Handler {
-
+public final class Authenticator implements Handler {
     private final ArrayList<IdentityProvider> providers = new ArrayList<>();
 
     public Authenticator() {
@@ -21,7 +20,7 @@ public class Authenticator implements Handler {
         for (IdentityProvider provider: providers) {
             if (provider.canAuth(ctx)) {
                 Principal p = provider.authenticate(ctx);
-                ctx.sessionAttribute("principal", p);
+                ctx.sessionAttribute(IdentityProvider.PRINCIPAL_KEY, p);
                 return;
             }
         }
