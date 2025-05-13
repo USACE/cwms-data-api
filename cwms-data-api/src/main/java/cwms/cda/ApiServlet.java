@@ -279,6 +279,7 @@ public class ApiServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     JavalinServlet javalin = null;
+    private Authenticator authenticator = new Authenticator();
     private String APP_CONTEXT;
 
     @Resource(name = "jdbc/CWMS3")
@@ -329,7 +330,7 @@ public class ApiServlet extends HttpServlet {
                 })
                 .attribute("PolicyFactory", sanitizer)
                 .attribute("ObjectMapper", om)
-                .before(new Authenticator())
+                .before(authenticator)
                 .before(ctx -> {
                     ctx.attribute("sanitizer", sanitizer);
                     ctx.header("X-Content-Type-Options", "nosniff");
@@ -867,7 +868,7 @@ public class ApiServlet extends HttpServlet {
     
         Components components = new Components();
         final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
-        CdaIdentityProviders.providers().forEachRemaining(identityProvider -> {
+        authenticator.getActiveProviders().forEach(identityProvider -> {
             components.addSecuritySchemes(identityProvider.getName(),identityProvider.getScheme());
             SecurityRequirement req = new SecurityRequirement();
             if (!identityProvider.getName().equalsIgnoreCase("guestauth") && !identityProvider.getName().equalsIgnoreCase("noauth")) {

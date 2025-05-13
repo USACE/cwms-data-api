@@ -76,6 +76,10 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
                         .setSigningKeyResolver(new UrlResolver(config.getJwksUrl(),timeout))
                         .build();
         } catch (IOException ex) {
+            // The downstream users of this check if the Provider is valid and respond appropriate.
+            // To test manually have OpenIDConfig throw an IOException so config stays null and 
+            // see the resulting explained failure in the logs.
+            // That said it's possible we should maybe just have the system fail completely.
             log.atSevere().withCause(ex).log("Unable to initialize realm.");
         }
     }
@@ -126,7 +130,7 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
 
     @Override
     public SecurityScheme getScheme() {
-        return config.getScheme();
+        return config != null ? config.getScheme() : null;
     }
 
     @Override
