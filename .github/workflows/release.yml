@@ -118,6 +118,7 @@ jobs:
           context: "."
           # This is not conditional on pull_request as we want access to these if we are manually running it.
           push: true
+          sbom: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
       - name: Set Output Image
