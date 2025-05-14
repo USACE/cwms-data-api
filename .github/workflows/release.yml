@@ -88,7 +88,7 @@ jobs:
         with:
           images: |
             ${{secrets.registry != null && secrets.registry ||secrets.HEC_PUB_REGISTRY}}/cwms/data-api
-            ghcr.io/${REPO}
+            ghcr.io/${{env.REPO}}
           tags: |
             type=sha
             type=ref,event=tag
@@ -112,7 +112,7 @@ jobs:
         with:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}      
+          labels: ${{ steps.meta.outputs.labels }}
       - name: Set Output Image
         id: set_image
         run: |
