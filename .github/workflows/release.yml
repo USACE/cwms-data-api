@@ -74,6 +74,8 @@ jobs:
         run: ./gradlew build --info --init-script init.gradle -PversionOverride=$VERSION
       - name: Create GitHub Release
         id: create_release
+        # Allow testing withing creating a release
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2.1.0
         with:
           files: cwms-data-api/build/libs/cwms-data-api-${{env.VERSION}}.war
@@ -93,6 +95,8 @@ jobs:
             type=sha
             type=ref,event=tag
             type=schedule,pattern=nightly
+            type=schedule,pattern={{date 'YYYY.MM.DD'}}
+            type=schedule,pattern={{date 'YYYY.MM.DD-hhmmss'}}
       - name: Log in to the Container registry
         id: login-ghcr
         uses: docker/login-action@v3.3.0
@@ -110,6 +114,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6.16.0
         with:
+          context: "."
+          # This is not conditional on pull_request as we want access to these if we are manually running it.
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
