@@ -64,8 +64,8 @@ jobs:
         run: echo "VERSION=${{inputs.branch}}-nightly" >> $GITHUB_ENV
       - name: Set version
         if: inputs.nightly == false
-        run: |
-          echo "VERSION=${{inputs.branch}}" >> $GITHUB_ENV
+        run: echo "VERSION=${{inputs.branch}}" >> $GITHUB_ENV
+      - name: Sanitize repo for container image names
           REPO=`echo "${{github.repository}}" | tr  '[:upper:]' '[:lower:]'`
           echo "REPO=$REPO" >> $GITHUB_ENV
       - name: show version
@@ -75,7 +75,7 @@ jobs:
       - name: Create GitHub Release
         id: create_release
         # Allow testing withing creating a release
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.event.ref == 'refs/heads/develop'
         uses: softprops/action-gh-release@v2.1.0
         with:
           files: cwms-data-api/build/libs/cwms-data-api-${{env.VERSION}}.war
