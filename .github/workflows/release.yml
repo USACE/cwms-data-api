@@ -66,6 +66,7 @@ jobs:
         if: inputs.nightly == false
         run: echo "VERSION=${{inputs.branch}}" >> $GITHUB_ENV
       - name: Sanitize repo for container image names
+        run: |
           REPO=`echo "${{github.repository}}" | tr  '[:upper:]' '[:lower:]'`
           echo "REPO=$REPO" >> $GITHUB_ENV
       - name: show version
