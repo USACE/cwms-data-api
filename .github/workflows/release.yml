@@ -75,7 +75,7 @@ jobs:
         run: ./gradlew build --info --init-script init.gradle -PversionOverride=$VERSION
       - name: Create GitHub Release
         id: create_release
-        # Allow testing withing creating a release
+        # Allow testing without creating a release
         if: github.event_name != 'pull_request' && github.event.ref == 'refs/heads/develop'
         uses: softprops/action-gh-release@v2.1.0
         with:
