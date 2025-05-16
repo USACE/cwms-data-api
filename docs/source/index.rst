@@ -49,3 +49,4 @@ Welcome to CWMS Data API documentation!
    
    Design <./introduction/design.rst>
    Decision Records <./decisions/index.rst>
+   Design Documents <./design/index.rst>
