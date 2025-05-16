@@ -19,3 +19,4 @@ Welcome to CWMS Data API documentation!
    Glossary <./glossary.rst>
    FAQ <./faq.rst>
    Client Libraries <./libraries.rst>
+   Design Documents <./design/index.rst>
