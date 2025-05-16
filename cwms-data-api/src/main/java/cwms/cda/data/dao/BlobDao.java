@@ -140,22 +140,16 @@ public class BlobDao extends JooqDao<Blob> {
         String pFailIfExists = formatBool(failIfExists);
         String pIgnoreNulls = formatBool(ignoreNulls);
 
-        dsl.connection(c -> {
-            try
-            {
+        connection(dsl, c ->
             CWMS_TEXT_PACKAGE.call_STORE_BINARY(
-                    getDslContext(c, blob.getOfficeId()).configuration(),
-                    blob.getValue(),
-                    blob.getId(),
-                    blob.getMediaTypeId(),
-                    blob.getDescription(),
-                    pFailIfExists,
-                    pIgnoreNulls,
-                    blob.getOfficeId());
-            } catch (RuntimeException e) {
-                throw JooqDao.wrapException(e);
-            }
-        });
+                getDslContext(c, blob.getOfficeId()).configuration(),
+                blob.getValue(),
+                blob.getId(),
+                blob.getMediaTypeId(),
+                blob.getDescription(),
+                pFailIfExists,
+                pIgnoreNulls,
+                blob.getOfficeId()));
     }
 
     public void update(Blob blob, boolean ignoreNulls) {

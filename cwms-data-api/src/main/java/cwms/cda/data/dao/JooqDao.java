@@ -548,7 +548,12 @@ public abstract class JooqDao<T> extends Dao<T> {
                 localizedMessage = parts[0];
             }
         }
-        return new ValueTooLongException(localizedMessage, cause);
+        if (hasCodeOrMessage((SQLException) input.getCause(), Collections.singletonList(12899),
+                Collections.singletonList("value too large for column"))) {
+            return ValueTooLongException.fromString(localizedMessage, cause.getMessage(), cause);
+        } else {
+            return new ValueTooLongException(localizedMessage, cause);
+        }
     }
 
     private static InvalidItemException buildInvalidOffice(RuntimeException input) {

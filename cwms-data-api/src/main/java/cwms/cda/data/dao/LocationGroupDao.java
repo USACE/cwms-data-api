@@ -606,15 +606,10 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
-            try
-            {
-                CWMS_LOC_PACKAGE.call_CREATE_LOC_GROUP2(dslContext.configuration(), categoryId,
-                        group.getId(), group.getDescription(), group.getOfficeId(), group.getSharedLocAliasId(),
-                        group.getSharedRefLocationId());
-                assignLocs(dslContext, group, office);
-            } catch (RuntimeException e) {
-                throw JooqDao.wrapException(e);
-            }
+            CWMS_LOC_PACKAGE.call_CREATE_LOC_GROUP2(dslContext.configuration(), categoryId,
+                    group.getId(), group.getDescription(), group.getOfficeId(), group.getSharedLocAliasId(),
+                    group.getSharedRefLocationId());
+            assignLocs(dslContext, group, office);
         });
     }
 

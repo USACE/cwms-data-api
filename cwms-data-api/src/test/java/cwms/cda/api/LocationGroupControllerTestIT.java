@@ -32,6 +32,7 @@ import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import helpers.StringGenerator;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.FunctionalSchemas;
 import fixtures.TestAccounts;
@@ -1431,7 +1432,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
     void test_ID_too_long()
     {
         String officeId = user.getOperatingOffice();
-        String invalidId = "ThisIsAnInvalidIdThatIsWayTooLongForTheDatabaseSinceTheMaximumLengthIs65Characters";
+        String invalidId = StringGenerator.createString(65);
         LocationCategory cat = new LocationCategory(officeId, invalidId, "IntegrationTesting");
         ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
         String categoryXml = Formats.format(contentType, cat);
@@ -1451,6 +1452,6 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-            .body("message", is("One or more provided values exceeds the maximum length for the parameter."));
+            .body("message", containsString("One or more provided values exceeds the maximum length for the parameter."));
     }
 }

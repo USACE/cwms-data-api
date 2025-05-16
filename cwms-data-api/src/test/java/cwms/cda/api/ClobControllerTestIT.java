@@ -1,6 +1,7 @@
 package cwms.cda.api;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
@@ -9,6 +10,7 @@ import cwms.cda.data.dto.Clob;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
+import helpers.StringGenerator;
 import io.restassured.filter.log.LogDetail;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -206,10 +208,7 @@ public class ClobControllerTestIT extends DataApiTestIT {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         ObjectMapper om = JsonV2.buildObjectMapper();
 
-        String invalidClobId = "ThisIsAVeryLongClobIdThatExceedsTheMaximumAllowedLengthForClobIdsInTheSystemWhichIs"
-                + "TwoHundredFiftySixCharactersAndWillCauseAnErrorWhenAttemptingToCreateTheClobInTheDatabaseBecause"
-                + "ItIsTooLongAndWillNotBeAcceptedByTheSystemAsAValidClobId.ThisClobIdIsFarTooLongAndWillNotBeAccepted"
-                + "ByTheSystemAsAValidClobId";
+        String invalidClobId = StringGenerator.createString(300);
 
         Clob clob = new Clob(SPK, invalidClobId, EXISTING_CLOB_DESC, EXISTING_CLOB_VALUE);
         String serializedClob = om.writeValueAsString(clob);
@@ -229,7 +228,7 @@ public class ClobControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-            .body("message", is("One or more provided values exceeds the maximum length for the parameter."));
+            .body("message", containsString("One or more provided values exceeds the maximum length for the parameter."));
     }
 
 

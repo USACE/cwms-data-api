@@ -46,6 +46,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
+import static cwms.cda.data.dao.JooqDao.connection;
+
 public class AuthDao extends Dao<DataApiPrincipal> {
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String SCHEMA_TOO_OLD = "The CWMS-Data-API requires schema version "
@@ -419,7 +421,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                     ZonedDateTime.now(ZoneId.of("UTC")),
                     sourceData.getExpires()
             );
-            dsl.connection(c -> {
+             connection(dsl, c -> {
                 setSessionForAuthCheck(c);
                 try (PreparedStatement createKey = c.prepareStatement(CREATE_API_KEY)) {
                     createKey.setString(1, newKey.getUserId());
@@ -434,10 +436,8 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                         createKey.setDate(5,null);
                     }
                     createKey.execute();
-                }
-                catch (Exception e)
-                {
-                    RuntimeException re = new RuntimeException(e);
+                } catch (SQLException e) {
+                    DataAccessException re = new DataAccessException(e.getMessage(), e);
                     throw JooqDao.wrapException(re);
                 }
             });

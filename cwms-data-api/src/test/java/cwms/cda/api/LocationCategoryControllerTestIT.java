@@ -27,6 +27,7 @@ package cwms.cda.api;
 import static cwms.cda.api.Controllers.CASCADE_DELETE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -307,6 +308,6 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 			.log().ifValidationFails(LogDetail.ALL,true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-			.body("message", is("One or more provided values exceeds the maximum length for the parameter."));
+			.body("message", containsString("One or more provided values exceeds the maximum length for the parameter."));
 	}
 }

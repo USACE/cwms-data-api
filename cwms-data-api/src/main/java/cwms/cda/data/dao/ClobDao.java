@@ -167,19 +167,14 @@ public class ClobDao extends JooqDao<Clob> {
     public void create(Clob clob, boolean failIfExists) {
 
         String pFailIfExists = getBoolean(failIfExists);
-        dsl.connection(c -> {
-            try {
-                CWMS_TEXT_PACKAGE.call_STORE_TEXT(
-                        getDslContext(c, clob.getOfficeId()).configuration(),
-                        clob.getValue(),
-                        clob.getId(),
-                        clob.getDescription(),
-                        pFailIfExists,
-                        clob.getOfficeId());
-            } catch (RuntimeException e) {
-                throw JooqDao.wrapException(e);
-            }
-        });
+        connection(dsl, c ->
+            CWMS_TEXT_PACKAGE.call_STORE_TEXT(
+                    getDslContext(c, clob.getOfficeId()).configuration(),
+                    clob.getValue(),
+                    clob.getId(),
+                    clob.getDescription(),
+                    pFailIfExists,
+                    clob.getOfficeId()));
     }
 
     @NotNull

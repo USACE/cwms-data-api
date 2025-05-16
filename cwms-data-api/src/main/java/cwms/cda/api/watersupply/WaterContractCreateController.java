@@ -38,7 +38,6 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
@@ -104,12 +103,8 @@ public final class WaterContractCreateController extends WaterSupplyControllerBa
             boolean ignoreNulls = Boolean.parseBoolean(ctx.queryParam(IGNORE_NULLS));
             String newContractName = ctx.pathParam(WATER_USER);
             WaterContractDao contractDao = getContractDao(dsl);
-            try {
-                contractDao.storeWaterContract(waterContract, failIfExists, ignoreNulls);
-                ctx.status(HttpServletResponse.SC_CREATED).json(newContractName + " created successfully");
-            } catch (ValueTooLongException ex) {
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(ex.getMessage());
-            }
+            contractDao.storeWaterContract(waterContract, failIfExists, ignoreNulls);
+            ctx.status(HttpServletResponse.SC_CREATED).json(newContractName + " created successfully");
         }
     }
 }

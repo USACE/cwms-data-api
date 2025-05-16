@@ -5,6 +5,7 @@ import cwms.cda.data.dto.Blob;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
+import helpers.StringGenerator;
 import io.restassured.filter.log.LogDetail;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -17,6 +18,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
@@ -251,10 +253,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_too_long_name() throws Exception
     {
-        String blobId = "ThisIsAVeryLongBlobIdThatExceedsTheMaximumAllowedLengthForBlobIdsInTheSystemWhichIs"
-                + "TwoHundredFiftySixCharactersAndWillCauseAnErrorWhenAttemptingToCreateTheBlobInTheDatabaseBecause"
-                + "ItIsTooLongAndWillNotBeAcceptedByTheSystemAsAValidBlobId.ThisBlobIdIsFarTooLongAndWillNotBeAccepted"
-                + "ByTheSystemAsAValidBlobId";
+        String blobId = StringGenerator.createString(300);
         String blobValue = "test value";
         String origDesc = "test description";
         byte[] origBytes = blobValue.getBytes();
@@ -280,7 +279,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-            .body("message", is("One or more provided values exceeds the maximum length for the parameter."));
+            .body("message", containsString("One or more provided values exceeds the maximum length for the parameter."));
     }
 
     enum GetAllTest

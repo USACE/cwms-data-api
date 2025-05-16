@@ -86,11 +86,7 @@ public final class LocationCategoryDao extends JooqDao<LocationCategory> {
         String office = category.getOfficeId();
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
-            try {
-                CWMS_LOC_PACKAGE.call_CREATE_LOC_CATEGORY(dslContext.configuration(), category.getId(), category.getDescription(), office);
-            } catch (RuntimeException e) {
-                throw JooqDao.wrapException(e);
-            }
+            CWMS_LOC_PACKAGE.call_CREATE_LOC_CATEGORY(dslContext.configuration(), category.getId(), category.getDescription(), office);
         });
     }
 
