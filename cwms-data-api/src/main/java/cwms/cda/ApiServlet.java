@@ -325,7 +325,6 @@ public class ApiServlet extends HttpServlet {
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         APP_CONTEXT = this.getServletContext().getContextPath();
         javalin = Javalin.createStandalone(config -> {
-                    config.enableDevLogging();
                     config.defaultContentType = "application/json";
                     getOpenApiOptions(config);
                     config.autogenerateEtags = true;
