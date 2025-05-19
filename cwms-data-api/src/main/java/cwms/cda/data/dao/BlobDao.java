@@ -43,9 +43,9 @@ public class BlobDao extends JooqDao<Blob> {
         ResultQuery<Record> query;
         if (limitToOffice != null && !limitToOffice.isEmpty()) {
             queryStr = queryStr + " and CWMS_OFFICE.OFFICE_ID = ?";
-            query = dsl.resultQuery(queryStr, id, limitToOffice);
+            query = dsl.resultQuery(queryStr, id.toUpperCase(), limitToOffice);
         } else {
-            query = dsl.resultQuery(queryStr, id);
+            query = dsl.resultQuery(queryStr, id.toUpperCase());
         }
 
         Blob retVal = query.fetchOne(r -> {
@@ -73,14 +73,14 @@ public class BlobDao extends JooqDao<Blob> {
 
         dsl.connection(connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(BLOB_WITH_OFFICE)) {
-                preparedStatement.setString(1, id);
+                preparedStatement.setString(1, id.toUpperCase());
                 preparedStatement.setString(2, office);
 
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         handleResultSet(resultSet, consumer);
                     } else {
-                        throw new NotFoundException("Unable to find blob with id " + id + " in office " + office);
+                        throw new NotFoundException("Unable to find blob with id " + id.toUpperCase() + " in office " + office);
                     }
                 }
             }
@@ -91,13 +91,13 @@ public class BlobDao extends JooqDao<Blob> {
 
         dsl.connection(connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(BLOB_QUERY)) {
-                preparedStatement.setString(1, id);
+                preparedStatement.setString(1, id.toUpperCase());
 
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         handleResultSet(resultSet, consumer);
                     } else {
-                        throw new NotFoundException("Unable to find blob with id " + id);
+                        throw new NotFoundException("Unable to find blob with id " + id.toUpperCase());
                     }
                 }
             }
@@ -142,7 +142,7 @@ public class BlobDao extends JooqDao<Blob> {
         dsl.connection(c -> CWMS_TEXT_PACKAGE.call_STORE_BINARY(
                 getDslContext(c, blob.getOfficeId()).configuration(),
                 blob.getValue(),
-                blob.getId(),
+                blob.getId().toUpperCase(),
                 blob.getMediaTypeId(),
                 blob.getDescription(),
                 pFailIfExists,
@@ -158,14 +158,14 @@ public class BlobDao extends JooqDao<Blob> {
             throw new NotFoundException("Null blob provided to update");
         }
 
-        if (!blobExists(blob.getOfficeId(), blob.getId())) {
-            throw new NotFoundException("Unable to find blob with id " + blob.getId() + " in office " + blob.getOfficeId());
+        if (!blobExists(blob.getOfficeId(), blob.getId().toUpperCase())) {
+            throw new NotFoundException("Unable to find blob with id " + blob.getId().toUpperCase() + " in office " + blob.getOfficeId());
         }
 
         dsl.connection(c -> CWMS_TEXT_PACKAGE.call_STORE_BINARY(
                 getDslContext(c, blob.getOfficeId()).configuration(),
                 blob.getValue(),
-                blob.getId(),
+                blob.getId().toUpperCase(),
                 blob.getMediaTypeId(),
                 blob.getDescription(),
                 pFailIfExists,
@@ -174,12 +174,12 @@ public class BlobDao extends JooqDao<Blob> {
     }
 
     public void delete(String office, String id) {
-        if (!blobExists(office, id)) {
-            throw new NotFoundException("Unable to find blob with id " + id + " in office " + office);
+        if (!blobExists(office, id.toUpperCase())) {
+            throw new NotFoundException("Unable to find blob with id " + id.toUpperCase() + " in office " + office);
         }
         dsl.connection(c -> CWMS_TEXT_PACKAGE.call_DELETE_BINARY(
                 getDslContext(c, office).configuration(),
-                id,
+                id.toUpperCase(),
                 office));
     }
 
@@ -190,7 +190,7 @@ public class BlobDao extends JooqDao<Blob> {
                 + "WHERE ID = ? AND upper(CWMS_OFFICE.OFFICE_ID) = upper(?)";
         return connectionResult(dsl, conn -> {
             try (PreparedStatement preparedStatement = conn.prepareStatement(existsQuery)) {
-                preparedStatement.setString(1, id);
+                preparedStatement.setString(1, id.toUpperCase());
                 preparedStatement.setString(2, office);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     return resultSet.next();

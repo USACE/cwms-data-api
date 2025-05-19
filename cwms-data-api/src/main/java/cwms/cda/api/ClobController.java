@@ -118,7 +118,7 @@ public class ClobController implements CrudHandler {
             String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
             ClobDao dao = new ClobDao(dsl);
-            Clobs clobs = dao.getClobs(cursor, pageSize, office, includeValues, like.toUpperCase());
+            Clobs clobs = dao.getClobs(cursor, pageSize, office, includeValues, like);
             String result = Formats.format(contentType, clobs);
 
             ctx.result(result);
@@ -172,7 +172,7 @@ public class ClobController implements CrudHandler {
             if (TEXT_PLAIN.equals(formatHeader)) {
                 // useful cmd:  curl -X 'GET' 'http://localhost:7000/cwms-data/clobs/encoded?office=SPK&id=%2FTIME%20SERIES%20TEXT%2F6261044'
                 // -H 'accept: text/plain' --header "Range: bytes=20000-40000"
-                dao.getClob(clobId.toUpperCase(), office, c -> {
+                dao.getClob(clobId, office, c -> {
                     if (c == null) {
                         ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                                 + "clob based on given parameters"));
@@ -181,7 +181,7 @@ public class ClobController implements CrudHandler {
                     }
                 });
             } else {
-                Optional<Clob> optAc = dao.getByUniqueName(clobId.toUpperCase(), office);
+                Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
 
                 if (optAc.isPresent()) {
                     ContentType contentType = Formats.parseHeader(formatHeader, Clob.class);
@@ -224,10 +224,8 @@ public class ClobController implements CrudHandler {
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             ContentType contentType = Formats.parseHeader(formatHeader, Clob.class);
             Clob clob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Clob.class);
-            Clob clobUpper = new Clob(clob.getOfficeId(), clob.getId().toUpperCase(),
-                    clob.getDescription(), clob.getValue());
             ClobDao dao = new ClobDao(dsl);
-            dao.create(clobUpper, failIfExists);
+            dao.create(clob, failIfExists);
             ctx.status(HttpCode.CREATED);
         }
     }
@@ -271,16 +269,14 @@ public class ClobController implements CrudHandler {
                         "An office is required in the request body when updating a clob");
             }
 
-            clob = fillOutClob(clob, clobId.toUpperCase());
+            clob = fillOutClob(clob, clobId);
 
-            if (!Objects.equals(clob.getId().toUpperCase(), clobId.toUpperCase())) {
+            if (!Objects.equals(clob.getId(), clobId)) {
                 throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
                         "Clob id in body does not match id in path");
             }
 
-            Clob clobUpper = new Clob(clob.getOfficeId(), clob.getId().toUpperCase(),
-                    clob.getDescription(), clob.getValue());
-            dao.update(clobUpper, ignoreNulls);
+            dao.update(clob, ignoreNulls);
         }
     }
 
@@ -325,7 +321,7 @@ public class ClobController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             ClobDao dao = new ClobDao(dsl);
-            dao.delete(office, clobId.toUpperCase());
+            dao.delete(office, clobId);
         }
     }
 

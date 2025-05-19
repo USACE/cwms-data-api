@@ -47,7 +47,7 @@ public class ClobDao extends JooqDao<Clob> {
         AV_CLOB vClob = AV_CLOB.AV_CLOB;
         AV_OFFICE vOffice = AV_OFFICE.AV_OFFICE;
 
-        Condition cond = vClob.ID.eq(uniqueName);
+        Condition cond = vClob.ID.eq(uniqueName.toUpperCase());
         if (office != null && !office.isEmpty()) {
             cond = cond.and(vOffice.OFFICE_ID.eq(office));
         }
@@ -145,7 +145,7 @@ public class ClobDao extends JooqDao<Clob> {
         AV_CLOB vClob = AV_CLOB.AV_CLOB;
         AV_OFFICE vOffice = AV_OFFICE.AV_OFFICE;
 
-        Condition cond = DSL.upper(vClob.ID).like(idLike.toUpperCase());
+        Condition cond = caseInsensitiveLikeRegex(vClob.ID, idLike);
         if (office != null && !office.isEmpty()) {
             cond = cond.and(DSL.upper(vOffice.OFFICE_ID).eq(office.toUpperCase()));
         }
@@ -170,7 +170,7 @@ public class ClobDao extends JooqDao<Clob> {
         dsl.connection(c -> CWMS_TEXT_PACKAGE.call_STORE_TEXT(
             getDslContext(c, clob.getOfficeId()).configuration(),
             clob.getValue(),
-            clob.getId(),
+            clob.getId().toUpperCase(),
             clob.getDescription(),
             pFailIfExists,
             clob.getOfficeId()));
@@ -189,7 +189,7 @@ public class ClobDao extends JooqDao<Clob> {
 
     public void delete(String officeId, String id) {
         dsl.connection(c -> CWMS_TEXT_PACKAGE.call_DELETE_TEXT(
-                getDslContext(c,officeId).configuration(), id, officeId)
+                getDslContext(c,officeId).configuration(), id.toUpperCase(), officeId)
         );
     }
 
@@ -207,7 +207,7 @@ public class ClobDao extends JooqDao<Clob> {
             CWMS_TEXT_PACKAGE.call_UPDATE_TEXT(
                 getDslContext(c,clob.getOfficeId()).configuration(),
                 clob.getValue(),
-                clob.getId(),
+                clob.getId().toUpperCase(),
                 clob.getDescription(),
                 pIgnoreNulls,
                 clob.getOfficeId()
@@ -235,14 +235,14 @@ public class ClobDao extends JooqDao<Clob> {
         dsl.connection(connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(SELECT_CLOB_QUERY)) {
                 preparedStatement.setString(1, officeId);
-                preparedStatement.setString(2, clobId);
+                preparedStatement.setString(2, clobId.toUpperCase());
 
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         java.sql.Clob clob = resultSet.getClob("VALUE");
                         clobConsumer.accept(clob);
                     } else {
-                        throw new NotFoundException("Unable to find clob with id " + clobId + " in office " + officeId);
+                        throw new NotFoundException("Unable to find clob with id " + clobId.toUpperCase() + " in office " + officeId);
                     }
                 }
             }

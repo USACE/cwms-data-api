@@ -115,7 +115,7 @@ public class BlobController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Blobs.class);
 
             BlobDao dao = new BlobDao(dsl);
-            List<Blob> blobList = dao.getAll(office, like.toUpperCase());
+            List<Blob> blobList = dao.getAll(office, like);
 
             Blobs blobs = new Blobs.Builder(cursor, pageSize, 0).addAll(blobList).build();
             String result = Formats.format(contentType, blobs);
@@ -156,9 +156,9 @@ public class BlobController implements CrudHandler {
                 }
             };
             if (office.isPresent()) {
-                dao.getBlob(blobId.toUpperCase(), office.get(), tripleConsumer);
+                dao.getBlob(blobId, office.get(), tripleConsumer);
             } else {
-                dao.getBlob(blobId.toUpperCase(), tripleConsumer);
+                dao.getBlob(blobId, tripleConsumer);
             }
         }
     }
@@ -186,9 +186,8 @@ public class BlobController implements CrudHandler {
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
             Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
-            Blob blobUpper = new Blob(blob.getOfficeId(), blob.getId().toUpperCase(), blob.getDescription(), blob.getMediaTypeId(), blob.getValue());
             BlobDao dao = new BlobDao(dsl);
-            dao.create(blobUpper, failIfExists, false);
+            dao.create(blob, failIfExists, false);
             ctx.status(HttpCode.CREATED);
         }
     }
@@ -217,7 +216,6 @@ public class BlobController implements CrudHandler {
 
             ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
             Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
-            Blob blobUpper = new Blob(blob.getOfficeId(), blob.getId().toUpperCase(), blob.getDescription(), blob.getMediaTypeId(), blob.getValue());
 
             if (blob.getOfficeId() == null) {
                 throw new FormattingException("An officeId is required when updating a blob");
@@ -233,7 +231,7 @@ public class BlobController implements CrudHandler {
             }
 
             BlobDao dao = new BlobDao(dsl);
-            dao.update(blobUpper, false);
+            dao.update(blob, false);
             ctx.status(HttpServletResponse.SC_OK);
         }
     }
@@ -256,7 +254,7 @@ public class BlobController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             String office = requiredParam(ctx, OFFICE);
             BlobDao dao = new BlobDao(dsl);
-            dao.delete(office, blobId.toUpperCase());
+            dao.delete(office, blobId);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
