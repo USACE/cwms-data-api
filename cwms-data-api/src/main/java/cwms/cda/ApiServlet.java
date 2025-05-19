@@ -413,9 +413,7 @@ public class ApiServlet extends HttpServlet {
                 .exception(ValueTooLongException.class, (e, ctx) -> {
                     CdaError re;
                     if (e.hasParameter()) {
-                        re = new CdaError(String.format("One or more provided values exceeds the "
-                                + "maximum length for the parameter. The field %s with provided length of %d "
-                                + "has a maximum length of %d characters.", e.getParameter(), e.getLength(), e.getMaxLength()), e.isSuppressIncidentId());
+                        re = new CdaError(e.getMessage(), e.isSuppressIncidentId());
                     } else {
                         re = new CdaError("One or more provided values exceeds the maximum length for the parameter.", e.isSuppressIncidentId());
                     }

@@ -1,6 +1,6 @@
 package cwms.cda.api.auth;
 
-import helpers.StringGenerator;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -361,7 +361,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     void test_api_key_length_limit(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec)
     {
         final ApiKey key = new ApiKey(theUser.getName(),
-                StringGenerator.createString(70));
+                RandomStringUtils.randomAlphabetic(70));
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)

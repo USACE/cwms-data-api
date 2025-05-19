@@ -10,11 +10,12 @@ import cwms.cda.data.dto.Clob;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
-import helpers.StringGenerator;
 import io.restassured.filter.log.LogDetail;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -208,7 +209,7 @@ public class ClobControllerTestIT extends DataApiTestIT {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         ObjectMapper om = JsonV2.buildObjectMapper();
 
-        String invalidClobId = StringGenerator.createString(300);
+        String invalidClobId = RandomStringUtils.randomAlphabetic(300);
 
         Clob clob = new Clob(SPK, invalidClobId, EXISTING_CLOB_DESC, EXISTING_CLOB_VALUE);
         String serializedClob = om.writeValueAsString(clob);

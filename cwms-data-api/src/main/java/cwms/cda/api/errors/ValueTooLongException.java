@@ -40,15 +40,10 @@ public final class ValueTooLongException extends RuntimeException {
 		super(message, cause);
 	}
 
-	public ValueTooLongException(String message, String parameter, int length, int maxLength, Throwable cause) {
-		super(message, cause);
-		this.parameter = parameter;
-		this.length = length;
-		this.maxLength = maxLength;
-	}
-
-	public ValueTooLongException(String message, String parameter, int length, int maxLength, Throwable cause, boolean suppressIncidentId) {
-		super(message, cause);
+	public ValueTooLongException(String parameter, int length, int maxLength, Throwable cause, boolean suppressIncidentId) {
+		super(String.format("One or more provided values exceeds the "
+				+ "maximum length for the parameter. The field %s with provided length of %d "
+				+ "has a maximum length of %d characters.", parameter, length, maxLength), cause);
 		this.parameter = parameter;
 		this.length = length;
 		this.maxLength = maxLength;
@@ -60,17 +55,17 @@ public final class ValueTooLongException extends RuntimeException {
 		return parameter != null && !parameter.isEmpty() && length > 0 && maxLength > 0;
 	}
 
-	public static ValueTooLongException fromString(String messageToParse, String message, Throwable cause, boolean suppressIncidentId) {
+	public static ValueTooLongException fromString(String messageToParse, Throwable cause, boolean suppressIncidentId) {
 		String[] parts = messageToParse.split("\"");
 		String parameter = parts[parts.length - 2];
 		String lengthString = parts[parts.length - 1];
 		int actualLength = Integer.parseInt(lengthString.split("actual:")[1].split(",")[0].trim());
 		int maxLength = Integer.parseInt(lengthString.split("maximum:")[1].split("\\)")[0].trim());
-		return new ValueTooLongException(message, parameter, actualLength, maxLength, cause, suppressIncidentId);
+		return new ValueTooLongException(parameter, actualLength, maxLength, cause, suppressIncidentId);
 	}
 
-	public static ValueTooLongException fromString(String messageToParse, String message, Throwable cause) {
-		return fromString(messageToParse, message, cause, true);
+	public static ValueTooLongException fromString(String messageToParse, Throwable cause) {
+		return fromString(messageToParse, cause, true);
 	}
 
 	public String getParameter() {

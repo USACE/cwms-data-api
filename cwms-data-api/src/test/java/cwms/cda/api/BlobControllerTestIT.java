@@ -5,8 +5,8 @@ import cwms.cda.data.dto.Blob;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
-import helpers.StringGenerator;
 import io.restassured.filter.log.LogDetail;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -253,7 +253,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_too_long_name() throws Exception
     {
-        String blobId = StringGenerator.createString(300);
+        String blobId = RandomStringUtils.randomAlphabetic(300);
         String blobValue = "test value";
         String origDesc = "test description";
         byte[] origBytes = blobValue.getBytes();

@@ -32,7 +32,6 @@ import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import helpers.StringGenerator;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.FunctionalSchemas;
 import fixtures.TestAccounts;
@@ -46,6 +45,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jooq.Configuration;
 import org.jooq.impl.DSL;
 import org.jooq.util.oracle.OracleDSL;
@@ -1432,7 +1432,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
     void test_ID_too_long()
     {
         String officeId = user.getOperatingOffice();
-        String invalidId = StringGenerator.createString(65);
+        String invalidId = RandomStringUtils.randomAlphabetic(65);
         LocationCategory cat = new LocationCategory(officeId, invalidId, "IntegrationTesting");
         ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
         String categoryXml = Formats.format(contentType, cat);
