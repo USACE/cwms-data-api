@@ -9,6 +9,7 @@ import static org.jooq.impl.DSL.name;
 import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
+import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
 
@@ -172,6 +173,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Timestamp tsCursor = null;
         Integer total = null;
 
+        if (includeEntryDate) {
+            Record entryDateSupport = dsl.select(asterisk()).from(table("ALL_TYPES"))
+                    .where(field("TYPE_NAME").eq("ZTSV_ENTRY_TYPE"))
+                    .and(field("OWNER").eq("CWMS_20")).fetchOne();
+
+            if (entryDateSupport == null) {
+                throw new DataAccessException("Data entry date retrieval is not supported by this database");
+            }
+        }
+
         if (page != null && !page.isEmpty()) {
             final String[] parts = CwmsDTOPaginated.decodeCursor(page);
 
@@ -298,7 +309,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     valid.field("office_id", String.class)
             ));
 
-            totalField = DSL.selectCount().from(DSL.table(retrieveSelectCount)).asField("TOTAL");
+            totalField = DSL.selectCount().from(table(retrieveSelectCount)).asField("TOTAL");
         }
 
         SelectJoinStep<?> metadataQuery =
