@@ -23,7 +23,7 @@ public class BlobDao extends JooqDao<Blob> {
             + "FROM CWMS_20.AT_BLOB \n"
             + "join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
             + "join CWMS_20.CWMS_OFFICE on AT_BLOB.OFFICE_CODE=CWMS_OFFICE.OFFICE_CODE \n"
-            + "WHERE upper(ID) = upper(?) and CWMS_OFFICE.OFFICE_ID = ?";
+            + "WHERE CWMS_OFFICE.OFFICE_ID = ? and upper(ID) = upper(?)";
     public static final String BLOB_QUERY = "SELECT CWMS_MEDIA_TYPE.MEDIA_TYPE_ID, AT_BLOB.VALUE \n"
             + "FROM CWMS_20.AT_BLOB \n"
             + "join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
@@ -73,8 +73,8 @@ public class BlobDao extends JooqDao<Blob> {
 
         dsl.connection(connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(BLOB_WITH_OFFICE)) {
-                preparedStatement.setString(1, id);
-                preparedStatement.setString(2, office);
+                preparedStatement.setString(1, office);
+                preparedStatement.setString(2, id);
 
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
@@ -198,11 +198,11 @@ public class BlobDao extends JooqDao<Blob> {
         String existsQuery = "select 1 "
                 + "from CWMS_20.AT_BLOB \n"
                 + "join CWMS_20.CWMS_OFFICE on AT_BLOB.OFFICE_CODE = CWMS_OFFICE.OFFICE_CODE \n"
-                + "WHERE upper(ID) = upper(?) AND upper(CWMS_OFFICE.OFFICE_ID) = upper(?)";
+                + "WHERE upper(CWMS_OFFICE.OFFICE_ID) = upper(?) AND upper(ID) = upper(?)";
         return connectionResult(dsl, conn -> {
             try (PreparedStatement preparedStatement = conn.prepareStatement(existsQuery)) {
-                preparedStatement.setString(1, id);
-                preparedStatement.setString(2, office);
+                preparedStatement.setString(1, office);
+                preparedStatement.setString(2, id);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     return resultSet.next();
                 }
