@@ -56,6 +56,9 @@ public final class ValueTooLongException extends RuntimeException {
 	}
 
 	public static ValueTooLongException fromString(String messageToParse, Throwable cause, boolean suppressIncidentId) {
+		if (!messageToParse.startsWith("ORA-12899:")) {
+			throw new IllegalArgumentException("The provided message does not appear to be an ORA-12899 error message.");
+		}
 		String[] parts = messageToParse.split("\"");
 		String parameter = parts[parts.length - 2];
 		String lengthString = parts[parts.length - 1];

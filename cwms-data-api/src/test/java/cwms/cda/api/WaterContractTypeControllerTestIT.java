@@ -43,6 +43,7 @@ import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
@@ -202,12 +203,8 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
     void test_create_WaterContractType_values_too_long() throws Exception
     {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
-        String invalidDisplayValue = "TEST Contract Type with a very long display value that "
-                + "exceeds the maximum length of 25 chars";
-        String invalidTooltip = "This is a TEST LOOKUP type tooltip with a very long value that "
-                + "exceeds the maximum length of 255 chars and should cause a failure when storing to the database. "
-                + "This is a TEST LOOKUP type tooltip with a very long value that exceeds the maximum length of 255 "
-                + "chars and should cause a failure when storing to the database";
+        String invalidDisplayValue = RandomStringUtils.randomAlphabetic(35);
+        String invalidTooltip = RandomStringUtils.randomAlphabetic(260);
         LookupType type = new LookupType.Builder().withActive(true).withOfficeId(OFFICE_ID)
                 .withDisplayValue(invalidDisplayValue).withTooltip(invalidTooltip).build();
         String json = JsonV1.buildObjectMapper().writeValueAsString(type);

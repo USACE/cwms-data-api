@@ -48,6 +48,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -601,11 +602,12 @@ class WaterContractControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_too_long_WaterUserContract()
     {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
+        String office = CONTRACT.getOfficeId();
 
         // create contract with too long name
-        String tooLongName = "TOOLONGNAME12345678901234567890123456789012345678901234567890123456789012345678901234567890";
+        String tooLongName = RandomStringUtils.randomAlphabetic(80);
         json = json.replace(CONTRACT.getContractId().getName(), tooLongName);
 
         // Create contract
@@ -618,7 +620,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/projects/" + OFFICE_ID + "/" + CONTRACT.getWaterUser().getProjectId().getName()
+            .post("/projects/" + office + "/" + CONTRACT.getWaterUser().getProjectId().getName()
                     + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
