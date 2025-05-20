@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2025 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,21 +22,21 @@
  * SOFTWARE.
  */
 
-package cwms.cda.api;
+package cwms.cda.api.rating;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.JsonRatingUtils;
-import cwms.cda.data.dao.RatingTemplateDao;
-import cwms.cda.data.dto.rating.RatingTemplate;
-import cwms.cda.data.dto.rating.RatingTemplates;
+import cwms.cda.data.dao.RatingSpecDao;
+import cwms.cda.data.dto.rating.RatingSpec;
+import cwms.cda.data.dto.rating.RatingSpecs;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -58,22 +58,25 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class RatingTemplateController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(RatingTemplateController.class.getName());
-
+public class RatingSpecController implements CrudHandler {
+    private static final Logger logger = Logger.getLogger(RatingSpecController.class.getName());
     private static final String TAG = "Ratings";
+
     private final MetricRegistry metrics;
 
     private static final int DEFAULT_PAGE_SIZE = 100;
 
     private final Histogram requestResultSize;
 
-    public RatingTemplateController(MetricRegistry metrics) {
+    public RatingSpecController(MetricRegistry metrics) {
         this.metrics = metrics;
         String className = this.getClass().getName();
         requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
 
+    protected DSLContext getDslContext(Context ctx) {
+        return JooqDao.getDslContext(ctx);
+    }
 
     private Timer.Context markAndTime(String subject) {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
@@ -83,29 +86,28 @@ public class RatingTemplateController implements CrudHandler {
     @OpenApi(
             queryParams = {
                     @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
-                            + "the Rating Templates whose data is to be included in the response."
-                            + " If this field is not specified, matching rating information from "
-                            + "all offices shall be returned."),
-                    @OpenApiParam(name = TEMPLATE_ID_MASK, description = "RegExp that specifies"
-                            + " the rating template IDs to be included in the response. If this "
-                            + "field is not specified, all rating templates shall be returned."),
+                            + "the Rating Specs whose data is to be included in the response. If "
+                            + "this field is not specified, matching rating information from all "
+                            + "offices shall be returned."),
+                    @OpenApiParam(name = RATING_ID_MASK, description = "Posix "
+                            + "<a href=\"regexp.html\">regular expression</a>  that specifies "
+                            + "the rating IDs to be included in the response. If this field is "
+                            + "not specified, all Rating Specs shall be returned."),
                     @OpenApiParam(name = PAGE,
                             description = "This end point can return a lot of data, this "
                                     + "identifies where in the request you are. This is an opaque"
                                     + " value, and can be obtained from the 'next-page' value in "
                                     + "the response."
                     ),
-                    @OpenApiParam(name = PAGE_SIZE,
-                            type = Integer.class,
+                    @OpenApiParam(name = PAGE_SIZE, type = Integer.class,
                             description = "How many entries per page returned. "
-                                    + "Default " + DEFAULT_PAGE_SIZE + "."
+                            + "Default " + DEFAULT_PAGE_SIZE + "."
                     ),
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
                             content = {
-                                    @OpenApiContent(from = RatingTemplates.class, type =
-                                            Formats.JSONV2),
+                                    @OpenApiContent(type = Formats.JSONV2, from = RatingSpecs.class)
                             }
                     )},
             tags = {TAG}
@@ -117,23 +119,23 @@ public class RatingTemplateController implements CrudHandler {
                 ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
 
         String office = ctx.queryParam(OFFICE);
-        String templateIdMask = ctx.queryParam(TEMPLATE_ID_MASK);
+        String ratingIdMask = ctx.queryParam(RATING_ID_MASK);
 
         String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeader(formatHeader, RatingTemplates.class);
+        ContentType contentType = Formats.parseHeader(formatHeader, RatingSpecs.class);
         try (final Timer.Context timeContext = markAndTime(GET_ALL)){
             DSLContext dsl = getDslContext(ctx);
 
-            RatingTemplateDao ratingTemplateDao = getRatingTemplateDao(dsl);
-            RatingTemplates ratingTemplates = ratingTemplateDao.retrieveRatingTemplates(cursor,
-                    pageSize, office,
-                    templateIdMask);
-            ctx.status(HttpServletResponse.SC_OK);
+            RatingSpecDao ratingSpecDao = getRatingSpecDao(dsl);
+            RatingSpecs ratingSpecs = ratingSpecDao.retrieveRatingSpecs(cursor, pageSize, office,
+                    ratingIdMask);
+
             ctx.contentType(contentType.toString());
 
-            String result = Formats.format(contentType, ratingTemplates);
+            String result = Formats.format(contentType, ratingSpecs);
             ctx.result(result);
             requestResultSize.update(result.length());
+            ctx.status(HttpServletResponse.SC_OK);
         } catch (Exception ex) {
             CdaError re =
                     new CdaError("Failed to process request: " + ex.getLocalizedMessage());
@@ -143,45 +145,39 @@ public class RatingTemplateController implements CrudHandler {
 
     }
 
-    @NotNull
-    private RatingTemplateDao getRatingTemplateDao(DSLContext dsl) {
-        return new RatingTemplateDao(dsl);
-    }
-
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = TEMPLATE_ID, required = true, description = "Specifies"
-                            + " the template whose data is to be included in the response")
+                    @OpenApiParam(name = RATING_ID, required = true, description = "Specifies "
+                            + "the rating-id of the Rating Spec to be included in the response")
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "owning office of the Rating Templates whose data is to be included"
-                            + " in the response. If this field is not specified, matching rating "
+                            + "owning office of the Rating Specs whose data is to be included in "
+                            + "the response. If this field is not specified, matching rating "
                             + "information from all offices shall be returned."),
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
                             content = {
-                                    @OpenApiContent(isArray = true, from = RatingTemplate.class,
-                                            type = Formats.JSONV2),
+                                    @OpenApiContent(from = RatingSpec.class, type = Formats.JSONV2),
                             }
-                    )},
+                    )
+            },
             tags = {TAG}
     )
     @Override
-    public void getOne(Context ctx, String templateId) {
+    public void getOne(Context ctx, String ratingId) {
         String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeader(formatHeader, RatingTemplate.class);
+        ContentType contentType = Formats.parseHeader(formatHeader, RatingSpec.class);
 
         String office = ctx.queryParam(OFFICE);
 
         try (final Timer.Context timeContext = markAndTime(GET_ONE)){
             DSLContext dsl = getDslContext(ctx);
 
-            RatingTemplateDao ratingSetDao = getRatingTemplateDao(dsl);
+            RatingSpecDao ratingSpecDao = getRatingSpecDao(dsl);
 
-            Optional<RatingTemplate> template = ratingSetDao.retrieveRatingTemplate(office,
-                    templateId);
+            Optional<RatingSpec> template = ratingSpecDao.retrieveRatingSpec(office, ratingId);
             if (template.isPresent()) {
                 String result = Formats.format(contentType, template.get());
 
@@ -191,20 +187,25 @@ public class RatingTemplateController implements CrudHandler {
                 requestResultSize.update(result.length());
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
-                CdaError re = new CdaError("Unable to find Rating Template based on "
-                        + "parameters given");
+                CdaError re = new CdaError("Unable to find Rating Spec based on parameters "
+                        + "given");
                 logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
         }
     }
 
+    @NotNull
+    protected RatingSpecDao getRatingSpecDao(DSLContext dsl) {
+        return new RatingSpecDao(dsl);
+    }
+
 
     @OpenApi(
-        description = "Create new Rating Template",
+        description = "Create new Rating Specification",
         requestBody = @OpenApiRequestBody(
             content = {
-                @OpenApiContent(from = RatingTemplate.class, type = Formats.XMLV2)
+                @OpenApiContent(from = RatingSpec.class, type = Formats.XMLV2)
             },
             required = true),
         queryParams = {
@@ -223,7 +224,7 @@ public class RatingTemplateController implements CrudHandler {
             String formatHeader = reqContentType != null ? reqContentType : Formats.XMLV2;
             String body = ctx.body();
             String xml = translateToXml(body, formatHeader);
-            RatingTemplateDao dao = new RatingTemplateDao(dsl);
+            RatingSpecDao dao = new RatingSpecDao(dsl);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(false);
             dao.create(xml, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED);
@@ -232,7 +233,6 @@ public class RatingTemplateController implements CrudHandler {
 
     private static String translateToXml(String body, String contentType) {
         String retval;
-
 
         if (contentType.contains(Formats.XMLV2)) {
             retval = body;
@@ -259,12 +259,12 @@ public class RatingTemplateController implements CrudHandler {
     @Override
     public void update(Context ctx, String locationCode) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of
-        // generated methods, choose Tools | Templates.
+        // generated methods, choose Tools | Specs.
     }
 
     @OpenApi(
         pathParams = {
-            @OpenApiParam(name = TEMPLATE_ID, required = true, description = "The rating-template-id of the ratings data to be deleted."),
+            @OpenApiParam(name = RATING_ID, required = true, description = "The rating-spec-id of the ratings data to be deleted."),
         },
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
@@ -277,14 +277,14 @@ public class RatingTemplateController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, String ratingTemplateId) {
+    public void delete(Context ctx, @NotNull String ratingSpecId) {
         try (final Timer.Context ignored = markAndTime(DELETE)){
             DSLContext dsl = getDslContext(ctx);
 
             String office = ctx.queryParam(OFFICE);
-            RatingTemplateDao ratingDao = new RatingTemplateDao(dsl);
+            RatingSpecDao ratingDao = getRatingSpecDao(dsl);
             JooqDao.DeleteMethod method = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class).get();
-            ratingDao.delete(office, method, ratingTemplateId);
+            ratingDao.delete(office, method, ratingSpecId);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
