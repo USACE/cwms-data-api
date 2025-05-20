@@ -31,6 +31,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -48,6 +49,7 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
@@ -76,7 +78,7 @@ public abstract class LocationLevel extends CwmsDTO {
 
     private final String specifiedLevelId;
 
-    private ZonedDateTime expirationDate;
+    private final ZonedDateTime expirationDate;
 
     @Schema(description = "Data Type such as Stage, Elevation, or others.")
 
@@ -215,7 +217,7 @@ public abstract class LocationLevel extends CwmsDTO {
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-    public static class Builder {
+    public abstract static class Builder<T extends Builder<T>> {
         String specifiedLevelId;
         String parameterTypeId;
         String parameterId;
@@ -236,14 +238,13 @@ public abstract class LocationLevel extends CwmsDTO {
         final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
         @JsonCreator
-        public Builder(@JsonProperty(value = "location-level-id", required = true) String name,
+        protected Builder(@JsonProperty(value = "location-level-id", required = true) String name,
                 @JsonProperty(value = "level-date", required = true) ZonedDateTime lvlDate) {
             locationId = name;
             levelDate = lvlDate;
-            buildPropertyFunctions();
         }
 
-        public Builder(LocationLevel copyFrom) {
+        Builder(LocationLevel copyFrom) {
             withAttributeComment(copyFrom.getAttributeComment());
             withAttributeDurationId(copyFrom.getAttributeDurationId());
             withAttributeParameterId(copyFrom.getAttributeParameterId());
@@ -258,10 +259,9 @@ public abstract class LocationLevel extends CwmsDTO {
             withOfficeId(copyFrom.getOfficeId());
             withParameterTypeId(copyFrom.getParameterTypeId());
             withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
-            buildPropertyFunctions();
         }
 
-        public Builder(JDomLocationLevelImpl copyFrom) {
+        Builder(JDomLocationLevelImpl copyFrom) {
             withAttributeComment(copyFrom.getAttributeComment());
             withAttributeDurationId(copyFrom.getAttributeDurationId());
             withAttributeParameterId(copyFrom.getAttributeParameterId());
@@ -283,139 +283,290 @@ public abstract class LocationLevel extends CwmsDTO {
             withParameterId(copyFrom.getParameterId());
             withParameterTypeId(copyFrom.getParameterTypeId());
             withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
-            buildPropertyFunctions();
+        }
+
+        protected T self() {
+            return (T) this;
         }
 
         @JsonIgnore
-        private void buildPropertyFunctions() {
-            propertyFunctionMap.clear();
-            propertyFunctionMap.put("location-level-id",
-                    nameVal -> withLocationLevelId((String) nameVal));
-            propertyFunctionMap.put("office-id", officeIdVal -> withOfficeId((String) officeIdVal));
-            propertyFunctionMap.put("specified-level-id",
-                    specifiedLevelIdVal -> withSpecifiedLevelId((String) specifiedLevelIdVal));
-            propertyFunctionMap.put("parameter-type-id",
-                    parameterTypeIdVal -> withParameterTypeId((String) parameterTypeIdVal));
-            propertyFunctionMap.put("parameter-id",
-                    parameterIdVal -> withParameterId((String) parameterIdVal));
-            propertyFunctionMap.put("level-units-id",
-                    levelUnitsIdVal -> withLevelUnitsId((String) levelUnitsIdVal));
-            propertyFunctionMap.put("level-date",
-                    levelDateVal -> withLevelDate((ZonedDateTime) levelDateVal));
-            propertyFunctionMap.put("level-comment",
-                    levelCommentVal -> withLevelComment((String) levelCommentVal));
-            propertyFunctionMap.put("duration-id",
-                    durationIdVal -> withDurationId((String) durationIdVal));
-            propertyFunctionMap.put("attribute-value",
-                    attributeVal -> withAttributeValue(BigDecimal.valueOf((Double) attributeVal)));
-            propertyFunctionMap.put("attribute-units-id",
-                    attributeUnitsIdVal -> withAttributeUnitsId((String) attributeUnitsIdVal));
-            propertyFunctionMap.put("attribute-parameter-type-id",
-                    attributeParameterTypeIdVal ->
-                            withAttributeParameterTypeId((String) attributeParameterTypeIdVal));
-            propertyFunctionMap.put("attribute-parameter-id",
-                    attributeParameterIdVal ->
-                            withAttributeParameterId((String) attributeParameterIdVal));
-            propertyFunctionMap.put("attribute-duration-id",
-                    attributeDurationIdVal -> withAttributeDurationId((String) attributeDurationIdVal));
-            propertyFunctionMap.put("attribute-comment",
-                    attributeCommentVal -> withAttributeComment((String) attributeCommentVal));
-        }
-
-        @JsonIgnore
-        public <T extends LocationLevel.Builder> T withProperty(String propertyName, Object value) {
+        public T withProperty(String propertyName, Object value) {
             Consumer<Object> function = propertyFunctionMap.get(propertyName);
             if(function == null) {
                 throw new IllegalArgumentException("Property Name does not exist for Location "
                         + "Level");
             }
             function.accept(value);
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withSpecifiedLevelId(String specifiedLevelId) {
+        public T withSpecifiedLevelId(String specifiedLevelId) {
             this.specifiedLevelId = specifiedLevelId;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withParameterTypeId(String parameterTypeId) {
+        public T withParameterTypeId(String parameterTypeId) {
             this.parameterTypeId = parameterTypeId;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withParameterId(String parameterId) {
+        public T withParameterId(String parameterId) {
             this.parameterId = parameterId;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withExpirationDate(ZonedDateTime expirationDate) {
+        public T withExpirationDate(ZonedDateTime expirationDate) {
             this.expirationDate = expirationDate;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withLevelUnitsId(String levelUnitsId) {
+        public T withLevelUnitsId(String levelUnitsId) {
             this.levelUnitsId = levelUnitsId;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withLevelDate(ZonedDateTime levelDate) {
+        public T withLevelDate(ZonedDateTime levelDate) {
             this.levelDate = levelDate;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withLevelComment(String levelComment) {
+        public T withLevelComment(String levelComment) {
             this.levelComment = levelComment;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withInterpolateString(String interpolateString) {
+        public T withInterpolateString(String interpolateString) {
             this.interpolateString = interpolateString;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withDurationId(String durationId) {
+        public T withDurationId(String durationId) {
             this.durationId = durationId;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withAttributeValue(BigDecimal attributeValue) {
+        public T withAttributeValue(BigDecimal attributeValue) {
             this.attributeValue = attributeValue;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withAttributeUnitsId(String attributeUnitsId) {
+        public T withAttributeUnitsId(String attributeUnitsId) {
             this.attributeUnitsId = attributeUnitsId;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withAttributeParameterTypeId(String attributeParameterTypeId) {
+        public T withAttributeParameterTypeId(String attributeParameterTypeId) {
             this.attributeParameterTypeId = attributeParameterTypeId;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withAttributeParameterId(String attributeParameterId) {
+        public T withAttributeParameterId(String attributeParameterId) {
             this.attributeParameterId = attributeParameterId;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withAttributeDurationId(String attributeDurationId) {
+        public T withAttributeDurationId(String attributeDurationId) {
             this.attributeDurationId = attributeDurationId;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withAttributeComment(String attributeComment) {
+        public T withAttributeComment(String attributeComment) {
             this.attributeComment = attributeComment;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withLocationLevelId(String locationId) {
+        public T withLocationLevelId(String locationId) {
             this.locationId = locationId;
-            return (T) this;
+            return self();
         }
 
-        public <T extends LocationLevel.Builder> T withOfficeId(String officeId) {
+        public T withOfficeId(String officeId) {
             this.officeId = officeId;
-            return (T) this;
+            return self();
+        }
+    }
+
+    public static LocationLevel getUpdatedLocationLevel(LocationLevel existingLevel,
+            LocationLevel updatedLevel) {
+
+        String specifiedLevelId = (updatedLevel.getSpecifiedLevelId() == null
+                ? existingLevel.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
+        String parameterTypeId = (updatedLevel.getParameterTypeId() == null
+                ? existingLevel.getParameterTypeId() : updatedLevel.getParameterTypeId());
+        String parameterId = (updatedLevel.getParameterId() == null
+                ? existingLevel.getParameterId() : updatedLevel.getParameterId());
+
+        String levelUnitsId = (updatedLevel.getLevelUnitsId() == null
+                ? existingLevel.getLevelUnitsId() : updatedLevel.getLevelUnitsId());
+        ZonedDateTime levelDate = (updatedLevel.getLevelDate() == null
+                ? existingLevel.getLevelDate() : updatedLevel.getLevelDate());
+        String levelComment = (updatedLevel.getLevelComment() == null
+                ? existingLevel.getLevelComment() : updatedLevel.getLevelComment());
+
+        String durationId = (updatedLevel.getDurationId() == null
+                ? existingLevel.getDurationId() : updatedLevel.getDurationId());
+        BigDecimal attributeValue = (updatedLevel.getAttributeValue() == null
+                ? existingLevel.getAttributeValue() : updatedLevel.getAttributeValue());
+        String attributeUnitsId = (updatedLevel.getAttributeUnitsId() == null
+                ? existingLevel.getAttributeUnitsId() : updatedLevel.getAttributeUnitsId());
+        String attributeParameterTypeId = (updatedLevel.getAttributeParameterTypeId() == null
+                ? existingLevel.getAttributeParameterTypeId() :
+                updatedLevel.getAttributeParameterTypeId());
+        String attributeParameterId = (updatedLevel.getAttributeParameterId() == null
+                ? existingLevel.getAttributeParameterId() : updatedLevel.getAttributeParameterId());
+        String attributeDurationId = (updatedLevel.getAttributeDurationId() == null
+                ? existingLevel.getAttributeDurationId() : updatedLevel.getAttributeDurationId());
+        String attributeComment = (updatedLevel.getAttributeComment() == null
+                ? existingLevel.getAttributeComment() : updatedLevel.getAttributeComment());
+        String locationId = (updatedLevel.getLocationLevelId() == null
+                ? existingLevel.getLocationLevelId() : updatedLevel.getLocationLevelId());
+        String officeId = (updatedLevel.getOfficeId() == null
+                ? existingLevel.getOfficeId() : updatedLevel.getOfficeId());
+
+        if (existingLevel.getAttributeValue() == null) {
+            attributeUnitsId = null;
+        }
+
+        if (existingLevel instanceof VirtualLocationLevel) {
+
+            VirtualLocationLevel virtualLevel = (VirtualLocationLevel) existingLevel;
+            VirtualLocationLevel updatedVirtualLevel = (VirtualLocationLevel) updatedLevel;
+
+            String constituentConnections = (updatedVirtualLevel.getConstituentConnections() == null
+                    ? virtualLevel.getConstituentConnections() : updatedVirtualLevel.getConstituentConnections());
+            List<VirtualLocationLevel.RatingConstituent> constituents = updatedVirtualLevel.getConstituents() == null
+                    ? virtualLevel.getConstituents() : updatedVirtualLevel.getConstituents();
+
+            return new VirtualLocationLevel.Builder(locationId, levelDate)
+                    .withSpecifiedLevelId(specifiedLevelId)
+                    .withParameterTypeId(parameterTypeId)
+                    .withParameterId(parameterId)
+                    .withLevelUnitsId(levelUnitsId)
+                    .withLevelComment(levelComment)
+                    .withDurationId(durationId)
+                    .withAttributeValue(attributeValue)
+                    .withAttributeUnitsId(attributeUnitsId)
+                    .withAttributeParameterTypeId(attributeParameterTypeId)
+                    .withAttributeParameterId(attributeParameterId)
+                    .withAttributeDurationId(attributeDurationId)
+                    .withAttributeComment(attributeComment)
+                    .withOfficeId(officeId)
+                    .withConstituents(constituents)
+                    .withConstituentConnections(constituentConnections).build();
+        } else if (existingLevel instanceof ConstantLocationLevel) {
+            ConstantLocationLevel constantLevel = (ConstantLocationLevel) existingLevel;
+            ConstantLocationLevel updatedConstantLevel = (ConstantLocationLevel) updatedLevel;
+
+            Double siParameterUnitsConstantValue = (updatedConstantLevel.getConstantValue() == null
+                    ? constantLevel.getConstantValue() : updatedConstantLevel.getConstantValue());
+
+            return new ConstantLocationLevel.Builder(locationId, levelDate)
+                    .withSpecifiedLevelId(specifiedLevelId)
+                    .withParameterTypeId(parameterTypeId)
+                    .withParameterId(parameterId)
+                    .withLevelUnitsId(levelUnitsId)
+                    .withLevelComment(levelComment)
+                    .withDurationId(durationId)
+                    .withAttributeValue(attributeValue)
+                    .withAttributeUnitsId(attributeUnitsId)
+                    .withAttributeParameterTypeId(attributeParameterTypeId)
+                    .withAttributeParameterId(attributeParameterId)
+                    .withAttributeDurationId(attributeDurationId)
+                    .withAttributeComment(attributeComment)
+                    .withOfficeId(officeId)
+                    .withConstantValue(siParameterUnitsConstantValue)
+                    .build();
+
+        } else if (existingLevel instanceof TimeSeriesLocationLevel) {
+            TimeSeriesLocationLevel timeSeriesLevel = (TimeSeriesLocationLevel) existingLevel;
+            TimeSeriesLocationLevel updatedTimeSeriesLevel = (TimeSeriesLocationLevel) updatedLevel;
+
+            String seasonalTimeSeriesId = (updatedTimeSeriesLevel.getSeasonalTimeSeriesId() == null
+                    ? timeSeriesLevel.getSeasonalTimeSeriesId() : updatedTimeSeriesLevel.getSeasonalTimeSeriesId());
+
+            return new TimeSeriesLocationLevel.Builder(locationId, levelDate, seasonalTimeSeriesId)
+                    .withSpecifiedLevelId(specifiedLevelId)
+                    .withParameterTypeId(parameterTypeId)
+                    .withParameterId(parameterId)
+                    .withLevelUnitsId(levelUnitsId)
+                    .withLevelComment(levelComment)
+                    .withDurationId(durationId)
+                    .withAttributeValue(attributeValue)
+                    .withAttributeUnitsId(attributeUnitsId)
+                    .withAttributeParameterTypeId(attributeParameterTypeId)
+                    .withAttributeParameterId(attributeParameterId)
+                    .withAttributeDurationId(attributeDurationId)
+                    .withAttributeComment(attributeComment)
+                    .withOfficeId(officeId)
+                    .build();
+
+        } else if (existingLevel instanceof SeasonalLocationLevel) {
+            SeasonalLocationLevel seasonalLevel = (SeasonalLocationLevel) existingLevel;
+            SeasonalLocationLevel updatedSeasonalLevel = (SeasonalLocationLevel) updatedLevel;
+
+            ZonedDateTime intervalOrigin = (updatedSeasonalLevel.getIntervalOrigin() == null
+                    ? seasonalLevel.getIntervalOrigin() : updatedSeasonalLevel.getIntervalOrigin());
+            Integer intervalMinutes = (updatedSeasonalLevel.getIntervalMinutes() == null
+                    ? seasonalLevel.getIntervalMinutes() : updatedSeasonalLevel.getIntervalMinutes());
+            Integer intervalMonths = (updatedSeasonalLevel.getIntervalMonths() == null
+                    ? seasonalLevel.getIntervalMonths() : updatedSeasonalLevel.getIntervalMonths());
+            String interpolateString = (updatedSeasonalLevel.getInterpolateString() == null
+                    ? seasonalLevel.getInterpolateString() : updatedSeasonalLevel.getInterpolateString());
+
+            List<SeasonalValueBean> seasonalValues = (updatedSeasonalLevel.getSeasonalValues() == null
+                    ? seasonalLevel.getSeasonalValues() : updatedSeasonalLevel.getSeasonalValues());
+
+            if (seasonalLevel.getIntervalMonths() != null && seasonalLevel.getIntervalMonths() > 0) {
+                intervalMinutes = null;
+            } else if (seasonalLevel.getIntervalMinutes() != null
+                    && seasonalLevel.getIntervalMinutes() > 0) {
+                intervalMonths = null;
+            }
+
+            return new SeasonalLocationLevel.Builder(locationId, levelDate)
+                    .withSeasonalValues(seasonalValues)
+                    .withSpecifiedLevelId(specifiedLevelId)
+                    .withParameterTypeId(parameterTypeId)
+                    .withParameterId(parameterId)
+                    .withLevelUnitsId(levelUnitsId)
+                    .withLevelComment(levelComment)
+                    .withInterpolateString(interpolateString)
+                    .withDurationId(durationId)
+                    .withAttributeValue(attributeValue)
+                    .withAttributeUnitsId(attributeUnitsId)
+                    .withAttributeParameterTypeId(attributeParameterTypeId)
+                    .withAttributeParameterId(attributeParameterId)
+                    .withAttributeDurationId(attributeDurationId)
+                    .withAttributeComment(attributeComment)
+                    .withOfficeId(officeId)
+                    .withIntervalOrigin(intervalOrigin)
+                    .withIntervalMinutes(intervalMinutes)
+                    .withIntervalMonths(intervalMonths)
+                    .build();
+        } else {
+            throw new UnsupportedFormatException("Unsupported location level type");
+        }
+    }
+
+    public static <T extends LocationLevel> T castLocationLevel(LocationLevel level, ZonedDateTime unmarshalledDateTime) {
+        if (level instanceof SeasonalLocationLevel) {
+            SeasonalLocationLevel seasonalLevel = (SeasonalLocationLevel) level;
+            return (T) new SeasonalLocationLevel.Builder(seasonalLevel)
+                    .withLevelDate(unmarshalledDateTime).build();
+        } else if (level instanceof TimeSeriesLocationLevel) {
+            TimeSeriesLocationLevel timeSeriesLevel = (TimeSeriesLocationLevel) level;
+            return (T) new TimeSeriesLocationLevel.Builder(timeSeriesLevel)
+                    .withLevelDate(unmarshalledDateTime).build();
+        } else if (level instanceof ConstantLocationLevel) {
+            ConstantLocationLevel constantLevel = (ConstantLocationLevel) level;
+            return (T) new ConstantLocationLevel.Builder(constantLevel)
+                    .withLevelDate(unmarshalledDateTime).build();
+        } else if (level instanceof VirtualLocationLevel) {
+            VirtualLocationLevel virtualLevel = (VirtualLocationLevel) level;
+            return (T) new VirtualLocationLevel.Builder(virtualLevel)
+                    .withLevelDate(unmarshalledDateTime).build();
+        } else {
+            throw new IllegalArgumentException("Unsupported location level type");
         }
     }
 

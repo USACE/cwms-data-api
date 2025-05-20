@@ -26,14 +26,9 @@
 
 package cwms.cda.data.dto.locationlevel;
 
-import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -78,21 +73,18 @@ public final class ConstantLocationLevel extends LocationLevel {
 	@JsonPOJOBuilder
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 	@JsonIgnoreProperties(ignoreUnknown = true)
-	public static class Builder extends LocationLevel.Builder {
+	public static class Builder extends LocationLevel.Builder<ConstantLocationLevel.Builder> {
 		private Double constantValue;
-		final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
 		@JsonCreator
 		public Builder(@JsonProperty(value = "location-level-id", required = true) String name,
 				@JsonProperty(value = "level-date", required = true) ZonedDateTime lvlDate) {
 			super(name, lvlDate);
-			buildPropertyFunctions();
 		}
 
 		public Builder(ConstantLocationLevel copyFrom) {
 			super(copyFrom);
 			withConstantValue(copyFrom.getConstantValue());
-			buildPropertyFunctions();
 		}
 
 		public Builder(JDomLocationLevelImpl copyFrom) {
@@ -101,47 +93,6 @@ public final class ConstantLocationLevel extends LocationLevel {
 			if (constantLevel != null) {
 				withConstantValue(constantLevel.getSiParameterUnitsValue());
 			}
-			buildPropertyFunctions();
-		}
-
-		@JsonIgnore
-		private void buildPropertyFunctions() {
-			propertyFunctionMap.clear();
-			propertyFunctionMap.put("location-level-id",
-					nameVal -> super.withLocationLevelId((String) nameVal));
-			propertyFunctionMap.put("office-id", officeIdVal -> withOfficeId((String) officeIdVal));
-			propertyFunctionMap.put("specified-level-id",
-					specifiedLevelIdVal -> withSpecifiedLevelId((String) specifiedLevelIdVal));
-			propertyFunctionMap.put("parameter-type-id",
-					parameterTypeIdVal -> withParameterTypeId((String) parameterTypeIdVal));
-			propertyFunctionMap.put("constant-value",
-					constantVal -> withConstantValue((Double) constantVal));
-			propertyFunctionMap.put("parameter-id",
-					parameterIdVal -> withParameterId((String) parameterIdVal));
-			propertyFunctionMap.put("si-parameter-units-constant-value",
-					paramUnitsConstVal -> withConstantValue((Double) paramUnitsConstVal));
-			propertyFunctionMap.put("level-units-id",
-					levelUnitsIdVal -> withLevelUnitsId((String) levelUnitsIdVal));
-			propertyFunctionMap.put("level-date",
-					levelDateVal -> super.withLevelDate((ZonedDateTime) levelDateVal));
-			propertyFunctionMap.put("level-comment",
-					levelCommentVal -> withLevelComment((String) levelCommentVal));
-			propertyFunctionMap.put("duration-id",
-					durationIdVal -> withDurationId((String) durationIdVal));
-			propertyFunctionMap.put("attribute-value",
-					attributeVal -> withAttributeValue(BigDecimal.valueOf((Double) attributeVal)));
-			propertyFunctionMap.put("attribute-units-id",
-					attributeUnitsIdVal -> withAttributeUnitsId((String) attributeUnitsIdVal));
-			propertyFunctionMap.put("attribute-parameter-type-id",
-					attributeParameterTypeIdVal ->
-							withAttributeParameterTypeId((String) attributeParameterTypeIdVal));
-			propertyFunctionMap.put("attribute-parameter-id",
-					attributeParameterIdVal ->
-							withAttributeParameterId((String) attributeParameterIdVal));
-			propertyFunctionMap.put("attribute-duration-id",
-					attributeDurationIdVal -> withAttributeDurationId((String) attributeDurationIdVal));
-			propertyFunctionMap.put("attribute-comment",
-					attributeCommentVal -> withAttributeComment((String) attributeCommentVal));
 		}
 
 		public ConstantLocationLevel.Builder withConstantValue(Double value) {

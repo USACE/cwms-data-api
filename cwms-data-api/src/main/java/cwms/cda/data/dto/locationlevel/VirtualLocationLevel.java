@@ -53,7 +53,7 @@ import cwms.cda.formatters.json.JsonV2;
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 public final class VirtualLocationLevel extends LocationLevel {
-	private final List<Constituent> constituents;
+	private final List<RatingConstituent> constituents;
 
 	private final String constituentConnections;
 
@@ -63,7 +63,7 @@ public final class VirtualLocationLevel extends LocationLevel {
 		this.constituentConnections = builder.constituentConnections;
 	}
 
-	public List<Constituent> getConstituents()
+	public List<RatingConstituent> getConstituents()
 	{
 		return constituents;
 	}
@@ -76,8 +76,8 @@ public final class VirtualLocationLevel extends LocationLevel {
 	@JsonPOJOBuilder
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 	@JsonIgnoreProperties(ignoreUnknown = true)
-	public static final class Builder extends LocationLevel.Builder {
-		private List<Constituent> constituents;
+	public static final class Builder extends LocationLevel.Builder<VirtualLocationLevel.Builder> {
+		private List<RatingConstituent> constituents;
 		private String constituentConnections;
 
 		@JsonCreator
@@ -92,7 +92,7 @@ public final class VirtualLocationLevel extends LocationLevel {
 			this.constituentConnections = copyFrom.constituentConnections;
 		}
 
-		public Builder withConstituents(List<Constituent> constituents) {
+		public Builder withConstituents(List<RatingConstituent> constituents) {
 			this.constituents = constituents;
 			return this;
 		}
@@ -111,19 +111,20 @@ public final class VirtualLocationLevel extends LocationLevel {
 	@JsonRootName("RATING")
 	@JsonPOJOBuilder
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-	@JsonDeserialize(builder = Constituent.Builder.class)
+	@JsonDeserialize(builder = RatingConstituent.Builder.class)
 	@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 	@JsonSubTypes({
 			@JsonSubTypes.Type(value = LocationLevelConstituent.class, name = "LOCATION_LEVEL"),
-			@JsonSubTypes.Type(value = Constituent.class, name = "RATING")
+			@JsonSubTypes.Type(value = RatingConstituent.class, name = "RATING")
 	})
 	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type", visible = true)
-	public static class Constituent {
+	public static class RatingConstituent
+	{
 		private final String abbr;
 		private final String type;
 		private final String name;
 
-		private Constituent(Builder builder) {
+		private RatingConstituent(Builder builder) {
 			this.abbr = builder.abbr;
 			this.type = builder.type;
 			this.name = builder.name;
@@ -169,9 +170,9 @@ public final class VirtualLocationLevel extends LocationLevel {
 				this.name = name;
 			}
 
-			public Constituent build()
+			public RatingConstituent build()
 			{
-				return new Constituent(this);
+				return new RatingConstituent(this);
 			}
 		}
 	}
@@ -180,7 +181,8 @@ public final class VirtualLocationLevel extends LocationLevel {
 	@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 	@JsonDeserialize(builder = LocationLevelConstituent.Builder.class)
 	@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
-	public static final class LocationLevelConstituent extends Constituent {
+	public static final class LocationLevelConstituent extends RatingConstituent
+	{
 		private final String attributeId;
 		private final Double attributeValue;
 		private final String attributeUnits;
@@ -228,7 +230,7 @@ public final class VirtualLocationLevel extends LocationLevel {
 		@JsonPOJOBuilder
 		@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 		@JsonInclude(JsonInclude.Include.NON_NULL)
-		public static final class Builder extends Constituent.Builder {
+		public static final class Builder extends RatingConstituent.Builder {
 			@JsonProperty(required = true)
 			private final String attributeId;
 			private final Double attributeValue;
