@@ -218,7 +218,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         }
     }
 
-    private List<Column> getColumnDescriptor() {
+    public static List<Column> getColumnDescriptor() {
         List<Column> columns = new ArrayList<>();
         for (Field f: Record.class.getDeclaredFields()) {
             JsonProperty field = f.getAnnotation(JsonProperty.class);
