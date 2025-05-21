@@ -71,6 +71,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -505,6 +506,21 @@ public class TimeSeriesController implements CrudHandler {
             }
             addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
+        } catch (DataAccessException ex) {
+            if (ex.getCause() instanceof SQLException) {
+                SQLException sqlEx = (SQLException) ex.getCause();
+                if (sqlEx.getErrorCode() == 20998 && sqlEx.getMessage().contains("Cannot convert from unit")) {
+                    CdaError re = new CdaError("Unable to convert to the requested unit, "
+                            + "please verify the unit parameter.");
+                    logger.log(Level.WARNING, re.toString(), ex);
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                    ctx.json(re);
+                } else {
+                    throw ex;
+                }
+            } else {
+                throw ex;
+            }
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
             logger.log(Level.WARNING, re.toString(), e);
