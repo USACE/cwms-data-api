@@ -378,10 +378,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         });
 
-        if (includeEntryDate) {
-            timeseries = new TimeSeriesWithDataEntryDate(timeseries);
-        }
-
         // Now we're going to call the retrieve_ts_entry_out_tab function to get the data and build an
         // internal table from it so we can manipulate it further
         // This code assumes the database timezone is in UTC (per Oracle recommendation)
@@ -433,7 +429,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             if (includeEntryDate) {
                 logger.fine(() -> query2.getSQL(ParamType.INLINED));
-                final TimeSeriesWithDataEntryDate timeSeries = new TimeSeriesWithDataEntryDate(timeseries);
+                final TimeSeriesWithDataEntryDate timeSeries =  (TimeSeriesWithDataEntryDate) timeseries;
                 query2.forEach(tsRecord -> timeSeries.addValue(
                         tsRecord.getValue(dateTimeCol),
                         tsRecord.getValue(valueCol),
@@ -1184,11 +1180,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         final ZTSV_ARRAY tsvArray = new ZTSV_ARRAY();
 
         if (values != null && !values.isEmpty()) {
-			for(TimeSeries.Record value : values)
-			{
+			for (TimeSeries.Record value : values) {
 				Double dataValue = value.getValue();
-				if(dataValue != null && dataValue == -Float.MAX_VALUE)
-				{
+				if (dataValue != null && dataValue == -Float.MAX_VALUE) {
 					dataValue = null;
 				}
 				tsvArray.add(new ZTSV_TYPE(value.getDateTime(), dataValue, BigDecimal.valueOf(value.getQualityCode())));

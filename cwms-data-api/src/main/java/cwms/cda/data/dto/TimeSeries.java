@@ -269,7 +269,6 @@ public class TimeSeries extends CwmsDTOPaginated {
         }
 
         public Record(Timestamp dateTime, Double value, int qualityCode) {
-            super();
             this.dateTime = dateTime;
             this.value = value;
             this.qualityCode = qualityCode;
