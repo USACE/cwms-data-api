@@ -96,7 +96,6 @@ public class BlobController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
 
-
             String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
                     String.class, "", metrics, name(BlobController.class.getName(), GET_ALL));
 
