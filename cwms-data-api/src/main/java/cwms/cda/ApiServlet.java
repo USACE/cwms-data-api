@@ -97,6 +97,9 @@ import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.UpstreamLocationsGetController;
 import cwms.cda.api.auth.ApiKeyController;
+import cwms.cda.api.auth.users.UsersController;
+import cwms.cda.api.auth.users.roles.AddRoleController;
+import cwms.cda.api.auth.users.roles.GetRolesController;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.CdaError;
@@ -673,6 +676,16 @@ public class ApiServlet extends HttpServlet {
 
         addProjectLocksHandlers("/project-locks/{name}", requiredRoles);
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
+
+
+        addUserManagementHandlers();
+    }
+
+    private void addUserManagementHandlers() {
+        RouteRole[] roles = new RouteRole[] { new Role("CWMS User Admins")};
+        crud("/auth/users/{user-name}", new UsersController(metrics), roles);
+        post("/auth/user/{user-name}/add-roles/{office-id}", new AddRoleController());
+        get("/auth/roles", new GetRolesController());
     }
 
     private void addAccountingHandlers(String path, RouteRole[] requiredRoles) {
