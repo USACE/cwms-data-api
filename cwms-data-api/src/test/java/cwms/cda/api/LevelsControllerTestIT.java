@@ -1021,6 +1021,8 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         boolean foundLevel1 = false;
         boolean foundLevel2 = false;
         boolean foundLevel3 = false;
+        boolean foundNormalLevel1 = false;
+        boolean foundNormalLevel2 = false;
         for (Map<String, Object> item : levels) {
             if (item.get("location-level-id").equals(levelId)) {
                 foundLevel1 = true;
@@ -1031,12 +1033,195 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             } else if (item.get("location-level-id").equals(level2Id)) {
                 foundLevel3 = true;
                 assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(levelIdLocal)) {
+                foundNormalLevel1 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(levelId2Local)) {
+                foundNormalLevel2 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
             }
         }
 
         assertTrue(foundLevel1, "Did not find levelId: " + levelId);
         assertTrue(foundLevel2, "Did not find levelId: " + level1Id);
         assertTrue(foundLevel3, "Did not find levelId: " + level2Id);
+        assertTrue(foundNormalLevel1, "Did not find levelId: " + levelIdLocal);
+        assertTrue(foundNormalLevel2, "Did not find levelId: " + levelId2Local);
+    }
+
+    @Test
+    void testStoreRetrieveAllVirtualLocationLevelsPaged() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String existingLoc = "LevelsControllerTestIT";
+        String levelLoc1 = "level_get_all_loc1";
+        String levelLoc2 = "level_get_all_loc2";
+        String levelLoc3 = "level_get_all_loc3";
+        String virtualLoc = "virtual_level_value";
+        String virtualLoc1 = "virtual_level_value_1";
+        String virtualLoc2 = "virtual_level_value_2";
+        String levelIdStor = ".Stor.Ave.1Day.Regulating";
+        String levelIdElev = ".Elev.Ave.1Day.Regulating";
+        createLocation(virtualLoc, true, OFFICE);
+        createLocation(virtualLoc2, true, OFFICE);
+        createLocation(virtualLoc1, true, OFFICE);
+        createLocation(levelLoc1, true, OFFICE);
+        createLocation(levelLoc2, true, OFFICE);
+        createLocation(levelLoc3, true, OFFICE);
+        createLocation(existingLoc, true, OFFICE);
+        String levelId = virtualLoc + levelIdElev;
+        String level1Id = virtualLoc1 + levelIdStor;
+        String level2Id = virtualLoc2 + levelIdStor;
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        String specXml = createRatingSpec(existingLoc);
+        String setXml = createRatingSet(existingLoc);
+        String levelIdLocal = levelLoc1 + levelIdStor;
+        String levelId2Local = levelLoc2 + levelIdStor;
+        createVirtualLocation(specXml, setXml, time, levelIdLocal, levelId2Local);
+
+        String levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_1.json");
+        // Store the virtual level
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .body(levelJson)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_2.json");
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .body(levelJson)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_3.json");
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .body(levelJson)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        //Read level with unit
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("m"));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", level1Id)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("m3"));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", level2Id)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id", equalTo("m3"));
+
+        // retrieve all virtual levels
+        ExtractableResponse<Response> response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(BEGIN, time.toInstant().toString())
+            .queryParam(PAGE_SIZE, 3)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
+
+        JsonPath path = JsonPath.from(response.body().asInputStream());
+        List<Map<String, Object>> levels = path.getList("levels");
+        boolean foundLevel1 = false;
+        boolean foundNormalLevel1 = false;
+        boolean foundNormalLevel2 = false;
+        assertEquals(3, levels.size());
+        for (Map<String, Object> item : levels) {
+            if (item.get("location-level-id").equals(levelId)) {
+                foundLevel1 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(levelIdLocal)) {
+                foundNormalLevel1 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(levelId2Local)) {
+                foundNormalLevel2 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            }
+        }
+
+        assertTrue(foundLevel1, "Did not find levelId: " + levelId);
+        assertTrue(foundNormalLevel1, "Did not find levelId: " + levelIdLocal);
+        assertTrue(foundNormalLevel2, "Did not find levelId: " + levelId2Local);
     }
 
     @ParameterizedTest
