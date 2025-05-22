@@ -33,7 +33,10 @@ export default function useDescriptors({ office, location, parameter, type, inte
   
         descriptors?.entries.forEach((d) => {
           const parts = d.name.split(".");
-          parameters.add(parts[1]);
+          const locParts = parts[0].split("-")
+          // Account for tsids selected with a sub location
+          let subLocation = locParts.length > 0 ? "-" + parts[0].split("-").at(-1) || "" : parts[0];
+          parameters.add(subLocation + "." + parts[1]);
           types.add(parts[2]);
           intervals.add(parts[3]);
           durations.add(parts[4]);
