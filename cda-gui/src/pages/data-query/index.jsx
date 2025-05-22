@@ -1,5 +1,5 @@
 import { UsaceBox, Skeleton, Badge, H3, Button } from "@usace/groundwork";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import Controls from "./components/Controls";
@@ -11,6 +11,7 @@ import TimeSeriesDropdown from "./components/TimeSeriesDropdown";
 import DataTabs from "./components/DataTabs";
 import Toggle from "./components/Toggle";
 import TimeSeriesBuilder from "./components/TimeSeriesBuilder";
+import TimeSeriesManager from "./components/TimeSeriesManager";
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
 
 const v2_config = new Configuration({
@@ -30,11 +31,21 @@ const offices_api = new OfficesApi();
 
 export default function HydrologicQuery() {
   const [tsids, setTsids] = useState([]);
+  const [visibleTSIDs, setVisibleTSIDs] = useState(tsids);
   //   const [location, setLocation] = useState(null);
   //   const [parameter, setParameter] = useState(null);
   //   const [interval, setInterval] = useState(null);
   const [office, setOffice] = useState("");
   const [mode, setMode] = useState("basic");
+  useEffect(() => {
+    // Reset visible list when tsids change
+    setVisibleTSIDs(tsids);
+  }, [tsids]);
+
+  const toggleTSID = (tsid) =>
+    setVisibleTSIDs((prev) =>
+      prev.includes(tsid) ? prev.filter((t) => t !== tsid) : [...prev, tsid]
+    );
 
   const offices = useQuery({
     queryKey: ["offices"],
@@ -125,21 +136,26 @@ export default function HydrologicQuery() {
       return { ...mergeTimeseries(data), raw: data };
     },
     enabled:
-      tsids.length === 1 &&
-      tsids[0].split(".").length === 6 &&
-      tsids[0].split(".").every((part) => part.trim() !== "") &&
+      tsids.length > 0 &&
+      tsids.every(
+        (tsid) =>
+          tsid.split(".").length === 6 &&
+          tsid.split(".").every((part) => part.trim() !== "")
+      ) &&
       office !== undefined,
   });
 
   const timeseriesParams = useMemo(() => {
     // Build table params from timeseriesData
     if (!timeseriesData) return [];
-    return timeseriesData.tsids.map((series, index) => ({
-      tsid: tsids[index],
-      header: `${tsids[index].split(".")[1]} (${series.units})`,
-      rounding: getPrecision(series.units),
-    }));
-  }, [timeseriesData, tsids]);
+    return timeseriesData.tsids
+      .map((series, index) => ({
+        tsid: tsids[index],
+        header: `${tsids[index].split(".")[1]} (${series.units})`,
+        rounding: getPrecision(series.units),
+      }))
+      .filter((p) => visibleTSIDs.includes(p.tsid));
+  }, [timeseriesData, tsids, visibleTSIDs]);
 
   const cdaParams = useMemo(
     () => ({
@@ -154,27 +170,25 @@ export default function HydrologicQuery() {
       console.warn("No data to export");
       return;
     }
-
-    const parameter = tsids[0].split(".")[1];
-    const header = ["Date", parameter];
+    console.log({ timeseriesData, tsids });
+    const parameters = tsids.map(ts=>ts.split(".")[1])
+    const header = ["Date", parameters];
     const rows = timeseriesData.dates.map((date) => {
       const formattedDate = dayjs(date).format("YYYY-MM-DD HH:mm:ss");
-      const value = timeseriesData.values[date]?.[0] ?? "";
-      return [formattedDate, value];
+      return [formattedDate, ...timeseriesData.values[date]];
     });
-
+    console.log({rows})
     const csvContent = [header, ...rows].map((row) => row.join(",")).join("\n");
-
+    console.log({csvContent})
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
 
     const link = document.createElement("a");
     const locName = tsids[0].split(".")[0];
-    const paramName = parameter.split("-")[0].split(".")[0];
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `${locName}_${paramName}_${beginDateTime.format(
+      `${locName}_${parameters.length}_params_${beginDateTime.format(
         "YYYY-MM-DD"
       )}_${endDateTime.format("YYYY-MM-DD")}.csv`
     );
@@ -188,27 +202,29 @@ export default function HydrologicQuery() {
       console.warn("No data to export");
       return;
     }
-  
+
     const jsonContent = JSON.stringify(timeseriesData.raw, null, 2);
     const blob = new Blob([jsonContent], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-  
+
     const parameter = tsids[0].split(".")[1];
     const locName = tsids[0].split(".")[0];
     const paramName = parameter.split("-")[0].split(".")[0];
-  
+
     const link = document.createElement("a");
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `${locName}_${paramName}_${beginDateTime.format("YYYY-MM-DD")}_${endDateTime.format("YYYY-MM-DD")}.json`
+      `${locName}_${paramName}_${beginDateTime.format(
+        "YYYY-MM-DD"
+      )}_${endDateTime.format("YYYY-MM-DD")}.json`
     );
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
-  
+
   if (error)
     return (
       <div>
@@ -223,102 +239,116 @@ export default function HydrologicQuery() {
   return (
     <div className="px-5">
       <UsaceBox title="Hydrologic Query">
-        <div className="flex gap-4">
-          <div className={!office ? "text-lg m-auto" : ""}>
-            <label htmlFor="office">Select Office: </label>
-            <select
-              id="office"
-              value={office}
-              onChange={(e) => {
-                const _office = e.target.value;
-                if (!_office) {
-                  setOffice(null);
-                  setInterval(null);
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col gap-4 w-4/5 md:w-3/5">
+            <div className={!office ? "text-lg m-auto" : "flex gap-4"}>
+              <label htmlFor="office">Select Office: </label>
+              <select
+                id="office"
+                value={office}
+                onChange={(e) => {
+                  const _office = e.target.value;
+                  if (!_office) {
+                    setOffice(null);
+                    setInterval(null);
+                    setTsids([]);
+                    return;
+                  }
+                  setOffice(_office);
                   setTsids([]);
-                  return;
-                }
-                setOffice(_office);
-                setTsids([]);
-              }}
-              className="px-3 min-w-[150px] w-auto"
-            >
-              <option key="select" value="">
-                Select Office
-              </option>
-              {offices.data?.map((key) => (
-                <option key={key} value={key}>
-                  {key}
+                }}
+                className="px-3 min-w-[150px] w-auto"
+              >
+                <option key="select" value="">
+                  Select Office
                 </option>
-              ))}
-            </select>
+                {offices.data?.map((key) => (
+                  <option key={key} value={key}>
+                    {key}
+                  </option>
+                ))}
+              </select>
+              <Toggle
+                checked={mode === "advanced"}
+                onChange={() =>
+                  setMode((prev) => (prev === "basic" ? "advanced" : "basic"))
+                }
+                label={mode === "basic" ? "Guided Mode" : "Manual Mode"}
+              />{" "}
+            </div>
+            {office && (
+              <>
+                {mode == "advanced" ? (
+                  <TimeSeriesDropdown
+                    office={office}
+                    setTsids={setTsids}
+                    tsids={tsids}
+                  />
+                ) : (
+                  <TimeSeriesBuilder
+                    office={office}
+                    setTsids={setTsids}
+                    tsids={tsids}
+                  />
+                )}
+
+                <Controls
+                  setBeginDateTime={setBeginDateTime}
+                  setEndDateTime={setEndDateTime}
+                  beginDateTime={beginDateTime}
+                  endDateTime={endDateTime}
+                />
+                <FailedTimeSeries failedTS={timeseriesData?.failed} />
+              </>
+            )}
+            {!office && (
+              <H3 className="text-center mt-4">Select an office to begin</H3>
+            )}
           </div>
-          <Toggle
-            checked={mode === "advanced"}
-            onChange={() =>
-              setMode((prev) => (prev === "basic" ? "advanced" : "basic"))
-            }
-            label={mode === "basic" ? "Guided Mode" : "Manual Mode"}
+          <TimeSeriesManager
+            tsids={tsids}
+            visibleTSIDs={visibleTSIDs}
+            setTsids={setTsids}
+            toggleTSID={toggleTSID}
           />
         </div>
-        {office && (
-          <>
-            {mode == "advanced" ? (
-              <TimeSeriesDropdown
-                office={office}
-                setTsids={setTsids}
-                tsids={tsids}
-              />
-            ) : (
-              <TimeSeriesBuilder
-                office={office}
-                setTsids={setTsids}
-                tsids={tsids}
-              />
-            )}
-
-            <Controls
-              setBeginDateTime={setBeginDateTime}
-              setEndDateTime={setEndDateTime}
-              beginDateTime={beginDateTime}
-              endDateTime={endDateTime}
-            />
-            <FailedTimeSeries failedTS={timeseriesData?.failed} />
-          </>
-        )}
-        {!office && (
-          <H3 className="text-center mt-4">Select an office to begin</H3>
-        )}
-        <div className="mt-4">
-          <Button
-            onClick={handleDownloadCSV}
-            className={`mb-4 bg-blue-500 text-white px-4 py-2 rounded ${
-              !timeseriesData?.tsids.length || timeseriesLoading ? "hidden" : ""
-            }`}
-          >
-            Download CSV
-          </Button>
-          <Button
-            onClick={handleDownloadJSON}
-            className={`mb-4 bg-green-600 text-white px-4 py-2 rounded ms-2 ${
-              !timeseriesData?.tsids.length || timeseriesLoading ? "hidden" : ""
-            }`}
-          >
-            Download JSON
-          </Button>
+        <div>
+          <div className="mt-4">
+            <Button
+              onClick={handleDownloadCSV}
+              className={`mb-4 bg-blue-500 text-white px-4 py-2 rounded ${
+                !timeseriesData?.tsids.length || timeseriesLoading
+                  ? "hidden"
+                  : ""
+              }`}
+            >
+              Download CSV
+            </Button>
+            <Button
+              onClick={handleDownloadJSON}
+              className={`mb-4 bg-green-600 text-white px-4 py-2 rounded ms-2 ${
+                !timeseriesData?.tsids.length || timeseriesLoading
+                  ? "hidden"
+                  : ""
+              }`}
+            >
+              Download JSON
+            </Button>
+          </div>
 
           {timeseriesLoading ? (
             <Skeleton type="card" className="w-full h-[500px]" />
           ) : tsids.length > 0 &&
             timeseriesData?.raw?.every((ts) => ts?.values?.length === 0) ? (
             <div className="text-center text-red-600 font-semibold mt-4">
-              Time series is empty.
+              TimeSeries is empty.
             </div>
           ) : (
             <DataTabs
               begin={beginDateTime}
               end={endDateTime}
               office={office}
-              tsids={tsids}
+              tsids={visibleTSIDs}
               timeseriesData={timeseriesData}
               isLoading={timeseriesLoading}
               cdaParams={cdaParams}

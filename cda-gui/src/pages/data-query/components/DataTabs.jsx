@@ -34,7 +34,6 @@ export default function DataTabs({
                 begin={cdaParams.begin}
                 end={cdaParams.end}
                 office={cdaParams.office}
-                tsids={timeseriesParams.map((item) => item.tsid)}
                 timeseriesParams={timeseriesParams}
                 dateFormat="YYYY-MM-DD HH:mm:ss"
                 interval="5"
@@ -54,20 +53,15 @@ export default function DataTabs({
               timeSeries={tsids.map((tsid, index) => ({
                 id: tsid,
                 traceOptions: {
-                  name: `${tsid.split(".")[1]} (${
-                    timeseriesData?.tsids?.[index]?.units || "unit"
-                  })`,
-                  yaxis: "y1",
+                  name: `${tsid.split(".")[1]}${
+                  timeseriesData?.tsids?.[index]?.units ? " (" +timeseriesData?.tsids?.[index]?.units  + ")" : ""
+                  }`,
+                  yaxis: `y${index + 1}`,
                 },
               }))}
               locationLevels={[]} // Optional static levels like top of flood, etc.
               layoutOptions={{
-                height: 500,
-                yaxis: {
-                  title: {
-                    text: "Value",
-                  },
-                },
+                height: 500 + tsids.length * 100, // Dynamically adjust height based on number of timeseries
                 showlegend: true,
                 legend: {
                   font: {

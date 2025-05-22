@@ -58,7 +58,20 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
   useEffect(() => {
     const parts = [location, parameter, type, interval, duration, version];
     if (parts.every(Boolean)) {
-      setTsids([parts.join(".")]);
+      const fullTsid =
+        location +
+        parameter +
+        "." +
+        type +
+        "." +
+        interval +
+        "." +
+        duration +
+        "." +
+        version;
+      setTsids((prev) =>
+        prev.includes(fullTsid) ? prev : [...prev, fullTsid]
+      );
     }
   }, [location, parameter, type, interval, duration, version]);
 

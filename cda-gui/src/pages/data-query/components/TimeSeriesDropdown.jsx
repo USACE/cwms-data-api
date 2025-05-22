@@ -74,11 +74,11 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
           value={tsids[0] || ""}
           onChange={(value) => {
             if (!value) {
-              setTsids([]);
               return;
             }
             if ((value.match(/\./g) || []).length === 5) {
-              setTsids([value]);
+              setTsids((prev) => (prev.includes(value) ? prev : [...prev, value]));
+
             } else {
               alert(
                 "TSID must have 6 parts: Location.Parameter.Type.Interval.Duration.Version"

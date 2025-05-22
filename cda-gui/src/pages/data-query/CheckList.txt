@@ -11,3 +11,13 @@ Setup download button for CSV and JSON-------1/2
 Add datum toggle
 
 CONVERT to using input with smart dropdown
+
+TODO:
+Add multi TS support
+    - Sidebar of TS that have been selected
+    - Allow for closing TS on the side or toggling their visibility (eyeball)
+Make it so the guided mode lets you pick any of the params at any time (i.e. start with version if you want)
+If only one option is left in a field, auto select that
+Add Scroll bars to the table
+
+Reach out to districts to review and critique
