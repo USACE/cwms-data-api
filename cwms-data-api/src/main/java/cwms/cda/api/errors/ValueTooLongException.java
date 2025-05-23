@@ -32,10 +32,6 @@ public final class ValueTooLongException extends RuntimeException {
 	private int maxLength;
 	private boolean suppressIncidentId = true;
 
-	public ValueTooLongException(String message) {
-		super(message);
-	}
-
 	public ValueTooLongException(String message, Throwable cause) {
 		super(message, cause);
 	}
@@ -53,28 +49,6 @@ public final class ValueTooLongException extends RuntimeException {
 	public boolean hasParameter()
 	{
 		return parameter != null && !parameter.isEmpty() && length > 0 && maxLength > 0;
-	}
-
-	public static ValueTooLongException fromString(String messageToParse, Throwable cause, boolean suppressIncidentId) {
-		if (!messageToParse.startsWith("ORA-12899:")) {
-			throw new IllegalArgumentException("The provided message does not appear to be an ORA-12899 error message.");
-		}
-		String[] parts = messageToParse.split("\"");
-		if (parts.length < 3) {
-			throw new IllegalArgumentException("The provided message does not contain the expected format.");
-		}
-		String parameter = parts[parts.length - 2];
-		String lengthString = parts[parts.length - 1];
-		if (!lengthString.contains("actual:") || !lengthString.contains("maximum:")) {
-			throw new IllegalArgumentException("The provided message does not contain the expected length information.");
-		}
-		int actualLength = Integer.parseInt(lengthString.split("actual:")[1].split(",")[0].trim());
-		int maxLength = Integer.parseInt(lengthString.split("maximum:")[1].split("\\)")[0].trim());
-		return new ValueTooLongException(parameter, actualLength, maxLength, cause, suppressIncidentId);
-	}
-
-	public static ValueTooLongException fromString(String messageToParse, Throwable cause) {
-		return fromString(messageToParse, cause, true);
 	}
 
 	public String getParameter() {

@@ -306,8 +306,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
 
-            if(!retVal)
-            {
+            if (!retVal) {
                 segments = Collections.singletonList("does not exist as a stream location");
                 retVal = hasCodeAndMessage(sqlException, Collections.singletonList(20998), segments);
             }
@@ -551,7 +550,21 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
         if (hasCodeOrMessage((SQLException) input.getCause(), Collections.singletonList(12899),
                 Collections.singletonList("value too large for column"))) {
-            return ValueTooLongException.fromString(localizedMessage, cause);
+            if (!localizedMessage.startsWith("ORA-12899:")) {
+                throw new IllegalArgumentException("The provided message does not appear to be an ORA-12899 error message.");
+            }
+            String[] parts = localizedMessage.split("\"");
+            if (parts.length < 3) {
+                throw new IllegalArgumentException("The provided message does not contain the expected format.");
+            }
+            String parameter = parts[parts.length - 2];
+            String lengthString = parts[parts.length - 1];
+            if (!lengthString.contains("actual:") || !lengthString.contains("maximum:")) {
+                throw new IllegalArgumentException("The provided message does not contain the expected length information.");
+            }
+            int actualLength = Integer.parseInt(lengthString.split("actual:")[1].split(",")[0].trim());
+            int maxLength = Integer.parseInt(lengthString.split("maximum:")[1].split("\\)")[0].trim());
+            return new ValueTooLongException(parameter, actualLength, maxLength, cause, true);
         } else {
             return new ValueTooLongException(localizedMessage, cause);
         }
