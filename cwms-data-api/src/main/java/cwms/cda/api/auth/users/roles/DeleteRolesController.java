@@ -2,6 +2,8 @@ package cwms.cda.api.auth.users.roles;
 
 import static cwms.cda.api.Controllers.STATUS_204;
 
+import com.codahale.metrics.MetricRegistry;
+
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -13,16 +15,21 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
 
 public class DeleteRolesController implements Handler {
+    private final MetricRegistry metrics;
+
+    public DeleteRolesController(MetricRegistry metrics) {
+        this.metrics = metrics;
+    }
 
     @OpenApi(
+        
         pathParams = {
+            @OpenApiParam(name = "office-id", required = true,
+            description = "Office for these roles"),
             @OpenApiParam(name = "user-name", required = true,
                 description = "Username of the user to alter")
         },
         responses = @OpenApiResponse(
-                    content = {
-                        @OpenApiContent(from = Void.class, type = "")
-                    },
                     status = STATUS_204
         ),
         requestBody = @OpenApiRequestBody(

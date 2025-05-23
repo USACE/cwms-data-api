@@ -54,9 +54,6 @@ public class UsersController implements CrudHandler {
 
     @OpenApi(
         responses = @OpenApiResponse(
-                    content = {
-                        @OpenApiContent(from = Void.class, type = "")
-                    },
                     status = STATUS_204
         ),
         description = "Delete API key for a user",

@@ -2,7 +2,8 @@ package cwms.cda.api.auth.users.roles;
 
 import static cwms.cda.api.Controllers.STATUS_204;
 
-import cwms.cda.data.dto.auth.ApiKey;
+import com.codahale.metrics.MetricRegistry;
+
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -14,6 +15,11 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
 
 public class AddRoleController implements Handler {
+    private final MetricRegistry metrics;
+
+    public AddRoleController(MetricRegistry metrics) {
+        this.metrics = metrics;
+    }
 
     @OpenApi(
         pathParams = {
@@ -23,9 +29,6 @@ public class AddRoleController implements Handler {
                 description = "Name of the user to alter")
         },
         responses = @OpenApiResponse(
-                    content = {
-                        @OpenApiContent(from = Void.class, type = "")
-                    },
                     status = STATUS_204
         ),
         requestBody = @OpenApiRequestBody(
