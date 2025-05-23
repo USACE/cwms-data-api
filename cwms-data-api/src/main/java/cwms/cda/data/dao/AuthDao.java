@@ -175,7 +175,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * @param conn the connection to setup.
      * @throws SQLException if there is an issue setting up the session.
      */
-    private void setSessionForAuthCheck(Connection conn) throws SQLException {
+    static void setSessionForAuthCheck(Connection conn) throws SQLException {
         if (hasCwmsEnvMultiOfficeAuthFix) {
             try (PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE)) {
                 setApiUser.setString(1,connectionUser);

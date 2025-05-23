@@ -252,7 +252,9 @@ import org.owasp.html.PolicyFactory;
     "/project-lock-rights/*",
     "/properties/*",
     "/lookup-types/*",
-    "/embankments/*"
+    "/embankments/*",
+    "/user/*",
+    "/users/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -684,12 +686,13 @@ public class ApiServlet extends HttpServlet {
     }
 
     private void addUserManagementHandlers() {
-        RouteRole[] roles = new RouteRole[] { new Role("CWMS User Admins")};
-        crud("/users/{user-name}", new UsersController(metrics), roles);
-        get("/users/roles", new GetRolesController(metrics));
-        get("/user/profile", new SelfUserController(metrics));
-        post("/user/{user-name}/add-roles/{office-id}", new AddRoleController(metrics));
-        delete("/user/{user-name}/delete-roles/{office-id}", new DeleteRolesController(metrics));
+        RouteRole[] adminRoles = new RouteRole[] { new Role("CWMS User Admins")};
+        RouteRole[] userRoles = new RouteRole[] {new Role("CWMS Users")};
+        crud("/users/{user-name}", new UsersController(metrics), adminRoles);
+        get("/users/roles", new GetRolesController(metrics), adminRoles);
+        get("/user/profile", new SelfUserController(metrics), userRoles);
+        post("/user/{user-name}/add-roles/{office-id}", new AddRoleController(metrics), adminRoles);
+        delete("/user/{user-name}/delete-roles/{office-id}", new DeleteRolesController(metrics), adminRoles);
         
     }
 

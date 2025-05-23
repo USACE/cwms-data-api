@@ -24,7 +24,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
 
 public class UsersController implements CrudHandler {
-    public final MetricRegistry metrics;
+    private final MetricRegistry metrics;
 
 
     public UsersController(MetricRegistry metrics) {

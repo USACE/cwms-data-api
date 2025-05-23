@@ -1,11 +1,24 @@
 package cwms.cda.api.auth.users;
 
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
+import java.security.Principal;
+import java.util.Optional;
+
+import org.jooq.DSLContext;
 
 import com.codahale.metrics.MetricRegistry;
 
+import cwms.cda.ApiServlet;
+import cwms.cda.data.dao.AuthDao;
+import cwms.cda.data.dao.UserDao;
+import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.auth.users.User;
+import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.security.DataApiPrincipal;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -39,8 +52,21 @@ public class SelfUserController implements Handler {
     )
     @Override
     public void handle(Context ctx) throws Exception {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handle'");
+        DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
+        DSLContext dsl = getDslContext(ctx);
+        UserDao dao = new UserDao(dsl);
+        String cac_user = p.getRoles()
+                           .stream()
+                           .map(rr -> rr.toString())
+                           .filter(r -> r.equals(ApiServlet.CAC_USER))
+                           .findFirst().orElse(null);
+        User user = dao.getByUniqueName(p.getName(), cac_user).orElse(null);
+        String formatHeader = ctx.header(Header.ACCEPT);
+        ContentType contentType = Formats.parseHeader(formatHeader, User.class);
+        String result = Formats.format(contentType, user);
+
+        ctx.result(result);
+        ctx.contentType(contentType.toString());
     }
     
 }
