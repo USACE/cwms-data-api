@@ -1181,7 +1181,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("level-units-id", equalTo("m3"));
 
-        // retrieve all virtual levels
+        // retrieve levels with page size of 3
         ExtractableResponse<Response> response = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -1203,6 +1203,77 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         JsonPath path = JsonPath.from(response.body().asInputStream());
         List<Map<String, Object>> levels = path.getList("levels");
         assertEquals(3, levels.size());
+        boolean foundLevel1 = false;
+        boolean foundLevel2 = false;
+        boolean foundLevel3 = false;
+        boolean foundNormalLevel1 = false;
+        boolean foundNormalLevel2 = false;
+        for (Map<String, Object> item : levels) {
+            if (item.get("location-level-id").equals(levelId)) {
+                foundLevel1 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(level1Id)) {
+                foundLevel2 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(level2Id)) {
+                foundLevel3 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(levelIdLocal)) {
+                foundNormalLevel1 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(levelId2Local)) {
+                foundNormalLevel2 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            }
+        }
+
+        String page = path.getString("next-page");
+
+        response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(BEGIN, time.toInstant().toString())
+            .queryParam(PAGE, page)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(2)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
+
+        path = JsonPath.from(response.body().asInputStream());
+        levels = path.getList("levels");
+        assertTrue(levels.size() >= 2 && levels.size() <= 3);
+        for (Map<String, Object> item : levels) {
+            if (item.get("location-level-id").equals(levelId)) {
+                foundLevel1 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(level1Id)) {
+                foundLevel2 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(level2Id)) {
+                foundLevel3 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(levelIdLocal)) {
+                foundNormalLevel1 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            } else if (item.get("location-level-id").equals(levelId2Local)) {
+                foundNormalLevel2 = true;
+                assertThat(item.get("office-id"), equalTo(user.getOperatingOffice()));
+            }
+        }
+
+        assertTrue(foundLevel1, "Did not find levelId: " + levelId);
+        assertTrue(foundLevel2, "Did not find levelId: " + level1Id);
+        assertTrue(foundLevel3, "Did not find levelId: " + level2Id);
+        assertTrue(foundNormalLevel1, "Did not find levelId: " + levelIdLocal);
+        assertTrue(foundNormalLevel2, "Did not find levelId: " + levelId2Local);
     }
 
     @ParameterizedTest
