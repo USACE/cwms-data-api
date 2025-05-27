@@ -42,6 +42,7 @@ import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
@@ -73,7 +74,8 @@ public class LocationControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(containsString("Created Location"));
         //Create associated time series so delete fails without cascade
         try {
             createTimeseries(officeId, location.getName() + ".Flow.Inst.~1Hour.0.cda-test");

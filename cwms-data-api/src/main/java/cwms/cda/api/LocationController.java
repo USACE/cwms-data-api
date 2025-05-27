@@ -63,7 +63,6 @@ import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.UnsupportedFormatException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -77,9 +76,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.ZoneId;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -192,27 +189,20 @@ public class LocationController implements CrudHandler {
 
                 requestResultSize.update(ctx.res.getBufferSize());
                 ctx.contentType(contentType.toString());
-            }
-            else if (formatParm.isEmpty() && !isLegacyFormat)
-            {
+            } else if (formatParm.isEmpty() && !isLegacyFormat) {
                 List<Location> locations = locationsDao.getLocations(names, units, datum, office);
                 results = Formats.format(contentType, locations, Location.class);
                 ctx.result(results);
                 requestResultSize.update(results.length());
                 ctx.contentType(contentType.toString());
-            }
-            else
-            {
+            } else {
                 String format = Formats.getLegacyTypeFromContentType(contentType);
                 results = locationsDao.getLocations(names, format, units, datum, office);
                 ctx.result(results);
                 requestResultSize.update(results.length());
-                if (isLegacyFormat)
-                {
+                if (isLegacyFormat) {
                     ctx.contentType(contentType.toString());
-                }
-                else
-                {
+                } else {
                     ctx.contentType(contentType.getType());
                 }
             }
@@ -310,7 +300,7 @@ public class LocationController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             locationsDao.storeLocation(locationFromBody);
-            ctx.status(HttpServletResponse.SC_OK).json("Created Location");
+            ctx.status(HttpServletResponse.SC_OK).json("{\"Created Location\"}");
         } catch (IOException ex) {
             CdaError re = new CdaError("failed to process request");
             logger.log(Level.SEVERE, re.toString(), ex);
