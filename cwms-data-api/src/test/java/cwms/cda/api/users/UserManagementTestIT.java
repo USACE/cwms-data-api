@@ -50,5 +50,71 @@ public class UserManagementTestIT extends DataApiTestIT {
     }
 
 
+    @ParameterizedTest
+	@ArgumentsSource(UserSpecSource.class)
+	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
+    void test_manage_user(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+        final TestAccounts.KeyUser userUnderTest = TestAccounts.KeyUser.SPK_NORMAL;
+        // we can get a specific user
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+        .when()
+            .get("/users/{user-name}", userUnderTest.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.OK.getStatus()))
+            .body("user-name", equalTo(userUnderTest.getName().toUpperCase()))
+            .body("roles.SPK",contains("All Users", "CWMS Users", "TS ID Creator"))
+            ;
+        // we can add a role
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+            .body("[\"CCP Mgr\"]")
+        .when()
+            .post("/user/{user-name}/roles/{office-id}", userUnderTest.getName(), theUser.getOperatingOffice())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.NO_CONTENT.getStatus()))
+        ;
 
+        // the role was added
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+        .when()
+            .get("/users/{user-name}", userUnderTest.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.OK.getStatus()))
+            .body("user-name", equalTo(userUnderTest.getName().toUpperCase()))
+            .body("roles.SPK",hasItem("CCP Mgr"))
+        ;
+
+        // remove the role
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+            .body("[\"CCP Mgr\"]")
+        .when()
+            .delete("/user/{user-name}/roles/{office-id}", userUnderTest.getName(), theUser.getOperatingOffice())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.NO_CONTENT.getStatus()))
+        ;
+
+        // the role was removed
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+        .when()
+            .get("/users/{user-name}", userUnderTest.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.OK.getStatus()))
+            .body("user-name", equalTo(userUnderTest.getName().toUpperCase()))
+            .body("roles.SPK",not(hasItem("CCP Mgr")))
+        ;
+    }
 }

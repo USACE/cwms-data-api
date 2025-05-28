@@ -1,5 +1,6 @@
 package cwms.cda.data.dao;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,6 +17,7 @@ import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.data.dto.auth.users.User;
 import cwms.cda.security.CwmsAuthException;
+import cwms.cda.security.DataApiPrincipal;
 
 public class UserDao extends Dao<User> {
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -64,5 +66,37 @@ public class UserDao extends Dao<User> {
             })
         );
             
+    }
+
+    public void addRoles(DataApiPrincipal p, String user, String office, String[] roles) {
+        dsl.connection(c -> {
+            setOffice(c, office);
+            try (CallableStatement addUser = c.prepareCall("call cwms_20.cwms_sec.add_user_to_group(?,?,?)")) {
+                for (String role: roles) {
+                    addUser.setString(1, user);
+                    addUser.setString(2, role);
+                    addUser.setString(3, office);
+                    addUser.addBatch();
+                }
+                addUser.executeBatch();
+            }
+        });
+        logger.atInfo().log("Roles '%s' added for user '%s' and office '%s'", String.join(",", roles), user, office);
+    }
+
+    public void deleteRoles(DataApiPrincipal p, String user, String office, String[] roles) {
+        dsl.connection(c -> {
+            setOffice(c, office);
+            try (CallableStatement addUser = c.prepareCall("call cwms_20.cwms_sec.remove_user_from_group(?,?,?)")) {
+                for (String role: roles) {
+                    addUser.setString(1, user);
+                    addUser.setString(2, role);
+                    addUser.setString(3, office);
+                    addUser.addBatch();
+                }
+                addUser.executeBatch();
+            }
+        });
+        logger.atInfo().log("Roles '%s' removed for user '%s' and office '%s'", String.join(",", roles), user, office);
     }
 }

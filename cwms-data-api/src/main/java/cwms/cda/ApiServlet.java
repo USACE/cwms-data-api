@@ -691,8 +691,8 @@ public class ApiServlet extends HttpServlet {
         crud("/users/{user-name}", new UsersController(metrics), adminRoles);
         get("/users/roles", new GetRolesController(metrics), adminRoles);
         get("/user/profile", new SelfUserController(metrics), userRoles);
-        post("/user/{user-name}/add-roles/{office-id}", new AddRoleController(metrics), adminRoles);
-        delete("/user/{user-name}/delete-roles/{office-id}", new DeleteRolesController(metrics), adminRoles);
+        post("/user/{user-name}/roles/{office-id}", new AddRoleController(metrics), adminRoles);
+        delete("/user/{user-name}/roles/{office-id}", new DeleteRolesController(metrics), adminRoles);
         
     }
 

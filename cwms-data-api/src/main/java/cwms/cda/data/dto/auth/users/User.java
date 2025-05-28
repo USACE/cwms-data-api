@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import cwms.cda.data.dto.CwmsDTOBase;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -27,7 +28,7 @@ public class User extends CwmsDTOBase {
 
     @Schema(description = "Is the current session based on CAC Authentication")
     @JsonProperty(access = Access.READ_ONLY)
-    private final boolean cacAuth;
+    private final Boolean cacAuth;
 
     public String getUserName() {
         return userName;
@@ -60,7 +61,7 @@ public class User extends CwmsDTOBase {
     @Schema(description = "Assigned user roles per office.")
     private final Map<String,List<String>> roles;
     
-    public User(String userName, String principal, String email, boolean cac_auth, Map<String, List<String>> roles) {
+    public User(String userName, String principal, String email, Boolean cac_auth, Map<String, List<String>> roles) {
         this.userName = userName;
         this.principal = principal;
         this.email = email;
