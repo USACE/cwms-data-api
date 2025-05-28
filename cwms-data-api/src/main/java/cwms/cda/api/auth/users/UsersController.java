@@ -6,6 +6,8 @@ import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_204;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
+import java.util.List;
+
 import org.jooq.DSLContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -57,13 +59,7 @@ public class UsersController implements CrudHandler {
         throw new UnsupportedOperationException("Unimplemented method 'create'");
     }
 
-    @OpenApi(
-        responses = @OpenApiResponse(
-                    status = STATUS_204
-        ),
-        description = "Delete API key for a user",
-        tags = {"User Management"}
-    )
+    @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String username) {
         // TODO Auto-generated method stub
@@ -90,8 +86,15 @@ public class UsersController implements CrudHandler {
     )
     @Override
     public void getAll(Context ctx) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getAll'");
+        DSLContext dsl = getDslContext(ctx);
+        UserDao dao = new UserDao(dsl);
+        UserList users = dao.getAll();
+        String formatHeader = ctx.header(Header.ACCEPT);
+        ContentType contentType = Formats.parseHeader(formatHeader, User.class);
+        String result = Formats.format(contentType, user);
+
+        ctx.result(result);
+        ctx.contentType(contentType.toString());
     }
 
     @OpenApi(
