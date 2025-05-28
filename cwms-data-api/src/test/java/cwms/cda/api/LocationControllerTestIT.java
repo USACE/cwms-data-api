@@ -75,7 +75,7 @@ public class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body(containsString("\"Created Location\""));
+            .body(is("\"Created Location\""));
         //Create associated time series so delete fails without cascade
         try {
             createTimeseries(officeId, location.getName() + ".Flow.Inst.~1Hour.0.cda-test");
