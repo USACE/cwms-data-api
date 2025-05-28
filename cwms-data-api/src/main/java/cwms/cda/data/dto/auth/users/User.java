@@ -8,6 +8,7 @@ import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.Formats;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
@@ -24,12 +25,20 @@ public class User extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final String principal;
 
+    @Schema(description = "Is the current session based on CAC Authentication")
+    @JsonProperty(access = Access.READ_ONLY)
+    private final boolean cacAuth;
+
     public String getUserName() {
         return userName;
     }
 
     public String getPrincipal() {
         return this.principal;
+    }
+
+    public boolean getCacAuth() {
+        return cacAuth;
     }
 
 
@@ -51,11 +60,12 @@ public class User extends CwmsDTOBase {
     @Schema(description = "Assigned user roles per office.")
     private final Map<String,List<String>> roles;
     
-    public User(String userName, String principal, String email, Map<String, List<String>> roles) {
+    public User(String userName, String principal, String email, boolean cac_auth, Map<String, List<String>> roles) {
         this.userName = userName;
         this.principal = principal;
         this.email = email;
         this.roles = roles;
+        this.cacAuth = cac_auth;
     }
 
     @Override
@@ -64,6 +74,7 @@ public class User extends CwmsDTOBase {
             " userName='" + getUserName() + "'" +
             ", principal='" + getPrincipal() + "'" +
             ", email='" + getEmail() + "'" +
+            ", usedCac='" + getCacAuth() + "'" +
             ", roles='" + getRoles() + "'" +
             "}";
     }

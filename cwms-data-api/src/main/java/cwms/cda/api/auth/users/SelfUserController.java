@@ -18,6 +18,7 @@ import cwms.cda.data.dto.auth.users.User;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.security.DataApiPrincipal;
+import cwms.cda.security.Role;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -57,8 +58,8 @@ public class SelfUserController implements Handler {
         UserDao dao = new UserDao(dsl);
         String cac_user = p.getRoles()
                            .stream()
-                           .map(rr -> rr.toString())
-                           .filter(r -> r.equals(ApiServlet.CAC_USER))
+                           .filter(r -> r.equals(new Role(ApiServlet.CAC_USER)))
+                           .map(r -> ApiServlet.CAC_USER)
                            .findFirst().orElse(null);
         User user = dao.getByUniqueName(p.getName(), cac_user).orElse(null);
         String formatHeader = ctx.header(Header.ACCEPT);

@@ -53,15 +53,9 @@ public class UserDao extends Dao<User> {
                                 }
                                 final String roleOffice = rs.getString("office");
                                 final String role = rs.getString("role");
-                                roles.computeIfAbsent(roleOffice, (key) -> {
-                                    ArrayList<String> tmp = new ArrayList<>();
-                                    if (cac_role != null) {
-                                        tmp.add(cac_role);
-                                    }
-                                    return tmp;
-                                }).add(role);
+                                roles.computeIfAbsent(roleOffice, (key) -> new ArrayList<>()).add(role);
                             }
-                           return new User(userName, principalName, email, roles);
+                           return new User(userName, principalName, email, cac_role != null,  roles);
                         } else {
                             return (User)null;
                         }

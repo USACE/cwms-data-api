@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
+import cwms.cda.ApiServlet;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.auth.users.User;
 import fixtures.KeyCloakExtension;
@@ -43,11 +44,11 @@ public class UserManagementTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpCode.OK.getStatus()))
             .body("user-name", equalTo(theUser.getName().toUpperCase()))
+            .body("cac-auth", equalTo(true))
             .body("roles.SPK",contains("All Users", "CWMS Users", "TS ID Creator"))
-            
             ;
     }
 
 
-    
+
 }
