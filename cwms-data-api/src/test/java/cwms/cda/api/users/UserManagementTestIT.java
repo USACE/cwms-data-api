@@ -117,4 +117,20 @@ public class UserManagementTestIT extends DataApiTestIT {
             .body("roles.SPK",not(hasItem("CCP Mgr")))
         ;
     }
+
+    @ParameterizedTest
+	@ArgumentsSource(UserSpecSource.class)
+	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
+    void test_list_roles(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+        .when()
+            .get("/roles")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.OK.getStatus()))
+            .body("", hasItem("VT Mgr"))
+        ;
+    }
 }

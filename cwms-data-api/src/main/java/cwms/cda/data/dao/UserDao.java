@@ -99,4 +99,18 @@ public class UserDao extends Dao<User> {
         });
         logger.atInfo().log("Roles '%s' removed for user '%s' and office '%s'", String.join(",", roles), user, office);
     }
+
+    public List<String> getRoles() {
+        return dsl.connectionResult(c -> {
+            AuthDao.setSessionForAuthCheck(c);
+            final ArrayList<String> roles = new ArrayList<>();
+            try (PreparedStatement getUser = c.prepareStatement("select distinct user_group_id from cwms_20.at_sec_user_groups order by user_group_id asc");
+                 ResultSet result = getUser.executeQuery()) {
+                while(result.next()) {
+                    roles.add(result.getString("user_group_id"));
+                }
+                return roles;
+            }
+        });
+    }
 }

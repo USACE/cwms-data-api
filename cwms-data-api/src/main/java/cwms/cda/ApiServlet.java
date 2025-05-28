@@ -254,7 +254,8 @@ import org.owasp.html.PolicyFactory;
     "/lookup-types/*",
     "/embankments/*",
     "/user/*",
-    "/users/*"
+    "/users/*",
+    "/roles/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -689,7 +690,7 @@ public class ApiServlet extends HttpServlet {
         RouteRole[] adminRoles = new RouteRole[] { new Role("CWMS User Admins")};
         RouteRole[] userRoles = new RouteRole[] {new Role("CWMS Users")};
         crud("/users/{user-name}", new UsersController(metrics), adminRoles);
-        get("/users/roles", new GetRolesController(metrics), adminRoles);
+        get("/roles", new GetRolesController(metrics), adminRoles);
         get("/user/profile", new SelfUserController(metrics), userRoles);
         post("/user/{user-name}/roles/{office-id}", new AddRoleController(metrics), adminRoles);
         delete("/user/{user-name}/roles/{office-id}", new DeleteRolesController(metrics), adminRoles);
