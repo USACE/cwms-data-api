@@ -300,7 +300,7 @@ public class LocationController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             locationsDao.storeLocation(locationFromBody);
-            ctx.status(HttpServletResponse.SC_OK).json("{\"Created Location\"}");
+            ctx.status(HttpServletResponse.SC_OK).json("\"Created Location\"");
         } catch (IOException ex) {
             CdaError re = new CdaError("failed to process request");
             logger.log(Level.SEVERE, re.toString(), ex);
