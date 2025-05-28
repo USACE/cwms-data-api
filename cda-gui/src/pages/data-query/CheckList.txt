@@ -21,3 +21,5 @@ If only one option is left in a field, auto select that
 Add Scroll bars to the table
 
 Reach out to districts to review and critique
+Asc/Desc table
+Add SI/EN toggle
