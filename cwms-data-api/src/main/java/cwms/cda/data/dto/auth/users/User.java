@@ -1,5 +1,7 @@
 package cwms.cda.data.dto.auth.users;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -7,7 +9,9 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.Formats;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -18,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonInclude(value = Include.NON_NULL)
 public class User extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final String userName;
@@ -38,7 +43,7 @@ public class User extends CwmsDTOBase {
         return this.principal;
     }
 
-    public boolean getCacAuth() {
+    public Boolean getCacAuth() {
         return cacAuth;
     }
 
@@ -78,5 +83,24 @@ public class User extends CwmsDTOBase {
             ", usedCac='" + getCacAuth() + "'" +
             ", roles='" + getRoles() + "'" +
             "}";
+    }
+
+
+    public static class Builder {
+        private final User tmp;
+
+        public Builder(String userName, String principal, String email, Boolean cac_auth) {
+            tmp = new User(userName, principal, email, cac_auth, new HashMap<>());
+        }
+
+        public Builder addRole(String office, String role) {
+            tmp.roles.computeIfAbsent(office, (key) -> new ArrayList<>()).add(role);
+
+            return this;
+        }
+
+        public User build() {
+            return tmp;
+        }
     }
 }

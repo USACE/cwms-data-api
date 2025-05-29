@@ -147,7 +147,8 @@ public class UserManagementTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpCode.OK.getStatus()))
-            .body("", hasItem("VT Mgr"))
+            .body("users.find { it.'user-name' == 'M5HECTEST' }.roles.SWT", hasItem("TS ID Creator"))
         ;
     }
+
 }

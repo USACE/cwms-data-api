@@ -4,14 +4,25 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import cwms.cda.data.dto.Clobs;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import cwms.cda.formatters.json.JsonV2;
+import io.swagger.v3.oas.annotations.media.Schema;
 import cwms.cda.formatters.Formats;
 
+@JsonRootName("users")
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class Users extends CwmsDTOPaginated {
+    @JacksonXmlElementWrapper
+    @JacksonXmlProperty(localName = "user")
+    // Use the array shape to optimize data transfer to client
+    //@JsonFormat(shape=JsonFormat.Shape.ARRAY)
+    @Schema(description = "List of retrieved users")
     List<User> users;
 
 
@@ -20,7 +31,7 @@ public class Users extends CwmsDTOPaginated {
         users = new ArrayList<>();
     }
 
-    public List<User> getClobs() {
+    public List<User> getUsers() {
         return Collections.unmodifiableList(users);
     }
 
