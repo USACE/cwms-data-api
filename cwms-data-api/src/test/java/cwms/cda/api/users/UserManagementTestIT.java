@@ -151,4 +151,17 @@ public class UserManagementTestIT extends DataApiTestIT {
         ;
     }
 
+
+    @Test
+    void test_list_users_fails_if_no_auth() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .when()
+            .get("/users")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()))
+        ;
+    }
+
 }
