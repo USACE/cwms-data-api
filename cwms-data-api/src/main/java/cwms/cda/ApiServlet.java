@@ -29,6 +29,7 @@ import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
 import cwms.cda.api.MeasurementTimeExtentsGetController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
@@ -71,11 +72,14 @@ import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
 import cwms.cda.api.ProjectController;
 import cwms.cda.api.PropertyController;
-import cwms.cda.api.RatingController;
-import cwms.cda.api.RatingLatestController;
-import cwms.cda.api.RatingMetadataController;
-import cwms.cda.api.RatingSpecController;
-import cwms.cda.api.RatingTemplateController;
+import cwms.cda.api.errors.RateException;
+import cwms.cda.api.rating.RateTimeSeriesController;
+import cwms.cda.api.rating.RateValuesController;
+import cwms.cda.api.rating.RatingController;
+import cwms.cda.api.rating.RatingLatestController;
+import cwms.cda.api.rating.RatingMetadataController;
+import cwms.cda.api.rating.RatingSpecController;
+import cwms.cda.api.rating.RatingTemplateController;
 import cwms.cda.api.SpecifiedLevelController;
 import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
@@ -109,7 +113,6 @@ import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.GateChangeDeleteController;
 import cwms.cda.api.location.kind.GateChangeGetAllController;
-import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.LockController;
 import cwms.cda.api.location.kind.OutletController;
 import cwms.cda.api.location.kind.VirtualOutletController;
@@ -125,6 +128,8 @@ import cwms.cda.api.project.ProjectLockRevokeDeny;
 import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
+import cwms.cda.api.rating.ReverseRateTimeSeriesController;
+import cwms.cda.api.rating.ReverseRateValuesController;
 import cwms.cda.api.watersupply.AccountingCatalogController;
 import cwms.cda.api.watersupply.AccountingCreateController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCatalogController;
@@ -406,6 +411,11 @@ public class ApiServlet extends HttpServlet {
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
                 })
+                .exception(RateException.class, (e, ctx) -> {
+                    CdaError re = new CdaError("Error performing rate function: " + e.getMessage());
+                    logger.atInfo().withCause(e).log(re.toString());
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
                 .exception(FieldException.class, (e, ctx) -> {
                     CdaError re = new CdaError(e.getMessage(), e.getDetails(), true);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
@@ -569,15 +579,7 @@ public class ApiServlet extends HttpServlet {
                 new TimeSeriesGroupController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/{timeseries}",
                 new TimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/ratings/template/{template-id}",
-                new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/ratings/spec/{rating-id}",
-                new RatingSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/ratings/metadata/{rating-id}",
-                new RatingMetadataController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        get("/ratings/{rating-id}/latest", new RatingLatestController(metrics));
-        cdaCrudCache("/ratings/{rating-id}",
-                new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        addRatingHandlers(requiredRoles);
         cdaCrudCache("/catalog/{dataset}",
                 new CatalogController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/basins/{name}",
@@ -668,6 +670,26 @@ public class ApiServlet extends HttpServlet {
 
         addProjectLocksHandlers("/project-locks/{name}", requiredRoles);
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
+    }
+
+    private void addRatingHandlers(RouteRole[] requiredRoles) {
+        post(format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID),
+            new RateValuesController(metrics), requiredRoles);
+        post(format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID),
+            new RateTimeSeriesController(metrics), requiredRoles);
+        post(format("/ratings/reverse-rate-values/{%s}/{%s}", OFFICE, RATING_ID),
+            new ReverseRateValuesController(metrics), requiredRoles);
+        post(format("/ratings/reverse-rate-ts/{%s}/{%s}", OFFICE, RATING_ID),
+            new ReverseRateTimeSeriesController(metrics), requiredRoles);
+        cdaCrudCache("/ratings/template/{template-id}",
+                new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/ratings/spec/{rating-id}",
+                new RatingSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache("/ratings/metadata/{rating-id}",
+                new RatingMetadataController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        get("/ratings/{rating-id}/latest", new RatingLatestController(metrics));
+        cdaCrudCache("/ratings/{rating-id}",
+                new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
     }
 
     private void addAccountingHandlers(String path, RouteRole[] requiredRoles) {
