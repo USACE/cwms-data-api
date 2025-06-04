@@ -36,7 +36,7 @@ import cwms.cda.data.dto.measurement.Measurement;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.MinimumSchema;
 import fixtures.TestAccounts;

@@ -43,6 +43,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -93,6 +94,9 @@ public final class CwmsDTOValidator {
                 }
             }
         } catch (IllegalAccessException | InvocationTargetException e) {
+            if(e.getCause() instanceof RequiredFieldException) {
+                throw (RequiredFieldException) e.getCause();
+            }
             LOGGER.atWarning().withCause(e).log("Unable to validate required fields are non-null in DTO: " + type);
         }
     }
@@ -176,12 +180,12 @@ public final class CwmsDTOValidator {
     /**
      * Validates a given Callable by executing it and capturing any exceptions thrown.
      *
-     * @param callable the Callable to be validated
+     * @param runnable the Callable to be validated
      */
-    public void validate(Callable<?> callable) {
+    public void validate(Runnable runnable) {
         try {
-            callable.call();
-        } catch (Exception e) {
+            runnable.run();
+        } catch (RuntimeException e) {
             validationExceptions.add(e);
         }
     }
