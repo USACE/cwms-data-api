@@ -563,6 +563,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                     updateData.execute();
                 } 
             });
+            logger.atInfo().log("Created user {} from principal {}", username, principal);
             Optional<DataApiPrincipal> apiPrincipal = getPrincipalFromPrincipal(principal);
             if (apiPrincipal.isPresent()) {
                 return apiPrincipal.get();
@@ -570,7 +571,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                 throw new CwmsAuthException("User " + username + " was created, however no principal object could be created.");
             }
         } catch (DataAccessException ex) {
-            logger.atInfo().withCause(ex).log("Unable to create user " + username);
+            logger.atInfo().withCause(ex).log("Unable to create user {}", username);
             throw new CwmsAuthException("Unable to create user " + username, ex);
         }
     }
