@@ -29,11 +29,11 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
 
-public class SelfUserController implements Handler {
+public class UserProfileController implements Handler {
 
     private final MetricRegistry metrics;
 
-    public SelfUserController(MetricRegistry metrics) {
+    public UserProfileController(MetricRegistry metrics) {
 		this.metrics = metrics;
 	}
 
