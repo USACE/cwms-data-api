@@ -39,7 +39,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

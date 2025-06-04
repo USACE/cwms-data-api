@@ -37,6 +37,8 @@ import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.Context;
+import io.javalin.http.HandlerType;
+
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
@@ -74,6 +76,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final int DEFAULT_FETCH_SIZE = 1000;
     public static final int DEFAULT_SMALL_FETCH_SIZE = 500;
+    public static final int ORACLE_ECID_MAX_LENGTH = 22;
 
     static ExecuteListener listener = new ExceptionWrappingListener();
     private static Pattern INVALID_OFFICE_ID = Pattern.compile(
@@ -154,8 +157,15 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     private static Connection setClientInfo(Context ctx, Connection connection) {
         try {
-            connection.setClientInfo("OCSID.ECID", ApiServlet.APPLICATION_TITLE + " " + ApiServlet.getApiVersion());
-            connection.setClientInfo("OCSID.MODULE", ctx.endpointHandlerPath());
+            final String apiVersion = ApiServlet.getApiVersion();
+            connection.setClientInfo("OCSID.ECID",
+                                     ApiServlet.APPLICATION_TITLE + " " + 
+                                     apiVersion.substring(0,Math.min(ORACLE_ECID_MAX_LENGTH,apiVersion.length())));
+            if (ctx.handlerType() == HandlerType.BEFORE) {
+                connection.setClientInfo("OCSID.MODULE", "BEFORE-HANDLER");
+            } else {
+                connection.setClientInfo("OCSID.MODULE", ctx.endpointHandlerPath());
+            }
             connection.setClientInfo("OCSID.ACTION", ctx.method());
             connection.setClientInfo("OCSID.CLIENTID", ctx.url().replace(ctx.path(), "") + ctx.contextPath());
         } catch (SQLClientInfoException ex) {

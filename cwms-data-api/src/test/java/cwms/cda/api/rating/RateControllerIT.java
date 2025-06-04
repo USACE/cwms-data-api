@@ -26,7 +26,7 @@ package cwms.cda.api.rating;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.formatters.Formats.JSON;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
