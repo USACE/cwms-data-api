@@ -25,6 +25,8 @@ configurations.all {
 }
 
 dependencies {
+    annotationProcessor(libs.com.google.auto.service)
+    compileOnly(libs.com.google.auto.service.annotations)
     implementation(libs.jaxb.api)
     implementation(libs.jaxb.core)
     implementation(libs.jaxb.impl)
