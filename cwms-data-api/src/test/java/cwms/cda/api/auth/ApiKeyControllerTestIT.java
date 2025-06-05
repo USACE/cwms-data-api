@@ -374,7 +374,8 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-            .body("message", containsString("One or more provided values exceeds the maximum length for the parameter."));
+            .body("message", containsString("One or more provided values exceeds the maximum length for the parameter. "
+                    + "The field KEY_NAME with provided length of 70 has a maximum length of 64 characters."));
     }
 
     private void assertContainsKey(ApiKey expectedKey, List<ApiKey> returnedSet) {

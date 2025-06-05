@@ -24,8 +24,6 @@
 
 package cwms.cda.data.dao;
 
-import java.sql.Timestamp;
-import java.time.Instant;
 import static org.jooq.SQLDialect.ORACLE;
 
 import com.google.common.flogger.FluentLogger;
@@ -42,7 +40,9 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
@@ -79,6 +79,9 @@ public abstract class JooqDao<T> extends Dao<T> {
     static ExecuteListener listener = new ExceptionWrappingListener();
     private static Pattern INVALID_OFFICE_ID = Pattern.compile(
         "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
+    private static Pattern VALUE_TOO_LONG = Pattern.compile(
+            "(^ORA-12899: value too large for column )(\".+\"\\.\".+\"\\.\".+\")" +
+                    "( \\(actual: )(\\d+)(, maximum: )(\\d+)(\\)(\\R*)$)");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -323,7 +326,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     public static boolean isValueTooLargeException(RuntimeException input) {
         return getSqlException(input.getCause()).map(sqlException -> hasCodeOrMessage(sqlException,
-                Arrays.asList(6502, 12899),
+                Arrays.asList(6502, 12899, 20041),
                 Arrays.asList("value too large for column", "character string buffer too small",
                         "Error while writing value at JDBC bind index:"))).orElse(false);
     }
@@ -533,8 +536,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new InvalidItemException(localizedMessage, cause);
     }
 
-    private static ValueTooLongException buildValueTooLongException(RuntimeException input)
-    {
+    private static ValueTooLongException buildValueTooLongException(RuntimeException input) {
         Throwable cause = input.getCause();
         if (input instanceof DataAccessException) {
             DataAccessException dae = (DataAccessException) input;
@@ -548,25 +550,15 @@ public abstract class JooqDao<T> extends Dao<T> {
                 localizedMessage = parts[0];
             }
         }
-        if (hasCodeOrMessage((SQLException) input.getCause(), Collections.singletonList(12899),
-                Collections.singletonList("value too large for column"))) {
-            if (!localizedMessage.startsWith("ORA-12899:")) {
-                throw new IllegalArgumentException("The provided message does not appear to be an ORA-12899 error message.");
-            }
+        if (localizedMessage != null && VALUE_TOO_LONG.matcher(localizedMessage).matches()) {
             String[] parts = localizedMessage.split("\"");
-            if (parts.length < 3) {
-                throw new IllegalArgumentException("The provided message does not contain the expected format.");
-            }
             String parameter = parts[parts.length - 2];
             String lengthString = parts[parts.length - 1];
-            if (!lengthString.contains("actual:") || !lengthString.contains("maximum:")) {
-                throw new IllegalArgumentException("The provided message does not contain the expected length information.");
-            }
             int actualLength = Integer.parseInt(lengthString.split("actual:")[1].split(",")[0].trim());
             int maxLength = Integer.parseInt(lengthString.split("maximum:")[1].split("\\)")[0].trim());
             return new ValueTooLongException(parameter, actualLength, maxLength, cause, true);
         } else {
-            return new ValueTooLongException(localizedMessage, cause);
+            return new ValueTooLongException(cause);
         }
     }
 
@@ -578,7 +570,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             Matcher matcher = INVALID_OFFICE_ID.matcher(localizedMessage);
             if (matcher.find()) {
                 String office = sanitizeOrNull(matcher.group(1));
-                if(office != null) {
+                if (office != null) {
                     localizedMessage = "\"" + office + "\" is not a valid CWMS office id";
                 }
             }

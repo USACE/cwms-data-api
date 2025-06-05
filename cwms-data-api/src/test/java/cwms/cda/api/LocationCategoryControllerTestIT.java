@@ -43,6 +43,7 @@ import org.junit.jupiter.api.Test;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
 
 @Tag("integration")
 class LocationCategoryControllerTestIT extends DataApiTestIT {
@@ -287,7 +288,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 	void test_id_too_long()
 	{
 		String officeId = user.getOperatingOffice();
-		String invalidCatId = "ThisIsAnInvalidCategoryIdThatIsWayTooLongAndShouldNotBeAllowed";
+		String invalidCatId = RandomStringUtils.randomAlphabetic(64);
 		LocationCategory cat = new LocationCategory(officeId, invalidCatId,
 				"IntegrationTesting");
 		ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);

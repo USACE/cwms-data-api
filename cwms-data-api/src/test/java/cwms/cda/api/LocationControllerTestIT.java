@@ -34,6 +34,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -42,6 +43,7 @@ import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
@@ -225,8 +227,7 @@ class LocationControllerTestIT extends DataApiTestIT {
     void test_name_too_long() throws Exception
     {
         String officeId = "SPK";
-        String invalidLongName = "This is a very long name that exceeds the maximum length allowed for a location name "
-                + "in the system. It should trigger an error when we try to create a location with this name.";
+        String invalidLongName = RandomStringUtils.randomAlphabetic(200);
         String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
         Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
                 json, Location.class))
@@ -250,7 +251,8 @@ class LocationControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body(containsString("One or more provided values exceeds the maximum length for the parameter."));
     }
 
     enum GetAllTest

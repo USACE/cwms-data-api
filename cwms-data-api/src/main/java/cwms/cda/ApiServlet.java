@@ -30,7 +30,6 @@ import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
-import cwms.cda.api.MeasurementTimeExtentsGetController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -66,6 +65,7 @@ import cwms.cda.api.LocationCategoryController;
 import cwms.cda.api.LocationController;
 import cwms.cda.api.LocationGroupController;
 import cwms.cda.api.LookupTypeController;
+import cwms.cda.api.MeasurementTimeExtentsGetController;
 import cwms.cda.api.OfficeController;
 import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
@@ -411,12 +411,7 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(ValueTooLongException.class, (e, ctx) -> {
-                    CdaError re;
-                    if (e.hasParameter()) {
-                        re = new CdaError(e.getMessage(), e.isSuppressIncidentId());
-                    } else {
-                        re = new CdaError("One or more provided values exceeds the maximum length for the parameter.", e.isSuppressIncidentId());
-                    }
+                    CdaError re = new CdaError(e.getMessage(), e.isSuppressIncidentId());
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })

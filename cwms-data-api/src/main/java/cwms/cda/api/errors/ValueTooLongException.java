@@ -32,14 +32,15 @@ public final class ValueTooLongException extends RuntimeException {
 	private int maxLength;
 	private boolean suppressIncidentId = true;
 
-	public ValueTooLongException(String message, Throwable cause) {
-		super(message, cause);
+	private static final String DEFAULT_ERROR = "One or more provided values exceeds the maximum length for the parameter.";
+
+	public ValueTooLongException(Throwable cause) {
+		super(DEFAULT_ERROR, cause);
 	}
 
 	public ValueTooLongException(String parameter, int length, int maxLength, Throwable cause, boolean suppressIncidentId) {
-		super(String.format("One or more provided values exceeds the "
-				+ "maximum length for the parameter. The field %s with provided length of %d "
-				+ "has a maximum length of %d characters.", parameter, length, maxLength), cause);
+		super(String.format("%s The field %s with provided length of %d "
+				+ "has a maximum length of %d characters.", DEFAULT_ERROR, parameter, length, maxLength), cause);
 		this.parameter = parameter;
 		this.length = length;
 		this.maxLength = maxLength;

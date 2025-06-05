@@ -30,6 +30,7 @@ import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static java.lang.String.format;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -224,6 +225,7 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body(containsString("One or more provided values exceeds the maximum length for the parameter."))
         ;
     }
 
