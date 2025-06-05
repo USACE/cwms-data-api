@@ -9,12 +9,15 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.json.adapters.TimeSeriesRecordDeserializer;
 import cwms.cda.formatters.xml.XMLv2;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -214,7 +217,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         if (pageSize > 0 && values.size() == pageSize) {
             nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
         } else {
-            values.add(new Record(dateTime, value, qualityCode));
+            values.add(new StandardRecord(dateTime, value, qualityCode));
         }
     }
 
@@ -230,7 +233,6 @@ public class TimeSeries extends CwmsDTOPaginated {
         }
         return columns;
     }
-
 
 
     @ArraySchema(
@@ -250,8 +252,9 @@ public class TimeSeries extends CwmsDTOPaginated {
             )
     )
 
+    @JsonDeserialize(using = TimeSeriesRecordDeserializer.class)
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class Record {
+    public abstract static class Record {
         // Explicitly set property order for array serialization
         @JsonProperty(value = "date-time", index = 0)
         @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch), always UTC")
@@ -318,6 +321,18 @@ public class TimeSeries extends CwmsDTOPaginated {
         @Override
         public String toString() {
             return "Record{" + "dateTime=" + dateTime + ", value=" + value + ", qualityCode=" + qualityCode + '}';
+        }
+    }
+
+    @JsonDeserialize(using = JsonDeserializer.None.class)
+    public static final class StandardRecord extends Record {
+        // unused - required for Jackson to deserialize
+        private StandardRecord()
+        {
+        }
+
+        public StandardRecord(Timestamp dateTime, Double value, int qualityCode) {
+            super(dateTime, value, qualityCode);
         }
     }
 

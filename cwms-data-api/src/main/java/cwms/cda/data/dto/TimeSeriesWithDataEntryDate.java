@@ -35,15 +35,12 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -54,15 +51,14 @@ public final class TimeSeriesWithDataEntryDate extends TimeSeries {
     // Default constructor for Jackson Deserialization
     public TimeSeriesWithDataEntryDate() {
         super();
-        valuesWithEntryDate = new ArrayList<>();
     }
 
+    // Unused constructor required for Jackson Deserialization
     public TimeSeriesWithDataEntryDate(TimeSeries timeSeries) {
         this(timeSeries.getPage(), timeSeries.getPageSize(), timeSeries.getTotal(), timeSeries.getName(),
                 timeSeries.getOfficeId(), timeSeries.getBegin(), timeSeries.getEnd(), timeSeries.getUnits(),
                 timeSeries.getInterval(), timeSeries.getVerticalDatumInfo(), timeSeries.getIntervalOffset(),
                 timeSeries.getTimeZone(), timeSeries.getVersionDate(), timeSeries.getDateVersionType());
-        valuesWithEntryDate = new ArrayList<>();
     }
 
     public TimeSeriesWithDataEntryDate(String page, int pageSize, Integer total, String name, String officeId,
@@ -70,26 +66,17 @@ public final class TimeSeriesWithDataEntryDate extends TimeSeries {
             Long intervalOffset, String timeZone, ZonedDateTime versionDate, VersionType dateVersionType) {
         super(page, pageSize, total, name, officeId, begin, end, units, interval, info, intervalOffset,
                 timeZone, versionDate, dateVersionType);
-        valuesWithEntryDate = new ArrayList<>();
-    }
-
-    @JsonProperty(value = "values")
-    private List<TimeSeriesWithDataEntryDate.Record> valuesWithEntryDate;
-
-    @Override
-    public List<TimeSeries.Record> getValues() {
-        return new ArrayList<>(valuesWithEntryDate);
     }
 
     public void addValue(Timestamp dateTime, Double value, int qualityCode, Timestamp dataEntryDate) {
         // Set the current page, if not set
-        if ((page == null || page.isEmpty()) && (valuesWithEntryDate == null || valuesWithEntryDate.isEmpty())) {
+        if ((page == null || page.isEmpty()) && (values == null || values.isEmpty())) {
             page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
         }
-        if (pageSize > 0 && valuesWithEntryDate.size() == pageSize) {
+        if (pageSize > 0 && values.size() == pageSize) {
             nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
         } else {
-            valuesWithEntryDate.add(new Record(dateTime, value, qualityCode, dataEntryDate));
+            values.add(new TimeSeriesRecordWithDate(dateTime, value, qualityCode, dataEntryDate));
         }
     }
 
@@ -109,7 +96,7 @@ public final class TimeSeriesWithDataEntryDate extends TimeSeries {
                 columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
             }
         }
-        for (Field f: Record.class.getDeclaredFields()) {
+        for (Field f: TimeSeriesRecordWithDate.class.getDeclaredFields()) {
             JsonProperty field = f.getAnnotation(JsonProperty.class);
             if (field != null) {
                 String fieldName = !field.value().isEmpty() ? field.value() : f.getName();
@@ -119,46 +106,5 @@ public final class TimeSeriesWithDataEntryDate extends TimeSeries {
         }
 
         return columns;
-    }
-
-    public static final class Record extends TimeSeries.Record {
-        @JsonProperty(value = "data-entry-date", index = 3)
-        @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch), always UTC")
-        @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-        private Timestamp dataEntryDate;
-
-        // Default constructor for Jackson Deserialization
-        public Record() {
-            super(null, null, 0);
-        }
-
-        public Record(Timestamp dateTime, Double value, int qualityCode, Timestamp dataEntryDate) {
-            super(dateTime, value, qualityCode);
-            this.dataEntryDate = dataEntryDate;
-        }
-
-        public Timestamp getDataEntryDate() {
-            return dataEntryDate;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            if (!super.equals(o)) {
-                return false;
-            }
-            Record that = (Record) o;
-            return Objects.equals(getDataEntryDate(), that.getDataEntryDate());
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), getDataEntryDate());
-        }
     }
 }

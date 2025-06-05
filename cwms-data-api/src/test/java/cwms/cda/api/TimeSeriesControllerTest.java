@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.data.dto.TimeSeriesRecordWithDate;
 import cwms.cda.data.dto.TimeSeriesWithDataEntryDate;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -153,8 +154,8 @@ class TimeSeriesControllerTest extends ControllerTest {
 
     private void assertDateRecordsMatch(List<? extends TimeSeries.Record> expected, List<? extends TimeSeries.Record> actual) {
         for (int i = 0; i < expected.size(); i++) {
-            assertEquals(((TimeSeriesWithDataEntryDate.Record) expected.get(i)).getDataEntryDate(),
-                    ((TimeSeriesWithDataEntryDate.Record) actual.get(i)).getDataEntryDate(), "Entry dates did not match");
+            assertEquals(((TimeSeriesRecordWithDate) expected.get(i)).getDataEntryDate(),
+                    ((TimeSeriesRecordWithDate) actual.get(i)).getDataEntryDate(), "Entry dates did not match");
             assertEquals(expected.get(i).getDateTime(), actual.get(i).getDateTime(), "Timestamps did not match");
             assertEquals(expected.get(i).getValue(), actual.get(i).getValue(), "Values did not match");
             assertEquals(expected.get(i).getQualityCode(), actual.get(i).getQualityCode(), "Quality codes did not match");

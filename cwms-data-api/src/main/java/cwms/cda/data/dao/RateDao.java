@@ -132,7 +132,7 @@ public class RateDao extends JooqDao<RatingSet> {
                 officeId);
         });
         List<TimeSeries.Record> records = ztsvTypes.stream()
-            .map(z -> new TimeSeries.Record(z.getDATE_TIME(), z.getVALUE(), z.getQUALITY_CODE().intValue()))
+            .map(z -> new TimeSeries.StandardRecord(z.getDATE_TIME(), z.getVALUE(), z.getQUALITY_CODE().intValue()))
             .collect(toList());
         return new RatedOutputTimeSeries(CwmsId.buildCwmsId(officeId, ratingId), records, input.getOutputUnit());
     }
@@ -153,7 +153,7 @@ public class RateDao extends JooqDao<RatingSet> {
                 officeId);
         });
         List<TimeSeries.Record> records = ztsvTypes.stream()
-            .map(z -> new TimeSeries.Record(z.getDATE_TIME(), z.getVALUE(), z.getQUALITY_CODE().intValue()))
+            .map(z -> new TimeSeries.StandardRecord(z.getDATE_TIME(), z.getVALUE(), z.getQUALITY_CODE().intValue()))
             .collect(toList());
         return new RatedOutputTimeSeries(CwmsId.buildCwmsId(officeId, ratingId), records, input.getOutputUnit());
     }
