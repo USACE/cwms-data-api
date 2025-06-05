@@ -1,11 +1,11 @@
 {
   "office-id" : "SPK",
-  "location-level-id" : "virtual_level_value.Elev.Ave.1Day.Regulating",
+  "location-level-id" : "virtual_level_value.Stage.Ave.1Day.Regulating",
   "specified-level-id" : "Total",
-  "parameter-id" : "Elev",
-  "attribute-value" : 12500.0,
+  "parameter-id" : "Stage",
+  "attribute-value" : 12.5,
   "attribute-units-id" : "ft",
-  "attribute-parameter-id" : "Elev",
+  "attribute-parameter-id" : "Stage",
   "attribute-parameter-type-id" : "Inst",
   "level-units-id" : "ft",
   "level-date" : "2023-06-01T00:00:00-07:00",
@@ -14,9 +14,9 @@
     {
       "type": "LOCATION_LEVEL",
       "abbr": "L1",
-      "name": "level_get_all_loc1.Elev.Ave.1Day.Regulating",
-      "attribute-id": "Elev",
-      "attribute-value": 1650.0
+      "name": "level_get_all_loc1.Stage.Ave.1Day.Regulating",
+      "attribute-id": "Stage",
+      "attribute-value": 16.5
     },
     {
       "type": "RATING",

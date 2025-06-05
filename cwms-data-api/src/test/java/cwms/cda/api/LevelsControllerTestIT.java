@@ -762,7 +762,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         createLocation("virtual_level_value", true, OFFICE);
         createLocation(virtualLoc, true, OFFICE);
         createLocation(existingLoc, true, OFFICE);
-        String levelId = "virtual_level_value.Elev.Ave.1Day.Regulating";
+        String levelId = "virtual_level_value.Stage.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         String levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_1.json");
         String specXml = createRatingSpec(existingLoc);
@@ -859,9 +859,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .extract();
 
         assertThat(response.path("constituents.size()"), is(2));
-        assertThat(response.path("constituents[0].name"), equalTo(virtualLoc +  ".Elev.Ave.1Day.Regulating"));
+        assertThat(response.path("constituents[0].name"), equalTo(virtualLoc +  ".Stage.Ave.1Day.Regulating"));
         assertThat(response.path("constituents[0].type"), equalTo("LOCATION_LEVEL"));
-        assertThat(response.path("constituents[0].attribute-id"), equalTo("Elev"));
+        assertThat(response.path("constituents[0].attribute-id"), equalTo("Stage"));
         assertThat(response.path("constituents[1].name"), equalTo(existingSpec));
         assertThat(response.path("constituents[1].type"), equalTo("RATING"));
     }
@@ -877,7 +877,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String virtualLoc1 = "virtual_level_value_1";
         String virtualLoc2 = "virtual_level_value_2";
         String levelIdStor = ".Stor.Ave.1Day.Regulating";
-        String levelIdElev = ".Elev.Ave.1Day.Regulating";
+        String levelIdStage = ".Stage.Ave.1Day.Regulating";
         createLocation(virtualLoc, true, OFFICE);
         createLocation(virtualLoc2, true, OFFICE);
         createLocation(virtualLoc1, true, OFFICE);
@@ -885,7 +885,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         createLocation(levelLoc2, true, OFFICE);
         createLocation(levelLoc3, true, OFFICE);
         createLocation(existingLoc, true, OFFICE);
-        String levelId = virtualLoc + levelIdElev;
+        String levelId = virtualLoc + levelIdStage;
         String level1Id = virtualLoc1 + levelIdStor;
         String level2Id = virtualLoc2 + levelIdStor;
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
@@ -1060,7 +1060,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String virtualLoc1 = "virtual_level_value_1";
         String virtualLoc2 = "virtual_level_value_2";
         String levelIdStor = ".Stor.Ave.1Day.Regulating";
-        String levelIdElev = ".Elev.Ave.1Day.Regulating";
+        String levelIdStage = ".Stage.Ave.1Day.Regulating";
         createLocation(virtualLoc, true, OFFICE);
         createLocation(virtualLoc2, true, OFFICE);
         createLocation(virtualLoc1, true, OFFICE);
@@ -1068,7 +1068,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         createLocation(levelLoc2, true, OFFICE);
         createLocation(levelLoc3, true, OFFICE);
         createLocation(existingLoc, true, OFFICE);
-        String levelId = virtualLoc + levelIdElev;
+        String levelId = virtualLoc + levelIdStage;
         String level1Id = virtualLoc1 + levelIdStor;
         String level2Id = virtualLoc2 + levelIdStor;
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
@@ -1287,7 +1287,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         createLocation("virtual_level_value", true, OFFICE);
         createLocation(virtualLoc, true, OFFICE);
         createLocation(existingLoc, true, OFFICE);
-        String levelId = "virtual_level_value.Elev.Ave.1Day.Regulating";
+        String levelId = "virtual_level_value.Stage.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         String levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_1.json");
         String specXml = createRatingSpec(existingLoc);
@@ -1350,9 +1350,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .extract();
 
         assertThat(response.path("constituents.size()"), is(2));
-        assertThat(response.path("constituents[0].name"), equalTo(virtualLoc +  ".Elev.Ave.1Day.Regulating"));
+        assertThat(response.path("constituents[0].name"), equalTo(virtualLoc +  ".Stage.Ave.1Day.Regulating"));
         assertThat(response.path("constituents[0].type"), equalTo("LOCATION_LEVEL"));
-        assertThat(response.path("constituents[0].attribute-id"), equalTo("Elev"));
+        assertThat(response.path("constituents[0].attribute-id"), equalTo("Stage"));
         assertThat(response.path("constituents[1].name"), equalTo(existingSpec));
         assertThat(response.path("constituents[1].type"), equalTo("RATING"));
 
