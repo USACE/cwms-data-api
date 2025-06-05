@@ -496,8 +496,12 @@ public abstract class JooqDao<T> extends Dao<T> {
             int errorCode = sqlException.getErrorCode();
 
             retVal = errorCode == 20998
-                    && message.contains("ORA-20102: The unit")
-                    && message.contains("is not a recognized CWMS Database unit for the")
+                    && ((message.contains("ORA-20102: The unit")
+                    && message.contains("is not a recognized CWMS Database unit for the"))
+                    || (message.contains("ORA-20998: ERROR: Cannot convert from unit ")
+                    && message.contains(" to unit "))
+                    || (message.contains("Cannot convert parameter ")
+                    && message.contains(" from specified units: ")))
                 ;
         }
         return retVal;
@@ -512,6 +516,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
 
         String localizedMessage = cause.getLocalizedMessage();
+        boolean isConversionError = false;
         if (localizedMessage != null) {
             // skip ahead in localizedMessage to "ORA-20102:"
             String searchFor = "ORA-20102:";
@@ -522,10 +527,23 @@ public abstract class JooqDao<T> extends Dao<T> {
                 if (parts.length >= 1) {
                     localizedMessage = parts[0];
                 }
+            } else {
+                searchFor = "ORA-20998: ERROR: ";
+                start = localizedMessage.indexOf(searchFor);
+                if (start >= 0) {
+                    localizedMessage = localizedMessage.substring(start + searchFor.length());
+                    String[] parts = localizedMessage.split("\n");
+                    if (parts.length >= 1) {
+                        localizedMessage = parts[0];
+                    }
+                    isConversionError = true;
+                }
             }
         }
 
-        localizedMessage = sanitizeOrNull(localizedMessage);
+        if (!isConversionError) {
+            localizedMessage = sanitizeOrNull(localizedMessage);
+        }
 
         if (localizedMessage == null || localizedMessage.isEmpty()) {
             localizedMessage = "Invalid Units.";
