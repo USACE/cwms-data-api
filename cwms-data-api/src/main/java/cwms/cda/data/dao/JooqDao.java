@@ -83,8 +83,8 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static final Pattern INVALID_OFFICE_ID = Pattern.compile(
         "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
     private static final Pattern VALUE_TOO_LONG = Pattern.compile(
-            "(^ORA-12899: value too large for column )(\".+\"\\.\".+\"\\.\"(.+)\")"
-                    + "( \\(actual: )(\\d+)(, maximum: )(\\d+)(\\)(\\R*)$)");
+            "^ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
+                    + "\\(actual: (\\d+), maximum: (\\d+)\\)\\R*$");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -564,9 +564,9 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             Matcher matcher = VALUE_TOO_LONG.matcher(localizedMessage);
             if (matcher.matches()) {
-                String parameter = matcher.group(3);
-                int actualLength = Integer.parseInt(matcher.group(5));
-                int maxLength = Integer.parseInt(matcher.group(7));
+                String parameter = matcher.group(1);
+                int actualLength = Integer.parseInt(matcher.group(2));
+                int maxLength = Integer.parseInt(matcher.group(3));
                 return new ValueTooLongException(parameter, actualLength, maxLength, cause, true);
             }
         }
