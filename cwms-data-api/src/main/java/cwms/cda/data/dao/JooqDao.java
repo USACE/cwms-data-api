@@ -79,14 +79,14 @@ public abstract class JooqDao<T> extends Dao<T> {
     public static final int ORACLE_ECID_MAX_LENGTH = 22;
 
     static ExecuteListener listener = new ExceptionWrappingListener();
-    private static Pattern INVALID_OFFICE_ID = Pattern.compile(
+    private static final Pattern INVALID_OFFICE_ID = Pattern.compile(
         "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
     private static final Pattern INVALID_UNIT = Pattern.compile(
-            "((.+\\R+){6})(ORA-20102: The unit: )(\\S+)"
-                    + "( is not a recognized CWMS Database unit for the )(.+)((.+\\R+){10})");
+            "(.+\\R+){6}ORA-20102: The unit: \\S+"
+                    + " is not a recognized CWMS Database unit for the .+(.+\\R+){10}");
     private static final Pattern CONVERSION_ERROR = Pattern.compile(
-            "(^ORA-20998: ERROR: Cannot convert )(((parameter )(.+)( from specified units: )(.+$))"
-                    + "|((from unit )(.+)( to unit )(.+$)))");
+            "^ORA-20998: ERROR: Cannot convert ((parameter .+ from specified units: .+$)"
+                    + "|(from unit .+ to unit .+$))");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -319,7 +319,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
 
-            if(!retVal) {
+            if (!retVal) {
                 segments = Collections.singletonList("does not exist as a stream location");
                 retVal = hasCodeAndMessage(sqlException, Collections.singletonList(20998), segments);
             }
