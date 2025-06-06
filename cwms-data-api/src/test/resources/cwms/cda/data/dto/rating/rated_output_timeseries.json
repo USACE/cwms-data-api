@@ -1,0 +1,31 @@
+{
+  "rating-id": {
+    "name": "DOTW.Stage;Flow.Logarithmic.USGS-NWIS",
+    "office-id": "NWDP"
+  },
+  "unit": "cfs",
+  "values": [
+    [1672531200000,137.90304290304002,0],
+    [1577836800000,167.0693948928, 0],
+    [1546300800000,null,5],
+    [1451606400000,0.0269010042624,0],
+    [1388534400000,1786.7930199552, 0]
+  ],
+  "value-columns": [
+    {
+      "name": "date-time",
+      "ordinal": 1,
+      "datatype": "java.sql.Timestamp"
+    },
+    {
+      "name": "value",
+      "ordinal": 2,
+      "datatype": "java.lang.Double"
+    },
+    {
+      "name": "quality-code",
+      "ordinal": 3,
+      "datatype": "int"
+    }
+  ]
+}
