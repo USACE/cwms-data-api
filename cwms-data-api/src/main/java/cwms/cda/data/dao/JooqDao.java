@@ -80,11 +80,11 @@ public abstract class JooqDao<T> extends Dao<T> {
     public static final int ORACLE_ECID_MAX_LENGTH = 22;
 
     static ExecuteListener listener = new ExceptionWrappingListener();
-    private static Pattern INVALID_OFFICE_ID = Pattern.compile(
+    private static final Pattern INVALID_OFFICE_ID = Pattern.compile(
         "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
-    private static Pattern VALUE_TOO_LONG = Pattern.compile(
-            "(^ORA-12899: value too large for column )(\".+\"\\.\".+\"\\.\".+\")" +
-                    "( \\(actual: )(\\d+)(, maximum: )(\\d+)(\\)(\\R*)$)");
+    private static final Pattern VALUE_TOO_LONG = Pattern.compile(
+            "(^ORA-12899: value too large for column )(\".+\"\\.\".+\"\\.\"(.+)\")"
+                    + "( \\(actual: )(\\d+)(, maximum: )(\\d+)(\\)(\\R*)$)");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -560,16 +560,17 @@ public abstract class JooqDao<T> extends Dao<T> {
                 localizedMessage = parts[0];
             }
         }
-        if (localizedMessage != null && VALUE_TOO_LONG.matcher(localizedMessage).matches()) {
-            String[] parts = localizedMessage.split("\"");
-            String parameter = parts[parts.length - 2];
-            String lengthString = parts[parts.length - 1];
-            int actualLength = Integer.parseInt(lengthString.split("actual:")[1].split(",")[0].trim());
-            int maxLength = Integer.parseInt(lengthString.split("maximum:")[1].split("\\)")[0].trim());
-            return new ValueTooLongException(parameter, actualLength, maxLength, cause, true);
-        } else {
-            return new ValueTooLongException(cause);
+
+        if (localizedMessage != null) {
+            Matcher matcher = VALUE_TOO_LONG.matcher(localizedMessage);
+            if (matcher.matches()) {
+                String parameter = matcher.group(3);
+                int actualLength = Integer.parseInt(matcher.group(5));
+                int maxLength = Integer.parseInt(matcher.group(7));
+                return new ValueTooLongException(parameter, actualLength, maxLength, cause, true);
+            }
         }
+        return new ValueTooLongException(cause);
     }
 
     private static InvalidItemException buildInvalidOffice(RuntimeException input) {
