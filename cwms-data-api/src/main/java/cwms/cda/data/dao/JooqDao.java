@@ -81,6 +81,12 @@ public abstract class JooqDao<T> extends Dao<T> {
     static ExecuteListener listener = new ExceptionWrappingListener();
     private static Pattern INVALID_OFFICE_ID = Pattern.compile(
         "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
+    private static final Pattern INVALID_UNIT = Pattern.compile(
+            "((.+\\R+){6})(ORA-20102: The unit: )(\\S+)"
+                    + "( is not a recognized CWMS Database unit for the )(.+)((.+\\R+){10})");
+    private static final Pattern CONVERSION_ERROR = Pattern.compile(
+            "(^ORA-20998: ERROR: Cannot convert )(((parameter )(.+)( from specified units: )(.+$))"
+                    + "|((from unit )(.+)( to unit )(.+$)))");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -313,8 +319,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
 
-            if(!retVal)
-            {
+            if(!retVal) {
                 segments = Collections.singletonList("does not exist as a stream location");
                 retVal = hasCodeAndMessage(sqlException, Collections.singletonList(20998), segments);
             }
@@ -493,16 +498,21 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
             String message = sqlException.getLocalizedMessage();
-            int errorCode = sqlException.getErrorCode();
 
-            retVal = errorCode == 20998
-                    && ((message.contains("ORA-20102: The unit")
-                    && message.contains("is not a recognized CWMS Database unit for the"))
-                    || (message.contains("ORA-20998: ERROR: Cannot convert from unit ")
-                    && message.contains(" to unit "))
-                    || (message.contains("Cannot convert parameter ")
-                    && message.contains(" from specified units: ")))
-                ;
+            if (INVALID_UNIT.matcher(message).matches()) {
+                retVal = true;
+            }
+
+            if (message != null) {
+                String[] parts = message.split("\n");
+                if (parts.length > 1) {
+                    message = parts[0];
+                }
+            }
+
+            if (CONVERSION_ERROR.matcher(message).matches()) {
+                retVal = true;
+            }
         }
         return retVal;
     }
@@ -560,7 +570,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             Matcher matcher = INVALID_OFFICE_ID.matcher(localizedMessage);
             if (matcher.find()) {
                 String office = sanitizeOrNull(matcher.group(1));
-                if(office != null) {
+                if (office != null) {
                     localizedMessage = "\"" + office + "\" is not a valid CWMS office id";
                 }
             }
