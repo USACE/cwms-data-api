@@ -273,6 +273,7 @@ public class ClobController implements CrudHandler {
                 throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
                         "Clob id in body does not match id in path");
             }
+
             dao.update(clob, ignoreNulls);
         }
     }

@@ -233,6 +233,76 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
+    @Test
+    void testIdCase() throws Exception
+    {
+        String blobId = "test_blob_id_case";
+        String blobValue = "testing value";
+        String origDesc = "testing description";
+        byte[] origBytes = blobValue.getBytes();
+
+        String mediaType = "application/octet-stream";
+        Blob blob = new Blob(SPK, blobId, origDesc, mediaType, origBytes);
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        String serializedBlob = om.writeValueAsString(blob);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Store new blob
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, SPK)
+            .queryParam(Controllers.FAIL_IF_EXISTS,false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/blobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // retrieve blob, assert value matches expected
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(is(blobValue));
+
+        // delete blob
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .delete("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        // retrieve blob, assert not found
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
     @ParameterizedTest
     @EnumSource(GetAllTest.class)
     void test_blob_get_all_default_alias(GetAllTest test)
