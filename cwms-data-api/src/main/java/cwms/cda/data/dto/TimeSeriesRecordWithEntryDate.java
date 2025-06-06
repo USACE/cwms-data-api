@@ -35,22 +35,22 @@ import java.sql.Timestamp;
 import java.util.Objects;
 
 /**
- * TimeSeriesRecordWithDate is a subclass of TimeSeries.Record that includes a data entry date.
+ * TimeSeriesRecordWithEntryDate is a subclass of TimeSeries.Record that includes a data entry date.
  * The data entry date is the date that the data was entered into the database.
  */
 @JsonDeserialize(using = JsonDeserializer.None.class)
-public final class TimeSeriesRecordWithDate extends TimeSeries.Record {
+public final class TimeSeriesRecordWithEntryDate extends TimeSeries.Record {
     @JsonProperty(value = "data-entry-date", index = 3)
     @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch), always UTC")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     Timestamp dataEntryDate;
 
     // Default constructor for Jackson Deserialization
-    public TimeSeriesRecordWithDate() {
+    public TimeSeriesRecordWithEntryDate() {
         super(null, null, 0);
     }
 
-    public TimeSeriesRecordWithDate(Timestamp dateTime, Double value, int qualityCode, Timestamp dataEntryDate) {
+    public TimeSeriesRecordWithEntryDate(Timestamp dateTime, Double value, int qualityCode, Timestamp dataEntryDate) {
         super(dateTime, value, qualityCode);
         this.dataEntryDate = dataEntryDate;
     }
@@ -70,7 +70,7 @@ public final class TimeSeriesRecordWithDate extends TimeSeries.Record {
         if (!super.equals(o)) {
             return false;
         }
-        TimeSeriesRecordWithDate that = (TimeSeriesRecordWithDate) o;
+        TimeSeriesRecordWithEntryDate that = (TimeSeriesRecordWithEntryDate) o;
         return Objects.equals(getDataEntryDate(), that.getDataEntryDate());
     }
 

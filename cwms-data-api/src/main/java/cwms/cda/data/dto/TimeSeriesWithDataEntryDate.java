@@ -76,7 +76,7 @@ public final class TimeSeriesWithDataEntryDate extends TimeSeries {
         if (pageSize > 0 && values.size() == pageSize) {
             nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
         } else {
-            values.add(new TimeSeriesRecordWithDate(dateTime, value, qualityCode, dataEntryDate));
+            values.add(new TimeSeriesRecordWithEntryDate(dateTime, value, qualityCode, dataEntryDate));
         }
     }
 
@@ -96,7 +96,7 @@ public final class TimeSeriesWithDataEntryDate extends TimeSeries {
                 columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
             }
         }
-        for (Field f: TimeSeriesRecordWithDate.class.getDeclaredFields()) {
+        for (Field f: TimeSeriesRecordWithEntryDate.class.getDeclaredFields()) {
             JsonProperty field = f.getAnnotation(JsonProperty.class);
             if (field != null) {
                 String fieldName = !field.value().isEmpty() ? field.value() : f.getName();

@@ -31,7 +31,8 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import cwms.cda.data.dto.TimeSeries;
-import cwms.cda.data.dto.TimeSeriesRecordWithDate;
+import cwms.cda.data.dto.TimeSeriesRecordWithEntryDate;
+
 import java.io.IOException;
 import java.sql.Timestamp;
 
@@ -40,7 +41,7 @@ import java.sql.Timestamp;
  * Requires {@link cwms.cda.data.dto.TimeSeries.StandardRecord} class to avoid
  * a StackOverflowError when deserializing JSON data. This issue can be caused by the custom serializer
  * getting stuck in a loop if the Record class is used directly.
- * Allows for use of subclass with additional fields {@link TimeSeriesRecordWithDate}.
+ * Allows for use of subclass with additional fields {@link TimeSeriesRecordWithEntryDate}.
  */
 public final class TimeSeriesRecordDeserializer extends JsonDeserializer<TimeSeries.Record> {
 	private static final String DATA_ENTRY_DATE = "data-entry-date";
@@ -48,7 +49,7 @@ public final class TimeSeriesRecordDeserializer extends JsonDeserializer<TimeSer
 	public TimeSeries.Record deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
 		JsonNode node = jsonParser.readValueAsTree();
 		if (node.get(DATA_ENTRY_DATE) != null) {
-			return jsonParser.getCodec().treeToValue(node, TimeSeriesRecordWithDate.class);
+			return jsonParser.getCodec().treeToValue(node, TimeSeriesRecordWithEntryDate.class);
 		}
 		String nodeString = node.toString();
 		if (nodeString.startsWith("[")) {
@@ -60,7 +61,7 @@ public final class TimeSeriesRecordDeserializer extends JsonDeserializer<TimeSer
 						? null : Double.parseDouble(valList[1]);
 				int quality = Integer.parseInt(valList[2]);
 				Timestamp entryDate = new Timestamp(Long.parseLong(valList[3]));
-				return new TimeSeriesRecordWithDate(dateTime, value, quality, entryDate);
+				return new TimeSeriesRecordWithEntryDate(dateTime, value, quality, entryDate);
 			} else if (valList.length == 3) {
 				Timestamp dateTime = new Timestamp(Long.parseLong(valList[0]));
 				Double value = valList[1] == null || valList[1].equalsIgnoreCase("null")
