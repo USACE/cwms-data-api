@@ -429,9 +429,9 @@ public class LevelsController implements CrudHandler {
                     existingLevelLevel);
                 //only store (update) if level does exist
                 LocationLevel updatedLocationLevel = LocationLevel.getUpdatedLocationLevel(existingLevelLevel,
-                    levelFromBody);
+                    levelFromBody, unmarshalledDateTime);
 
-                levelsDao.storeLocationLevel((LocationLevel.castLocationLevel(updatedLocationLevel,unmarshalledDateTime)));
+                levelsDao.storeLocationLevel(updatedLocationLevel);
                 ctx.status(HttpServletResponse.SC_OK).json("Updated Location Level");
             }
         } catch (JsonProcessingException ex) {

@@ -138,23 +138,19 @@ public abstract class LocationLevel extends CwmsDTO {
         expirationDate = builder.expirationDate;
     }
 
-    public String getSpecifiedLevelId()
-    {
+    public String getSpecifiedLevelId() {
         return specifiedLevelId;
     }
 
-    public String getParameterTypeId()
-    {
+    public String getParameterTypeId() {
         return parameterTypeId;
     }
 
-    public String getLevelUnitsId()
-    {
+    public String getLevelUnitsId() {
         return levelUnitsId;
     }
 
-    public ZonedDateTime getLevelDate()
-    {
+    public ZonedDateTime getLevelDate() {
         return levelDate;
     }
 
@@ -162,18 +158,15 @@ public abstract class LocationLevel extends CwmsDTO {
         return expirationDate;
     }
 
-    public String getLevelComment()
-    {
+    public String getLevelComment() {
         return levelComment;
     }
 
-    public String getInterpolateString()
-    {
+    public String getInterpolateString() {
         return interpolateString;
     }
 
-    public String getDurationId()
-    {
+    public String getDurationId() {
         return durationId;
     }
 
@@ -181,13 +174,11 @@ public abstract class LocationLevel extends CwmsDTO {
         return attributeValue;
     }
 
-    public String getAttributeUnitsId()
-    {
+    public String getAttributeUnitsId() {
         return attributeUnitsId;
     }
 
-    public String getAttributeParameterTypeId()
-    {
+    public String getAttributeParameterTypeId() {
         return attributeParameterTypeId;
     }
 
@@ -195,23 +186,19 @@ public abstract class LocationLevel extends CwmsDTO {
         return attributeParameterId;
     }
 
-    public String getAttributeDurationId()
-    {
+    public String getAttributeDurationId() {
         return attributeDurationId;
     }
 
-    public String getAttributeComment()
-    {
+    public String getAttributeComment() {
         return attributeComment;
     }
 
-    public String getLocationLevelId()
-    {
+    public String getLocationLevelId() {
         return locationLevelId;
     }
 
-    public String getParameterId()
-    {
+    public String getParameterId() {
         return parameterId;
     }
 
@@ -266,7 +253,7 @@ public abstract class LocationLevel extends CwmsDTO {
             withAttributeDurationId(copyFrom.getAttributeDurationId());
             withAttributeParameterId(copyFrom.getAttributeParameterId());
             ILocationLevelRef locationLevelRef = copyFrom.getLocationLevelRef();
-            if(locationLevelRef != null) {
+            if (locationLevelRef != null) {
                 withLocationLevelId(locationLevelRef.getLocationLevelId());
             }
             withAttributeValue(copyFrom.getAttributeValue());
@@ -275,7 +262,7 @@ public abstract class LocationLevel extends CwmsDTO {
             withDurationId(copyFrom.getDurationId());
             withLevelComment(copyFrom.getLevelComment());
             Date copyLevelDate = copyFrom.getLevelDate();
-            if(copyLevelDate != null) {
+            if (copyLevelDate != null) {
                 withLevelDate(ZonedDateTime.ofInstant(copyLevelDate.toInstant(), ZoneId.of("UTC")));
             }
             withLevelUnitsId(copyFrom.getLevelUnitsId());
@@ -292,7 +279,7 @@ public abstract class LocationLevel extends CwmsDTO {
         @JsonIgnore
         public T withProperty(String propertyName, Object value) {
             Consumer<Object> function = propertyFunctionMap.get(propertyName);
-            if(function == null) {
+            if (function == null) {
                 throw new IllegalArgumentException("Property Name does not exist for Location "
                         + "Level");
             }
@@ -387,7 +374,7 @@ public abstract class LocationLevel extends CwmsDTO {
     }
 
     public static LocationLevel getUpdatedLocationLevel(LocationLevel existingLevel,
-            LocationLevel updatedLevel) {
+            LocationLevel updatedLevel, ZonedDateTime unmarshalledDate) {
 
         String specifiedLevelId = (updatedLevel.getSpecifiedLevelId() == null
                 ? existingLevel.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
@@ -398,8 +385,6 @@ public abstract class LocationLevel extends CwmsDTO {
 
         String levelUnitsId = (updatedLevel.getLevelUnitsId() == null
                 ? existingLevel.getLevelUnitsId() : updatedLevel.getLevelUnitsId());
-        ZonedDateTime levelDate = (updatedLevel.getLevelDate() == null
-                ? existingLevel.getLevelDate() : updatedLevel.getLevelDate());
         String levelComment = (updatedLevel.getLevelComment() == null
                 ? existingLevel.getLevelComment() : updatedLevel.getLevelComment());
 
@@ -437,7 +422,7 @@ public abstract class LocationLevel extends CwmsDTO {
             List<VirtualLocationLevel.RatingConstituent> constituents = updatedVirtualLevel.getConstituents() == null
                     ? virtualLevel.getConstituents() : updatedVirtualLevel.getConstituents();
 
-            return new VirtualLocationLevel.Builder(locationId, levelDate)
+            return new VirtualLocationLevel.Builder(locationId, unmarshalledDate)
                     .withSpecifiedLevelId(specifiedLevelId)
                     .withParameterTypeId(parameterTypeId)
                     .withParameterId(parameterId)
@@ -460,7 +445,7 @@ public abstract class LocationLevel extends CwmsDTO {
             Double siParameterUnitsConstantValue = (updatedConstantLevel.getConstantValue() == null
                     ? constantLevel.getConstantValue() : updatedConstantLevel.getConstantValue());
 
-            return new ConstantLocationLevel.Builder(locationId, levelDate)
+            return new ConstantLocationLevel.Builder(locationId, unmarshalledDate)
                     .withSpecifiedLevelId(specifiedLevelId)
                     .withParameterTypeId(parameterTypeId)
                     .withParameterId(parameterId)
@@ -484,7 +469,7 @@ public abstract class LocationLevel extends CwmsDTO {
             String seasonalTimeSeriesId = (updatedTimeSeriesLevel.getSeasonalTimeSeriesId() == null
                     ? timeSeriesLevel.getSeasonalTimeSeriesId() : updatedTimeSeriesLevel.getSeasonalTimeSeriesId());
 
-            return new TimeSeriesLocationLevel.Builder(locationId, levelDate, seasonalTimeSeriesId)
+            return new TimeSeriesLocationLevel.Builder(locationId, unmarshalledDate, seasonalTimeSeriesId)
                     .withSpecifiedLevelId(specifiedLevelId)
                     .withParameterTypeId(parameterTypeId)
                     .withParameterId(parameterId)
@@ -523,7 +508,7 @@ public abstract class LocationLevel extends CwmsDTO {
                 intervalMonths = null;
             }
 
-            return new SeasonalLocationLevel.Builder(locationId, levelDate)
+            return new SeasonalLocationLevel.Builder(locationId, unmarshalledDate)
                     .withSeasonalValues(seasonalValues)
                     .withSpecifiedLevelId(specifiedLevelId)
                     .withParameterTypeId(parameterTypeId)
@@ -545,28 +530,6 @@ public abstract class LocationLevel extends CwmsDTO {
                     .build();
         } else {
             throw new UnsupportedFormatException("Unsupported location level type");
-        }
-    }
-
-    public static <T extends LocationLevel> T castLocationLevel(LocationLevel level, ZonedDateTime unmarshalledDateTime) {
-        if (level instanceof SeasonalLocationLevel) {
-            SeasonalLocationLevel seasonalLevel = (SeasonalLocationLevel) level;
-            return (T) new SeasonalLocationLevel.Builder(seasonalLevel)
-                    .withLevelDate(unmarshalledDateTime).build();
-        } else if (level instanceof TimeSeriesLocationLevel) {
-            TimeSeriesLocationLevel timeSeriesLevel = (TimeSeriesLocationLevel) level;
-            return (T) new TimeSeriesLocationLevel.Builder(timeSeriesLevel)
-                    .withLevelDate(unmarshalledDateTime).build();
-        } else if (level instanceof ConstantLocationLevel) {
-            ConstantLocationLevel constantLevel = (ConstantLocationLevel) level;
-            return (T) new ConstantLocationLevel.Builder(constantLevel)
-                    .withLevelDate(unmarshalledDateTime).build();
-        } else if (level instanceof VirtualLocationLevel) {
-            VirtualLocationLevel virtualLevel = (VirtualLocationLevel) level;
-            return (T) new VirtualLocationLevel.Builder(virtualLevel)
-                    .withLevelDate(unmarshalledDateTime).build();
-        } else {
-            throw new IllegalArgumentException("Unsupported location level type");
         }
     }
 
