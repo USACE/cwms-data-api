@@ -1,5 +1,6 @@
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
 import static org.hamcrest.Matchers.closeTo;
@@ -9,11 +10,11 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.isNull;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cwms.cda.ApiServlet;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
@@ -45,7 +46,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         String tsData = IOUtils.toString(resource, "UTF-8");
 
         JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get("name").asText().split("\\.")[0];
+        String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
 
         try {
@@ -60,7 +61,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
-                .queryParam("office",officeId)
+                .queryParam(OFFICE,officeId)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -75,13 +76,12 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-//                .body(tsData)
                 .header("Authorization",user.toHeaderValue())
-                .queryParam("office",officeId)
+                .queryParam(OFFICE,officeId)
                 .queryParam("units","cfs")
-                .queryParam("name",ts.get("name").asText())
-                .queryParam("begin","2023-01-11T12:00:00-00:00")
-                .queryParam("end","2023-01-11T13:00:00-00:00")
+                .queryParam(NAME,ts.get(NAME).asText())
+                .queryParam(BEGIN,"2023-01-11T12:00:00-00:00")
+                .queryParam(END,"2023-01-11T13:00:00-00:00")
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -103,6 +103,102 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    void test_local_regular_new_LRTS_ID() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/timeseries/local_regular_ts.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, "UTF-8");
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get(NAME).asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // get it back
+        given()
+            .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT,"F")
+            .queryParam(NAME, ts.get(NAME).asText())
+            .queryParam(BEGIN,"2025-05-08T12:00:00-00:00")
+            .queryParam(END,"2025-05-19T13:00:00-00:00")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("values.size()", is(9))
+            .body("values[0][1]", closeTo(35.0,0.0001))
+        ;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(BEGIN, "2025-05-08T11:00:00+00:00")
+            .queryParam(END, "2025-05-19T11:00:00+00:00")
+            .queryParam("start-time-inclusive", "true")
+            .queryParam("end-time-inclusive", "true")
+            .queryParam("override-protection", "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/timeseries/" + ts.get(NAME).asText())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // inserting the time series with new LRTS ID turned off
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, false)
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+    }
+
+    @Test
     void test_lrl_1day() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
@@ -112,7 +208,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         String tsData = IOUtils.toString(resource, "UTF-8");
 
         JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get("name").asText().split("\\.")[0];
+        String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
 
         createLocation(location, true, officeId);
@@ -126,7 +222,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
-                .queryParam("office",officeId)
+                .queryParam(OFFICE,officeId)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -145,11 +241,11 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
 //                .body(tsData)
                 .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
-                .queryParam("units", "F")
-                .queryParam("name", ts.get("name").asText())
-                .queryParam("begin", firstPoint)
-                .queryParam("end", firstPoint)
+                .queryParam(OFFICE, officeId)
+                .queryParam(UNIT, "F")
+                .queryParam(NAME, ts.get(NAME).asText())
+                .queryParam(BEGIN, firstPoint)
+                .queryParam(END, firstPoint)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -176,7 +272,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         String tsData = IOUtils.toString(resource, "UTF-8");
 
         JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get("name").asText().split("\\.")[0];
+        String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
 
         createLocation(location, true, officeId);
@@ -185,22 +281,22 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
 
         // inserting the time series
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .body(tsData)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-                .body("details.message", containsString("The unit: m is not a recognized CWMS "
-                        + "Database unit for the Temp Parameter"));
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("details.message", containsString("The unit: m is not a recognized CWMS "
+                    + "Database unit for the Temp Parameter"));
 
     }
 
@@ -215,7 +311,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get("name").asText().split("\\.")[0];
+        String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
 
         createLocation(location, true, officeId);
@@ -229,7 +325,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
+                .queryParam(OFFICE, officeId)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -254,7 +350,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         String tsData = IOUtils.toString(resource, "UTF-8");
 
         JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get("name").asText().split("\\.")[0];
+        String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
         createLocation(location, true, officeId);
 
@@ -267,7 +363,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
+                .queryParam(OFFICE, officeId)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -281,16 +377,16 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
-                .queryParam("begin", "2023-02-02T11:00:00+00:00")
-                .queryParam("end", "2023-02-02T11:00:00+00:00")
+                .queryParam(OFFICE, officeId)
+                .queryParam(BEGIN, "2023-02-02T11:00:00+00:00")
+                .queryParam(END, "2023-02-02T11:00:00+00:00")
                 .queryParam("start-time-inclusive", "true")
                 .queryParam("end-time-inclusive", "true")
                 .queryParam("override-protection", "true")
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
-                .delete("/timeseries/" + ts.get("name").asText())
+                .delete("/timeseries/" + ts.get(NAME).asText())
             .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
@@ -305,11 +401,11 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
 //                .body(tsData)
                 .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
-                .queryParam("units", "F")
-                .queryParam("name", ts.get("name").asText())
-                .queryParam("begin", "2023-02-02T11:00:00+00:00")
-                .queryParam("end", "2023-02-03T11:00:00+00:00")
+                .queryParam(OFFICE, officeId)
+                .queryParam(UNIT, "F")
+                .queryParam(NAME, ts.get(NAME).asText())
+                .queryParam(BEGIN, "2023-02-02T11:00:00+00:00")
+                .queryParam(END, "2023-02-03T11:00:00+00:00")
                 .queryParam(Controllers.TRIM, false)
             .when()
                 .redirects().follow(true)
@@ -333,7 +429,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         String tsData = IOUtils.toString(resource, "UTF-8");
 
         JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get("name").asText().split("\\.")[0];
+        String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
 
         createLocation(location, true, officeId);
@@ -347,7 +443,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
+                .queryParam(OFFICE, officeId)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -366,8 +462,8 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             //Purposefully misspelled office id
-            .queryParam("office", "NWDW")
-            .queryParam("name", "Buckhorn.Temp-Water.Inst.1Day.0.cda-test")
+            .queryParam(OFFICE, "NWDW")
+            .queryParam(NAME, "Buckhorn.Temp-Water.Inst.1Day.0.cda-test")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -389,7 +485,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get("name").asText().split("\\.")[0];
+        String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
         createLocation(location, true, officeId);
 
@@ -399,12 +495,12 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV1)
-                .queryParam("office", officeId)
-                .queryParam("units", "F")
-                .queryParam("name", ts.get("name").asText())
-                .queryParam("begin", firstPoint)
-                .queryParam("end", firstPoint)
-                .queryParam("trim", "true")
+                .queryParam(OFFICE, officeId)
+                .queryParam(UNIT, "F")
+                .queryParam(NAME, ts.get(NAME).asText())
+                .queryParam(BEGIN, firstPoint)
+                .queryParam(END, firstPoint)
+                .queryParam(TRIM, "true")
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -426,7 +522,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get("name").asText().split("\\.")[0];
+        String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
         createLocation(location, true, officeId);
 
@@ -438,11 +534,11 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
-            .queryParam("office", officeId)
-            .queryParam("units", "F")
-            .queryParam("name", ts.get("name").asText())
-            .queryParam("begin", firstPoint)
-            .queryParam("end", firstPoint)
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT, "F")
+            .queryParam(NAME, ts.get(NAME).asText())
+            .queryParam(BEGIN, firstPoint)
+            .queryParam(END, firstPoint)
             .queryParam("version-date", version)
         .when()
             .redirects().follow(true)
@@ -465,7 +561,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get("name").asText().split("\\.")[0];
+        String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
         createLocation(location, true, officeId);
 
@@ -475,11 +571,11 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .queryParam("office", officeId)
-                .queryParam("units", "F")
-                .queryParam("name", ts.get("name").asText())
-                .queryParam("begin", firstPoint)
-                .queryParam("end", firstPoint)
+                .queryParam(OFFICE, officeId)
+                .queryParam(UNIT, "F")
+                .queryParam(NAME, ts.get(NAME).asText())
+                .queryParam(BEGIN, firstPoint)
+                .queryParam(END, firstPoint)
                 .queryParam("datum", "NAVD88")
             .when()
                 .redirects().follow(true)
@@ -502,7 +598,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         String tsData = IOUtils.toString(resource, "UTF-8");
 
         JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get("name").asText().split("\\.")[0];
+        String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
 
         try {
@@ -517,7 +613,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                     .contentType(Formats.JSONV2)
                     .body(tsData)
                     .header("Authorization", user.toHeaderValue())
-                    .queryParam("office", officeId)
+                    .queryParam(OFFICE, officeId)
                 .when()
                     .redirects().follow(true)
                     .redirects().max(3)
@@ -544,12 +640,12 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                     .accept(Formats.JSONV2)
 //                    .body(tsData)
                     .header("Authorization", user.toHeaderValue())
-                    .queryParam("office", officeId)
-                    .queryParam("units", "F")
-                    .queryParam("name", ts.get("name").asText())
-                    .queryParam("begin", dayBeforeFirst.toInstant().toString())
-                    .queryParam("end", firstPoint)
-                    .queryParam("trim", false)
+                    .queryParam(OFFICE, officeId)
+                    .queryParam(UNIT, "F")
+                    .queryParam(NAME, ts.get(NAME).asText())
+                    .queryParam(BEGIN, dayBeforeFirst.toInstant().toString())
+                    .queryParam(END, firstPoint)
+                    .queryParam(TRIM, false)
                 .when()
                     .redirects().follow(true)
                     .redirects().max(3)
@@ -569,14 +665,13 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                     .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .accept(Formats.JSONV2)
-//                    .body(tsData)
                     .header("Authorization", user.toHeaderValue())
-                    .queryParam("office", officeId)
-                    .queryParam("units", "F")
-                    .queryParam("name", ts.get("name").asText())
-                    .queryParam("begin", dayBeforeFirst.toInstant().toString())
-                    .queryParam("end", firstPoint)
-                    .queryParam("trim", true)
+                    .queryParam(OFFICE, officeId)
+                    .queryParam(UNIT, "F")
+                    .queryParam(NAME, ts.get(NAME).asText())
+                    .queryParam(BEGIN, dayBeforeFirst.toInstant().toString())
+                    .queryParam(END, firstPoint)
+                    .queryParam(TRIM, true)
                 .when()
                     .redirects().follow(true)
                     .redirects().max(3)
@@ -611,7 +706,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get("name").asText().split("\\.")[0];
+        String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
 
         createLocation(location, true, officeId);
@@ -625,7 +720,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(giantString)
                 .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
+                .queryParam(OFFICE, officeId)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -705,7 +800,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode ts = mapper.readTree(tsData);
-        String name = ts.get("name").asText();
+        String name = ts.get(NAME).asText();
         String location = name.split("\\.")[0];
         String officeId = ts.get("office-id").asText();
 
@@ -725,7 +820,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(giantString)
                 .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
+                .queryParam(OFFICE, officeId)
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -741,11 +836,11 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
-                .queryParam("units","mm")
-                .queryParam("name", name)
-                .queryParam("begin","2021-02-08T08:00:00Z")
-                .queryParam("end","2021-03-08T08:00:00Z")
+                .queryParam(OFFICE, officeId)
+                .queryParam(UNIT,"mm")
+                .queryParam(NAME, name)
+                .queryParam(BEGIN,"2021-02-08T08:00:00Z")
+                .queryParam(END,"2021-03-08T08:00:00Z")
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -764,11 +859,11 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
-                .queryParam("units","mm")
-                .queryParam("name", name)
-                .queryParam("begin","2021-03-08T08:00:00Z")
-                .queryParam("end","2021-03-15T08:00:00Z")
+                .queryParam(OFFICE, officeId)
+                .queryParam(UNIT,"mm")
+                .queryParam(NAME, name)
+                .queryParam(BEGIN,"2021-03-08T08:00:00Z")
+                .queryParam(END,"2021-03-15T08:00:00Z")
                 .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -817,7 +912,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         String tsData = IOUtils.toString(resource, "UTF-8");
 
         JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get("name").asText().split("\\.")[0];
+        String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
 
         createLocation(location, true, officeId);
@@ -831,7 +926,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
-                .queryParam("office",officeId)
+                .queryParam(OFFICE,officeId)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -847,9 +942,9 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
-                .queryParam("office", officeId)
-                .queryParam("units", "F")
-                .queryParam("name", ts.get("name").asText())
+                .queryParam(OFFICE, officeId)
+                .queryParam(UNIT, "F")
+                .queryParam(NAME, ts.get(NAME).asText())
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)

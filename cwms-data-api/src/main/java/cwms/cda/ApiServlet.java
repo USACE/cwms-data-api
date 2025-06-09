@@ -167,7 +167,6 @@ import cwms.cda.security.CdaAccessManager;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
-import cwms.cda.spi.CdaIdentityProviders;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
@@ -204,7 +203,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 import javax.annotation.Resource;
-import javax.management.ServiceNotFoundException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -267,6 +265,7 @@ public class ApiServlet extends HttpServlet {
     public static final String DATA_SOURCE = "data_source";
     public static final String RAW_DATA_SOURCE = "data_source";
     public static final String DATABASE = "database";
+    public static final String IS_NEW_LRTS = "X-NEW_LRTS";
 
     // The VERSION should match the gradle version but not contain the patch version.
     // For example 2.4 not 2.4.13
@@ -770,7 +769,7 @@ public class ApiServlet extends HttpServlet {
      * forget to set their own.
      * @param path where to register the routes.
      * @param crudHandler the handler requests should be forwarded to.
-     * @param getRequriesAuth if the get handlers should have an authoriation check
+     * @param getRequiresAuth if the get handlers should have an authorization check
      * @param roles the required these roles are present to access post, patch
      * @param duration the number of TimeUnit to cache GET responses.
      * @param timeUnit the TimeUnit to use for duration.

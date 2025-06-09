@@ -69,6 +69,7 @@ import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 
 
 public abstract class JooqDao<T> extends Dao<T> {
@@ -79,7 +80,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     public static final int ORACLE_ECID_MAX_LENGTH = 22;
 
     static ExecuteListener listener = new ExceptionWrappingListener();
-    private static Pattern INVALID_OFFICE_ID = Pattern.compile(
+    private static final Pattern INVALID_OFFICE_ID = Pattern.compile(
         "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
 
     public enum DeleteMethod {
@@ -118,6 +119,9 @@ public abstract class JooqDao<T> extends Dao<T> {
         DSLContext retVal;
         final String officeId = ctx.attribute(ApiServlet.OFFICE_ID);
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
+        final Boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) == null
+                ? null : Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
+
         if (dataSource != null) {
             DataSource wrappedDataSource = new ConnectionPreparingDataSource(connection ->
                     setClientInfo(ctx, connection), dataSource);
@@ -132,6 +136,12 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         retVal.configuration().set(new DefaultExecuteListenerProvider(listener));
 
+        if (isNewLRTS != null) {
+            String requireBool = isNewLRTS ? "T" : "F";
+            int requireIntValue = isNewLRTS ? 6 : 0;
+            CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(retVal.configuration(),
+                    "USE_NEW_LRTS_ID_FORMAT", requireBool, requireIntValue);
+        }
         return retVal;
     }
 
@@ -313,8 +323,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
 
-            if(!retVal)
-            {
+            if (!retVal) {
                 segments = Collections.singletonList("does not exist as a stream location");
                 retVal = hasCodeAndMessage(sqlException, Collections.singletonList(20998), segments);
             }
@@ -542,7 +551,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             Matcher matcher = INVALID_OFFICE_ID.matcher(localizedMessage);
             if (matcher.find()) {
                 String office = sanitizeOrNull(matcher.group(1));
-                if(office != null) {
+                if (office != null) {
                     localizedMessage = "\"" + office + "\" is not a valid CWMS office id";
                 }
             }
