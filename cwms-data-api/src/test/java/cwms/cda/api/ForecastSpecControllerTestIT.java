@@ -1,10 +1,10 @@
 package cwms.cda.api;
 
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.UnsupportedFormatException;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
@@ -16,7 +16,6 @@ import org.jooq.impl.DSL;
 import org.jooq.util.oracle.OracleDSL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +32,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
-public class ForecastSpecControllerTestIT extends DataApiTestIT {
+final class ForecastSpecControllerTestIT extends DataApiTestIT {
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE = "SPK";
     private static final String SPEC_ID = "TEST-SPEC";
@@ -43,7 +42,7 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
     public static final String PATH = "/forecast-spec/";
 
     @BeforeAll
-    public static void create() throws Exception {
+    static void create() throws Exception {
         createLocation(locationId, true, OFFICE);
         createTimeSeries(locationId);
     }
@@ -58,8 +57,33 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
         createTimeseries(OFFICE, locationId + ".Flow.Ave.1Day.1Day.tsid6");
     }
 
+    static void createLRTSTimeSeries(String locationId, String tsData, String originalId) throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        for (int i = 1; i <= 3; i++) {
+            createTimeseries(OFFICE, String.format("%s.Flow.Ave.1DayLocal.1Day.tsid%d", locationId, i));
+            tsData = tsData.replace(originalId, String.format("%s.Flow.Ave.1DayLocal.1Day.tsid%d", locationId, i));
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header("Authorization", user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, true)
+                .queryParam(Controllers.OFFICE, OFFICE)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+        }
+    }
+
     @AfterEach
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         truncateFcstTimeSeries();
         deleteSpec();
     }
@@ -245,6 +269,120 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
             .redirects().follow(true)
             .redirects().max(3)
             .get(PATH + SPEC_ID)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
+    }
+
+    @Test
+    void test_create_get_delete_get_lrts() throws Exception {
+
+        // Structure of test:
+        //
+        // 1)Create the spec
+        // 2)Retrieve the spec and assert that it exists
+        // 3)Delete the spec
+        // 4)Retrieve the spec and assert that it does not exist
+
+        String specId = "TEST-SPEC-LRTS";
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Step 1)
+        // Create the spec
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/forecast_spec_create_lrts.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        InputStream tsResource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/forecast_spec_create_lrts.json");
+        assertNotNull(tsResource);
+        String tsDataInput = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsDataInput);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("locations/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        createLRTSTimeSeries(locationId, tsDataInput, "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid1");
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Step 2)
+        // Retrieve the spec and assert that it exists
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.DESIGNATOR, designator)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH + specId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("designator", equalTo(designator))
+            .body("time-series-ids.size()", equalTo(3))
+        ;
+        truncateFcstTimeSeries();
+        // Step 3)
+        // Delete the spec
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, specId)
+            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(Controllers.METHOD, JooqDao.DeleteMethod.DELETE_ALL)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete(PATH + specId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        // Step 4)
+        // Retrieve the spec and assert that it does not exist
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.DESIGNATOR, designator)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH + specId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()

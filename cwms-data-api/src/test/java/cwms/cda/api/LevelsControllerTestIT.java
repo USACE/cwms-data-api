@@ -24,6 +24,7 @@
 
 package cwms.cda.api;
 
+import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.TimeSeries;
@@ -49,6 +50,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+
+import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 
 import static cwms.cda.api.Controllers.*;
 import static helpers.FloatCloseTo.floatCloseTo;
@@ -318,6 +321,94 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpServletResponse.SC_OK))
             .extract()
+                .response()
+                .as(TimeSeries.class);
+        assertEquals("level_as_timeseries.Flow.Ave.1Hour.1Day.Regulating", timeSeries.getName());
+        assertEquals(OFFICE, timeSeries.getOfficeId());
+        assertEquals(time.toInstant(), timeSeries.getBegin().toInstant());
+        assertEquals(time.plusDays(effectiveDateCount).toInstant(), timeSeries.getEnd().toInstant());
+        assertEquals(24 * effectiveDateCount + 1, timeSeries.getTotal());
+        List<TimeSeries.Record> values = timeSeries.getValues();
+        for (int i = 0; i < values.size(); i++) {
+            TimeSeries.Record tsrec = values.get(i);
+            assertEquals(time.plusHours(i).toInstant(), tsrec.getDateTime().toInstant(), "Time check failed at iteration: " + i);
+            assertEquals(0, tsrec.getQualityCode(), "Quality check failed at iteration: " + i);
+            Double constantValue = levels.floorEntry(tsrec.getDateTime().toInstant())
+                    .getValue()
+                    .getConstantValue();
+            assertEquals(constantValue, tsrec.getValue(), 0.0001, "Value check failed at iteration: " + i);
+        }
+    }
+
+    @Test
+    void test_level_as_timeseries_lrts() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        createLocation("level_as_ts_lrts", true, OFFICE);
+        String levelId = "level_as_ts_lrts.Flow.Ave.1WeekLocal.1Day.lrts";
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+
+        int effectiveDateCount = 10;
+        NavigableMap<Instant, LocationLevel> levels = new TreeMap<>();
+        for (int i = 0; i < effectiveDateCount; i++) {
+            LocationLevel level = new LocationLevel.Builder(levelId, time.plusDays(i))
+                    .withOfficeId(OFFICE)
+                    .withConstantValue((double) i)
+                    .withLevelUnitsId("cfs")
+                    .build();
+            levelList.add(level);
+            levels.put(level.getLevelDate().toInstant(), level);
+            CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+                DSLContext dsl = dslContext(c, OFFICE);
+                CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(dsl.configuration(),
+                        "USE_NEW_LRTS_ID_FORMAT", "T", 6);
+                LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+                dao.storeLocationLevel(level);
+            });
+        }
+
+        // try to retrieve level timeseries without new LRTS identifier
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, false)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(BEGIN, time.toInstant().toString())
+            .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
+            .queryParam(INTERVAL, "1Hour")
+            .queryParam(UNIT, "cfs")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/" + levelId + "/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        //Read level timeseries with LRTS
+        TimeSeries timeSeries =
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, true)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(BEGIN, time.toInstant().toString())
+                .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
+                .queryParam(INTERVAL, "1Hour")
+                .queryParam(UNIT, "cfs")
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/levels/" + levelId + "/timeseries/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .extract()
                 .response()
                 .as(TimeSeries.class);
         assertEquals("level_as_timeseries.Flow.Ave.1Hour.1Day.Regulating", timeSeries.getName());
