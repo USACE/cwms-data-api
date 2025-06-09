@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.formatters.Formats;
@@ -28,12 +29,12 @@ import org.junit.jupiter.api.Test;
 
 
 @Tag("integration")
-public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT {
+final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
 
     @Test
-    public void test_create_delete() throws JsonProcessingException, SQLException {
+    void test_create_delete() throws JsonProcessingException, SQLException {
 
         createLocation("Alder Springs",true,"SPK");
         String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.15Minutes\\.0\\.DescriptorTEST_ID.*";
@@ -107,6 +108,107 @@ public class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestI
         // Check that we don't have any ts like this in the catalog.
         names = getIdsLike(OFFICE, likePattern);
         Assertions.assertTrue(names.isEmpty());
+    }
+
+    @Test
+    void test_create_delete_new_LRTS_identifier() throws JsonProcessingException, SQLException {
+
+        createLocation("Alder Springs",true,"SPK");
+        String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.12HoursLocal\\.0\\.DescriptorTEST_LRTS*";
+
+        // Check that we don't have any ts like this in the catalog.
+        List<String> names = getIdsLike(OFFICE, likePattern);
+        Assertions.assertTrue(names.isEmpty());
+
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Create a bunch of ts and store them.
+        int count = 8;
+        for (int i = 0; i < count; i++) {
+            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.12HoursLocal.0.DescriptorTEST_LRTS%d", i);
+            TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
+            String serializedTs = om.writeValueAsString(ts);
+
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(serializedTs)
+                .header("Authorization", user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, true)
+                .queryParam("office",OFFICE)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/identifier-descriptor/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+        }
+
+        // Check that we have the right number of ts like this in the catalog.
+        names = getIdsLike(OFFICE, likePattern);
+        Assertions.assertFalse(names.isEmpty());
+        assertEquals(count, names.size());
+
+        // Now let's delete them
+        for (int i = 0; i < count; i++) {
+            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.12HoursLocal.0.DescriptorTEST_LRTS%d", i);
+
+            // String urlencoded = java.net.URLEncoder.encode(tsId); // This isn't the right thing
+            // to call here b/c it encodes a space into +
+            // but the tsId is in the url part - not the url parameters part.
+            // In the url part a + is a valid character - we must do the %20 type encoding for
+            // the url part. For the params part you can do either + or %20
+
+            // RestAssured does the right thing with the url encoding - we don't need to escape
+
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
+                .header("Authorization", user.toHeaderValue())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/timeseries/identifier-descriptor/" + tsId)
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+        }
+
+
+        // Check that we don't have any ts like this in the catalog.
+        names = getIdsLike(OFFICE, likePattern);
+        Assertions.assertTrue(names.isEmpty());
+
+        for (int i = 0; i < count; i++) {
+            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.12HoursLocal.0.DescriptorTEST_LRTS%d", i);
+            TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
+            String serializedTs = om.writeValueAsString(ts);
+
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(serializedTs)
+                .header("Authorization", user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, false)
+                .queryParam("office",OFFICE)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/identifier-descriptor/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
     }
 
 
