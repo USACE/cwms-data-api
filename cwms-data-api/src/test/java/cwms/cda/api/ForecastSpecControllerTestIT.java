@@ -57,12 +57,13 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         createTimeseries(OFFICE, locationId + ".Flow.Ave.1Day.1Day.tsid6");
     }
 
-    static void createLRTSTimeSeries(String locationId, String tsData, String originalId) throws Exception {
+    static void createLRTSTimeSeries(String locationId, String tsData, String originalId) {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         for (int i = 1; i <= 3; i++) {
-            createTimeseries(OFFICE, String.format("%s.Flow.Ave.1DayLocal.1Day.tsid%d", locationId, i));
             tsData = tsData.replace(originalId, String.format("%s.Flow.Ave.1DayLocal.1Day.tsid%d", locationId, i));
+            tsData = tsData.replace(String.format("%s.Flow.Ave.1DayLocal.1Day.tsid%d", locationId, i-1),
+                    String.format("%s.Flow.Ave.1DayLocal.1Day.tsid%d", locationId, i));
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
@@ -297,10 +298,11 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
 
-        InputStream tsResource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/forecast_spec_create_lrts.json");
+        InputStream tsResource = this.getClass().getResourceAsStream("/cwms/cda/api/timeseries/local_regular_ts.json");
         assertNotNull(tsResource);
-        String tsDataInput = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        String tsDataInput = IOUtils.toString(tsResource, StandardCharsets.UTF_8);
         assertNotNull(tsDataInput);
+        tsDataInput = tsDataInput.replace("F", "cms");
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -317,7 +319,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
-        createLRTSTimeSeries(locationId, tsDataInput, "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid1");
+        createLRTSTimeSeries(locationId, tsDataInput, "Buckhorn.Temp-Water.Inst.1DayLocal.0.lrts-test");
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)

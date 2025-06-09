@@ -28,6 +28,7 @@ import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
@@ -50,8 +51,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
-
-import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 
 import static cwms.cda.api.Controllers.*;
 import static helpers.FloatCloseTo.floatCloseTo;
@@ -357,13 +356,24 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                     .build();
             levelList.add(level);
             levels.put(level.getLevelDate().toInstant(), level);
-            CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-                DSLContext dsl = dslContext(c, OFFICE);
-                CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(dsl.configuration(),
-                        "USE_NEW_LRTS_ID_FORMAT", "T", 6);
-                LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
-                dao.storeLocationLevel(level);
-            });
+
+            String tsDataInput = Formats.format(new ContentType(Formats.JSONV2), level);
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, true)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .body(tsDataInput)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("levels/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
         }
 
         // try to retrieve level timeseries without new LRTS identifier

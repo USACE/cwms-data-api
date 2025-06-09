@@ -427,8 +427,9 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
         InputStream tsResource = this.getClass().getResourceAsStream("/cwms/cda/api/timeseries/local_regular_ts.json");
         assertNotNull(tsResource);
-        String tsDataInput = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        String tsDataInput = IOUtils.toString(tsResource, StandardCharsets.UTF_8);
         assertNotNull(tsDataInput);
+        tsDataInput = tsDataInput.replace("F", "cms");
 
         ForecastSpec spec = JsonV2.buildObjectMapper().readValue(tsData, ForecastInstance.class).getSpec();
         String specJson = JsonV2.buildObjectMapper().writeValueAsString(spec);
@@ -449,7 +450,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
-        createLRTSTimeSeries(locationId, tsData, "Buckhorn.Temp-Water.Inst.1DayLocal.0.lrts-test");
+        createLRTSTimeSeries(locationId, tsDataInput, "Buckhorn.Temp-Water.Inst.1DayLocal.0.lrts-test");
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
