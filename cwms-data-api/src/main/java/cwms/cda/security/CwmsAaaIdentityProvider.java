@@ -1,14 +1,13 @@
 package cwms.cda.security;
 
-import cwms.auth.CwmsUserPrincipal;
-import cwms.cda.spi.CdaAccessManager;
-import cwms.cda.data.dao.AuthDao;
+import com.google.auto.service.AutoService;
+import cwms.cda.spi.IdentityProvider;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
+
 import java.security.Principal;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -17,21 +16,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import org.jetbrains.annotations.NotNull;
 
-public class CwmsAccessManager extends CdaAccessManager {
-    private static final Logger logger = Logger.getLogger(CwmsAccessManager.class.getName());
-    private static final String SESSION_COOKIE_NAME = "JSESSIONIDSSO";
+import cwms.auth.CwmsUserPrincipal;
 
-    @Override
-    public void manage(@NotNull Handler handler, @NotNull Context ctx,
-                       @NotNull Set<RouteRole> requiredRoles)
-            throws Exception {
-        DataApiPrincipal p = getApiPrincipal(ctx);
-        AuthDao.isAuthorized(ctx,p,requiredRoles);
-        AuthDao.prepareContextWithUser(ctx, p);
-        handler.handle(ctx);
-    }
+@AutoService(IdentityProvider.class)
+public class CwmsAaaIdentityProvider implements IdentityProvider {
+
+    private static final Logger logger = Logger.getLogger(CwmsAaaIdentityProvider.class.getName());
+    private static final String SESSION_COOKIE_NAME = "JSESSIONIDSSO";    
 
     private DataApiPrincipal getApiPrincipal(Context ctx) {
         Optional<String> user = getUser(ctx);
@@ -79,7 +73,7 @@ public class CwmsAccessManager extends CdaAccessManager {
                 CwmsUserPrincipal cup = (CwmsUserPrincipal) principal;
                 roleNames = cup.getRoles();
                 if (roleNames != null) {
-                    roleNames.stream().map(CwmsAccessManager::buildRole).forEach(retval::add);
+                    roleNames.stream().map(CwmsAaaIdentityProvider::buildRole).forEach(retval::add);
                 }
                 logger.log(Level.FINE, "Principal had roles: {0}", retval);
             } catch (ClassCastException e) {
@@ -111,8 +105,12 @@ public class CwmsAccessManager extends CdaAccessManager {
     }
 
     @Override
-    public boolean canAuth(Context ctx, Set<RouteRole> roles) {
+    public boolean canAuth(Context ctx) {
         return ctx.cookie(SESSION_COOKIE_NAME) != null;
     }
 
+    @Override
+    public Principal authenticate(Context ctx) {
+        return getApiPrincipal(ctx);
+    }
 }

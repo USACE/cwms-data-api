@@ -1,15 +1,11 @@
 package cwms.cda.security;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.flogger.FluentLogger;
+import com.google.auto.service.AutoService;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.spi.CdaAccessManager;
-import io.javalin.core.security.RouteRole;
+import cwms.cda.spi.IdentityProvider;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwsHeader;
@@ -18,6 +14,7 @@ import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SigningKeyResolverAdapter;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
@@ -25,6 +22,7 @@ import java.net.URL;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 import java.time.ZonedDateTime;
@@ -33,15 +31,23 @@ import java.util.Base64.Decoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import javax.servlet.http.HttpServletResponse;
-import org.jetbrains.annotations.NotNull;
 
-/**
- * This is currently more a placeholder for example than actual implementation
- */
-public class OpenIDAccessManager extends CdaAccessManager {
+import javax.servlet.http.HttpServletResponse;
+
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.flogger.FluentLogger;
+
+
+@AutoService(IdentityProvider.class)
+public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
+
+    public static final String WELL_KNOWN_PROPERTY = "cwms.dataapi.access.openid.wellKnownUrl";
+    public static final String ALT_AUTH_URL = "cwms.dataapi.access.openid.altAuthUrl";
+    public static final String ISSUER_PROPERTY = "cwms.dataapi.access.openid.issuer";
+    public static final String TIMEOUT_PROPERTY = "cwms.dataapi.access.openid.timeout";
     public static final String AUTHORIZATION = "Authorization";
     public static final String CREATE_USERS_KEY = "cwms.dataapi.access.openid.create_users";
     public static final String EMAIL_CLAIM = "email";
@@ -54,28 +60,37 @@ public class OpenIDAccessManager extends CdaAccessManager {
     private JwtParser jwtParser = null;
     private OpenIDConfig config = null;
 
-
-    public OpenIDAccessManager(String wellKnownUrl, String issuer, int realmKeyTimeout, String authUrl) {
+    public OpenIdConnectIdentitityProvider() {
+        String wellKnownUrl = System.getProperty(WELL_KNOWN_PROPERTY,System.getenv(WELL_KNOWN_PROPERTY));
+        String issuer = System.getProperty(ISSUER_PROPERTY,System.getenv(ISSUER_PROPERTY));
+        String timeoutStr = System.getProperty(TIMEOUT_PROPERTY,System.getenv(TIMEOUT_PROPERTY));
+        String altAuthUrl = System.getProperty(ALT_AUTH_URL, System.getenv(ALT_AUTH_URL));
+        int timeout = 3600; 
+        if (timeoutStr != null && !timeoutStr.isEmpty()) {
+            timeout = Integer.parseInt(timeoutStr);
+        }
         try {
-            config = new OpenIDConfig(new URL(wellKnownUrl), authUrl);
+            config = new OpenIDConfig(new URL(wellKnownUrl), altAuthUrl);
             jwtParser = Jwts.parserBuilder()
                         .requireIssuer(issuer)
-                        .setSigningKeyResolver(new UrlResolver(config.getJwksUrl(),realmKeyTimeout))
+                        .setSigningKeyResolver(new UrlResolver(config.getJwksUrl(),timeout))
                         .build();
         } catch (IOException ex) {
+            // The downstream users of this check if the Provider is valid and respond appropriate.
+            // To test manually have OpenIDConfig throw an IOException so config stays null and 
+            // see the resulting explained failure in the logs.
+            // That said it's possible we should maybe just have the system fail completely.
             log.atSevere().withCause(ex).log("Unable to initialize realm.");
         }
     }
 
+
     @Override
-    public void manage(Handler handler, @NotNull Context ctx, @NotNull Set<RouteRole> routeRoles) throws Exception {
-        DataApiPrincipal p = getUserFromToken(ctx);
-        AuthDao.isAuthorized(ctx,p,routeRoles);
-        AuthDao.prepareContextWithUser(ctx, p);
-        handler.handle(ctx);
+    public Principal authenticate(Context ctx) {
+       return getUserFromToken(ctx);
     }
 
-    private DataApiPrincipal getUserFromToken(Context ctx) throws CwmsAuthException {
+   private DataApiPrincipal getUserFromToken(Context ctx) throws CwmsAuthException {
         try {
             Jws<Claims> token = jwtParser.parseClaimsJws(getToken(ctx));
             Claims claims = token.getBody();
@@ -113,12 +128,9 @@ public class OpenIDAccessManager extends CdaAccessManager {
         }
     }
 
-    /**
-     * TODO: build from the wellknown information.
-     */
     @Override
     public SecurityScheme getScheme() {
-        return config.getScheme();
+        return config != null ? config.getScheme() : null;
     }
 
     @Override
@@ -127,7 +139,7 @@ public class OpenIDAccessManager extends CdaAccessManager {
     }
 
     @Override
-    public boolean canAuth(Context ctx, Set<RouteRole> roles) {
+    public boolean canAuth(Context ctx) {
         String header = ctx.header(AUTHORIZATION);
         if (header == null) {
             return false;
@@ -217,4 +229,5 @@ public class OpenIDAccessManager extends CdaAccessManager {
             return key;
         }
     }
+
 }
