@@ -30,6 +30,8 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.TimeSeriesRecordWithEntryDate;
 
@@ -45,33 +47,45 @@ import java.sql.Timestamp;
  */
 public final class TimeSeriesRecordDeserializer extends JsonDeserializer<TimeSeries.Record> {
 	private static final String DATA_ENTRY_DATE = "data-entry-date";
+	private static final String DATE_TIME = "date-time";
+	private static final String VALUE = "value";
+	private static final String QUALITY = "quality";
+
 	@Override
 	public TimeSeries.Record deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
 		JsonNode node = jsonParser.readValueAsTree();
-		if (node.get(DATA_ENTRY_DATE) != null) {
-			return jsonParser.getCodec().treeToValue(node, TimeSeriesRecordWithEntryDate.class);
+		if (node instanceof ObjectNode) {
+			return parseObjectNode((ObjectNode) node);
+		} else if (node instanceof ArrayNode) {
+			return parseArrayNode((ArrayNode) node);
+		} else {
+			throw new IOException("Unexpected JSON node type: " + node.getNodeType());
 		}
-		String nodeString = node.toString();
-		if (nodeString.startsWith("[")) {
-			nodeString = nodeString.substring(1, nodeString.length() - 1);
-			String[] valList = nodeString.split(",");
-			if (valList.length == 4) {
-				Timestamp dateTime = new Timestamp(Long.parseLong(valList[0]));
-				Double value = valList[1] == null || valList[1].equalsIgnoreCase("null")
-						? null : Double.parseDouble(valList[1]);
-				int quality = Integer.parseInt(valList[2]);
-				Timestamp entryDate = new Timestamp(Long.parseLong(valList[3]));
-				return new TimeSeriesRecordWithEntryDate(dateTime, value, quality, entryDate);
-			} else if (valList.length == 3) {
-				Timestamp dateTime = new Timestamp(Long.parseLong(valList[0]));
-				Double value = valList[1] == null || valList[1].equalsIgnoreCase("null")
-						? null : Double.parseDouble(valList[1]);
-				int quality = Integer.parseInt(valList[2]);
-				return new TimeSeries.StandardRecord(dateTime, value, quality);
-			} else {
-				throw new IOException("Invalid TimeSeries Record format");
-			}
+	}
+
+	private TimeSeries.Record parseObjectNode(ObjectNode node) {
+		Timestamp dateTime = node.get(DATE_TIME) == null ? null : new Timestamp(node.get(DATE_TIME).asLong());
+		Double value = node.get(VALUE) == null || node.get(VALUE).asText().equalsIgnoreCase("null")
+				? null : node.get(VALUE).asDouble();
+		int quality = node.get(QUALITY) == null ? 0 : node.get(QUALITY).asInt();
+		if (node.size() == 4) {
+			Timestamp entryDate = new Timestamp(node.get(DATA_ENTRY_DATE).asLong());
+			return new TimeSeriesRecordWithEntryDate(dateTime, value, quality, entryDate);
+		} else {
+			return new TimeSeries.StandardRecord(dateTime, value, quality);
 		}
-		return jsonParser.getCodec().treeToValue(node, TimeSeries.StandardRecord.class);
+	}
+
+	private TimeSeries.Record parseArrayNode(ArrayNode aNode) {
+		Timestamp dateTime = aNode.get(0) == null ? null : new Timestamp(aNode.get(0).asLong());
+		Double value = aNode.get(1) == null || aNode.get(1).asText().equalsIgnoreCase("null")
+				? null : aNode.get(1).asDouble();
+		int quality = aNode.get(2) == null ? 0 : aNode.get(2).asInt();
+		if (aNode.size() == 4) {
+			Timestamp entryDate = new Timestamp(aNode.get(3).asLong());
+			return new TimeSeriesRecordWithEntryDate(dateTime, value, quality, entryDate);
+		} else {
+			return new TimeSeries.StandardRecord(dateTime, value, quality);
+		}
 	}
 }

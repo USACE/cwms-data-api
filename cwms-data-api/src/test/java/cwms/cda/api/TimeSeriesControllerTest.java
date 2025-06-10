@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.TimeSeriesRecordWithEntryDate;
-import cwms.cda.data.dto.TimeSeriesWithDataEntryDate;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
@@ -135,7 +134,7 @@ class TimeSeriesControllerTest extends ControllerTest {
         assertTrue(expected.getEnd().isEqual(actual.getEnd()), "end dates not equal");
     }
 
-    private void assertSimilarWithDate(TimeSeriesWithDataEntryDate expected, TimeSeriesWithDataEntryDate actual)
+    private void assertSimilarWithDate(TimeSeries expected, TimeSeries actual)
     {
         assertEquals(expected.getOfficeId(), actual.getOfficeId(), "offices did not match");
         assertEquals(expected.getName(), actual.getName(), "names did not match");
@@ -181,14 +180,14 @@ class TimeSeriesControllerTest extends ControllerTest {
     void testSerializeTimeSeriesWithDataEntryDate(String format) {
         String officeId = "LRL";
         String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
-        TimeSeriesWithDataEntryDate fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
+        TimeSeries fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
         assertEquals(4, fakeTs.getValueColumnsJSON().size());
-        assertInstanceOf(TimeSeriesWithDataEntryDate.Record.class,
+        assertInstanceOf(TimeSeries.Record.class,
                 fakeTs.getValues().get(0));
-        ContentType contentType = Formats.parseHeader(format, TimeSeriesWithDataEntryDate.class);
+        ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
         assertNotNull(formatted);
-        TimeSeriesWithDataEntryDate ts2 = Formats.parseContent(contentType, formatted, TimeSeriesWithDataEntryDate.class);
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
         assertNotNull(ts2);
         assertSimilarWithDate(fakeTs, ts2);
     }
@@ -212,10 +211,10 @@ class TimeSeriesControllerTest extends ControllerTest {
     void testDeserializeTimeSeriesWithEntryDate(String format) {
         String officeId = "LRL";
         String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
-        TimeSeriesWithDataEntryDate fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
-        ContentType contentType = Formats.parseHeader(format, TimeSeriesWithDataEntryDate.class);
+        TimeSeries fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
+        ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
-        TimeSeriesWithDataEntryDate ts2 = Formats.parseContent(contentType, formatted, TimeSeriesWithDataEntryDate.class);
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
         assertNotNull(ts2);
         assertSimilarWithDate(fakeTs, ts2);
     }
@@ -224,10 +223,10 @@ class TimeSeriesControllerTest extends ControllerTest {
     void testDeserializeTimeSeriesWithEntryDateFromFile() {
         InputStream inputStream = this.getClass()
                 .getResourceAsStream("/cwms/cda/api/lrl/timeseries_with_data_entry_dates.json");
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeriesWithDataEntryDate.class);
-        TimeSeriesWithDataEntryDate fakeTs = Formats.parseContent(contentType, inputStream, TimeSeriesWithDataEntryDate.class);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeries.class);
+        TimeSeries fakeTs = Formats.parseContent(contentType, inputStream, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
-        TimeSeriesWithDataEntryDate ts2 = Formats.parseContent(contentType, formatted, TimeSeriesWithDataEntryDate.class);
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
         assertNotNull(ts2);
         assertSimilarWithDate(fakeTs, ts2);
     }
@@ -238,12 +237,12 @@ class TimeSeriesControllerTest extends ControllerTest {
         String format = Formats.XMLV2;
         String officeId = "LRL";
         String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
-        TimeSeriesWithDataEntryDate fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
-        ContentType contentType = Formats.parseHeader(format, TimeSeriesWithDataEntryDate.class);
+        TimeSeries fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
+        ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
         assertTrue(formatted.contains("quality-code"));
         assertTrue(formatted.contains("data-entry-date"));
-        TimeSeriesWithDataEntryDate ts2 = Formats.parseContent(contentType, formatted, TimeSeriesWithDataEntryDate.class);
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
         assertNotNull(ts2);
         assertSimilarWithDate(fakeTs, ts2);
     }
@@ -330,7 +329,7 @@ class TimeSeriesControllerTest extends ControllerTest {
     }
 
     @NotNull
-    private TimeSeriesWithDataEntryDate buildTimeSeriesWithEntryDate(String officeId, String tsId) {
+    private TimeSeries buildTimeSeriesWithEntryDate(String officeId, String tsId) {
         ZonedDateTime start = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
         ZonedDateTime end = ZonedDateTime.parse("2021-06-21T09:00:00-07:00[PST8PDT]");
 
@@ -341,7 +340,7 @@ class TimeSeriesControllerTest extends ControllerTest {
         int count = 60/15 ; // do I need a +1?  ie should this be 12 or 13?
         // Also, should end be the last point or the next interval?
 
-        TimeSeriesWithDataEntryDate ts = new TimeSeriesWithDataEntryDate(null,
+        TimeSeries ts = new TimeSeries(null,
                 -1,
                 0,
                 tsId,

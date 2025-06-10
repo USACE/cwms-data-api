@@ -28,8 +28,6 @@ package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.sql.Timestamp;
 import java.util.Objects;
@@ -38,7 +36,6 @@ import java.util.Objects;
  * TimeSeriesRecordWithEntryDate is a subclass of TimeSeries.Record that includes a data entry date.
  * The data entry date is the date that the data was entered into the database.
  */
-@JsonDeserialize(using = JsonDeserializer.None.class)
 public final class TimeSeriesRecordWithEntryDate extends TimeSeries.Record {
     @JsonProperty(value = "data-entry-date", index = 3)
     @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch), always UTC")

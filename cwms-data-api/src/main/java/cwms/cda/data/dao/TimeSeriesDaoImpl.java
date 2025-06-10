@@ -25,7 +25,6 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.TimeSeriesExtents;
-import cwms.cda.data.dto.TimeSeriesWithDataEntryDate;
 import cwms.cda.data.dto.Tsv;
 import cwms.cda.data.dto.TsvDqu;
 import cwms.cda.data.dto.TsvId;
@@ -351,7 +350,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             String vert = (String) tsMetadata.getValue("VERTICAL_DATUM");
             VerticalDatumInfo verticalDatumInfo = parseVerticalDatumInfo(vert);
             VersionType finalDateVersionType = getVersionType(dsl, names, office, versionDate != null);
-            if (!includeEntryDate) {
                 return new TimeSeries(recordCursor, recordPageSize, tsMetadata.getValue("TOTAL",
                         Integer.class), tsMetadata.getValue("NAME", String.class),
                         tsMetadata.getValue("office_id", String.class),
@@ -363,20 +361,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         tsMetadata.getValue(tzName),
                         versionDate, finalDateVersionType
                 );
-            } else {
-                return new TimeSeriesWithDataEntryDate(recordCursor, recordPageSize, tsMetadata.getValue("TOTAL",
-                        Integer.class), tsMetadata.getValue("NAME", String.class),
-                        tsMetadata.getValue("office_id", String.class),
-                        beginTime, endTime, tsMetadata.getValue("units", String.class),
-                        Duration.ofMinutes(tsMetadata.get("interval") == null ? 0 :
-                                tsMetadata.getValue("interval", Long.class)),
-                        verticalDatumInfo,
-                        tsMetadata.getValue(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET).longValue(),
-                        tsMetadata.getValue(tzName),
-                        versionDate, finalDateVersionType
-                );
             }
-        });
+        );
 
         // Now we're going to call the retrieve_ts_entry_out_tab function to get the data and build an
         // internal table from it so we can manipulate it further
@@ -429,7 +415,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             if (includeEntryDate) {
                 logger.fine(() -> query2.getSQL(ParamType.INLINED));
-                final TimeSeriesWithDataEntryDate timeSeries =  (TimeSeriesWithDataEntryDate) timeseries;
+                final TimeSeries timeSeries =  timeseries;
                 query2.forEach(tsRecord -> timeSeries.addValue(
                         tsRecord.getValue(dateTimeCol),
                         tsRecord.getValue(valueCol),

@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonRootName;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -206,6 +205,9 @@ public class TimeSeries extends CwmsDTOPaginated {
                     + "data in the array.",
             accessMode = AccessMode.READ_ONLY)
     public List<Column> getValueColumnsJSON() {
+        if (values != null && !values.isEmpty() && values.get(0) instanceof TimeSeriesRecordWithEntryDate) {
+            return getColumnDescriptorWithEntryDate();
+        }
         return getColumnDescriptor();
     }
 
@@ -221,6 +223,18 @@ public class TimeSeries extends CwmsDTOPaginated {
         }
     }
 
+    public void addValue(Timestamp dateTime, Double value, int qualityCode, Timestamp dataEntryDate) {
+        // Set the current page, if not set
+        if ((page == null || page.isEmpty()) && (values == null || values.isEmpty())) {
+            page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
+        }
+        if (pageSize > 0 && values.size() == pageSize) {
+            nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
+        } else {
+            values.add(new TimeSeriesRecordWithEntryDate(dateTime, value, qualityCode, dataEntryDate));
+        }
+    }
+
     public static List<Column> getColumnDescriptor() {
         List<Column> columns = new ArrayList<>();
         for (Field f: Record.class.getDeclaredFields()) {
@@ -231,6 +245,28 @@ public class TimeSeries extends CwmsDTOPaginated {
                 columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
             }
         }
+        return columns;
+    }
+
+    private List<Column> getColumnDescriptorWithEntryDate() {
+        List<Column> columns = new ArrayList<>();
+        for (Field f: TimeSeries.Record.class.getDeclaredFields()) {
+            JsonProperty field = f.getAnnotation(JsonProperty.class);
+            if (field != null) {
+                String fieldName = !field.value().isEmpty() ? field.value() : f.getName();
+                int fieldIndex = field.index();
+                columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
+            }
+        }
+        for (Field f: TimeSeriesRecordWithEntryDate.class.getDeclaredFields()) {
+            JsonProperty field = f.getAnnotation(JsonProperty.class);
+            if (field != null) {
+                String fieldName = !field.value().isEmpty() ? field.value() : f.getName();
+                int fieldIndex = field.index();
+                columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
+            }
+        }
+
         return columns;
     }
 
@@ -324,12 +360,9 @@ public class TimeSeries extends CwmsDTOPaginated {
         }
     }
 
-    @JsonDeserialize(using = JsonDeserializer.None.class)
     public static final class StandardRecord extends Record {
         // unused - required for Jackson to deserialize
-        private StandardRecord()
-        {
-        }
+        private StandardRecord() {}
 
         public StandardRecord(Timestamp dateTime, Double value, int qualityCode) {
             super(dateTime, value, qualityCode);
