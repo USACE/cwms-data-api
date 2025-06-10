@@ -30,6 +30,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.AuthDao;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.formatters.Formats;
 import cwms.cda.security.CwmsAuthException;
@@ -90,7 +91,7 @@ public class ApiKeyController implements CrudHandler {
             if (ex.getMessage().equals(AuthDao.ONLY_OWN_KEY_MESSAGE)) {
                 ctx.json(new CdaError(ex.getMessage(), true)).status(ex.getAuthFailCode());
             } else {
-                throw ex;
+                throw JooqDao.wrapException(ex);
             }
         }
     }
