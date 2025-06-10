@@ -24,8 +24,6 @@
 
 package cwms.cda.data.dao;
 
-import java.sql.Timestamp;
-import java.time.Instant;
 import static org.jooq.SQLDialect.ORACLE;
 
 import com.google.common.flogger.FluentLogger;
@@ -34,6 +32,7 @@ import cwms.cda.ApiServlet;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.Context;
@@ -43,7 +42,9 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
@@ -87,6 +88,9 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static final Pattern CONVERSION_ERROR = Pattern.compile(
             "^ORA-20998: ERROR: Cannot convert ((parameter .+ from specified units: .+$)"
                     + "|(from unit .+ to unit .+$))");
+    private static final Pattern VALUE_TOO_LONG = Pattern.compile(
+            "^ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
+                    + "\\(actual: (\\d+), maximum: (\\d+)\\)\\R*$");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -264,6 +268,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildUnsupportedOperationException(input);
         } else if (isInvalidOffice(input)) {
             retVal = buildInvalidOffice(input);
+        } else if (isValueTooLargeException(input)) {
+            retVal = buildValueTooLongException(input);
         }
 
         return retVal;
@@ -332,6 +338,13 @@ public abstract class JooqDao<T> extends Dao<T> {
             .map(sqlException -> hasCodeOrMessage(sqlException, Collections.singletonList(20010),
                 Collections.singletonList("INVALID_OFFICE_ID")))
             .orElse(false);
+    }
+
+    public static boolean isValueTooLargeException(RuntimeException input) {
+        return getSqlException(input.getCause()).map(sqlException -> hasCodeOrMessage(sqlException,
+                Arrays.asList(6502, 12899, 20041),
+                Arrays.asList("value too large for column", "character string buffer too small",
+                        "Error while writing value at JDBC bind index:"))).orElse(false);
     }
 
     public static boolean isInvalidItem(RuntimeException input) {
@@ -560,6 +573,33 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
 
         return new InvalidItemException(localizedMessage, cause);
+    }
+
+    private static ValueTooLongException buildValueTooLongException(RuntimeException input) {
+        Throwable cause = input.getCause();
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        String localizedMessage = cause.getLocalizedMessage();
+        if (localizedMessage != null) {
+            String[] parts = localizedMessage.split("\n");
+            if (parts.length > 1) {
+                localizedMessage = parts[0];
+            }
+        }
+
+        if (localizedMessage != null) {
+            Matcher matcher = VALUE_TOO_LONG.matcher(localizedMessage);
+            if (matcher.matches()) {
+                String parameter = matcher.group(1);
+                int actualLength = Integer.parseInt(matcher.group(2));
+                int maxLength = Integer.parseInt(matcher.group(3));
+                return new ValueTooLongException(parameter, actualLength, maxLength, cause, true);
+            }
+        }
+        return new ValueTooLongException(cause);
     }
 
     private static InvalidItemException buildInvalidOffice(RuntimeException input) {

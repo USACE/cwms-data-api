@@ -1,5 +1,6 @@
 package cwms.cda.api.auth;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
@@ -12,7 +13,6 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 
 import cwms.cda.ApiServlet;
 import cwms.cda.api.DataApiTestIT;
-import cwms.cda.api.LocationController;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.auth.ApiKey;
@@ -30,13 +30,13 @@ import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Forced order is used here to allow better error reporting
@@ -51,15 +51,15 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     private final String KEY_NAME = "TestKey1";
     private final String EXPIRED_KEY_NAME = "TestKey2-Expired";
 
-    private static List<ApiKey> realKeys = new ArrayList<>();
-    private static List<ApiKey> firstReturnedKeys = new ArrayList<>();
+    private static final List<ApiKey> realKeys = new ArrayList<>();
+    private static final List<ApiKey> firstReturnedKeys = new ArrayList<>();
 
     // Create API key, no expiration
     @Order(1)
     @ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)
 	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
-    public void test_api_key_creation_no_expiration(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+    void test_api_key_creation_no_expiration(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
         final ApiKey key = new ApiKey(theUser.getName(),KEY_NAME);
 
         ApiKey returnedKey =
@@ -87,11 +87,11 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     @ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)
 	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
-    public void test_api_key_creation_with_expiration(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
-        final String KEY_NAME = "TestKey1-Expires";
+    void test_api_key_creation_with_expiration(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+        final String keyName = "TestKey1-Expires";
         
         
-        final ApiKey key = new ApiKey(theUser.getName(),KEY_NAME,null,null,ZonedDateTime.now());
+        final ApiKey key = new ApiKey(theUser.getName(),keyName,null,null,ZonedDateTime.now());
         final ApiKey expiredKey = new ApiKey(key.getUserId(),EXPIRED_KEY_NAME,null,null,ZonedDateTime.now().minusMinutes(1L));
 
         ApiKey returnedKey =
@@ -158,11 +158,11 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     @ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)
 	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
-    public void test_api_key_creation_not_other_user(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
-        final String KEY_NAME = "TestKey1-Expires";
+    void test_api_key_creation_not_other_user(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+        final String keyName = "TestKey1-Expires";
 
         // This doesn't need to be a user in the database, the check is done before it gets there
-        final ApiKey key = new ApiKey("Bob",KEY_NAME,null,null,ZonedDateTime.now());
+        final ApiKey key = new ApiKey("Bob",keyName,null,null,ZonedDateTime.now());
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -182,7 +182,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     @ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)
 	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
-    public void test_api_key_listing(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+    void test_api_key_listing(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
         List<ApiKey> keys = 
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -289,11 +289,11 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     @ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)
 	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
-    public void test_api_key_cannot_create_new_key(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
-        final String KEY_NAME = "KeyFromKey";
+    void test_api_key_cannot_create_new_key(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+        final String keyName = "KeyFromKey";
 
         // This doesn't need to be a user in the database, the check is done before it gets there
-        final ApiKey key = new ApiKey(theUser.getName(),KEY_NAME,null,null,ZonedDateTime.now());
+        final ApiKey key = new ApiKey(theUser.getName(),keyName,null,null,ZonedDateTime.now());
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -314,7 +314,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     @ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)
 	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
-    public void test_api_key_delete_key(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+    void test_api_key_delete_key(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
         for(ApiKey key: realKeys) {
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -353,6 +353,29 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .jsonPath()
                 .getList(".", ApiKey.class);
         assertTrue(keys.size() < firstReturnedKeys.size(), "Keys were not deleted.");
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
+    void test_api_key_length_limit(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec)
+    {
+        final ApiKey key = new ApiKey(theUser.getName(),
+                RandomStringUtils.randomAlphabetic(70));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+            .contentType("application/json")
+            .body(key)
+        .when()
+            .post("/auth/keys")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("message", containsString("One or more provided values exceeds the maximum length for the parameter. "
+                    + "The field KEY_NAME with provided length of 70 has a maximum length of 64 characters."));
     }
 
     private void assertContainsKey(ApiKey expectedKey, List<ApiKey> returnedSet) {
