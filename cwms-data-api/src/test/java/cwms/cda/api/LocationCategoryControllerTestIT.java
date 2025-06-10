@@ -27,6 +27,7 @@ package cwms.cda.api;
 import static cwms.cda.api.Controllers.CASCADE_DELETE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -42,6 +43,7 @@ import org.junit.jupiter.api.Test;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
 
 @Tag("integration")
 class LocationCategoryControllerTestIT extends DataApiTestIT {
@@ -280,5 +282,33 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 			.log().ifValidationFails(LogDetail.ALL,true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+	}
+
+	@Test
+	void test_id_too_long()
+	{
+		String officeId = user.getOperatingOffice();
+		String invalidCatId = RandomStringUtils.randomAlphabetic(64);
+		LocationCategory cat = new LocationCategory(officeId, invalidCatId,
+				"IntegrationTesting");
+		ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
+		String xml = Formats.format(contentType, cat);
+		registerCategory(cat);
+		//Create Category
+		given()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.accept(Formats.JSON)
+			.contentType(Formats.JSON)
+			.body(xml)
+			.header("Authorization", user.toHeaderValue())
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("/location/category")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL,true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+			.body("message", containsString("One or more provided values exceeds the maximum length for the parameter."));
 	}
 }

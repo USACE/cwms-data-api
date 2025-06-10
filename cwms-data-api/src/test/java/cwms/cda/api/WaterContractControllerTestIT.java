@@ -38,7 +38,6 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.project.Project;
-import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -49,6 +48,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -596,6 +596,37 @@ class WaterContractControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+        ;
+    }
+
+    @Test
+    void test_create_too_long_WaterUserContract()
+    {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
+        String office = CONTRACT.getOfficeId();
+
+        // create contract with too long name
+        String tooLongName = RandomStringUtils.randomAlphabetic(80);
+        json = json.replace(CONTRACT.getContractId().getName(), tooLongName);
+
+        // Create contract
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + office + "/" + CONTRACT.getWaterUser().getProjectId().getName()
+                    + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body(containsString("One or more provided values exceeds the maximum length for the parameter."))
         ;
     }
 }
