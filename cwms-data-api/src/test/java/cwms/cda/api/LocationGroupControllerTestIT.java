@@ -45,6 +45,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jooq.Configuration;
 import org.jooq.impl.DSL;
 import org.jooq.util.oracle.OracleDSL;
@@ -1252,7 +1253,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         boolean found = false;
         for (AssignedLocation assignedLocation : assignedLocations) {
             if (assignedLocation.getLocationId().equals(locationId)) {
-                assertEquals(assignedLocation.getLocationId(), locationId);
+                assertEquals(locationId, assignedLocation.getLocationId());
                 assertNull(assignedLocation.getAliasId());
                 assertNull(assignedLocation.getRefLocationId());
                 found = true;
@@ -1381,7 +1382,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         boolean found = false;
         for (AssignedLocation assignedLocation : assignedLocations) {
             if (assignedLocation.getLocationId().equals(locationId)) {
-                assertEquals(assignedLocation.getLocationId(), locationId);
+                assertEquals(locationId, assignedLocation.getLocationId());
                 assertNull(assignedLocation.getAliasId());
                 assertNull(assignedLocation.getRefLocationId());
                 found = true;
@@ -1425,5 +1426,32 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("assigned-locations.size()", equalTo(expectedSize));
+    }
+
+    @Test
+    void test_ID_too_long()
+    {
+        String officeId = user.getOperatingOffice();
+        String invalidId = RandomStringUtils.randomAlphabetic(65);
+        LocationCategory cat = new LocationCategory(officeId, invalidId, "IntegrationTesting");
+        ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
+        String categoryXml = Formats.format(contentType, cat);
+        //Create Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(categoryXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/category")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("message", containsString("One or more provided values exceeds the maximum length for the parameter."));
     }
 }

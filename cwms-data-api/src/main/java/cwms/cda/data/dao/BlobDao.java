@@ -139,7 +139,9 @@ public class BlobDao extends JooqDao<Blob> {
     public void create(Blob blob, boolean failIfExists, boolean ignoreNulls) {
         String pFailIfExists = formatBool(failIfExists);
         String pIgnoreNulls = formatBool(ignoreNulls);
-        dsl.connection(c -> CWMS_TEXT_PACKAGE.call_STORE_BINARY(
+
+        connection(dsl, c ->
+            CWMS_TEXT_PACKAGE.call_STORE_BINARY(
                 getDslContext(c, blob.getOfficeId()).configuration(),
                 blob.getValue(),
                 blob.getId(),

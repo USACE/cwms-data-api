@@ -267,7 +267,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 			effectiveDate = response.path("simple-rating.effective-date");
 		}
 		assertNotNull(effectiveDate);
-		assertEquals("2016-06-06T00:00:00Z", effectiveDate);
+		assertEquals("2025-06-06T00:00:00Z", effectiveDate);
 
 		// get latest xml
 		response = given()
@@ -290,7 +290,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 			effectiveDate = response.path("simple-rating.effective-date");
 		}
 		assertNotNull(effectiveDate);
-		assertEquals("2016-06-06T00:00:00Z", effectiveDate);
+		assertEquals("2025-06-06T00:00:00Z", effectiveDate);
 	}
 
 	enum GetOneTest
