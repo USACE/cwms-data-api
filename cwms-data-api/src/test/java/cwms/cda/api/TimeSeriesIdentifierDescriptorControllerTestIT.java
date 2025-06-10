@@ -175,7 +175,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
-                .delete("/timeseries/identifier-descriptor/" + tsId)
+                .delete("/timeseries/identifier-descriptor/{tsId}", tsId)
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()

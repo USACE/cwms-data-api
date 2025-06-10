@@ -148,6 +148,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .queryParam(NAME, ts.get(NAME).asText())
             .queryParam(BEGIN,"2025-05-08T12:00:00-00:00")
             .queryParam(END,"2025-05-19T13:00:00-00:00")
+            .queryParam(INCLUDE_EXTENTS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

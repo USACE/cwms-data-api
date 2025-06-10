@@ -196,8 +196,28 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
     void test_store_retrieve_with_ref_LRTS() throws Exception {
         // create a new TimeSeries to reference
         String oldTsId = tsProfile3.getReferenceTsId().getName();
-        String newTsId = "Sacramento Dam.Elev.Total.1HourLocal.0.Raw";
-        createTimeseries(OFFICE_ID, newTsId);
+        String newTsId = "Sacramento River.Elev.Total.1HourLocal.0.Raw";
+        InputStream localResource = this.getClass()
+                .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_timeseries.json");
+        assertNotNull(localResource);
+        String tsInsertData = IOUtils.toString(localResource, StandardCharsets.UTF_8);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsInsertData)
+            .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+            .queryParam(OFFICE, OFFICE_ID)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
 
         tsData3 = tsData3.replace(oldTsId, newTsId);
 
@@ -242,6 +262,25 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .body("parameter-list[1]", equalTo(tsProfile3.getKeyParameter()))
             .body("reference-ts-id.name", is(newTsId))
         ;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsInsertData)
+            .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(BEGIN, "2025-05-08T00:00:00Z")
+            .queryParam(END, "2025-05-18T00:00:00Z")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/timeseries/{tsId}", newTsId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
     }
 
     @Test
@@ -295,7 +334,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("profile-list.size()", is(2))
+            .body("profile-list.size()", is(3))
         ;
 
         // Retrieve TimeSeriesProfiles with pagination, page 1
@@ -374,7 +413,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("profile-list.size()", is(1))
+            .body("profile-list.size()", is(2))
         ;
 
         // Retrieve TimeSeriesProfiles with pagination, page 1, assert that next-page is null
@@ -393,7 +432,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("profile-list.size()", is(1))
-            .body("next-page", is(nullValue()))
+            .body("next-page", not(nullValue()))
         ;
     }
 
@@ -449,7 +488,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("profile-list.size()", is(2))
+            .body("profile-list.size()", is(3))
         ;
     }
 
@@ -518,7 +557,6 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
-            .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(LOCATION_ID, "nonexistent")
