@@ -343,7 +343,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     void test_level_as_timeseries_lrts() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         createLocation("level_as_ts_lrts", true, OFFICE);
-        String levelId = "level_as_ts_lrts.Flow.Ave.1WeekLocal.1Day.lrts";
+        String levelId = "level_as_ts_lrts.Flow.Ave.1Day.1DayLocal.lrts";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
 
         int effectiveDateCount = 10;
@@ -373,7 +373,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+                .statusCode(is(HttpServletResponse.SC_OK));
         }
 
         // try to retrieve level timeseries without new LRTS identifier
