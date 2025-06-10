@@ -102,6 +102,7 @@ public final class TimeSeriesLocationLevel extends LocationLevel {
 			return this;
 		}
 
+		@Override
 		public TimeSeriesLocationLevel build() {
 			return new TimeSeriesLocationLevel(this);
 		}

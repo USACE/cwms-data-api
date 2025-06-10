@@ -371,6 +371,8 @@ public abstract class LocationLevel extends CwmsDTO {
             this.officeId = officeId;
             return self();
         }
+
+        public abstract LocationLevel build();
     }
 
     public static LocationLevel getUpdatedLocationLevel(LocationLevel existingLevel,
@@ -412,7 +414,7 @@ public abstract class LocationLevel extends CwmsDTO {
             attributeUnitsId = null;
         }
 
-        LocationLevel.Builder builder = null;
+        LocationLevel.Builder builder;
 
         if (existingLevel instanceof VirtualLocationLevel) {
             VirtualLocationLevel virtualLevel = (VirtualLocationLevel) existingLevel;
@@ -474,13 +476,12 @@ public abstract class LocationLevel extends CwmsDTO {
                     .withIntervalMonths(intervalMonths)
                     .withIntervalOrigin(intervalOrigin)
                     .withInterpolateString(interpolateString);
-        }
-        if (builder == null) {
+        } else {
             throw new UnsupportedFormatException("Unsupported Location Level type: "
                     + existingLevel.getClass().getName());
         }
 
-        builder.withParameterTypeId(parameterTypeId)
+        return builder.withParameterTypeId(parameterTypeId)
                 .withSpecifiedLevelId(specifiedLevelId)
                 .withParameterId(parameterId)
                 .withLevelUnitsId(levelUnitsId)
@@ -492,20 +493,8 @@ public abstract class LocationLevel extends CwmsDTO {
                 .withAttributeParameterId(attributeParameterId)
                 .withAttributeDurationId(attributeDurationId)
                 .withAttributeComment(attributeComment)
-                .withOfficeId(officeId);
-
-        if (builder instanceof SeasonalLocationLevel.Builder) {
-            return ((SeasonalLocationLevel.Builder) builder).build();
-        } else if (builder instanceof TimeSeriesLocationLevel.Builder) {
-            return ((TimeSeriesLocationLevel.Builder) builder).build();
-        } else if (builder instanceof ConstantLocationLevel.Builder) {
-            return ((ConstantLocationLevel.Builder) builder).build();
-        } else if (builder instanceof VirtualLocationLevel.Builder) {
-            return ((VirtualLocationLevel.Builder) builder).build();
-        } else {
-            throw new UnsupportedFormatException("Unsupported Location Level type: "
-                    + existingLevel.getClass().getName());
-        }
+                .withOfficeId(officeId)
+                .build();
     }
 
     @Override

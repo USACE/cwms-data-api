@@ -103,6 +103,7 @@ public final class ConstantLocationLevel extends LocationLevel {
 			return this;
 		}
 
+		@Override
 		public ConstantLocationLevel build() {
 			return new ConstantLocationLevel(this);
 		}

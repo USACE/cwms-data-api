@@ -63,13 +63,11 @@ public final class VirtualLocationLevel extends LocationLevel {
 		this.constituentConnections = builder.constituentConnections;
 	}
 
-	public List<RatingConstituent> getConstituents()
-	{
+	public List<RatingConstituent> getConstituents() {
 		return constituents;
 	}
 
-	public String getConstituentConnections()
-	{
+	public String getConstituentConnections() {
 		return constituentConnections;
 	}
 
@@ -102,8 +100,8 @@ public final class VirtualLocationLevel extends LocationLevel {
 			return this;
 		}
 
-		public VirtualLocationLevel build()
-		{
+		@Override
+		public VirtualLocationLevel build() {
 			return new VirtualLocationLevel(this);
 		}
 	}
@@ -140,8 +138,7 @@ public final class VirtualLocationLevel extends LocationLevel {
 			return type;
 		}
 
-		public String getName()
-		{
+		public String getName() {
 			return name;
 		}
 
@@ -170,8 +167,7 @@ public final class VirtualLocationLevel extends LocationLevel {
 				this.name = name;
 			}
 
-			public RatingConstituent build()
-			{
+			public RatingConstituent build() {
 				return new RatingConstituent(this);
 			}
 		}
@@ -253,8 +249,7 @@ public final class VirtualLocationLevel extends LocationLevel {
 			}
 
 			@Override
-			public LocationLevelConstituent build()
-			{
+			public LocationLevelConstituent build() {
 				return new LocationLevelConstituent(this);
 			}
 		}

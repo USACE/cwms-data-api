@@ -250,6 +250,7 @@ public final class SeasonalLocationLevel extends LocationLevel {
 			return this;
 		}
 
+		@Override
 		public SeasonalLocationLevel build() {
 			return new SeasonalLocationLevel(this);
 		}
