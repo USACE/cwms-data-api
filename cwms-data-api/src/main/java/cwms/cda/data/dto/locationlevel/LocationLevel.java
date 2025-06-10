@@ -204,7 +204,7 @@ public abstract class LocationLevel extends CwmsDTO {
 
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-    public static class Builder<T extends Builder<T>> {
+    public abstract static class Builder<T extends Builder<T>> {
         String specifiedLevelId;
         String parameterTypeId;
         String parameterId;
@@ -412,20 +412,7 @@ public abstract class LocationLevel extends CwmsDTO {
             attributeUnitsId = null;
         }
 
-        LocationLevel.Builder builder = new LocationLevel.Builder(locationId, unmarshalledDate)
-                .withParameterTypeId(parameterTypeId)
-                .withSpecifiedLevelId(specifiedLevelId)
-                .withParameterId(parameterId)
-                .withLevelUnitsId(levelUnitsId)
-                .withLevelComment(levelComment)
-                .withDurationId(durationId)
-                .withAttributeValue(attributeValue)
-                .withAttributeUnitsId(attributeUnitsId)
-                .withAttributeParameterTypeId(attributeParameterTypeId)
-                .withAttributeParameterId(attributeParameterId)
-                .withAttributeDurationId(attributeDurationId)
-                .withAttributeComment(attributeComment)
-                .withOfficeId(officeId);
+        LocationLevel.Builder builder = null;
 
         if (existingLevel instanceof VirtualLocationLevel) {
             VirtualLocationLevel virtualLevel = (VirtualLocationLevel) existingLevel;
@@ -435,12 +422,12 @@ public abstract class LocationLevel extends CwmsDTO {
                     ? virtualLevel.getConstituentConnections() : updatedVirtualLevel.getConstituentConnections());
             List<VirtualLocationLevel.RatingConstituent> constituents = updatedVirtualLevel.getConstituents() == null
                     ? virtualLevel.getConstituents() : updatedVirtualLevel.getConstituents();
-            return ((VirtualLocationLevel.Builder) builder)
+
+            builder = new VirtualLocationLevel.Builder(locationId, unmarshalledDate)
                     .withExpirationDate(updatedVirtualLevel.getExpirationDate() == null
                         ? virtualLevel.getExpirationDate() : updatedVirtualLevel.getExpirationDate())
                     .withConstituents(constituents)
-                    .withConstituentConnections(constituentConnections)
-                    .build();
+                    .withConstituentConnections(constituentConnections);
         } else if (existingLevel instanceof ConstantLocationLevel) {
             ConstantLocationLevel constantLevel = (ConstantLocationLevel) existingLevel;
             ConstantLocationLevel updatedConstantLevel = (ConstantLocationLevel) updatedLevel;
@@ -448,9 +435,8 @@ public abstract class LocationLevel extends CwmsDTO {
             Double siParameterUnitsConstantValue = (updatedConstantLevel.getConstantValue() == null
                     ? constantLevel.getConstantValue() : updatedConstantLevel.getConstantValue());
 
-            return ((ConstantLocationLevel.Builder) builder)
-                    .withConstantValue(siParameterUnitsConstantValue)
-                    .build();
+            builder = new ConstantLocationLevel.Builder(locationId, unmarshalledDate)
+                    .withConstantValue(siParameterUnitsConstantValue);
         } else if (existingLevel instanceof TimeSeriesLocationLevel) {
             TimeSeriesLocationLevel timeSeriesLevel = (TimeSeriesLocationLevel) existingLevel;
             TimeSeriesLocationLevel updatedTimeSeriesLevel = (TimeSeriesLocationLevel) updatedLevel;
@@ -458,9 +444,7 @@ public abstract class LocationLevel extends CwmsDTO {
             String seasonalTimeSeriesId = (updatedTimeSeriesLevel.getSeasonalTimeSeriesId() == null
                     ? timeSeriesLevel.getSeasonalTimeSeriesId() : updatedTimeSeriesLevel.getSeasonalTimeSeriesId());
 
-            return ((TimeSeriesLocationLevel.Builder) builder)
-                    .withSeasonalTimeSeriesId(seasonalTimeSeriesId)
-                    .build();
+            builder = new TimeSeriesLocationLevel.Builder(locationId, unmarshalledDate, seasonalTimeSeriesId);
         } else if (existingLevel instanceof SeasonalLocationLevel) {
             SeasonalLocationLevel seasonalLevel = (SeasonalLocationLevel) existingLevel;
             SeasonalLocationLevel updatedSeasonalLevel = (SeasonalLocationLevel) updatedLevel;
@@ -484,15 +468,43 @@ public abstract class LocationLevel extends CwmsDTO {
                 intervalMonths = null;
             }
 
-            return ((SeasonalLocationLevel.Builder) builder)
+            builder = new SeasonalLocationLevel.Builder(locationId, unmarshalledDate)
                     .withSeasonalValues(seasonalValues)
                     .withIntervalMinutes(intervalMinutes)
                     .withIntervalMonths(intervalMonths)
                     .withIntervalOrigin(intervalOrigin)
-                    .withInterpolateString(interpolateString)
-                    .build();
+                    .withInterpolateString(interpolateString);
+        }
+        if (builder == null) {
+            throw new UnsupportedFormatException("Unsupported Location Level type: "
+                    + existingLevel.getClass().getName());
+        }
+
+        builder.withParameterTypeId(parameterTypeId)
+                .withSpecifiedLevelId(specifiedLevelId)
+                .withParameterId(parameterId)
+                .withLevelUnitsId(levelUnitsId)
+                .withLevelComment(levelComment)
+                .withDurationId(durationId)
+                .withAttributeValue(attributeValue)
+                .withAttributeUnitsId(attributeUnitsId)
+                .withAttributeParameterTypeId(attributeParameterTypeId)
+                .withAttributeParameterId(attributeParameterId)
+                .withAttributeDurationId(attributeDurationId)
+                .withAttributeComment(attributeComment)
+                .withOfficeId(officeId);
+
+        if (builder instanceof SeasonalLocationLevel.Builder) {
+            return ((SeasonalLocationLevel.Builder) builder).build();
+        } else if (builder instanceof TimeSeriesLocationLevel.Builder) {
+            return ((TimeSeriesLocationLevel.Builder) builder).build();
+        } else if (builder instanceof ConstantLocationLevel.Builder) {
+            return ((ConstantLocationLevel.Builder) builder).build();
+        } else if (builder instanceof VirtualLocationLevel.Builder) {
+            return ((VirtualLocationLevel.Builder) builder).build();
         } else {
-            throw new UnsupportedFormatException("Unsupported location level type");
+            throw new UnsupportedFormatException("Unsupported Location Level type: "
+                    + existingLevel.getClass().getName());
         }
     }
 

@@ -18,6 +18,9 @@ import cwms.cda.formatters.json.JsonV2;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -149,6 +152,40 @@ class LocationLevelTest {
 		assertThrows(RequiredFieldException.class, () -> new SeasonalLocationLevel.Builder("Test", ZonedDateTime.now()).build());
 		assertThrows(RequiredFieldException.class, () -> new SeasonalLocationLevel.Builder("Test", ZonedDateTime.now())
 						.withIntervalMinutes(25).withIntervalMonths(12).build());
+	}
+
+	@Test
+	void test_update_level() {
+		ConstantLocationLevel existingLevel = new ConstantLocationLevel.Builder("Test", ZonedDateTime.now()).withConstantValue(12345.65).build();
+
+		ZonedDateTime zdt = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
+
+		ConstantLocationLevel updatedLevel = new ConstantLocationLevel.Builder("Test", ZonedDateTime.now()).withConstantValue(1899.45).build();
+
+		LocationLevel updated = LocationLevel.getUpdatedLocationLevel(existingLevel, updatedLevel, zdt);
+
+		assertNotNull(updated);
+		assertInstanceOf(ConstantLocationLevel.class, updated);
+		ConstantLocationLevel constantLevel = (ConstantLocationLevel) updated;
+		assertEquals(1899.45, constantLevel.getConstantValue());
+		assertEquals(zdt, constantLevel.getLevelDate());
+	}
+
+	@Test
+	void test_update_level_virtual() {
+		VirtualLocationLevel existingLevel = new VirtualLocationLevel.Builder("Test", ZonedDateTime.now()).withConstituentConnections("L1=L2").build();
+
+		ZonedDateTime zdt = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
+
+		VirtualLocationLevel updatedLevel = new VirtualLocationLevel.Builder("Test", ZonedDateTime.now()).withConstituentConnections("L2=L3").build();
+
+		LocationLevel updated = LocationLevel.getUpdatedLocationLevel(existingLevel, updatedLevel, zdt);
+
+		assertNotNull(updated);
+		assertInstanceOf(VirtualLocationLevel.class, updated);
+		VirtualLocationLevel virtualLevel = (VirtualLocationLevel) updated;
+		assertEquals("L2=L3", virtualLevel.getConstituentConnections());
+		assertEquals(zdt, virtualLevel.getLevelDate());
 	}
 
 }
