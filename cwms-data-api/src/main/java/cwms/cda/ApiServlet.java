@@ -31,7 +31,6 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
-import cwms.cda.api.MeasurementTimeExtentsGetController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -67,6 +66,7 @@ import cwms.cda.api.LocationCategoryController;
 import cwms.cda.api.LocationController;
 import cwms.cda.api.LocationGroupController;
 import cwms.cda.api.LookupTypeController;
+import cwms.cda.api.MeasurementTimeExtentsGetController;
 import cwms.cda.api.OfficeController;
 import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
@@ -115,6 +115,7 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.JsonFieldsException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
+import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.GateChangeDeleteController;
 import cwms.cda.api.location.kind.GateChangeGetAllController;
@@ -430,6 +431,11 @@ public class ApiServlet extends HttpServlet {
                 })
                 .exception(DateTimeException.class, (e, ctx) -> {
                     CdaError re = new CdaError(e.getMessage());
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
+                })
+                .exception(ValueTooLongException.class, (e, ctx) -> {
+                    CdaError re = new CdaError(e.getMessage(), e.isSuppressIncidentId());
+                    logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(JsonFieldsException.class, (e, ctx) -> {
@@ -792,7 +798,7 @@ public class ApiServlet extends HttpServlet {
      * forget to set their own.
      * @param path where to register the routes.
      * @param crudHandler the handler requests should be forwarded to.
-     * @param getRequriesAuth if the get handlers should have an authoriation check
+     * @param getRequiresAuth if the get handlers should have an authorization check
      * @param roles the required these roles are present to access post, patch
      * @param duration the number of TimeUnit to cache GET responses.
      * @param timeUnit the TimeUnit to use for duration.
