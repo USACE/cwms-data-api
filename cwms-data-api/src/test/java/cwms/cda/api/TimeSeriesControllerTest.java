@@ -150,6 +150,7 @@ class TimeSeriesControllerTest extends ControllerTest {
         ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
         assertNotNull(formatted);
+        assertFalse(formatted.contains("null"));
         TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
         assertNotNull(ts2);
         assertSimilar(fakeTs, ts2);
