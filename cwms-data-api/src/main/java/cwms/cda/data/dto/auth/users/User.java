@@ -9,11 +9,14 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.Formats;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -23,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonInclude(value = Include.NON_NULL)
+@JsonDeserialize(builder = User.Builder.class)
 public class User extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final String userName;
@@ -65,7 +69,7 @@ public class User extends CwmsDTOBase {
 
     @Schema(description = "Assigned user roles per office.")
     private final Map<String,List<String>> roles;
-    
+
     public User(String userName, String principal, String email, Boolean cac_auth, Map<String, List<String>> roles) {
         this.userName = userName;
         this.principal = principal;
@@ -89,13 +93,23 @@ public class User extends CwmsDTOBase {
     public static class Builder {
         private final User tmp;
 
-        public Builder(String userName, String principal, String email, Boolean cac_auth) {
+        @JsonCreator
+        public Builder(@JsonProperty("user-name") String userName,
+                       @JsonProperty("principal") String principal,
+                       @JsonProperty("email") String email,
+                       @JsonProperty("cac-auth") Boolean cac_auth) {
             tmp = new User(userName, principal, email, cac_auth, new HashMap<>());
         }
 
         public Builder addRole(String office, String role) {
             tmp.roles.computeIfAbsent(office, (key) -> new ArrayList<>()).add(role);
 
+            return this;
+        }
+
+        @JsonSetter("roles")
+        public Builder addRoles(Map<String, List<String>> roles) {
+            tmp.roles.putAll(roles);
             return this;
         }
 

@@ -2,8 +2,11 @@ package cwms.cda.api.users;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -17,6 +20,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import cwms.cda.ApiServlet;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.auth.users.User;
+import cwms.cda.data.dto.auth.users.Users;
 import fixtures.KeyCloakExtension;
 import fixtures.TestAccounts;
 import fixtures.users.UserSpecSource;
@@ -149,6 +153,47 @@ public class UserManagementTestIT extends DataApiTestIT {
             .statusCode(is(HttpCode.OK.getStatus()))
             .body("users.find { it.'user-name' == 'M5HECTEST' }.roles.SWT", hasItem("TS ID Creator"))
         ;
+    }
+
+    @ParameterizedTest
+	@ArgumentsSource(UserSpecSource.class)
+	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
+    void test_list_users_pagination(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+        final ArrayList<User> users = new ArrayList<User>();
+        Users tmp = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+            .queryParam("page-size", 2)
+        .when()
+            .get("/users")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.OK.getStatus()))
+            //.body("users.find { it.'user-name' == 'M5HECTEST' }.roles.SWT", hasItem("TS ID Creator"))
+            .extract().as(Users.class);
+        ;
+
+        users.addAll(tmp.getUsers());
+        while (tmp.getNextPage() != null) {
+            tmp = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .spec(authSpec)
+                .queryParam("page",tmp.getNextPage())
+            .when()
+                .get("/users")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpCode.OK.getStatus()))
+                //.body("users.find { it.'user-name' == 'M5HECTEST' }.roles.SWT", hasItem("TS ID Creator"))
+                .extract().as(Users.class);
+            ;
+            users.addAll(tmp.getUsers());
+        }
+
+        assertEquals(tmp.getTotal(), users.size(), "Returned user size does not match provided total.");
+        final User m5hectest = users.stream().filter(u -> u.getUserName().equals("M5HECTEST")).findFirst().orElse(null);
+        assertNotNull(m5hectest, "Could not retrieve expected user.");
+        assertTrue(m5hectest.getRoles().get("SWT").contains("TS ID Creator"));
     }
 
 

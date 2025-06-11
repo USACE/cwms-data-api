@@ -77,7 +77,8 @@ public class UsersController implements CrudHandler {
     @OpenApi(
         queryParams = {
             @OpenApiParam(allowEmptyValue = true, name = OFFICE, type = String.class,
-                    description = "Show only users with active privileges in a given office" ),
+                    description = "Show only users with active privileges in a given office." 
+                                + Controllers.OFFICE_DESCRIPTION ),
             @OpenApiParam(name = PAGE,
                     description = "This end point can return a lot of data, this "
                             + "identifies where in the request you are. This is an opaque"
@@ -90,7 +91,7 @@ public class UsersController implements CrudHandler {
         },
         responses = @OpenApiResponse(
                     content = {
-                        @OpenApiContent(from = User[].class, type = Formats.JSON)
+                        @OpenApiContent(from = Users.class, type = Formats.JSON)
                     },
                     status = STATUS_200
         ),

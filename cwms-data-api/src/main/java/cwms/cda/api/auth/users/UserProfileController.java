@@ -47,7 +47,7 @@ public class UserProfileController implements Handler {
         security = {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
-        description = "View users's own information",
+        description = "View users' own information",
         method = HttpMethod.GET,
         tags = {"User Management"}
     )

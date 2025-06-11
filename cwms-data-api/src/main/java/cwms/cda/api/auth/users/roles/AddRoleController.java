@@ -5,6 +5,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 
+import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.UserDao;
 import cwms.cda.formatters.Formats;
@@ -29,7 +30,7 @@ public class AddRoleController implements Handler {
     @OpenApi(
         pathParams = {
             @OpenApiParam(name = "office-id", required = true,
-            description = "Office for these roles"),
+            description = "Office for these roles." + Controllers.OFFICE_DESCRIPTION),
             @OpenApiParam(name = "user-name", required = true,
                 description = "Name of the user to alter")
         },

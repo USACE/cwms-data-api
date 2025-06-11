@@ -150,12 +150,15 @@ public class UserDao extends JooqDao<User> {
             int pageSizeTmp = pageSize;
 
             Condition whereClause = office == null ? DSL.noCondition()
+            // If we are including only those users with permissions to a  specific office
+            // we limit to those users that also have an entry in the at_sec_cwms_users_group table.
             : dsl.select(count(asterisk()))
                  .from(vUserGroups)
                  .where(upper(vUserGroups.DB_OFFICE_ID).eq(upper(office)))
                  .and(vUserGroups.IS_MEMBER.eq("T")).asField().gt(1)
             ;
-
+/// TODO: instead of where clause we establish the join or not. If not limiting by office we don't
+/// join on the vUserGroups table at this point.
             if (cursor == null || cursor.isEmpty()) {
                 SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
                     .from(vUsers)
@@ -195,6 +198,10 @@ public class UserDao extends JooqDao<User> {
                                         .and(vUserGroups.IS_MEMBER.eq("T")))
                 .where(whereClause)
                 .and(pagingCondition)
+                // office id is included in order by to maintain consistent ordering.
+                // office id It is not used in the pagination clause as we are only
+                // paging on "users" not their roles, wich is the only element with the office
+                // association and always fully included per use in the response.
                 .orderBy(userId, vUserGroups.DB_OFFICE_ID)
                 .limit(pageSize);
 
