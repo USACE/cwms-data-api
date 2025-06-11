@@ -36,29 +36,27 @@ import java.io.IOException;
 public class TimeSeriesRecordSerializer extends StdSerializer<TimeSeries.Record> {
     // Default constructor for Jackson
     public TimeSeriesRecordSerializer() {
-        this(null);
-    }
-
-    public TimeSeriesRecordSerializer(Class<TimeSeries.Record> t) {
-        super(t);
+        super(TimeSeries.Record.class);
     }
 
     @Override
-    public void serialize(TimeSeries.Record recordValue, JsonGenerator gen, SerializerProvider provider) throws IOException {
-        if (recordValue != null) {
-            gen.writeStartArray();
-            gen.writeNumber(recordValue.getDateTime().getTime());
-            // Handle null values for value and qualityCode
-            if (recordValue.getValue() == null) {
-                gen.writeNull();
-            } else {
-                gen.writeNumber(recordValue.getValue());
-            }
-            gen.writeNumber(recordValue.getQualityCode());
-            if (recordValue.getDataEntryDate() != null) {
-                gen.writeNumber(recordValue.getDataEntryDate().getTime());
-            }
-            gen.writeEndArray();
+    public void serialize(TimeSeries.Record recordValue, JsonGenerator gen, SerializerProvider provider)
+        throws IOException {
+
+        gen.writeStartArray();
+        gen.writeNumber(recordValue.getDateTime().getTime());
+        if (recordValue.getValue() == null) {
+            gen.writeNull();
+        } else {
+            gen.writeNumber(recordValue.getValue());
         }
+        gen.writeNumber(recordValue.getQualityCode());
+        // Used to include the dataEntryDate in the serialized output if requested. Modifies length of the output array.
+        // If the dataEntryDate is requested, it will always be non-null
+        // Without the dataEntryDate, the array will have 3 elements: [dateTime, value, qualityCode]
+        if (recordValue.getDataEntryDate() != null) {
+            gen.writeNumber(recordValue.getDataEntryDate().getTime());
+        }
+        gen.writeEndArray();
     }
 }

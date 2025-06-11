@@ -150,11 +150,9 @@ class TimeSeriesControllerTest extends ControllerTest {
         ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
         assertNotNull(formatted);
-        if (format.equalsIgnoreCase(Formats.JSONV2)) {
-            TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
-            assertNotNull(ts2);
-            assertSimilar(fakeTs, ts2);
-        }
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        assertNotNull(ts2);
+        assertSimilar(fakeTs, ts2);
     }
 
     @ParameterizedTest
@@ -170,11 +168,9 @@ class TimeSeriesControllerTest extends ControllerTest {
         String formatted = Formats.format(contentType, fakeTs);
         assertNotNull(formatted);
         assertTrue(formatted.contains("data-entry-date"));
-        if (format.equalsIgnoreCase(Formats.JSONV2)) {
-            TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
-            assertNotNull(ts2);
-            assertSimilar(fakeTs, ts2);
-        }
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        assertNotNull(ts2);
+        assertSimilar(fakeTs, ts2);
     }
 
 
@@ -187,11 +183,9 @@ class TimeSeriesControllerTest extends ControllerTest {
         ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
         assertNotNull(formatted);
-        if (format.equalsIgnoreCase(Formats.JSONV2)) {
-            TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
-            assertNotNull(ts2);
-            assertSimilar(fakeTs, ts2);
-        }
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        assertNotNull(ts2);
+        assertSimilar(fakeTs, ts2);
     }
 
     @ParameterizedTest
@@ -203,11 +197,9 @@ class TimeSeriesControllerTest extends ControllerTest {
         ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
         assertNotNull(formatted);
-        if (format.equalsIgnoreCase(Formats.JSONV2)) {
-            TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
-            assertNotNull(ts2);
-            assertSimilar(fakeTs, ts2);
-        }
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        assertNotNull(ts2);
+        assertSimilar(fakeTs, ts2);
     }
 
     @Test
@@ -234,6 +226,9 @@ class TimeSeriesControllerTest extends ControllerTest {
         assertNotNull(formatted);
         assertTrue(formatted.contains("quality-code"));
         assertTrue(formatted.contains("data-entry-date"));
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        assertNotNull(ts2);
+        assertSimilar(fakeTs, ts2);
     }
 
     @Test
@@ -265,11 +260,10 @@ class TimeSeriesControllerTest extends ControllerTest {
         InputStream inputStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
         ContentType contentType = Formats.parseHeader(Formats.XMLV2, TimeSeries.class);
         TimeSeries ts = Formats.parseContent(contentType, inputStream, TimeSeries.class);
+        assertNotNull(ts);
 
-            assertNotNull(ts);
-
-            TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
-            assertSimilar(fakeTs, ts);
+        TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
+        assertSimilar(fakeTs, ts);
     }
 
     @Test

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import cwms.cda.formatters.xml.XMLv2;
 
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -28,12 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class TimeSeriesTest
-{
-
+public class TimeSeriesTest {
 	@Test
-	void testRoundtripJson() throws JsonProcessingException
-	{
+	void testRoundtripJson() throws JsonProcessingException {
 		TimeSeries ts = buildTimeSeries();
 
 		ObjectMapper om = buildObjectMapper();
@@ -55,8 +53,7 @@ public class TimeSeriesTest
 	}
 
 	@Test
-	void testRoundtripJsonVertical() throws JsonProcessingException
-	{
+	void testRoundtripJsonVertical() throws JsonProcessingException {
 		TimeSeries ts = buildTimeSeries(buildVerticalDatumInfo());
 
 		ObjectMapper om = buildObjectMapper();
@@ -87,14 +84,12 @@ public class TimeSeriesTest
 	}
 
 	@NotNull
-	private TimeSeries buildTimeSeries()
-	{
+	private TimeSeries buildTimeSeries() {
 		return buildTimeSeries(null);
 	}
 
 	@NotNull
-	private TimeSeries buildTimeSeries(VerticalDatumInfo vdi)
-	{
+	private TimeSeries buildTimeSeries(VerticalDatumInfo vdi) {
 		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
 
 		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
@@ -106,8 +101,7 @@ public class TimeSeriesTest
 		return ts;
 	}
 
-	private TimeSeries buildTimeSeriesWithNulls()
-	{
+	private TimeSeries buildTimeSeriesWithNulls() {
 		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
 
 		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
@@ -120,8 +114,20 @@ public class TimeSeriesTest
 		return ts;
 	}
 
-	VerticalDatumInfo buildVerticalDatumInfo()
-	{
+	private TimeSeries buildTimeSeriesWithEntryDates() {
+		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+
+		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
+		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
+		ZonedDateTime versionDate = Instant.now().atZone(ZoneId.of("UTC"));
+		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, null, versionDate, null);
+		ts.addValue(Timestamp.from(Instant.now()), 12.34567, 0, Timestamp.from(Instant.now()));
+		ts.addValue(Timestamp.from(Instant.now().plusSeconds(60)), 12.34567, 0, Timestamp.from(Instant.now()));
+		ts.addValue(Timestamp.from(Instant.now().plusSeconds(120)), null, 0, Timestamp.from(Instant.now()));
+		return ts;
+	}
+
+	VerticalDatumInfo buildVerticalDatumInfo() {
 		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
 				.withOffice("LRL").withUnit("m").withLocation("Buckhorn")
 				.withNativeDatum("NGVD-29").withElevation(230.7).withOffset(
@@ -130,8 +136,25 @@ public class TimeSeriesTest
 	}
 
 	@Test
-	void testFormatter()
-	{
+	void testColumns() {
+		TimeSeries ts = buildTimeSeries();
+
+		List<TimeSeries.Column> columnList = ts.getValueColumnsJSON();
+		assertNotNull(columnList);
+		assertEquals(3, columnList.size());
+	}
+
+	@Test
+	void testColumnsWithEntryDates() {
+		TimeSeries ts = buildTimeSeriesWithEntryDates();
+
+		List<TimeSeries.Column> columnList = ts.getValueColumnsJSON();
+		assertNotNull(columnList);
+		assertEquals(4, columnList.size());
+	}
+
+	@Test
+	void testFormatter() {
 		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
 		DateTimeFormatter formatter1 = DateTimeFormatter.ofPattern(TimeSeries.ZONED_DATE_TIME_FORMAT);
 
@@ -147,8 +170,7 @@ public class TimeSeriesTest
 	}
 
 	@NotNull
-	public static ObjectMapper buildObjectMapper(ObjectMapper om)
-	{
+	public static ObjectMapper buildObjectMapper(ObjectMapper om) {
 		ObjectMapper retval = om.copy();
 
 		retval.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
@@ -160,8 +182,7 @@ public class TimeSeriesTest
 
 
 	@Test
-	void test_xml_value_columns()
-	{
+	void test_xml_value_columns() {
 		TimeSeries ts = buildTimeSeries();
 
 		XMLv2 xmlV2 = new XMLv2();

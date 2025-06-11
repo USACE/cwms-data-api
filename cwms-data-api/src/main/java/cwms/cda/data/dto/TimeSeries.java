@@ -12,6 +12,8 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -205,7 +207,7 @@ public class TimeSeries extends CwmsDTOPaginated {
                     + "data in the array.",
             accessMode = AccessMode.READ_ONLY)
     public List<Column> getValueColumnsJSON() {
-        if (values != null && !values.isEmpty() && values.get(0) != null) {
+        if (values != null && !values.isEmpty() && values.get(0) != null && values.get(0).getDataEntryDate() != null) {
             return getColumnDescriptorWithEntryDate();
         }
         return getColumnDescriptor();
@@ -285,20 +287,24 @@ public class TimeSeries extends CwmsDTOPaginated {
 
     @JsonSerialize(using = TimeSeriesRecordSerializer.class)
     @JsonIgnoreProperties(ignoreUnknown = true)
-    @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+    @JacksonXmlRootElement
     public static class Record {
         // Explicitly set property order for array serialization
         @JsonProperty(value = "date-time", index = 0)
+        @JacksonXmlProperty(localName = "date-time")
         @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch), always UTC")
         Timestamp dateTime;
 
         @JsonProperty(index = 1)
+        @JacksonXmlProperty(localName = "value")
         @Schema(description = "Requested time-series data value")
         Double value;
 
+        @JacksonXmlProperty(localName = "quality-code")
         @JsonProperty(value = "quality-code", index = 2)
         int qualityCode;
 
+        @JsonIgnore
         @JsonProperty(value = "data-entry-date", index = 3)
         Timestamp dataEntryDate;
 

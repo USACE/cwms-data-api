@@ -26,6 +26,7 @@
 
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -36,6 +37,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.formatters.json.JsonV2;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 final class TimeSeriesRecordTest
@@ -49,6 +51,12 @@ final class TimeSeriesRecordTest
 
 		String tsBody = om.writeValueAsString(tsRecord);
 		assertNotNull(tsBody);
+		JsonNode tsNode = om.readTree(tsBody);
+		assertNotNull(tsNode);
+		assertNotNull(tsNode.get(0));
+		assertEquals(1749211200000L, tsNode.get(0).asLong());
+		assertEquals(12.34567, tsNode.get(1).asDouble(), 0.00001);
+		assertEquals(0, tsNode.get(2).asInt());
 	}
 
 	@Test
@@ -60,6 +68,11 @@ final class TimeSeriesRecordTest
 
 		String tsBody = om.writeValueAsString(tsRecord);
 		assertNotNull(tsBody);
+		JsonNode tsNode = om.readTree(tsBody);
+		assertNotNull(tsNode);
+		assertEquals(1749211200000L, tsNode.get(0).asLong());
+		assertEquals(12.34567, tsNode.get(1).asDouble(), 0.00001);
+		assertEquals(0, tsNode.get(2).asInt());
 	}
 
 
@@ -70,8 +83,8 @@ final class TimeSeriesRecordTest
 		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
 		ZonedDateTime versionDate = Instant.now().atZone(ZoneId.of("UTC"));
 		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, null, versionDate, null);
-		ts.addValue(Timestamp.from(Instant.now()), 12.34567, 0);
-		ts.addValue(Timestamp.from(Instant.now().plusSeconds(60)), 13.45678, 0);
+		ts.addValue(Timestamp.from(Instant.parse("2025-06-06T12:00:00Z")), 12.34567, 0);
+		ts.addValue(Timestamp.from(Instant.parse("2025-06-06T12:00:00Z").plusSeconds(60)), 13.45678, 0);
 		return ts;
 	}
 
@@ -82,8 +95,8 @@ final class TimeSeriesRecordTest
 		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
 		ZonedDateTime versionDate = Instant.now().atZone(ZoneId.of("UTC"));
 		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, null, versionDate, null);
-		ts.addValue(Timestamp.from(Instant.now()), 12.34567, 0, Timestamp.from(Instant.now().minusSeconds(60)));
-		ts.addValue(Timestamp.from(Instant.now().plusSeconds(60)), 13.45678, 0, Timestamp.from(Instant.now()));
+		ts.addValue(Timestamp.from(Instant.parse("2025-06-06T12:00:00Z")), 12.34567, 0, Timestamp.from(Instant.now().minusSeconds(60)));
+		ts.addValue(Timestamp.from(Instant.parse("2025-06-06T12:00:00Z").plusSeconds(60)), 13.45678, 0, Timestamp.from(Instant.now()));
 		return ts;
 	}
 }
