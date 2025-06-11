@@ -78,18 +78,18 @@ public class RateDao extends JooqDao<RatingSet> {
     }
 
     private void validateReverseRateInput(RateInput input) {
-        if(input instanceof RateInputTimeSeries && ((RateInputTimeSeries) input).getTimeSeriesIds().size() > 1) {
+        if (input instanceof RateInputTimeSeries && ((RateInputTimeSeries) input).getTimeSeriesIds().size() > 1) {
             throw new IllegalArgumentException("Reverse Rating only supports one dependent parameter");
         }
-        if(input instanceof RateInputValues) {
+        if (input instanceof RateInputValues) {
             List<List<Double>> values = ((RateInputValues) input).getValues();
-            if(values.size() > 1) {
+            if (values.size() > 1) {
                 throw new IllegalArgumentException("Reverse Rating only supports one time series at a time");
             }
             List<Double> inputValues = new ArrayList<>(values.get(0));
             Collections.sort(inputValues);
             for (int i = 1; i < inputValues.size(); i++) {
-                if(inputValues.get(i) == null) {
+                if (inputValues.get(i) == null) {
                     throw new IllegalArgumentException("Input values must be non-null");
                 }
                 if (inputValues.get(i) < inputValues.get(i - 1)) {
@@ -132,7 +132,7 @@ public class RateDao extends JooqDao<RatingSet> {
                 officeId);
         });
         List<TimeSeries.Record> records = ztsvTypes.stream()
-            .map(z -> new TimeSeries.StandardRecord(z.getDATE_TIME(), z.getVALUE(), z.getQUALITY_CODE().intValue()))
+            .map(z -> new TimeSeries.Record(z.getDATE_TIME(), z.getVALUE(), z.getQUALITY_CODE().intValue()))
             .collect(toList());
         return new RatedOutputTimeSeries(CwmsId.buildCwmsId(officeId, ratingId), records, input.getOutputUnit());
     }
@@ -153,7 +153,7 @@ public class RateDao extends JooqDao<RatingSet> {
                 officeId);
         });
         List<TimeSeries.Record> records = ztsvTypes.stream()
-            .map(z -> new TimeSeries.StandardRecord(z.getDATE_TIME(), z.getVALUE(), z.getQUALITY_CODE().intValue()))
+            .map(z -> new TimeSeries.Record(z.getDATE_TIME(), z.getVALUE(), z.getQUALITY_CODE().intValue()))
             .collect(toList());
         return new RatedOutputTimeSeries(CwmsId.buildCwmsId(officeId, ratingId), records, input.getOutputUnit());
     }
@@ -161,7 +161,7 @@ public class RateDao extends JooqDao<RatingSet> {
     private <R> R connectionResult(ConnectionCallable<R> callable) {
         try {
             return connectionResult(dsl, callable);
-        } catch(DataAccessException ex) {
+        } catch (DataAccessException ex) {
             throw handleRateDbError(ex);
         }
     }

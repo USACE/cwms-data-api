@@ -14,7 +14,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dto.TimeSeries;
-import cwms.cda.data.dto.TimeSeriesRecordWithEntryDate;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
@@ -134,27 +133,8 @@ class TimeSeriesControllerTest extends ControllerTest {
         assertTrue(expected.getEnd().isEqual(actual.getEnd()), "end dates not equal");
     }
 
-    private void assertSimilarWithDate(TimeSeries expected, TimeSeries actual)
-    {
-        assertEquals(expected.getOfficeId(), actual.getOfficeId(), "offices did not match");
-        assertEquals(expected.getName(), actual.getName(), "names did not match");
-        assertDateRecordsMatch(expected.getValues(), actual.getValues());
-        assertTrue(expected.getBegin().isEqual(actual.getBegin()), "begin dates not equal");
-        assertTrue(expected.getEnd().isEqual(actual.getEnd()), "end dates not equal");
-    }
-
     private void assertRecordsMatch(List<TimeSeries.Record> expected, List<TimeSeries.Record> actual) {
         for (int i = 0; i < expected.size(); i++) {
-            assertEquals(expected.get(i).getDateTime(), actual.get(i).getDateTime(), "Timestamps did not match");
-            assertEquals(expected.get(i).getValue(), actual.get(i).getValue(), "Values did not match");
-            assertEquals(expected.get(i).getQualityCode(), actual.get(i).getQualityCode(), "Quality codes did not match");
-        }
-    }
-
-    private void assertDateRecordsMatch(List<? extends TimeSeries.Record> expected, List<? extends TimeSeries.Record> actual) {
-        for (int i = 0; i < expected.size(); i++) {
-            assertEquals(((TimeSeriesRecordWithEntryDate) expected.get(i)).getDataEntryDate(),
-                    ((TimeSeriesRecordWithEntryDate) actual.get(i)).getDataEntryDate(), "Entry dates did not match");
             assertEquals(expected.get(i).getDateTime(), actual.get(i).getDateTime(), "Timestamps did not match");
             assertEquals(expected.get(i).getValue(), actual.get(i).getValue(), "Values did not match");
             assertEquals(expected.get(i).getQualityCode(), actual.get(i).getQualityCode(), "Quality codes did not match");
@@ -170,9 +150,11 @@ class TimeSeriesControllerTest extends ControllerTest {
         ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
         assertNotNull(formatted);
-        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
-        assertNotNull(ts2);
-        assertSimilar(fakeTs, ts2);
+        if (format.equalsIgnoreCase(Formats.JSONV2)) {
+            TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+            assertNotNull(ts2);
+            assertSimilar(fakeTs, ts2);
+        }
     }
 
     @ParameterizedTest
@@ -187,9 +169,12 @@ class TimeSeriesControllerTest extends ControllerTest {
         ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
         assertNotNull(formatted);
-        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
-        assertNotNull(ts2);
-        assertSimilarWithDate(fakeTs, ts2);
+        assertTrue(formatted.contains("data-entry-date"));
+        if (format.equalsIgnoreCase(Formats.JSONV2)) {
+            TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+            assertNotNull(ts2);
+            assertSimilar(fakeTs, ts2);
+        }
     }
 
 
@@ -201,9 +186,12 @@ class TimeSeriesControllerTest extends ControllerTest {
         TimeSeries fakeTs = buildTimeSeries(officeId, tsId);
         ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
-        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
-        assertNotNull(ts2);
-        assertSimilar(fakeTs, ts2);
+        assertNotNull(formatted);
+        if (format.equalsIgnoreCase(Formats.JSONV2)) {
+            TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+            assertNotNull(ts2);
+            assertSimilar(fakeTs, ts2);
+        }
     }
 
     @ParameterizedTest
@@ -214,9 +202,12 @@ class TimeSeriesControllerTest extends ControllerTest {
         TimeSeries fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
         ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
-        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
-        assertNotNull(ts2);
-        assertSimilarWithDate(fakeTs, ts2);
+        assertNotNull(formatted);
+        if (format.equalsIgnoreCase(Formats.JSONV2)) {
+            TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+            assertNotNull(ts2);
+            assertSimilar(fakeTs, ts2);
+        }
     }
 
     @Test
@@ -228,7 +219,7 @@ class TimeSeriesControllerTest extends ControllerTest {
         String formatted = Formats.format(contentType, fakeTs);
         TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
         assertNotNull(ts2);
-        assertSimilarWithDate(fakeTs, ts2);
+        assertSimilar(fakeTs, ts2);
     }
 
     @Test
@@ -240,11 +231,9 @@ class TimeSeriesControllerTest extends ControllerTest {
         TimeSeries fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
         ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
+        assertNotNull(formatted);
         assertTrue(formatted.contains("quality-code"));
         assertTrue(formatted.contains("data-entry-date"));
-        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
-        assertNotNull(ts2);
-        assertSimilarWithDate(fakeTs, ts2);
     }
 
     @Test

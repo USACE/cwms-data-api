@@ -550,13 +550,11 @@ public class TimeSeriesController implements CrudHandler {
         }
     }
 
-    private TimeSeries deserializeTimeSeries(Context ctx) throws IOException
-	{
+    private TimeSeries deserializeTimeSeries(Context ctx) throws IOException {
         String contentTypeHeader = ctx.req.getContentType();
         StringWriter writer = new StringWriter();
         IOUtils.copy(ctx.bodyAsInputStream(), writer, StandardCharsets.UTF_8);
-        if (writer.toString().contains("data-entry-date"))
-        {
+        if (writer.toString().contains("data-entry-date")) {
             throw new IllegalArgumentException("Data entry date is not allowed in the request");
         }
         ContentType contentType = Formats.parseHeader(contentTypeHeader, TimeSeries.class);

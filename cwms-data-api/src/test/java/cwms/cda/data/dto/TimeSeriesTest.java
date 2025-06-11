@@ -1,5 +1,7 @@
 package cwms.cda.data.dto;
 
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 
 import java.sql.Timestamp;
@@ -77,6 +79,12 @@ public class TimeSeriesTest
 		assertEquals("NGVD-29", ts.getVerticalDatumInfo().getNativeDatum());
 	}
 
+	@Test
+	void testSerializerWithNulls() {
+		TimeSeries ts = buildTimeSeriesWithNulls();
+		String tsBody = Formats.format(new ContentType(Formats.JSONV2), ts);
+		assertNotNull(tsBody);
+	}
 
 	@NotNull
 	private TimeSeries buildTimeSeries()
@@ -95,6 +103,20 @@ public class TimeSeriesTest
 		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, vdi, versionDate, null);
 		ts.addValue(Timestamp.from(Instant.now()), 12.34567, 0);
 		ts.addValue(Timestamp.from(Instant.now().plusSeconds(60)), 12.34567, 0);
+		return ts;
+	}
+
+	private TimeSeries buildTimeSeriesWithNulls()
+	{
+		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+
+		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
+		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
+		ZonedDateTime versionDate = Instant.now().atZone(ZoneId.of("UTC"));
+		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, null, versionDate, null);
+		ts.addValue(Timestamp.from(Instant.now()), 12.34567, 0);
+		ts.addValue(Timestamp.from(Instant.now().plusSeconds(60)), 12.34567, 0);
+		ts.addValue(Timestamp.from(Instant.now().plusSeconds(120)), null, 0);
 		return ts;
 	}
 

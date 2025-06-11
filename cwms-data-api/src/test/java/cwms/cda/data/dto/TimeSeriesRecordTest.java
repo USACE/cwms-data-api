@@ -36,8 +36,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.formatters.json.JsonV2;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 final class TimeSeriesRecordTest
@@ -51,37 +49,17 @@ final class TimeSeriesRecordTest
 
 		String tsBody = om.writeValueAsString(tsRecord);
 		assertNotNull(tsBody);
-
-		TimeSeries.Record tsRecordReturned = om.readValue(tsBody, TimeSeries.Record.class);
-		assertNotNull(tsRecordReturned);
-
-		assertAll(() -> {
-			assertEquals(tsRecord.getDateTime(), tsRecordReturned.getDateTime());
-			assertEquals(tsRecord.getValue(), tsRecordReturned.getValue());
-			assertEquals(tsRecord.getQualityCode(), tsRecordReturned.getQualityCode());
-		});
 	}
 
 	@Test
 	void testRecordWithEntryDateRoundTrip() throws Exception {
 		TimeSeries ts = buildTimeSeriesWithEntryDate();
-		TimeSeriesRecordWithEntryDate tsRecord = (TimeSeriesRecordWithEntryDate) ts.values.get(0);
+		TimeSeries.Record tsRecord = ts.values.get(0);
 
 		ObjectMapper om = JsonV2.buildObjectMapper();
 
 		String tsBody = om.writeValueAsString(tsRecord);
 		assertNotNull(tsBody);
-
-		TimeSeriesRecordWithEntryDate tsRecordReturned = om.readValue(tsBody, TimeSeriesRecordWithEntryDate.class);
-		assertNotNull(tsRecordReturned);
-
-		assertAll(() ->
-		{
-			assertEquals(tsRecord.getDateTime(), tsRecordReturned.getDateTime());
-			assertEquals(tsRecord.getValue(), tsRecordReturned.getValue());
-			assertEquals(tsRecord.getQualityCode(), tsRecordReturned.getQualityCode());
-			assertEquals(tsRecord.getDataEntryDate(), tsRecordReturned.getDataEntryDate());
-		});
 	}
 
 

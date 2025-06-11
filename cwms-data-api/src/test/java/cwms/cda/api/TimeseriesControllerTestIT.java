@@ -30,6 +30,7 @@ import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -1004,10 +1005,11 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .body("values.size()", equalTo(2))
-                .body("values[0].size()", equalTo(4))  // time, value, quality, data entry date
+                .body("values[1].size()", equalTo(4))  // time, value, quality, data entry date
                 .body("values[1][0]", equalTo(1675335600000L)) // time
                 .body("values[0][1]", nullValue())
-                .body("values[1][1]", closeTo(35, 0.0001));
+                .body("values[1][1]", closeTo(35, 0.0001))
+                .body("values[1][3]", Matchers.notNullValue()); // data entry date
 
             // with trim the null should get trimmed.
             given()

@@ -934,7 +934,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
 
         List<TimeSeries.Record> timeValuePairList = new ArrayList<>();
         for (int i = 0; i < dateTimeArray.length; i++) {
-            TimeSeries.Record timeValuePair = new TimeSeries.StandardRecord(Timestamp.from(dateTimeArray[i]),
+            TimeSeries.Record timeValuePair = new TimeSeries.Record(Timestamp.from(dateTimeArray[i]),
                     valueArray[i], 0);
             timeValuePairList.add(timeValuePair);
         }

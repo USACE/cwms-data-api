@@ -52,11 +52,11 @@ final class RatedOutputTimeSeriesTest {
         RatedOutputTimeSeries deserialized = Formats.parseContent(contentType, json, RatedOutputTimeSeries.class);
         CwmsId cwmsId = CwmsId.buildCwmsId("NWDP", "DOTW.Stage;Flow.Logarithmic.USGS-NWIS");
         List<TimeSeries.Record> depValues =
-            Arrays.asList(new TimeSeries.StandardRecord(new Timestamp(1672531200000L), 137.90304290304002, 0),
-                new TimeSeries.StandardRecord(new Timestamp(1577836800000L), 167.0693948928, 0),
-                new TimeSeries.StandardRecord(new Timestamp(1546300800000L), null, 5),
-                new TimeSeries.StandardRecord(new Timestamp(1451606400000L), 0.0269010042624, 0),
-                new TimeSeries.StandardRecord(new Timestamp(1388534400000L), 1786.7930199552, 0));
+            Arrays.asList(new TimeSeries.Record(new Timestamp(1672531200000L), 137.90304290304002, 0),
+                new TimeSeries.Record(new Timestamp(1577836800000L), 167.0693948928, 0),
+                new TimeSeries.Record(new Timestamp(1546300800000L), null, 5),
+                new TimeSeries.Record(new Timestamp(1451606400000L), 0.0269010042624, 0),
+                new TimeSeries.Record(new Timestamp(1388534400000L), 1786.7930199552, 0));
         String outputUnit = "cfs";
         assertEquals(depValues, deserialized.getValues());
         assertMatch(cwmsId, deserialized.getRatingId());
