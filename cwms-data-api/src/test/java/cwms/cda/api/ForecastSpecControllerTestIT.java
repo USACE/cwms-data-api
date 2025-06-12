@@ -57,32 +57,6 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         createTimeseries(OFFICE, locationId + ".Flow.Ave.1Day.1Day.tsid6");
     }
 
-    static void createLRTSTimeSeries(String locationId, String tsData, String originalId) {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-
-        for (int i = 1; i <= 3; i++) {
-            tsData = tsData.replace(originalId, String.format("%s.Flow.Ave.1DayLocal.1Day.tsid%d", locationId, i));
-            tsData = tsData.replace(String.format("%s.Flow.Ave.1DayLocal.1Day.tsid%d", locationId, i-1),
-                    String.format("%s.Flow.Ave.1DayLocal.1Day.tsid%d", locationId, i));
-            given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .body(tsData)
-                .header("Authorization", user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, true)
-                .queryParam(Controllers.OFFICE, OFFICE)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
-        }
-    }
-
     @AfterEach
     void tearDown() throws Exception {
         truncateFcstTimeSeries();
@@ -295,38 +269,20 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         // Create the spec
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/forecast_spec_create_lrts.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        assertNotNull(tsData);
+        String specData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(specData);
 
-        InputStream tsResource = this.getClass().getResourceAsStream("/cwms/cda/api/timeseries/local_regular_ts.json");
-        assertNotNull(tsResource);
-        String tsDataInput = IOUtils.toString(tsResource, StandardCharsets.UTF_8);
-        assertNotNull(tsDataInput);
-        tsDataInput = tsDataInput.replace("F", "cms");
+        createTimeseries(OFFICE, "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid1", true);
+        createTimeseries(OFFICE, "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid2", true);
+        createTimeseries(OFFICE, "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid3", true);
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
+            .body(specData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .header(ApiServlet.IS_NEW_LRTS, true)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("locations/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-        createLRTSTimeSeries(locationId, tsDataInput, "Buckhorn.Temp-Water.Inst.1DayLocal.0.lrts-test");
-
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
-            .body(tsData)
-            .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
             .redirects().max(3)

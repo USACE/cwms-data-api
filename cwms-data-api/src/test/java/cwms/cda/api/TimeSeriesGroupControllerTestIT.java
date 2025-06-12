@@ -391,27 +391,8 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
-        InputStream resource = this.getClass().getResourceAsStream(
-                "/cwms/cda/api/timeseries/ts_group_lrts.json");
-        assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
         // inserting the time series
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
-            .body(tsData)
-            .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
-            .queryParam(OFFICE, officeId)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
+        createTimeseries(officeId, timeSeriesId, true);
 
         // try to create a group without setting the LRTS header
         given()

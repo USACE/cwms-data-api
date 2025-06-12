@@ -29,9 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
-import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.BLOB_ID;
-import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.VERSION_DATE;
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.toMap;
@@ -155,6 +153,27 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
                 .withVersionDate(bts.getVersionDate())
                 .withIntervalOffset(bts.getIntervalOffset())
                 .build();
+        return om.writeValueAsString(bts);
+    }
+
+    @NotNull
+    private String getTsBodyNewLRTSInterval(String tsIdent) throws IOException {
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/bin_ts_create_lrts.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        BinaryTimeSeries bts = om.readValue(tsData, BinaryTimeSeries.class);
+        bts = new BinaryTimeSeries.Builder()
+            .withBinaryValues(bts.getBinaryValues())
+            .withName(tsIdent)
+            .withOfficeId(OFFICE)
+            .withTimeZone(bts.getTimeZone())
+            .withDateVersionType(bts.getDateVersionType())
+            .withVersionDate(bts.getVersionDate())
+            .withIntervalOffset(bts.getIntervalOffset())
+            .build();
         return om.writeValueAsString(bts);
     }
 
@@ -301,33 +320,10 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Step 1)
         // Try to create the binary time series without LRTS header set
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        String officeId = user.getOperatingOffice();
         String tsIdentifier = "TsBinTestLoc.Flow.Inst.1HourLocal.0.lrts";
-        String binaryAllowedTsId = "TsBinTestLoc.Flow.Inst.~1Hour.0.lrts";
-        String tsData = getTsBody();
-        tsData = tsData.replace(tsId, tsIdentifier);
+        String tsData = getTsBodyNewLRTSInterval(tsIdentifier);
 
-        InputStream resource = this.getClass().getResourceAsStream(
-                "/cwms/cda/api/timeseries/binary_ts_lrts.json");
-        assertNotNull(resource);
-        String tsInsertData = IOUtils.toString(resource, "UTF-8");
-        // inserting the time series
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
-            .body(tsInsertData)
-            .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
-            .queryParam(OFFICE, officeId)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
+        createTimeseries(OFFICE, tsIdentifier, true);
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -348,10 +344,6 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Step 2)
         // Create the binary time series
 
-        // TODO: Fix the binary timeseries creation to support the new LRTS id format
-        // Binary format currently does not support the new LRTS id format,
-        // so we need to replace the tsId with a legacy identifier
-        tsData = tsData.replace(tsIdentifier, binaryAllowedTsId);
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
@@ -372,14 +364,13 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Step 3)
         // Retrieve the binary time series and assert that it exists
 
-        // TODO: Fix the binary timeseries retrieval to support the new LRTS id format
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.NAME, binaryAllowedTsId)
-            .queryParam(Controllers.BEGIN, "2025-05-01T12:00:00Z")
-            .queryParam(Controllers.END, "2025-05-19T16:00:00Z")
+            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.BEGIN, "2004-05-01T12:00:00Z")
+            .queryParam(Controllers.END, "2007-05-19T16:00:00Z")
             .header(ApiServlet.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
@@ -436,26 +427,6 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("binary-values.size()", equalTo(0))
         ;
-
-        // Delete the time series
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-            .queryParam(BEGIN, "2025-05-08T11:00:00+00:00")
-            .queryParam(END, "2025-05-19T11:00:00+00:00")
-            .queryParam(Controllers.START_TIME_INCLUSIVE, "true")
-            .queryParam(Controllers.END_TIME_INCLUSIVE, "true")
-            .queryParam(Controllers.OVERRIDE_PROTECTION, "true")
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .delete("/timeseries/" + tsIdentifier)
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
     }
 
     @Test

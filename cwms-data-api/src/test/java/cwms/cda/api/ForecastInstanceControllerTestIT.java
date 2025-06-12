@@ -425,32 +425,13 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
 
-        InputStream tsResource = this.getClass().getResourceAsStream("/cwms/cda/api/timeseries/local_regular_ts.json");
-        assertNotNull(tsResource);
-        String tsDataInput = IOUtils.toString(tsResource, StandardCharsets.UTF_8);
-        assertNotNull(tsDataInput);
-        tsDataInput = tsDataInput.replace("F", "cms");
-
         ForecastSpec spec = JsonV2.buildObjectMapper().readValue(tsData, ForecastInstance.class).getSpec();
         String specJson = JsonV2.buildObjectMapper().writeValueAsString(spec);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
-            .header(AUTH_HEADER, user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("locations/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-        createLRTSTimeSeries(locationId, tsDataInput, "Buckhorn.Temp-Water.Inst.1DayLocal.0.lrts-test");
+        createTimeseries(OFFICE, "FcstInstTestLoc.Flow.Ave.1DayLocal.1Day.tsid1", true);
+        createTimeseries(OFFICE, "FcstInstTestLoc.Flow.Ave.1DayLocal.1Day.tsid2", true);
+        createTimeseries(OFFICE, "FcstInstTestLoc.Flow.Ave.1DayLocal.1Day.tsid3", true);
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -458,6 +439,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .body(specJson)
             .header(AUTH_HEADER, user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

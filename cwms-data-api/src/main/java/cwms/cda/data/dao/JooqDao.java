@@ -79,8 +79,9 @@ public abstract class JooqDao<T> extends Dao<T> {
     public static final int DEFAULT_FETCH_SIZE = 1000;
     public static final int DEFAULT_SMALL_FETCH_SIZE = 500;
     public static final int ORACLE_ECID_MAX_LENGTH = 22;
-    private static final int REQUIRE_NEW_LRTS_ID_FORMAT = 6;
-    private static final int REQUIRE_OLD_LRTS_ID_FORMAT = 0;
+    public static final int REQUIRE_NEW_LRTS_ID_FORMAT = 6;
+    public static final int REQUIRE_OLD_LRTS_ID_FORMAT = 0;
+    public static final String SESSION_USE_LRTS_ID_FORMAT = "USE_NEW_LRTS_ID_FORMAT";
 
     static ExecuteListener listener = new ExceptionWrappingListener();
     private static final Pattern INVALID_OFFICE_ID = Pattern.compile(
@@ -146,7 +147,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             String requireBool = isNewLRTS ? "T" : "F";
             int requireIntValue = isNewLRTS ? REQUIRE_NEW_LRTS_ID_FORMAT : REQUIRE_OLD_LRTS_ID_FORMAT;
             CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(retVal.configuration(),
-                    "USE_NEW_LRTS_ID_FORMAT", requireBool, requireIntValue);
+                SESSION_USE_LRTS_ID_FORMAT, requireBool, requireIntValue);
         }
         return retVal;
     }

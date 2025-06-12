@@ -1080,24 +1080,24 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         ;
         // Delete instance
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
-                .contentType(Formats.JSONV1)
-                .header(AUTH_HEADER, user.toHeaderValue())
-                .queryParam(OFFICE, OFFICE_ID)
-                .queryParam(VERSION_DATE, "2023-07-09T12:00:00.00Z")
-                .queryParam(TIMEZONE, "UTC")
-                .queryParam(OVERRIDE_PROTECTION, false)
-                .queryParam(DATE, "2020-09-09T13:49:07Z")
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/timeseries/profile-instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName()
-                        + "/" + tspParserColumnar.getKeyParameter() + "/" + "OBS")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(VERSION_DATE, "2023-07-09T12:00:00.00Z")
+            .queryParam(TIMEZONE, "UTC")
+            .queryParam(OVERRIDE_PROTECTION, false)
+            .queryParam(DATE, "2020-09-09T13:49:07Z")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/timeseries/profile-instance/" + tspInstance.getTimeSeriesProfile().getLocationId().getName()
+                    + "/" + tspParserColumnar.getKeyParameter() + "/" + "OBS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
         ;
 
         // Delete instance
@@ -1124,12 +1124,12 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
     }
 
     @Test
-    void test_retrieve_TimeSeriesProfileInstance_Columnar_maxVersion_LRTS() throws Exception {
+    void test_retrieve_TimeSeriesProfileInstance_Indexed_LRTS_interval_id() throws Exception {
         storeParser(tspParserIndexed3, null);
 
         assertParserInDb(tspParserIndexed3);
 
-        String newTsId = "Sacramento Dam.Elev.Total.1HourLocal.0.Raw";
+        String newTsId = "Sacramento River.Elev.Total.1HourLocal.0.Raw";
 
         String data = tspData3.replace("Sacramento River.Elev.Total.0.1Hour.Raw",
                 newTsId);
@@ -1218,6 +1218,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(VERSION_DATE, "2024-07-09T12:00:00.00Z")
             .queryParam(TIMEZONE, "UTC")
@@ -1243,9 +1244,10 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                     equalTo(tspInstance3.getTimeSeriesProfile().getLocationId().getName()))
             .body("time-series-profile.key-parameter",
                     equalTo(tspInstance3.getTimeSeriesProfile().getKeyParameter()))
+            .body("time-series-profile.reference-ts-id.name", equalTo(newTsId))
             .body("time-series-profile.parameter-list.size()", equalTo(2))
-            .body("time-series-list.size()", equalTo(3))
-            .body("time-series-list[\"1568033347000\"].size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(2))
+            .body("time-series-list[\"1568033337000\"].size()", equalTo(2))
             .body("time-series-list[\"1568033359000\"].size()", equalTo(2))
         ;
 
@@ -1268,7 +1270,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .redirects().follow(true)
             .redirects().max(3)
             .get("/timeseries/profile-instance/" + tspInstance3.getTimeSeriesProfile().getLocationId().getName()
-                    + "/" + tspParserIndexed3.getKeyParameter() + "/" + "OBS")
+                    + "/" + tspParserIndexed3.getKeyParameter() + "/OBS")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -1280,8 +1282,8 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .body("time-series-profile.key-parameter",
                     equalTo(tspInstance3.getTimeSeriesProfile().getKeyParameter()))
             .body("time-series-profile.parameter-list.size()", equalTo(2))
-            .body("time-series-list.size()", equalTo(3))
-            .body("time-series-list[\"1568033347000\"].size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(2))
+            .body("time-series-list[\"1568033337000\"].size()", equalTo(2))
             .body("time-series-list[\"1568033359000\"].size()", equalTo(2))
         ;
 
@@ -1316,9 +1318,9 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .body("time-series-profile.key-parameter",
                     equalTo(tspInstance3.getTimeSeriesProfile().getKeyParameter()))
             .body("time-series-profile.parameter-list.size()", equalTo(2))
-            .body("time-series-list.size()", equalTo(3))
-            .body("time-series-list[\"1599659347000\"].size()", equalTo(2))
-            .body("time-series-list[\"1599659359000\"].size()", equalTo(2))
+            .body("time-series-list.size()", equalTo(2))
+            .body("time-series-list[\"1568033337000\"].size()", equalTo(2))
+            .body("time-series-list[\"1568033359000\"].size()", equalTo(2))
         ;
         // Delete instance
         given()

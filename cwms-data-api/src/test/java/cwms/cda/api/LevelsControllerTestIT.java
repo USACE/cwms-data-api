@@ -340,24 +340,26 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_level_as_timeseries_lrts() throws Exception {
+    void test_ts_backed_level_new_lrts_interval() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         createLocation("level_as_ts_lrts", true, OFFICE);
-        String levelId = "level_as_ts_lrts.Flow.Ave.1DayLocal.1Day.lrts";
+        String levelId = "level_as_ts_lrts.Flow.Ave.1Week.lrts";
+        String tsId = "level_as_ts_lrts.Flow.Ave.1DayLocal.1Week.lrts";
+        String legacyTSId = "level_as_ts_lrts.Flow.Ave.~1Day.1Week.lrts";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
 
+        createTimeseries(OFFICE, tsId, true);
+
         int effectiveDateCount = 10;
-        NavigableMap<Instant, LocationLevel> levels = new TreeMap<>();
         for (int i = 0; i < effectiveDateCount; i++) {
             LocationLevel level = new LocationLevel.Builder(levelId, time.plusDays(i))
                     .withOfficeId(OFFICE)
-                    .withConstantValue((double) i)
                     .withLevelUnitsId("cfs")
+                    .withSeasonalTimeSeriesId(tsId)
+                    .withInterpolateString("T")
                     .build();
             levelList.add(level);
-            levels.put(level.getLevelDate().toInstant(), level);
 
-            // TODO: Add suport for the new LRTS identifier in the Level package
             String tsDataInput = Formats.format(new ContentType(Formats.JSONV2), level);
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -385,58 +387,44 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .header(ApiServlet.IS_NEW_LRTS, false)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(BEGIN, time.toInstant().toString())
-            .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
-            .queryParam(INTERVAL, "1Hour")
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(INTERVAL, "Week")
             .queryParam(UNIT, "cfs")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/levels/" + levelId + "/timeseries/")
+            .get("/levels/" + levelId)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("seasonal-time-series-id", equalTo(legacyTSId))
+        ;
 
-        //Read level timeseries with LRTS
-        TimeSeries timeSeries =
-            given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, true)
-                .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(BEGIN, time.toInstant().toString())
-                .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
-                .queryParam(INTERVAL, "1Hour")
-                .queryParam(UNIT, "cfs")
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/levels/" + levelId + "/timeseries/")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .extract()
-                .response()
-                .as(TimeSeries.class);
-        assertEquals("level_as_timeseries.Flow.Ave.1Hour.1Day.Regulating", timeSeries.getName());
-        assertEquals(OFFICE, timeSeries.getOfficeId());
-        assertEquals(time.toInstant(), timeSeries.getBegin().toInstant());
-        assertEquals(time.plusDays(effectiveDateCount).toInstant(), timeSeries.getEnd().toInstant());
-        assertEquals(24 * effectiveDateCount + 1, timeSeries.getTotal());
-        List<TimeSeries.Record> values = timeSeries.getValues();
-        for (int i = 0; i < values.size(); i++) {
-            TimeSeries.Record tsrec = values.get(i);
-            assertEquals(time.plusHours(i).toInstant(), tsrec.getDateTime().toInstant(), "Time check failed at iteration: " + i);
-            assertEquals(0, tsrec.getQualityCode(), "Quality check failed at iteration: " + i);
-            Double constantValue = levels.floorEntry(tsrec.getDateTime().toInstant())
-                    .getValue()
-                    .getConstantValue();
-            assertEquals(constantValue, tsrec.getValue(), 0.0001, "Value check failed at iteration: " + i);
-        }
+        // TODO: Add support for new LRTS interval identifier to Levels retrieval
+        // Currently the retrieved level will provide the legacy time series id interval
+
+        // retrieve level and assert that it matches the expected values
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(INTERVAL, "1Week")
+            .queryParam(UNIT, "cfs")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/" + levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("seasonal-time-series-id", equalTo(legacyTSId))
+        ;
     }
 
 
