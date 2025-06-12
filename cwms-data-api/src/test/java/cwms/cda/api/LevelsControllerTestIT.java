@@ -41,6 +41,7 @@ import io.restassured.response.Response;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
+import mil.army.usace.hec.metadata.UnitUtil;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
@@ -343,6 +344,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertEquals(time.toInstant(), timeSeries.getBegin().toInstant());
         assertEquals(time.plusDays(effectiveDateCount).toInstant(), timeSeries.getEnd().toInstant());
         assertEquals(24 * effectiveDateCount + 1, timeSeries.getTotal());
+        assertEquals("cfs", timeSeries.getUnits());
         List<TimeSeries.Record> values = timeSeries.getValues();
         for (int i = 0; i < values.size(); i++) {
             TimeSeries.Record tsrec = values.get(i);
@@ -351,6 +353,47 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             Double constantValue = ((ConstantLocationLevel) levels.floorEntry(tsrec.getDateTime().toInstant())
                     .getValue())
                     .getConstantValue();
+            assertEquals(constantValue, tsrec.getValue(), 0.0001, "Value check failed at iteration: " + i);
+        }
+
+        //test retrieval in different units than stored
+        timeSeries =
+                given()
+                        .log().ifValidationFails(LogDetail.ALL,true)
+                        .accept(Formats.JSONV2)
+                        .contentType(Formats.JSONV2)
+                        .header("Authorization", user.toHeaderValue())
+                        .queryParam(Controllers.OFFICE, OFFICE)
+                        .queryParam(BEGIN, time.toInstant().toString())
+                        .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
+                        .queryParam(INTERVAL, "1Hour")
+                        .queryParam(UNIT, "cms")
+                .when()
+                        .redirects().follow(true)
+                        .redirects().max(3)
+                        .get("/levels/" + levelId + "/timeseries/")
+                .then()
+                        .assertThat()
+                        .log().ifValidationFails(LogDetail.ALL,true)
+                        .statusCode(is(HttpServletResponse.SC_OK))
+                .extract()
+                        .response()
+                        .as(TimeSeries.class);
+        assertEquals("level_as_timeseries.Flow.Ave.1Hour.1Day.Regulating", timeSeries.getName());
+        assertEquals(OFFICE, timeSeries.getOfficeId());
+        assertEquals(time.toInstant(), timeSeries.getBegin().toInstant());
+        assertEquals(time.plusDays(effectiveDateCount).toInstant(), timeSeries.getEnd().toInstant());
+        assertEquals(24 * effectiveDateCount + 1, timeSeries.getTotal());
+        assertEquals("cms", timeSeries.getUnits());
+        values = timeSeries.getValues();
+        for (int i = 0; i < values.size(); i++) {
+            TimeSeries.Record tsrec = values.get(i);
+            assertEquals(time.plusHours(i).toInstant(), tsrec.getDateTime().toInstant(), "Time check failed at iteration: " + i);
+            assertEquals(0, tsrec.getQualityCode(), "Quality check failed at iteration: " + i);
+            Double constantValue = levels.floorEntry(tsrec.getDateTime().toInstant())
+                    .getValue()
+                    .getConstantValue();
+            constantValue = UnitUtil.convertUnits(constantValue, "cfs", "cms"); // convert cfs to cms
             assertEquals(constantValue, tsrec.getValue(), 0.0001, "Value check failed at iteration: " + i);
         }
     }
