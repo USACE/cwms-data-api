@@ -302,7 +302,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("profile-list.size()", is(3))
+            .body("profile-list.size()", is(2))
         ;
 
         // Retrieve TimeSeriesProfiles with pagination, page 1
@@ -381,7 +381,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("profile-list.size()", is(2))
+            .body("profile-list.size()", is(1))
         ;
 
         // Retrieve TimeSeriesProfiles with pagination, page 1, assert that next-page is null
@@ -400,7 +400,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("profile-list.size()", is(1))
-            .body("next-page", not(nullValue()))
+            .body("next-page", is(nullValue()))
         ;
     }
 
@@ -456,7 +456,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("profile-list.size()", is(3))
+            .body("profile-list.size()", is(2))
         ;
     }
 

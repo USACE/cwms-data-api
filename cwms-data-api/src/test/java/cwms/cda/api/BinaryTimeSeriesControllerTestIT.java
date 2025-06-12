@@ -382,6 +382,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("binary-values.size()", equalTo(3))
         ;
+        // TODO: The above method is not returning the stored binary values associated with the TS.
 
         // Step 4)
         // Delete the binary time series
