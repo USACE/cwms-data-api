@@ -390,8 +390,8 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             TimeSeries.Record tsrec = values.get(i);
             assertEquals(time.plusHours(i).toInstant(), tsrec.getDateTime().toInstant(), "Time check failed at iteration: " + i);
             assertEquals(0, tsrec.getQualityCode(), "Quality check failed at iteration: " + i);
-            Double constantValue = levels.floorEntry(tsrec.getDateTime().toInstant())
-                    .getValue()
+            Double constantValue = ((ConstantLocationLevel) levels.floorEntry(tsrec.getDateTime().toInstant())
+                    .getValue())
                     .getConstantValue();
             constantValue = UnitUtil.convertUnits(constantValue, "cfs", "cms"); // convert cfs to cms
             assertEquals(constantValue, tsrec.getValue(), 0.0001, "Value check failed at iteration: " + i);
