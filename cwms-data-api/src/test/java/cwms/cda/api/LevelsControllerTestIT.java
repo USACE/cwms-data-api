@@ -798,7 +798,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         createLocation("level_units_invalid", true, OFFICE);
         String levelId = "level_units_invalid.Stor.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
-        LocationLevel level = new LocationLevel.Builder(levelId, time)
+        LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
                 .withOfficeId(OFFICE)
                 .withConstantValue(1.0)
                 .withLevelUnitsId("ac-ft")
@@ -815,13 +815,21 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
             .queryParam(UNIT, "m")
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-            .body("details.message", containsString("Cannot convert parameter Stor from specified units: m"));
+            .body("details.message", containsString("Cannot convert from unit m3 to unit m"));
     }
 
+    @Test
     void testStoreRetrieveVirtualLocationLevels() throws Exception {
         // Virtual levels do not include constant or seasonal values
 
