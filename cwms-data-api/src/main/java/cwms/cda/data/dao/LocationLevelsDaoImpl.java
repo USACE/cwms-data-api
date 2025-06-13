@@ -800,7 +800,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     "No time series found for: %s between start time: %s and end time: %s",
                     levelRef, start, end));
         }
-        return buildTimeSeries(levelRef, interval, locLvlValues, locationZoneId);
+        return buildTimeSeries(levelRef, interval, locLvlValues, locationZoneId, units);
     }
 
     public static ZTSV_ARRAY call_RETRIEVE_LOC_LVL_VALUES3(Configuration configuration,
@@ -835,12 +835,11 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     private static TimeSeries buildTimeSeries(ILocationLevelRef levelRef, Interval interval,
-                                              ZTSV_ARRAY locLvlValues, ZoneId locationTimeZone) {
+                                              ZTSV_ARRAY locLvlValues, ZoneId locationTimeZone, String levelUnits) {
         String timeSeriesId = String.format("%s.%s.%s.%s.%s.%s", levelRef.getLocationRef().getLocationId(),
                 levelRef.getParameter().getParameter(), levelRef.getParameterType().getParameterType(),
                 interval.getInterval(), levelRef.getDuration().toString(), levelRef.getSpecifiedLevel().getId());
         int size = locLvlValues.size();
-        String levelUnits = levelRef.getParameter().getUnitsString();
         String officeId = levelRef.getOfficeId();
         Instant start = locLvlValues.get(0).getDATE_TIME().toInstant();
         Instant end = locLvlValues.get(size - 1).getDATE_TIME().toInstant();
