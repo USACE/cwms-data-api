@@ -10,16 +10,14 @@ import cwms.cda.data.dto.Clob;
 import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.County;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.LocationLevels;
+import cwms.cda.data.dto.locationlevel.LocationLevels;
 import cwms.cda.data.dto.Office;
 import cwms.cda.data.dto.State;
 import cwms.cda.data.dto.basinconnectivity.Basin;
 import cwms.cda.data.dto.project.LockRevokerRights;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.formatters.xml.XMLv2;
 import cwms.cda.formatters.xml.XMLv2Office;
-import io.swagger.v3.oas.annotations.Parameter;
 
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -153,7 +151,7 @@ class FormatsTest {
     
     @ParameterizedTest
     @EnumSource(ParseQueryOrParamTest.class)
-    void test_header_or_query_parm(ParseQueryOrParamTest test) throws Exception {
+    void test_header_or_query_parm(ParseQueryOrParamTest test) {
         ContentType ct = Formats.parseQueryOrHeaderParam(test.header, test.query, test.dto);
         System.out.println(ct.toString());
         assertTrue(ContentType.equivalent(ct.toString(), test.type), "In correct content type returned.");
