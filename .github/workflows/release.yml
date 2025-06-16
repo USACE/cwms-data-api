@@ -95,9 +95,10 @@ jobs:
           tags: |
             type=sha
             type=ref,event=tag
-            type=schedule,pattern=nightly
-            type=schedule,pattern={{date 'YYYY.MM.DD'}}
-            type=schedule,pattern={{date 'YYYY.MM.DD-hhmmss'}}
+            type=raw,value=latest-dev,enable={{is_default_branch}}
+            type=raw,value=${{env.VERSION}}
+            type=schedule,pattern={{branch}}-{{date 'YYYY.MM.DD'}}
+            type=schedule,pattern={{branch}}-{{date 'YYYY.MM.DD-hhmmss'}}
       - name: Log in to the Container registry
         id: login-ghcr
         uses: docker/login-action@v3.3.0
