@@ -1,8 +1,6 @@
 package cwms.cda.api;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -22,13 +20,12 @@ import cwms.cda.formatters.json.JsonV2;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,9 +40,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class TimeSeriesControllerTest extends ControllerTest {
-
-
-
     @Test
     void testDaoMock() throws JsonProcessingException     {
         String officeId = "LRL";
@@ -67,7 +61,7 @@ class TimeSeriesControllerTest extends ControllerTest {
 
         when(
                 dao.getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                         isNotNull(), isNotNull(), isNull(), eq(true) )).thenReturn(expected);
+                         isNotNull(), isNotNull(), isNull(), eq(true), eq(false))).thenReturn(expected);
 
 
         // build mock request and response
@@ -113,7 +107,7 @@ class TimeSeriesControllerTest extends ControllerTest {
         // Check that the controller accessed our mock dao in the expected way
         verify(dao, times(1)).
                 getTimeseries(eq(""), eq(500), eq(tsId), eq(officeId), eq("EN"),
-                         isNotNull(), isNotNull(), isNull(), eq(true));//
+                         isNotNull(), isNotNull(), isNull(), eq(true), eq(false));//
 
         // Make sure controller thought it was happy
         verify(response).setStatus(200);
@@ -134,10 +128,52 @@ class TimeSeriesControllerTest extends ControllerTest {
         // Make sure ts we got back resembles the fakeTS our mock dao was supposed to return.
         assertEquals(expected.getOfficeId(), actual.getOfficeId(), "offices did not match");
         assertEquals(expected.getName(), actual.getName(), "names did not match");
-        assertEquals(expected.getValues(), actual.getValues(), "values did not match");
+        assertRecordsMatch(expected.getValues(), actual.getValues());
         assertTrue(expected.getBegin().isEqual(actual.getBegin()), "begin dates not equal");
         assertTrue(expected.getEnd().isEqual(actual.getEnd()), "end dates not equal");
     }
+
+    private void assertRecordsMatch(List<TimeSeries.Record> expected, List<TimeSeries.Record> actual) {
+        for (int i = 0; i < expected.size(); i++) {
+            assertEquals(expected.get(i).getDateTime(), actual.get(i).getDateTime(), "Timestamps did not match");
+            assertEquals(expected.get(i).getValue(), actual.get(i).getValue(), "Values did not match");
+            assertEquals(expected.get(i).getQualityCode(), actual.get(i).getQualityCode(), "Quality codes did not match");
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.XMLV2, Formats.JSONV2})
+    void testSerializeTimeSeries(String format) {
+        String officeId = "LRL";
+        String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+        TimeSeries fakeTs = buildTimeSeries(officeId, tsId);
+        ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
+        String formatted = Formats.format(contentType, fakeTs);
+        assertNotNull(formatted);
+        assertFalse(formatted.contains("null"));
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        assertNotNull(ts2);
+        assertSimilar(fakeTs, ts2);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.XMLV2, Formats.JSONV2})
+    void testSerializeTimeSeriesWithDataEntryDate(String format) {
+        String officeId = "LRL";
+        String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+        TimeSeries fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
+        assertEquals(4, fakeTs.getValueColumnsJSON().size());
+        assertInstanceOf(TimeSeries.Record.class,
+                fakeTs.getValues().get(0));
+        ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
+        String formatted = Formats.format(contentType, fakeTs);
+        assertNotNull(formatted);
+        assertTrue(formatted.contains("data-entry-date"));
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        assertNotNull(ts2);
+        assertSimilar(fakeTs, ts2);
+    }
+
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.XMLV2, Formats.JSONV2})
@@ -147,6 +183,50 @@ class TimeSeriesControllerTest extends ControllerTest {
         TimeSeries fakeTs = buildTimeSeries(officeId, tsId);
         ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
         String formatted = Formats.format(contentType, fakeTs);
+        assertNotNull(formatted);
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        assertNotNull(ts2);
+        assertSimilar(fakeTs, ts2);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.XMLV2, Formats.JSONV2})
+    void testDeserializeTimeSeriesWithEntryDate(String format) {
+        String officeId = "LRL";
+        String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+        TimeSeries fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
+        ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
+        String formatted = Formats.format(contentType, fakeTs);
+        assertNotNull(formatted);
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        assertNotNull(ts2);
+        assertSimilar(fakeTs, ts2);
+    }
+
+    @Test
+    void testDeserializeTimeSeriesWithEntryDateFromFile() {
+        InputStream inputStream = this.getClass()
+                .getResourceAsStream("/cwms/cda/api/lrl/timeseries_with_data_entry_dates.json");
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeries.class);
+        TimeSeries fakeTs = Formats.parseContent(contentType, inputStream, TimeSeries.class);
+        String formatted = Formats.format(contentType, fakeTs);
+        TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
+        assertNotNull(ts2);
+        assertSimilar(fakeTs, ts2);
+    }
+
+    @Test
+    void testXMLSerializeDeserializeTimeSeries()
+    {
+        String format = Formats.XMLV2;
+        String officeId = "LRL";
+        String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+        TimeSeries fakeTs = buildTimeSeriesWithEntryDate(officeId, tsId);
+        ContentType contentType = Formats.parseHeader(format, TimeSeries.class);
+        String formatted = Formats.format(contentType, fakeTs);
+        assertNotNull(formatted);
+        assertTrue(formatted.contains("quality-code"));
+        assertTrue(formatted.contains("data-entry-date"));
         TimeSeries ts2 = Formats.parseContent(contentType, formatted, TimeSeries.class);
         assertNotNull(ts2);
         assertSimilar(fakeTs, ts2);
@@ -181,11 +261,10 @@ class TimeSeriesControllerTest extends ControllerTest {
         InputStream inputStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
         ContentType contentType = Formats.parseHeader(Formats.XMLV2, TimeSeries.class);
         TimeSeries ts = Formats.parseContent(contentType, inputStream, TimeSeries.class);
+        assertNotNull(ts);
 
-            assertNotNull(ts);
-
-            TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
-            assertSimilar(fakeTs, ts);
+        TimeSeries fakeTs = buildTimeSeries("LRL", "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST");
+        assertSimilar(fakeTs, ts);
     }
 
     @Test
@@ -228,7 +307,43 @@ class TimeSeriesControllerTest extends ControllerTest {
         for(int i = 0; i < count; i++) {
             Timestamp dateTime = Timestamp.from(next.toInstant());
             ts.addValue(dateTime, (double) i, 0);
-            next = next.plus(minutes, ChronoUnit.MINUTES);
+            next = next.plusMinutes(minutes);
+        }
+        return ts;
+    }
+
+    @NotNull
+    private TimeSeries buildTimeSeriesWithEntryDate(String officeId, String tsId) {
+        ZonedDateTime start = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
+        ZonedDateTime end = ZonedDateTime.parse("2021-06-21T09:00:00-07:00[PST8PDT]");
+
+        long diff = end.toEpochSecond() - start.toEpochSecond();
+        assertEquals(3600, diff); // just to make sure I've got the date parsing thing right.
+
+        int minutes = 15;
+        int count = 60/15 ; // do I need a +1?  ie should this be 12 or 13?
+        // Also, should end be the last point or the next interval?
+
+        TimeSeries ts = new TimeSeries(null,
+                -1,
+                0,
+                tsId,
+                officeId,
+                start,
+                end,
+                "m",
+                Duration.ofMinutes(minutes),
+                null,
+                null,
+                null,
+                null,
+                null);
+
+        ZonedDateTime next = start;
+        for(int i = 0; i < count; i++) {
+            Timestamp dateTime = Timestamp.from(next.toInstant());
+            ts.addValue(dateTime, (double) i, 0, Timestamp.from(Instant.now()));
+            next = next.plusMinutes(minutes);
         }
         return ts;
     }

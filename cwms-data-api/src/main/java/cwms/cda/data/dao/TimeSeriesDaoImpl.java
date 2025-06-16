@@ -9,6 +9,7 @@ import static org.jooq.impl.DSL.name;
 import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
+import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
 
@@ -47,7 +48,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +64,7 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.Record3;
+import org.jooq.Record4;
 import org.jooq.Record7;
 import org.jooq.Result;
 import org.jooq.SQL;
@@ -166,11 +167,20 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public TimeSeries getTimeseries(String page, int pageSize, String names, String office,
                                        String units,
                                        ZonedDateTime beginTime, ZonedDateTime endTime,
-                                    ZonedDateTime versionDate, boolean shouldTrim) {
-        TimeSeries retVal = null;
+                                    ZonedDateTime versionDate, boolean shouldTrim, boolean includeEntryDate) {
         String cursor = null;
         Timestamp tsCursor = null;
         Integer total = null;
+
+        if (includeEntryDate) {
+            Record entryDateSupport = dsl.select(asterisk()).from(table("ALL_TYPES"))
+                    .where(field("TYPE_NAME").eq("ZTSV_ENTRY_TYPE"))
+                    .and(field("OWNER").eq("CWMS_20")).fetchOne();
+
+            if (entryDateSupport == null) {
+                throw new DataAccessException("Data entry date retrieval is not supported by this database");
+            }
+        }
 
         if (page != null && !page.isEmpty()) {
             final String[] parts = CwmsDTOPaginated.decodeCursor(page);
@@ -178,7 +188,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             logger.fine("Decoded cursor");
             logger.finest(() -> {
                 StringBuilder sb = new StringBuilder();
-                for (String p: parts) {
+                for (String p : parts) {
                     sb.append(p).append("\n");
                 }
                 return sb.toString();
@@ -250,7 +260,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                         unit.as("units"),
                                         ival.as("interval"),
                                         param.as("parm_part")
-
                                 ).from(validTs)
                         );
 
@@ -258,9 +267,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Field<Timestamp> dateTimeCol = field("DATE_TIME", Timestamp.class).as("DATE_TIME");
         Field<Double> valueCol = field("VALUE", Double.class).as("VALUE");
         Field<Integer> qualityCol = field("QUALITY_CODE", Integer.class).as("QUALITY_CODE");
-
-        Field<BigDecimal> qualityNormCol = CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(
-                DSL.nvl(qualityCol, DSL.inline(5))).as("QUALITY_NORM");
 
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
@@ -277,19 +283,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         } else {
             maxVersion = "T";
         }
-
-        // Now we're going to call the retrieve_ts_out_tab function to get the data and build an
-        // internal table from it so we can manipulate it further
-        // This code assumes the database timezone is in UTC (per Oracle recommendation)
-        SQL retrieveSelectData = DSL.sql(
-                "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,"
-                        + "cwms_20.cwms_util.to_timestamp(?), cwms_20.cwms_util.to_timestamp(?), 'UTC',"
-                        + "?,?,?,?,?,"
-                        + getVersionPart(versionDate) + ",?,?) ) retrieveTs",
-                tsId, unit,
-                beginTimeMilli, endTimeMilli,  //tz hardcoded
-                trim, startInclusive, endInclusive, previous, next,
-                versionDateMilli, maxVersion, officeId);
 
         Field<String> tzName = AV_CWMS_TS_ID2.TIME_ZONE_ID;
 
@@ -315,7 +308,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     valid.field("office_id", String.class)
             ));
 
-            totalField = DSL.selectCount().from(DSL.table(retrieveSelectCount)).asField("TOTAL");
+            totalField = DSL.selectCount().from(table(retrieveSelectCount)).asField("TOTAL");
         }
 
         SelectJoinStep<?> metadataQuery =
@@ -352,25 +345,52 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         logger.fine(() -> metadataQuery.getSQL(ParamType.INLINED));
 
-        VersionType finalDateVersionType = getVersionType(dsl, names, office, versionDate != null);
+
         TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> {
             String vert = (String) tsMetadata.getValue("VERTICAL_DATUM");
             VerticalDatumInfo verticalDatumInfo = parseVerticalDatumInfo(vert);
+            VersionType finalDateVersionType = getVersionType(dsl, names, office, versionDate != null);
+                return new TimeSeries(recordCursor, recordPageSize, tsMetadata.getValue("TOTAL",
+                        Integer.class), tsMetadata.getValue("NAME", String.class),
+                        tsMetadata.getValue("office_id", String.class),
+                        beginTime, endTime, tsMetadata.getValue("units", String.class),
+                        Duration.ofMinutes(tsMetadata.get("interval") == null ? 0 :
+                                tsMetadata.getValue("interval", Long.class)),
+                        verticalDatumInfo,
+                        tsMetadata.getValue(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET).longValue(),
+                        tsMetadata.getValue(tzName),
+                        versionDate, finalDateVersionType
+                );
+            }
+        );
 
-            return new TimeSeries(recordCursor, recordPageSize, tsMetadata.getValue("TOTAL",
-                    Integer.class), tsMetadata.getValue("NAME", String.class),
-                    tsMetadata.getValue("office_id", String.class),
-                    beginTime, endTime, tsMetadata.getValue("units", String.class),
-                    Duration.ofMinutes(tsMetadata.get("interval") == null ? 0 :
-                            tsMetadata.getValue("interval", Long.class)),
-                    verticalDatumInfo,
-                    tsMetadata.getValue(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET).longValue(),
-                    tsMetadata.getValue(tzName),
-                    versionDate, finalDateVersionType
-            );
-        });
+        // Now we're going to call the retrieve_ts_entry_out_tab function to get the data and build an
+        // internal table from it so we can manipulate it further
+        // This code assumes the database timezone is in UTC (per Oracle recommendation)
+        SQL retrieveSelectData = DSL.sql(
+                "table(cwms_20.cwms_ts.retrieve_ts_entry_out_tab(?,?,"
+                        + "cwms_20.cwms_util.to_timestamp(?), cwms_20.cwms_util.to_timestamp(?), 'UTC',"
+                        + "?,?,?,?,?,"
+                        + getVersionPart(versionDate) + ",?,?) ) retrieveTs",
+                tsId, unit,
+                beginTimeMilli, endTimeMilli,  //tz hardcoded
+                trim, startInclusive, endInclusive, previous, next,
+                versionDateMilli, maxVersion, officeId);
 
+        Field<BigDecimal> qualityNormCol = CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(
+                DSL.nvl(qualityCol, DSL.inline(5))).as("QUALITY_NORM");
+        Field<Timestamp> dataEntryDate = field("DATA_ENTRY_DATE", Timestamp.class).as("data_entry_date");
+
+        TimeSeries retVal = null;
         if (pageSize != 0) {
+            SelectJoinStep<Record4<Timestamp, Double, BigDecimal, Timestamp>> query2 = dsl.select(
+                            dateTimeCol,
+                            valueCol,
+                            qualityNormCol,
+                            dataEntryDate
+                    )
+                    .from(retrieveSelectData);
+
             SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query =
                     dsl.select(
                                     dateTimeCol,
@@ -390,18 +410,29 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             if (pageSize > 0) {
                 query.limit(DSL.val(pageSize + 1));
+                query2.limit(DSL.val(pageSize + 1));
             }
 
-            logger.fine(() -> query.getSQL(ParamType.INLINED));
-
-            query.forEach(tsRecord -> timeseries.addValue(
-                            tsRecord.getValue(dateTimeCol),
-                            tsRecord.getValue(valueCol),
-                            tsRecord.getValue(qualityNormCol).intValue()
-                    )
-            );
-
-            retVal = timeseries;
+            if (includeEntryDate) {
+                logger.fine(() -> query2.getSQL(ParamType.INLINED));
+                final TimeSeries timeSeries =  timeseries;
+                query2.forEach(tsRecord -> timeSeries.addValue(
+                        tsRecord.getValue(dateTimeCol),
+                        tsRecord.getValue(valueCol),
+                        tsRecord.getValue(qualityNormCol).intValue(),
+                        tsRecord.getValue(dataEntryDate)
+                ));
+                retVal = timeSeries;
+            } else {
+                logger.fine(() -> query.getSQL(ParamType.INLINED));
+                final TimeSeries finalTimeseries = timeseries;
+                query.forEach(tsRecord -> finalTimeseries.addValue(
+                        tsRecord.getValue(dateTimeCol),
+                        tsRecord.getValue(valueCol),
+                        tsRecord.getValue(qualityNormCol).intValue()
+                ));
+                retVal = finalTimeseries;
+            }
         }
 
         return retVal;
@@ -483,7 +514,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String cursorOffice = null;
         Catalog.CatalogPage catPage = null;
         if (page == null || page.isEmpty()) {
-            CommonTableExpression<?> limiter = buildWithClause(inputParams, buildWhereConditions(inputParams), new ArrayList<>(), pageSize, true);
+            CommonTableExpression<?> limiter = buildWithClause(inputParams, buildWhereConditions(inputParams),
+                    new ArrayList<>(), pageSize, true);
             SelectJoinStep<Record1<Integer>> totalQuery = dsl.with(limiter)
                     .select(countDistinct(limiter.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)))
                     .from(limiter);
@@ -524,7 +556,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         SelectJoinStep<?> tmpQuery = dsl.with(limiter)
                                         .select(pageEntryFields)
                                         .from(limiter)
-                                        .join(AV_CWMS_TS_ID.AV_CWMS_TS_ID).on(limiterCode.eq(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE));
+                                        .join(AV_CWMS_TS_ID.AV_CWMS_TS_ID)
+                                            .on(limiterCode.eq(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE));
 
         if (params.isIncludeExtents()) {
 
@@ -532,7 +565,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                        .on(limiterCode
                                          .eq(AV_TS_EXTENTS_UTC.TS_CODE.coerce(limiterCode)));
         }
-        final SelectSeekStep2<?, String, String> overallQuery = tmpQuery.orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID, AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID);
+        final SelectSeekStep2<?, String, String> overallQuery = tmpQuery
+                .orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID,
+                    AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID);
         logger.fine(() -> overallQuery.getSQL(ParamType.INLINED));
         Result<?> result = overallQuery.fetch();
 
@@ -568,8 +603,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         });
 
-        List<? extends CatalogEntry> entries = tsIdExtentMap.entrySet().stream()
-                .map(e -> e.getValue().build())
+        List<? extends CatalogEntry> entries = tsIdExtentMap.values().stream()
+                .map(TimeseriesCatalogEntry.Builder::build)
                 .collect(Collectors.toList());
 
         return new Catalog(catPage != null ? catPage.toString() : null,
@@ -625,15 +660,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return conditions;
     }
 
-    private static @NotNull CommonTableExpression<?> buildWithClause(CatalogRequestParameters params, List<Condition> whereConditions, List<Condition> pagingConditions, int pageSize, boolean forCount) {
+    private static @NotNull CommonTableExpression<?> buildWithClause(CatalogRequestParameters params,
+            List<Condition> whereConditions, List<Condition> pagingConditions, int pageSize, boolean forCount) {
         TableLike<?> fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
 
-        TableOnConditionStep<Record> on = null;
         List<Field<?>> selectFields = new ArrayList<>();
         selectFields.add(fromTable.field(cwmsTsIdView.TS_CODE));
         selectFields.add(fromTable.field(cwmsTsIdView.DB_OFFICE_ID));
 
         selectFields.add(fromTable.field(cwmsTsIdView.CWMS_TS_ID));
+        TableOnConditionStep<Record> on = null;
 
         if (params.needs(tsGroupView)) {
             on = AV_CWMS_TS_ID.AV_CWMS_TS_ID
@@ -695,20 +731,23 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         TableLike<?> innerSelect = selectDistinct(selectFields)
                                      .from(fromTable)
                                      .where(whereConditions).and(DSL.and(pagingConditions))
-                                     .orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID, AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID)
+                                     .orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID,
+                                             AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID)
                                      .asTable("limiterInner");
         if (forCount) {
             return name("limiter").as(
                     select(asterisk())
                     .from(innerSelect)
-                    .orderBy(innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID), innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID))
+                    .orderBy(innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID),
+                            innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID))
                     );
         } else {
             return name("limiter").as(
                     select(asterisk())
                     .from(innerSelect)
                     .where(field("rownum").lessOrEqual(pageSize))
-                    .orderBy(innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID), innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID))
+                    .orderBy(innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID),
+                            innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID))
                     );
         }
     }
@@ -733,11 +772,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         if (params.isExcludeEmpty()) {
             retval.add(DSL.or(
-                    AV_TS_EXTENTS_UTC.VERSION_TIME.isNotNull(),
-                    AV_TS_EXTENTS_UTC.EARLIEST_TIME.isNotNull(),
-                    AV_TS_EXTENTS_UTC.LATEST_TIME.isNotNull(),
-                    AV_TS_EXTENTS_UTC.LAST_UPDATE.isNotNull())
-                    );
+                AV_TS_EXTENTS_UTC.VERSION_TIME.isNotNull(),
+                AV_TS_EXTENTS_UTC.EARLIEST_TIME.isNotNull(),
+                AV_TS_EXTENTS_UTC.LATEST_TIME.isNotNull(),
+                AV_TS_EXTENTS_UTC.LAST_UPDATE.isNotNull())
+            );
         }
 
         return retval;
@@ -933,18 +972,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             // Using the innerSelect field makes DATA_ENTRY_DATE correctly map to Timestamp
             // and the generated sql refers to columns from the alias_??? table.
             Field[] queryFields = new Field[]{
-                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.CWMS_TS_ID),
-                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID),
-                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.TS_CODE),
-                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE),
-                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.DATA_ENTRY_DATE),
-                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.VALUE),
-                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.QUALITY_CODE),
-                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.START_DATE),
-                    innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.END_DATE),
-                    unitField,
-                    dateTimeField,
-                    innerSelect.field(tsField)
+                innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.CWMS_TS_ID),
+                innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID),
+                innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.TS_CODE),
+                innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE),
+                innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.DATA_ENTRY_DATE),
+                innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.VALUE),
+                innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.QUALITY_CODE),
+                innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.START_DATE),
+                innerSelect.field(AV_TSV_DQU.AV_TSV_DQU.END_DATE),
+                unitField,
+                dateTimeField,
+                innerSelect.field(tsField)
             };
 
             SelectConditionStep<? extends Record> query = dsl.select(queryFields)
@@ -1031,18 +1070,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Field<String> unit = innerSelect.field(tsvView.UNIT_ID);
 
         Field[] queryFields = new Field[]{
-                innerSelect.field(tsvView.OFFICE_ID),
-                innerSelect.field(tsvView.TS_CODE),
-                innerSelect.field(tsvView.VERSION_DATE),
-                innerSelect.field(tsvView.DATA_ENTRY_DATE),
-                innerSelect.field(tsvView.VALUE),
-                innerSelect.field(tsvView.QUALITY_CODE),
-                innerSelect.field(tsvView.START_DATE),
-                innerSelect.field(tsvView.END_DATE),
-                dateTime,
-                unit,
-                innerSelect.field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID),
-                innerSelect.field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE)};
+            innerSelect.field(tsvView.OFFICE_ID),
+            innerSelect.field(tsvView.TS_CODE),
+            innerSelect.field(tsvView.VERSION_DATE),
+            innerSelect.field(tsvView.DATA_ENTRY_DATE),
+            innerSelect.field(tsvView.VALUE),
+            innerSelect.field(tsvView.QUALITY_CODE),
+            innerSelect.field(tsvView.START_DATE),
+            innerSelect.field(tsvView.END_DATE),
+            dateTime,
+            unit,
+            innerSelect.field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID),
+            innerSelect.field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE)};
 
         return dsl.select(queryFields)
                 .from(innerSelect)
@@ -1127,15 +1166,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         final ZTSV_ARRAY tsvArray = new ZTSV_ARRAY();
 
         if (values != null && !values.isEmpty()) {
-            Iterator<TimeSeries.Record> iter = values.iterator();
-            while (iter.hasNext()) {
-                TimeSeries.Record value = iter.next();
-                Double dataValue = value.getValue();
-                if (dataValue != null && dataValue == -Float.MAX_VALUE) {
-                    dataValue = null;
-                }
-                tsvArray.add(new ZTSV_TYPE(value.getDateTime(), dataValue, BigDecimal.valueOf(value.getQualityCode())));
-            }
+			for (TimeSeries.Record value : values) {
+				Double dataValue = value.getValue();
+				if (dataValue != null && dataValue == -Float.MAX_VALUE) {
+					dataValue = null;
+				}
+				tsvArray.add(new ZTSV_TYPE(value.getDateTime(), dataValue, BigDecimal.valueOf(value.getQualityCode())));
+			}
         }
 
         if (versionDate != null) {
