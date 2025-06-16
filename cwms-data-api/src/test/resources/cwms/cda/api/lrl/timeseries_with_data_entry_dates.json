@@ -1,0 +1,41 @@
+{
+  "name": "Buckhorn.Temp-Water.Inst.1Day.0.cda-test",
+  "office-id": "SPK",
+  "units": "F",
+  "begin": 1675335600000,
+    "end": 1675422000000,
+  "version-date": 1594786000000,
+  "value-columns" : [
+    {
+      "name" : "date-time",
+      "ordinal" : 1,
+      "datatype" : "java.sql.Timestamp"
+    }, {
+      "name" : "value",
+      "ordinal" : 2,
+      "datatype" : "java.lang.Double"
+    }, {
+      "name" : "quality-code",
+      "ordinal" : 3,
+      "datatype" : "int"
+    }, {
+      "name" : "data-entry-date",
+      "ordinal" : 4,
+      "datatype" : "java.sql.Timestamp"
+    }
+  ],
+  "values": [
+    [
+      1675335600000,
+      35,
+      0,
+      1734566146000
+    ],
+    [
+      1675422000000,
+      36,
+      0,
+      1734566147000
+    ]
+  ]
+}
