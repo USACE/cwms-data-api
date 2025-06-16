@@ -56,6 +56,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag("integration")
 class LocationControllerTestIT extends DataApiTestIT {
@@ -274,7 +275,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
         // create location of the same name as alias
-        ExtractableResponse<Response> response = given()
+        Response response = given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
@@ -288,7 +289,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .extract();
+            .extract().response();
 
         //Create associated time series so delete fails without cascade
         try {
@@ -296,6 +297,23 @@ class LocationControllerTestIT extends DataApiTestIT {
         } catch (Exception ex) {
             // ignore
         }
+
+        Location loc = given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", officeId)
+            .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + locationId)
+            .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract().as(Location.class);
+
+        assertEquals(location, loc);
 
         // get it back
         given()
