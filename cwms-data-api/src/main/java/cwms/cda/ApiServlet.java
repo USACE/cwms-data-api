@@ -47,6 +47,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.BaseHandler;
 import cwms.cda.api.BasinController;
 import cwms.cda.api.BinaryTimeSeriesController;
 import cwms.cda.api.BinaryTimeSeriesValueController;
@@ -176,10 +177,13 @@ import io.javalin.apibuilder.CrudHandlerKt;
 import io.javalin.core.JavalinConfig;
 import io.javalin.core.security.RouteRole;
 import io.javalin.core.util.Header;
+import io.javalin.core.util.JavalinException;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Handler;
+import io.javalin.http.HttpResponseException;
 import io.javalin.http.JavalinServlet;
+import io.javalin.http.util.NaiveRateLimit;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.Components;
@@ -197,11 +201,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.DateTimeException;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 import javax.annotation.Resource;
@@ -279,6 +286,10 @@ public class ApiServlet extends HttpServlet {
     public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
+    // specify the maximum number of requests allowed per time unit
+    private static final int REQUEST_LIMIT = 100;
+    private static final TimeUnit REQUEST_LIMIT_UNIT = TimeUnit.MINUTES;
+
     private MetricRegistry metrics;
     private Meter totalRequests;
 
@@ -290,6 +301,7 @@ public class ApiServlet extends HttpServlet {
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
+    private CdaAccessManager cdaAccessManager;
 
     public static String getApiVersion() {
         return VERSION != null ? VERSION : "Not Yet Known";
@@ -327,12 +339,13 @@ public class ApiServlet extends HttpServlet {
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         APP_CONTEXT = this.getServletContext().getContextPath();
+        cdaAccessManager = new CdaAccessManager();
         javalin = Javalin.createStandalone(config -> {
                     config.defaultContentType = "application/json";
                     getOpenApiOptions(config);
                     config.autogenerateEtags = true;
                     config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
-                    config.accessManager(new CdaAccessManager());
+                    config.accessManager(cdaAccessManager);
                 })
                 .attribute("PolicyFactory", sanitizer)
                 .attribute("ObjectMapper", om)
@@ -679,8 +692,9 @@ public class ApiServlet extends HttpServlet {
     }
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {
-        post(format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID),
-            new RateValuesController(metrics), requiredRoles);
+        String rateValues = format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID);
+        post(rateValues,
+            new RateValuesController(metrics));
         post(format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID),
             new RateTimeSeriesController(metrics), requiredRoles);
         post(format("/ratings/reverse-rate-values/{%s}/{%s}", OFFICE, RATING_ID),
@@ -696,6 +710,24 @@ public class ApiServlet extends HttpServlet {
         get("/ratings/{rating-id}/latest", new RatingLatestController(metrics));
         cdaCrudCache("/ratings/{rating-id}",
                 new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        addRateLimit(rateValues, new RateValuesController(metrics), requiredRoles);
+    }
+
+    private void addRateLimit(String path, BaseHandler handler, RouteRole[] requiredRoles) {
+        Set<RouteRole> roles = new HashSet<>(Arrays.asList(requiredRoles));
+        try (Javalin java = staticInstance()) {
+            java.before(path, ctx -> {
+                try {
+                    NaiveRateLimit.requestPerTimeUnit(ctx, 10, REQUEST_LIMIT_UNIT);
+                } catch (HttpResponseException e) {
+                    try {
+                        cdaAccessManager.manage(handler, ctx, roles);
+                    } catch (CwmsAuthException ex) {
+                        throw e;
+                    }
+                }
+            });
+        }
     }
 
     private void addAccountingHandlers(String path, RouteRole[] requiredRoles) {

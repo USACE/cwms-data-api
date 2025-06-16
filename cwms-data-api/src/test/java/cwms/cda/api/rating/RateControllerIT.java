@@ -32,7 +32,9 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isOneOf;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import cwms.cda.api.DataApiTestIT;
@@ -50,6 +52,7 @@ import hec.data.cwmsRating.RatingSetFactory;
 import hec.data.cwmsRating.io.RatingSetContainer;
 import hec.data.cwmsRating.io.RatingSpecContainer;
 import io.restassured.filter.log.LogDetail;
+import io.restassured.response.Response;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -289,6 +292,30 @@ final class RateControllerIT extends DataApiTestIT {
             .body("unit", is("ft"))
             .body("values", not(empty()))
             .body("values[0]", not(empty()));
+    }
+
+    @Test
+    void testRateLimit() throws Exception {
+        boolean rateLimitReached = false;
+        for (int i = 0; i <= 110; i++) {
+            String body = serializeRateInputValues();
+            Response response = given()
+                .accept(JSON)
+                .contentType(JSON)
+                .header(AUTH_HEADER, TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+                .body(body)
+            .when()
+                .post("/ratings/rate-values/" + SPK + "/" + ratingSet.getName())
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(isOneOf(HttpServletResponse.SC_OK, 429))
+                .extract().response();
+            if (response.statusCode() == 429) {
+                rateLimitReached = true;
+            }
+        }
+        assertTrue(rateLimitReached);
     }
 
     private static String serializeReverseRateInputTimeSeries() throws JsonProcessingException {
