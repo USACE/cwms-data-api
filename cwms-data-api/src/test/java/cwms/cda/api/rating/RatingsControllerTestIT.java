@@ -68,7 +68,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 		String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
 		ratingXml = ratingXml.replaceAll("Zanesville", EXISTING_LOC);
 		String ratingXml2 = ratingXml.replaceAll("2002-04-09T13:53:01Z", "2016-06-06T00:00:00Z");
-		String ratingXml3 = ratingXml.replaceAll("2002-04-09T13:53:01Z", "2025-06-06T00:00:00Z");
+		String ratingXml3 = ratingXml.replaceAll("2002-04-09T13:53:01Z", "2085-06-06T00:00:00Z");
 		RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
 		RatingSetContainer container2 = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml2);
 		RatingSetContainer container3 = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml3);

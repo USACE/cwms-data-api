@@ -17,7 +17,6 @@ import cwms.cda.security.Role;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
-import usace.cwms.db.jooq.codegen.packages.cwms_sec.UPDATE_USER_DATA;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -46,6 +45,8 @@ import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
+
+import static cwms.cda.data.dao.JooqDao.connection;
 
 public class AuthDao extends Dao<DataApiPrincipal> {
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -420,7 +421,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                     ZonedDateTime.now(ZoneId.of("UTC")),
                     sourceData.getExpires()
             );
-            dsl.connection(c -> {
+             connection(dsl, c -> {
                 setSessionForAuthCheck(c);
                 try (PreparedStatement createKey = c.prepareStatement(CREATE_API_KEY)) {
                     createKey.setString(1, newKey.getUserId());
@@ -435,6 +436,9 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                         createKey.setDate(5,null);
                     }
                     createKey.execute();
+                } catch (SQLException e) {
+                    DataAccessException re = new DataAccessException(e.getMessage(), e);
+                    throw JooqDao.wrapException(re);
                 }
             });
             return newKey;
