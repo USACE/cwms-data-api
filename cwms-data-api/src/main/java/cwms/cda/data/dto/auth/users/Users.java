@@ -3,6 +3,7 @@ package cwms.cda.data.dto.auth.users;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -12,6 +13,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
+import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -42,28 +44,47 @@ public class Users extends CwmsDTOPaginated {
     }
 
     private void addUser(User user) {
-        users.add(user);
+        this.users.add(user);
     }
 
     private void addUsers(List<User> users) {
-        users.addAll(users);
+        this.users.addAll(users);
     }
 
     public static class Builder {
         private final Users workingUsers;
+        private final Optional<String> nextPage;
 
+
+        public Builder(String cursor, int pageSize, int total) {
+            workingUsers = new Users(cursor, pageSize, total);
+            this.nextPage = Optional.empty();
+        }
+        
+        /**
+         * Used when deserializing provided JSON.
+         * @param cursor current page
+         * @param nextPage next-page the next page or null
+         * @param pageSize page size
+         * @param total total for the entire set
+         */
         @JsonCreator
         public Builder(@JsonProperty("page") String cursor,
+                       @JsonProperty("next-page") String nextPage,
                        @JsonProperty("page-size") int pageSize,
                        @JsonProperty("total") int total) {
             workingUsers = new Users(cursor, pageSize, total);
+            this.nextPage = Optional.of(nextPage != null ? nextPage : "end");
         }
 
         public Users build() {
-            if (this.workingUsers.users.size() == this.workingUsers.pageSize && !this.workingUsers.users.isEmpty()) {
+            if (this.nextPage.isPresent()) {
+                final String next = this.nextPage.get();
+                workingUsers.nextPage = !next.equals("end") ? next : null;
+            }
+            else if (this.workingUsers.users.size() == this.workingUsers.pageSize && !this.workingUsers.users.isEmpty()) {
                 User lastUser = this.workingUsers.users.get(this.workingUsers.users.size() - 1);
-                String cursor = encodeCursor(CwmsDTOPaginated.delimiter, lastUser.getUserName());
-                this.workingUsers.nextPage = encodeCursor(cursor, this.workingUsers.pageSize, this.workingUsers.total);
+                this.workingUsers.nextPage = encodeCursor(CwmsDTOPaginated.delimiter, lastUser.getUserName(), this.workingUsers.pageSize, this.workingUsers.total);
             } else {
                 this.workingUsers.nextPage = null;
             }

@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
@@ -22,6 +23,7 @@ import org.jooq.Record4;
 import org.jooq.Record5;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectLimitPercentStep;
+import org.jooq.SelectSeekStep2;
 import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
@@ -142,8 +144,8 @@ public class UserDao extends JooqDao<User> {
         final Field<String> principal = field(name(vUsers.getName(),"PRINCIPLE_NAME"), String.class);
 
         return connectionResult(dsl, c -> {
-            final DSLContext dsl = JooqDao.getDslContext(c, null);
             AuthDao.setSessionForAuthCheck(c);
+            final DSLContext dsl = JooqDao.getDslContext(c, null);
 
             int total = 0;
             String cursorUserId = null;
@@ -162,7 +164,7 @@ public class UserDao extends JooqDao<User> {
             if (cursor == null || cursor.isEmpty()) {
                 SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
                     .from(vUsers)
-                    .leftOuterJoin(vUserGroups).on(userId.eq(vUserGroups.USERNAME))
+                    //.leftOuterJoin(vUserGroups).on(userId.eq(vUserGroups.USERNAME))
                     .where(whereClause);
                 Record1<Integer> rec = count.fetchOne();
                 if(rec != null) {
@@ -178,32 +180,47 @@ public class UserDao extends JooqDao<User> {
 
                 if (parts.length > 1) {
                     cursorUserId = parts[0];
-                    total = Integer.parseInt(parts[1]);
-                    pageSizeTmp = Integer.parseInt(parts[2]);
+                    total = Integer.parseInt(parts[2]);
+                    pageSizeTmp = Integer.parseInt(parts[1]);
                 }
             }
 
             Condition pagingCondition = cursorUserId == null
                 ? noCondition()
                 : userId.greaterThan(cursorUserId);
-            SelectLimitPercentStep<Record5<String, String, String, String, String>> query = dsl.select(
-                    userId,
-                    email,
-                    principal,
+
+            CommonTableExpression<?> limiter = name("limiter")
+                                                .fields(userId.getName(),
+                                                        email.getName(),
+                                                        principal.getName())
+                                                .as(
+                                                    select(userId, email,principal)
+                                                    .from(vUsers)
+                                                    .where(whereClause)
+                                                    .and(pagingCondition)
+                                                    .orderBy(userId)
+                                                    .limit(pageSize)
+                                                );
+            Field<String> limitUserId = field(name(limiter.getName(), userId.getName()), String.class);
+            Field<String> limitEmail = field(name(limiter.getName(), email.getName()), String.class);
+            Field<String> limitPrincipal = field(name(limiter.getName(), principal.getName()), String.class);
+            SelectSeekStep2<Record5<String, String, String, String, String>, String, String> query = dsl.with(limiter).select(
+                    limitUserId,
+                    limitEmail,
+                    limitPrincipal,
                     vUserGroups.DB_OFFICE_ID,
                     vUserGroups.USER_GROUP_ID
                 )
-                .from(vUsers)
-                .leftOuterJoin(vUserGroups).on(userId.eq(vUserGroups.USERNAME)
+                .from(limiter)
+                .leftOuterJoin(vUserGroups).on(limitUserId.eq(vUserGroups.USERNAME)
                                         .and(vUserGroups.IS_MEMBER.eq("T")))
-                .where(whereClause)
-                .and(pagingCondition)
                 // office id is included in order by to maintain consistent ordering.
                 // office id It is not used in the pagination clause as we are only
-                // paging on "users" not their roles, wich is the only element with the office
+                // paging on "users" not their roles, which is the only element with the office
                 // association and always fully included per use in the response.
-                .orderBy(userId, vUserGroups.DB_OFFICE_ID)
-                .limit(pageSize);
+                .orderBy(limitUserId, vUserGroups.DB_OFFICE_ID)
+                ;
+                
 
             logger.atInfo().log(query.getSQL(ParamType.INLINED));
 
