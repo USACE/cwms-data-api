@@ -54,11 +54,13 @@ public class Users extends CwmsDTOPaginated {
     public static class Builder {
         private final Users workingUsers;
         private final Optional<String> nextPage;
+        private final String limitOffice;
 
 
-        public Builder(String cursor, int pageSize, int total) {
+        public Builder(String cursor, int pageSize, int total, String limitOffice) {
             workingUsers = new Users(cursor, pageSize, total);
             this.nextPage = Optional.empty();
+            this.limitOffice = limitOffice;
         }
         
         /**
@@ -75,6 +77,7 @@ public class Users extends CwmsDTOPaginated {
                        @JsonProperty("total") int total) {
             workingUsers = new Users(cursor, pageSize, total);
             this.nextPage = Optional.of(nextPage != null ? nextPage : "end");
+            this.limitOffice = null; // Not used when processing existing JSON, value is encoded in next-page for the query.
         }
 
         public Users build() {
@@ -84,7 +87,7 @@ public class Users extends CwmsDTOPaginated {
             }
             else if (this.workingUsers.users.size() == this.workingUsers.pageSize && !this.workingUsers.users.isEmpty()) {
                 User lastUser = this.workingUsers.users.get(this.workingUsers.users.size() - 1);
-                this.workingUsers.nextPage = encodeCursor(CwmsDTOPaginated.delimiter, lastUser.getUserName(), this.workingUsers.pageSize, this.workingUsers.total);
+                this.workingUsers.nextPage = encodeCursor(CwmsDTOPaginated.delimiter, lastUser.getUserName(), this.workingUsers.pageSize, this.workingUsers.total, this.limitOffice);
             } else {
                 this.workingUsers.nextPage = null;
             }

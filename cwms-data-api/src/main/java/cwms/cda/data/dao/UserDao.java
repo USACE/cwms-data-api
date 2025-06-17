@@ -43,11 +43,11 @@ public class UserDao extends JooqDao<User> {
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private static final String GET_USER =
-        "select ut.userid as username,ut.email, ut.principle_name,groups.db_office_id as office,groups.user_group_id as role " +
+        "select ut.userid as username,ut.email, ut.principle_name,groups.db_office_id as \"office\",groups.user_group_id as \"role\" " +
         " from cwms_20.at_sec_cwms_users ut " +
-        "left outer join cwms_20.av_sec_users groups on ut.userid=groups.username and is_member='T' " +
+        "left join cwms_20.av_sec_users groups on ut.userid=groups.username and is_member='T' " +
         "where ut.principle_name = ? or upper(ut.userid) = upper(?) " +
-        "order by office, role"
+        "order by \"office\", \"role\""
         ;
 
     private final Table<?> AT_SEC_CWMS_USERS = table("cwms_20.at_sec_cwms_users","userid", "email","principle_name");
@@ -77,8 +77,11 @@ public class UserDao extends JooqDao<User> {
                                 }
                                 final String roleOffice = rs.getString("office");
                                 final String role = rs.getString("role");
-                                roles.computeIfAbsent(roleOffice, (key) -> new ArrayList<>()).add(role);
+                                if (role != null) {
+                                    roles.computeIfAbsent(roleOffice, (key) -> new ArrayList<>()).add(role);
+                                }
                             }
+                            logger.atInfo().log("Building user object.");
                            return new User(userName, principalName, email, cac_role != null,  roles);
                         } else {
                             return (User)null;
@@ -150,6 +153,7 @@ public class UserDao extends JooqDao<User> {
             int total = 0;
             String cursorUserId = null;
             int pageSizeTmp = pageSize;
+            String limitOffice = null;
 
             Condition whereClause = office == null ? DSL.noCondition()
             // If we are including only those users with permissions to a  specific office
@@ -182,6 +186,16 @@ public class UserDao extends JooqDao<User> {
                     cursorUserId = parts[0];
                     total = Integer.parseInt(parts[2]);
                     pageSizeTmp = Integer.parseInt(parts[1]);
+                    limitOffice = parts[3];
+
+                    // Rebuild the where clause to match the initial conditions
+                    whereClause = limitOffice == null ? DSL.noCondition()
+                    // If we are including only those users with permissions to a  specific office
+                    // we limit to those users that also have an entry in the at_sec_cwms_users_group table.
+                    : dsl.select(count(asterisk()))
+                        .from(vUserGroups)
+                        .where(upper(vUserGroups.DB_OFFICE_ID).eq(upper(limitOffice)))
+                        .and(vUserGroups.IS_MEMBER.eq("T")).asField().gt(1);
                 }
             }
 
@@ -225,7 +239,7 @@ public class UserDao extends JooqDao<User> {
             logger.atInfo().log(query.getSQL(ParamType.INLINED));
 
 
-            final Users.Builder builder = new Users.Builder(cursor, pageSizeTmp, total);
+            final Users.Builder builder = new Users.Builder(cursor, pageSizeTmp, total, limitOffice);
 
             final HashMap<String, User.Builder> tmpUsers = new HashMap<>();
 
@@ -242,6 +256,7 @@ public class UserDao extends JooqDao<User> {
             });
 
             tmpUsers.entrySet().stream().map(e -> e.getValue().build()).forEach(builder::addUser);
+            
             return builder.build();
         });
     }
