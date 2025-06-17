@@ -89,16 +89,18 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5.7.0
         with:
+          # this is triggered by the schedule so we want to actually use the checked out information
+          # and not the context from the workflow itself.
+          context: git
           images: |
             ${{secrets.registry != null && secrets.registry ||secrets.HEC_PUB_REGISTRY}}/cwms/data-api
             ghcr.io/${{env.REPO}}
           tags: |
             type=sha
             type=ref,event=tag
-            type=raw,value=latest-dev,enable={{is_default_branch}}
             type=raw,value=${{env.VERSION}}
-            type=schedule,pattern={{branch}}-{{date 'YYYY.MM.DD'}}
-            type=schedule,pattern={{branch}}-{{date 'YYYY.MM.DD-hhmmss'}}
+            type=schedule,pattern=${{inputs.branch}}-{{date 'YYYY.MM.DD'}}
+            type=schedule,pattern=${{inputs.branch}}-{{date 'YYYY.MM.DD-hhmmss'}}
       - name: Log in to the Container registry
         id: login-ghcr
         uses: docker/login-action@v3.3.0
