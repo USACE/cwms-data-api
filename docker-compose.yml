@@ -31,8 +31,9 @@ services:
       - OFFICE_EROC=s0
       - INSTALLONCE=1
       - QUIET=1
+      - API_KEY=testkey12345677
     command: >
-      sh -xc "sqlplus CWMS_20/$$CWMS_PASSWORD@$$DB_HOST_PORT$$DB_NAME @/setup_sql/users $$OFFICE_EROC"
+      sh -xc "sqlplus CWMS_20/$$CWMS_PASSWORD@$$DB_HOST_PORT$$DB_NAME @/setup_sql/users $$OFFICE_EROC $$API_KEY"
     volumes:
       - ./compose_files/sql:/setup_sql:ro
     depends_on:
@@ -144,3 +145,5 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=PathPrefix(`/traefik`)"
       - "traefik.http.routers.traefik.service=api@internal"
+
+
