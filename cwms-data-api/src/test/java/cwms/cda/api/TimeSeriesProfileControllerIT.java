@@ -197,7 +197,6 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         // create a new TimeSeries to reference
         String oldTsId = tsProfile3.getReferenceTsId().getName();
         String newTsId = "Sacramento River.Elev.Total.1HourLocal.0.Raw";
-        String legacyTsId = "Sacramento River.Elev.Total.~1Hour.0.Raw";
         String location = newTsId.split("\\.")[0];
         createLocation(location, true, OFFICE_ID);
 
@@ -247,7 +246,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .body("location-id.office-id", is(tsProfile3.getLocationId().getOfficeId()))
             .body("description", is(tsProfile3.getDescription()))
             .body("parameter-list[1]", equalTo(tsProfile3.getKeyParameter()))
-            .body("reference-ts-id.name", is(legacyTsId))
+            .body("reference-ts-id.name", is(newTsId))
         ;
     }
 

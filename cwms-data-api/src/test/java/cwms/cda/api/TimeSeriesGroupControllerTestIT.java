@@ -362,7 +362,6 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     void test_create_read_delete_LRTS() throws Exception {
         String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.1HourLocal.0.cda-lrts";
-        String legacyTimeSeriesId = "Alder Springs.Precip-Cumulative.Inst.~1Hour.0.cda-lrts";
         createLocation(timeSeriesId.split("\\.")[0],true,officeId);
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_lrts", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_lrts", "IntegrationTesting",
@@ -452,9 +451,9 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body("office-id", equalTo(group.getOfficeId()))
             .body("id", equalTo(group.getId()))
             .body("description", equalTo(group.getDescription()))
-            .body("assigned-time-series[0].timeseries-id", equalTo(legacyTimeSeriesId))
+            .body("assigned-time-series[0].timeseries-id", equalTo(timeSeriesId))
             .body("assigned-time-series[0].alias-id", equalTo("AliasId"))
-            .body("assigned-time-series[0].ref-ts-id", equalTo(legacyTimeSeriesId))
+            .body("assigned-time-series[0].ref-ts-id", equalTo(timeSeriesId))
             .body("assigned-time-series[0].ts-code", nullValue());
         //Clear Assigned TS
         group.getAssignedTimeSeries().clear();

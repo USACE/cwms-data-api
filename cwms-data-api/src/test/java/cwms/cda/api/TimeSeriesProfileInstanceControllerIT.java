@@ -1134,7 +1134,6 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         assertParserInDb(tspParserIndexed3);
 
         String newTsId = "Sacramento River.Elev.Total.1HourLocal.0.Raw";
-        String legacyTsId = "Sacramento River.Elev.Total.~1Hour.0.Raw";
 
         String data = tspData3.replace("Sacramento River.Elev.Total.0.1Hour.Raw",
                 newTsId);
@@ -1251,7 +1250,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                     equalTo(tspInstance3.getTimeSeriesProfile().getLocationId().getName()))
             .body("time-series-profile.key-parameter",
                     equalTo(tspInstance3.getTimeSeriesProfile().getKeyParameter()))
-            .body("time-series-profile.reference-ts-id.name", equalTo(legacyTsId))
+            .body("time-series-profile.reference-ts-id.name", equalTo(newTsId))
             .body("time-series-profile.parameter-list.size()", equalTo(2))
             .body("time-series-list.size()", equalTo(2))
             .body("time-series-list[\"1568033337000\"].size()", equalTo(2))

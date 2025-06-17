@@ -345,7 +345,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         createLocation("level_as_ts_lrts", true, OFFICE);
         String levelId = "level_as_ts_lrts.Flow.Ave.1Week.lrts";
         String tsId = "level_as_ts_lrts.Flow.Ave.1DayLocal.1Week.lrts";
-        String legacyTSId = "level_as_ts_lrts.Flow.Ave.~1Day.1Week.lrts";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
 
         createTimeseries(OFFICE, tsId, true);
@@ -398,7 +397,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("seasonal-time-series-id", equalTo(legacyTSId))
+            .body("seasonal-time-series-id", equalTo(tsId))
         ;
 
         // TODO: Add support for new LRTS interval identifier to Levels retrieval
@@ -423,7 +422,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("seasonal-time-series-id", equalTo(legacyTSId))
+            .body("seasonal-time-series-id", equalTo(tsId))
         ;
     }
 
