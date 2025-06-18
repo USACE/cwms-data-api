@@ -34,6 +34,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isOneOf;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -58,7 +59,9 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
@@ -66,6 +69,8 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 final class RateControllerIT extends DataApiTestIT {
@@ -294,28 +299,31 @@ final class RateControllerIT extends DataApiTestIT {
             .body("values[0]", not(empty()));
     }
 
-    @Test
-    void testRateLimit() throws Exception {
-        boolean rateLimitReached = false;
-        for (int i = 0; i <= 110; i++) {
-            String body = serializeRateInputValues();
-            Response response = given()
-                .accept(JSON)
-                .contentType(JSON)
-                .header(AUTH_HEADER, TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
-                .body(body)
-            .when()
-                .post("/ratings/rate-values/" + SPK + "/" + ratingSet.getName())
-            .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
-                .statusCode(isOneOf(HttpServletResponse.SC_OK, 429))
-                .extract().response();
-            if (response.statusCode() == 429) {
-                rateLimitReached = true;
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testRateLimit(boolean authenticated) throws Exception {
+        List<RateLimitTest> rateLimitTests = new ArrayList<>();
+        AtomicBoolean rateLimitReachedAtomic = new AtomicBoolean(false);
+
+        for (int i = 0; i <= Runtime.getRuntime().availableProcessors(); i++) {
+            RateLimitTest rateLimitTest = new RateLimitTest(rateLimitReachedAtomic, authenticated);
+            rateLimitTest.start();
+            rateLimitTests.add(rateLimitTest);
+        }
+        for (RateLimitTest rateLimitTest : rateLimitTests) {
+            try {
+                rateLimitTest.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Rate limit test interrupted", e);
             }
         }
-        assertTrue(rateLimitReached);
+        if (authenticated)
+        {
+            assertFalse(rateLimitReachedAtomic.get());
+        } else {
+            assertTrue(rateLimitReachedAtomic.get());
+        }
     }
 
     private static String serializeReverseRateInputTimeSeries() throws JsonProcessingException {
@@ -358,5 +366,56 @@ final class RateControllerIT extends DataApiTestIT {
         return JsonV1.buildObjectMapper().writeValueAsString(valuesInput);
     }
 
+    private static final class RateLimitTest extends Thread {
+        private final AtomicBoolean rateLimitReached;
+        private final boolean authenticated;
 
+        RateLimitTest(AtomicBoolean rateLimitReached, boolean authenticated) {
+            this.rateLimitReached = rateLimitReached;
+            this.authenticated = authenticated;
+        }
+
+        @Override
+        public void run() {
+            try {
+                String body = serializeRateInputValues();
+                for (int i = 0; i <= 110; i++) {
+                    if (authenticated) {
+                        Response response = given()
+                            .accept(JSON)
+                            .contentType(JSON)
+                            .body(body)
+                            .header(AUTH_HEADER, TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+                        .when()
+                            .post("/ratings/rate-values/" + SPK + "/" + ratingSet.getName())
+                        .then()
+                            .log().ifValidationFails(LogDetail.ALL, true)
+                        .assertThat()
+                            .statusCode(isOneOf(HttpServletResponse.SC_OK, 429))
+                            .extract().response();
+                        if (response.statusCode() == 429) {
+                            rateLimitReached.set(true);
+                        }
+                    } else {
+                        Response response = given()
+                            .accept(JSON)
+                            .contentType(JSON)
+                            .body(body)
+                        .when()
+                            .post("/ratings/rate-values/" + SPK + "/" + ratingSet.getName())
+                        .then()
+                            .log().ifValidationFails(LogDetail.ALL, true)
+                        .assertThat()
+                            .statusCode(isOneOf(HttpServletResponse.SC_OK, 429))
+                            .extract().response();
+                        if (response.statusCode() == 429) {
+                            rateLimitReached.set(true);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Error during rate limit test", e);
+            }
+        }
+    }
 }

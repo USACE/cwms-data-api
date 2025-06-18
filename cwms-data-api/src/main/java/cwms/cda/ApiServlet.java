@@ -169,7 +169,6 @@ import cwms.cda.security.CdaAccessManager;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
-import cwms.cda.spi.CdaIdentityProviders;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
@@ -177,11 +176,9 @@ import io.javalin.apibuilder.CrudHandlerKt;
 import io.javalin.core.JavalinConfig;
 import io.javalin.core.security.RouteRole;
 import io.javalin.core.util.Header;
-import io.javalin.core.util.JavalinException;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Handler;
-import io.javalin.http.HttpResponseException;
 import io.javalin.http.JavalinServlet;
 import io.javalin.http.util.NaiveRateLimit;
 import io.javalin.plugin.openapi.OpenApiOptions;
@@ -201,7 +198,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.DateTimeException;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -212,7 +208,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 import javax.annotation.Resource;
-import javax.management.ServiceNotFoundException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -710,24 +705,24 @@ public class ApiServlet extends HttpServlet {
         get("/ratings/{rating-id}/latest", new RatingLatestController(metrics));
         cdaCrudCache("/ratings/{rating-id}",
                 new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        addRateLimit(rateValues, new RateValuesController(metrics), requiredRoles);
+        addRateLimitCheckAuth(rateValues, new RateValuesController(metrics), requiredRoles);
     }
 
-    private void addRateLimit(String path, BaseHandler handler, RouteRole[] requiredRoles) {
+    private void addRateLimitCheckAuth(String path, BaseHandler handler, RouteRole[] requiredRoles) {
         Set<RouteRole> roles = new HashSet<>(Arrays.asList(requiredRoles));
-        try (Javalin java = staticInstance()) {
-            java.before(path, ctx -> {
-                try {
-                    NaiveRateLimit.requestPerTimeUnit(ctx, 10, REQUEST_LIMIT_UNIT);
-                } catch (HttpResponseException e) {
-                    try {
-                        cdaAccessManager.manage(handler, ctx, roles);
-                    } catch (CwmsAuthException ex) {
-                        throw e;
-                    }
-                }
-            });
-        }
+        staticInstance().before(path, ctx -> {
+            try {
+                cdaAccessManager.manage(handler, ctx, roles);
+            } catch (CwmsAuthException ex) {
+                NaiveRateLimit.requestPerTimeUnit(ctx, REQUEST_LIMIT, REQUEST_LIMIT_UNIT);
+            }
+        });
+    }
+
+    private static void addRateLimit(String path) {
+        staticInstance().before(path, ctx ->
+                NaiveRateLimit.requestPerTimeUnit(ctx, REQUEST_LIMIT, REQUEST_LIMIT_UNIT)
+        );
     }
 
     private void addAccountingHandlers(String path, RouteRole[] requiredRoles) {
@@ -877,6 +872,8 @@ public class ApiServlet extends HttpServlet {
             instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE), roles);
             instance.get(pathWithoutResource, crudFunctions.get(CrudFunction.GET_ALL), roles);
         } else {
+            addRateLimit(fullPath);
+            addRateLimit(pathWithoutResource);
             instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
             instance.get(pathWithoutResource, crudFunctions.get(CrudFunction.GET_ALL));
         }
