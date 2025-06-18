@@ -1,8 +1,5 @@
 package cwms.cda.data.dao;
 
-import cwms.cda.data.dao.rsql.FieldResolver;
-import cwms.cda.data.dao.rsql.MapFieldResolver;
-import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
 import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.helpers.DateUtils;
 import static org.jooq.impl.DSL.asterisk;
@@ -207,15 +204,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     @Override
     public TimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters) {
-        return getRequestedTimeSeries(page, pageSize, requestParameters, null);
+        return getRequestedTimeSeries(page, pageSize,requestParameters, null);
     }
 
     @Override
     public FilteredTimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters, FilteredTimeSeriesParameters filterParams){
         TimeSeries ts =  getRequestedTimeSeries(page, pageSize, requestParameters, filterParams);
-        FilteredTimeSeries fts = new FilteredTimeSeries(ts, filterParams);
-        fts.clearTimeSeriesPagination();  // we are wrapping the ts, it doesn't need to serialize its own page, nextPage etc.
-        return fts;
+        return new FilteredTimeSeries(ts, filterParams);
     }
 
     protected TimeSeries getRequestedTimeSeries(String page, int pageSize, @NotNull TimeSeriesRequestParameters requestParameters,
@@ -328,7 +323,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Field<Timestamp> dateTimeCol = field("DATE_TIME", Timestamp.class).as("DATE_TIME");
         Field<Double> valueCol = field("VALUE", Double.class).as("VALUE");
         Field<Integer> qualityCol = field("QUALITY_CODE", Integer.class).as("QUALITY_CODE");
-        Field<Timestamp> dataEntryDate = field("DATA_ENTRY_DATE", Timestamp.class).as("data_entry_date");
 
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
@@ -348,16 +342,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Field<String> tzName = AV_CWMS_TS_ID2.TIME_ZONE_ID;
 
-        Condition filterConditions = noCondition();
-        if(fp != null) {
-            Map<String, Field<?>> nameToField = new LinkedHashMap<>();
-            nameToField.put("value", valueCol);
-            nameToField.put("datetime", dateTimeCol);
-            nameToField.put("quality", qualityCol);
-            nameToField.put("data_entry_date", dataEntryDate);
-            FieldResolver resolver = new MapFieldResolver(nameToField);
-            filterConditions = getFilterCondition(fp, resolver);
-        }
+        Condition filterConditions = getFilterCondition(fp, valueCol);
 
         Field<Integer> totalField;
         if (total != null) {
@@ -439,21 +424,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         );
 
-        Long pageBegin =  beginTimeMilli;
-        if (tsCursor != null && !shouldTrim){
-            // If trim is turned on we can't change the start time to the retrieve_ts_entry_out_tab call
-            // Imagine there is a single non-null point in the first page but then the second page is all nulls
-            // If we change the start time for the second call the trim will get applied to second page and
-            // leave us with holes in our data.
-            pageBegin = tsCursor.toInstant().toEpochMilli();
-        } else {
-            filterConditions = filterConditions.and(dateTimeCol
-                    .greaterOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
-                            DSL.nvl(DSL.val(tsCursor == null ? null :
-                                            tsCursor.toInstant().toEpochMilli()),
-                                    DSL.val(beginTime.toInstant().toEpochMilli())))));
-        }
-
         // Now we're going to call the retrieve_ts_entry_out_tab function to get the data and build an
         // internal table from it so we can manipulate it further
         // This code assumes the database timezone is in UTC (per Oracle recommendation)
@@ -463,32 +433,51 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         + "?,?,?,?,?,"
                         + getVersionPart(versionDate) + ",?,?) ) retrieveTs",
                 tsId, unit,
-                pageBegin, endTimeMilli,  //tz hardcoded
+                beginTimeMilli, endTimeMilli,  //tz hardcoded
                 trim, startInclusive, endInclusive, previous, next,
                 versionDateMilli, maxVersion, officeId);
 
         Field<BigDecimal> qualityNormCol = CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(
                 DSL.nvl(qualityCol, DSL.inline(5))).as("QUALITY_NORM");
-
+        Field<Timestamp> dataEntryDate = field("DATA_ENTRY_DATE", Timestamp.class).as("data_entry_date");
 
         TimeSeries retVal = null;
         if (pageSize != 0) {
-            SelectConditionStep<Record4<Timestamp, Double, BigDecimal, Timestamp>> query2 = dsl.select(
+
+            boolean isAscending = true;
+            if(fp != null){
+                isAscending = fp.isAscending();
+            }
+
+
+            SelectSeekStep1<Record4<Timestamp, Double, BigDecimal, Timestamp>, Timestamp> query2 = dsl.select(
                             dateTimeCol,
                             valueCol,
                             qualityNormCol,
                             dataEntryDate
                     )
                     .from(retrieveSelectData)
-                    .where(filterConditions);
+                    .where(filterConditions)
+                    .orderBy(isAscending ? dateTimeCol.asc() : dateTimeCol.desc());
 
-            SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query = dsl.select(
-                            dateTimeCol,
-                            valueCol,
-                            qualityNormCol
-                    )
-                    .from(retrieveSelectData)
-                    .where(filterConditions);
+            SelectSeekStep1<Record3<Timestamp, Double, BigDecimal>, Timestamp> query =
+                    dsl.select(
+                                    dateTimeCol,
+                                    valueCol,
+                                    qualityNormCol
+                            )
+                            .from(retrieveSelectData)
+                            .where(dateTimeCol
+                                    .greaterOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                                            DSL.nvl(DSL.val(tsCursor == null ? null :
+                                                            tsCursor.toInstant().toEpochMilli()),
+                                                    DSL.val(beginTime.toInstant().toEpochMilli())))))
+                            .and(dateTimeCol
+                                    .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                                            DSL.val(endTime.toInstant().toEpochMilli())))
+                            )
+                            .and(filterConditions)
+                            .orderBy(isAscending?dateTimeCol.asc():dateTimeCol.desc());
 
             if (pageSize > 0) {
                 query.limit(DSL.val(pageSize + 1));
@@ -517,7 +506,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     }
                 }
             }
-            retVal = timeseries;
         }
 
         return retVal;
@@ -698,11 +686,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 
     @NotNull
-    private static Condition getFilterCondition( @Nullable FilteredTimeSeriesParameters ip, FieldResolver resolver) {
+    private static Condition getFilterCondition(@Nullable FilteredTimeSeriesParameters ip, Field<Double> valueCol) {
         // In Filter case we want to skip certain points in time....
         Condition filterConditions = noCondition();
         if(ip != null) {
-            Field<Object> valueCol = resolver.resolve("value");
             if (ip.isFilterNulls()) {
                 filterConditions = filterConditions.and(valueCol.isNotNull());
             }
@@ -712,14 +699,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             if (ip.getMinValue() != null) {
                 filterConditions = filterConditions.and(valueCol.ge(ip.getMinValue()));
             }
-
-            String query = ip.getQuery();
-            if(query != null) {
-                RSQLConditionBuilder builder = RSQLConditionBuilder.create(resolver);
-                Condition condition = builder.buildCondition(query);
-                filterConditions = filterConditions.and(condition);
-            }
-
         }
         return filterConditions;
     }

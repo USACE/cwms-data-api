@@ -49,13 +49,4 @@ public class FilteredTimeSeries extends CwmsDTOPaginated {
         return filterParams;
     }
 
-    /**
-     * Clears the pagination information (page and nextPage) in the contained TimeSeries object.
-     * This is useful when the pagination information should not be exposed or used.
-     */
-    public void clearTimeSeriesPagination() {
-        if (timeSeries != null) {
-            timeSeries.clearPagination();
-        }
-    }
 }
