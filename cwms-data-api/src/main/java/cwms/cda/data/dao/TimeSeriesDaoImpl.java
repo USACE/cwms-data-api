@@ -204,7 +204,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     @Override
     public TimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters) {
-        return getRequestedTimeSeries(page, pageSize,requestParameters, null);
+        return getRequestedTimeSeries(page, pageSize, requestParameters, null);
     }
 
     @Override
@@ -499,6 +499,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     }
                 }
             }
+            retVal = timeseries;
         }
 
         return retVal;
