@@ -424,6 +424,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         );
 
+        Long pageBegin =  tsCursor == null ? beginTimeMilli : tsCursor.toInstant().toEpochMilli();
+
         // Now we're going to call the retrieve_ts_entry_out_tab function to get the data and build an
         // internal table from it so we can manipulate it further
         // This code assumes the database timezone is in UTC (per Oracle recommendation)
@@ -433,7 +435,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         + "?,?,?,?,?,"
                         + getVersionPart(versionDate) + ",?,?) ) retrieveTs",
                 tsId, unit,
-                beginTimeMilli, endTimeMilli,  //tz hardcoded
+                pageBegin, endTimeMilli,  //tz hardcoded
                 trim, startInclusive, endInclusive, previous, next,
                 versionDateMilli, maxVersion, officeId);
 
@@ -467,16 +469,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                     qualityNormCol
                             )
                             .from(retrieveSelectData)
-                            .where(dateTimeCol
-                                    .greaterOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
-                                            DSL.nvl(DSL.val(tsCursor == null ? null :
-                                                            tsCursor.toInstant().toEpochMilli()),
-                                                    DSL.val(beginTime.toInstant().toEpochMilli())))))
-                            .and(dateTimeCol
-                                    .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
-                                            DSL.val(endTime.toInstant().toEpochMilli())))
-                            )
-                            .and(filterConditions)
+                            .where(filterConditions)
                             .orderBy(isAscending?dateTimeCol.asc():dateTimeCol.desc());
 
             if (pageSize > 0) {
