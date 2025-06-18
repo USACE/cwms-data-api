@@ -466,6 +466,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 isAscending = fp.isAscending();
             }
 
+
             SelectSeekStep1<Record4<Timestamp, Double, BigDecimal, Timestamp>, Timestamp> query2 = dsl.select(
                             dateTimeCol,
                             valueCol,
@@ -484,6 +485,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                             )
                             .from(retrieveSelectData)
                             .where(filterConditions)
+                            .orderBy(isAscending?dateTimeCol.asc():dateTimeCol.desc())
+                            .and(filterConditions)
                             .orderBy(isAscending?dateTimeCol.asc():dateTimeCol.desc());
 
             if (pageSize > 0) {

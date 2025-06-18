@@ -130,8 +130,6 @@ public class TimeSeriesFilteredController implements Handler {
                             + "whether to include the data entry date of each value in the response. Including the data entry "
                             + "date will increase the size of the array containing each data value from three to four, "
                             + "changing the format of the response. Default is false."),
-                    @OpenApiParam(name = ASC, type = Boolean.class, description = "Specifies "
-                            + "whether to return the data in ascending order to descending order. Default is true."),
                     @OpenApiParam(name = MIN_VALUE, type = Double.class, description = "Specifies "
                             + "the minimum value to include in the results. Values below this threshold will be excluded."),
                     @OpenApiParam(name = MAX_VALUE, type = Double.class, description = "Specifies "
