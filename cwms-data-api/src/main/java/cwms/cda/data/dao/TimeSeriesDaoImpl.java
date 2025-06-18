@@ -77,6 +77,7 @@ import org.jooq.SQL;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectHavingStep;
 import org.jooq.SelectJoinStep;
+import org.jooq.SelectSeekStep1;
 import org.jooq.SelectSeekStep2;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -481,7 +482,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .from(retrieveSelectData)
                     .where(filterConditions);
 
-            @NotNull SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query = dsl.select(
+            SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query = dsl.select(
                             dateTimeCol,
                             valueCol,
                             qualityNormCol
