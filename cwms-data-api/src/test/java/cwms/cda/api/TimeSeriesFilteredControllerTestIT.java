@@ -83,10 +83,10 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("values[0][1]", closeTo(500.0,0.0001))
-                .body("values[1][1]", nullValue())
-                .body("values[2][1]", nullValue())
-                .body("values[3][1]", closeTo(600.0,0.0001))
+                .body("time-series.values[0][1]", closeTo(500.0,0.0001))
+                .body("time-series.values[1][1]", nullValue())
+                .body("time-series.values[2][1]", nullValue())
+                .body("time-series.values[3][1]", closeTo(600.0,0.0001))
             ;
 
             // get it back with filter-nulls
@@ -109,8 +109,8 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("values[0][1]", closeTo(500.0,0.0001))
-                .body("values[1][1]", closeTo(600.0,0.0001))
+                .body("time-series.values[0][1]", closeTo(500.0,0.0001))
+                .body("time-series.values[1][1]", closeTo(600.0,0.0001))
             ;
         } catch (SQLException ex) {
             throw new RuntimeException("Unable to create location for TS", ex);
@@ -172,8 +172,8 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("values[0][1]", closeTo(600.0,0.0001))
-                .body("values.size()", equalTo(1))
+                .body("time-series.values[0][1]", closeTo(600.0,0.0001))
+                .body("time-series.values.size()", equalTo(1))
             ;
         } catch (SQLException ex) {
             throw new RuntimeException("Unable to create location for TS", ex);
@@ -235,8 +235,8 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("values[0][1]", closeTo(500.0,0.0001))
-                .body("values.size()", equalTo(1))
+                .body("time-series.values[0][1]", closeTo(500.0,0.0001))
+                .body("time-series.values.size()", equalTo(1))
             ;
         } catch (SQLException ex) {
             throw new RuntimeException("Unable to create location for TS", ex);
@@ -299,8 +299,8 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("values[0][1]", closeTo(500.0,0.0001))
-                .body("values.size()", equalTo(1))
+                .body("time-series.values[0][1]", closeTo(500.0,0.0001))
+                .body("time-series.values.size()", equalTo(1))
             ;
         } catch (SQLException ex) {
             throw new RuntimeException("Unable to create location for TS", ex);
@@ -364,8 +364,8 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("values[0][1]", closeTo(500.0,0.0001))
-                .body("values.size()", equalTo(1))
+                .body("time-series.values[0][1]", closeTo(500.0,0.0001))
+                .body("time-series.values.size()", equalTo(1))
             ;
         } catch (SQLException ex) {
             throw new RuntimeException("Unable to create location for TS", ex);
