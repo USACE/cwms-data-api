@@ -93,6 +93,7 @@ import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesGroupController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
+import cwms.cda.api.TimeSeriesFilteredController;
 import cwms.cda.api.TimeZoneController;
 import cwms.cda.api.TurbineChangesDeleteController;
 import cwms.cda.api.TurbineChangesGetController;
@@ -205,7 +206,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 import javax.annotation.Resource;
-import javax.management.ServiceNotFoundException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -310,7 +310,7 @@ public class ApiServlet extends HttpServlet {
         metrics = (MetricRegistry)config.getServletContext()
                 .getAttribute(MetricsServlet.METRICS_REGISTRY);
         totalRequests = metrics.meter("cwms.dataapi.total_requests");
-        
+
         super.init(config);
     }
 
@@ -533,6 +533,10 @@ public class ApiServlet extends HttpServlet {
         get(recentPath, new TimeSeriesRecentController(metrics));
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
 
+        String filteredPath = "/timeseries/filtered";
+        get(filteredPath, new TimeSeriesFilteredController(metrics));
+        addCacheControl(filteredPath, 5, TimeUnit.MINUTES);
+
         cdaCrudCache(format("/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
                 new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
 
@@ -549,9 +553,9 @@ public class ApiServlet extends HttpServlet {
         addCacheControl(textBinaryValuePath, 1, TimeUnit.DAYS);
 
         String timeSeriesProfilePath = "/timeseries/profile/";
-        get(format(timeSeriesProfilePath + "{%s}/{%s}", Controllers.LOCATION_ID, Controllers.PARAMETER_ID),
+        get(format( "%s{%s}/{%s}", timeSeriesProfilePath, Controllers.LOCATION_ID, Controllers.PARAMETER_ID),
                 new TimeSeriesProfileController(metrics));
-        delete(format(timeSeriesProfilePath + "/{%s}/{%s}", Controllers.LOCATION_ID,
+        delete(format( "%s/{%s}/{%s}", timeSeriesProfilePath, Controllers.LOCATION_ID,
                         Controllers.PARAMETER_ID), new TimeSeriesProfileDeleteController(metrics),
                 requiredRoles);
         get(format(timeSeriesProfilePath, Controllers.LOCATION_ID, Controllers.PARAMETER_ID),
@@ -559,20 +563,20 @@ public class ApiServlet extends HttpServlet {
         post(timeSeriesProfilePath, new TimeSeriesProfileCreateController(metrics), requiredRoles);
 
         String timeSeriesProfileParserPath = "/timeseries/profile-parser/";
-        get(format(timeSeriesProfileParserPath + "{%s}/{%s}/", Controllers.LOCATION_ID,
+        get(format( "%s{%s}/{%s}/", timeSeriesProfileParserPath, Controllers.LOCATION_ID,
                 Controllers.PARAMETER_ID), new TimeSeriesProfileParserController(metrics));
         post(timeSeriesProfileParserPath, new TimeSeriesProfileParserCreateController(metrics), requiredRoles);
-        delete(format(timeSeriesProfileParserPath + "{%s}/{%s}/", Controllers.LOCATION_ID,
+        delete(format( "%s{%s}/{%s}/", timeSeriesProfileParserPath, Controllers.LOCATION_ID,
                         Controllers.PARAMETER_ID), new TimeSeriesProfileParserDeleteController(metrics),
                 requiredRoles);
         get(timeSeriesProfileParserPath, new TimeSeriesProfileParserCatalogController(metrics));
 
         String timeSeriesProfileInstancePath = "/timeseries/profile-instance/";
-        get(format(timeSeriesProfileInstancePath + "{%s}/{%s}/{%s}/", Controllers.LOCATION_ID,
+        get(format("%s{%s}/{%s}/{%s}/", timeSeriesProfileInstancePath, Controllers.LOCATION_ID,
                         Controllers.PARAMETER_ID, Controllers.VERSION),
                 new TimeSeriesProfileInstanceController(metrics));
         post(timeSeriesProfileInstancePath, new TimeSeriesProfileInstanceCreateController(metrics), requiredRoles);
-        delete(format(timeSeriesProfileInstancePath + "{%s}/{%s}/{%s}/", Controllers.LOCATION_ID,
+        delete(format("%s{%s}/{%s}/{%s}/", timeSeriesProfileInstancePath, Controllers.LOCATION_ID,
                         Controllers.PARAMETER_ID, Controllers.VERSION),
                 new TimeSeriesProfileInstanceDeleteController(metrics), requiredRoles);
         get(timeSeriesProfileInstancePath, new TimeSeriesProfileInstanceCatalogController(metrics));
@@ -610,7 +614,7 @@ public class ApiServlet extends HttpServlet {
         String measTimeExtents = measurements + "time-extents";
         get(measTimeExtents,new MeasurementTimeExtentsGetController(metrics));
         addCacheControl(measTimeExtents, 5, TimeUnit.MINUTES);
-        cdaCrudCache(format(measurements + "{%s}", LOCATION_ID),
+        cdaCrudCache(format( "%s{%s}", measurements, LOCATION_ID),
                 new cwms.cda.api.MeasurementController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
                 new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
@@ -893,7 +897,7 @@ public class ApiServlet extends HttpServlet {
 
         String provider = CdaAccessManager.class.getSimpleName();
 
-    
+
         Components components = new Components();
         final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
         authenticator.getActiveProviders().forEach(identityProvider -> {

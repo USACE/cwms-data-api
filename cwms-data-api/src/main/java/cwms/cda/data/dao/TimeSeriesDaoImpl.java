@@ -1,11 +1,13 @@
 package cwms.cda.data.dao;
 
+import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.helpers.DateUtils;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.countDistinct;
 import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.max;
 import static org.jooq.impl.DSL.name;
+import static org.jooq.impl.DSL.noCondition;
 import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
@@ -59,6 +61,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
+import org.jooq.Cursor;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
@@ -71,6 +74,7 @@ import org.jooq.SQL;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectHavingStep;
 import org.jooq.SelectJoinStep;
+import org.jooq.SelectSeekStep1;
 import org.jooq.SelectSeekStep2;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -162,12 +166,66 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 timezone.getId(), office);
     }
 
+    /**
+     * Retrieves a TimeSeries from the database
+     * @param page an opaque token used for paging
+     * @param pageSize number of points to return in a page
+     * @param names the timeseries id
+     * @param office the office
+     * @param units the units to return
+     * @param beginTime the beginning of the time window
+     * @param endTime the end of the time window
+     * @param versionDate the requested version date or null
+     * @param shouldTrim should the beginning and end of the returned timeseries be trimmed
+     * @param includeEntryDate if the entry-date should be included in results
+     * @return TimeSeries containing the requested data
+     * @deprecated Use {@link #getTimeseries(String,int,TimeSeriesRequestParameters)}
+     *             instead.  Create a {@link TimeSeriesRequestParameters} instance and
+     *             call that overload.
+     */
+    @Override
+    @Deprecated
+    public TimeSeries getTimeseries(String page, int pageSize, String names, String office,
+                                    String units,
+                                    ZonedDateTime beginTime, ZonedDateTime endTime,
+                                    ZonedDateTime versionDate, boolean shouldTrim, boolean includeEntryDate) {
+        TimeSeriesRequestParameters requestParameters = new TimeSeriesRequestParameters.Builder()
+                .withNames(names)
+                .withOffice(office)
+                .withUnits(units)
+                .withBeginTime(beginTime)
+                .withEndTime(endTime)
+                .withVersionDate(versionDate)
+                .withShouldTrim(shouldTrim)
+                .withIncludeEntryDate(includeEntryDate)
+                .build();
+        return getTimeseries(page, pageSize, requestParameters);
+    }
 
     @Override
-    public TimeSeries getTimeseries(String page, int pageSize, String names, String office,
-                                       String units,
-                                       ZonedDateTime beginTime, ZonedDateTime endTime,
-                                    ZonedDateTime versionDate, boolean shouldTrim, boolean includeEntryDate) {
+    public TimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters) {
+        return getRequestedTimeSeries(page, pageSize, requestParameters, null);
+    }
+
+    @Override
+    public FilteredTimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters, FilteredTimeSeriesParameters filterParams){
+        TimeSeries ts =  getRequestedTimeSeries(page, pageSize, requestParameters, filterParams);
+        FilteredTimeSeries fts = new FilteredTimeSeries(ts, filterParams);
+        fts.clearTimeSeriesPagination();  // we are wrapping the ts, it doesn't need to serialize its own page, nextPage etc.
+        return fts;
+    }
+
+    protected TimeSeries getRequestedTimeSeries(String page, int pageSize, @NotNull TimeSeriesRequestParameters requestParameters,
+                                       @Nullable FilteredTimeSeriesParameters fp) {
+
+        String names = requestParameters.getNames();
+        String office = requestParameters.getOffice();
+        String units = requestParameters.getUnits();
+        ZonedDateTime beginTime = requestParameters.getBeginTime();
+        ZonedDateTime endTime = requestParameters.getEndTime();
+        ZonedDateTime versionDate = requestParameters.getVersionDate();
+        boolean shouldTrim = requestParameters.isShouldTrim();
+        boolean includeEntryDate = requestParameters.isIncludeEntryDate();
         String cursor = null;
         Timestamp tsCursor = null;
         Integer total = null;
@@ -271,8 +329,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
         String trim = formatBool(shouldTrim);
-        String startInclusive = "T";
-        String endInclusive = "T";
+        final String startInclusive = "T";
+        final String endInclusive = "T";
         String previous = "F";
         String next = "F";
         Long versionDateMilli = null;
@@ -286,6 +344,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Field<String> tzName = AV_CWMS_TS_ID2.TIME_ZONE_ID;
 
+        Condition filterConditions = getFilterCondition(fp, valueCol);
+
         Field<Integer> totalField;
         if (total != null) {
             totalField = DSL.val(total).as("TOTAL");
@@ -294,7 +354,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             // Total is only an estimate, as it can change if fetching current data,
             // or the timeseries otherwise changes between queries.
 
-            SelectJoinStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = select(
+            SelectConditionStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = select(
                     dateTimeCol, valueCol, qualityCol
             ).from(DSL.sql(
                     "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,"
@@ -306,7 +366,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     endTimeMilli,
                     trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,
                     valid.field("office_id", String.class)
-            ));
+            ))
+                    .where(filterConditions)
+                    ;
 
             totalField = DSL.selectCount().from(table(retrieveSelectCount)).asField("TOTAL");
         }
@@ -364,6 +426,21 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         );
 
+        Long pageBegin =  beginTimeMilli;
+        if (tsCursor != null && !shouldTrim){
+            // If trim is turned on we can't change the start time to the retrieve_ts_entry_out_tab call
+            // Imagine there is a single non-null point in the first page but then the second page is all nulls
+            // If we change the start time for the second call the trim will get applied to second page and
+            // leave us with holes in our data.
+            pageBegin = tsCursor.toInstant().toEpochMilli();
+        } else {
+            filterConditions = filterConditions.and(dateTimeCol
+                    .greaterOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                            DSL.nvl(DSL.val(tsCursor == null ? null :
+                                            tsCursor.toInstant().toEpochMilli()),
+                                    DSL.val(beginTime.toInstant().toEpochMilli())))));
+        }
+
         // Now we're going to call the retrieve_ts_entry_out_tab function to get the data and build an
         // internal table from it so we can manipulate it further
         // This code assumes the database timezone is in UTC (per Oracle recommendation)
@@ -373,7 +450,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         + "?,?,?,?,?,"
                         + getVersionPart(versionDate) + ",?,?) ) retrieveTs",
                 tsId, unit,
-                beginTimeMilli, endTimeMilli,  //tz hardcoded
+                pageBegin, endTimeMilli,  //tz hardcoded
                 trim, startInclusive, endInclusive, previous, next,
                 versionDateMilli, maxVersion, officeId);
 
@@ -383,56 +460,60 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         TimeSeries retVal = null;
         if (pageSize != 0) {
-            SelectJoinStep<Record4<Timestamp, Double, BigDecimal, Timestamp>> query2 = dsl.select(
+
+            boolean isAscending = true;
+            if(fp != null){
+                isAscending = fp.isAscending();
+            }
+
+            SelectSeekStep1<Record4<Timestamp, Double, BigDecimal, Timestamp>, Timestamp> query2 = dsl.select(
                             dateTimeCol,
                             valueCol,
                             qualityNormCol,
                             dataEntryDate
                     )
-                    .from(retrieveSelectData);
+                    .from(retrieveSelectData)
+                    .where(filterConditions)
+                    .orderBy(isAscending ? dateTimeCol.asc() : dateTimeCol.desc());
 
-            SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query =
+            SelectSeekStep1<Record3<Timestamp, Double, BigDecimal>, Timestamp> query =
                     dsl.select(
                                     dateTimeCol,
                                     valueCol,
                                     qualityNormCol
                             )
                             .from(retrieveSelectData)
-                            .where(dateTimeCol
-                                    .greaterOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
-                                            DSL.nvl(DSL.val(tsCursor == null ? null :
-                                                            tsCursor.toInstant().toEpochMilli()),
-                                                    DSL.val(beginTime.toInstant().toEpochMilli())))))
-                            .and(dateTimeCol
-                                    .lessOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
-                                            DSL.val(endTime.toInstant().toEpochMilli())))
-                            );
+                            .where(filterConditions)
+                            .orderBy(isAscending?dateTimeCol.asc():dateTimeCol.desc());
 
             if (pageSize > 0) {
                 query.limit(DSL.val(pageSize + 1));
                 query2.limit(DSL.val(pageSize + 1));
             }
 
-            if (includeEntryDate) {
+            if (requestParameters.isIncludeEntryDate()) {
                 logger.fine(() -> query2.getSQL(ParamType.INLINED));
-                final TimeSeries timeSeries =  timeseries;
-                query2.forEach(tsRecord -> timeSeries.addValue(
-                        tsRecord.getValue(dateTimeCol),
-                        tsRecord.getValue(valueCol),
-                        tsRecord.getValue(qualityNormCol).intValue(),
-                        tsRecord.getValue(dataEntryDate)
-                ));
-                retVal = timeSeries;
+                try (Cursor<Record4<Timestamp, Double, BigDecimal, Timestamp>> recCursor = query2.fetchLazy()) {
+                    for(Record tsRecord: recCursor){
+                        timeseries.addValue(
+                                tsRecord.getValue(dateTimeCol),
+                                tsRecord.getValue(valueCol),
+                                tsRecord.getValue(qualityNormCol).intValue(),
+                                tsRecord.getValue(dataEntryDate));
+                    }
+                }
             } else {
                 logger.fine(() -> query.getSQL(ParamType.INLINED));
-                final TimeSeries finalTimeseries = timeseries;
-                query.forEach(tsRecord -> finalTimeseries.addValue(
-                        tsRecord.getValue(dateTimeCol),
-                        tsRecord.getValue(valueCol),
-                        tsRecord.getValue(qualityNormCol).intValue()
-                ));
-                retVal = finalTimeseries;
+                try (Cursor<Record3<Timestamp, Double, BigDecimal>> recCursor = query.fetchLazy()) {
+                    for(Record tsRecord: recCursor){
+                        timeseries.addValue(
+                                tsRecord.getValue(dateTimeCol),
+                                tsRecord.getValue(valueCol),
+                                tsRecord.getValue(qualityNormCol).intValue());
+                    }
+                }
             }
+            retVal = timeseries;
         }
 
         return retVal;
@@ -609,6 +690,25 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         return new Catalog(catPage != null ? catPage.toString() : null,
                 total, pageSize, entries, params);
+    }
+
+
+    @NotNull
+    private static Condition getFilterCondition(@Nullable FilteredTimeSeriesParameters ip, Field<Double> valueCol) {
+        // In Filter case we want to skip certain points in time....
+        Condition filterConditions = noCondition();
+        if(ip != null) {
+            if (ip.isFilterNulls()) {
+                filterConditions = filterConditions.and(valueCol.isNotNull());
+            }
+            if (ip.getMaxValue() != null) {
+                filterConditions = filterConditions.and(valueCol.le(ip.getMaxValue()));
+            }
+            if (ip.getMinValue() != null) {
+                filterConditions = filterConditions.and(valueCol.ge(ip.getMinValue()));
+            }
+        }
+        return filterConditions;
     }
 
     private static @NotNull List<Condition> buildPagingConditions(String cursorOffice, String cursorTsId) {
@@ -1380,10 +1480,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 return this;
             }
 
+
             public DeleteOptions build() {
                 return new DeleteOptions(this);
             }
         }
     }
+
 
 }

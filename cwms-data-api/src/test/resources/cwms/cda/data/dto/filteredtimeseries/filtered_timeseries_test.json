@@ -1,0 +1,33 @@
+{
+    "name": "Calhoun.Flow.Inst.~1Hour.0.cda-test",
+    "office-id": "SPK",
+    "units": "cfs",
+    "values": [
+        [
+            1673438400000,
+            500,
+            0
+        ],
+        [
+            1673439400000,
+            null,
+            5
+        ],
+        [
+            1673440400000,
+            -340282346638528859811704183484516925440,
+            5
+        ],
+        [
+            1673442000000,
+            600,
+            0
+        ]
+    ],
+    "filter-parameters": {
+        "ascending": true,
+        "min-value": 450.0,
+        "max-value": 550.0,
+        "filter-nulls": true
+    }
+}
