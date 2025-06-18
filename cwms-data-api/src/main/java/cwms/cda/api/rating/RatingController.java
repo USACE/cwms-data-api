@@ -28,11 +28,9 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.AT;
 import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DATE_FORMAT;
 import static cwms.cda.api.Controllers.DATUM;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.EXAMPLE_DATE;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
@@ -48,6 +46,7 @@ import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.STORE_TEMPLATE;
 import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION_DATE;
@@ -212,13 +211,9 @@ public class RatingController implements CrudHandler {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of "
                     + "the ratings to be deleted."),
             @OpenApiParam(name = BEGIN, required = true, description = "The start of the time "
-                    + "window to delete. The format for this field is ISO 8601 extended, "
-                    + "with optional offset and timezone, i.e., '"
-                + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    + "window to delete. " + TIME_FORMAT_DESC),
             @OpenApiParam(name = END, required = true, description = "The end of the time window"
-                    + " to delete. The format for this field is ISO 8601 extended, with optional "
-                    + "offset and timezone, i.e., '"
-                + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    + " to delete. " + TIME_FORMAT_DESC),
             @OpenApiParam(name = TIMEZONE, description = "This field specifies a default "
                     + "timezone to be used if the format of the "
                 + BEGIN + ", " + END + ", or " + VERSION_DATE + " parameters do not include "
