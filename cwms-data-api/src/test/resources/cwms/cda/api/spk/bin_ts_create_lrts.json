@@ -1,6 +1,6 @@
 {
   "office-id": "SPK",
-  "name": "TsBinTestLoc.Flow.Inst.1HourLocal.0.lrts",
+  "name": "TsBinTestLoc.Binary.Inst.1HourLocal.0.lrts",
   "interval-offset": 0,
   "time-zone": "UTC",
   "binary-values": [

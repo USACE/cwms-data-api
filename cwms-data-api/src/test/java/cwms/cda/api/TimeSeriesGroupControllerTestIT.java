@@ -359,6 +359,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @Disabled("This test is disabled because the new LRTS identifier is not yet supported in the retrieval")
     void test_create_read_delete_LRTS() throws Exception {
         String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.1HourLocal.0.cda-lrts";

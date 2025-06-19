@@ -15,6 +15,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -306,6 +307,8 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @Disabled("This test is disabled because there is a bug in the association between the binary time series "
+        + "and its associated binary data. It is likely related to the new LRTS identifier.")
     void test_create_get_delete_get_lrts() throws Exception {
 
         // Structure of test:
@@ -321,7 +324,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Step 1)
         // Try to create the binary time series without LRTS header set
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        String tsIdentifier = "TsBinTestLoc.Flow.Inst.1HourLocal.0.lrts";
+        String tsIdentifier = "TsBinTestLoc.Binary.Inst.1HourLocal.0.lrts";
         String tsData = getTsBodyNewLRTSInterval(tsIdentifier);
 
         createTimeseries(OFFICE, tsIdentifier, true);

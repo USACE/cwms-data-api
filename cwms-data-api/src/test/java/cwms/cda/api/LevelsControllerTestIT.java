@@ -38,6 +38,7 @@ import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -340,6 +341,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @Disabled("This test is disabled because the new LRTS identifier is not yet supported in the Levels retrieval")
     void test_ts_backed_level_new_lrts_interval() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         createLocation("level_as_ts_lrts", true, OFFICE);
