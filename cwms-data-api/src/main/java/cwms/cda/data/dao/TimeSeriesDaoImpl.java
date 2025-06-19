@@ -424,7 +424,20 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         );
 
-        Long pageBegin =  tsCursor == null ? beginTimeMilli : tsCursor.toInstant().toEpochMilli();
+        Long pageBegin =  beginTimeMilli;
+        if (tsCursor != null && !shouldTrim){
+            // If trim is turned on we can't change the start time to the retrieve_ts_entry_out_tab call
+            // Imagine there is a single non-null point in the first page but then the second page is all nulls
+            // If we change the start time for the second call the trim will get applied to second page and
+            // leave us with holes in our data.
+            pageBegin = tsCursor.toInstant().toEpochMilli();
+        } else {
+            filterConditions = filterConditions.and(dateTimeCol
+                    .greaterOrEqual(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                            DSL.nvl(DSL.val(tsCursor == null ? null :
+                                            tsCursor.toInstant().toEpochMilli()),
+                                    DSL.val(beginTime.toInstant().toEpochMilli())))));
+        }
 
         // Now we're going to call the retrieve_ts_entry_out_tab function to get the data and build an
         // internal table from it so we can manipulate it further
@@ -450,7 +463,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             if(fp != null){
                 isAscending = fp.isAscending();
             }
-
 
             SelectSeekStep1<Record4<Timestamp, Double, BigDecimal, Timestamp>, Timestamp> query2 = dsl.select(
                             dateTimeCol,
