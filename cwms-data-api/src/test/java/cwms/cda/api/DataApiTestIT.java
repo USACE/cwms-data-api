@@ -25,7 +25,6 @@
 package cwms.cda.api;
 
 import static cwms.cda.data.dao.JooqDao.REQUIRE_NEW_LRTS_ID_FORMAT;
-import static cwms.cda.data.dao.JooqDao.REQUIRE_OLD_LRTS_ID_FORMAT;
 import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
 
 import com.google.common.flogger.FluentLogger;
@@ -337,15 +336,12 @@ public class DataApiTestIT {
         }, "cwms_20");
     }
 
-    protected static void createTimeseries(String office, String timeseries, boolean requireNewLRTSIntervalFormat) throws SQLException {
+    protected static void createTimeseriesWithNewLRTSInterval(String office, String timeseries) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection((c)-> {
-            String requireBool = requireNewLRTSIntervalFormat ? "T" : "F";
-            int requireIntValue = requireNewLRTSIntervalFormat
-                ? REQUIRE_NEW_LRTS_ID_FORMAT : REQUIRE_OLD_LRTS_ID_FORMAT;
             org.jooq.Configuration configuration = DSL.using(c).configuration();
             CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(configuration,
-                SESSION_USE_LRTS_ID_FORMAT, requireBool, requireIntValue);
+                SESSION_USE_LRTS_ID_FORMAT, "T", REQUIRE_NEW_LRTS_ID_FORMAT);
             try(PreparedStatement stmt = c.prepareStatement(createTimeseriesQuery)) {
                 stmt.setString(1,office);
                 stmt.setString(2,timeseries);

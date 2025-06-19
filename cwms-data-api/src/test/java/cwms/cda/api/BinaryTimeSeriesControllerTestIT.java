@@ -328,7 +328,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         String legacyTsIdentifier = "TsBinTestLoc.Binary.Inst.~1Hour.0.lrts";
         String tsData = getTsBodyNewLRTSInterval(tsIdentifier);
 
-        createTimeseries(OFFICE, tsIdentifier, true);
+        createTimeseriesWithNewLRTSInterval(OFFICE, tsIdentifier);
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)

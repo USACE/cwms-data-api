@@ -202,7 +202,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         String location = newTsId.split("\\.")[0];
         createLocation(location, true, OFFICE_ID);
 
-        createTimeseries(OFFICE_ID, newTsId, true);
+        createTimeseriesWithNewLRTSInterval(OFFICE_ID, newTsId);
 
         tsData3 = tsData3.replace(oldTsId, newTsId);
 

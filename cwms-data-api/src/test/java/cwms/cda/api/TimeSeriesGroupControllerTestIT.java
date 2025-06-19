@@ -393,7 +393,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
         // inserting the time series
-        createTimeseries(officeId, timeSeriesId, true);
+        createTimeseriesWithNewLRTSInterval(officeId, timeSeriesId);
 
         // try to create a group without setting the LRTS header
         given()

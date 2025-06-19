@@ -272,9 +272,9 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         String specData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(specData);
 
-        createTimeseries(OFFICE, "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid1", true);
-        createTimeseries(OFFICE, "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid2", true);
-        createTimeseries(OFFICE, "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid3", true);
+        createTimeseriesWithNewLRTSInterval(OFFICE, "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid1");
+        createTimeseriesWithNewLRTSInterval(OFFICE, "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid2");
+        createTimeseriesWithNewLRTSInterval(OFFICE, "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid3");
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)

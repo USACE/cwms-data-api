@@ -429,9 +429,9 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         String specJson = JsonV2.buildObjectMapper().writeValueAsString(spec);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
-        createTimeseries(OFFICE, "FcstInstTestLoc.Flow.Ave.1DayLocal.1Day.tsid1", true);
-        createTimeseries(OFFICE, "FcstInstTestLoc.Flow.Ave.1DayLocal.1Day.tsid2", true);
-        createTimeseries(OFFICE, "FcstInstTestLoc.Flow.Ave.1DayLocal.1Day.tsid3", true);
+        createTimeseriesWithNewLRTSInterval(OFFICE, "FcstInstTestLoc.Flow.Ave.1DayLocal.1Day.tsid1");
+        createTimeseriesWithNewLRTSInterval(OFFICE, "FcstInstTestLoc.Flow.Ave.1DayLocal.1Day.tsid2");
+        createTimeseriesWithNewLRTSInterval(OFFICE, "FcstInstTestLoc.Flow.Ave.1DayLocal.1Day.tsid3");
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
