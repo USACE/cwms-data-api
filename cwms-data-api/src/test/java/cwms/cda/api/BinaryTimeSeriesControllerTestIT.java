@@ -310,11 +310,12 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         // Structure of test:
         //
-        // 1)Try to create the binary time series without LRTS
+        // 1)Try to create the binary time series using new LRTS format without the new LRTS format header
         // 2)Create the binary time series with LRTS
-        // 3)Retrieve the binary time series and assert that it exists
-        // 4)Delete the binary time series
-        // 5)Retrieve the binary time series and assert that it does not exist
+        // 3)Retrieve the binary time series with the new header and assert that it exists
+        // 3)Retrieve the binary time series without the new header and assert that it exists
+        // 5)Delete the binary time series
+        // 6)Retrieve the binary time series and assert that it does not exist
 
 
         // Step 1)
@@ -339,7 +340,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+            .statusCode(is(HttpServletResponse.SC_CONFLICT));
 
         // Step 2)
         // Create the binary time series
@@ -380,11 +381,33 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("name", equalTo(tsIdentifier))
             .body("binary-values.size()", equalTo(3))
         ;
         // TODO: The above method is not returning the stored binary values associated with the TS.
 
         // Step 4)
+        // Retrieve the binary time series without the header and assert that it exists
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.BEGIN, "2004-05-01T12:00:00Z")
+            .queryParam(Controllers.END, "2007-05-19T16:00:00Z")
+            .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/binary/")
+            .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("name", equalTo(tsIdentifier))
+            .body("binary-values.size()", equalTo(3))
+        ;
+
+        // Step 5)
         // Delete the binary time series
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -408,7 +431,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         Instant instant = versionDate.toInstant();
         String versionDateStr = instant.toString();
 
-        // Step 5)
+        // Step 6)
         // Retrieve the binary time series and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
