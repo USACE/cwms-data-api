@@ -325,6 +325,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Try to create the binary time series without LRTS header set
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String tsIdentifier = "TsBinTestLoc.Binary.Inst.1HourLocal.0.lrts";
+        String legacyTsIdentifier = "TsBinTestLoc.Binary.Inst.~1Hour.0.lrts";
         String tsData = getTsBodyNewLRTSInterval(tsIdentifier);
 
         createTimeseries(OFFICE, tsIdentifier, true);
@@ -394,19 +395,20 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
+            .header(ApiServlet.IS_NEW_LRTS, false)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.NAME, legacyTsIdentifier)
             .queryParam(Controllers.BEGIN, "2004-05-01T12:00:00Z")
             .queryParam(Controllers.END, "2007-05-19T16:00:00Z")
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/timeseries/binary/")
-            .then()
+        .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("name", equalTo(tsIdentifier))
+            .body("name", equalTo(legacyTsIdentifier))
             .body("binary-values.size()", equalTo(3))
         ;
 

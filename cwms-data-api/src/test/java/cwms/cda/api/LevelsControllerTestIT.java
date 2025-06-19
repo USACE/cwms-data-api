@@ -31,6 +31,7 @@ import cwms.cda.data.dao.RatingSetDao;
 import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
@@ -414,10 +415,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
         int effectiveDateCount = 10;
         for (int i = 0; i < effectiveDateCount; i++) {
-            LocationLevel level = new LocationLevel.Builder(levelId, time.plusDays(i))
+            LocationLevel level = new TimeSeriesLocationLevel.Builder(levelId, time.plusDays(i), tsId)
                     .withOfficeId(OFFICE)
                     .withLevelUnitsId("cfs")
-                    .withSeasonalTimeSeriesId(tsId)
                     .withInterpolateString("T")
                     .build();
             levelList.add(level);
