@@ -109,9 +109,9 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("time-series.values[0][0]", closeTo(1673442000000L,1000))
+                .body("time-series.values[0][0]",  equalTo(1673438400000L))
                 .body("time-series.values[0][1]", closeTo(500.0,0.0001))
-                .body("time-series.values[1][0]", closeTo(1673442000000L,1000))
+                .body("time-series.values[1][0]", equalTo(1673442000000L))
                 .body("time-series.values[1][1]", closeTo(600.0,0.0001))
                 .body("time-series.values.size()", equalTo(2))
             ;
@@ -175,7 +175,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("time-series.values[0][0]", closeTo(1673442000000L,1000))
+                .body("time-series.values[0][0]", equalTo(1673442000000L))
                 .body("time-series.values[0][1]", closeTo(600.0,0.0001))
                 .body("time-series.values.size()", equalTo(1))
             ;
@@ -239,7 +239,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("time-series.values[0][0]", closeTo(1673442000000L,1000))
+                .body("time-series.values[0][0]",  equalTo(1673438400000L))
                 .body("time-series.values[0][1]", closeTo(500.0,0.0001))
                 .body("time-series.values.size()", equalTo(1))
             ;
@@ -304,7 +304,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("time-series.values[0][0]", closeTo(1673442000000L,1000))
+                .body("time-series.values[0][0]",  equalTo(1673438400000L))
                 .body("time-series.values[0][1]", closeTo(500.0,0.0001))
                 .body("time-series.values.size()", equalTo(1))
             ;
@@ -370,7 +370,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("time-series.values[0][0]", closeTo(1673442000000L,1000))
+                .body("time-series.values[0][0]", equalTo(1673438400000L))
                 .body("time-series.values[0][1]", closeTo(500.0,0.0001))
                 .body("time-series.values.size()", equalTo(1))
             ;
@@ -435,10 +435,10 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK))
                 // First value should be 500 (earliest timestamp)
                 .body("time-series.values[0][1]", closeTo(500.0,0.0001))
-                .body("time-series.values[0][0]", closeTo(1673442000000L,1000))
+                .body("time-series.values[0][0]",  equalTo(1673438400000L))
                 // Last value should be 600 (latest timestamp)
                 .body("time-series.values[3][1]", closeTo(600.0,0.0001))
-                .body("time-series.values[3][0]", closeTo(1673438400000L,1000))
+                .body("time-series.values[3][0]", equalTo(1673442000000L))
             ;
         } catch (SQLException ex) {
             throw new RuntimeException("Unable to create location for TS", ex);
@@ -501,10 +501,10 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
                 // First value should be 600 (latest timestamp)
-                .body("time-series.values[0][0]", closeTo(1673442000000L,1000))
+                .body("time-series.values[0][0]", equalTo(1673442000000L))
                 .body("time-series.values[0][1]", closeTo(600.0,0.0001))
                 // Last value should be 500 (earliest timestamp)
-                .body("time-series.values[3][0]", closeTo(1673438400000L,1000))
+                .body("time-series.values[3][0]",  equalTo(1673438400000L))
                 .body("time-series.values[3][1]", closeTo(500.0,0.0001))
             ;
         } catch (SQLException ex) {
