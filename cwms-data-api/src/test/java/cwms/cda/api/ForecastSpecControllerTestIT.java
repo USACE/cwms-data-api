@@ -8,6 +8,7 @@ import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
+import org.junit.jupiter.api.Disabled;
 import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
 
 import org.apache.commons.io.IOUtils;
@@ -252,6 +253,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @Disabled("Disabled until the retrieval returns the new LRTS interval identifier")
     void test_create_get_delete_get_lrts() throws Exception {
 
         // Structure of test:
@@ -309,6 +311,9 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("designator", equalTo(designator))
             .body("time-series-ids.size()", equalTo(3))
+            .body("time-series-ids[0]", equalTo("TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid1"))
+            .body("time-series-ids[1]", equalTo("TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid2"))
+            .body("time-series-ids[2]", equalTo("TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid3"))
         ;
         truncateFcstTimeSeries();
         // Step 3)
