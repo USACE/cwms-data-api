@@ -41,7 +41,6 @@ public class JooqFieldResolver implements FieldResolver {
                     .findFirst()
                     .orElseThrow(() ->
                             new IllegalArgumentException("Unknown field: " + fieldName));
-
         }
 
         return (Field<Object>) field;
