@@ -31,13 +31,21 @@ import fixtures.TestAccounts;
 import hec.data.cwmsRating.io.RatingSetContainer;
 import hec.data.cwmsRating.io.RatingSpecContainer;
 import io.restassured.filter.log.LogDetail;
+import io.restassured.path.json.JsonPath;
+import io.restassured.path.xml.XmlPath;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -59,8 +67,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 	private static final String TEMPLATE = "Stage;Flow.COE";
 	private static final String SPK = "SPK";
 
-	@BeforeAll
-	static void beforeAll() throws Exception
+	static void store(boolean storeTemplate) throws Exception
 	{
 		//Make sure we always have something.
 		createLocation(EXISTING_LOC, true, SPK);
@@ -122,7 +129,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.body(setXml)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, SPK)
-			.queryParam(STORE_TEMPLATE, false)
+			.queryParam(STORE_TEMPLATE, storeTemplate)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -139,7 +146,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.body(setXml2)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, SPK)
-			.queryParam(STORE_TEMPLATE, false)
+			.queryParam(STORE_TEMPLATE, storeTemplate)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -156,7 +163,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.body(setXml3)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, SPK)
-			.queryParam(STORE_TEMPLATE, false)
+			.queryParam(STORE_TEMPLATE, storeTemplate)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -167,8 +174,145 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.statusCode(is(HttpServletResponse.SC_OK));
 	}
 
-	@AfterAll
-	static void afterAll()
+	static void storeOneSet(boolean storeTemplate) throws Exception {
+		storeOneSet("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml", "Zanesville", storeTemplate, false);
+	}
+
+	static void storeOneSet(String file, String locationString, boolean storeTemplate, boolean replaceBaseCurve) throws Exception {
+		createLocation(EXISTING_LOC, true, SPK);
+		String ratingXml = readResourceFile(file);
+		ratingXml = ratingXml.replaceAll(locationString, EXISTING_LOC);
+		String ratingXml2 = ratingXml;
+		RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml2);
+		RatingSpecContainer specContainer = container.ratingSpecContainer;
+		specContainer.officeId = SPK;
+		specContainer.specOfficeId = SPK;
+		specContainer.locationId = EXISTING_LOC;
+		String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
+		String templateXml = RatingSpecXmlFactory.toXml(specContainer, "", 0);
+		String setXml = RatingContainerXmlFactory.toXml(container, "", 0, true, false);
+		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+		//Create Template
+		given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.contentType(Formats.XMLV2)
+				.body(templateXml)
+				.header("Authorization", user.toHeaderValue())
+				.queryParam(OFFICE, SPK)
+		.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.post("/ratings/template")
+		.then()
+		.assertThat()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_CREATED));
+
+		//Create Spec
+		given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.contentType(Formats.XMLV2)
+				.body(specXml)
+				.header("Authorization", user.toHeaderValue())
+				.queryParam(OFFICE, SPK)
+		.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.post("/ratings/spec")
+		.then()
+		.assertThat()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_CREATED));
+
+		//Create the set
+		given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.contentType(Formats.XMLV2)
+				.body(setXml)
+				.header("Authorization", user.toHeaderValue())
+				.queryParam(OFFICE, SPK)
+				.queryParam(STORE_TEMPLATE, storeTemplate)
+				.queryParam(REPLACE_BASE_CURVE, replaceBaseCurve)
+		.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.post("/ratings")
+		.then()
+		.assertThat()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_OK));
+
+	}
+
+	static void updateOneSet(String file, boolean replaceBaseCurve) throws Exception {
+		createLocation(EXISTING_LOC, true, SPK);
+		String ratingXml = readResourceFile(file);
+		ratingXml = ratingXml.replaceAll("STJ-St_Joseph-Missouri", EXISTING_LOC);
+		String ratingXml2 = ratingXml;
+		RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml2);
+		RatingSpecContainer specContainer = container.ratingSpecContainer;
+		specContainer.officeId = SPK;
+		specContainer.specOfficeId = SPK;
+		specContainer.locationId = EXISTING_LOC;
+		String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
+		String templateXml = RatingSpecXmlFactory.toXml(specContainer, "", 0);
+		String setXml = RatingContainerXmlFactory.toXml(container, "", 0, true, false);
+		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+		//Create Template
+		given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.contentType(Formats.XMLV2)
+				.body(templateXml)
+				.header("Authorization", user.toHeaderValue())
+				.queryParam(OFFICE, SPK)
+		.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.post("/ratings/template")
+		.then()
+		.assertThat()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_CREATED));
+
+		//Create Spec
+		given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.contentType(Formats.XMLV2)
+				.body(specXml)
+				.header("Authorization", user.toHeaderValue())
+				.queryParam(OFFICE, SPK)
+		.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.post("/ratings/spec")
+		.then()
+		.assertThat()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_CREATED));
+
+		//Create the set
+		given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.contentType(Formats.XMLV2)
+				.body(setXml)
+				.header("Authorization", user.toHeaderValue())
+				.queryParam(OFFICE, SPK)
+				.queryParam(STORE_TEMPLATE, false)
+				.queryParam(REPLACE_BASE_CURVE, replaceBaseCurve)
+		.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.patch("/ratings/STJ-St_Joseph-Missouri.Stage;Flow.USGS-BASE.Production")
+		.then()
+		.assertThat()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_OK));
+
+	}
+
+	static void cleanUp()
 	{
 		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
@@ -191,106 +335,501 @@ class RatingsControllerTestIT extends DataApiTestIT
 
 	@ParameterizedTest
 	@EnumSource(GetAllLegacyTest.class)
-	void test_getAll_legacy(GetAllLegacyTest test)
-	{
-		given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.queryParam(FORMAT, test.queryParam)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/ratings")
-		.then()
+	void test_getAll_legacy(GetAllLegacyTest test) throws Exception {
+		try {
+			store(false);
+			given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.queryParam(FORMAT, test.queryParam)
+			.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("/ratings")
+			.then()
 			.assertThat()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.contentType(is(test.expectedContentType));
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_OK))
+				.contentType(is(test.expectedContentType));
+		} finally {
+			cleanUp();
+		}
 	}
 
 	@ParameterizedTest
 	@EnumSource(GetAllTest.class)
-	void test_getAll(GetAllTest test)
-	{
-		given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(test.accept)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/ratings")
-		.then()
+	void test_getAll(GetAllTest test) throws Exception {
+		try {
+			store(false);
+			given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.accept(test.accept)
+			.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("/ratings")
+			.then()
 			.assertThat()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.contentType(is(test.expectedContentType));
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_OK))
+				.contentType(is(test.expectedContentType));
+		} finally {
+			cleanUp();
+		}
 	}
 
 	@ParameterizedTest
 	@EnumSource(GetOneTest.class)
-	void test_getOne(GetOneTest test)
-	{
-		given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(test.accept)
-			.queryParam(OFFICE, SPK)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/ratings/" + EXISTING_SPEC)
-		.then()
+	void test_getOne(GetOneTest test) throws Exception {
+		try {
+			store(false);
+			given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.accept(test.accept)
+				.queryParam(OFFICE, SPK)
+			.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("/ratings/" + EXISTING_SPEC)
+			.then()
 			.assertThat()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.contentType(is(test.expectedContentType));
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_OK))
+				.contentType(is(test.expectedContentType));
+		}
+		finally {
+			cleanUp();
+		}
+	}
+
+	@ParameterizedTest
+	@EnumSource(GetAllTest.class)
+	void test_getAll_storeTemplate(GetAllTest test) throws Exception {
+		try {
+			store(true);
+			given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.accept(test.accept)
+			.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("/ratings")
+			.then()
+			.assertThat()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_OK))
+				.contentType(is(test.expectedContentType));
+		} finally {
+			cleanUp();
+		}
+	}
+
+	@ParameterizedTest
+	@EnumSource(GetAllTest.class)
+	@SuppressWarnings("unchecked")
+	void test_multiple_store_with_store_template(GetAllTest test) throws Exception {
+		try {
+			store(true);
+			storeOneSet(true);
+			Response response = given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.accept(test.accept)
+				.queryParam(AT, "2001-04-09T13:53:01Z")
+				.queryParam(END, "2086-06-06T00:00:00Z")
+			.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("/ratings")
+			.then()
+			.assertThat()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_OK))
+				.contentType(is(test.expectedContentType))
+				.extract()
+				.response();
+			List<String> dates = new ArrayList<>();
+
+			if (response.contentType().contains("json")) {
+				Map<String, Object> root = response.jsonPath().get("ratings");
+				List<Map<String, Object>>  ratings = ((List)root.get("ratings"));
+				for(Map<String, Object> rating : ratings) {
+					Map<String, Object> simpleRating = (Map<String, Object>) rating.get("simple-rating");
+					if (simpleRating != null && simpleRating.get("effective-date") != null) {
+						dates.add((String) simpleRating.get("effective-date"));
+					}
+				}
+			} else if (response.contentType().contains("xml")) {
+				dates = response.xmlPath().getList("ratings.simple-rating.effective-date");
+			}
+
+			//verifying calling multiple stores does not overwrite existing set, so checking original effective-dates are still present
+			assertEquals(1, Collections.frequency(dates, "2016-06-06T00:00:00Z"));
+			assertEquals(1, Collections.frequency(dates, "2085-06-06T00:00:00Z"));
+		} finally {
+			cleanUp();
+		}
+	}
+
+	@ParameterizedTest
+	@EnumSource(GetAllTest.class)
+	@SuppressWarnings("unchecked")
+	void test_multiple_store(GetAllTest test) throws Exception {
+		try {
+			store(true);
+			storeOneSet(false);
+			Response response = given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.accept(test.accept)
+				.queryParam(AT, "2001-04-09T13:53:01Z")
+				.queryParam(END, "2086-06-06T00:00:00Z")
+			.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("/ratings")
+			.then()
+			.assertThat()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_OK))
+				.contentType(is(test.expectedContentType))
+				.extract()
+				.response();
+			List<String> dates = new ArrayList<>();
+
+			if (response.contentType().contains("json")) {
+				dates = ((List<?>) ((Map<String,Object>)response.jsonPath().get("ratings")).get("ratings")).stream()
+						.map(rating -> (Map<String, Object>) ((Map<?, ?>) rating).get("simple-rating"))
+						.filter(Objects::nonNull)
+						.map(sr -> (String) sr.get("effective-date"))
+						.filter(Objects::nonNull)
+						.collect(Collectors.toList());
+			} else if (response.contentType().contains("xml")) {
+				dates = response.xmlPath().getList("ratings.simple-rating.effective-date");
+			}
+
+			//verifying calling multiple stores does not overwrite existing set, so checking original effective-dates are still present
+			assertEquals(1, Collections.frequency(dates, "2016-06-06T00:00:00Z"));
+			assertEquals(1, Collections.frequency(dates, "2085-06-06T00:00:00Z"));
+		} finally {
+			cleanUp();
+		}
 	}
 
 	@Test
-	void test_get_one_latest() {
-		// get latest json
-		ExtractableResponse<Response> response = given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.contentType(Formats.JSONV2)
-			.queryParam(OFFICE, SPK)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/ratings/" + EXISTING_SPEC + "/latest")
-		.then()
-		.assertThat()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.contentType(is(Formats.JSONV2))
-			.extract();
+	void test_fail_not_monotonic() throws Exception {
+		try {
+			createLocation(EXISTING_LOC, true, SPK);
+			String ratingXml = readResourceFile("cwms/cda/api/STJ-St_Joseph-Missouri_Stage_Flow_USGS-BASE_Production.xml");
+			ratingXml = ratingXml.replaceAll("STJ-St_Joseph-Missouri", EXISTING_LOC);
+			String ratingXml2 = ratingXml;
+			RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml2);
+			RatingSpecContainer specContainer = container.ratingSpecContainer;
+			specContainer.officeId = SPK;
+			specContainer.specOfficeId = SPK;
+			specContainer.locationId = EXISTING_LOC;
+			String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
+			String templateXml = RatingSpecXmlFactory.toXml(specContainer, "", 0);
+			String setXml = RatingContainerXmlFactory.toXml(container, "", 0, true, false);
+			setXml = setXml.replace("0.4544681", "0.5544681"); //this will make things not increase monotonically
+			TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
-		String effectiveDate = response.path("ratings.simple-rating[0].effective-date");
-		if (effectiveDate == null) {
-			effectiveDate = response.path("simple-rating.effective-date");
+			//Create Template
+			given()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.contentType(Formats.XMLV2)
+					.body(templateXml)
+					.header("Authorization", user.toHeaderValue())
+					.queryParam(OFFICE, SPK)
+			.when()
+					.redirects().follow(true)
+					.redirects().max(3)
+					.post("/ratings/template")
+			.then()
+			.assertThat()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.statusCode(is(HttpServletResponse.SC_CREATED));
+
+			//Create Spec
+			given()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.contentType(Formats.XMLV2)
+					.body(specXml)
+					.header("Authorization", user.toHeaderValue())
+					.queryParam(OFFICE, SPK)
+			.when()
+					.redirects().follow(true)
+					.redirects().max(3)
+					.post("/ratings/spec")
+			.then()
+			.assertThat()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.statusCode(is(HttpServletResponse.SC_CREATED));
+
+			//Create the set should fail since not monotonically increasing
+			given()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.contentType(Formats.XMLV2)
+					.body(setXml)
+					.header("Authorization", user.toHeaderValue())
+					.queryParam(OFFICE, SPK)
+					.queryParam(STORE_TEMPLATE, true)
+					.queryParam(REPLACE_BASE_CURVE, true)
+			.when()
+					.redirects().follow(true)
+					.redirects().max(3)
+					.post("/ratings")
+			.then()
+			.assertThat()
+					.statusCode(is(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+		} finally {
+			cleanUp();
 		}
-		assertNotNull(effectiveDate);
-		assertEquals("2016-06-06T00:00:00Z", effectiveDate);
+	}
 
-		// get latest xml
-		response = given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.contentType(Formats.XMLV2)
-			.queryParam(OFFICE, SPK)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/ratings/" + EXISTING_SPEC + "/latest")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL,true)
-		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.contentType(is(Formats.XMLV2))
-			.extract();
+	@ParameterizedTest
+	@EnumSource(GetAllTest.class)
+	void test_multiple_store_replace_base(GetAllTest test) throws Exception {
+		try {
+			storeOneSet("cwms/cda/api/STJ-St_Joseph-Missouri_Stage_Flow_USGS-BASE_Production.xml", "STJ-St_Joseph-Missouri", true, true);
+			Response response = given()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.accept(test.accept)
+					.queryParam(AT, "2001-04-09T13:53:01Z")
+					.queryParam(END, "2086-06-06T00:00:00Z")
+			.when()
+					.redirects().follow(true)
+					.redirects().max(3)
+					.get("/ratings")
+			.then()
+			.assertThat()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.statusCode(is(HttpServletResponse.SC_OK))
+					.contentType(is(test.expectedContentType))
+					.extract()
+					.response();
+			List<String> dates = new ArrayList<>();
+			List<String> shifts = new ArrayList<>();
+			List<String> ratingPoints = new ArrayList<>();
+			Object description = null;
 
-		effectiveDate = response.path("ratings.simple-rating[0].effective-date");
-		if (effectiveDate == null) {
-			effectiveDate = response.path("simple-rating.effective-date");
+			if (response.contentType().contains("json")) {
+				JsonPath json = response.jsonPath();
+				dates = extractJsonDates(json);
+				shifts = extractJsonShifts(json);
+				ratingPoints = extractJsonRatingPoints(json);
+				description = json.getList("ratings.ratings.usgs-stream-rating.description").get(0);
+			} else if (response.contentType().contains("xml")) {
+				XmlPath xml = response.xmlPath();
+				dates = xml.getList("ratings.usgs-stream-rating.effective-date");
+				description = xml.get("ratings.usgs-stream-rating.description");
+				shifts = xml.getList("ratings.usgs-stream-rating.shifts");
+				ratingPoints = xml.getList("ratings.usgs-stream-rating.rating-points");
+			}
+
+			assertEquals(1, Collections.frequency(dates, "2016-06-11T05:00:00Z"));
+			assertEquals("11.0", description);
+			assertEquals(".05 0", shifts.get(0).trim());
+			assertEquals(".4544681 14700", ratingPoints.get(0).split("\n")[0]);
+
+			//Update with replace-base set to false... this should update the shifts but not the base curve
+			updateOneSet("cwms/cda/api/STJ-St_Joseph-Missouri_Stage_Flow_USGS-BASE_Production_Changed.xml", false);
+			response = given()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.accept(test.accept)
+					.queryParam(AT, "2001-04-09T13:53:01Z")
+					.queryParam(END, "2086-06-06T00:00:00Z")
+			.when()
+					.redirects().follow(true)
+					.redirects().max(3)
+					.get("/ratings")
+			.then()
+			.assertThat()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.statusCode(is(HttpServletResponse.SC_OK))
+					.contentType(is(test.expectedContentType))
+					.extract()
+					.response();
+			dates = new ArrayList<>();
+			shifts = new ArrayList<>();
+			ratingPoints = new ArrayList<>();
+			if (response.contentType().contains("json")) {
+				JsonPath json = response.jsonPath();
+				dates = extractJsonDates(json);
+				shifts = extractJsonShifts(json);
+				ratingPoints = extractJsonRatingPoints(json);
+				description = json.getList("ratings.ratings.usgs-stream-rating.description").get(0);
+			} else if (response.contentType().contains("xml")) {
+				XmlPath xml = response.xmlPath();
+				dates = xml.getList("ratings.usgs-stream-rating.effective-date");
+				description = xml.get("ratings.usgs-stream-rating.description");
+				shifts = xml.getList("ratings.usgs-stream-rating.shifts");
+				ratingPoints = xml.getList("ratings.usgs-stream-rating.rating-points");
+			}
+
+			assertEquals(1, Collections.frequency(dates, "2016-06-11T05:00:00Z"));
+			assertEquals("11.0", description);
+			assertEquals("1 2", shifts.get(0).trim());
+			//verify that the base curve hasn't changed
+			assertEquals(".4544681 14700", ratingPoints.get(0).split("\n")[0]);
+
+			//update with replace-base set to true - this will update the base curve, so verify the ratings point is changed
+			updateOneSet("cwms/cda/api/STJ-St_Joseph-Missouri_Stage_Flow_USGS-BASE_Production_Changed.xml", true);
+			response = given()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.accept(test.accept)
+					.queryParam(AT, "2001-04-09T13:53:01Z")
+					.queryParam(END, "2086-06-06T00:00:00Z")
+			.when()
+					.redirects().follow(true)
+					.redirects().max(3)
+					.get("/ratings")
+			.then()
+			.assertThat()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.statusCode(is(HttpServletResponse.SC_OK))
+					.contentType(is(test.expectedContentType))
+					.extract()
+					.response();
+			dates = new ArrayList<>();
+			shifts = new ArrayList<>();
+			if (response.contentType().contains("json")) {
+				JsonPath json = response.jsonPath();
+				dates = extractJsonDates(json);
+				shifts = extractJsonShifts(json);
+				ratingPoints = extractJsonRatingPoints(json);
+				description = json.getList("ratings.ratings.usgs-stream-rating.description").get(0);
+			} else if (response.contentType().contains("xml")) {
+				XmlPath xml = response.xmlPath();
+				dates = xml.getList("ratings.usgs-stream-rating.effective-date");
+				description = xml.get("ratings.usgs-stream-rating.description");
+				shifts = xml.getList("ratings.usgs-stream-rating.shifts");
+				ratingPoints = xml.getList("ratings.usgs-stream-rating.rating-points");
+			}
+
+			assertEquals(1, Collections.frequency(dates, "2016-06-11T05:00:00Z"));
+			assertEquals("12.0", description);
+			assertEquals("1 2", shifts.get(0).trim());
+			//verify that the base curve HAS changed with replace base flag set to true
+			assertEquals("1.4544681 14800", ratingPoints.get(0).split("\n")[0]);
+
+			//resets description and shifts to original values since this test is iterating over different formats
+			updateOneSet("cwms/cda/api/STJ-St_Joseph-Missouri_Stage_Flow_USGS-BASE_Production.xml", true);
+		} finally {
+			cleanUp();
 		}
-		assertNotNull(effectiveDate);
-		assertEquals("2016-06-06T00:00:00Z", effectiveDate);
+	}
+
+	@SuppressWarnings("unchecked")
+	private static List<String> extractJsonRatingPoints(JsonPath json) {
+		return ((List<?>) ((Map<String, Object>) json.get("ratings")).get("ratings")).stream()
+				.map(rating -> (Map<String, Object>) ((Map<?, ?>) rating).get("usgs-stream-rating"))
+				.filter(Objects::nonNull)
+				.map(sr -> (List<List<Number>>) sr.get("values"))
+				.filter(Objects::nonNull)
+				.flatMap(List::stream) // Stream<List<Number>>
+				.map(pair -> pair.stream()
+						.map(val -> getNormalizedNumberString(val.toString()))
+						.collect(Collectors.joining(" ")))
+				.collect(Collectors.toList());
+	}
+
+	@SuppressWarnings("unchecked")
+	private List<String> extractJsonShifts(JsonPath json) {
+		return ((List<?>) ((Map<String, Object>) json.get("ratings")).get("ratings")).stream()
+				.map(rating -> (Map<String, Object>) ((Map<?, ?>) rating).get("usgs-stream-rating"))
+				.filter(Objects::nonNull)
+				.flatMap(sr -> {
+					List<Map<String, Object>> shifts2 = (List<Map<String, Object>>) sr.get("shifts");
+					return shifts2 != null ? shifts2.stream() : Stream.empty();
+				})
+				.map(shift -> (List<List<Number>>) shift.get("values"))
+				.filter(Objects::nonNull)
+				.flatMap(List::stream)
+				.map(pair -> pair.stream()
+						.map(val -> getNormalizedNumberString(val.toString()))
+						.collect(Collectors.joining(" ")))
+				.collect(Collectors.toList());
+	}
+
+	@SuppressWarnings("unchecked")
+	private static List<String> extractJsonDates(JsonPath json) {
+		return ((List<?>) ((Map<String, Object>) json.get("ratings")).get("ratings")).stream()
+				.map(rating -> (Map<String, Object>) ((Map<?, ?>) rating).get("usgs-stream-rating"))
+				.filter(Objects::nonNull)
+				.map(sr -> (String) sr.get("effective-date"))
+				.filter(Objects::nonNull)
+				.collect(Collectors.toList());
+	}
+
+	@NotNull
+	private static String getNormalizedNumberString(String val) {
+		//we get back numbers like .01, not 0.01, so normalizing here for string comparison
+		if(val != null)
+		{
+			if (!"0".equals(val) && val.matches("^0+(\\.0+)?$")) {
+				val = ".";
+			} else if (!"0".equals(val) && val.matches("^0+\\.(\\d+)$")) {
+				val = "." + val.replaceAll("^0+\\.", "");
+			}
+		}
+		else
+		{
+			val = "";
+		}
+		return val;
+	}
+
+	@Test
+	void test_get_one_latest() throws Exception {
+		try {
+			store(false);
+			// get latest json
+			ExtractableResponse<Response> response = given()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.contentType(Formats.JSONV2)
+					.queryParam(OFFICE, SPK)
+			.when()
+					.redirects().follow(true)
+					.redirects().max(3)
+					.get("/ratings/" + EXISTING_SPEC + "/latest")
+			.then()
+			.assertThat()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.statusCode(is(HttpServletResponse.SC_OK))
+					.contentType(is(Formats.JSONV2))
+					.extract();
+
+			String effectiveDate = response.path("ratings.simple-rating[0].effective-date");
+			if (effectiveDate == null) {
+				effectiveDate = response.path("simple-rating.effective-date");
+			}
+			assertNotNull(effectiveDate);
+			assertEquals("2016-06-06T00:00:00Z", effectiveDate);
+
+			// get latest xml
+			response = given()
+					.log().ifValidationFails(LogDetail.ALL,true)
+					.contentType(Formats.XMLV2)
+					.queryParam(OFFICE, SPK)
+			.when()
+					.redirects().follow(true)
+					.redirects().max(3)
+					.get("/ratings/" + EXISTING_SPEC + "/latest")
+			.then()
+					.log().ifValidationFails(LogDetail.ALL,true)
+			.assertThat()
+					.statusCode(is(HttpServletResponse.SC_OK))
+					.contentType(is(Formats.XMLV2))
+					.extract();
+
+			effectiveDate = response.path("ratings.simple-rating[0].effective-date");
+			if (effectiveDate == null) {
+				effectiveDate = response.path("simple-rating.effective-date");
+			}
+			assertNotNull(effectiveDate);
+			assertEquals("2016-06-06T00:00:00Z", effectiveDate);
+		} finally {
+			cleanUp();
+		}
+
 	}
 
 	enum GetOneTest
