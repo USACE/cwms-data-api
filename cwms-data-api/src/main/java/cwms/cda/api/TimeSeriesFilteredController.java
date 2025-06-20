@@ -130,13 +130,13 @@ public class TimeSeriesFilteredController implements Handler {
                             + "whether to include the data entry date of each value in the response. Including the data entry "
                             + "date will increase the size of the array containing each data value from three to four, "
                             + "changing the format of the response. Default is false."),
-                    @OpenApiParam(name = "asc", type = Boolean.class, description = "Specifies "
+                    @OpenApiParam(name = ASC, type = Boolean.class, description = "Specifies "
                             + "whether to return the data in ascending order to descending order. Default is true."),
-                    @OpenApiParam(name = "min-value", type = Double.class, description = "Specifies "
+                    @OpenApiParam(name = MIN_VALUE, type = Double.class, description = "Specifies "
                             + "the minimum value to include in the results. Values below this threshold will be excluded."),
-                    @OpenApiParam(name = "max-value", type = Double.class, description = "Specifies "
+                    @OpenApiParam(name = MAX_VALUE, type = Double.class, description = "Specifies "
                             + "the maximum value to include in the results. Values above this threshold will be excluded."),
-                    @OpenApiParam(name = "filter-nulls", type = Boolean.class, description = "Specifies "
+                    @OpenApiParam(name = FILTER_NULLS, type = Boolean.class, description = "Specifies "
                             + "whether to exclude null values from the results. Default is false."),
                     @OpenApiParam(name = PAGE, description = "This end point can return large amounts "
                             + "of data as a series of pages. This parameter is used to describes the "
@@ -213,10 +213,10 @@ public class TimeSeriesFilteredController implements Handler {
 
             String office = requiredParam(ctx, OFFICE);
 
-            boolean ascending = ctx.queryParamAsClass("asc", Boolean.class).getOrDefault(true);
-            Double minValue = ctx.queryParamAsClass("min-value", Double.class).getOrDefault(null);
-            Double maxValue = ctx.queryParamAsClass("max-value", Double.class).getOrDefault(null);
-            boolean filterNulls = ctx.queryParamAsClass("filter-nulls", Boolean.class).getOrDefault(false);
+            boolean ascending = ctx.queryParamAsClass(ASC, Boolean.class).getOrDefault(true);
+            Double minValue = ctx.queryParamAsClass(MIN_VALUE, Double.class).getOrDefault(null);
+            Double maxValue = ctx.queryParamAsClass(MAX_VALUE, Double.class).getOrDefault(null);
+            boolean filterNulls = ctx.queryParamAsClass(FILTER_NULLS, Boolean.class).getOrDefault(false);
 
             // Having all the parameters in a RequestParameters class will make changing/extending the args easier.
             FilteredTimeSeriesParameters ftsParams = new FilteredTimeSeriesParameters.Builder()
