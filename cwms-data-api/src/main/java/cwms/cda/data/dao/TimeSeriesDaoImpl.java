@@ -210,7 +210,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     @Override
     public FilteredTimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters, FilteredTimeSeriesParameters filterParams){
         TimeSeries ts =  getRequestedTimeSeries(page, pageSize, requestParameters, filterParams);
-        return new FilteredTimeSeries(ts, filterParams);
+        FilteredTimeSeries fts = new FilteredTimeSeries(ts, filterParams);
+        fts.clearTimeSeriesPagination();  // we are wrapping the ts, it doesn't need to serialize its own page, nextPage etc.
+        return fts;
     }
 
     protected TimeSeries getRequestedTimeSeries(String page, int pageSize, @NotNull TimeSeriesRequestParameters requestParameters,

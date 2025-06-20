@@ -2,6 +2,7 @@ package cwms.cda.data.dto.filteredtimeseries;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -134,5 +135,33 @@ class FilteredTimeSeriesTest {
     @NotNull
     private ObjectMapper buildObjectMapper() {
         return JsonV2.buildObjectMapper();
+    }
+
+    @Test
+    void testClearTimeSeriesPagination() {
+        // Create a TimeSeries with pagination information
+        String tsId = "Calhoun.Flow.Inst.~1Hour.0.cda-test";
+        ZonedDateTime start = ZonedDateTime.parse("2023-01-11T12:00:00Z");
+        ZonedDateTime end = ZonedDateTime.parse("2023-01-11T13:00:00Z");
+        ZonedDateTime versionDate = Instant.now().atZone(ZoneId.of("UTC"));
+
+        // Set page and pageSize to non-null values
+        String page = "testPage";
+        int pageSize = 10;
+        TimeSeries ts = new TimeSeries(page, pageSize, 0, tsId, "SPK", start, end, "cfs", Duration.ZERO, null, versionDate, null);
+
+        // Create a FilteredTimeSeries with this TimeSeries
+        FilteredTimeSeriesParameters params = buildFilterParams();
+        FilteredTimeSeries filteredTs = new FilteredTimeSeries(ts, params);
+
+        // Verify that the page is not null before clearing
+        assertNotNull(filteredTs.getTimeSeries().getPage());
+
+        // Call the clearTimeSeriesPagination method
+        filteredTs.clearTimeSeriesPagination();
+
+        // Verify that the page is now null
+        assertNull(filteredTs.getTimeSeries().getPage());
+        assertNull(filteredTs.getTimeSeries().getNextPage());
     }
 }
