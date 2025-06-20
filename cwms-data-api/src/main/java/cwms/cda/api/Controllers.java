@@ -222,6 +222,10 @@ public final class Controllers {
     private static final String DEPRECATED_HEADER = "CWMS-DATA-Format-Deprecated";
     private static final String DEPRECATED_TAB = "2024-11-01 TAB is not used often.";
     private static final String DEPRECATED_CSV = "2024-11-01 CSV is not used often.";
+    public static final String MIN_VALUE = "min-value";
+    public static final String MAX_VALUE = "max-value";
+    public static final String FILTER_NULLS = "filter-nulls";
+    public static final String ASC = "asc";
 
 
     static {
