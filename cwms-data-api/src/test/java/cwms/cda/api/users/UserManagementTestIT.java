@@ -69,7 +69,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpCode.OK.getStatus()))
             .body("user-name", equalTo(userUnderTest.getName().toUpperCase()))
-            .body("roles.SPK",contains("All Users", "CWMS Users", "TS ID Creator"))
+            .body("roles.SPK",hasItems("All Users", "CWMS Users", "TS ID Creator"))
             ;
         // we can add a role
         given()

@@ -163,8 +163,7 @@ public class UserDao extends JooqDao<User> {
                  .where(upper(vUserGroups.DB_OFFICE_ID).eq(upper(office)))
                  .and(vUserGroups.IS_MEMBER.eq("T")).asField().gt(1)
             ;
-/// TODO: instead of where clause we establish the join or not. If not limiting by office we don't
-/// join on the vUserGroups table at this point.
+
             if (cursor == null || cursor.isEmpty()) {
                 SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
                     .from(vUsers)
@@ -186,7 +185,7 @@ public class UserDao extends JooqDao<User> {
                     cursorUserId = parts[0];
                     total = Integer.parseInt(parts[2]);
                     pageSizeTmp = Integer.parseInt(parts[1]);
-                    limitOffice = parts[3];
+                    limitOffice = parts[3].equals("null") ? null : parts[3];
 
                     // Rebuild the where clause to match the initial conditions
                     whereClause = limitOffice == null ? DSL.noCondition()
@@ -256,7 +255,6 @@ public class UserDao extends JooqDao<User> {
             });
 
             tmpUsers.entrySet().stream().map(e -> e.getValue().build()).forEach(builder::addUser);
-            
             return builder.build();
         });
     }
