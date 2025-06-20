@@ -37,9 +37,7 @@ class MapFieldResolverTest {
         assertEquals("VALUE", resolvedValue.getName());
 
         // Test resolving a non-existent field
-        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
-            resolver.resolve("non_existent_field");
-        });
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> resolver.resolve("non_existent_field"));
 
         assertTrue(exception.getMessage().contains("Unknown field: non_existent_field"));
     }
