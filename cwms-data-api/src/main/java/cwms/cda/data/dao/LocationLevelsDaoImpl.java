@@ -302,7 +302,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         SEASONAL_VALUE_TAB_T seasonalValues = null;
         Number constantValue = null;
         String seasonalTimeSeriesId = null;
-        String interpolateString = null;
 
         if (locationLevel instanceof SeasonalLocationLevel) {
             SeasonalLocationLevel seasonalLocationLevel = (SeasonalLocationLevel) locationLevel;
@@ -312,8 +311,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     BigInteger.valueOf(seasonalLocationLevel.getIntervalMinutes());
             intervalOrigin = seasonalLocationLevel.getIntervalOrigin() == null ? null :
                     Timestamp.from(seasonalLocationLevel.getIntervalOrigin().toInstant());
-            interpolateString = seasonalLocationLevel.getInterpolateString();
-
             seasonalValues = getSeasonalValues(seasonalLocationLevel);
         } else if (locationLevel instanceof ConstantLocationLevel) {
             constantValue = ((ConstantLocationLevel) locationLevel).getConstantValue();
@@ -328,7 +325,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         final BigInteger minutesFinal = minutes;
         final SEASONAL_VALUE_TAB_T seasonalValuesFinal = seasonalValues;
         final String seasonalTimeSeriesIdFinal = seasonalTimeSeriesId;
-        final String interpolateStringFinal = interpolateString;
 
         connection(dsl, c -> {
             String officeId = locationLevel.getOfficeId();
@@ -338,7 +334,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     locationLevel.getLevelComment(),
                     dateFinal, "UTC", locationLevel.getAttributeValue(), locationLevel.getAttributeUnitsId(),
                     locationLevel.getAttributeDurationId(), locationLevel.getAttributeComment(), intervalOriginFinal, monthsFinal,
-                    minutesFinal, interpolateStringFinal, seasonalTimeSeriesIdFinal, seasonalValuesFinal,
+                    minutesFinal, locationLevel.getInterpolateString(), seasonalTimeSeriesIdFinal, seasonalValuesFinal,
                     "F",
                     officeId);
         });
@@ -684,7 +680,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             SeasonalLocationLevel.Builder seasonalBuilder = new SeasonalLocationLevel.Builder(locLevelId, levelZdt);
             seasonalBuilder.withSeasonalValue(seasonalValue);
             seasonalBuilder.withInterpolateString(interp);
-            seasonalBuilder.withIntervalMinutes(timeInterval.getMinutes());
+            if (timeInterval != null) {
+                seasonalBuilder.withIntervalMinutes(timeInterval.getMinutes());
+            }
             seasonalBuilder.withAttributeParameterId(attrId);
             seasonalBuilder.withAttributeUnitsId(attrUnit);
             seasonalBuilder.withLevelUnitsId(levelUnit);
