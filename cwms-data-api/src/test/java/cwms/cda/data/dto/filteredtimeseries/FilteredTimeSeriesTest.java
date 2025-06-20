@@ -150,17 +150,13 @@ class FilteredTimeSeriesTest {
         int pageSize = 10;
         TimeSeries ts = new TimeSeries(page, pageSize, 0, tsId, "SPK", start, end, "cfs", Duration.ZERO, null, versionDate, null);
 
-        // Create a FilteredTimeSeries with this TimeSeries
         FilteredTimeSeriesParameters params = buildFilterParams();
         FilteredTimeSeries filteredTs = new FilteredTimeSeries(ts, params);
 
-        // Verify that the page is not null before clearing
         assertNotNull(filteredTs.getTimeSeries().getPage());
 
-        // Call the clearTimeSeriesPagination method
         filteredTs.clearTimeSeriesPagination();
 
-        // Verify that the page is now null
         assertNull(filteredTs.getTimeSeries().getPage());
         assertNull(filteredTs.getTimeSeries().getNextPage());
     }
