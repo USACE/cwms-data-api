@@ -1100,9 +1100,12 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     void testStoreRetrieveAllVirtualLocationLevelsPaged() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String existingLoc = "LevelsControllerTestIT";
-        String levelLoc1 = "level_get_all_loc1";
-        String levelLoc2 = "level_get_all_loc2";
-        String levelLoc3 = "level_get_all_loc3";
+        String levelLoc1 = "non_virtual_level_1";
+        String oldLevelLoc1 = "level_get_all_loc1";
+        String levelLoc2 = "non_virtual_level_2";
+        String oldLevelLoc2 = "level_get_all_loc2";
+        String levelLoc3 = "non_virtual_level_3";
+        String oldLevelLoc3 = "level_get_all_loc3";
         String virtualLoc = "virtual_level_value";
         String virtualLoc1 = "virtual_level_value_1";
         String virtualLoc2 = "virtual_level_value_2";
@@ -1126,6 +1129,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         createVirtualLocation(specXml, setXml, time, levelIdLocal, levelId2Local);
 
         String levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_1.json");
+        levelJson = levelJson.replace(oldLevelLoc1, levelLoc1);
         // Store the virtual level
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -1143,6 +1147,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
         levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_2.json");
+        levelJson = levelJson.replace(oldLevelLoc2, levelLoc2);
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -1160,6 +1165,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
         levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_3.json");
+        levelJson = levelJson.replace(oldLevelLoc3, levelLoc3);
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -1236,6 +1242,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(BEGIN, time.toInstant().toString())
+            .queryParam(LEVEL_ID_MASK, "*virtual_level*")
             .queryParam(PAGE_SIZE, 3)
         .when()
             .redirects().follow(true)
@@ -1284,6 +1291,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(UNIT, "SI")
                 .queryParam(BEGIN, time.toInstant().toString())
+                .queryParam(LEVEL_ID_MASK, "*virtual_level*")
                 .queryParam(PAGE, page)
             .when()
                 .redirects().follow(true)
