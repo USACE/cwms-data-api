@@ -239,7 +239,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         final SelectLimitPercentAfterOffsetStep<Record> queryFinal = query;
 
-        logger.info(() -> "getLocationLevels query: " + queryFinal.getSQL(ParamType.INLINED));
+        logger.fine(() -> "getLocationLevels query: " + queryFinal.getSQL(ParamType.INLINED));
 
         query.stream().forEach(r -> parseLevels(r, builderMap, unit));
 
