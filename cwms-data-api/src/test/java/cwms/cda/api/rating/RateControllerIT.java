@@ -34,7 +34,6 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isOneOf;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -59,8 +58,10 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
@@ -300,29 +301,65 @@ final class RateControllerIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {true, false})
-    void testRateLimit(boolean authenticated) {
-        List<RateLimitTest> rateLimitTests = new ArrayList<>();
+    @ValueSource(strings = {
+        "/ratings/rate-values/",
+        "/ratings/rate-ts/",
+        "/ratings/reverse-rate-values/",
+        "/ratings/reverse-rate-ts/"
+    })
+    void testRateLimitRateValues(String endpointPath) {
         AtomicBoolean rateLimitReachedAtomic = new AtomicBoolean(false);
 
-        for (int i = 0; i <= Runtime.getRuntime().availableProcessors(); i++) {
-            RateLimitTest rateLimitTest = new RateLimitTest(rateLimitReachedAtomic, authenticated);
-            rateLimitTest.start();
-            rateLimitTests.add(rateLimitTest);
+        ExecutorService service = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 3);
+        for (int i = 0; i < 150; i++) {
+            service.submit(() -> {
+                try {
+                    String body = getAppropriateInputTimeSeriesData(endpointPath);
+                    Response response = given()
+                        .accept(JSON)
+                        .contentType(JSON)
+                        .body(body)
+                        .header(AUTH_HEADER, TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+                    .when()
+                        .post(endpointPath + SPK + "/" + ratingSet.getName())
+                    .then()
+                        .log().ifValidationFails(LogDetail.ALL, true)
+                    .assertThat()
+                        .statusCode(isOneOf(HttpServletResponse.SC_OK, 429))
+                        .extract().response();
+                    if (response.statusCode() == 429) {
+                        rateLimitReachedAtomic.set(true);
+                    }
+                }
+                catch (Exception e) {
+                    throw new RuntimeException("Error during rate limit test", e);
+                }
+            });
         }
-        for (RateLimitTest rateLimitTest : rateLimitTests) {
-            try {
-                rateLimitTest.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Rate limit test interrupted", e);
+        service.shutdown();
+        try {
+            if (!service.awaitTermination(5, TimeUnit.SECONDS)) {
+                service.shutdownNow();
             }
+        } catch (InterruptedException e) {
+            service.shutdownNow();
         }
-        if (authenticated)
-        {
-            assertFalse(rateLimitReachedAtomic.get());
-        } else {
-            assertTrue(rateLimitReachedAtomic.get());
+
+        assertTrue(rateLimitReachedAtomic.get());
+    }
+
+    private String getAppropriateInputTimeSeriesData(String path) throws JsonProcessingException {
+        switch (path) {
+            case "/ratings/rate-ts/":
+                return serializeRateInputTimeSeries();
+            case "/ratings/reverse-rate-ts/":
+                return serializeReverseRateInputTimeSeries();
+            case "/ratings/rate-values/":
+                return serializeRateInputValues();
+            case "/ratings/reverse-rate-values/":
+                return serializeReverseRateInputValues();
+            default:
+                throw new IllegalArgumentException("Unknown endpoint path: " + path);
         }
     }
 
@@ -364,58 +401,5 @@ final class RateControllerIT extends DataApiTestIT {
             .withOutputUnit("cfs")
             .build();
         return JsonV1.buildObjectMapper().writeValueAsString(valuesInput);
-    }
-
-    private static final class RateLimitTest extends Thread {
-        private final AtomicBoolean rateLimitReached;
-        private final boolean authenticated;
-
-        RateLimitTest(AtomicBoolean rateLimitReached, boolean authenticated) {
-            this.rateLimitReached = rateLimitReached;
-            this.authenticated = authenticated;
-        }
-
-        @Override
-        public void run() {
-            try {
-                String body = serializeRateInputValues();
-                for (int i = 0; i <= 30; i++) {
-                    if (authenticated) {
-                        Response response = given()
-                            .accept(JSON)
-                            .contentType(JSON)
-                            .body(body)
-                            .header(AUTH_HEADER, TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
-                        .when()
-                            .post("/ratings/rate-values/" + SPK + "/" + ratingSet.getName())
-                        .then()
-                            .log().ifValidationFails(LogDetail.ALL, true)
-                        .assertThat()
-                            .statusCode(isOneOf(HttpServletResponse.SC_OK, 429))
-                            .extract().response();
-                        if (response.statusCode() == 429) {
-                            rateLimitReached.set(true);
-                        }
-                    } else {
-                        Response response = given()
-                            .accept(JSON)
-                            .contentType(JSON)
-                            .body(body)
-                        .when()
-                            .post("/ratings/rate-values/" + SPK + "/" + ratingSet.getName())
-                        .then()
-                            .log().ifValidationFails(LogDetail.ALL, true)
-                        .assertThat()
-                            .statusCode(isOneOf(HttpServletResponse.SC_OK, 429))
-                            .extract().response();
-                        if (response.statusCode() == 429) {
-                            rateLimitReached.set(true);
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Error during rate limit test", e);
-            }
-        }
     }
 }
