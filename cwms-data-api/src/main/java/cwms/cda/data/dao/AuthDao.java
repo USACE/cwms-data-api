@@ -176,7 +176,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * @param conn the connection to setup.
      * @throws SQLException if there is an issue setting up the session.
      */
-    private void setSessionForAuthCheck(Connection conn) throws SQLException {
+    static void setSessionForAuthCheck(Connection conn) throws SQLException {
         if (hasCwmsEnvMultiOfficeAuthFix) {
             try (PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE)) {
                 setApiUser.setString(1,connectionUser);
@@ -567,6 +567,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                     updateData.execute();
                 } 
             });
+            logger.atInfo().log("Created user {} from principal {}", username, principal);
             Optional<DataApiPrincipal> apiPrincipal = getPrincipalFromPrincipal(principal);
             if (apiPrincipal.isPresent()) {
                 return apiPrincipal.get();
@@ -574,7 +575,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                 throw new CwmsAuthException("User " + username + " was created, however no principal object could be created.");
             }
         } catch (DataAccessException ex) {
-            logger.atInfo().withCause(ex).log("Unable to create user " + username);
+            logger.atInfo().withCause(ex).log("Unable to create user {}", username);
             throw new CwmsAuthException("Unable to create user " + username, ex);
         }
     }
