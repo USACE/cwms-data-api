@@ -244,6 +244,25 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.contentType(is(test.expectedContentType));
 	}
 
+	@ParameterizedTest
+	@EnumSource(GetAllTest.class)
+	void test_getAll_NATIVE_units(GetAllTest test)
+	{
+		given()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.accept(test.accept)
+			.queryParam(UNIT, "NATIVE")
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("/ratings")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL,true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_OK))
+			.contentType(is(test.expectedContentType));
+	}
+
 	@Test
 	void test_get_one_latest() {
 		// get latest json

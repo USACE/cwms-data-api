@@ -63,7 +63,6 @@ import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.UnsupportedFormatException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -77,9 +76,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.ZoneId;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -192,27 +189,20 @@ public class LocationController implements CrudHandler {
 
                 requestResultSize.update(ctx.res.getBufferSize());
                 ctx.contentType(contentType.toString());
-            }
-            else if (formatParm.isEmpty() && !isLegacyFormat)
-            {
+            } else if (formatParm.isEmpty() && !isLegacyFormat) {
                 List<Location> locations = locationsDao.getLocations(names, units, datum, office);
                 results = Formats.format(contentType, locations, Location.class);
                 ctx.result(results);
                 requestResultSize.update(results.length());
                 ctx.contentType(contentType.toString());
-            }
-            else
-            {
+            } else {
                 String format = Formats.getLegacyTypeFromContentType(contentType);
                 results = locationsDao.getLocations(names, format, units, datum, office);
                 ctx.result(results);
                 requestResultSize.update(results.length());
-                if (isLegacyFormat)
-                {
+                if (isLegacyFormat) {
                     ctx.contentType(contentType.toString());
-                }
-                else
-                {
+                } else {
                     ctx.contentType(contentType.getType());
                 }
             }
@@ -237,12 +227,9 @@ public class LocationController implements CrudHandler {
                 @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
                         + " of the response. Valid values for the unit field are: "
                         + "\n* `EN`  Specifies English unit system.  Location values will be in the "
-                        + "default English units for their parameters."
+                        + "default English units for their parameters. This is the default behavior."
                         + "\n* `SI`  Specifies the SI unit system.  Location values will be in the "
-                        + "default SI units for their parameters."
-                        + "\n* `Other`  Any unit returned in the "
-                        + "response to the units URI request that is appropriate for the "
-                        + "requested parameters.")
+                        + "default SI units for their parameters.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
