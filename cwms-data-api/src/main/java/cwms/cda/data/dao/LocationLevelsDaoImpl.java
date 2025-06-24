@@ -165,6 +165,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                                             String datum, ZonedDateTime beginZdt, ZonedDateTime endZdt) {
         Integer total = null;
         int offset = 0;
+        boolean totalSet = false;
 
         if (cursor != null && !cursor.isEmpty()) {
             String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
@@ -174,6 +175,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 if (!"null".equals(parts[1])) {
                     try {
                         total = Integer.valueOf(parts[1]);
+                        totalSet = true;
                     } catch (NumberFormatException e) {
                         logger.log(Level.INFO, "Could not parse {0}", parts[1]);
                     }
@@ -222,6 +224,19 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .offset(offset)
                 .limit(pageSize);
 
+        if (!totalSet) {
+            total = dsl.selectDistinct(LOCATION_LEVEL_FIELDS)
+                .from(view)
+                .fullOuterJoin(virtView)
+                .on(view.LOCATION_LEVEL_CODE.eq(virtView.LOCATION_LEVEL_CODE))
+                .where(whereCondition)
+                .orderBy(DSL.upper(view.OFFICE_ID), DSL.upper(view.LOCATION_LEVEL_ID),
+                    view.LEVEL_DATE, view.CALENDAR_OFFSET, DSL.upper(virtView.OFFICE_ID),
+                    DSL.upper(virtView.LOCATION_LEVEL_ID),
+                    virtView.EFFECTIVE_DATE_UTC
+                ).fetch().size();
+        }
+
         final SelectLimitPercentAfterOffsetStep<Record> queryFinal = query;
 
         logger.fine(() -> "getLocationLevels query: " + queryFinal.getSQL(ParamType.INLINED));
@@ -242,7 +257,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 throw new IllegalArgumentException("Unknown builder type: " + builder.getClass().getName());
             }
         }
-
         LocationLevels.Builder builder = new LocationLevels.Builder(offset, pageSize, total);
         builder.addAll(levels);
         return builder.build();
@@ -302,7 +316,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         SEASONAL_VALUE_TAB_T seasonalValues = null;
         Number constantValue = null;
         String seasonalTimeSeriesId = null;
-        String interpolateString = null;
 
         if (locationLevel instanceof SeasonalLocationLevel) {
             SeasonalLocationLevel seasonalLocationLevel = (SeasonalLocationLevel) locationLevel;
@@ -312,8 +325,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     BigInteger.valueOf(seasonalLocationLevel.getIntervalMinutes());
             intervalOrigin = seasonalLocationLevel.getIntervalOrigin() == null ? null :
                     Timestamp.from(seasonalLocationLevel.getIntervalOrigin().toInstant());
-            interpolateString = seasonalLocationLevel.getInterpolateString();
-
             seasonalValues = getSeasonalValues(seasonalLocationLevel);
         } else if (locationLevel instanceof ConstantLocationLevel) {
             constantValue = ((ConstantLocationLevel) locationLevel).getConstantValue();
@@ -328,7 +339,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         final BigInteger minutesFinal = minutes;
         final SEASONAL_VALUE_TAB_T seasonalValuesFinal = seasonalValues;
         final String seasonalTimeSeriesIdFinal = seasonalTimeSeriesId;
-        final String interpolateStringFinal = interpolateString;
 
         connection(dsl, c -> {
             String officeId = locationLevel.getOfficeId();
@@ -338,7 +348,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     locationLevel.getLevelComment(),
                     dateFinal, "UTC", locationLevel.getAttributeValue(), locationLevel.getAttributeUnitsId(),
                     locationLevel.getAttributeDurationId(), locationLevel.getAttributeComment(), intervalOriginFinal, monthsFinal,
-                    minutesFinal, interpolateStringFinal, seasonalTimeSeriesIdFinal, seasonalValuesFinal,
+                    minutesFinal, locationLevel.getInterpolateString(), seasonalTimeSeriesIdFinal, seasonalValuesFinal,
                     "F",
                     officeId);
         });
@@ -684,7 +694,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             SeasonalLocationLevel.Builder seasonalBuilder = new SeasonalLocationLevel.Builder(locLevelId, levelZdt);
             seasonalBuilder.withSeasonalValue(seasonalValue);
             seasonalBuilder.withInterpolateString(interp);
-            seasonalBuilder.withIntervalMinutes(timeInterval.getMinutes());
+            if (timeInterval != null) {
+                seasonalBuilder.withIntervalMinutes(timeInterval.getMinutes());
+            }
             seasonalBuilder.withAttributeParameterId(attrId);
             seasonalBuilder.withAttributeUnitsId(attrUnit);
             seasonalBuilder.withLevelUnitsId(levelUnit);
