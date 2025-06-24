@@ -235,8 +235,8 @@ public class RatingController implements CrudHandler {
                 + "parameters."
                 + "\n* `SI`   Specifies the SI unit system.  Rating values "
                 + "will be in the default SI units for their parameters."
-                + "\n* `Other`  Any unit returned in the response to the units URI request "
-                + "that is appropriate for the requested parameters."),
+                + "\n* `NATIVE`  Specifies the NATIVE units.  Rating values "
+                + "will be in the native units for their parameters."),
         @OpenApiParam(name = DATUM,  description = "Specifies the "
                 + "elevation datum of the response. This field affects only elevation"
                 + " Ratings. Valid values for this field are:"
@@ -297,13 +297,10 @@ public class RatingController implements CrudHandler {
 
             ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, RatingAliasMarker.class);
 
-            if (format.isEmpty())
-            {
+            if (format.isEmpty()) {
                 //Use the full content type here (i.e. application/json;version=2)
                 ctx.contentType(contentType.toString());
-            }
-            else
-            {
+            } else {
                 //Legacy content type only includes the basic type (i.e. application/json)
                 ctx.contentType(contentType.getType());
             }
