@@ -119,8 +119,8 @@ public class LevelsController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.storeLocationLevel(level);
-            ctx.status(HttpServletResponse.SC_OK).json("Created Location Level");
-        } catch(IOException e) {
+            ctx.status(HttpServletResponse.SC_CREATED).json("Created Location Level");
+        } catch (IOException e) {
             throw new IllegalArgumentException("Unable to parse the request body", e);
         }
     }
@@ -133,7 +133,7 @@ public class LevelsController implements CrudHandler {
         String body = writer.toString();
         if (body.contains("constituent")) {
             return Formats.parseContent(contentType, body, VirtualLocationLevel.class);
-        } else if (body.contains("seasonal-timeseries-id")) {
+        } else if (body.contains("seasonal-time-series-id")) {
             return Formats.parseContent(contentType, body, TimeSeriesLocationLevel.class);
         } else if (body.contains("seasonal-values")) {
             return Formats.parseContent(contentType, body, SeasonalLocationLevel.class);
