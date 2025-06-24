@@ -691,11 +691,14 @@ public class ApiServlet extends HttpServlet {
         String rateValues = format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID);
         post(rateValues,
             new RateValuesController(metrics));
-        post(format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID),
+        String rateTs = format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID);
+        post(rateTs,
             new RateTimeSeriesController(metrics), requiredRoles);
-        post(format("/ratings/reverse-rate-values/{%s}/{%s}", OFFICE, RATING_ID),
+        String reverseRateValues = format("/ratings/reverse-rate-values/{%s}/{%s}", OFFICE, RATING_ID);
+        post(reverseRateValues,
             new ReverseRateValuesController(metrics), requiredRoles);
-        post(format("/ratings/reverse-rate-ts/{%s}/{%s}", OFFICE, RATING_ID),
+        String reverseRateTs = format("/ratings/reverse-rate-ts/{%s}/{%s}", OFFICE, RATING_ID);
+        post(reverseRateTs,
             new ReverseRateTimeSeriesController(metrics), requiredRoles);
         cdaCrudCache("/ratings/template/{template-id}",
                 new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
@@ -706,6 +709,9 @@ public class ApiServlet extends HttpServlet {
         get("/ratings/{rating-id}/latest", new RatingLatestController(metrics));
         cdaCrudCache("/ratings/{rating-id}",
                 new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        addRateLimitCheckAuth(rateTs, new RateTimeSeriesController(metrics), requiredRoles);
+        addRateLimitCheckAuth(reverseRateTs, new ReverseRateTimeSeriesController(metrics), requiredRoles);
+        addRateLimitCheckAuth(reverseRateValues, new ReverseRateValuesController(metrics), requiredRoles);
         addRateLimitCheckAuth(rateValues, new RateValuesController(metrics), requiredRoles);
     }
 

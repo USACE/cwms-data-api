@@ -26,6 +26,10 @@ package cwms.cda.api;
 
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.filter.log.LogDetail;
+import io.restassured.response.Response;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -42,9 +46,12 @@ import static cwms.cda.api.Controllers.CASCADE_DELETE;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
+import static cwms.cda.formatters.Formats.JSON;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isOneOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("integration")
 class LocationControllerTestIT extends DataApiTestIT {
@@ -186,6 +193,27 @@ class LocationControllerTestIT extends DataApiTestIT {
             .contentType(is(test._expectedContentType));
     }
 
+    @Test
+    void testRateLimit() {
+        List<RateLimitTest> rateLimitTests = new ArrayList<>();
+        AtomicBoolean rateLimitReachedAtomic = new AtomicBoolean(false);
+
+        for (int i = 0; i <= Runtime.getRuntime().availableProcessors(); i++) {
+            RateLimitTest rateLimitTest = new RateLimitTest(rateLimitReachedAtomic);
+            rateLimitTest.start();
+            rateLimitTests.add(rateLimitTest);
+        }
+        for (RateLimitTest rateLimitTest : rateLimitTests) {
+            try {
+                rateLimitTest.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Rate limit test interrupted", e);
+            }
+        }
+        assertTrue(rateLimitReachedAtomic.get());
+    }
+
     @ParameterizedTest
     @EnumSource(GetAllLegacyTest.class)
     void test_get_all_locations_legacy_types(GetAllLegacyTest test)
@@ -274,6 +302,38 @@ class LocationControllerTestIT extends DataApiTestIT {
         {
             _accept = accept;
             _expectedContentType = expectedContentType;
+        }
+    }
+
+    private static final class RateLimitTest extends Thread {
+        private final AtomicBoolean rateLimitReached;
+
+        RateLimitTest(AtomicBoolean rateLimitReached) {
+            this.rateLimitReached = rateLimitReached;
+        }
+
+        @Override
+        public void run() {
+            try {
+                for (int i = 0; i <= 30; i++) {
+                    Response response = given()
+                        .accept(JSON)
+                        .contentType(JSON)
+                        .queryParam(OFFICE, "SPK")
+                    .when()
+                        .get("/locations/")
+                    .then()
+                        .log().ifValidationFails(LogDetail.ALL, true)
+                    .assertThat()
+                        .statusCode(isOneOf(HttpServletResponse.SC_OK, 429))
+                        .extract().response();
+                    if (response.statusCode() == 429) {
+                        rateLimitReached.set(true);
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Error during rate limit test", e);
+            }
         }
     }
 }

@@ -301,7 +301,7 @@ final class RateControllerIT extends DataApiTestIT {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void testRateLimit(boolean authenticated) throws Exception {
+    void testRateLimit(boolean authenticated) {
         List<RateLimitTest> rateLimitTests = new ArrayList<>();
         AtomicBoolean rateLimitReachedAtomic = new AtomicBoolean(false);
 
@@ -379,7 +379,7 @@ final class RateControllerIT extends DataApiTestIT {
         public void run() {
             try {
                 String body = serializeRateInputValues();
-                for (int i = 0; i <= 110; i++) {
+                for (int i = 0; i <= 30; i++) {
                     if (authenticated) {
                         Response response = given()
                             .accept(JSON)
