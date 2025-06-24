@@ -280,9 +280,10 @@ public class ApiServlet extends HttpServlet {
     public static final String PROVIDER_KEY = "cwms.dataapi.access.provider";
     public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
+    public static final String REQUEST_LIMIT_KEY = "cwms.dataapi.request.limit";
 
     // specify the maximum number of requests allowed per time unit
-    private static final int REQUEST_LIMIT = 100;
+    private static final int REQUEST_LIMIT = Integer.parseInt(System.getProperty(REQUEST_LIMIT_KEY, "100"));
     private static final TimeUnit REQUEST_LIMIT_UNIT = TimeUnit.MINUTES;
 
     private MetricRegistry metrics;
