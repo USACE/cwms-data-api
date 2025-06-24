@@ -168,7 +168,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private static void healthCheck() throws InterruptedException {
         int attempts = 0;
-        int maxAttempts = 15;
+        int maxAttempts = 30;
         for (; attempts < maxAttempts; attempts++) {
             try {
                 given()
@@ -182,7 +182,8 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                 break;
             } catch (Throwable e) {
                 logger.atInfo().log("Waiting for the server to start...");
-                Thread.sleep(100);
+                // yes, 100 millis *should* be fine. But at least my machine keeps lagging.
+                Thread.sleep(300);
             }
         }
         if (attempts == maxAttempts) {

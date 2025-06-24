@@ -69,11 +69,13 @@ begin
     cwms_sec.add_user_to_group('l2hectest_vt','All Users', 'HQ');
     cwms_sec.add_user_to_group('l2hectest_vt','CWMS Users', 'HQ');
     cwms_sec.add_user_to_group('l2hectest_vt','CWMS PD Users', 'HQ');
+    cwms_sec.add_user_to_group('l2hectest_vt','CWMS User Admins', 'HQ');
     cwms_sec.add_user_to_group('l2hectest_vt','CWMS DBA Users', 'HQ');
     cwms_sec.add_user_to_group('l2hectest_vt','All Users', 'SPK');
     cwms_sec.add_user_to_group('l2hectest_vt','CWMS Users', 'SPK');
     cwms_sec.add_user_to_group('l2hectest_vt','CWMS PD Users', 'SPK');
     cwms_sec.add_user_to_group('l2hectest_vt','CWMS DBA Users', 'SPK');
+    cwms_sec.add_user_to_group('l2hectest_vt','CWMS User Admins', 'SPK');
     cwms_sec.add_user_to_group('l2hectest_vt','TS ID Creator','SPK');
 
     cwms_sec.add_cwms_user('m5hectest', NULL, 'SWT');
