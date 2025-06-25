@@ -174,49 +174,51 @@ final class RateControllerIT extends DataApiTestIT {
     }
 
     @Test
-    void testRateRequiresAuth() {
+    void testRateDoesNotRequiresAuth() throws Exception {
 
         given()
             .accept(JSON)
             .contentType(JSON)
+            .body(serializeRateInputValues())
         .when()
             .post("/ratings/rate-values/" + SPK + "/" + ratingSet.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_UNAUTHORIZED));
-
+            .statusCode(is(HttpServletResponse.SC_OK));
 
         given()
             .accept(JSON)
             .contentType(JSON)
+            .body(serializeRateInputTimeSeries())
         .when()
             .post("/ratings/rate-ts/" + SPK + "/" + ratingSet.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_UNAUTHORIZED));
-
+            .statusCode(is(HttpServletResponse.SC_OK));
 
         given()
             .accept(JSON)
             .contentType(JSON)
+            .body(serializeReverseRateInputValues())
         .when()
             .post("/ratings/reverse-rate-values/" + SPK + "/" + ratingSet.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_UNAUTHORIZED));
+            .statusCode(is(HttpServletResponse.SC_OK));
 
         given()
             .accept(JSON)
             .contentType(JSON)
+            .body(serializeReverseRateInputTimeSeries())
         .when()
             .post("/ratings/reverse-rate-ts/" + SPK + "/" + ratingSet.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_UNAUTHORIZED));
+            .statusCode(is(HttpServletResponse.SC_OK));
     }
 
 
