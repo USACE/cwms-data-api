@@ -361,7 +361,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     @Test
     void test_create_read_delete_LRTS() throws Exception {
         String officeId = user.getOperatingOffice();
-        String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.1HourLocal.0.cda-lrts";
+        String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.1DayLocal.0.cda-lrts";
         createLocation(timeSeriesId.split("\\.")[0],true,officeId);
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_lrts", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_lrts", "IntegrationTesting",

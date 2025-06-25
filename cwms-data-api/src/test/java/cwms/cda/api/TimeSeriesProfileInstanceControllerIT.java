@@ -67,7 +67,6 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -545,7 +544,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
 
         assertParserInDb(tspParserIndexed3);
 
-        String newTsId = "Sacramento River.Elev.Total.1HourLocal.0.Raw";
+        String newTsId = "Sacramento River.Elev.Total.1DayLocal.0.Raw";
 
         String data = tspData3.replace("Sacramento River.Elev.Total.0.1Hour.Raw",
                 newTsId);
@@ -1126,13 +1125,12 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled("This test is disabled because the new LRTS identifier is not yet supported in the retrieval")
     void test_retrieve_TimeSeriesProfileInstance_Indexed_LRTS_interval_id() throws Exception {
         storeParser(tspParserIndexed3, null);
 
         assertParserInDb(tspParserIndexed3);
 
-        String newTsId = "Sacramento River.Elev.Total.1HourLocal.0.Raw";
+        String newTsId = "Sacramento River.Elev.Total.1DayLocal.0.Raw";
 
         String data = tspData3.replace("Sacramento River.Elev.Total.0.1Hour.Raw",
                 newTsId);
@@ -1214,8 +1212,6 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
         ;
-
-        // TODO: The new LRTS interval identifier is not being returned in the response, and is instead using the legacy identifier.
 
         // retrieve with no max version (should return the specified version)
         given()

@@ -213,7 +213,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         // this will return 200 but the lists should be empty.
         String startStr = "2005-02-01T08:00:00Z";
         String endStr = "2005-02-01T14:00:00Z";
-        String tsIdentifier = "TsTextTestLoc.Flow.Inst.1HourLocal.0.lrts-test";
+        String tsIdentifier = "TsTextTestLoc.Flow.Inst.1DayLocal.0.lrts-test";
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)

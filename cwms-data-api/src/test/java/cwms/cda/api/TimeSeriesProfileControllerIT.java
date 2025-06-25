@@ -196,7 +196,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
     void test_store_retrieve_with_ref_LRTS() throws Exception {
         // create a new TimeSeries to reference
         String oldTsId = tsProfile3.getReferenceTsId().getName();
-        String newTsId = "Sacramento River.Elev.Total.1HourLocal.0.Raw";
+        String newTsId = "Sacramento River.Elev.Total.1DayLocal.0.Raw";
         String location = newTsId.split("\\.")[0];
         createLocation(location, true, OFFICE_ID);
 

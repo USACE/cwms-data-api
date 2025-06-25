@@ -49,7 +49,6 @@ import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
 import mil.army.usace.hec.metadata.UnitUtil;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -405,11 +404,11 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled("This test is disabled because the new LRTS identifier is not yet supported in the Levels retrieval")
     void test_ts_backed_level_new_lrts_interval() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         createLocation("level_as_ts_lrts", true, OFFICE);
         String levelId = "level_as_ts_lrts.Flow.Ave.1Week.lrts";
+        String legacyTsId = "level_as_ts_lrts.Flow.Ave.~1Day.1Week.lrts";
         String tsId = "level_as_ts_lrts.Flow.Ave.1DayLocal.1Week.lrts";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
 
@@ -440,7 +439,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
+                .statusCode(is(HttpServletResponse.SC_CREATED));
         }
 
         // try to retrieve level timeseries without new LRTS identifier
@@ -462,11 +461,8 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("seasonal-time-series-id", equalTo(tsId))
+            .body("seasonal-time-series-id", equalTo(legacyTsId))
         ;
-
-        // TODO: Add support for new LRTS interval identifier to Levels retrieval
-        // Currently the retrieved level will provide the legacy time series id interval
 
         // retrieve level and assert that it matches the expected values
         given()

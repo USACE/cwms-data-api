@@ -301,6 +301,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
+            .header(ApiServlet.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
