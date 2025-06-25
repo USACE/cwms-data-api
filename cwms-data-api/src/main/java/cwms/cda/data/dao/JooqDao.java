@@ -86,6 +86,12 @@ public abstract class JooqDao<T> extends Dao<T> {
     static ExecuteListener listener = new ExceptionWrappingListener();
     private static final Pattern INVALID_OFFICE_ID = Pattern.compile(
         "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
+    private static final Pattern INVALID_UNIT = Pattern.compile(
+            "(.+\\R+){6}ORA-20102: The unit: \\S+"
+                    + " is not a recognized CWMS Database unit for the .+(.+\\R+){10}");
+    private static final Pattern CONVERSION_ERROR = Pattern.compile(
+            "^ORA-20998: ERROR: Cannot convert ((parameter .+ from specified units: .+$)"
+                    + "|(from unit .+ to unit .+$))");
     private static final Pattern VALUE_TOO_LONG = Pattern.compile(
             "^ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
                     + "\\(actual: (\\d+), maximum: (\\d+)\\)\\R*$");
@@ -518,12 +524,21 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
             String message = sqlException.getLocalizedMessage();
-            int errorCode = sqlException.getErrorCode();
 
-            retVal = errorCode == 20998
-                    && message.contains("ORA-20102: The unit")
-                    && message.contains("is not a recognized CWMS Database unit for the")
-                ;
+            if (INVALID_UNIT.matcher(message).matches()) {
+                retVal = true;
+            }
+
+            if (message != null) {
+                String[] parts = message.split("\n");
+                if (parts.length > 1) {
+                    message = parts[0];
+                }
+            }
+
+            if (CONVERSION_ERROR.matcher(message).matches()) {
+                retVal = true;
+            }
         }
         return retVal;
     }
@@ -537,6 +552,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
 
         String localizedMessage = cause.getLocalizedMessage();
+        boolean isConversionError = false;
         if (localizedMessage != null) {
             // skip ahead in localizedMessage to "ORA-20102:"
             String searchFor = "ORA-20102:";
@@ -547,10 +563,23 @@ public abstract class JooqDao<T> extends Dao<T> {
                 if (parts.length >= 1) {
                     localizedMessage = parts[0];
                 }
+            } else {
+                searchFor = "ORA-20998: ERROR: ";
+                start = localizedMessage.indexOf(searchFor);
+                if (start >= 0) {
+                    localizedMessage = localizedMessage.substring(start + searchFor.length());
+                    String[] parts = localizedMessage.split("\n");
+                    if (parts.length >= 1) {
+                        localizedMessage = parts[0];
+                    }
+                    isConversionError = true;
+                }
             }
         }
 
-        localizedMessage = sanitizeOrNull(localizedMessage);
+        if (!isConversionError) {
+            localizedMessage = sanitizeOrNull(localizedMessage);
+        }
 
         if (localizedMessage == null || localizedMessage.isEmpty()) {
             localizedMessage = "Invalid Units.";

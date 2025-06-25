@@ -101,6 +101,11 @@ import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.UpstreamLocationsGetController;
 import cwms.cda.api.auth.ApiKeyController;
+import cwms.cda.api.auth.users.UserProfileController;
+import cwms.cda.api.auth.users.UsersController;
+import cwms.cda.api.auth.users.roles.AddRoleController;
+import cwms.cda.api.auth.users.roles.DeleteRolesController;
+import cwms.cda.api.auth.users.roles.GetRolesController;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.CdaError;
@@ -252,7 +257,10 @@ import org.owasp.html.PolicyFactory;
     "/project-lock-rights/*",
     "/properties/*",
     "/lookup-types/*",
-    "/embankments/*"
+    "/embankments/*",
+    "/user/*",
+    "/users/*",
+    "/roles/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -675,6 +683,20 @@ public class ApiServlet extends HttpServlet {
 
         addProjectLocksHandlers("/project-locks/{name}", requiredRoles);
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
+
+
+        addUserManagementHandlers();
+    }
+
+    private void addUserManagementHandlers() {
+        RouteRole[] adminRoles = new RouteRole[] { new Role("CWMS User Admins")};
+        RouteRole[] userRoles = new RouteRole[] {new Role("CWMS Users")};
+        crud("/users/{user-name}", new UsersController(metrics), adminRoles);
+        get("/roles", new GetRolesController(metrics), adminRoles);
+        get("/user/profile", new UserProfileController(metrics), userRoles);
+        post("/user/{user-name}/roles/{office-id}", new AddRoleController(metrics), adminRoles);
+        delete("/user/{user-name}/roles/{office-id}", new DeleteRolesController(metrics), adminRoles);
+        
     }
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {

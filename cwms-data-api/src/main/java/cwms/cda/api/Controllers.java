@@ -108,6 +108,7 @@ public final class Controllers {
     public static final String TEMPLATE_ID = "template-id";
     public static final String TEMPLATE_ID_MASK = "template-id-mask";
     public static final String STORE_TEMPLATE = "store-template";
+    public static final String REPLACE_BASE_CURVE = "replace-base-curve";
 
     public static final String TIMESERIES_ID_REGEX = "timeseries-id-regex";
     public static final String TIMESERIES_ID = "timeseries-id";
@@ -218,6 +219,8 @@ public final class Controllers {
     public static final String SOURCE_ID = "source-id";
 
     public static final String CWMS_OFFICE = "CWMS";
+
+    public static final String OFFICE_DESCRIPTION = "Office Identifier 3/4 letter as returned by the office endpoint.";
 
     private static final String DEPRECATED_HEADER = "CWMS-DATA-Format-Deprecated";
     private static final String DEPRECATED_TAB = "2024-11-01 TAB is not used often.";

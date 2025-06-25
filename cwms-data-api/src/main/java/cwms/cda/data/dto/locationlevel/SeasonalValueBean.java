@@ -50,16 +50,15 @@ public class SeasonalValueBean {
         this.offsetMonths = builder.offsetMonths;
     }
 
-    public Double getValue()
-    {
+    public Double getValue() {
         return value;
     }
-    public BigInteger getOffsetMinutes()
-    {
+
+    public BigInteger getOffsetMinutes() {
         return offsetMinutes;
     }
-    public Integer getOffsetMonths()
-    {
+
+    public Integer getOffsetMonths() {
         return offsetMonths;
     }
 
@@ -67,8 +66,8 @@ public class SeasonalValueBean {
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Builder {
         private Double value;
-        private Integer offsetMonths;
-        private BigInteger offsetMinutes;
+        private Integer offsetMonths = 0; // Default to 0 months if not set
+        private BigInteger offsetMinutes = BigInteger.ZERO; // Default to 0 minutes if not set
 
         public Builder() {
             //No-op

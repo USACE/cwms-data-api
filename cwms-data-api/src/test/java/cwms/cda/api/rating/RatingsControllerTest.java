@@ -122,7 +122,7 @@ class RatingsControllerTest {
         }
         // For this test, it's ok that the server throws a RatingException
         // Only want to check that the controller accessed our mock dao in the expected way
-        verify(controller, times(1)).deserializeRatingSet(testBody, Formats.XML);  // Curious that it is XML and not XMLv2
+        verify(controller, times(1)).deserializeRatingSet(testBody, Formats.XML, true);  // Curious that it is XML and not XMLv2
 
     }
 
