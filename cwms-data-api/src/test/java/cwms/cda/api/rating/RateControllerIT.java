@@ -176,6 +176,9 @@ final class RateControllerIT extends DataApiTestIT {
     @Test
     void testRateDoesNotRequiresAuth() throws Exception {
 
+        // Ensure that the requests in this test do not hit the rate limit
+        Thread.sleep(1000 * 15);
+
         given()
             .accept(JSON)
             .contentType(JSON)

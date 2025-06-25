@@ -749,7 +749,8 @@ public class ApiServlet extends HttpServlet {
                 } catch (CwmsAuthException e) {
                     // If user is unauthorized, rethrow the rate limit exception
                     logger.atFinest().log("Unauthorized access to rate limited path: %s", path, e);
-                    throw ex;
+                    throw new HttpResponseException(ex.getStatus(), "Rate limit exceeded. "
+                            + "Please try again later or contact an administrator if you believe this is an error.");
                 }
             }
         });
