@@ -203,12 +203,12 @@ public class BlobController implements CrudHandler {
                         @OpenApiContent(from = Blob.class, type = Formats.JSON)
                     },
                     required = true),
-            method = HttpMethod.POST,
+            method = HttpMethod.PATCH,
             tags = {TAG}
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
-        try (final Timer.Context ignored = markAndTime(CREATE)) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();

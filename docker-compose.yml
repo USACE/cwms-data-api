@@ -3,7 +3,7 @@ volumes:
   auth_data:
 services:
   db:
-    image: registry-public.hecdev.net/cwms/database-ready-ora-23.5:latest-dev
+    image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev
     environment:
       #- ORACLE_DATABASE=FREEPDB1
       - ORACLE_PASSWORD=badSYSpassword
