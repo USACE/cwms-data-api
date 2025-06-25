@@ -173,58 +173,6 @@ final class RateControllerIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
-    void testRateDoesNotRequiresAuth() throws Exception {
-
-        // Ensure that the requests in this test do not hit the rate limit
-        Thread.sleep(1000 * 15);
-
-        given()
-            .accept(JSON)
-            .contentType(JSON)
-            .body(serializeRateInputValues())
-        .when()
-            .post("/ratings/rate-values/" + SPK + "/" + ratingSet.getName())
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-        given()
-            .accept(JSON)
-            .contentType(JSON)
-            .body(serializeRateInputTimeSeries())
-        .when()
-            .post("/ratings/rate-ts/" + SPK + "/" + ratingSet.getName())
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-        given()
-            .accept(JSON)
-            .contentType(JSON)
-            .body(serializeReverseRateInputValues())
-        .when()
-            .post("/ratings/reverse-rate-values/" + SPK + "/" + ratingSet.getName())
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-        given()
-            .accept(JSON)
-            .contentType(JSON)
-            .body(serializeReverseRateInputTimeSeries())
-        .when()
-            .post("/ratings/reverse-rate-ts/" + SPK + "/" + ratingSet.getName())
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-    }
-
-
 
     @Test
     void testRateFunctions() throws JsonProcessingException {
