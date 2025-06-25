@@ -1,11 +1,22 @@
 package cwms.cda.data.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 
+
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonPropertyOrder({"office-id", "response", "identifier"})
 public final class StatusResponse extends CwmsDTO{
 
-    @JsonProperty("response-message")
+    @JsonProperty(required = true)
     private final String response;
+
     private final String identifier;
 
     public StatusResponse(String officeId, String response) {
@@ -15,7 +26,8 @@ public final class StatusResponse extends CwmsDTO{
         this.identifier = "";
     }
 
-    public StatusResponse(String officeId, String response, String identifier) {
+    @JsonCreator
+    public StatusResponse(@JsonProperty("office-id") String officeId, @JsonProperty("response") String response, @JsonProperty("identifier") String identifier) {
         super(officeId);
         this.response = response;
         this.identifier = identifier;
