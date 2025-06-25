@@ -17,6 +17,10 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Inspired by <a href="https://www.baeldung.com/rest-api-search-language-rsql-fiql">...</a>
+ *
+ */
 public class RSQLJooqConditionVisitor implements RSQLVisitor<Condition, Void> {
 
     private final FieldResolver fieldResolver;

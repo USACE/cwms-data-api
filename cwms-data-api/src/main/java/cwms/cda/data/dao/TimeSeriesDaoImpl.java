@@ -1,5 +1,8 @@
 package cwms.cda.data.dao;
 
+import cwms.cda.data.dao.rsql.FieldResolver;
+import cwms.cda.data.dao.rsql.MapFieldResolver;
+import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
 import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.helpers.DateUtils;
 import static org.jooq.impl.DSL.asterisk;
@@ -325,6 +328,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Field<Timestamp> dateTimeCol = field("DATE_TIME", Timestamp.class).as("DATE_TIME");
         Field<Double> valueCol = field("VALUE", Double.class).as("VALUE");
         Field<Integer> qualityCol = field("QUALITY_CODE", Integer.class).as("QUALITY_CODE");
+        Field<Timestamp> dataEntryDate = field("DATA_ENTRY_DATE", Timestamp.class).as("data_entry_date");
 
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
@@ -344,7 +348,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Field<String> tzName = AV_CWMS_TS_ID2.TIME_ZONE_ID;
 
-        Condition filterConditions = getFilterCondition(fp, valueCol);
+        Condition filterConditions = noCondition();
+        if(fp != null) {
+            Map<String, Field<?>> nameToField = new LinkedHashMap<>();
+            nameToField.put("value", valueCol);
+            nameToField.put("datetime", dateTimeCol);
+            nameToField.put("quality", qualityCol);
+            nameToField.put("data_entry_date", dataEntryDate);
+            FieldResolver resolver = new MapFieldResolver(nameToField);
+            filterConditions = getFilterCondition(fp, resolver);
+        }
 
         Field<Integer> totalField;
         if (total != null) {
@@ -456,7 +469,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Field<BigDecimal> qualityNormCol = CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(
                 DSL.nvl(qualityCol, DSL.inline(5))).as("QUALITY_NORM");
-        Field<Timestamp> dataEntryDate = field("DATA_ENTRY_DATE", Timestamp.class).as("data_entry_date");
+
 
         TimeSeries retVal = null;
         if (pageSize != 0) {
@@ -694,10 +707,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 
     @NotNull
-    private static Condition getFilterCondition(@Nullable FilteredTimeSeriesParameters ip, Field<Double> valueCol) {
+    private static Condition getFilterCondition( @Nullable FilteredTimeSeriesParameters ip, FieldResolver resolver) {
         // In Filter case we want to skip certain points in time....
         Condition filterConditions = noCondition();
         if(ip != null) {
+            Field<Object> valueCol = resolver.resolve("value");
             if (ip.isFilterNulls()) {
                 filterConditions = filterConditions.and(valueCol.isNotNull());
             }
@@ -707,6 +721,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             if (ip.getMinValue() != null) {
                 filterConditions = filterConditions.and(valueCol.ge(ip.getMinValue()));
             }
+
+            String query = ip.getQuery();
+            if(query != null) {
+                RSQLConditionBuilder builder = RSQLConditionBuilder.create(resolver);
+                Condition condition = builder.buildCondition(query);
+                filterConditions = filterConditions.and(condition);
+            }
+
         }
         return filterConditions;
     }
