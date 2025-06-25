@@ -95,6 +95,8 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static final Pattern VALUE_TOO_LONG = Pattern.compile(
             "^ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
                     + "\\(actual: (\\d+), maximum: (\\d+)\\)\\R*$");
+    private static final Pattern TS_ID_NOT_FOUND = Pattern.compile("(ORA-20001: TS_ID_NOT_FOUND: "
+        + "The timeseries identifier \".+\" was not found for office \".+\")");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -283,6 +285,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildInvalidOffice(input);
         } else if (isValueTooLargeException(input)) {
             retVal = buildValueTooLongException(input);
+        } else if (isTSIDInvalidIntervalException(input)) {
+            retVal = buildInvalidTSIDIntervalException(input);
         }
 
         return retVal;
@@ -357,7 +361,35 @@ public abstract class JooqDao<T> extends Dao<T> {
         return getSqlException(input.getCause()).map(sqlException -> hasCodeOrMessage(sqlException,
                 Arrays.asList(6502, 12899, 20041),
                 Arrays.asList("value too large for column", "character string buffer too small",
-                        "Error while writing value at JDBC bind index:"))).orElse(false);
+                        "Error while writing value at JDBC bind index:")))
+            .orElse(false);
+    }
+
+    public static boolean isTSIDInvalidIntervalException(RuntimeException input) {
+        return getSqlException(input.getCause()).map(sqlException -> hasCodeAndMessage(sqlException,
+                Arrays.asList(20205),
+                Arrays.asList("Invalid Time Series Description", "is not a valid interval")))
+            .orElse(false);
+    }
+
+    static InvalidItemException buildInvalidTSIDIntervalException(RuntimeException input) {
+        Throwable cause = input.getCause();
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        String localizedMessage = cause.getLocalizedMessage();
+
+        if (localizedMessage != null) {
+            Matcher matcher = TS_ID_NOT_FOUND.matcher(localizedMessage);
+            if (matcher.find()) {
+                return new InvalidItemException(
+                    String.format("Invalid Time Series Description: %s is not a valid interval", matcher.group(1)),
+                    cause);
+            }
+        }
+        return new InvalidItemException("Invalid Time Series Description", cause);
     }
 
     public static boolean isInvalidItem(RuntimeException input) {

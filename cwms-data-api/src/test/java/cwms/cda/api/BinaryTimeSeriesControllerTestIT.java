@@ -320,15 +320,15 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // 5)Delete the binary time series
         // 6)Retrieve the binary time series and assert that it does not exist
 
-
-        // Step 1)
-        // Try to create the binary time series without LRTS header set
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String tsIdentifier = "TsBinTestLoc.Binary.Inst.1DayLocal.0.lrts";
         String legacyTsIdentifier = "TsBinTestLoc.Binary.Inst.~1Hour.0.lrts";
         String tsData = getTsBodyNewLRTSInterval(tsIdentifier);
 
         createTimeseriesWithNewLRTSInterval(OFFICE, tsIdentifier, 0);
+
+        // Step 1)
+        // Try to create the binary time series without LRTS header set
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -344,7 +344,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CONFLICT));
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
 
         // Step 2)
         // Create the binary time series

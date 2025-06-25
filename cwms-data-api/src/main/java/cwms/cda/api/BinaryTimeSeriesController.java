@@ -65,13 +65,10 @@ import java.net.URLEncoder;
 import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
 
 
 public class BinaryTimeSeriesController implements CrudHandler {
@@ -82,8 +79,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
     private static final String DEFAULT_BIN_TYPE_MASK = "*";
     public static final String BINARY_TYPE_MASK = "binary-type-mask";
     private final MetricRegistry metrics;
-    private static final Pattern TS_ID_NOT_FOUND = Pattern.compile("(ORA-20001: TS_ID_NOT_FOUND: "
-        + "The timeseries identifier \".+\" was not found for office \".+\")");
+
 
 
     public BinaryTimeSeriesController(MetricRegistry metrics) {
@@ -213,20 +209,8 @@ public class BinaryTimeSeriesController implements CrudHandler {
             boolean maxVersion = true;
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(false);
 
-            try {
-                dao.store(tts, maxVersion, replaceAll);
-                ctx.status(HttpServletResponse.SC_CREATED);
-            } catch (DataAccessException ex) {
-                Matcher matcher = TS_ID_NOT_FOUND.matcher(ex.getMessage());
-                if (matcher.find()) {
-                    ctx.status(HttpServletResponse.SC_CONFLICT);
-                    CdaError re = new CdaError("Failed to store binary timeseries: " + matcher.group(1));
-                    logger.log(Level.SEVERE, re.toString(), ex);
-                    ctx.json(re);
-                } else {
-                    throw ex; // re-throw if it doesn't match the expected pattern
-                }
-            }
+            dao.store(tts, maxVersion, replaceAll);
+            ctx.status(HttpServletResponse.SC_CREATED);
         }
     }
 

@@ -123,92 +123,72 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         ObjectMapper om = JsonV2.buildObjectMapper();
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
-        // Create a bunch of ts and store them.
-        int count = 8;
-        for (int i = 0; i < count; i++) {
-            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.12HoursLocal.0.DescriptorTEST_LRTS%d", i);
-            TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
-            String serializedTs = om.writeValueAsString(ts);
+        String tsId = "Alder Springs.Precip-Cumulative.Inst.12HoursLocal.0.DescriptorTEST_LRTS1";
+        TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
+        String serializedTs = om.writeValueAsString(ts);
 
-            given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .body(serializedTs)
-                .header("Authorization", user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, true)
-                .queryParam("office",OFFICE)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/identifier-descriptor/")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
-        }
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(serializedTs)
+            .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+            .queryParam("office",OFFICE)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/identifier-descriptor/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
 
         // Check that we have the right number of ts like this in the catalog.
         names = getIdsLike(OFFICE, likePattern);
         Assertions.assertFalse(names.isEmpty());
-        assertEquals(count, names.size());
+        assertEquals(1, names.size());
+        String name = names.get(0);
 
-        // Now let's delete them
-        for (int i = 0; i < count; i++) {
-            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.12HoursLocal.0.DescriptorTEST_LRTS%d", i);
+        assertEquals("12HoursLocal", name.split("\\.")[3]);
 
-            // String urlencoded = java.net.URLEncoder.encode(tsId); // This isn't the right thing
-            // to call here b/c it encodes a space into +
-            // but the tsId is in the url part - not the url parameters part.
-            // In the url part a + is a valid character - we must do the %20 type encoding for
-            // the url part. For the params part you can do either + or %20
-
-            // RestAssured does the right thing with the url encoding - we don't need to escape
-
-            given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
-                .header("Authorization", user.toHeaderValue())
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/timeseries/identifier-descriptor/{tsId}", tsId)
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
-        }
-
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", OFFICE)
+            .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/timeseries/identifier-descriptor/{tsId}", tsId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
 
         // Check that we don't have any ts like this in the catalog.
         names = getIdsLike(OFFICE, likePattern);
         Assertions.assertTrue(names.isEmpty());
 
-        for (int i = 0; i < count; i++) {
-            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.12HoursLocal.0.DescriptorTEST_LRTS%d", i);
-            TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
-            String serializedTs = om.writeValueAsString(ts);
-
-            given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .body(serializedTs)
-                .header("Authorization", user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, false)
-                .queryParam("office",OFFICE)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/identifier-descriptor/")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-                .statusCode(is(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
-        }
+        // Try to store it again, but this time with the new LRTS flag set to false.
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(serializedTs)
+            .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, false)
+            .queryParam("office",OFFICE)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/identifier-descriptor/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
     }
 
 

@@ -259,7 +259,7 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private void storeRows(String officeId, String tsId, Collection<BinaryTimeSeriesRow> rows,
                            boolean maxVersion, boolean storeExisting, boolean storeNonExisting,
                            boolean replaceAll, Instant versionDate) {
-        dsl.connection(connection -> {
+        connection(dsl, connection -> {
             DSLContext connDsl = getDslContext(connection, officeId);
             connDsl.transaction((Configuration trx) -> {
                 Configuration config = trx.dsl().configuration();
