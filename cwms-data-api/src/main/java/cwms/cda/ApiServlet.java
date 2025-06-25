@@ -47,7 +47,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.api.BaseHandler;
 import cwms.cda.api.BasinController;
 import cwms.cda.api.BinaryTimeSeriesController;
 import cwms.cda.api.BinaryTimeSeriesValueController;
@@ -690,13 +689,13 @@ public class ApiServlet extends HttpServlet {
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {
         String rateValues = format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID);
-        post(rateValues, new RateValuesController(metrics), requiredRoles);
+        post(rateValues, new RateValuesController(metrics));
         String rateTs = format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID);
-        post(rateTs, new RateTimeSeriesController(metrics), requiredRoles);
+        post(rateTs, new RateTimeSeriesController(metrics));
         String reverseRateValues = format("/ratings/reverse-rate-values/{%s}/{%s}", OFFICE, RATING_ID);
-        post(reverseRateValues, new ReverseRateValuesController(metrics), requiredRoles);
+        post(reverseRateValues, new ReverseRateValuesController(metrics));
         String reverseRateTs = format("/ratings/reverse-rate-ts/{%s}/{%s}", OFFICE, RATING_ID);
-        post(reverseRateTs, new ReverseRateTimeSeriesController(metrics), requiredRoles);
+        post(reverseRateTs, new ReverseRateTimeSeriesController(metrics));
         cdaCrudCache("/ratings/template/{template-id}",
                 new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/ratings/spec/{rating-id}",
@@ -706,46 +705,30 @@ public class ApiServlet extends HttpServlet {
         get("/ratings/{rating-id}/latest", new RatingLatestController(metrics));
         cdaCrudCache("/ratings/{rating-id}",
                 new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        addRateLimit(rateTs);
-        addRateLimit(reverseRateTs);
-        addRateLimit(reverseRateValues);
-        addRateLimit(rateValues);
+        addRateLimitCheckAuth(rateTs, requiredRoles);
+        addRateLimitCheckAuth(reverseRateTs, requiredRoles);
+        addRateLimitCheckAuth(reverseRateValues, requiredRoles);
+        addRateLimitCheckAuth(rateValues, requiredRoles);
     }
 
     /**
      * Add a rate limiter to a specified endpoint path, allowing authorized users to bypass the limit.
      * @param path the path to add the rate limiter to.
-     * @param handler the Controller handler for the endpoint.
      * @param requiredRoles the user roles required to access the path.
      */
-    private void addRateLimitCheckAuth(String path, BaseHandler handler, RouteRole[] requiredRoles) {
+    private void addRateLimitCheckAuth(String path, RouteRole[] requiredRoles) {
         Set<RouteRole> roles = new HashSet<>(Arrays.asList(requiredRoles));
         staticInstance().before(path, ctx -> {
             try {
                 NaiveRateLimit.requestPerTimeUnit(ctx, REQUEST_LIMIT, REQUEST_LIMIT_UNIT);
             } catch (HttpResponseException ex) {
                 try {
-                    cdaAccessManager.manage(handler, ctx, roles);
+                    cdaAccessManager.checkAuth(ctx, roles);
                 } catch (CwmsAuthException e) {
                     // If user is unauthorized, rethrow the rate limit exception
                     logger.atFinest().log("Unauthorized access to rate limited path: %s", path, e);
                     throw ex;
                 }
-            }
-        });
-    }
-
-    /**
-     * Add a rate limiter to a specified endpoint path, allowing all users to be rate limited.
-     * @param path the path to add the rate limiter to.
-     */
-    private void addRateLimit(String path) {
-        staticInstance().before(path, ctx -> {
-            try {
-                NaiveRateLimit.requestPerTimeUnit(ctx, REQUEST_LIMIT, REQUEST_LIMIT_UNIT);
-            } catch (HttpResponseException ex) {
-                logger.atFinest().log("Rate limit reached for path: %s", path, ex);
-                throw ex;
             }
         });
     }

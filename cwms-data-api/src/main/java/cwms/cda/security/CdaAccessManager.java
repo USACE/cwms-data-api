@@ -14,11 +14,16 @@ import io.javalin.http.Handler;
 public final class CdaAccessManager implements AccessManager {
 
     @Override
-    public void manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
-        DataApiPrincipal p = getApiPrincipal(ctx);
-        AuthDao.isAuthorized(ctx,p,routeRoles);
-        prepareContext(ctx, p);
+    public void  manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
+        DataApiPrincipal principal = checkAuth(ctx, routeRoles);
+        prepareContext(ctx, principal);
         handler.handle(ctx);
+    }
+
+    public DataApiPrincipal checkAuth(Context ctx, Set<RouteRole> routeRoles) {
+        DataApiPrincipal principal = getApiPrincipal(ctx);
+        AuthDao.isAuthorized(ctx,principal,routeRoles);
+        return principal;
     }
 
     private DataApiPrincipal getApiPrincipal(Context ctx) {
