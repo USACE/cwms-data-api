@@ -324,11 +324,11 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Step 1)
         // Try to create the binary time series without LRTS header set
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        String tsIdentifier = "TsBinTestLoc.Binary.Inst.1HourLocal.0.lrts";
+        String tsIdentifier = "TsBinTestLoc.Binary.Inst.1DayLocal.0.lrts";
         String legacyTsIdentifier = "TsBinTestLoc.Binary.Inst.~1Hour.0.lrts";
         String tsData = getTsBodyNewLRTSInterval(tsIdentifier);
 
-        createTimeseriesWithNewLRTSInterval(OFFICE, tsIdentifier);
+        createTimeseriesWithNewLRTSInterval(OFFICE, tsIdentifier, 0);
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)

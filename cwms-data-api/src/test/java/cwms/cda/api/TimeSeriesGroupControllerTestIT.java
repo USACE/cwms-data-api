@@ -359,7 +359,6 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled("This test is disabled because the new LRTS identifier is not yet supported in the retrieval")
     void test_create_read_delete_LRTS() throws Exception {
         String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.1HourLocal.0.cda-lrts";
@@ -393,7 +392,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
         // inserting the time series
-        createTimeseriesWithNewLRTSInterval(officeId, timeSeriesId);
+        createTimeseriesWithNewLRTSInterval(officeId, timeSeriesId, 0);
 
         // try to create a group without setting the LRTS header
         given()
@@ -430,7 +429,6 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
-        // TODO: Fix LRTS interval handling to return the new LRTS interval identifier
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)

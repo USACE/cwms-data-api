@@ -411,11 +411,11 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String tsId = "level_as_ts_lrts.Flow.Ave.1DayLocal.1Week.lrts";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
 
-        createTimeseriesWithNewLRTSInterval(OFFICE, tsId);
+        createTimeseriesWithNewLRTSInterval(OFFICE, tsId, 0);
 
         int effectiveDateCount = 10;
         for (int i = 0; i < effectiveDateCount; i++) {
-            LocationLevel level = new TimeSeriesLocationLevel.Builder(levelId, time.plusDays(i), tsId)
+            TimeSeriesLocationLevel level = new TimeSeriesLocationLevel.Builder(levelId, time.plusDays(i), tsId)
                     .withOfficeId(OFFICE)
                     .withLevelUnitsId("cfs")
                     .withInterpolateString("T")

@@ -41,7 +41,6 @@ import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import javax.servlet.http.HttpServletResponse;
@@ -194,7 +193,6 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled("This test is disabled because the new LRTS identifier is not yet supported in the Levels retrieval")
     void test_store_retrieve_with_ref_LRTS() throws Exception {
         // create a new TimeSeries to reference
         String oldTsId = tsProfile3.getReferenceTsId().getName();
@@ -202,7 +200,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
         String location = newTsId.split("\\.")[0];
         createLocation(location, true, OFFICE_ID);
 
-        createTimeseriesWithNewLRTSInterval(OFFICE_ID, newTsId);
+        createTimeseriesWithNewLRTSInterval(OFFICE_ID, newTsId, 0);
 
         tsData3 = tsData3.replace(oldTsId, newTsId);
 
@@ -225,7 +223,6 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED))
         ;
 
-        // TODO: The retrieval method is returning the legacy TS ID, not the new LRTS ID.
         // Retrieve the TimeSeriesProfile
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
