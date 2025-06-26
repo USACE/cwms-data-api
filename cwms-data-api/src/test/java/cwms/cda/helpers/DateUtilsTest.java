@@ -104,13 +104,11 @@ class DateUtilsTest {
 
     @Test
     void test_not_versioned(){
-        Instant my_nv_inst = ZonedDateTime.of(1111,11,18,0,0,0,0,
+        Instant myNotVersionedInstant = ZonedDateTime.of(1111,11,18,0,0,0,0,
                 ZoneId.of("UTC")).toInstant();
 
         assertTrue(NumericalConstants.isNotVersioned(NumericalConstants.notVersioned()));
-        assertEquals(NumericalConstants.notVersioned(), my_nv_inst);
-//        assertTrue(NumericalConstants.isNotVersioned(my_nv_inst));
-
+        assertEquals(NumericalConstants.notVersioned(), myNotVersionedInstant);
     }
 
     @Test
@@ -141,6 +139,28 @@ class DateUtilsTest {
         Instant expected = ZonedDateTime.of(2011,12,3,10,15,30,0,
                 ZoneId.of("Europe/Paris")).toInstant();
         assertEquals(expected, zdt.toInstant());
+    }
+
+    @Test
+    void test_double_check_times_html_examples(){
+        // I'm including some example strings in times.html helper file.  Just want to double check that those EXACT examples do parse.
+
+        /*
+           <li><code>2022-01-06T00:00:00Z</code> - UTC timezone (Z)</li>
+            <li><code>2022-01-06T07:00:01-07:00</code> - Offset timezone (-07:00)</li>
+            <li><code>2022-01-06T07:00:02-0700</code> - Offset timezone without colon</li>
+            <li><code>2021-06-10T13:00:23-07:00[PST8PDT]</code> - Offset with named timezone</li>
+            <li><code>2022-01-19T20:52:07+00:00[UTC]</code> - Zero offset with named timezone</li>
+            <li><code>2022-12-08T09:47:32-0800[America/Los_Angeles]</code> - Offset with region timezone</li>
+         */
+
+        assertNotNull(DateUtils.parseUserDate("2022-01-06T00:00:00Z"));
+        assertNotNull(DateUtils.parseUserDate("2022-01-06T07:00:01-07:00"));
+        assertNotNull(DateUtils.parseUserDate("2022-01-06T07:00:02-0700"));
+        assertNotNull(DateUtils.parseUserDate("2021-06-10T13:00:23-07:00[PST8PDT]"));
+        assertNotNull(DateUtils.parseUserDate("2022-01-19T20:52:07+00:00[UTC]"));
+        assertNotNull(DateUtils.parseUserDate("2022-12-08T09:47:32-0800[America/Los_Angeles]"));
+
     }
 
 }
