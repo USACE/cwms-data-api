@@ -51,7 +51,7 @@ public class RSQLJooqConditionVisitor implements RSQLVisitor<Condition, Void> {
 
         Field<Object> field = fieldResolver.resolve(selector);
 
-        // If not doing type conversion just do this:  Object value = arguments.get(0)
+        // If not doing type conversion, just do this: Object value = arguments.get(0)
         // else....
         String rawValue = arguments.isEmpty() ? null : arguments.get(0);
         if (isNullLiteral(rawValue)) {
@@ -64,11 +64,11 @@ public class RSQLJooqConditionVisitor implements RSQLVisitor<Condition, Void> {
         return buildCondition(field, op, value, values);
     }
 
-    private boolean isNullLiteral(String value) {
+    public static boolean isNullLiteral(String value) {
         return value == null || "null".equalsIgnoreCase(value.trim());
     }
 
-    private Condition buildNullCondition(Field<Object> field, ComparisonOperator operator) {
+    public static Condition buildNullCondition(Field<Object> field, ComparisonOperator operator) {
         if (RSQLOperators.EQUAL.equals(operator)) {
             return field.isNull();
         }
@@ -79,7 +79,7 @@ public class RSQLJooqConditionVisitor implements RSQLVisitor<Condition, Void> {
                 "Operator " + operator + " is not valid with NULL literal");
     }
 
-    private Condition buildCondition(Field<Object> field,
+    public static Condition buildCondition(Field<Object> field,
                                      ComparisonOperator operator,
                                      Object value,
                                      List<Object> values) {
@@ -113,7 +113,7 @@ public class RSQLJooqConditionVisitor implements RSQLVisitor<Condition, Void> {
         if (type == ZonedDateTime.class) return DateUtils.parseUserDate(value, "UTC");
         if (type == Timestamp.class) {
             ZonedDateTime zdt = DateUtils.parseUserDate(value, "UTC");
-         //   return zdt;  // we could just return zdt and let jOOQ do the zdt->ts
+         //   return zdt; // we could just return zdt and let jOOQ do the zdt->ts
             return Timestamp.from(zdt.toInstant());
         }
 
