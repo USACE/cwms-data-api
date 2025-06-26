@@ -61,6 +61,12 @@ public class DateUtils {
     }
 
     @NotNull
+    public static ZonedDateTime parseUserDate(@NotNull String text, @NotNull ZoneId tz){
+        return parseUserDate(text, tz, ZonedDateTime.now(tz));
+    }
+
+
+    @NotNull
     public static ZonedDateTime parseUserDate(@NotNull String text, @NotNull ZoneId tz, @NotNull ZonedDateTime now) {
 
         if (text.startsWith("PT")) {

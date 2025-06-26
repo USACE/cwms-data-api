@@ -24,8 +24,7 @@ class DateUtilsTest {
     @ParameterizedTest
     @ArgumentsSource(FullDatesArguments.class)
     void test_iso_dates_from_user( String inputDate, ZoneId tz, ZonedDateTime expected){
-        ZonedDateTime result = DateUtils.parseUserDate(inputDate, tz,null); // now not used in this case force npe if
-                                                                            // someone accidentally sets that up.
+        ZonedDateTime result = DateUtils.parseUserDate(inputDate, tz);
         // isEqual returns true if the instant is the same.  They can have different zones.
         assertTrue(result.isEqual(expected), "Provided date input not correctly matched");
     }
@@ -33,7 +32,7 @@ class DateUtilsTest {
     @ParameterizedTest
     @ArgumentsSource(DateWithoutZoneArguments.class)
     void test_iso_dates_without_zone_from_user( String inputDate, ZoneId tz, ZonedDateTime expected){
-        ZonedDateTime result = DateUtils.parseUserDate(inputDate, tz,null);
+        ZonedDateTime result = DateUtils.parseUserDate(inputDate, tz);
         // This checks that the two times refer to the same instant on the time-line.
         assertTrue(result.isEqual(expected), "Provided date input not correctly matched");
         // All the args in this test don't have a timezone, so the result should be in the provided fallback zone.
@@ -70,7 +69,7 @@ class DateUtilsTest {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(TimeSeries.ZONED_DATE_TIME_FORMAT);  // FYI this pattern throws away milliseconds.
         String formatted = now.format(formatter);  // looks like: 2022-12-08T09:27:14-0800[America/Los_Angeles]
 
-        ZonedDateTime parsed = DateUtils.parseUserDate(formatted, losAngeles, null);
+        ZonedDateTime parsed = DateUtils.parseUserDate(formatted, losAngeles);
         assertEquals(now, parsed, "Date parsed from TimeSeries format does not match original date");
     }
 
