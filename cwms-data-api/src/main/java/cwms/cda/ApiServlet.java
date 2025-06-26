@@ -183,9 +183,7 @@ import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Handler;
-import io.javalin.http.HttpResponseException;
 import io.javalin.http.JavalinServlet;
-import io.javalin.http.util.NaiveRateLimit;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.Components;
@@ -205,11 +203,9 @@ import java.nio.file.Paths;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 import javax.annotation.Resource;
@@ -288,11 +284,9 @@ public class ApiServlet extends HttpServlet {
     public static final String PROVIDER_KEY = "cwms.dataapi.access.provider";
     public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
-    public static final String REQUEST_LIMIT_KEY = "cwms.dataapi.request.limit";
 
-    // specify the maximum number of requests allowed per time unit
-    private static final int REQUEST_LIMIT = Integer.parseInt(System.getProperty(REQUEST_LIMIT_KEY, "100"));
-    private static final TimeUnit REQUEST_LIMIT_UNIT = TimeUnit.MINUTES;
+
+
 
     private MetricRegistry metrics;
     private Meter totalRequests;
@@ -727,10 +721,10 @@ public class ApiServlet extends HttpServlet {
         get("/ratings/{rating-id}/latest", new RatingLatestController(metrics));
         cdaCrudCache("/ratings/{rating-id}",
                 new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        addRateLimitCheckAuth(rateTs, requiredRoles);
-        addRateLimitCheckAuth(reverseRateTs, requiredRoles);
-        addRateLimitCheckAuth(reverseRateValues, requiredRoles);
-        addRateLimitCheckAuth(rateValues, requiredRoles);
+        addRateLimit(rateTs, requiredRoles);
+        addRateLimit(reverseRateTs, requiredRoles);
+        addRateLimit(reverseRateValues, requiredRoles);
+        addRateLimit(rateValues, requiredRoles);
     }
 
     /**
@@ -738,22 +732,8 @@ public class ApiServlet extends HttpServlet {
      * @param path the path to add the rate limiter to.
      * @param requiredRoles the user roles required to access the path.
      */
-    private void addRateLimitCheckAuth(String path, RouteRole[] requiredRoles) {
-        Set<RouteRole> roles = new HashSet<>(Arrays.asList(requiredRoles));
-        staticInstance().before(path, ctx -> {
-            try {
-                NaiveRateLimit.requestPerTimeUnit(ctx, REQUEST_LIMIT, REQUEST_LIMIT_UNIT);
-            } catch (HttpResponseException ex) {
-                try {
-                    cdaAccessManager.checkAuth(ctx, roles);
-                } catch (CwmsAuthException e) {
-                    // If user is unauthorized, rethrow the rate limit exception
-                    logger.atFinest().log("Unauthorized access to rate limited path: %s", path, e);
-                    throw new HttpResponseException(ex.getStatus(), "Rate limit exceeded. "
-                            + "Please try again later or contact an administrator if you believe this is an error.");
-                }
-            }
-        });
+    private void addRateLimit(String path, RouteRole[] requiredRoles) {
+        cdaAccessManager.addRateLimitedEndpoint(path, requiredRoles);
     }
 
     private void addAccountingHandlers(String path, RouteRole[] requiredRoles) {
