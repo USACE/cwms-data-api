@@ -188,7 +188,10 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("details.message",
+                is("Invalid Time Series Description: "
+                    + "12HoursLocal is not a valid interval is not a valid interval"));
     }
 
 

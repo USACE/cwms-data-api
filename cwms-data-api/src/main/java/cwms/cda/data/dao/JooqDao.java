@@ -95,8 +95,6 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static final Pattern VALUE_TOO_LONG = Pattern.compile(
             "^ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
                     + "\\(actual: (\\d+), maximum: (\\d+)\\)\\R*$");
-    private static final Pattern TS_ID_NOT_FOUND = Pattern.compile("(ORA-20001: TS_ID_NOT_FOUND: "
-        + "The timeseries identifier \".+\" was not found for office \".+\")");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -382,11 +380,12 @@ public abstract class JooqDao<T> extends Dao<T> {
         String localizedMessage = cause.getLocalizedMessage();
 
         if (localizedMessage != null) {
-            Matcher matcher = TS_ID_NOT_FOUND.matcher(localizedMessage);
-            if (matcher.find()) {
-                return new InvalidItemException(
-                    String.format("Invalid Time Series Description: %s is not a valid interval", matcher.group(1)),
-                    cause);
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 2) {
+                    return new InvalidItemException(String.format("Invalid Time Series Description: %s is not a valid interval",
+                        parts[1]), cause);
+                }
             }
         }
         return new InvalidItemException("Invalid Time Series Description", cause);
