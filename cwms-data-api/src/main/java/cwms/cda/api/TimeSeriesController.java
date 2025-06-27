@@ -194,13 +194,9 @@ public class TimeSeriesController implements CrudHandler {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of "
                     + "the timeseries to be deleted."),
             @OpenApiParam(name = BEGIN, required = true, description = "The start of the time "
-                    + "window to delete. The format for this field is ISO 8601 extended, with "
-                    + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
-                    + EXAMPLE_DATE + "'."),
+                    + "window to delete. " + TIME_FORMAT_DESC),
             @OpenApiParam(name = END, required = true, description = "The end of the time "
-                    + "window to delete.The format for this field is ISO 8601 extended, with "
-                    + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
-                    + EXAMPLE_DATE + "'."),
+                    + "window to delete. " + TIME_FORMAT_DESC),
             @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone "
                     + "to be used if the format of the " + BEGIN + ", " + END + ", or "
                     + VERSION_DATE + " parameters do not include offset or time zone information. "
@@ -300,9 +296,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "\n* `Other`  Any unit returned in the response to the units URI "
                         + "request that is appropriate for the requested parameters."),
                 @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date of a "
-                        + "time series trace to be selected. The format for this field is ISO 8601 "
-                        + "extended, i.e., 'format', e.g., '2021-06-10T13:00:00-0700' .If field is "
-                        + "empty, query will return a max aggregate for the timeseries. "
+                        + "time series trace to be selected. " + TIME_FORMAT_DESC +
+                        "If field is empty, query will return a max aggregate for the timeseries. "
                         + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2),
                 @OpenApiParam(name = DATUM,  description = "Specifies the "
                         + "elevation datum of the response. This field affects only elevation"
@@ -315,16 +310,13 @@ public class TimeSeriesController implements CrudHandler {
                 @OpenApiParam(name = BEGIN,  description = "Specifies the "
                         + "start of the time window for data to be included in the response. "
                         + "If this field is not specified, any required time window begins 24"
-                        + " hours prior to the specified or default end time. The format for "
-                        + "this field is ISO 8601 extended, with optional offset and "
-                        + "timezone, i.e., '"
-                        + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                        + " hours prior to the specified or default end time. " +
+                        TIME_FORMAT_DESC),
                 @OpenApiParam(name = END,  description = "Specifies the "
                         + "end of the time window for data to be included in the response. If"
                         + " this field is not specified, any required time window ends at the"
-                        + " current time. The format for this field is ISO 8601 extended, "
-                        + "with optional timezone, i.e., '"
-                        + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                        + " current time. " +
+                        TIME_FORMAT_DESC),
                 @OpenApiParam(name = TIMEZONE,  description = "Specifies "
                         + "the time zone of the values of the begin and end fields (unless "
                         + "otherwise specified).  "
