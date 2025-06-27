@@ -74,7 +74,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
                 .queryParam(Controllers.BEGIN,"2023-01-11T12:00:00-00:00")
                 .queryParam(Controllers.END,"2023-01-11T13:00:00-00:00")
-                .queryParam("filter-nulls", false)
+                .queryParam(Controllers.FILTER_NULLS, false)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -100,7 +100,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
                 .queryParam(Controllers.BEGIN,"2023-01-11T12:00:00-00:00")
                 .queryParam(Controllers.END,"2023-01-11T13:00:00-00:00")
-                .queryParam("filter-nulls", true)
+                .queryParam(Controllers.FILTER_NULLS, true)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -166,7 +166,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
                 .queryParam(Controllers.BEGIN,"2023-01-11T12:00:00-00:00")
                 .queryParam(Controllers.END,"2023-01-11T13:00:00-00:00")
-                .queryParam("min-value", 550.0)
+                .queryParam(Controllers.MIN_VALUE, 550.0)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -230,7 +230,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
                 .queryParam(Controllers.BEGIN,"2023-01-11T12:00:00-00:00")
                 .queryParam(Controllers.END,"2023-01-11T13:00:00-00:00")
-                .queryParam("max-value", 550.0)
+                .queryParam(Controllers.MAX_VALUE, 550.0)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -294,8 +294,8 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
                 .queryParam(Controllers.BEGIN,"2023-01-11T12:00:00-00:00")
                 .queryParam(Controllers.END,"2023-01-11T13:00:00-00:00")
-                .queryParam("min-value", 450.0)
-                .queryParam("max-value", 550.0)
+                .queryParam(Controllers.MIN_VALUE, 450.0)
+                .queryParam(Controllers.MAX_VALUE, 550.0)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -359,9 +359,9 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
                 .queryParam(Controllers.BEGIN,"2023-01-11T12:00:00-00:00")
                 .queryParam(Controllers.END,"2023-01-11T13:00:00-00:00")
-                .queryParam("filter-nulls", true)
-                .queryParam("min-value", 450.0)
-                .queryParam("max-value", 550.0)
+                .queryParam(Controllers.FILTER_NULLS, true)
+                .queryParam(Controllers.MIN_VALUE, 450.0)
+                .queryParam(Controllers.MAX_VALUE, 550.0)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -378,137 +378,5 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
             throw new RuntimeException("Unable to create location for TS", ex);
         }
     }
-    @Test
-    void test_asc_parameter_true() throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
 
-        InputStream resource = this.getClass().getResourceAsStream(
-                "/cwms/cda/api/lrl/pseudo_reg_1hour.json");
-        assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
-
-        JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get(Controllers.NAME).asText().split("\\.")[0];
-        String officeId = ts.get("office-id").asText();
-
-        try {
-            createLocation(location, true, officeId);
-
-            TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-
-            // inserting the time series
-            given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .body(tsData)
-                .header("Authorization",user.toHeaderValue())
-                .queryParam(Controllers.OFFICE, officeId)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
-
-            // get it back with asc=true (default)
-            given()
-                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .header("Authorization",user.toHeaderValue())
-                .queryParam(Controllers.OFFICE, officeId)
-                .queryParam(Controllers.UNIT,"cfs")
-                .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
-                .queryParam(Controllers.BEGIN,"2023-01-11T12:00:00-00:00")
-                .queryParam(Controllers.END,"2023-01-11T13:00:00-00:00")
-                .queryParam("asc", true)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/filtered/")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                // First value should be 500 (earliest timestamp)
-                .body("time-series.values[0][1]", closeTo(500.0,0.0001))
-                .body("time-series.values[0][0]",  equalTo(1673438400000L))
-                // Last value should be 600 (latest timestamp)
-                .body("time-series.values[3][1]", closeTo(600.0,0.0001))
-                .body("time-series.values[3][0]", equalTo(1673442000000L))
-            ;
-        } catch (SQLException ex) {
-            throw new RuntimeException("Unable to create location for TS", ex);
-        }
-    }
-
-    @Test
-    void test_asc_parameter_false() throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-
-        InputStream resource = this.getClass().getResourceAsStream(
-                "/cwms/cda/api/lrl/pseudo_reg_1hour.json");
-        assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
-
-        JsonNode ts = mapper.readTree(tsData);
-        String location = ts.get(Controllers.NAME).asText().split("\\.")[0];
-        String officeId = ts.get("office-id").asText();
-
-        try {
-            createLocation(location, true, officeId);
-
-            TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-
-            // inserting the time series
-            given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .body(tsData)
-                .header("Authorization",user.toHeaderValue())
-                .queryParam(Controllers.OFFICE, officeId)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
-
-            // get it back with asc=false
-            given()
-                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .header("Authorization",user.toHeaderValue())
-                .queryParam(Controllers.OFFICE, officeId)
-                .queryParam(Controllers.UNIT,"cfs")
-                .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
-                .queryParam(Controllers.BEGIN,"2023-01-11T12:00:00-00:00")
-                .queryParam(Controllers.END,"2023-01-11T13:00:00-00:00")
-                .queryParam("asc", false)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/filtered/")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                // First value should be 600 (latest timestamp)
-                .body("time-series.values[0][0]", equalTo(1673442000000L))
-                .body("time-series.values[0][1]", closeTo(600.0,0.0001))
-                // Last value should be 500 (earliest timestamp)
-                .body("time-series.values[3][0]",  equalTo(1673438400000L))
-                .body("time-series.values[3][1]", closeTo(500.0,0.0001))
-            ;
-        } catch (SQLException ex) {
-            throw new RuntimeException("Unable to create location for TS", ex);
-        }
-    }
 }

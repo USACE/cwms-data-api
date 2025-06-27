@@ -54,7 +54,6 @@ class FilteredTimeSeriesTest {
 
 
         assertTrue(tsBody.contains("\"filter-parameters\""));
-        assertTrue(tsBody.contains("\"ascending\":true"));
         assertTrue(tsBody.contains("\"min-value\":450.0"));
         assertTrue(tsBody.contains("\"max-value\":550.0"));
         assertTrue(tsBody.contains("\"filter-nulls\":true"));
@@ -86,7 +85,6 @@ class FilteredTimeSeriesTest {
         assertTrue(tsData.contains("cfs"));
 
         assertTrue(tsData.contains("filter-parameters"));
-        assertTrue(tsData.contains("ascending"));
         assertTrue(tsData.contains("min-value"));
         assertTrue(tsData.contains("max-value"));
         assertTrue(tsData.contains("filter-nulls"));
@@ -125,7 +123,6 @@ class FilteredTimeSeriesTest {
 
     private FilteredTimeSeriesParameters buildFilterParams() {
         return new FilteredTimeSeriesParameters.Builder()
-                .withAscending(true)
                 .withMinValue(450.0)
                 .withMaxValue(550.0)
                 .withFilterNulls(true)
