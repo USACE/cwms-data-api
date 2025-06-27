@@ -245,12 +245,12 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                             }
                             throw new AlreadyExists(message, e);
                         } else {
-                            throw e;
+                            throw wrapException(e);
                         }
-                    } catch (NotFoundException e1) {
+                    } catch (DataAccessException | NotFoundException ignored) {
                         // If we can't find the location by name, then it doesn't exist.
                         // We can throw the original exception.
-                        throw e;
+                        throw wrapException(e);
                     }
                 }
             });

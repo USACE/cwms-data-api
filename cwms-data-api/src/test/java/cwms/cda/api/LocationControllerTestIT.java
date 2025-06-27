@@ -342,6 +342,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .body(serializedLocation)
             .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -349,7 +350,7 @@ class LocationControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
+            .statusCode(is(HttpServletResponse.SC_CREATED));
 
         // get it back
         given()
