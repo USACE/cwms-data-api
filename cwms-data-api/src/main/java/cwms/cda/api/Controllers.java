@@ -229,7 +229,6 @@ public final class Controllers {
     public static final String MIN_VALUE = "min-value";
     public static final String MAX_VALUE = "max-value";
     public static final String FILTER_NULLS = "filter-nulls";
-    public static final String ASC = "asc";
     public static final String QUERY = "query";
 
 
