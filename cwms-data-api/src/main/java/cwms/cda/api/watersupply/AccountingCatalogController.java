@@ -39,6 +39,7 @@ import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.api.Controllers.requiredInstant;
@@ -96,10 +97,9 @@ public class AccountingCatalogController implements Handler {
     @OpenApi(
         queryParams = {
             @OpenApiParam(name = START, description = "The start time of the time window for "
-                + "pump accounting entries to retrieve. The format for this field is ISO 8601 extended, "
-                + "with optional offset and timezone", required = true),
+                + "pump accounting entries to retrieve. " + TIME_FORMAT_DESC, required = true),
             @OpenApiParam(name = END, description = "The end time of the time window for pump "
-                + "accounting entries to retrieve.", required = true),
+                + "accounting entries to retrieve." + TIME_FORMAT_DESC, required = true),
             @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone "
                 + "to be used if the format of the " + END + " or " + BEGIN
                 + " parameters do not include offset or time zone information. "
