@@ -119,7 +119,6 @@ public final class Controllers {
     public static final String INTERVAL = "interval";
     public static final String CATEGORY_ID = "category-id";
     public static final String CATEGORY_ID_MASK = "category-id-mask";
-    public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-07:00";
     public static final String VERSION_DATE = "version-date";
 
     public static final String CREATE_AS_LRTS = "create-as-lrts";
@@ -159,7 +158,12 @@ public final class Controllers {
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
     public static final String REPLACE_ASSIGNED_TS = "replace-assigned-ts";
     public static final String TS_IDS = "ts-ids";
+
+    public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-07:00";
     public static final String DATE_FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
+    public static final String TIME_FORMAT_DESC = "The <a href=\"times.html\">format for this field</a> is ISO 8601 extended" +
+            ", with optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."            ;
+
     public static final String INCLUDE_ASSIGNED = "include-assigned";
     public static final String ANY_MASK = "*";
     public static final String OFFICE_MASK = "office-mask";
@@ -228,7 +232,7 @@ public final class Controllers {
     public static final String MIN_VALUE = "min-value";
     public static final String MAX_VALUE = "max-value";
     public static final String FILTER_NULLS = "filter-nulls";
-    public static final String ASC = "asc";
+    public static final String QUERY = "query";
 
 
     static {

@@ -94,24 +94,20 @@ public class TimeSeriesFilteredController implements Handler {
                             + "\n* `Other`  Any unit returned in the response to the units URI "
                             + "request that is appropriate for the requested parameters."),
                     @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date of a "
-                            + "time series trace to be selected. The format for this field is ISO 8601 "
-                            + "extended, i.e., 'format', e.g., '2021-06-10T13:00:00-0700' .If field is "
-                            + "empty, query will return a max aggregate for the timeseries. "
+                            + "time series trace to be selected. " +
+                            TIME_FORMAT_DESC +
+                            " If field is empty, query will return a max aggregate for the timeseries. "
                             + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2),
-
                     @OpenApiParam(name = BEGIN, description = "Specifies the "
                             + "start of the time window for data to be included in the response. "
                             + "If this field is not specified, any required time window begins 24"
-                            + " hours prior to the specified or default end time. The format for "
-                            + "this field is ISO 8601 extended, with optional offset and "
-                            + "timezone, i.e., '"
-                            + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                            + " hours prior to the specified or default end time. " +
+                            TIME_FORMAT_DESC),
                     @OpenApiParam(name = END, description = "Specifies the "
                             + "end of the time window for data to be included in the response. If"
                             + " this field is not specified, any required time window ends at the"
-                            + " current time. The format for this field is ISO 8601 extended, "
-                            + "with optional timezone, i.e., '"
-                            + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                            + " current time. " +
+                            TIME_FORMAT_DESC),
                     @OpenApiParam(name = TIMEZONE, description = "Specifies "
                             + "the time zone of the values of the begin and end fields (unless "
                             + "otherwise specified).  "
@@ -136,6 +132,9 @@ public class TimeSeriesFilteredController implements Handler {
                             + "the maximum value to include in the results. Values above this threshold will be excluded."),
                     @OpenApiParam(name = FILTER_NULLS, type = Boolean.class, description = "Specifies "
                             + "whether to exclude null values from the results. Default is false."),
+                    @OpenApiParam(name = QUERY, description = "Specifies "
+                            + "an RSQL-like <a href=\"rsql.html\"> query string to filter the results.  " +
+                            "Expressions may reference \"value, datetime, quality, data_entry_date\""),
                     @OpenApiParam(name = PAGE, description = "This end point can return large amounts "
                             + "of data as a series of pages. This parameter is used to describes the "
                             + "current location in the response stream.  This is an opaque "
@@ -208,20 +207,9 @@ public class TimeSeriesFilteredController implements Handler {
                     ? DateUtils.parseUserDate(end, timezone)
                     : ZonedDateTime.now(tz);
 
-
             String office = requiredParam(ctx, OFFICE);
 
-            boolean ascending = ctx.queryParamAsClass(ASC, Boolean.class).getOrDefault(true);
-            Double minValue = ctx.queryParamAsClass(MIN_VALUE, Double.class).getOrDefault(null);
-            Double maxValue = ctx.queryParamAsClass(MAX_VALUE, Double.class).getOrDefault(null);
-            boolean filterNulls = ctx.queryParamAsClass(FILTER_NULLS, Boolean.class).getOrDefault(false);
-
-            // Having all the parameters in a RequestParameters class will make changing/extending the args easier.
-            FilteredTimeSeriesParameters ftsParams = new FilteredTimeSeriesParameters.Builder()
-                    .withAscending(ascending)
-                    .withMinValue(minValue)
-                    .withMaxValue(maxValue)
-                    .withFilterNulls(filterNulls)
+            FilteredTimeSeriesParameters ftsParams = FilteredTimeSeriesParameters.Builder.from(ctx)
                     .build();
 
             TimeSeriesRequestParameters tsParams = new TimeSeriesRequestParameters.Builder()
