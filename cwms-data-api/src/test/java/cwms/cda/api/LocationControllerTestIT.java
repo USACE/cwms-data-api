@@ -43,17 +43,14 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
 
 import javax.servlet.http.HttpServletResponse;
 
-import static cwms.cda.api.Controllers.CASCADE_DELETE;
-import static cwms.cda.api.Controllers.CATEGORY_ID;
-import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.FORMAT;
-import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -156,7 +153,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
-            .queryParam("office", officeId)
+            .queryParam(OFFICE, officeId)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -203,7 +200,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
-            .queryParam("office", officeId)
+            .queryParam(OFFICE, officeId)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -327,6 +324,81 @@ class LocationControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    void test_location_create_get_bad_units_delete() throws Exception {
+        String officeId = "SPK";
+        String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
+        Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
+                json, Location.class))
+                .withOfficeId(officeId)
+                //withName(getClass().getSimpleName())
+                .build();
+        String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
+
+        KeyUser user = KeyUser.SPK_NORMAL;
+        // create location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(serializedLocation)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/locations")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // get it back
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT, "m")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + location.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
+        // delete location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + location.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // get it back
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + location.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @Test
     void test_delete_location_that_does_not_exist() {
         final String officeId = "SPK";
         final String locationName = "I do not exit";
@@ -401,6 +473,38 @@ class LocationControllerTestIT extends DataApiTestIT {
             _accept = accept;
             _expectedContentType = expectedContentType;
         }
+    }
+
+    @Test
+    void test_name_too_long() throws Exception
+    {
+        String officeId = "SPK";
+        String invalidLongName = RandomStringUtils.randomAlphabetic(200);
+        String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
+        Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
+                json, Location.class))
+                .withOfficeId(officeId)
+                .withName(invalidLongName)
+                .build();
+        String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
+
+        KeyUser user = KeyUser.SPK_NORMAL;
+        // create location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(serializedLocation)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/locations")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body(containsString("One or more provided values exceeds the maximum length for the parameter."));
     }
 
     enum GetAllTest

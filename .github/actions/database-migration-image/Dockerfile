@@ -5,6 +5,7 @@ FROM ${IMAGE}
 COPY entry.sh /
 COPY create-queues.sql /after.install.d/
 COPY cda-user.sql /after.install.d/
+COPY aaaa-updates.sql /after.install.d/
 
 ENV RDS_MODE="true"
 ENV BUILDUSER=DBAdmin

@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.ZonedDateTime;
+
+import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import org.junit.jupiter.api.Test;
 
-import cwms.cda.data.dto.LocationLevel;
-import cwms.cda.data.dto.LocationLevels;
+import cwms.cda.data.dto.locationlevel.LocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevels;
 import cwms.cda.formatters.json.JsonV2;
 
 class JsonV2Test extends TimeSeriesTestBase {
@@ -42,7 +44,7 @@ class JsonV2Test extends TimeSeriesTestBase {
 
     private LocationLevel buildLevel(String crazyName) {
         ZonedDateTime efDate = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
-        return new LocationLevel.Builder(crazyName, efDate).build();
+        return new ConstantLocationLevel.Builder(crazyName, efDate).build();
     }
 
     @Test

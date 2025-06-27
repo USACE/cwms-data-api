@@ -47,7 +47,7 @@ public class OpenIDConfig {
         if (USE_ALT_WELLKNOWN) {
             this.altWellKnown = substituteBase(wellKnown, altAuthUrl);
         }
-
+        
         HttpURLConnection http = null;
         try
         {

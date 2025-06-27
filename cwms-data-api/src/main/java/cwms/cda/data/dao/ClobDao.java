@@ -36,7 +36,7 @@ public class ClobDao extends JooqDao<Clob> {
     public static final String SELECT_CLOB_QUERY = "select cwms_20.AV_CLOB.VALUE "
             + "from cwms_20.av_clob join cwms_20.av_office "
             + "on av_clob.office_code = av_office.office_code "
-            + "where av_office.office_id = ? and av_clob.id = ?";
+            + "where av_office.office_id = ? and upper(av_clob.id) = upper(?)";
 
     public ClobDao(DSLContext dsl) {
         super(dsl);
@@ -47,7 +47,7 @@ public class ClobDao extends JooqDao<Clob> {
         AV_CLOB vClob = AV_CLOB.AV_CLOB;
         AV_OFFICE vOffice = AV_OFFICE.AV_OFFICE;
 
-        Condition cond = vClob.ID.eq(uniqueName);
+        Condition cond = upper(vClob.ID).eq(upper(uniqueName));
         if (office != null && !office.isEmpty()) {
             cond = cond.and(vOffice.OFFICE_ID.eq(office));
         }
@@ -145,7 +145,7 @@ public class ClobDao extends JooqDao<Clob> {
         AV_CLOB vClob = AV_CLOB.AV_CLOB;
         AV_OFFICE vOffice = AV_OFFICE.AV_OFFICE;
 
-        Condition cond = DSL.upper(vClob.ID).like(idLike.toUpperCase());
+        Condition cond = caseInsensitiveLikeRegex(vClob.ID, idLike);
         if (office != null && !office.isEmpty()) {
             cond = cond.and(DSL.upper(vOffice.OFFICE_ID).eq(office.toUpperCase()));
         }
@@ -167,13 +167,14 @@ public class ClobDao extends JooqDao<Clob> {
     public void create(Clob clob, boolean failIfExists) {
 
         String pFailIfExists = getBoolean(failIfExists);
-        dsl.connection(c -> CWMS_TEXT_PACKAGE.call_STORE_TEXT(
-            getDslContext(c, clob.getOfficeId()).configuration(),
-            clob.getValue(),
-            clob.getId(),
-            clob.getDescription(),
-            pFailIfExists,
-            clob.getOfficeId()));
+        connection(dsl, c ->
+            CWMS_TEXT_PACKAGE.call_STORE_TEXT(
+                    getDslContext(c, clob.getOfficeId()).configuration(),
+                    clob.getValue(),
+                    clob.getId(),
+                    clob.getDescription(),
+                    pFailIfExists,
+                    clob.getOfficeId()));
     }
 
     @NotNull

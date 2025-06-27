@@ -1,6 +1,7 @@
 package cwms.cda.api;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
@@ -13,6 +14,8 @@ import io.restassured.filter.log.LogDetail;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import javax.servlet.http.HttpServletResponse;
+
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -181,6 +184,48 @@ public class ClobControllerTestIT extends DataApiTestIT {
             .body("clobs.office-id", hasItem(TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice()));
     }
 
+    @Test
+    void test_id_case() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        String clobId = "clob_test_id_case";
+
+        Clob clob = new Clob(SPK, clobId, EXISTING_CLOB_DESC, EXISTING_CLOB_VALUE);
+        String serializedClob = om.writeValueAsString(clob);
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(serializedClob)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam("office", clob.getOfficeId())
+            .queryParam("fail-if-exists",false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/clobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        given()
+            .accept(Formats.JSONV2)
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+            .queryParam(Controllers.CLOB_ID, clobId)
+        .when()
+            .get("/clobs/ignored")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("office-id", is(SPK))
+            .body("id", is(clobId.toUpperCase()))
+            .body("description", is(EXISTING_CLOB_DESC))
+            .body("value", is(EXISTING_CLOB_VALUE));
+    }
+
 
     @ParameterizedTest
     @EnumSource(GetAllTest.class)
@@ -199,6 +244,36 @@ public class ClobControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .contentType(is(test._expectedContentType));
     }
+
+    @Test
+    void test_create_with_long_name() throws Exception
+    {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        ObjectMapper om = JsonV2.buildObjectMapper();
+
+        String invalidClobId = RandomStringUtils.randomAlphabetic(300);
+
+        Clob clob = new Clob(SPK, invalidClobId, EXISTING_CLOB_DESC, EXISTING_CLOB_VALUE);
+        String serializedClob = om.writeValueAsString(clob);
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(serializedClob)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam("office", clob.getOfficeId())
+            .queryParam("fail-if-exists",false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/clobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("message", containsString("One or more provided values exceeds the maximum length for the parameter."));
+    }
+
 
     enum GetAllTest
     {

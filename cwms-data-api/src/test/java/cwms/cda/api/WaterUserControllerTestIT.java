@@ -28,8 +28,9 @@ package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -50,6 +51,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -427,6 +429,40 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+        ;
+    }
+
+    @Test
+    void test_create_values_too_long() throws Exception
+    {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+
+        String invalidEntityName = RandomStringUtils.randomAlphabetic(60);
+        String invalidWaterRight = RandomStringUtils.randomAlphabetic(260);
+
+        WaterUser invalidUser = new WaterUser.Builder().withEntityName(invalidEntityName)
+                .withProjectId(WATER_USER.getProjectId())
+                .withWaterRight(invalidWaterRight)
+                .build();
+
+        String json = JsonV1.buildObjectMapper().writeValueAsString(invalidUser);
+
+        // create WaterUser, assert that it fails with long values
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .accept(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + OFFICE_ID + "/" + WATER_USER.getProjectId().getName() + "/water-user")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body(containsString("One or more provided values exceeds the maximum length for the parameter."))
         ;
     }
 }

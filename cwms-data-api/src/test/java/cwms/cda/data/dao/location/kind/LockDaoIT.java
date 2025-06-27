@@ -36,7 +36,8 @@ import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationLevel;
+import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.location.kind.LockLocationLevelRef;
@@ -330,39 +331,39 @@ final class LockDaoIT extends ProjectStructureIT {
 
     private List<LocationLevel> createLocationLevelList(Lock lock) {
         List<LocationLevel> retVal = new ArrayList<>();
-        LocationLevel lowLowerLevel = new LocationLevel.Builder(lock.getLowWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        ConstantLocationLevel lowLowerLevel = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(lock.getLowWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
             .withLevelUnitsId(lock.getElevationUnits())
-            .withConstantValue(lock.getLowWaterLowerPoolLocationLevel().getLevelValue())
             .withOfficeId(lock.getLowWaterLowerPoolLocationLevel().getOfficeId())
-            .withSpecifiedLevelId(lock.getLowWaterLowerPoolLocationLevel().getSpecifiedLevelId())
+            .withSpecifiedLevelId(lock.getLowWaterLowerPoolLocationLevel().getSpecifiedLevelId()))
+            .withConstantValue(lock.getLowWaterLowerPoolLocationLevel().getLevelValue())
             .build();
         retVal.add(lowLowerLevel);
-        LocationLevel lowUpperLevel = new LocationLevel.Builder(lock.getLowWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        ConstantLocationLevel lowUpperLevel = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(lock.getLowWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
             .withLevelUnitsId(lock.getElevationUnits())
-            .withConstantValue(lock.getLowWaterUpperPoolLocationLevel().getLevelValue())
             .withOfficeId(lock.getLowWaterUpperPoolLocationLevel().getOfficeId())
-            .withSpecifiedLevelId(lock.getLowWaterUpperPoolLocationLevel().getSpecifiedLevelId())
+            .withSpecifiedLevelId(lock.getLowWaterUpperPoolLocationLevel().getSpecifiedLevelId()))
+            .withConstantValue(lock.getLowWaterUpperPoolLocationLevel().getLevelValue())
             .build();
         retVal.add(lowUpperLevel);
-        LocationLevel highLowerLevel = new LocationLevel.Builder(lock.getHighWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        ConstantLocationLevel highLowerLevel = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(lock.getHighWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
             .withLevelUnitsId(lock.getElevationUnits())
-            .withConstantValue(lock.getHighWaterLowerPoolLocationLevel().getLevelValue())
             .withOfficeId(lock.getHighWaterLowerPoolLocationLevel().getOfficeId())
-            .withSpecifiedLevelId(lock.getHighWaterLowerPoolLocationLevel().getSpecifiedLevelId())
+            .withSpecifiedLevelId(lock.getHighWaterLowerPoolLocationLevel().getSpecifiedLevelId()))
+            .withConstantValue(lock.getHighWaterLowerPoolLocationLevel().getLevelValue())
             .build();
         retVal.add(highLowerLevel);
-        LocationLevel highUpperLevel = new LocationLevel.Builder(lock.getHighWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        ConstantLocationLevel highUpperLevel = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(lock.getHighWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
             .withLevelUnitsId(lock.getElevationUnits())
-            .withConstantValue(lock.getHighWaterUpperPoolLocationLevel().getLevelValue())
             .withOfficeId(lock.getHighWaterUpperPoolLocationLevel().getOfficeId())
-            .withSpecifiedLevelId(lock.getHighWaterUpperPoolLocationLevel().getSpecifiedLevelId())
+            .withSpecifiedLevelId(lock.getHighWaterUpperPoolLocationLevel().getSpecifiedLevelId()))
+            .withConstantValue(lock.getHighWaterUpperPoolLocationLevel().getLevelValue())
             .build();
         retVal.add(highUpperLevel);
-        LocationLevel warningBuffer = new LocationLevel.Builder(String.format("%s.Elev-Closure.Inst.0.Warning Buffer", lock.getLocation().getName()), ZonedDateTime.now())
+        ConstantLocationLevel warningBuffer = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(String.format("%s.Elev-Closure.Inst.0.Warning Buffer", lock.getLocation().getName()), ZonedDateTime.now())
                 .withLevelUnitsId(lock.getElevationUnits())
-                .withConstantValue(lock.getHighWaterLowerPoolWarningLevel())
                 .withOfficeId(lock.getLocation().getOfficeId())
-                .withSpecifiedLevelId("Warning Buffer")
+                .withSpecifiedLevelId("Warning Buffer"))
+                .withConstantValue(lock.getHighWaterLowerPoolWarningLevel())
                 .build();
         retVal.add(warningBuffer);
         return retVal;

@@ -231,12 +231,9 @@ public class LocationController implements CrudHandler {
                 @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
                         + " of the response. Valid values for the unit field are: "
                         + "\n* `EN`  Specifies English unit system.  Location values will be in the "
-                        + "default English units for their parameters."
+                        + "default English units for their parameters. This is the default behavior."
                         + "\n* `SI`  Specifies the SI unit system.  Location values will be in the "
-                        + "default SI units for their parameters."
-                        + "\n* `Other`  Any unit returned in the "
-                        + "response to the units URI request that is appropriate for the "
-                        + "requested parameters.")
+                        + "default SI units for their parameters.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,

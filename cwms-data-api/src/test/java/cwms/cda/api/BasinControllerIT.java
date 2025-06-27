@@ -43,7 +43,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -303,6 +303,28 @@ class BasinControllerIT extends DataApiTestIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+		;
+	}
+
+	@Test
+	void test_get_one_bad_units() {
+		TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+		// Retrieve basin with bad units
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(Formats.JSONV1)
+			.queryParam(Controllers.OFFICE, OFFICE)
+			.queryParam(UNIT, "F")
+			.header(AUTH_HEADER, user.toHeaderValue())
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("basins/" + BASIN_CONNECT.getBasinId().getName())
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+			.body("details.message", equalTo("Cannot convert from unit m2 to unit F"))
 		;
 	}
 
