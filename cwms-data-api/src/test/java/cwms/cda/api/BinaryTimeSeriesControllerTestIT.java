@@ -322,7 +322,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String tsIdentifier = "TsBinTestLoc.Binary.Inst.1DayLocal.0.lrts";
-        String legacyTsIdentifier = "TsBinTestLoc.Binary.Inst.~1Hour.0.lrts";
+        String legacyTsIdentifier = "TsBinTestLoc.Binary.Inst.~1Day.0.lrts";
         String tsData = getTsBodyNewLRTSInterval(tsIdentifier);
 
         createTimeseriesWithNewLRTSInterval(OFFICE, tsIdentifier, 0);
@@ -375,7 +375,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsIdentifier)
             .queryParam(Controllers.BEGIN, "2004-05-01T12:00:00Z")
-            .queryParam(Controllers.END, "2007-05-19T16:00:00Z")
+            .queryParam(Controllers.END, "2027-05-19T16:00:00Z")
             .header(ApiServlet.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
