@@ -74,7 +74,6 @@ import org.jooq.SQL;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectHavingStep;
 import org.jooq.SelectJoinStep;
-import org.jooq.SelectSeekStep1;
 import org.jooq.SelectSeekStep2;
 import org.jooq.Table;
 import org.jooq.TableField;
@@ -460,31 +459,22 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         TimeSeries retVal = null;
         if (pageSize != 0) {
-
-            boolean isAscending = true;
-            if(fp != null){
-                isAscending = fp.isAscending();
-            }
-
-            SelectSeekStep1<Record4<Timestamp, Double, BigDecimal, Timestamp>, Timestamp> query2 = dsl.select(
+            SelectConditionStep<Record4<Timestamp, Double, BigDecimal, Timestamp>> query2 = dsl.select(
                             dateTimeCol,
                             valueCol,
                             qualityNormCol,
                             dataEntryDate
                     )
                     .from(retrieveSelectData)
-                    .where(filterConditions)
-                    .orderBy(isAscending ? dateTimeCol.asc() : dateTimeCol.desc());
+                    .where(filterConditions);
 
-            SelectSeekStep1<Record3<Timestamp, Double, BigDecimal>, Timestamp> query =
-                    dsl.select(
-                                    dateTimeCol,
-                                    valueCol,
-                                    qualityNormCol
-                            )
-                            .from(retrieveSelectData)
-                            .where(filterConditions)
-                            .orderBy(isAscending?dateTimeCol.asc():dateTimeCol.desc());
+            @NotNull SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query = dsl.select(
+                            dateTimeCol,
+                            valueCol,
+                            qualityNormCol
+                    )
+                    .from(retrieveSelectData)
+                    .where(filterConditions);
 
             if (pageSize > 0) {
                 query.limit(DSL.val(pageSize + 1));
