@@ -4,24 +4,27 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import io.javalin.http.Context;
+import org.jetbrains.annotations.NotNull;
+
+import static cwms.cda.api.Controllers.FILTER_NULLS;
+import static cwms.cda.api.Controllers.MAX_VALUE;
+import static cwms.cda.api.Controllers.MIN_VALUE;
+import static cwms.cda.api.Controllers.QUERY;
 
 @JsonDeserialize(builder = FilteredTimeSeriesParameters.Builder.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class FilteredTimeSeriesParameters {
-    private final boolean ascending;
     private final Double minValue;
     private final Double maxValue;
     private final boolean filterNulls;
+    private final String query;
 
     private FilteredTimeSeriesParameters(Builder builder) {
-        this.ascending = builder.ascending;
         this.minValue = builder.minValue;
         this.maxValue = builder.maxValue;
         this.filterNulls = builder.filterNulls;
-    }
-
-    public boolean isAscending() {
-        return ascending;
+        this.query = builder.query;
     }
 
     public Double getMinValue() {
@@ -36,20 +39,19 @@ public class FilteredTimeSeriesParameters {
         return filterNulls;
     }
 
+    public String getQuery() {
+        return query;
+    }
+
     @JsonPOJOBuilder(withPrefix = "with", buildMethodName = "build")
     public static class Builder {
 
-        private boolean ascending = true;
         private Double minValue;
         private Double maxValue;
         private boolean filterNulls = false;
+        private String query;
 
         public Builder() {
-        }
-
-        public Builder withAscending(boolean ascending) {
-            this.ascending = ascending;
-            return this;
         }
 
         public Builder withMinValue(Double minValue) {
@@ -67,13 +69,32 @@ public class FilteredTimeSeriesParameters {
             return this;
         }
 
+        public Builder withQuery(String query) {
+            this.query = query;
+            return this;
+        }
+
         public static Builder from(FilteredTimeSeriesParameters params) {
             // This NEEDS to include every field in the FilteredTimeSeriesRequestParameters
             return new Builder()
-                    .withAscending(params.ascending)
                     .withMinValue(params.minValue)
                     .withMaxValue(params.maxValue)
-                    .withFilterNulls(params.filterNulls);
+                    .withFilterNulls(params.filterNulls)
+                    .withQuery(params.query);
+        }
+
+        public static Builder from(@NotNull Context ctx){
+            Double minValue = ctx.queryParamAsClass(MIN_VALUE, Double.class).getOrDefault(null);
+            Double maxValue = ctx.queryParamAsClass(MAX_VALUE, Double.class).getOrDefault(null);
+            boolean filterNulls = ctx.queryParamAsClass(FILTER_NULLS, Boolean.class).getOrDefault(false);
+            String query = ctx.queryParamAsClass(QUERY, String.class).getOrDefault(null);
+
+            return new Builder()
+                    .withMinValue(minValue)
+                    .withMaxValue(maxValue)
+                    .withFilterNulls(filterNulls)
+                    .withQuery(query)
+                    ;
         }
 
         public FilteredTimeSeriesParameters build() {

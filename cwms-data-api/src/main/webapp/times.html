@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CDA - CWMS Data API</title>
+        <meta name="Description" content="CDA CWMS Data API" />
+        <link rel="stylesheet" href="./css/body.css" />
+        <link rel="stylesheet" href="./css/HEC.sidebar.css"/>
+        <link rel="stylesheet" href="./css/cda.css"/>
+        <script type="text/javascript" src="./js/util.js"></script>
+        <script defer type="text/javascript">
+            // Load the page templates into the DOM
+            window.addEventListener("load", function () {
+                load('header', './templates/HEC.header.html')
+                load('footer', './templates/HEC.footer.html')
+            })
+        </script>
+    </head>
+    <body>
+        <div id="page-container">
+            <header id="header" style="display: none;">
+            </header>
+            <div class="page-wrap">
+                <div class="container-fluid">
+                    <div class="page-content">
+                        <div id="topPane" class="col-md backend-cp-collapsible">
+                            <div class="box-usace">
+                                <h2 class="box-header-striped">
+                                    <span class="titleLabel title">Timestamps</span>
+                                    <span class="rss"></span>
+                                </h2>
+                                <div class="box-content" style="background-color:white;margin:auto">
+                                    <div class="content">
+                                        <p>Several web service end-points make use of timestamp fields to represent start and end times. The CWMS Data API provides flexible date/time parsing and supports several formats:</p>
+
+                                        <ul>
+                                            <li>Full ISO 8601 dates with timezone information</li>
+                                            <li>ISO 8601 dates without timezone information (using the fallback timezone)</li>
+                                            <li>Period strings (starting with "P")</li>
+                                            <li>Duration strings (starting with "PT")</li>
+                                        </ul>
+
+                                        <p>There are still a few web-service end-points that pass user-provided timestamp string parameters directly to pl/sql functions.  Those end-points are sometimes described as legacy or version 1 end-points.  They often take a "format" parameter and do not use the accept header.  In those cases the pl/sql parses the user string and a slightly different timestamp format must be used.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="box-usace">
+                                <h2 class="box-header-striped">
+                                    <span class="titleLabel title">Time parsing examples</span>
+                                    <span class="rss"></span>
+                                </h2>
+                                <div class="box-content" style="background-color:white;margin:auto">
+                                    <div class="content">
+                                        <p>The following are examples of acceptable input strings for date/time parameters:</p>
+
+                                        <h3>1. ISO 8601 Dates with Timezone Information</h3>
+                                        <p>These formats include timezone information, so the fallback timezone is ignored:</p>
+                                        <ul>
+                                            <li><code>2022-01-06T00:00:00Z</code> - UTC timezone (Z)</li>
+                                            <li><code>2022-01-06T07:00:01-07:00</code> - Offset timezone (-07:00)</li>
+                                            <li><code>2022-01-06T07:00:02-0700</code> - Offset timezone without colon</li>
+                                            <li><code>2021-06-10T13:00:23-07:00[PST8PDT]</code> - Offset with named timezone</li>
+                                            <li><code>2022-01-19T20:52:07+00:00[UTC]</code> - Zero offset with named timezone</li>
+                                            <li><code>2022-12-08T09:47:32-0800[America/Los_Angeles]</code> - Offset with region timezone</li>
+                                        </ul>
+
+                                        <h3>2. ISO 8601 Dates without Timezone Information</h3>
+                                        <p>When timezone information is not included, the fallback timezone is used:</p>
+                                        <ul>
+                                            <li><code>2022-01-06T00:00:01</code> - Will be interpreted in the fallback timezone</li>
+                                            <li><code>2021-04-05</code> - Date only (time will be set to midnight in the fallback timezone)</li>
+                                        </ul>
+                                        <p>For example, if the fallback timezone is "US/Pacific" and you provide <code>2022-01-06T00:00:00</code>, it will be interpreted as January 6, 2022, at midnight Pacific time.</p>
+
+                                        <h3>3. Period Strings (Calendar-based)</h3>
+                                        <p>Period strings start with "P" and represent calendar-based periods (days, months, years). They are relative to the current time:</p>
+                                        <ul>
+                                            <li><code>P-1D</code> - 1 day ago</li>
+                                            <li><code>P-1M</code> - 1 month ago</li>
+                                            <li><code>P-1Y</code> - 1 year ago</li>
+                                            <li><code>P-1Y-2M-3D</code> - 1 year, 2 months, and 3 days ago</li>
+                                        </ul>
+                                        <p>Note: Periods respect calendar boundaries. For example, one month ago from March 30 is February 28 (in non-leap years).</p>
+
+                                        <h3>4. Duration Strings (Time-based)</h3>
+                                        <p>Duration strings start with "PT" and represent time-based durations (hours, minutes, seconds). They are relative to the current time:</p>
+                                        <ul>
+                                            <li><code>PT-24H</code> - 24 hours ago</li>
+                                            <li><code>PT-25H-3M</code> - 25 hours and 3 minutes ago</li>
+                                            <li><code>PT-1H-30M</code> - 1 hour and 30 minutes ago</li>
+                                        </ul>
+                                        <p>Note: Durations are exact time intervals. PT-24H is always exactly 24 hours, regardless of daylight saving time changes.</p>
+
+                                        <h3>Timezone Handling</h3>
+                                        <p>The API handles timezones in the following ways:</p>
+                                        <ul>
+                                            <li>If the input string includes timezone information, that timezone is used regardless of the fallback timezone.</li>
+                                            <li>If the input string does not include timezone information, the fallback timezone is used.</li>
+                                            <li>The fallback timezone comes from the "timezone" query parameter or is specified in the API call.</li>
+                                            <li>If no fallback timezone is specified, UTC is used as the default.</li>
+                                        </ul>
+
+                                        <h3>Error Handling</h3>
+                                        <p>The API will throw a DateTimeException in the following cases:</p>
+                                        <ul>
+                                            <li>The input string cannot be parsed as a valid date/time, period, or duration.</li>
+                                            <li>The specified fallback timezone is invalid.</li>
+                                        </ul>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <footer id="footer" style="display: none;"></footer>
+    </body>
+</html>
