@@ -139,20 +139,20 @@ final class LockControllerIT extends DataApiTestIT {
     }
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             try {
                 DSLContext context = getDslContext(c, LOCK_LOC.getOfficeId());
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-                locationsDao.storeLocation(PROJECT_LOC);
-                locationsDao.storeLocation(PROJECT_LOC2);
+                locationsDao.storeLocation(PROJECT_LOC, false);
+                locationsDao.storeLocation(PROJECT_LOC2, false);
                 PROJECT_OBJ_T projectObjT = buildProject(PROJECT_LOC);
                 PROJECT_OBJ_T projectObjT2 = buildProject(PROJECT_LOC2);
                 CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
                 CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT2, "T");
-                locationsDao.storeLocation(LOCK_LOC);
-                locationsDao.storeLocation(LOCK_LOC2);
+                locationsDao.storeLocation(LOCK_LOC, false);
+                locationsDao.storeLocation(LOCK_LOC2, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -160,7 +160,7 @@ final class LockControllerIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {

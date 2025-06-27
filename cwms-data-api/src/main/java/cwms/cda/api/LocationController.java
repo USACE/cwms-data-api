@@ -29,6 +29,7 @@ import static cwms.cda.api.Controllers.CASCADE_DELETE;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DATUM;
 import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
@@ -55,6 +56,7 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.DeleteConflictException;
 import cwms.cda.api.errors.NotFoundException;
@@ -63,7 +65,6 @@ import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.UnsupportedFormatException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -77,7 +78,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.ZoneId;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -192,27 +193,20 @@ public class LocationController implements CrudHandler {
 
                 requestResultSize.update(ctx.res.getBufferSize());
                 ctx.contentType(contentType.toString());
-            }
-            else if (formatParm.isEmpty() && !isLegacyFormat)
-            {
+            } else if (formatParm.isEmpty() && !isLegacyFormat) {
                 List<Location> locations = locationsDao.getLocations(names, units, datum, office);
                 results = Formats.format(contentType, locations, Location.class);
                 ctx.result(results);
                 requestResultSize.update(results.length());
                 ctx.contentType(contentType.toString());
-            }
-            else
-            {
+            } else {
                 String format = Formats.getLegacyTypeFromContentType(contentType);
                 results = locationsDao.getLocations(names, format, units, datum, office);
                 ctx.result(results);
                 requestResultSize.update(results.length());
-                if (isLegacyFormat)
-                {
+                if (isLegacyFormat) {
                     ctx.contentType(contentType.toString());
-                }
-                else
-                {
+                } else {
                     ctx.contentType(contentType.getType());
                 }
             }
@@ -293,6 +287,13 @@ public class LocationController implements CrudHandler {
                         @OpenApiContent(from = Location.class, type = Formats.XML)
                     },
                     required = true),
+            queryParams = {
+                @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                    description = "Specifies whether to fail if the location already exists. "
+                        + "Default: true. If true, an error will be returned if the "
+                        + "location already exists. If false, the existing location will "
+                        + "be updated with the new values.")
+            },
             description = "Create new CWMS Location",
             method = HttpMethod.POST,
             path = "/locations",
@@ -309,8 +310,15 @@ public class LocationController implements CrudHandler {
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
-            locationsDao.storeLocation(locationFromBody);
-            ctx.status(HttpServletResponse.SC_OK).json("Created Location");
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            locationsDao.storeLocation(locationFromBody, failIfExists);
+            ctx.status(HttpServletResponse.SC_CREATED).json("Created Location");
+        } catch (AlreadyExists e) {
+            Map<String, String> details = new HashMap<>();
+            details.put("message", e.getMessage());
+            CdaError re = new CdaError("Already exists", details);
+            logger.log(Level.SEVERE, re.toString(), e);
+            ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("failed to process request");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -357,7 +365,7 @@ public class LocationController implements CrudHandler {
                 locationsDao.renameLocation(locationId, updatedLocation);
                 ctx.status(HttpServletResponse.SC_OK).json("Updated and renamed Location");
             } else {
-                locationsDao.storeLocation(updatedLocation);
+                locationsDao.storeLocation(updatedLocation, false);
                 ctx.status(HttpServletResponse.SC_OK).json("Updated Location");
             }
         } catch (NotFoundException e) {

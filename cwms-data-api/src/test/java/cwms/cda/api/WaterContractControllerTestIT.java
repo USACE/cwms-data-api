@@ -38,7 +38,6 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.project.Project;
-import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -119,7 +118,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
             WaterContractDao waterContractDao = new WaterContractDao(ctx);
             try {
-                locationsDao.storeLocation(projectLocation);
+                locationsDao.storeLocation(projectLocation, false);
                 lookupTypeDao.storeLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE", contractType);
                 projectDao.store(project, true);
                 waterContractDao.storeWaterUser(CONTRACT.getWaterUser(), true);

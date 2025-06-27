@@ -34,8 +34,6 @@ import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.formatters.ContentType;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.response.ExtractableResponse;
-import io.restassured.response.Response;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -51,23 +49,48 @@ import javax.servlet.http.HttpServletResponse;
 import static cwms.cda.api.Controllers.CASCADE_DELETE;
 import static cwms.cda.api.Controllers.CATEGORY_ID;
 import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag("integration")
 class LocationControllerTestIT extends DataApiTestIT {
 
-    private List<LocationCategory> categoriesToCleanup = new ArrayList<>();
-    private List<LocationGroup> groupsToCleanup = new ArrayList<>();
+    private final List<LocationCategory> categoriesToCleanup = new ArrayList<>();
+    private final List<LocationGroup> groupsToCleanup = new ArrayList<>();
 
     @AfterEach
     void cleanup()
     {
         KeyUser user = KeyUser.SPK_NORMAL;
+
+        for (LocationGroup group : groupsToCleanup) {
+            try {
+                // Delete Group
+                given()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .accept(Formats.JSON)
+                    .contentType(Formats.JSON)
+                    .header("Authorization", user.toHeaderValue())
+                    .queryParam(OFFICE, group.getOfficeId())
+                    .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
+                    .queryParam(CASCADE_DELETE, "true")
+                .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .delete("/location/group/" + group.getId())
+                .then()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+            } catch (Exception ex) {
+                // ignore
+            }
+        }
 
         for (LocationCategory category : categoriesToCleanup) {
             try {
@@ -83,30 +106,6 @@ class LocationControllerTestIT extends DataApiTestIT {
                     .redirects().follow(true)
                     .redirects().max(3)
                     .delete("/location/category/" + category.getId())
-                .then()
-                    .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                    .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
-            } catch (Exception ex) {
-                // ignore
-            }
-        }
-
-        for (LocationGroup group : groupsToCleanup) {
-            try {
-                // Delete Group
-                given()
-                    .log().ifValidationFails(LogDetail.ALL,true)
-                    .accept(Formats.JSON)
-                    .contentType(Formats.JSON)
-                    .header("Authorization", user.toHeaderValue())
-                    .queryParam(OFFICE, group.getOfficeId())
-                    .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
-                    .queryParam(CASCADE_DELETE, "true")
-                .when()
-                    .redirects().follow(true)
-                    .redirects().max(3)
-                    .delete("/location/group/" + group.getId())
                 .then()
                     .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
@@ -136,6 +135,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .body(serializedLocation)
             .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -143,7 +143,7 @@ class LocationControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
+            .statusCode(is(HttpServletResponse.SC_CREATED));
         //Create associated time series so delete fails without cascade
         try {
             createTimeseries(officeId, location.getName() + ".Flow.Inst.~1Hour.0.cda-test");
@@ -215,7 +215,7 @@ class LocationControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_location_create_get_delete_failure() throws Exception {
+    void test_location_create_aliased() throws Exception {
         // Tests for https://github.com/USACE/cwms-data-api/issues/1080
         String officeId = "SPK";
         KeyUser user = KeyUser.SPK_NORMAL;
@@ -223,7 +223,6 @@ class LocationControllerTestIT extends DataApiTestIT {
         Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
                 json, Location.class))
                 .withOfficeId(officeId)
-                //withName(getClass().getSimpleName())
                 .build();
         String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
 
@@ -234,13 +233,15 @@ class LocationControllerTestIT extends DataApiTestIT {
         // create location group with location
         AssignedLocation assignLoc = new AssignedLocation(locationId, officeId, location.getName(), 1, locationId);
         LocationCategory cat = new LocationCategory(officeId, "TestCategory", "IntegrationTesting");
-        LocationGroup group = new LocationGroup(new LocationGroup(cat, officeId, LocationGroupControllerTestIT.class.getSimpleName(), "IntegrationTesting",
+        LocationGroup group = new LocationGroup(
+            new LocationGroup(cat, officeId, LocationGroupControllerTestIT.class.getSimpleName(), "IntegrationTesting",
                 "sharedLocAliasId", locationId, 123), Collections.singletonList(assignLoc));
         ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
         groupsToCleanup.add(group);
         categoriesToCleanup.add(cat);
+
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -258,6 +259,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
+
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -274,8 +276,8 @@ class LocationControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
-        // create location of the same name as alias
-        Response response = given()
+        // attempt to create location of the same name as alias
+        given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
@@ -288,81 +290,27 @@ class LocationControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .extract().response();
+            .statusCode(is(HttpServletResponse.SC_CONFLICT))
+            .body("details.message",
+                equalTo(String.format("The location with alias: '%s' and proper name: '%s' already exists in office: '%s'.",
+                    location.getName(), locationId, officeId)));
 
-        //Create associated time series so delete fails without cascade
-        try {
-            createTimeseries(officeId, location.getName() + ".Flow.Inst.~1Hour.0.cda-test");
-        } catch (Exception ex) {
-            // ignore
-        }
-
-        Location loc = given()
+        // get the existing location
+        given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", officeId)
-            .when()
+        .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/locations/" + locationId)
-            .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .extract().as(Location.class);
-
-        assertEquals(location, loc);
-
-        // get it back
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam("office", officeId)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/locations/" + location.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
-        // delete without cascade should fail
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-            .queryParam(CASCADE_DELETE, false)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .delete("/locations/" + location.getName())
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CONFLICT));
-
-        // delete with cascade should succeed
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-            .queryParam(CASCADE_DELETE, true)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .delete("/locations/" + location.getName())
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-        // get it back, assert not found
+        // get the location by alias, expect not to be found
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)

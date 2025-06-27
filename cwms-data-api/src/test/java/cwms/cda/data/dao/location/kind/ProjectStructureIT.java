@@ -119,7 +119,7 @@ public abstract class ProjectStructureIT extends DataApiTestIT {
 	public static void storeLocation(DSLContext context, Location loc) throws IOException {
 		LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
 		deleteLocation(context, loc.getOfficeId(), loc.getName());
-		locationsDao.storeLocation(loc);
+		locationsDao.storeLocation(loc, false);
 		LocationCleanup.locationsCreated.add(loc);
 	}
 

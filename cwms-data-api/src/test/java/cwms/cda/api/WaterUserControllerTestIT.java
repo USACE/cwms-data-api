@@ -112,7 +112,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(ctx);
             ProjectDao projectDao = new ProjectDao(ctx);
             try {
-                locationsDao.storeLocation(projectLocation);
+                locationsDao.storeLocation(projectLocation, false);
                 projectDao.store(project, true);
             } catch (IOException e) {
                 throw new RuntimeException(e);

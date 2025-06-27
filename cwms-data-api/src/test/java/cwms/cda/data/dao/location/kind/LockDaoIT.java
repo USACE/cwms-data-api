@@ -72,16 +72,16 @@ final class LockDaoIT extends ProjectStructureIT {
     private List<LocationLevel> locationLevelsToCleanup = new ArrayList<>();
 
     @BeforeAll
-    public void setup() throws Exception {
+    void setup() throws Exception {
         setupProject();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
                 DSLContext context = getDslContext(c, OFFICE_ID);
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
                 try {
-                    locationsDao.storeLocation(LOCK_LOC1);
-                    locationsDao.storeLocation(LOCK_LOC2);
-                    locationsDao.storeLocation(LOCK_LOC3);
+                    locationsDao.storeLocation(LOCK_LOC1, false);
+                    locationsDao.storeLocation(LOCK_LOC2, false);
+                    locationsDao.storeLocation(LOCK_LOC3, false);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -90,7 +90,7 @@ final class LockDaoIT extends ProjectStructureIT {
     }
 
     @AfterAll
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
                 DSLContext context = getDslContext(c, OFFICE_ID);
