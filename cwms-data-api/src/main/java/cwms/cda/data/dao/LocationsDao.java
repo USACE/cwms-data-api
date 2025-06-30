@@ -41,6 +41,9 @@ public interface LocationsDao {
 
     void deleteLocation(String locationName, String officeId, boolean cascadeDelete);
 
+    @Deprecated
+    void storeLocation(Location location) throws IOException;
+
     void storeLocation(Location location, boolean failIfExists) throws IOException;
 
     void renameLocation(String oldLocationName, Location renamedLocation) throws IOException;

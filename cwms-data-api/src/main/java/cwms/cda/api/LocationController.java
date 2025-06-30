@@ -56,7 +56,6 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.DeleteConflictException;
 import cwms.cda.api.errors.NotFoundException;
@@ -78,9 +77,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.ZoneId;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -310,12 +307,6 @@ public class LocationController implements CrudHandler {
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             locationsDao.storeLocation(locationFromBody, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED).json("Created Location");
-        } catch (AlreadyExists e) {
-            Map<String, String> details = new HashMap<>();
-            details.put("message", e.getMessage());
-            CdaError re = new CdaError("Already exists", details);
-            logger.log(Level.SEVERE, re.toString(), e);
-            ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("failed to process request");
             logger.log(Level.SEVERE, re.toString(), ex);

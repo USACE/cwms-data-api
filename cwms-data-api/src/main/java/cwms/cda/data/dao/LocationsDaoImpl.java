@@ -218,6 +218,15 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         });
     }
 
+    /**
+     * @deprecated Use {@link #storeLocation(Location, boolean)} instead.
+     */
+    @Deprecated
+    @Override
+    public void storeLocation(Location location) throws IOException {
+        storeLocation(location, false);
+    }
+
     @Override
     public void storeLocation(Location location, boolean failIfExists) throws IOException {
         location.validate();
