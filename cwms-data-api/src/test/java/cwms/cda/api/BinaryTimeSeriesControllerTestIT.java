@@ -15,7 +15,6 @@ import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
+import static cwms.cda.api.BinaryTimeSeriesController.REPLACE_ALL;
 import static cwms.cda.api.Controllers.BLOB_ID;
 import static cwms.cda.api.Controllers.VERSION_DATE;
 import static io.restassured.RestAssured.given;
@@ -179,6 +179,27 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
     }
 
     @NotNull
+    private String getTsBodyIrregular(String tsIdent) throws IOException {
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/bin_ts_create_irr.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        BinaryTimeSeries bts = om.readValue(tsData, BinaryTimeSeries.class);
+        bts = new BinaryTimeSeries.Builder()
+            .withBinaryValues(bts.getBinaryValues())
+            .withName(tsIdent)
+            .withOfficeId(OFFICE)
+            .withTimeZone(bts.getTimeZone())
+            .withDateVersionType(bts.getDateVersionType())
+            .withVersionDate(bts.getVersionDate())
+            .withIntervalOffset(bts.getIntervalOffset())
+            .build();
+        return om.writeValueAsString(bts);
+    }
+
+    @NotNull
     private String getTsBodyLarge() throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/bin_ts_large_value.json");
         assertNotNull(resource);
@@ -307,8 +328,51 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled("This test is disabled because there is a bug in the association between the binary time series "
-        + "and its associated binary data. It is likely related to the new LRTS identifier.")
+    void test_create_get_irregular() throws Exception {
+        // Test for issue found here: https://github.com/HydrologicEngineeringCenter/cwms-database/issues/28
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String tsIdentifier = "TsBinTestLoc.Binary.Inst.0.0.irreg";
+        String tsData = getTsBodyIrregular(tsIdentifier);
+
+        createTimeseries(OFFICE, tsIdentifier);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.BEGIN, "2020-05-01T12:00:00Z")
+            .queryParam(Controllers.END, "2027-05-19T16:00:00Z")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("name", equalTo(tsIdentifier))
+            .body("binary-values.size()", equalTo(3))
+        ;
+    }
+
+    @Test
     void test_create_get_delete_get_lrts() throws Exception {
 
         // Structure of test:
@@ -325,7 +389,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         String legacyTsIdentifier = "TsBinTestLoc.Binary.Inst.~1Day.0.lrts";
         String tsData = getTsBodyNewLRTSInterval(tsIdentifier);
 
-        createTimeseriesWithNewLRTSInterval(OFFICE, tsIdentifier, 0);
+        createTimeseriesWithNewLRTSInterval(OFFICE, tsIdentifier, -480);
 
         // Step 1)
         // Try to create the binary time series without LRTS header set
@@ -356,6 +420,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .body(tsData)
             .header("Authorization", user.toHeaderValue())
             .header(ApiServlet.IS_NEW_LRTS, true)
+            .queryParam(REPLACE_ALL , true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -388,7 +453,6 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .body("name", equalTo(tsIdentifier))
             .body("binary-values.size()", equalTo(3))
         ;
-        // TODO: The above method is not returning the stored binary values associated with the TS.
 
         // Step 4)
         // Retrieve the binary time series without the header and assert that it exists
@@ -399,7 +463,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, legacyTsIdentifier)
             .queryParam(Controllers.BEGIN, "2004-05-01T12:00:00Z")
-            .queryParam(Controllers.END, "2007-05-19T16:00:00Z")
+            .queryParam(Controllers.END, "2027-05-19T16:00:00Z")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -418,6 +482,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
         .when()
             .redirects().follow(true)

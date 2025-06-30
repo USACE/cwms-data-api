@@ -1,8 +1,8 @@
 {
   "office-id": "SPK",
-  "name": "TsBinTestLoc.Binary.Inst.1DayLocal.0.lrts",
-  "interval-offset": -480,
-  "time-zone": "America/Los_Angeles",
+  "name": "TsBinTestLoc.Binary.Inst.IR-Day.0.lrts",
+  "interval-offset": 0,
+  "time-zone": "UTC",
   "version-date": 1749168000000,
   "binary-values": [
     {
@@ -14,13 +14,13 @@
       "dest-flag": 0
     },
     {
-      "date-time": 1748822400000,
+      "date-time": 1748822480000,
       "data-entry-date": 1749081601000,
       "media-type": "text/plain",
       "binary-value": "TFJUU0JpbmFyeURhdGEy"
     },
     {
-      "date-time": 1748908800000,
+      "date-time": 1748908807000,
       "data-entry-date": 1749081602000,
       "media-type": "text/plain",
       "binary-value": "TFJUU0JpbmFyeURhdGEz"
