@@ -287,6 +287,17 @@ public class TimeSeriesController implements CrudHandler {
                         + "Required for:" + Formats.JSONV2 + " and " + Formats.XMLV2 + ". "
                         + "For other formats, if this field is not specified, matching location "
                         + "level information from all offices shall be returned."),
+                @OpenApiParam(name = UNIT, deprecated = true, description = "Specifies the "
+                        + "unit or unit system of the response. Valid values for the unit "
+                        + "field are: "
+                        + "\n* `EN`  (default) Specifies English unit system.  "
+                        + "Location level values will be in the default English units for "
+                        + "their parameters."
+                        + "\n* `SI`  Specifies the SI unit system.  "
+                        + "Location level values will be in the default SI units for their "
+                        + "parameters."
+                        + "\n* `Other`  Any unit returned in the response to the units URI "
+                        + "request that is appropriate for the requested parameters."),
                 @OpenApiParam(name = UNITS,  description = "Specifies the "
                         + "units or unit system of the response. Valid values for the units "
                         + "field are: "
