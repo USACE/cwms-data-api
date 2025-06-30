@@ -654,6 +654,111 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    void test_get_with_units() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/spk/num_ts_create2.json");
+        assertNotNull(resource);
+
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get(Controllers.NAME).asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(Controllers.OFFICE, officeId)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+        ;
+
+        // get it back using 'units' parameter
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(Controllers.OFFICE, officeId)
+                .queryParam(Controllers.UNITS, "CFS")
+                .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
+                .queryParam(Controllers.BEGIN, "2007-02-02T11:00:00Z")
+                .queryParam(Controllers.END, "2010-02-03T11:00:00Z")
+                .queryParam(Controllers.VERSION_DATE, "2021-06-20T08:00:00-0000[UTC]")
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+       .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+       .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("values.size()", equalTo(4))
+                .body("values[0][1]", equalTo(4.0F))
+                .body("values[0].size()", equalTo(3));
+
+       // get it back using old 'unit' parameter
+       given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(Controllers.OFFICE, officeId)
+                .queryParam(Controllers.UNIT, "CFS")
+                .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
+                .queryParam(Controllers.BEGIN, "2007-02-02T11:00:00Z")
+                .queryParam(Controllers.END, "2010-02-03T11:00:00Z")
+                .queryParam(Controllers.VERSION_DATE, "2021-06-20T08:00:00-0000[UTC]")
+       .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+       .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+       .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("values.size()", equalTo(4))
+                .body("values[0][1]", equalTo(4.0F))
+                .body("values[0].size()", equalTo(3));
+
+       // get it back using unit system for 'units'
+       given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(Controllers.OFFICE, officeId)
+                .queryParam(Controllers.UNITS, "EN")
+                .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
+                .queryParam(Controllers.BEGIN, "2007-02-02T11:00:00Z")
+                .queryParam(Controllers.END, "2010-02-03T11:00:00Z")
+                .queryParam(Controllers.VERSION_DATE, "2021-06-20T08:00:00-0000[UTC]")
+       .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+       .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+       .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("values.size()", equalTo(4))
+                .body("values[0][1]", equalTo(4.0F))
+                .body("values[0].size()", equalTo(3));
+    }
+
+    @Test
     void test_attempt_store_with_entry_date() throws Exception
     {
         ObjectMapper mapper = new ObjectMapper();

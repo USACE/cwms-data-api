@@ -286,6 +286,9 @@ public class ApiServlet extends HttpServlet {
     public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
+
+
+
     private MetricRegistry metrics;
     private Meter totalRequests;
 
@@ -297,6 +300,7 @@ public class ApiServlet extends HttpServlet {
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
+    private CdaAccessManager cdaAccessManager;
 
     public static String getApiVersion() {
         return VERSION != null ? VERSION : "Not Yet Known";
@@ -334,12 +338,13 @@ public class ApiServlet extends HttpServlet {
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         APP_CONTEXT = this.getServletContext().getContextPath();
+        cdaAccessManager = new CdaAccessManager();
         javalin = Javalin.createStandalone(config -> {
                     config.defaultContentType = "application/json";
                     getOpenApiOptions(config);
                     config.autogenerateEtags = true;
                     config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
-                    config.accessManager(new CdaAccessManager());
+                    config.accessManager(cdaAccessManager);
                 })
                 .attribute("PolicyFactory", sanitizer)
                 .attribute("ObjectMapper", om)
@@ -700,14 +705,14 @@ public class ApiServlet extends HttpServlet {
     }
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {
-        post(format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID),
-            new RateValuesController(metrics), requiredRoles);
-        post(format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID),
-            new RateTimeSeriesController(metrics), requiredRoles);
-        post(format("/ratings/reverse-rate-values/{%s}/{%s}", OFFICE, RATING_ID),
-            new ReverseRateValuesController(metrics), requiredRoles);
-        post(format("/ratings/reverse-rate-ts/{%s}/{%s}", OFFICE, RATING_ID),
-            new ReverseRateTimeSeriesController(metrics), requiredRoles);
+        String rateValues = format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID);
+        post(rateValues, new RateValuesController(metrics));
+        String rateTs = format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID);
+        post(rateTs, new RateTimeSeriesController(metrics));
+        String reverseRateValues = format("/ratings/reverse-rate-values/{%s}/{%s}", OFFICE, RATING_ID);
+        post(reverseRateValues, new ReverseRateValuesController(metrics));
+        String reverseRateTs = format("/ratings/reverse-rate-ts/{%s}/{%s}", OFFICE, RATING_ID);
+        post(reverseRateTs, new ReverseRateTimeSeriesController(metrics));
         cdaCrudCache("/ratings/template/{template-id}",
                 new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/ratings/spec/{rating-id}",
@@ -717,6 +722,19 @@ public class ApiServlet extends HttpServlet {
         get("/ratings/{rating-id}/latest", new RatingLatestController(metrics));
         cdaCrudCache("/ratings/{rating-id}",
                 new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        addRateLimit(rateTs, requiredRoles);
+        addRateLimit(reverseRateTs, requiredRoles);
+        addRateLimit(reverseRateValues, requiredRoles);
+        addRateLimit(rateValues, requiredRoles);
+    }
+
+    /**
+     * Add a rate limiter to a specified endpoint path, allowing authorized users to bypass the limit.
+     * @param path the path to add the rate limiter to.
+     * @param requiredRoles the user roles required to access the path.
+     */
+    private void addRateLimit(String path, RouteRole[] requiredRoles) {
+        cdaAccessManager.addRateLimitedEndpoint(path, requiredRoles);
     }
 
     private void addAccountingHandlers(String path, RouteRole[] requiredRoles) {
