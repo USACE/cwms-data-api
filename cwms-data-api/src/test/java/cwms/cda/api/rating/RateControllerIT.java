@@ -32,7 +32,10 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isOneOf;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import cwms.cda.api.DataApiTestIT;
@@ -63,6 +66,8 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 final class RateControllerIT extends DataApiTestIT {
@@ -168,53 +173,6 @@ final class RateControllerIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
-    void testRateRequiresAuth() {
-
-        given()
-            .accept(JSON)
-            .contentType(JSON)
-        .when()
-            .post("/ratings/rate-values/" + SPK + "/" + ratingSet.getName())
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_UNAUTHORIZED));
-
-
-        given()
-            .accept(JSON)
-            .contentType(JSON)
-        .when()
-            .post("/ratings/rate-ts/" + SPK + "/" + ratingSet.getName())
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_UNAUTHORIZED));
-
-
-        given()
-            .accept(JSON)
-            .contentType(JSON)
-        .when()
-            .post("/ratings/reverse-rate-values/" + SPK + "/" + ratingSet.getName())
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_UNAUTHORIZED));
-
-        given()
-            .accept(JSON)
-            .contentType(JSON)
-        .when()
-            .post("/ratings/reverse-rate-ts/" + SPK + "/" + ratingSet.getName())
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_UNAUTHORIZED));
-    }
-
-
 
     @Test
     void testRateFunctions() throws JsonProcessingException {
@@ -291,6 +249,88 @@ final class RateControllerIT extends DataApiTestIT {
             .body("values[0]", not(empty()));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "/ratings/rate-values/",
+        "/ratings/rate-ts/",
+        "/ratings/reverse-rate-values/",
+        "/ratings/reverse-rate-ts/"
+    })
+    void testRateLimitUnauthorized(String endpointPath) throws Exception {
+        boolean rateLimit = false;
+
+        // Expecting to hit the rate limit
+        String body = getAppropriateInputTimeSeriesData(endpointPath);
+
+        for (int i = 0; i < 150; i++) {
+            int code = given()
+                .accept(JSON)
+                .contentType(JSON)
+                .body(body)
+            .when()
+                .post(endpointPath + SPK + "/" + ratingSet.getName())
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(isOneOf(HttpServletResponse.SC_OK, 429))
+                .extract().statusCode();
+            if (code == 429) {
+                rateLimit = true;
+                break;
+            }
+        }
+        assertTrue(rateLimit);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "/ratings/rate-values/",
+        "/ratings/rate-ts/",
+        "/ratings/reverse-rate-values/",
+        "/ratings/reverse-rate-ts/"
+    })
+    void testRateLimitAuthorized(String endpointPath) throws Exception {
+        boolean rateLimit = false;
+
+        String body = getAppropriateInputTimeSeriesData(endpointPath);
+
+        // expecting to hit the rate limit but bypass it via authorization
+        for (int i = 0; i < 150; i++) {
+            int code = given()
+                .accept(JSON)
+                .contentType(JSON)
+                .body(body)
+                .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+            .when()
+                .post(endpointPath + SPK + "/" + ratingSet.getName())
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(isOneOf(HttpServletResponse.SC_OK, 429))
+                .extract().statusCode();
+            if (code == 429) {
+                rateLimit = true;
+                break;
+            }
+        }
+        assertFalse(rateLimit);
+    }
+
+    private String getAppropriateInputTimeSeriesData(String path) throws JsonProcessingException {
+        switch (path) {
+            case "/ratings/rate-ts/":
+                return serializeRateInputTimeSeries();
+            case "/ratings/reverse-rate-ts/":
+                return serializeReverseRateInputTimeSeries();
+            case "/ratings/rate-values/":
+                return serializeRateInputValues();
+            case "/ratings/reverse-rate-values/":
+                return serializeReverseRateInputValues();
+            default:
+                throw new IllegalArgumentException("Unknown endpoint path: " + path);
+        }
+    }
+
     private static String serializeReverseRateInputTimeSeries() throws JsonProcessingException {
         RateInputTimeSeries timeSeriesInput = new RateInputTimeSeries.RateInputTimeSeriesBuilder()
             .withTimeSeriesIds(singletonList(TSID_FLOW))
@@ -330,6 +370,4 @@ final class RateControllerIT extends DataApiTestIT {
             .build();
         return JsonV1.buildObjectMapper().writeValueAsString(valuesInput);
     }
-
-
 }
