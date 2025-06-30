@@ -30,6 +30,7 @@ import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
+import io.restassured.response.Response;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -72,7 +73,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
     private static final Logger LOGGER = Logger.getLogger(TimeSeriesRecentControllerIT.class.getName());
     private static final String OFFICE_ID = "SPK";
     private static final String LOCATION = "Sacramento River Delta";
-    private static final String TS_ID = LOCATION + ".Depth.Inst.15Minutes.0.OBS-Raw";
+    private static final String TS_ID = LOCATION + ".Flow.Inst.15Minutes.0.USGS-REV";
     private static final String CATEGORY_ID = "USACE Data Acquisition";
     private static final String GROUP_ID = "USACE Include List";
     private static final ZonedDateTime END = ZonedDateTime.now();
@@ -203,23 +204,158 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         ;
 
         // get recent data using timeseries id
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
-            .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(OFFICE, OFFICE_ID)
-            .queryParam(TS_IDS, TS_ID)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/timeseries/recent/")
-        .then()
+        Response response = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .accept(Formats.JSONV1)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(OFFICE, OFFICE_ID)
+                .queryParam(TS_IDS, TS_ID)
+       .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/recent/");
+        response.then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("size()", is(1))
         ;
+    }
+
+    @Test
+    void test_retrieving_recent_ts_data_comparison() throws Exception {
+        TimeSeries ts = buildTimeSeries(OFFICE_ID, TS_ID);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeries.class);
+        String json = Formats.format(contentType, ts);
+
+        // create timeseries
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV2)
+                .accept(Formats.JSONV2)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .body(json)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+        ;
+
+        TimeSeriesCategory category = new TimeSeriesCategory(OFFICE_ID, CATEGORY_ID, "Data Acquisition category");
+        json = JsonV1.buildObjectMapper().writeValueAsString(category);
+
+        // add timeseries to category
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .accept(Formats.JSONV1)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(FAIL_IF_EXISTS, false)
+                .body(json)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/category")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        group = new TimeSeriesGroup(category, OFFICE_ID, GROUP_ID, "USACE Include group", null, TS_ID);
+        List<AssignedTimeSeries> tsList = Collections
+                .singletonList(new AssignedTimeSeries(OFFICE_ID, TS_ID, null, TS_ID, 0));
+        group = new TimeSeriesGroup(group, tsList);
+        json = JsonV1.buildObjectMapper().writeValueAsString(group);
+
+        // add timeseries to group
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .accept(Formats.JSONV1)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(FAIL_IF_EXISTS, false)
+                .body(json)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/group")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // get recent data using category and group
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .accept(Formats.JSONV1)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(OFFICE, OFFICE_ID)
+                .queryParam(Controllers.CATEGORY_ID, CATEGORY_ID)
+                .queryParam(Controllers.GROUP_ID, GROUP_ID)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/recent/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("size()", is(1))
+        ;
+
+        //we are going to log how long this takes
+        long start = System.currentTimeMillis();
+        // get recent data using timeseries id
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .accept(Formats.JSONV1)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(OFFICE, OFFICE_ID)
+                .queryParam(NAME, TS_ID)
+                .queryParam(UNIT, "EN")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("size()", is(1))
+        ;
+        long end = System.currentTimeMillis();
+        System.out.println("Time taken to retrieve recent data using timeseries endpoint: " + (end - start) + " ms");
+
+        start = System.currentTimeMillis();
+        // get recent data using timeseries id
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .accept(Formats.JSONV1)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(OFFICE, OFFICE_ID)
+                .queryParam(TS_IDS, TS_ID)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/recent/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("size()", is(1))
+        ;
+        end = System.currentTimeMillis();
+        System.out.println("Time taken to retrieve recent data using timeseries recent endpoint: " + (end - start) + " ms");
     }
 
     @NotNull
@@ -238,11 +374,11 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
                 officeId,
                 START,
                 END,
-                "m",
+                "cfs",
                 Duration.ofMinutes(minutes),
                 null,
                 VERSION_DATE,
-                VersionType.SINGLE_VERSION);
+                VersionType.UNVERSIONED);
 
         ZonedDateTime next = START;
         for(int i = 0; i < count; i++) {
