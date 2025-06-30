@@ -66,6 +66,7 @@ public final class Controllers {
     public static final String CATEGORY_OFFICE_ID = "category-office-id";
     public static final String GROUP_OFFICE_ID = "group-office-id";
     public static final String UNIT = "unit";
+    public static final String UNITS = "units";
     public static final String COUNT = "count";
     public static final String TIME = "time";
     public static final String RESULTS = "results";

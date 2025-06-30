@@ -284,7 +284,7 @@ public class TimeSeriesController implements CrudHandler {
                         + "Required for:" + Formats.JSONV2 + " and " + Formats.XMLV2 + ". "
                         + "For other formats, if this field is not specified, matching location "
                         + "level information from all offices shall be returned."),
-                @OpenApiParam(name = UNIT,  description = "Specifies the "
+                @OpenApiParam(name = UNIT, deprecated = true, description = "Specifies the "
                         + "unit or unit system of the response. Valid values for the unit "
                         + "field are: "
                         + "\n* `EN`  (default) Specifies English unit system.  "
@@ -294,6 +294,17 @@ public class TimeSeriesController implements CrudHandler {
                         + "Location level values will be in the default SI units for their "
                         + "parameters."
                         + "\n* `Other`  Any unit returned in the response to the units URI "
+                        + "request that is appropriate for the requested parameters."),
+                @OpenApiParam(name = UNITS,  description = "Specifies the "
+                        + "units or unit system of the response. Valid values for the units "
+                        + "field are: "
+                        + "\n* `EN`  (default) Specifies English unit system.  "
+                        + "Location level values will be in the default English units for "
+                        + "their parameters."
+                        + "\n* `SI`  Specifies the SI unit system.  "
+                        + "Location level values will be in the default SI units for their "
+                        + "parameters."
+                        + "\n* `Other`  Any units returned in the response to the units URI "
                         + "request that is appropriate for the requested parameters."),
                 @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date of a "
                         + "time series trace to be selected. " + TIME_FORMAT_DESC +
@@ -381,8 +392,10 @@ public class TimeSeriesController implements CrudHandler {
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String names = requiredParam(ctx, NAME);
 
-            String unit = ctx.queryParamAsClass(UNIT, String.class)
-                    .getOrDefault(UnitSystem.EN.getValue());
+            //try 'unit' if 'units' is not provided as that was the original parameter name
+            String units = ctx.queryParamAsClass(UNITS, String.class)
+                    .getOrDefault(ctx.queryParamAsClass(UNIT, String.class)
+                            .getOrDefault(UnitSystem.EN.getValue()));
             String datum = ctx.queryParam(DATUM);
             String begin = ctx.queryParam(BEGIN);
             String end = ctx.queryParam(END);
@@ -461,7 +474,7 @@ public class TimeSeriesController implements CrudHandler {
                 }
 
                 String office = ctx.queryParam(OFFICE);
-                results = dao.getTimeseries(format, names, office, unit, datum, beginZdt, endZdt, tz);
+                results = dao.getTimeseries(format, names, office, units, datum, beginZdt, endZdt, tz);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
             }
