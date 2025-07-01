@@ -80,9 +80,9 @@ final class LockDaoIT extends ProjectStructureIT {
                 DSLContext context = getDslContext(c, OFFICE_ID);
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
                 try {
-                    locationsDao.storeLocation(LOCK_LOC1);
-                    locationsDao.storeLocation(LOCK_LOC2);
-                    locationsDao.storeLocation(LOCK_LOC3);
+                    locationsDao.storeLocation(LOCK_LOC1, false);
+                    locationsDao.storeLocation(LOCK_LOC2, false);
+                    locationsDao.storeLocation(LOCK_LOC3, false);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

@@ -29,6 +29,7 @@ import static cwms.cda.api.Controllers.CASCADE_DELETE;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DATUM;
 import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
@@ -280,6 +281,13 @@ public class LocationController implements CrudHandler {
                         @OpenApiContent(from = Location.class, type = Formats.XML)
                     },
                     required = true),
+            queryParams = {
+                @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                    description = "Specifies whether to fail if the location already exists. "
+                        + "Default: true. If true, an error will be returned if the "
+                        + "location already exists. If false, the existing location will "
+                        + "be updated with the new values.")
+            },
             description = "Create new CWMS Location",
             method = HttpMethod.POST,
             path = "/locations",
@@ -296,8 +304,9 @@ public class LocationController implements CrudHandler {
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
-            locationsDao.storeLocation(locationFromBody);
-            ctx.status(HttpServletResponse.SC_OK).json("Created Location");
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            locationsDao.storeLocation(locationFromBody, failIfExists);
+            ctx.status(HttpServletResponse.SC_CREATED).json("Created Location");
         } catch (IOException ex) {
             CdaError re = new CdaError("failed to process request");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -344,7 +353,7 @@ public class LocationController implements CrudHandler {
                 locationsDao.renameLocation(locationId, updatedLocation);
                 ctx.status(HttpServletResponse.SC_OK).json("Updated and renamed Location");
             } else {
-                locationsDao.storeLocation(updatedLocation);
+                locationsDao.storeLocation(updatedLocation, false);
                 ctx.status(HttpServletResponse.SC_OK).json("Updated Location");
             }
         } catch (NotFoundException e) {

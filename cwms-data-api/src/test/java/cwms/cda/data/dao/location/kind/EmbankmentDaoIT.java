@@ -59,16 +59,16 @@ final class EmbankmentDaoIT extends ProjectStructureIT {
     private static final Location EMBANK_LOC3 = buildProjectStructureLocation("EMBANK_LOC3_IT", EMBANKMENT_KIND);
 
     @BeforeAll
-    public void setup() throws Exception {
+    void setup() throws Exception {
         setupProject();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
             try {
-                locationsDao.storeLocation(EMBANK_LOC1);
-                locationsDao.storeLocation(EMBANK_LOC2);
-                locationsDao.storeLocation(EMBANK_LOC3);
+                locationsDao.storeLocation(EMBANK_LOC1, false);
+                locationsDao.storeLocation(EMBANK_LOC2, false);
+                locationsDao.storeLocation(EMBANK_LOC3, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -77,7 +77,7 @@ final class EmbankmentDaoIT extends ProjectStructureIT {
     }
 
     @AfterAll
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
