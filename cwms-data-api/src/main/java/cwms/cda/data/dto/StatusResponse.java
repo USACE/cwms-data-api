@@ -13,33 +13,29 @@ import cwms.cda.formatters.json.JsonV1;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class StatusResponse extends CwmsDTO{
+public final class StatusResponse extends CwmsDTOBase{
 
     @JsonProperty(required = true)
-    private String response;
+    private String message;
 
     // Name or ID for identifying information
     private String identifier;
 
     // NOT FOR USE, only for Jackson deserialization
-    public StatusResponse() {
-        super("");
-    }
+    public StatusResponse() {}
 
-    public StatusResponse(String officeId, String response) {
-        super(officeId);
-        this.response = response;
+    public StatusResponse(String message) {
+        this.message = message;
         this.identifier = "";
     }
 
-    public StatusResponse(String officeId, String response, String identifier) {
-        super(officeId);
-        this.response = response;
+    public StatusResponse(String message, String identifier) {
+        this.message = message;
         this.identifier = identifier;
     }
 
-    public String getResponse() {
-        return response;
+    public String getMessage() {
+        return message;
     }
 
     public String getIdentifier() {

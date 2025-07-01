@@ -170,8 +170,7 @@ public final class TurbineController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             TurbineDao dao = new TurbineDao(dsl);
             dao.storeTurbine(turbine, failIfExists);
-            String office = requiredParam(ctx, OFFICE);
-            StatusResponse re = new StatusResponse(office, "Turbine successfully stored to CWMS.",
+            StatusResponse re = new StatusResponse("Turbine successfully stored to CWMS.",
                     turbine.getProjectId().getName());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
@@ -203,7 +202,7 @@ public final class TurbineController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             TurbineDao dao = new TurbineDao(dsl);
             dao.renameTurbine(office, name, newName);
-            StatusResponse re = new StatusResponse(office, "Turbine successfully renamed in to CWMS", newName);
+            StatusResponse re = new StatusResponse("Turbine successfully renamed in to CWMS", newName);
             ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
@@ -238,7 +237,7 @@ public final class TurbineController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             TurbineDao dao = new TurbineDao(dsl);
             dao.deleteTurbine(name, office, deleteMethod.getRule());
-            StatusResponse re = new StatusResponse(office, "Turbine successfully deleted from CWMS", name);
+            StatusResponse re = new StatusResponse("Turbine successfully deleted from CWMS", name);
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
         }
     }
