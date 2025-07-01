@@ -29,6 +29,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.TurbineDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.Turbine;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -155,7 +156,7 @@ public final class TurbineController implements CrudHandler {
             method = HttpMethod.POST,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Turbine successfully stored to CWMS.")
+                    @OpenApiResponse(status = STATUS_201, description = "Turbine successfully stored to CWMS.")
             }
     )
     @Override
@@ -169,7 +170,10 @@ public final class TurbineController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             TurbineDao dao = new TurbineDao(dsl);
             dao.storeTurbine(turbine, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Turbine");
+            String office = requiredParam(ctx, OFFICE);
+            StatusResponse re = new StatusResponse(office, "Turbine successfully stored to CWMS.",
+                    turbine.getProjectId().getName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
 
     }
@@ -188,7 +192,7 @@ public final class TurbineController implements CrudHandler {
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Turbine successfully renamed in to CWMS.")
+                    @OpenApiResponse(status = STATUS_200, description = "Turbine successfully renamed in to CWMS.")
             }
     )
     @Override
@@ -199,7 +203,8 @@ public final class TurbineController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             TurbineDao dao = new TurbineDao(dsl);
             dao.renameTurbine(office, name, newName);
-            ctx.status(HttpServletResponse.SC_OK).json("Renamed Turbine");
+            StatusResponse re = new StatusResponse(office, "Turbine successfully renamed in to CWMS", newName);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 
@@ -233,7 +238,8 @@ public final class TurbineController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             TurbineDao dao = new TurbineDao(dsl);
             dao.deleteTurbine(name, office, deleteMethod.getRule());
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(name + " Deleted");
+            StatusResponse re = new StatusResponse(office, "Turbine successfully deleted from CWMS", name);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
         }
     }
 }

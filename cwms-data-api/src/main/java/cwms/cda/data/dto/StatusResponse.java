@@ -18,6 +18,7 @@ public final class StatusResponse extends CwmsDTO{
     @JsonProperty(required = true)
     private String response;
 
+    // Name or ID for identifying information
     private String identifier;
 
     // NOT FOR USE, only for Jackson deserialization
