@@ -425,6 +425,9 @@ public abstract class JooqDao<T> extends Dao<T> {
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
 
+        } else if (input instanceof AlreadyExists) {
+            // If the input is already an AlreadyExists exception, then we can just return true.
+            retVal = true;
         }
         return retVal;
     }
@@ -436,14 +439,18 @@ public abstract class JooqDao<T> extends Dao<T> {
             DataAccessException dae = (DataAccessException) input;
             cause = dae.getCause();
         }
+        AlreadyExists exception;
+        if (cause instanceof AlreadyExists) {
+            exception = (AlreadyExists) cause;
+        } else {
+            exception = new AlreadyExists(cause);
 
-        AlreadyExists exception = new AlreadyExists(cause);
-
-        String localizedMessage = cause.getLocalizedMessage();
-        if (localizedMessage != null) {
-            String[] parts = localizedMessage.split("\n");
-            if (parts.length > 1) {
-                exception = new AlreadyExists(parts[0], cause);
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    exception = new AlreadyExists(parts[0], cause);
+                }
             }
         }
         return exception;
