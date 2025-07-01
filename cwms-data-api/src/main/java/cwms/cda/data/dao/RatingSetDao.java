@@ -48,16 +48,16 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     }
 
     @Override
-    public void create(String ratingSetXml, boolean storeTemplate) throws IOException, RatingException {
+    public void create(String ratingSetXml, boolean replaceBaseCurve) throws IOException, RatingException {
         try {
             connection(dsl, c -> {
                 // can't exist if we are creating, if it exists use store
                 String office = extractOfficeId(ratingSetXml);
                 DSLContext context = getDslContext(c, office);
                 String errs = CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
-                        ratingSetXml, "T", storeTemplate ? "T" : "F");
+                        ratingSetXml, "T", replaceBaseCurve ? "T" : "F");
                 if (errs != null && !errs.isEmpty()) {
-                    throw new DataAccessException(errs);
+                    throw new DataAccessException("Failed to create Rating", new RatingException(errs));
                 }
             });
         } catch (DataAccessException ex) {
@@ -137,13 +137,17 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
     // store/update
     @Override
-    public void store(String ratingSetXml, boolean includeTemplate) throws IOException, RatingException {
+    public void store(String ratingSetXml, boolean replaceBaseCurve) throws IOException, RatingException {
         try {
             connection(dsl, c -> {
                 String office = extractOfficeId(ratingSetXml);
                 DSLContext context = getDslContext(c, office);
-                CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
-                        ratingSetXml, "F", includeTemplate ? "T" : "F");
+                String errs = CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
+                        ratingSetXml, "F", replaceBaseCurve ? "T" : "F");
+                if (errs != null && !errs.isEmpty())
+                {
+                    throw new DataAccessException("Failed to store Rating", new RatingException(errs));
+                }
             });
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
