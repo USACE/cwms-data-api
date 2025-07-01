@@ -11,23 +11,25 @@ import cwms.cda.formatters.json.JsonV1;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@JsonPropertyOrder({"office-id", "response", "identifier"})
 public final class StatusResponse extends CwmsDTO{
 
     @JsonProperty(required = true)
-    private final String response;
+    private String response;
 
-    private final String identifier;
+    private String identifier;
+
+    // NOT FOR USE, only for Jackson deserialization
+    public StatusResponse() {
+        super("");
+    }
 
     public StatusResponse(String officeId, String response) {
         super(officeId);
         this.response = response;
-        // or should I change to null? Only occurs when there is no identifier
         this.identifier = "";
     }
 
-    @JsonCreator
-    public StatusResponse(@JsonProperty("office-id") String officeId, @JsonProperty("response") String response, @JsonProperty("identifier") String identifier) {
+    public StatusResponse(String officeId, String response, String identifier) {
         super(officeId);
         this.response = response;
         this.identifier = identifier;
