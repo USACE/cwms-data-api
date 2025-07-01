@@ -125,8 +125,8 @@ class BasinControllerIT extends DataApiTestIT
 					.withNearestCity("Denver")
 					.build();
 			try {
-				locationsDao.storeLocation(loc);
-				locationsDao.storeLocation(loc2);
+				locationsDao.storeLocation(loc, false);
+				locationsDao.storeLocation(loc2, false);
 				basinDao.storeBasin(BASIN_CONNECT);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
