@@ -867,7 +867,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Created Location Level"))
+                .body("identifier", equalTo("virtual_level_value.Stage.Ave.1Day.Regulating"));
 
         //Read level with unit
         given()
@@ -993,7 +995,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Created Location Level"))
+                .body("identifier", equalTo("virtual_level_value.Stage.Ave.1Day.Regulating"));
 
         levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_2.json");
 
@@ -1010,7 +1014,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Created Location Level"))
+                .body("identifier", equalTo("virtual_level_value_1.Stor.Ave.1Day.Regulating"));
 
         levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_3.json");
 
@@ -1027,7 +1033,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Created Location Level"))
+                .body("identifier", equalTo("virtual_level_value_2.Stor.Ave.1Day.Regulating"));
 
         //Read level with unit
         given()
@@ -1180,7 +1188,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Created Location Level"))
+                .body("identifier", equalTo("virtual_level_value.Stage.Ave.1Day.Regulating"));
 
         levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_2.json");
         levelJson = levelJson.replace(oldLevelLoc2, levelLoc2);
@@ -1198,7 +1208,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Created Location Level"))
+                .body("identifier", equalTo("virtual_level_value_1.Stor.Ave.1Day.Regulating"));
 
         levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_3.json");
         levelJson = levelJson.replace(oldLevelLoc3, levelLoc3);
@@ -1216,7 +1228,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Created Location Level"))
+                .body("identifier", equalTo("virtual_level_value_2.Stor.Ave.1Day.Regulating"));
 
         //Read level with unit
         given()
@@ -1403,7 +1417,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Created Location Level"))
+                .body("identifier", equalTo("virtual_level_value.Stage.Ave.1Day.Regulating"));
 
         //Read level with unit
         given()
@@ -1588,7 +1604,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Created Location Level"))
+                .body("identifier", equalTo("seasonalLoc6.Elev.Ave.1Day.tst"));
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -1638,7 +1656,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Created Location Level"))
+                .body("identifier", equalTo("tsLocation123.Elev.Ave.1Day.Regulating"));
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -1686,7 +1706,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Created Location Level"))
+                .body("identifier", equalTo("constLocation123.Elev.Ave.1Day.Regulating"));
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
