@@ -75,7 +75,7 @@ final class TurbineDaoIT extends DataApiTestIT {
     private static final Location TURBINE_LOC3 = buildTurbineLocation("TURB_LOC3dao2");
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         tearDown();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -84,9 +84,9 @@ final class TurbineDaoIT extends DataApiTestIT {
                 try {
                     CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC), "T");
                     CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC2), "T");
-                    locationsDao.storeLocation(TURBINE_LOC1);
-                    locationsDao.storeLocation(TURBINE_LOC2);
-                    locationsDao.storeLocation(TURBINE_LOC3);
+                    locationsDao.storeLocation(TURBINE_LOC1, false);
+                    locationsDao.storeLocation(TURBINE_LOC2, false);
+                    locationsDao.storeLocation(TURBINE_LOC3, false);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -95,7 +95,7 @@ final class TurbineDaoIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
                 DSLContext context = getDslContext(c, OFFICE);

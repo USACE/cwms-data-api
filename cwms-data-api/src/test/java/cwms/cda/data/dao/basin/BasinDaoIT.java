@@ -120,7 +120,7 @@ class BasinDaoIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDownStream() {
+    static void tearDownStream() {
         try{
             CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
             db.connection(c -> {
@@ -135,7 +135,7 @@ class BasinDaoIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDownLocations() {
+    static void tearDownLocations() {
         Iterator<Location> it = locationsCreated.iterator();
         while(it.hasNext()) {
             try {
@@ -172,7 +172,7 @@ class BasinDaoIT extends DataApiTestIT {
         db.connection(c -> {
             try {
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(getDslContext(c, OFFICE_ID));
-                locationsDao.storeLocation(location);
+                locationsDao.storeLocation(location, false);
                 if (!kind.equalsIgnoreCase("STREAM")) {
                     locationsCreated.add(location);
                 }

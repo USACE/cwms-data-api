@@ -119,7 +119,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
             WaterContractDao waterContractDao = new WaterContractDao(ctx);
             try {
-                locationsDao.storeLocation(projectLocation);
+                locationsDao.storeLocation(projectLocation, false);
                 lookupTypeDao.storeLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE", contractType);
                 projectDao.store(project, true);
                 waterContractDao.storeWaterUser(CONTRACT.getWaterUser(), true);

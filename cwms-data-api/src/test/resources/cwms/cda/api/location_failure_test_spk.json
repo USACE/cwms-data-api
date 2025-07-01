@@ -1,0 +1,20 @@
+{
+  "office-id": "SPK",
+  "name": "BallClub",
+  "latitude": 47.33181227,
+  "longitude": -93.8929429,
+  "active": true,
+  "public-name": "Ball Club River Near Ball Club, MN",
+  "long-name": "Ball Club River Near Ball Club, MN",
+  "timezone-name": "US/Central",
+  "location-kind": "SITE",
+  "nation": "US",
+  "state-initial": "MN",
+  "county-name": "Itasca",
+  "nearest-city": "Ball Club",
+  "horizontal-datum": "NAD83",
+  "vertical-datum": "LOCAL",
+  "map-label": "Ball Club River Near Ball Club, MN",
+  "bounding-office-id": "SPK",
+  "elevation-units": "ft"
+}

@@ -96,7 +96,7 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
     }
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             try {
@@ -104,7 +104,7 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
                 PROJECT_OBJ_T projectObjT = buildProject();
                 CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
-                locationsDao.storeLocation(TURBINE_LOC);
+                locationsDao.storeLocation(TURBINE_LOC, false);
                 Turbine turbine = new Turbine.Builder()
                     .withProjectId(new CwmsId.Builder()
                         .withOfficeId(PROJECT_LOC.getOfficeId())
@@ -120,7 +120,7 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE);

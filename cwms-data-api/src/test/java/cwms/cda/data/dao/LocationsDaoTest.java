@@ -52,7 +52,7 @@ class LocationsDaoTest extends DaoTest {
             Location location = buildTestLocation();
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(getDslContext(getConnection(),
                     OFFICE_ID));
-            locationsDao.storeLocation(location);
+            locationsDao.storeLocation(location, false);
             Location retrievedLocation = locationsDao.getLocation(location.getName(),
                     UnitSystem.EN.getValue(), OFFICE_ID);
             assertEquals(location, retrievedLocation);
@@ -66,7 +66,7 @@ class LocationsDaoTest extends DaoTest {
         Location location = buildTestLocation();
         LocationsDaoImpl locationsDao = new LocationsDaoImpl(getDslContext(getConnection(),
                 OFFICE_ID));
-        locationsDao.storeLocation(location);
+        locationsDao.storeLocation(location, false);
         locationsDao.deleteLocation(location.getName(), location.getOfficeId());
         assertThrows(IOException.class, () -> locationsDao.getLocation(location.getName(),
                 UnitSystem.EN.getValue(), OFFICE_ID));
@@ -80,7 +80,7 @@ class LocationsDaoTest extends DaoTest {
         LocationsDaoImpl locationsDao = new LocationsDaoImpl(getDslContext(getConnection(),
                 OFFICE_ID));
         try {
-            locationsDao.storeLocation(location);
+            locationsDao.storeLocation(location, false);
             locationsDao.renameLocation(location.getName(), renamedLocation);
             assertThrows(IOException.class, () -> locationsDao.getLocation(location.getName(),
                     UnitSystem.EN.getValue(), OFFICE_ID));

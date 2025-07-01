@@ -203,6 +203,7 @@ import java.nio.file.Paths;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -408,7 +409,14 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(AlreadyExists.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Already Exists.");
+                    CdaError re;
+                    if (e.getMessage() == null || e.getMessage().isEmpty()) {
+                        re = new CdaError("Already exists");
+                    } else {
+                        Map<String, String> details = new HashMap<>();
+                        details.put("message", e.getMessage());
+                        re = new CdaError("Already exists", details);
+                    }
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
                 })
