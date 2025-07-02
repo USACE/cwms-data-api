@@ -140,7 +140,9 @@ class LocationControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Created Location"))
+                .body("identifier", equalTo("LOC_TEST"));
         //Create associated time series so delete fails without cascade
         try {
             createTimeseries(officeId, location.getName() + ".Flow.Inst.~1Hour.0.cda-test");
@@ -193,7 +195,9 @@ class LocationControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
+            .statusCode(is(HttpServletResponse.SC_OK))
+                .body("message", equalTo("Deleted CWMS Location"))
+                .body("identifier", equalTo("LOC_TEST"));
 
         // get it back
         given()
@@ -381,7 +385,9 @@ class LocationControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
+            .statusCode(is(HttpServletResponse.SC_OK))
+                .body("message", equalTo("Deleted CWMS Location"))
+                .body("identifier", equalTo("LOC_TEST"));
 
         // get it back
         given()
@@ -459,7 +465,9 @@ class LocationControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
+            .statusCode(is(HttpServletResponse.SC_OK))
+                .body("message", equalTo("Updated and renamed Location"))
+                .body("identifier", equalTo(updatedLocationName));
 
         // get it back
         given()
@@ -491,7 +499,9 @@ class LocationControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
+            .statusCode(is(HttpServletResponse.SC_OK))
+                .body("message", equalTo("Deleted CWMS Location"))
+                .body("identifier", equalTo(updatedLocationName));
     }
 
     @Test

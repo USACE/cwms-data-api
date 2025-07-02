@@ -62,6 +62,7 @@ import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.LocationsDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.UnsupportedFormatException;
@@ -306,7 +307,8 @@ public class LocationController implements CrudHandler {
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             locationsDao.storeLocation(locationFromBody, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Location");
+            StatusResponse re = new StatusResponse("Created Location", locationFromBody.getName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("failed to process request");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -351,10 +353,12 @@ public class LocationController implements CrudHandler {
             if (!updatedLocation.getName().equalsIgnoreCase(existingLocation.getName())) {
                 //if name changed then delete location with old name
                 locationsDao.renameLocation(locationId, updatedLocation);
-                ctx.status(HttpServletResponse.SC_OK).json("Updated and renamed Location");
+                ctx.status(HttpServletResponse.SC_OK).json(new StatusResponse("Updated and renamed Location",
+                        updatedLocation.getName()));
             } else {
                 locationsDao.storeLocation(updatedLocation, false);
-                ctx.status(HttpServletResponse.SC_OK).json("Updated Location");
+                ctx.status(HttpServletResponse.SC_OK).json(new StatusResponse("Updated Location",
+                        updatedLocation.getName()));
             }
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
@@ -400,7 +404,8 @@ public class LocationController implements CrudHandler {
             LocationsDao locationsDao = getLocationsDao(dsl);
             boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);
             locationsDao.deleteLocation(locationId, office, cascadeDelete);
-            ctx.status(HttpServletResponse.SC_OK).json(locationId + " Deleted");
+            StatusResponse re = new StatusResponse("Deleted CWMS Location", locationId);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         } catch (DataAccessException ex) {
             SQLException cause = ex.getCause(SQLException.class);
             if (cause != null && cause.getErrorCode() == 20031) {
