@@ -1662,7 +1662,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
                 .body("message", equalTo("Created Location Level"))
-                .body("identifier", equalTo("tsLocation123.Elev.Ave.1Day.Regulating"));
+                .body("identifier", equalTo(levelId));
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -1712,7 +1712,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
                 .body("message", equalTo("Created Location Level"))
-                .body("identifier", equalTo("constLocation123.Elev.Ave.1Day.Regulating"));
+                .body("identifier", equalTo(levelId));
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
