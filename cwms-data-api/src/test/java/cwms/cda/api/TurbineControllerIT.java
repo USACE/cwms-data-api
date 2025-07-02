@@ -123,6 +123,8 @@ final class TurbineControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Turbine successfully stored to CWMS."))
+                .body("identifier", equalTo("PROJ_TURB_PHYS"))
         ;
         String office = TURBINE.getLocation().getOfficeId();
         // Retrieve the Turbine and assert that it exists
@@ -238,6 +240,8 @@ final class TurbineControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Turbine successfully stored to CWMS."))
+                .body("identifier", equalTo("PROJ_TURB_PHYS"))
         ;
         String office = TURBINE.getLocation().getOfficeId();
         // Retrieve the Turbine and assert that it exists

@@ -1483,7 +1483,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .then()
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .assertThat()
-                    .statusCode(is(HttpServletResponse.SC_OK));
+                    .statusCode(is(HttpServletResponse.SC_OK))
+                        .body("message", equalTo("CWMS Location Level Deleted"))
+                        .body("identifier", equalTo("virtual_level_value.Stage.Ave.1Day.Regulating"));
                 break;
             case "no_date":
                 given()
@@ -1499,7 +1501,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .then()
                     .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
-                    .statusCode(is(HttpServletResponse.SC_OK));
+                    .statusCode(is(HttpServletResponse.SC_OK))
+                        .body("message", equalTo("CWMS Location Level Deleted"))
+                        .body("identifier", equalTo("virtual_level_value.Stage.Ave.1Day.Regulating"));;
                 break;
             default:
                 fail("Invalid deletion method: " + deletionMethod);
