@@ -139,11 +139,11 @@ class LocationControllerTestIT extends DataApiTestIT {
             .post("/locations")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-                .body("office-id", equalTo(officeId))
-                .body("message", equalTo("Created Location"))
-                .body("identifier", equalTo("LOC_TEST"));
+            .body("office-id", equalTo(officeId))
+            .body("message", equalTo("Created Location"))
+            .body("identifier", equalTo("LOC_TEST"));
         //Create associated time series so delete fails without cascade
         try {
             createTimeseries(officeId, location.getName() + ".Flow.Inst.~1Hour.0.cda-test");
@@ -195,11 +195,11 @@ class LocationControllerTestIT extends DataApiTestIT {
             .delete("/locations/" + location.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-                .body("office-id", equalTo(officeId))
-                .body("message", equalTo("Deleted CWMS Location"))
-                .body("identifier", equalTo("LOC_TEST"));
+            .body("office-id", equalTo(officeId))
+            .body("message", equalTo("Deleted CWMS Location"))
+            .body("identifier", equalTo("LOC_TEST"));
 
         // get it back
         given()
@@ -388,9 +388,9 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-                .body("office-id", equalTo(officeId))
-                .body("message", equalTo("Deleted CWMS Location"))
-                .body("identifier", equalTo("LOC_TEST"));
+            .body("office-id", equalTo(officeId))
+            .body("message", equalTo("Deleted CWMS Location"))
+            .body("identifier", equalTo("LOC_TEST"));
 
         // get it back
         given()
@@ -469,9 +469,9 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-                .body("office-id", equalTo(user.getOperatingOffice()))
-                .body("message", equalTo("Updated and renamed Location"))
-                .body("identifier", equalTo(updatedLocationName));
+            .body("office-id", equalTo(user.getOperatingOffice()))
+            .body("message", equalTo("Updated and renamed Location"))
+            .body("identifier", equalTo(updatedLocationName));
 
         // get it back
         given()
@@ -504,9 +504,9 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-                .body("office-id", equalTo(user.getOperatingOffice()))
-                .body("message", equalTo("Deleted CWMS Location"))
-                .body("identifier", equalTo(updatedLocationName));
+            .body("office-id", equalTo(user.getOperatingOffice()))
+            .body("message", equalTo("Deleted CWMS Location"))
+            .body("identifier", equalTo(updatedLocationName));
     }
 
     @Test

@@ -54,7 +54,6 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import hec.lang.StatisticalParameter;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
