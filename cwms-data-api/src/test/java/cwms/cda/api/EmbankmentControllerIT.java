@@ -145,6 +145,8 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Embankment successfully stored to CWMS"))
+                .body("identifier", equalTo(EMBANKMENT.getLocation().getName()))
         ;
         String office = EMBANKMENT.getLocation().getOfficeId();
         // Retrieve the Embankment and assert that it exists
@@ -267,6 +269,8 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("message", equalTo("Embankment successfully stored to CWMS"))
+                .body("identifier", equalTo(EMBANKMENT.getLocation().getName()))
         ;
         String office = EMBANKMENT.getLocation().getOfficeId();
         // Retrieve the Embankment and assert that it exists

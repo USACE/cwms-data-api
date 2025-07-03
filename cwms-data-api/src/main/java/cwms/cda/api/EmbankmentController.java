@@ -29,6 +29,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.EmbankmentDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.Embankment;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -167,7 +168,9 @@ public final class EmbankmentController  implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             EmbankmentDao dao = new EmbankmentDao(dsl);
             dao.storeEmbankment(embankment, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Embankment");
+            StatusResponse re = new StatusResponse("Embankment successfully stored to CWMS",
+                    embankment.getLocation().getName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
 
     }
@@ -197,7 +200,8 @@ public final class EmbankmentController  implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             EmbankmentDao dao = new EmbankmentDao(dsl);
             dao.renameEmbankment(office, name, newName);
-            ctx.status(HttpServletResponse.SC_OK).json("Renamed Embankment");
+            StatusResponse re = new StatusResponse("Embankment successfully renamed in CWMS", newName);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 
@@ -231,7 +235,8 @@ public final class EmbankmentController  implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             EmbankmentDao dao = new EmbankmentDao(dsl);
             dao.deleteEmbankment(name, office, deleteMethod.getRule());
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(name + " Deleted");
+            StatusResponse re = new StatusResponse("Embankment successfully deleted from CWMS", name);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
         }
     }
 }
