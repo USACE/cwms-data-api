@@ -17,22 +17,25 @@ final class StatusResponseTest {
     @Test
     void createStatusResponse_allFieldsProvided_Success() {
         // both fields provided
-        StatusResponse item = new StatusResponse("Created Location Level", "TestIdentifier123");
-        assertAll(() -> assertEquals("Created Location Level", item.getMessage(), "The response message does not match the provided value"),
-                () -> assertEquals("TestIdentifier123", item.getIdentifier(), "The identifier does not match the provided value"));
+        StatusResponse item = new StatusResponse("SPK", "Created Location Level", "LocationName123");
+        assertAll(() -> assertEquals("SPK", item.getOfficeId(), "The office ID does not match the provided value"),
+                () -> assertEquals("Created Location Level", item.getMessage(), "The response message does not match the provided value"),
+                () -> assertEquals("LocationName123", item.getIdentifier(), "The identifier does not match the provided value"));
         // only message provided
-        StatusResponse item2 = new StatusResponse("Updated Location");
-        assertAll(() -> assertEquals("Updated Location", item2.getMessage(), "The response message does not match the provided value"));
+        StatusResponse item2 = new StatusResponse("SPK", "Updated Location");
+        assertAll(() -> assertEquals("SPK", item2.getOfficeId(), "The office ID does not match the provided value"),
+                () -> assertEquals("Updated Location", item2.getMessage(), "The response message does not match the provided value"));
     }
 
 
     @Test
     void createStatusResponse_serialize_roundtrip() {
-        StatusResponse statusResponse = new StatusResponse("Created Location Level", "Identifier123");
+        StatusResponse statusResponse = new StatusResponse("SPK", "Created Location Level", "LocationName123");
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, statusResponse);
         StatusResponse deserialized = Formats.parseContent(contentType, json, StatusResponse.class);
         assertAll(
+                () -> assertEquals(statusResponse.getOfficeId(), deserialized.getOfficeId(), "deserialized Office ID does not match provided value"),
                 () -> assertEquals(statusResponse.getMessage(), deserialized.getMessage(), "deserialized response does not match provided value"),
                 () -> assertEquals(statusResponse.getIdentifier(), deserialized.getIdentifier(), "deserialized identifier does not match provided value")
         );
@@ -40,13 +43,14 @@ final class StatusResponseTest {
 
     @Test
     void createStatusResponse_deserialize_roundtrip() throws IOException {
-        StatusResponse statusResponse = new StatusResponse("Created Location Level", "Identifier123");
+        StatusResponse statusResponse = new StatusResponse("SPK", "Created Location Level", "LocationName123");
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/status_response.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = new ContentType(Formats.JSON);
         StatusResponse deserialized = Formats.parseContent(contentType, json, StatusResponse.class);
         assertAll(
+                () -> assertEquals(statusResponse.getOfficeId(), deserialized.getOfficeId(), "deserialized Office ID does not match provided value"),
                 () -> assertEquals(statusResponse.getMessage(), deserialized.getMessage(), "deserialized response does not match provided value"),
                 () -> assertEquals(statusResponse.getIdentifier(), deserialized.getIdentifier(), "deserialized identifier does not match provided value")
         );
