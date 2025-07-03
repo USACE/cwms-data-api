@@ -50,9 +50,11 @@ import static cwms.cda.api.Controllers.STREAM_ID;
 import static cwms.cda.api.Controllers.STREAM_ID_MASK;
 import static cwms.cda.api.Controllers.requiredParam;
 import cwms.cda.data.dao.StreamLocationDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import hec.lang.StatisticalParameter;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -204,7 +206,9 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.storeStreamLocation(streamLocation, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Stream Location");
+            StatusResponse re = new StatusResponse("Stream Location successfully stored to CWMS.",
+                    streamLocation.getId().getName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 
@@ -230,6 +234,8 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.updateStreamLocation(streamLocation);
+            StatusResponse re = new StatusResponse("Stream Location successfully updated to CWMS.",
+                    streamLocation.getId().getName());
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Updated Stream Location");
         }
     }
@@ -261,7 +267,8 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.deleteStreamLocation(officeId, streamId, locationId);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Deleted Stream Location");
+            StatusResponse re = new StatusResponse("Stream Location successfully deleted from CWMS.", streamId);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
         }
     }
 }
