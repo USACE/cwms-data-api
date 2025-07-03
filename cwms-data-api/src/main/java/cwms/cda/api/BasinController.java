@@ -45,6 +45,7 @@ import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.basinconnectivity.BasinDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.basinconnectivity.Basin;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -251,7 +252,8 @@ public class BasinController implements CrudHandler {
             .withOfficeId(officeId)
             .build();
         basinDao.renameBasin(oldLoc, newLoc);
-        ctx.status(HttpServletResponse.SC_OK).json("Updated Location");
+        StatusResponse re = new StatusResponse(officeId, "Updated Location", newBasinId);
+        ctx.status(HttpServletResponse.SC_OK).json(re);
     }
 
     @OpenApi(
@@ -276,13 +278,15 @@ public class BasinController implements CrudHandler {
         String newBasinId = basin.getBasinId().getName();
         cwms.cda.data.dao.basin.BasinDao basinDao = new cwms.cda.data.dao.basin.BasinDao(dsl);
         basinDao.storeBasin(basin);
-        ctx.status(HttpServletResponse.SC_CREATED).json(newBasinId + " Created");
+        StatusResponse re = new StatusResponse(basin.getBasinId().getOfficeId(),
+                "Basin successfully stored to CWMS.", newBasinId);
+        ctx.status(HttpServletResponse.SC_CREATED).json(re);
     }
 
     @OpenApi(
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the"
-                    + " owning office of the basin to be renamed."),
+                    + " owning office of the basin to be deleted."),
             @OpenApiParam(name = METHOD, required = true, description = "Specifies the delete method used.",
                 type = JooqDao.DeleteMethod.class)
         },
@@ -290,7 +294,7 @@ public class BasinController implements CrudHandler {
             @OpenApiParam(name = NAME, description = "Specifies the name of "
                     + "the basin to be deleted.")
         },
-        description = "Renames CWMS Basin",
+        description = "Deletes CWMS Basin",
         tags = {TAG}
     )
     @Override
@@ -303,6 +307,7 @@ public class BasinController implements CrudHandler {
                 .withOfficeId(ctx.queryParam(OFFICE))
                 .build();
         basinDao.deleteBasin(basinId, deleteMethod.getRule());
-        ctx.status(HttpServletResponse.SC_NO_CONTENT).json(basinId.getName() + " Deleted");
+        StatusResponse re = new StatusResponse(basinId.getOfficeId(), "Deleted CWMS Basin", basinId.getName());
+        ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
     }
 }

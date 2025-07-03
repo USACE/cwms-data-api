@@ -176,6 +176,9 @@ class BasinControllerIT extends DataApiTestIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.body("office-id", equalTo(BASIN.getBasinId().getOfficeId()))
+			.body("message", equalTo("Basin successfully stored to CWMS."))
+			.body("identifier", equalTo(BASIN.getBasinId().getName()))
 		;
 
 		if(BASIN.getParentBasinId() != null && BASIN.getPrimaryStreamId() != null){
@@ -399,6 +402,9 @@ class BasinControllerIT extends DataApiTestIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.body("office-id", equalTo(BASIN.getBasinId().getOfficeId()))
+			.body("message", equalTo("Basin successfully stored to CWMS."))
+			.body("identifier", equalTo(BASIN.getBasinId().getName()))
 		;
 
 
