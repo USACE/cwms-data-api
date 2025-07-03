@@ -81,6 +81,9 @@ final class LookupTypeControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(lookupType.getOfficeId()))
+                .body("message", equalTo("Lookup Type successfully stored to CWMS."))
+                .body("identifier", equalTo(lookupType.getDisplayValue()))
         ;
         String office = user.getOperatingOffice();
         // Retrieve the lookup type and assert that it exists
