@@ -307,7 +307,7 @@ public class LocationController implements CrudHandler {
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             locationsDao.storeLocation(locationFromBody, failIfExists);
-            StatusResponse re = new StatusResponse("Created Location", locationFromBody.getName());
+            StatusResponse re = new StatusResponse(locationFromBody.getOfficeId(),"Created Location", locationFromBody.getName());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("failed to process request");
@@ -353,11 +353,13 @@ public class LocationController implements CrudHandler {
             if (!updatedLocation.getName().equalsIgnoreCase(existingLocation.getName())) {
                 //if name changed then delete location with old name
                 locationsDao.renameLocation(locationId, updatedLocation);
-                ctx.status(HttpServletResponse.SC_OK).json(new StatusResponse("Updated and renamed Location",
+                ctx.status(HttpServletResponse.SC_OK).json(new StatusResponse(updatedLocation.getOfficeId(),
+                        "Updated and renamed Location",
                         updatedLocation.getName()));
             } else {
                 locationsDao.storeLocation(updatedLocation, false);
-                ctx.status(HttpServletResponse.SC_OK).json(new StatusResponse("Updated Location",
+                ctx.status(HttpServletResponse.SC_OK).json(new StatusResponse(updatedLocation.getOfficeId(),
+                        "Updated Location",
                         updatedLocation.getName()));
             }
         } catch (NotFoundException e) {
@@ -404,7 +406,7 @@ public class LocationController implements CrudHandler {
             LocationsDao locationsDao = getLocationsDao(dsl);
             boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);
             locationsDao.deleteLocation(locationId, office, cascadeDelete);
-            StatusResponse re = new StatusResponse("Deleted CWMS Location", locationId);
+            StatusResponse re = new StatusResponse(office,"Deleted CWMS Location", locationId);
             ctx.status(HttpServletResponse.SC_OK).json(re);
         } catch (DataAccessException ex) {
             SQLException cause = ex.getCause(SQLException.class);

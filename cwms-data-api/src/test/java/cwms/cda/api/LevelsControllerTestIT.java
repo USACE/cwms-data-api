@@ -868,6 +868,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE))
                 .body("message", equalTo("Created Location Level"))
                 .body("identifier", equalTo(levelId));
 
@@ -996,6 +997,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE))
                 .body("message", equalTo("Created Location Level"))
                 .body("identifier", equalTo(levelId));
 
@@ -1015,6 +1017,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE))
                 .body("message", equalTo("Created Location Level"))
                 .body("identifier", equalTo(level1Id));
 
@@ -1034,6 +1037,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE))
                 .body("message", equalTo("Created Location Level"))
                 .body("identifier", equalTo(level2Id));
 
@@ -1189,6 +1193,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE))
                 .body("message", equalTo("Created Location Level"))
                 .body("identifier", equalTo(levelId));
 
@@ -1209,6 +1214,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE))
                 .body("message", equalTo("Created Location Level"))
                 .body("identifier", equalTo(level1Id));
 
@@ -1229,6 +1235,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE))
                 .body("message", equalTo("Created Location Level"))
                 .body("identifier", equalTo(level2Id));
 
@@ -1418,6 +1425,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE))
                 .body("message", equalTo("Created Location Level"))
                 .body("identifier", equalTo(levelId));
 
@@ -1484,6 +1492,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .assertThat()
                     .statusCode(is(HttpServletResponse.SC_OK))
+                        .body("office-id", equalTo(OFFICE))
                         .body("message", equalTo("CWMS Location Level Deleted"))
                         .body("identifier", equalTo(levelId));
                 break;
@@ -1502,8 +1511,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                     .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
                     .statusCode(is(HttpServletResponse.SC_OK))
+                        .body("office-id", equalTo(OFFICE))
                         .body("message", equalTo("CWMS Location Level Deleted"))
-                        .body("identifier", equalTo(levelId));;
+                        .body("identifier", equalTo(levelId));
                 break;
             default:
                 fail("Invalid deletion method: " + deletionMethod);
@@ -1609,6 +1619,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE))
                 .body("message", equalTo("Created Location Level"))
                 .body("identifier", equalTo("seasonalLoc6.Elev.Ave.1Day.tst"));
 
@@ -1661,6 +1672,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE))
                 .body("message", equalTo("Created Location Level"))
                 .body("identifier", equalTo(levelId));
 
@@ -1711,6 +1723,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE))
                 .body("message", equalTo("Created Location Level"))
                 .body("identifier", equalTo(levelId));
 

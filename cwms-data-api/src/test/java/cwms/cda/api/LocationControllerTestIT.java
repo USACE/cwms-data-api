@@ -141,6 +141,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(officeId))
                 .body("message", equalTo("Created Location"))
                 .body("identifier", equalTo("LOC_TEST"));
         //Create associated time series so delete fails without cascade
@@ -196,6 +197,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+                .body("office-id", equalTo(officeId))
                 .body("message", equalTo("Deleted CWMS Location"))
                 .body("identifier", equalTo("LOC_TEST"));
 
@@ -386,6 +388,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+                .body("office-id", equalTo(officeId))
                 .body("message", equalTo("Deleted CWMS Location"))
                 .body("identifier", equalTo("LOC_TEST"));
 
@@ -466,6 +469,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+                .body("office-id", equalTo(user.getOperatingOffice()))
                 .body("message", equalTo("Updated and renamed Location"))
                 .body("identifier", equalTo(updatedLocationName));
 
@@ -500,6 +504,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+                .body("office-id", equalTo(user.getOperatingOffice()))
                 .body("message", equalTo("Deleted CWMS Location"))
                 .body("identifier", equalTo(updatedLocationName));
     }

@@ -147,6 +147,7 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE_ID))
                 .body("message", equalTo("Stream Location successfully stored to CWMS."))
                 .body("identifier", equalTo(streamLocation.getId().getName()));
 
@@ -287,6 +288,7 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE_ID))
                 .body("message", equalTo("Stream Location successfully stored to CWMS."))
                 .body("identifier", equalTo(streamLocation.getId().getName()));
 

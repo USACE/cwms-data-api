@@ -120,7 +120,7 @@ public class LevelsController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.storeLocationLevel(level);
-            StatusResponse re = new StatusResponse("Created Location Level", level.getLocationLevelId());
+            StatusResponse re = new StatusResponse(level.getOfficeId(),"Created Location Level", level.getLocationLevelId());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to parse the request body", e);
@@ -187,7 +187,7 @@ public class LevelsController implements CrudHandler {
                     ? DateUtils.parseUserDate(dateString, timezone) : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete);
-            StatusResponse re = new StatusResponse("CWMS Location Level Deleted", levelId);
+            StatusResponse re = new StatusResponse(office,"CWMS Location Level Deleted", levelId);
             ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
@@ -414,7 +414,7 @@ public class LevelsController implements CrudHandler {
             if (!oldLevelId.equals(newLevelId)) {
                 //if name changed then delete location with old name
                 levelsDao.renameLocationLevel(oldLevelId, newLevelId, officeId);
-                StatusResponse re = new StatusResponse("Renamed Location Level", newLevelId);
+                StatusResponse re = new StatusResponse(officeId,"Renamed Location Level", newLevelId);
                 ctx.status(HttpServletResponse.SC_OK).json(re);
             } else {
                 String dateString = queryParamAsClass(ctx,
@@ -436,7 +436,7 @@ public class LevelsController implements CrudHandler {
                     levelFromBody, unmarshalledDateTime);
 
                 levelsDao.storeLocationLevel(updatedLocationLevel);
-                StatusResponse re = new StatusResponse("Updated Location Level", newLevelId);
+                StatusResponse re = new StatusResponse(officeId,"Updated Location Level", newLevelId);
                 ctx.status(HttpServletResponse.SC_OK).json(re);
             }
         } catch (JsonProcessingException ex) {

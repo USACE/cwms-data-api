@@ -123,6 +123,7 @@ final class TurbineControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE))
                 .body("message", equalTo("Turbine successfully stored to CWMS."))
                 .body("identifier", equalTo("PROJ_TURB_PHYS"))
         ;
@@ -240,6 +241,7 @@ final class TurbineControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(OFFICE))
                 .body("message", equalTo("Turbine successfully stored to CWMS."))
                 .body("identifier", equalTo("PROJ_TURB_PHYS"))
         ;

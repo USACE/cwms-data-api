@@ -168,7 +168,8 @@ public final class EmbankmentController  implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             EmbankmentDao dao = new EmbankmentDao(dsl);
             dao.storeEmbankment(embankment, failIfExists);
-            StatusResponse re = new StatusResponse("Embankment successfully stored to CWMS",
+            StatusResponse re = new StatusResponse(embankment.getLocation().getOfficeId(),
+                    "Embankment successfully stored to CWMS",
                     embankment.getLocation().getName());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
@@ -200,7 +201,7 @@ public final class EmbankmentController  implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             EmbankmentDao dao = new EmbankmentDao(dsl);
             dao.renameEmbankment(office, name, newName);
-            StatusResponse re = new StatusResponse("Embankment successfully renamed in CWMS", newName);
+            StatusResponse re = new StatusResponse(office, "Embankment successfully renamed in CWMS", newName);
             ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
@@ -235,7 +236,7 @@ public final class EmbankmentController  implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             EmbankmentDao dao = new EmbankmentDao(dsl);
             dao.deleteEmbankment(name, office, deleteMethod.getRule());
-            StatusResponse re = new StatusResponse("Embankment successfully deleted from CWMS", name);
+            StatusResponse re = new StatusResponse(office, "Embankment successfully deleted from CWMS", name);
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
         }
     }

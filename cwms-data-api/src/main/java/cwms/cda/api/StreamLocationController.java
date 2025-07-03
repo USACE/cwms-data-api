@@ -206,7 +206,8 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.storeStreamLocation(streamLocation, failIfExists);
-            StatusResponse re = new StatusResponse("Stream Location successfully stored to CWMS.",
+            StatusResponse re = new StatusResponse(streamLocation.getId().getOfficeId(),
+                    "Stream Location successfully stored to CWMS.",
                     streamLocation.getId().getName());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
@@ -234,7 +235,8 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.updateStreamLocation(streamLocation);
-            StatusResponse re = new StatusResponse("Stream Location successfully updated to CWMS.",
+            StatusResponse re = new StatusResponse(streamLocation.getId().getOfficeId(),
+                    "Stream Location successfully updated to CWMS.",
                     streamLocation.getId().getName());
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Updated Stream Location");
         }
@@ -267,7 +269,8 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.deleteStreamLocation(officeId, streamId, locationId);
-            StatusResponse re = new StatusResponse("Stream Location successfully deleted from CWMS.", streamId);
+            StatusResponse re = new StatusResponse(officeId,
+                    "Stream Location successfully deleted from CWMS.", streamId);
             ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
         }
     }
