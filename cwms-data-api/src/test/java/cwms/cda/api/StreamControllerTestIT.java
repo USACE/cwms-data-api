@@ -142,7 +142,10 @@ final class StreamControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(stream.getOfficeId()))
+                .body("message", equalTo("Stream successfully stored to CWMS."))
+                .body("identifier", equalTo(stream.getId().getName()));
 
         String streamId = stream.getId().getName();
 
@@ -274,7 +277,10 @@ final class StreamControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(stream.getOfficeId()))
+                .body("message", equalTo("Stream successfully stored to CWMS."))
+                .body("identifier", equalTo(stream.getId().getName()));
 
         String office = stream.getId().getOfficeId();
         String streamId = stream.getId().getName();
