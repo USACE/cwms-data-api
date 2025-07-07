@@ -1130,17 +1130,14 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
 
         assertParserInDb(tspParserIndexed3);
 
-        String newTsId = "Sacramento River.Elev.Total.1DayLocal.0.Raw";
-
-        String data = tspData3.replace("Sacramento River.Elev.Total.0.1Hour.Raw",
-                newTsId);
+        String newTsId = "Sacramento River.Precip-Cumulative.Inst.1DayLocal.0.Raw";
 
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
-            .body(data)
+            .body(tspData3)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
             .queryParam(OVERRIDE_PROTECTION, false)
@@ -1162,7 +1159,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
-            .body(data)
+            .body(tspData3)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(METHOD, StoreRule.REPLACE_ALL)
             .queryParam(OVERRIDE_PROTECTION, false)
