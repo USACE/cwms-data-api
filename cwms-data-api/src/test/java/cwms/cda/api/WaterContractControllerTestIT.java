@@ -179,6 +179,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(CONTRACT.getOfficeId()))
             .body("message", equalTo("Water Contract Created Successfully"))
             .body("identifier", equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
@@ -428,6 +429,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(CONTRACT.getOfficeId()))
             .body("message", equalTo("Water Contract Created Successfully"))
             .body("identifier", equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
@@ -449,6 +451,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("office-id", equalTo(CONTRACT.getOfficeId()))
             .body("message", equalTo("Contract Renamed Successfully"))
             .body("identifier", equalTo(NEW_CONTRACT_NAME))
         ;
@@ -513,6 +516,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(CONTRACT.getOfficeId()))
             .body("message", equalTo("Water Contract Created Successfully"))
             .body("identifier", equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
@@ -548,6 +552,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(CONTRACT.getOfficeId()))
             .body("message", equalTo("Water Contract Created Successfully"))
             .body("identifier", equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;

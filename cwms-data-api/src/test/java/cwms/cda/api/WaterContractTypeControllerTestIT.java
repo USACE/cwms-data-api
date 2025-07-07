@@ -97,6 +97,9 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(CONTRACT_TYPE.getOfficeId()))
+            .body("message", equalTo("Contract type successfully stored to CWMS."))
+            .body("identifier", equalTo(CONTRACT_TYPE.getDisplayValue()))
         ;
 
         // get water contract type and assert that it exists
@@ -145,6 +148,9 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(CONTRACT_TYPE.getOfficeId()))
+            .body("message", equalTo("Contract type successfully stored to CWMS."))
+            .body("identifier", equalTo(CONTRACT_TYPE.getDisplayValue()))
         ;
 
         // get water contract type and assert that it exists

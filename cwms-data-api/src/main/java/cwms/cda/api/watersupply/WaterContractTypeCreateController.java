@@ -34,6 +34,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.LookupType;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
@@ -45,6 +46,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import javax.servlet.http.HttpServletResponse;
+import javax.transaction.Status;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -86,7 +89,9 @@ public final class WaterContractTypeCreateController extends WaterSupplyControll
             LookupType contractType = Formats.parseContent(contentType, ctx.body(), LookupType.class);
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.storeWaterContractType(contractType, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Contract type successfully stored to CWMS.");
+            StatusResponse re = new StatusResponse(contractType.getOfficeId(),
+                    "Contract type successfully stored to CWMS.", contractType.getDisplayValue());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 
