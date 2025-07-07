@@ -222,7 +222,7 @@ public final class StreamLocationController implements CrudHandler {
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Stream Location successfully updated to CWMS.")
+                    @OpenApiResponse(status = STATUS_200, description = "Stream Location successfully updated to CWMS.")
             }
     )
     @Override
@@ -237,7 +237,7 @@ public final class StreamLocationController implements CrudHandler {
             StatusResponse re = new StatusResponse(streamLocation.getId().getOfficeId(),
                     "Stream Location successfully updated to CWMS.",
                     streamLocation.getId().getName());
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Updated Stream Location");
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 
