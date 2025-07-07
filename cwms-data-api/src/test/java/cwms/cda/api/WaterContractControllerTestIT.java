@@ -179,6 +179,8 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("message", equalTo("Water Contract Created Successfully"))
+            .body("identifier", equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         // get contract
@@ -426,6 +428,8 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("message", equalTo("Water Contract Created Successfully"))
+            .body("identifier", equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         // rename contract
@@ -445,6 +449,8 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("message", equalTo("Contract Renamed Successfully"))
+            .body("identifier", equalTo(NEW_CONTRACT_NAME))
         ;
 
         // get contract, assert name is changed
@@ -507,6 +513,8 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("message", equalTo("Water Contract Created Successfully"))
+            .body("identifier", equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         WaterUserContract waterContract = new WaterUserContract.Builder()
@@ -540,6 +548,8 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("message", equalTo("Water Contract Created Successfully"))
+            .body("identifier", equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         // get all contracts

@@ -39,6 +39,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -104,7 +105,9 @@ public final class WaterContractCreateController extends WaterSupplyControllerBa
             String newContractName = ctx.pathParam(WATER_USER);
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.storeWaterContract(waterContract, failIfExists, ignoreNulls);
-            ctx.status(HttpServletResponse.SC_CREATED).json(newContractName + " created successfully");
+            StatusResponse re = new StatusResponse(waterContract.getOfficeId(),
+                    "Water Contract Created Successfully", newContractName);
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 }
