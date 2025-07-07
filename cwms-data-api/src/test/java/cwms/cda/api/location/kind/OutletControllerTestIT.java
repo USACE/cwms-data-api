@@ -184,7 +184,10 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(RENAMED_CONDUIT_GATE.getOfficeId()))
+            .body(MESSAGE, equalTo("CWMS Outlet successfully renamed."))
+            .body(IDENTIFIER, equalTo(RENAMED_CONDUIT_GATE.getName()));
         ;
 
         //Fail to retrieve old outlet name

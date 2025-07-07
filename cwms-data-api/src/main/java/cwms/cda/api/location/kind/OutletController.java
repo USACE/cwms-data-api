@@ -172,7 +172,7 @@ public class OutletController extends BaseCrudHandler {
         method = HttpMethod.PATCH,
         tags = {TAG},
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "CWMS Outlet successfully renamed.")
+            @OpenApiResponse(status = STATUS_200, description = "CWMS Outlet successfully renamed.")
         }
     )
     @Override
@@ -184,7 +184,7 @@ public class OutletController extends BaseCrudHandler {
             OutletDao dao = new OutletDao(dsl);
             dao.renameOutlet(office, name, newOutletId);
             StatusResponse re = new StatusResponse(office, "CWMS Outlet successfully renamed.", newOutletId);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 

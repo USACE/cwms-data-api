@@ -189,7 +189,7 @@ public final class MeasurementController implements CrudHandler {
             method = HttpMethod.POST,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = "200", description = "Measurement(s) successfully stored.")
+                    @OpenApiResponse(status = "201", description = "Measurement(s) successfully stored.")
             }
     )
     @Override
