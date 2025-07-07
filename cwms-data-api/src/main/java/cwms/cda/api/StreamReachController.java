@@ -41,6 +41,7 @@ import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATION_UNIT;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_204;
 import static cwms.cda.api.Controllers.STREAM_ID;
 import static cwms.cda.api.Controllers.STREAM_ID_MASK;
@@ -48,6 +49,7 @@ import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.requiredParam;
 import cwms.cda.data.dao.StreamLocationDao;
 import cwms.cda.data.dao.StreamReachDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.stream.StreamReach;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -182,7 +184,7 @@ public final class StreamReachController implements CrudHandler {
             method = HttpMethod.POST,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Stream Reach successfully stored to CWMS.")
+                    @OpenApiResponse(status = STATUS_201, description = "Stream Reach successfully stored to CWMS.")
             }
     )
     @Override
@@ -195,7 +197,9 @@ public final class StreamReachController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamReachDao dao = new StreamReachDao(dsl);
             dao.storeStreamReach(streamReach, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Stream Reach");
+            StatusResponse re = new StatusResponse(streamReach.getStreamId().getOfficeId(), "Stream Reach successfully stored to CWMS.",
+                    streamReach.getStreamId().getName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 
@@ -213,7 +217,7 @@ public final class StreamReachController implements CrudHandler {
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Stream Reach successfully renamed in CWMS.")
+                    @OpenApiResponse(status = STATUS_200, description = "Stream Reach successfully renamed in CWMS.")
             }
     )
     @Override
@@ -224,7 +228,8 @@ public final class StreamReachController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamReachDao dao = new StreamReachDao(dsl);
             dao.renameStreamReach(office, reachId, newReachId);
-            ctx.status(HttpServletResponse.SC_OK).json("Renamed Stream Reach");
+            StatusResponse re = new StatusResponse(office, "Stream Reach successfully renamed in CWMS.", newReachId);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 
@@ -251,7 +256,9 @@ public final class StreamReachController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamReachDao dao = new StreamReachDao(dsl);
             dao.deleteStreamReach(office, reachId);
-            ctx.status(HttpServletResponse.SC_OK).json("Deleted Stream Reach");
+            StatusResponse re = new StatusResponse(office, "Stream Reach successfully deleted from CWMS.",
+                    reachId);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }
