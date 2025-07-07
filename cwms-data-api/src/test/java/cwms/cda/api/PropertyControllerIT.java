@@ -79,6 +79,9 @@ final class PropertyControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(property.getOfficeId()))
+            .body("message", equalTo("Property successfully stored to CWMS."))
+            .body("identifier", equalTo(property.getName()))
         ;
         String office = property.getOfficeId();
         // Retrieve the property and assert that it exists
@@ -216,6 +219,9 @@ final class PropertyControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(property.getOfficeId()))
+            .body("message", equalTo("Property successfully stored to CWMS."))
+            .body("identifier", equalTo(property.getName()))
         ;
         String office = property.getOfficeId();
         // Retrieve the property and assert that it exists
