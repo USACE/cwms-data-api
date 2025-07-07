@@ -147,7 +147,10 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(NEW_CONDUIT_GATE_2_OUTLET.getLocation().getOfficeId()))
+            .body("message", equalTo("Outlet successfully stored to CWMS."))
+            .body("identifier", equalTo(NEW_CONDUIT_GATE_2_OUTLET.getLocation().getName()));
 
         //Get the newly created outlet
         given()
@@ -239,7 +242,11 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(NEW_RATED_OUTLET_UNCONTROLLED.getLocation().getOfficeId()))
+            .body("message", equalTo("Outlet successfully stored to CWMS."))
+            .body("identifier", equalTo(NEW_RATED_OUTLET_UNCONTROLLED.getLocation().getName()))
+        ;
 
         // Get the outlet, assert that it has null rating spec id
         given()
@@ -388,7 +395,10 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(NEW_RATED_OUTLET_CONTROLLED.getLocation().getOfficeId()))
+            .body("message", equalTo("Outlet successfully stored to CWMS."))
+            .body("identifier", equalTo(NEW_RATED_OUTLET_CONTROLLED.getLocation().getName()));
 
         // Get the outlet, assert that it has null rating spec id
         given()
@@ -561,7 +571,10 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getOfficeId()))
+            .body("message", equalTo("Outlet successfully stored to CWMS."))
+            .body("identifier", equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getName()));
 
         //Get the newly created outlet
         given()
@@ -602,7 +615,10 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getOfficeId()))
+            .body("message", equalTo("Outlet successfully stored to CWMS."))
+            .body("identifier", equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getName()));
 
         //Get the newly modified outlet
         given()
