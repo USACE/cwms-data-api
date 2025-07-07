@@ -156,7 +156,10 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(measurement.getOfficeId()))
+                .body("message", equalTo("Measurement(s) successfully stored."))
+                .body("identifier", equalTo(""));
 
         String locationId = measurement.getLocationId();
         String number = measurement.getNumber();
@@ -283,7 +286,10 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body("office-id", equalTo(measurement1.getOfficeId()))
+                .body("message", equalTo("Measurement(s) successfully stored."))
+                .body("identifier", equalTo(""));
 
         // Retrieve the Measurements and assert that they exists
         given()

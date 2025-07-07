@@ -56,6 +56,7 @@ import static cwms.cda.api.Controllers.queryParamAsInstant;
 import static cwms.cda.api.Controllers.requiredParam;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.MeasurementDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.measurement.Measurement;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -188,7 +189,7 @@ public final class MeasurementController implements CrudHandler {
             method = HttpMethod.POST,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = "204", description = "Measurement(s) successfully stored.")
+                    @OpenApiResponse(status = "200", description = "Measurement(s) successfully stored.")
             }
     )
     @Override
@@ -202,12 +203,8 @@ public final class MeasurementController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             MeasurementDao dao = new MeasurementDao(dsl);
             dao.storeMeasurements(measurements, failIfExists);
-            String statusMsg = "Created Measurement";
-            if(measurements.size() > 1)
-            {
-                statusMsg += "s";
-            }
-            ctx.status(HttpServletResponse.SC_CREATED).json(statusMsg);
+            StatusResponse re = new StatusResponse(measurements.get(0).getOfficeId(), "Measurement(s) successfully stored.");
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 
@@ -260,7 +257,8 @@ public final class MeasurementController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             MeasurementDao dao = new MeasurementDao(dsl);
             dao.deleteMeasurements(officeId, locationId, minDate, maxDate,minNum, maxNum);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json( "Measurements for " + locationId + " Deleted");
+            StatusResponse re = new StatusResponse(officeId, "Measurement successfully deleted for specified location-id.", locationId);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT).json( re);
         }
     }
 
