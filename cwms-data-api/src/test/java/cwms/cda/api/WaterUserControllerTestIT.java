@@ -161,6 +161,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body("message", equalTo("Water user successfully stored to CWMS."))
+            .body("identifier", equalTo(WATER_USER.getEntityName()))
         ;
 
         // get WaterUser, assert that it is correct
@@ -249,6 +252,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body("message", equalTo("Water user successfully stored to CWMS."))
+            .body("identifier", equalTo(WATER_USER.getEntityName()))
         ;
 
         // Rename WaterUser
@@ -268,7 +274,10 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+                .body("office-id", equalTo(OFFICE_ID))
+                .body("message", equalTo("Water user successfully updated in CWMS."))
+                .body("identifier", equalTo("NEW USER NAME"))
         ;
 
         // Get WaterUser, assert name has changed
@@ -351,6 +360,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body("message", equalTo("Water user successfully stored to CWMS."))
+            .body("identifier", equalTo(WATER_USER.getEntityName()))
         ;
 
         // Create WaterUser
@@ -368,6 +380,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body("message", equalTo("Water user successfully stored to CWMS."))
+            .body("identifier", equalTo(waterUser.getEntityName()))
         ;
 
         // get water users
