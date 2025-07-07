@@ -63,7 +63,6 @@ import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -148,8 +147,7 @@ public class RatingController implements CrudHandler {
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
             String ratingSet = deserializeRatingSet(ctx, storeTemplate);
             ratingDao.create(ratingSet, false);
-            StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Created RatingSet");
-            ctx.status(HttpServletResponse.SC_OK).json(re);
+            ctx.status(HttpServletResponse.SC_OK).json("Created RatingSet");
         } catch (IOException ex) {
             CdaError re = new CdaError("Failed to process request to update RatingSet");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -502,8 +500,7 @@ public class RatingController implements CrudHandler {
                     .getOrDefault(false);
             String ratingSet = deserializeRatingSet(ctx, storeTemplate);
             ratingDao.store(ratingSet, replaceBaseCurve);
-            StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Updated RatingSet");
-            ctx.status(HttpServletResponse.SC_OK).json(re);
+            ctx.status(HttpServletResponse.SC_OK).json("Updated RatingSet");
         } catch (IOException ex) {
             CdaError re = new CdaError("Failed to process request to update RatingSet");
             logger.log(Level.SEVERE, re.toString(), ex);

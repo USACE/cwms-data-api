@@ -52,7 +52,6 @@ import com.codahale.metrics.Timer;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.location.kind.TurbineDao;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.TurbineChange;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -126,8 +125,7 @@ public final class TurbineChangesDeleteController implements Handler {
                 .withOfficeId(office)
                 .build();
             dao.deleteOperationalChanges(cwmsId, begin, end, overrideProtection);
-            StatusResponse re = new StatusResponse(office, "Turbine successfully deleted from CWMS.", projectId);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(projectId + " Deleted");
         }
     }
 }

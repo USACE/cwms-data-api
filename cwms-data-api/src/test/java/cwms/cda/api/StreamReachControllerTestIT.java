@@ -47,6 +47,8 @@ import java.util.ArrayList;
 import java.util.List;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -59,7 +61,6 @@ import java.nio.charset.StandardCharsets;
 
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
@@ -68,9 +69,6 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
     private static final List<StreamLocation> STREAM_LOCATIONS_CREATED = new ArrayList<>();
-    private static final String OFFICE_ID_TEXT = "office-id";
-    private static final String MESSAGE = "message";
-    private static final String IDENTIFIER = "identifier";
 
     @BeforeAll
     public static void setup() throws SQLException {
@@ -198,10 +196,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED))
-                .body(OFFICE_ID, equalTo(streamReach.getStreamId().getOfficeId()))
-                .body(MESSAGE, equalTo("Stream Reach successfully stored to CWMS."))
-                .body(IDENTIFIER, equalTo(streamReach.getStreamId().getName()));
+                .statusCode(is(HttpServletResponse.SC_CREATED));
 
         String streamReachId = streamReach.getId().getName();
 
@@ -256,10 +251,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body(OFFICE_ID, equalTo(streamReach.getStreamId().getOfficeId()))
-                .body(MESSAGE, equalTo("Stream Reach successfully deleted from CWMS."))
-                .body(IDENTIFIER, equalTo(streamReach.getStreamId().getName()));
+                .statusCode(is(HttpServletResponse.SC_OK));
 
         // Retrieve the StreamReach and assert that it does not exist
         given()
@@ -343,10 +335,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED))
-                .body(OFFICE_ID, equalTo(streamReach.getStreamId().getOfficeId()))
-                .body(MESSAGE, equalTo("Stream Reach successfully stored to CWMS."))
-                .body(IDENTIFIER, equalTo(streamReach.getStreamId().getName()));
+                .statusCode(is(HttpServletResponse.SC_CREATED));
 
         String office = streamReach.getId().getOfficeId();
         String streamReachId = streamReach.getId().getName();
@@ -402,10 +391,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body(OFFICE_ID, equalTo(streamReach.getStreamId().getOfficeId()))
-                .body(MESSAGE, equalTo("Stream Reach successfully deleted from CWMS."))
-                .body(IDENTIFIER, equalTo(streamReach.getStreamId().getName()));
+                .statusCode(is(HttpServletResponse.SC_OK));
 
         //verify deletion
         given()

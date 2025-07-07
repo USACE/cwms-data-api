@@ -40,7 +40,6 @@ import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
 import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_204;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.UNIT_SYSTEM;
@@ -55,7 +54,6 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.location.kind.TurbineDao;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.TurbineChange;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -109,7 +107,7 @@ public final class TurbineChangesPostController implements Handler {
         method = HttpMethod.POST,
         tags = {TurbineController.TAG},
         responses = {
-            @OpenApiResponse(status = STATUS_201, description = "Turbine successfully stored to CWMS."),
+            @OpenApiResponse(status = STATUS_204, description = "Turbine successfully stored to CWMS."),
             @OpenApiResponse(status = STATUS_404, description = "Project Id or Turbine location Ids not found.")
         }
     )
@@ -124,8 +122,7 @@ public final class TurbineChangesPostController implements Handler {
             DSLContext dsl = getDslContext(ctx);
             TurbineDao dao = new TurbineDao(dsl);
             dao.storeOperationalChanges(turbine, overrideProtection);
-            StatusResponse re = new StatusResponse(turbine.get(0).getProjectId().getOfficeId(), "Created Turbine Changes");
-            ctx.status(HttpServletResponse.SC_CREATED).json(re);
+            ctx.status(HttpServletResponse.SC_CREATED).json("Created Turbine Changes");
         }
     }
 }
