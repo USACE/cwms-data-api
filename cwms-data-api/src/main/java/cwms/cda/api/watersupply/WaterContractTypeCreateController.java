@@ -46,7 +46,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import javax.servlet.http.HttpServletResponse;
-import javax.transaction.Status;
 
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;

@@ -193,7 +193,7 @@ public final class PropertyController implements CrudHandler {
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                @OpenApiResponse(status = STATUS_200, description = "Property successfully stored to CWMS.")
+                @OpenApiResponse(status = STATUS_200, description = "Property successfully updated in CWMS.")
             }
     )
     @Override
@@ -206,7 +206,7 @@ public final class PropertyController implements CrudHandler {
             PropertyDao dao = new PropertyDao(dsl);
             dao.updateProperty(property);
             StatusResponse re = new StatusResponse(property.getOfficeId(),
-                    "Property successfully stored to CWMS.", property.getName());
+                    "Property successfully updated in CWMS.", property.getName());
             ctx.status(HttpServletResponse.SC_OK).json(re);
         }
 
