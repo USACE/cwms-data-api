@@ -54,8 +54,10 @@ import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
-import static org.hamcrest.Matchers.is;
+
 import org.junit.jupiter.api.AfterEach;
+
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -64,7 +66,9 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 @Tag("integration")
 class RatingsControllerIT extends DataApiTestIT{
-
+    private static final String OFFICE_ID = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
     @AfterEach
     void tearDown() {
@@ -138,7 +142,10 @@ class RatingsControllerIT extends DataApiTestIT{
         .then()
         .assertThat()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpServletResponse.SC_OK));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID, equalTo(SPK))
+                .body(MESSAGE, equalTo("Created RatingSet"))
+                .body(IDENTIFIER, isEmptyString());
     }
 
     static void updateOneSet(String file, boolean replaceBaseCurve) throws Exception {
@@ -204,7 +211,10 @@ class RatingsControllerIT extends DataApiTestIT{
         .then()
         .assertThat()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpServletResponse.SC_OK));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID, equalTo(SPK))
+                .body(MESSAGE, equalTo("Updated RatingSet"))
+                .body(IDENTIFIER, isEmptyString());
 
     }
 

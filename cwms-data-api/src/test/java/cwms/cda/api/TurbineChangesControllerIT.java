@@ -30,6 +30,7 @@ import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -75,6 +76,9 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
     private static final Location TURBINE_LOC;
     private static final Turbine TURBINE;
     private static final List<TurbineChange> TURBINE_CHANGES;
+    private static final String OFFICE_ID = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
     static {
         Class<TurbineChangesControllerIT> c = TurbineChangesControllerIT.class;
@@ -156,6 +160,9 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(PROJECT_LOC.getOfficeId()))
+            .body(MESSAGE, equalTo("Created Turbine Changes"))
+            .body(IDENTIFIER, isEmptyString())
         ;
         String office = TURBINE.getLocation().getOfficeId();
 
