@@ -286,6 +286,9 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(LOCK.getLocation().getOfficeId()))
+            .body("message", equalTo("Lock successfully stored to CWMS."))
+            .body("identifier", equalTo(LOCK.getLocation().getName()))
         ;
         String office = LOCK.getLocation().getOfficeId();
         // Retrieve the Lock and assert that it exists
@@ -423,6 +426,9 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(metricLock.getLocation().getOfficeId()))
+            .body("message", equalTo("Lock successfully stored to CWMS."))
+            .body("identifier", equalTo(metricLock.getLocation().getName()))
         ;
         String office = metricLock.getLocation().getOfficeId();
 
@@ -642,6 +648,9 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(metricLock.getLocation().getOfficeId()))
+            .body("message", equalTo("Lock successfully stored to CWMS."))
+            .body("identifier", equalTo(metricLock.getLocation().getName()))
         ;
 
         lockToCleanup = metricLockProj2;
@@ -679,6 +688,9 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(metricLock.getLocation().getOfficeId()))
+            .body("message", equalTo("Lock successfully stored to CWMS."))
+            .body("identifier", equalTo(metricLock.getLocation().getName()))
         ;
 
         String office = metricLock.getLocation().getOfficeId();
@@ -950,6 +962,9 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("office-id", equalTo(LOCK.getLocation().getOfficeId()))
+            .body("message", equalTo("Lock successfully stored to CWMS."))
+            .body("identifier", equalTo(LOCK.getLocation().getName()))
         ;
         String office = LOCK.getLocation().getOfficeId();
         // Retrieve the Lock and assert that it exists
