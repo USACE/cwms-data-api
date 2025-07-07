@@ -66,6 +66,9 @@ final class TurbineControllerIT extends DataApiTestIT {
     private static final String OFFICE = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
     private static final Location PROJECT_LOC;
     private static final Turbine TURBINE;
+    private static final String OFFICE_ID = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
     static {
         try(InputStream projectStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location_turb.json");
             InputStream turbineStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/turbine_phys.json")) {
@@ -123,9 +126,9 @@ final class TurbineControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(OFFICE))
-            .body("message", equalTo("Turbine successfully stored to CWMS."))
-            .body("identifier", equalTo("PROJ_TURB_PHYS"))
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Turbine successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo("PROJ_TURB_PHYS"))
         ;
         String office = TURBINE.getLocation().getOfficeId();
         // Retrieve the Turbine and assert that it exists
@@ -241,9 +244,9 @@ final class TurbineControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(OFFICE))
-            .body("message", equalTo("Turbine successfully stored to CWMS."))
-            .body("identifier", equalTo("PROJ_TURB_PHYS"))
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Turbine successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo("PROJ_TURB_PHYS"))
         ;
         String office = TURBINE.getLocation().getOfficeId();
         // Retrieve the Turbine and assert that it exists

@@ -71,6 +71,9 @@ import static org.hamcrest.Matchers.*;
 class WaterContractControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SWT";
     private static final WaterUserContract CONTRACT;
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
     static {
         try (InputStream contractStream = WaterContractCreateController.class
@@ -179,9 +182,9 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(CONTRACT.getOfficeId()))
-            .body("message", equalTo("Water Contract Created Successfully"))
-            .body("identifier", equalTo(CONTRACT.getWaterUser().getEntityName()))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Created Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         // get contract
@@ -199,7 +202,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("office-id", equalTo(CONTRACT.getOfficeId()))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
             .body("water-user.entity-name", equalTo(CONTRACT.getWaterUser().getEntityName()))
             .body("water-user.project-id.office-id", equalTo(CONTRACT.getWaterUser()
                     .getProjectId().getOfficeId()))
@@ -429,9 +432,9 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(CONTRACT.getOfficeId()))
-            .body("message", equalTo("Water Contract Created Successfully"))
-            .body("identifier", equalTo(CONTRACT.getWaterUser().getEntityName()))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Created Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         // rename contract
@@ -451,9 +454,9 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("office-id", equalTo(CONTRACT.getOfficeId()))
-            .body("message", equalTo("Contract Renamed Successfully"))
-            .body("identifier", equalTo(NEW_CONTRACT_NAME))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Contract Renamed Successfully"))
+            .body(IDENTIFIER, equalTo(NEW_CONTRACT_NAME))
         ;
 
         // get contract, assert name is changed
@@ -471,7 +474,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("office-id", equalTo(CONTRACT.getOfficeId()))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
             .body("contract-id.name", equalTo(NEW_CONTRACT_NAME))
         ;
 
@@ -516,9 +519,9 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(CONTRACT.getOfficeId()))
-            .body("message", equalTo("Water Contract Created Successfully"))
-            .body("identifier", equalTo(CONTRACT.getWaterUser().getEntityName()))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Created Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         WaterUserContract waterContract = new WaterUserContract.Builder()
@@ -552,9 +555,9 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(CONTRACT.getOfficeId()))
-            .body("message", equalTo("Water Contract Created Successfully"))
-            .body("identifier", equalTo(CONTRACT.getWaterUser().getEntityName()))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Created Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         // get all contracts

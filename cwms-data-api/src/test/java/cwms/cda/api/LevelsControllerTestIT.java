@@ -85,6 +85,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
     private final List<LocationLevel> levelList = new ArrayList<>();
+    private static final String OFFICE_ID = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
     @AfterEach
     void cleanup() throws Exception {
@@ -868,9 +871,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(OFFICE))
-            .body("message", equalTo("Created Location Level"))
-            .body("identifier", equalTo(levelId));
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Created Location Level"))
+            .body(IDENTIFIER, equalTo(levelId));
 
         //Read level with unit
         given()
@@ -997,9 +1000,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(OFFICE))
-            .body("message", equalTo("Created Location Level"))
-            .body("identifier", equalTo(levelId));
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Created Location Level"))
+            .body(IDENTIFIER, equalTo(levelId));
 
         levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_2.json");
 
@@ -1017,9 +1020,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(OFFICE))
-            .body("message", equalTo("Created Location Level"))
-            .body("identifier", equalTo(level1Id));
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Created Location Level"))
+            .body(IDENTIFIER, equalTo(level1Id));
 
         levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_3.json");
 
@@ -1037,9 +1040,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(OFFICE))
-            .body("message", equalTo("Created Location Level"))
-            .body("identifier", equalTo(level2Id));
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Created Location Level"))
+            .body(IDENTIFIER, equalTo(level2Id));
 
         //Read level with unit
         given()
@@ -1193,9 +1196,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(OFFICE))
-            .body("message", equalTo("Created Location Level"))
-            .body("identifier", equalTo(levelId));
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Created Location Level"))
+            .body(IDENTIFIER, equalTo(levelId));
 
         levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_2.json");
         levelJson = levelJson.replace(oldLevelLoc2, levelLoc2);
@@ -1214,9 +1217,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(OFFICE))
-            .body("message", equalTo("Created Location Level"))
-            .body("identifier", equalTo(level1Id));
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Created Location Level"))
+            .body(IDENTIFIER, equalTo(level1Id));
 
         levelJson = readResourceFile("cwms/cda/api/virtuallevels/virtual_level_3.json");
         levelJson = levelJson.replace(oldLevelLoc3, levelLoc3);
@@ -1235,9 +1238,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(OFFICE))
-            .body("message", equalTo("Created Location Level"))
-            .body("identifier", equalTo(level2Id));
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Created Location Level"))
+            .body(IDENTIFIER, equalTo(level2Id));
 
         //Read level with unit
         given()
@@ -1425,9 +1428,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(OFFICE))
-            .body("message", equalTo("Created Location Level"))
-            .body("identifier", equalTo(levelId));
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Created Location Level"))
+            .body(IDENTIFIER, equalTo(levelId));
 
         //Read level with unit
         given()
@@ -1492,9 +1495,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                     .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
                     .statusCode(is(HttpServletResponse.SC_OK))
-                    .body("office-id", equalTo(OFFICE))
-                    .body("message", equalTo("CWMS Location Level Deleted"))
-                    .body("identifier", equalTo(levelId));
+                    .body(OFFICE_ID, equalTo(OFFICE))
+                    .body(MESSAGE, equalTo("CWMS Location Level Deleted"))
+                    .body(IDENTIFIER, equalTo(levelId));
                 break;
             case "no_date":
                 given()
@@ -1511,9 +1514,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                     .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
                     .statusCode(is(HttpServletResponse.SC_OK))
-                    .body("office-id", equalTo(OFFICE))
-                    .body("message", equalTo("CWMS Location Level Deleted"))
-                    .body("identifier", equalTo(levelId));
+                    .body(OFFICE_ID, equalTo(OFFICE))
+                    .body(MESSAGE, equalTo("CWMS Location Level Deleted"))
+                    .body(IDENTIFIER, equalTo(levelId));
                 break;
             default:
                 fail("Invalid deletion method: " + deletionMethod);
@@ -1619,9 +1622,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(OFFICE))
-            .body("message", equalTo("Created Location Level"))
-            .body("identifier", equalTo("seasonalLoc6.Elev.Ave.1Day.tst"));
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Created Location Level"))
+            .body(IDENTIFIER, equalTo("seasonalLoc6.Elev.Ave.1Day.tst"));
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -1672,9 +1675,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(OFFICE))
-            .body("message", equalTo("Created Location Level"))
-            .body("identifier", equalTo(levelId));
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Created Location Level"))
+            .body(IDENTIFIER, equalTo(levelId));
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -1723,9 +1726,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(OFFICE))
-            .body("message", equalTo("Created Location Level"))
-            .body("identifier", equalTo(levelId));
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Created Location Level"))
+            .body(IDENTIFIER, equalTo(levelId));
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)

@@ -46,6 +46,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 final class PropertyControllerIT extends DataApiTestIT {
+    private static final String OFFICE_ID = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
 
 
@@ -79,9 +82,9 @@ final class PropertyControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(property.getOfficeId()))
-            .body("message", equalTo("Property successfully stored to CWMS."))
-            .body("identifier", equalTo(property.getName()))
+            .body(OFFICE_ID, equalTo(property.getOfficeId()))
+            .body(MESSAGE, equalTo("Property successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(property.getName()))
         ;
         String office = property.getOfficeId();
         // Retrieve the property and assert that it exists
@@ -100,7 +103,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("category", equalTo(property.getCategory()))
-            .body("office-id", equalTo(office))
+            .body(OFFICE_ID, equalTo(office))
             .body("comment", equalTo(property.getComment()))
             .body("value", equalTo(property.getValue()))
             .body("name", equalTo(property.getName()))
@@ -219,9 +222,9 @@ final class PropertyControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(property.getOfficeId()))
-            .body("message", equalTo("Property successfully stored to CWMS."))
-            .body("identifier", equalTo(property.getName()))
+            .body(OFFICE_ID, equalTo(property.getOfficeId()))
+            .body(MESSAGE, equalTo("Property successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(property.getName()))
         ;
         String office = property.getOfficeId();
         // Retrieve the property and assert that it exists

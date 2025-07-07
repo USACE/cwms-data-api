@@ -49,6 +49,9 @@ final class LookupTypeControllerIT extends DataApiTestIT {
 
     private static final String CATEGORY_IT = "AT_EMBANK_STRUCTURE_TYPE";
     private static final String PREFIX_IT = "STRUCTURE_TYPE";
+    private static final String OFFICE_ID = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
     @Test
     void test_get_create_delete() throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/lookup_type.json");
@@ -81,9 +84,9 @@ final class LookupTypeControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-                .body("office-id", equalTo(lookupType.getOfficeId()))
-                .body("message", equalTo("Lookup Type successfully stored to CWMS."))
-                .body("identifier", equalTo(lookupType.getDisplayValue()))
+                .body(OFFICE_ID, equalTo(lookupType.getOfficeId()))
+                .body(MESSAGE, equalTo("Lookup Type successfully stored to CWMS."))
+                .body(IDENTIFIER, equalTo(lookupType.getDisplayValue()))
         ;
         String office = user.getOperatingOffice();
         // Retrieve the lookup type and assert that it exists

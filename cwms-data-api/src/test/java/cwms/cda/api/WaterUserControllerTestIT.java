@@ -69,6 +69,9 @@ import java.time.ZoneId;
 class WaterUserControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SWT";
     private static final WaterUser WATER_USER;
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
     static {
         try (InputStream userStream
                      = WaterUserContract.class.getResourceAsStream("/cwms/cda/api/wateruser.json")) {
@@ -161,9 +164,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(WATER_USER.getProjectId().getOfficeId()))
-            .body("message", equalTo("Water user successfully stored to CWMS."))
-            .body("identifier", equalTo(WATER_USER.getEntityName()))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(WATER_USER.getEntityName()))
         ;
 
         // get WaterUser, assert that it is correct
@@ -252,9 +255,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(WATER_USER.getProjectId().getOfficeId()))
-            .body("message", equalTo("Water user successfully stored to CWMS."))
-            .body("identifier", equalTo(WATER_USER.getEntityName()))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(WATER_USER.getEntityName()))
         ;
 
         // Rename WaterUser
@@ -275,9 +278,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-                .body("office-id", equalTo(OFFICE_ID))
-                .body("message", equalTo("Water user successfully updated in CWMS."))
-                .body("identifier", equalTo("NEW USER NAME"))
+                .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+                .body(MESSAGE, equalTo("Water user successfully updated in CWMS."))
+                .body(IDENTIFIER, equalTo("NEW USER NAME"))
         ;
 
         // Get WaterUser, assert name has changed
@@ -360,9 +363,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(WATER_USER.getProjectId().getOfficeId()))
-            .body("message", equalTo("Water user successfully stored to CWMS."))
-            .body("identifier", equalTo(WATER_USER.getEntityName()))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(WATER_USER.getEntityName()))
         ;
 
         // Create WaterUser
@@ -380,9 +383,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(WATER_USER.getProjectId().getOfficeId()))
-            .body("message", equalTo("Water user successfully stored to CWMS."))
-            .body("identifier", equalTo(waterUser.getEntityName()))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(waterUser.getEntityName()))
         ;
 
         // get water users

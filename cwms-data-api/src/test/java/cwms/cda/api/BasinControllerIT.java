@@ -62,6 +62,9 @@ class BasinControllerIT extends DataApiTestIT
 	private static final String OFFICE = "SWT";
 	private static final Basin BASIN;
 	private static final Basin BASIN_CONNECT;
+	private static final String OFFICE_ID = "office-id";
+	private static final String MESSAGE = "message";
+	private static final String IDENTIFIER = "identifier";
 	static {
 		try {
 			BASIN = new Basin.Builder()
@@ -176,9 +179,9 @@ class BasinControllerIT extends DataApiTestIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_CREATED))
-			.body("office-id", equalTo(BASIN.getBasinId().getOfficeId()))
-			.body("message", equalTo("Basin successfully stored to CWMS."))
-			.body("identifier", equalTo(BASIN.getBasinId().getName()))
+			.body(OFFICE_ID, equalTo(BASIN.getBasinId().getOfficeId()))
+			.body(MESSAGE, equalTo("Basin successfully stored to CWMS."))
+			.body(IDENTIFIER, equalTo(BASIN.getBasinId().getName()))
 		;
 
 		if(BASIN.getParentBasinId() != null && BASIN.getPrimaryStreamId() != null){
@@ -402,9 +405,9 @@ class BasinControllerIT extends DataApiTestIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_CREATED))
-			.body("office-id", equalTo(BASIN.getBasinId().getOfficeId()))
-			.body("message", equalTo("Basin successfully stored to CWMS."))
-			.body("identifier", equalTo(BASIN.getBasinId().getName()))
+			.body(OFFICE_ID, equalTo(BASIN.getBasinId().getOfficeId()))
+			.body(MESSAGE, equalTo("Basin successfully stored to CWMS."))
+			.body(IDENTIFIER, equalTo(BASIN.getBasinId().getName()))
 		;
 
 

@@ -87,6 +87,9 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             = buildProjectStructureLocation(PROJECT_2_ID.getName() + "-TG2", OUTLET_KIND);
     private static final Outlet NEW_RATED_OUTLET_UNCONTROLLED
             = buildTestOutlet(RATED_OUTLET_LOCATION_UNCONTROLLED, PROJECT_LOC, RATING_GROUP_UNCONTROLLED, RATING_SPEC_ID_UNCONTROLLED);
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
     @BeforeAll
     public static void setup() throws Exception {
@@ -148,9 +151,9 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(NEW_CONDUIT_GATE_2_OUTLET.getLocation().getOfficeId()))
-            .body("message", equalTo("Outlet successfully stored to CWMS."))
-            .body("identifier", equalTo(NEW_CONDUIT_GATE_2_OUTLET.getLocation().getName()));
+            .body(OFFICE_ID_TEXT, equalTo(NEW_CONDUIT_GATE_2_OUTLET.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(NEW_CONDUIT_GATE_2_OUTLET.getLocation().getName()));
 
         //Get the newly created outlet
         given()
@@ -243,9 +246,9 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(NEW_RATED_OUTLET_UNCONTROLLED.getLocation().getOfficeId()))
-            .body("message", equalTo("Outlet successfully stored to CWMS."))
-            .body("identifier", equalTo(NEW_RATED_OUTLET_UNCONTROLLED.getLocation().getName()))
+            .body(OFFICE_ID_TEXT, equalTo(NEW_RATED_OUTLET_UNCONTROLLED.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(NEW_RATED_OUTLET_UNCONTROLLED.getLocation().getName()))
         ;
 
         // Get the outlet, assert that it has null rating spec id
@@ -396,9 +399,9 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(NEW_RATED_OUTLET_CONTROLLED.getLocation().getOfficeId()))
-            .body("message", equalTo("Outlet successfully stored to CWMS."))
-            .body("identifier", equalTo(NEW_RATED_OUTLET_CONTROLLED.getLocation().getName()));
+            .body(OFFICE_ID_TEXT, equalTo(NEW_RATED_OUTLET_CONTROLLED.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(NEW_RATED_OUTLET_CONTROLLED.getLocation().getName()));
 
         // Get the outlet, assert that it has null rating spec id
         given()
@@ -572,9 +575,9 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getOfficeId()))
-            .body("message", equalTo("Outlet successfully stored to CWMS."))
-            .body("identifier", equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getName()));
+            .body(OFFICE_ID_TEXT, equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getName()));
 
         //Get the newly created outlet
         given()
@@ -616,9 +619,9 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("office-id", equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getOfficeId()))
-            .body("message", equalTo("Outlet successfully stored to CWMS."))
-            .body("identifier", equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getName()));
+            .body(OFFICE_ID_TEXT, equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getName()));
 
         //Get the newly modified outlet
         given()

@@ -71,6 +71,10 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
 
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
+
     @BeforeAll
     public static void setup() throws SQLException {
         String testLoc = "StreamLoc321"; // match the stream location name in the json file
@@ -147,9 +151,9 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED))
-                .body("office-id", equalTo(OFFICE_ID))
-                .body("message", equalTo("Stream Location successfully stored to CWMS."))
-                .body("identifier", equalTo(streamLocation.getId().getName()));
+                .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+                .body(MESSAGE, equalTo("Stream Location successfully stored to CWMS."))
+                .body(IDENTIFIER, equalTo(streamLocation.getId().getName()));
 
         String streamLocationId = streamLocation.getId().getName();
 
@@ -288,9 +292,9 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED))
-                .body("office-id", equalTo(OFFICE_ID))
-                .body("message", equalTo("Stream Location successfully stored to CWMS."))
-                .body("identifier", equalTo(streamLocation.getId().getName()));
+                .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+                .body(MESSAGE, equalTo("Stream Location successfully stored to CWMS."))
+                .body(IDENTIFIER, equalTo(streamLocation.getId().getName()));
 
         String office = streamLocation.getId().getOfficeId();
         String streamLocationId = streamLocation.getId().getName();
