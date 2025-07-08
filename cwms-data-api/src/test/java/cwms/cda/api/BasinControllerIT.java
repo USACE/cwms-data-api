@@ -293,7 +293,10 @@ class BasinControllerIT extends DataApiTestIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(HttpServletResponse.SC_OK))
+			.body(OFFICE_ID, equalTo(BASIN.getBasinId().getOfficeId()))
+			.body(MESSAGE, equalTo("Deleted CWMS Basin"))
+			.body(IDENTIFIER, equalTo(BASIN.getBasinId().getName()))
 		;
 
 		// Retrieve basin and assert that it does not exist
@@ -520,7 +523,10 @@ class BasinControllerIT extends DataApiTestIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(HttpServletResponse.SC_OK))
+			.body(OFFICE_ID, equalTo(BASIN.getBasinId().getOfficeId()))
+			.body(MESSAGE, equalTo("Deleted CWMS Basin"))
+			.body(IDENTIFIER, equalTo(BASIN.getBasinId().getName()))
 		;
 	}
 

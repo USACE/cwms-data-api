@@ -206,7 +206,10 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user deleted successfully."))
+            .body(IDENTIFIER, equalTo(WATER_USER.getEntityName()))
         ;
 
         // get water user and assert that it does not exist
@@ -334,7 +337,10 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user deleted successfully."))
+            .body(IDENTIFIER, equalTo(WATER_USER.getEntityName()))
         ;
 
     }
@@ -427,7 +433,10 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user deleted successfully."))
+            .body(IDENTIFIER, equalTo(waterUser.getEntityName()))
         ;
 
         // delete WaterUser
@@ -446,7 +455,10 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user deleted successfully."))
+            .body(IDENTIFIER, equalTo(waterUser.getEntityName()))
         ;
     }
 

@@ -254,7 +254,7 @@ public final class LockController implements CrudHandler {
         method = HttpMethod.DELETE,
         tags = {TAG},
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Lock successfully deleted from CWMS."),
+            @OpenApiResponse(status = STATUS_200, description = "Lock successfully deleted from CWMS."),
             @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                 + "inputs provided the lock was not found.")
         }
@@ -269,7 +269,7 @@ public final class LockController implements CrudHandler {
             LockDao dao = new LockDao(dsl);
             dao.deleteLock(CwmsId.buildCwmsId(office, name), deleteMethod.getRule());
             StatusResponse re = new StatusResponse(office, "Lock successfully deleted from CWMS.", name);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

@@ -192,7 +192,10 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(EMBANKMENT.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Embankment successfully deleted from CWMS"))
+            .body(IDENTIFIER, equalTo(EMBANKMENT.getLocation().getName()))
         ;
 
         // Retrieve a Embankment and assert that it does not exist
@@ -318,7 +321,10 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(EMBANKMENT.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Embankment successfully deleted from CWMS"))
+            .body(IDENTIFIER, equalTo(EMBANKMENT.getLocation().getName()))
         ;
     }
 

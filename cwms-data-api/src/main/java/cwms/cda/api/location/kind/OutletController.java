@@ -203,7 +203,7 @@ public class OutletController extends BaseCrudHandler {
         method = HttpMethod.DELETE,
         tags = {TAG},
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Outlet successfully deleted from CWMS."),
+            @OpenApiResponse(status = STATUS_200, description = "Outlet successfully deleted from CWMS."),
             @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                 + "inputs provided the outlet was not found.")
         }
@@ -218,7 +218,7 @@ public class OutletController extends BaseCrudHandler {
             OutletDao dao = new OutletDao(dsl);
             dao.deleteOutlet(office, name, deleteMethod.getRule());
             StatusResponse re = new StatusResponse(office, "Outlet successfully deleted from CWMS.", name);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

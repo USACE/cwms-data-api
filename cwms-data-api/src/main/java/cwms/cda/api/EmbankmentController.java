@@ -222,7 +222,7 @@ public final class EmbankmentController  implements CrudHandler {
             method = HttpMethod.DELETE,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Embankment successfully deleted from CWMS."),
+                    @OpenApiResponse(status = STATUS_200, description = "Embankment successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the embankment was not found.")
             }
@@ -237,7 +237,7 @@ public final class EmbankmentController  implements CrudHandler {
             EmbankmentDao dao = new EmbankmentDao(dsl);
             dao.deleteEmbankment(name, office, deleteMethod.getRule());
             StatusResponse re = new StatusResponse(office, "Embankment successfully deleted from CWMS", name);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

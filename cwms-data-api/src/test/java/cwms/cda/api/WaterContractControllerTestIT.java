@@ -387,7 +387,10 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Deleted Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         // get contract, assert that it doesn't exist
@@ -493,7 +496,10 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Deleted Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
     }
 
@@ -595,7 +601,10 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Deleted Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         // delete contract
@@ -613,7 +622,10 @@ class WaterContractControllerTestIT extends DataApiTestIT {
                 .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+                .body(MESSAGE, equalTo("Water Contract Deleted Successfully"))
+                .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
     }
 

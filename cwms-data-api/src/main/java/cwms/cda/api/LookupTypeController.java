@@ -189,7 +189,7 @@ public final class LookupTypeController implements CrudHandler {
             method = HttpMethod.DELETE,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Lookup Type successfully deleted from CWMS."),
+                    @OpenApiResponse(status = STATUS_200, description = "Lookup Type successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of inputs provided the lookup type was not found.")
             }
     )
@@ -203,7 +203,7 @@ public final class LookupTypeController implements CrudHandler {
             LookupTypeDao dao = new LookupTypeDao(dsl);
             dao.deleteLookupType(category, prefix, officeId, displayValue);
             StatusResponse re = new StatusResponse(officeId, "Lookup Type successfully deleted from CWMS.", displayValue);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 

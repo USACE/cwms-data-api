@@ -84,9 +84,9 @@ final class LookupTypeControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-                .body(OFFICE_ID, equalTo(lookupType.getOfficeId()))
-                .body(MESSAGE, equalTo("Lookup Type successfully stored to CWMS."))
-                .body(IDENTIFIER, equalTo(lookupType.getDisplayValue()))
+            .body(OFFICE_ID, equalTo(lookupType.getOfficeId()))
+            .body(MESSAGE, equalTo("Lookup Type successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(lookupType.getDisplayValue()))
         ;
         String office = user.getOperatingOffice();
         // Retrieve the lookup type and assert that it exists
@@ -125,7 +125,10 @@ final class LookupTypeControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(lookupType.getOfficeId()))
+            .body(MESSAGE, equalTo("Lookup Type successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(lookupType.getDisplayValue()))
         ;
 
         // Retrieve the lookup type and assert that it does not exist

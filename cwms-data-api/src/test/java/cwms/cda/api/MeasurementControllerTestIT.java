@@ -241,7 +241,10 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(measurement.getOfficeId()))
+                .body(MESSAGE, equalTo("Measurement successfully deleted for specified location-id."))
+                .body(IDENTIFIER, equalTo(measurement.getLocationId()));
 
         // Retrieve the Measurement and assert that it does not exist
         given()
@@ -420,7 +423,10 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(measurement1.getOfficeId()))
+                .body(MESSAGE, equalTo("Measurement successfully deleted for specified location-id."))
+                .body(IDENTIFIER, equalTo(measurement1.getLocationId()));
 
         // Retrieve the Measurements and assert that they do not exist
         given()

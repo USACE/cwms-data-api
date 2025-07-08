@@ -347,7 +347,10 @@ final class LockControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(LOCK.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(LOCK.getLocation().getName()))
         ;
 
         // Retrieve a Lock and assert that it does not exist
@@ -498,7 +501,10 @@ final class LockControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(LOCK.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(LOCK.getLocation().getName()))
         ;
 
         // Retrieve a Lock and assert that it does not exist
@@ -805,7 +811,10 @@ final class LockControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(LOCK.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(LOCK.getLocation().getName()))
         ;
 
         // Retrieve a Lock and assert that it does not exist
@@ -836,7 +845,10 @@ final class LockControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(LOCK.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(LOCK.getLocation().getName()))
         ;
 
         // Retrieve a Lock and assert that it does not exist
@@ -1000,7 +1012,10 @@ final class LockControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(LOCK.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(LOCK.getLocation().getName()))
         ;
     }
 

@@ -87,7 +87,7 @@ public final class WaterUserDeleteController extends WaterSupplyControllerBase i
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.deleteWaterUser(location, entityName, deleteMode);
             StatusResponse re = new StatusResponse(office, "Water user deleted successfully.", entityName);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

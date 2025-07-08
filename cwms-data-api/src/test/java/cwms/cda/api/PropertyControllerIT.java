@@ -123,7 +123,10 @@ final class PropertyControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(property.getOfficeId()))
+            .body(MESSAGE, equalTo("Property successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(property.getName()))
         ;
 
         // Retrieve a Property and assert that it does not exist
@@ -264,7 +267,10 @@ final class PropertyControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(property.getOfficeId()))
+            .body(MESSAGE, equalTo("Property successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(property.getName()))
         ;
     }
 }

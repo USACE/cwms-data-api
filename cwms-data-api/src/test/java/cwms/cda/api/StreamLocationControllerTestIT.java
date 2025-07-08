@@ -204,7 +204,10 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+            .body(MESSAGE, equalTo("Stream Location successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(streamLocation.getStreamId().getName()));
 
         // Retrieve the StreamLocation and assert that it does not exist
         given()
@@ -345,6 +348,9 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+                .body(MESSAGE, equalTo("Stream Location successfully deleted from CWMS."))
+                .body(IDENTIFIER, equalTo(streamLocation.getStreamId().getName()));
     }
 }

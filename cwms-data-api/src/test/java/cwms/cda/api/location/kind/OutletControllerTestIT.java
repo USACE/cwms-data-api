@@ -353,7 +353,10 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(RATED_OUTLET_LOCATION_UNCONTROLLED.getOfficeId()))
+                .body(MESSAGE, equalTo("Outlet successfully deleted from CWMS."))
+                .body(IDENTIFIER, equalTo(RATED_OUTLET_LOCATION_UNCONTROLLED.getName()));
 
         // Delete the LocationGroup
         given()
@@ -505,7 +508,10 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(RATED_OUTLET_LOCATION_CONTROLLED.getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(RATED_OUTLET_LOCATION_CONTROLLED.getName()));
 
         // Delete the LocationGroup
         given()
@@ -658,8 +664,11 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             .delete("projects/outlets/" + NEW_CONDUIT_GATE_1_OUTLET.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getName()));
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {

@@ -256,7 +256,7 @@ public final class StreamLocationController implements CrudHandler {
             method = HttpMethod.DELETE,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Stream Location successfully deleted from CWMS."),
+                    @OpenApiResponse(status = STATUS_200, description = "Stream Location successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Stream Location not found.")
             }
     )
@@ -270,7 +270,7 @@ public final class StreamLocationController implements CrudHandler {
             dao.deleteStreamLocation(officeId, streamId, locationId);
             StatusResponse re = new StatusResponse(officeId,
                     "Stream Location successfully deleted from CWMS.", streamId);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

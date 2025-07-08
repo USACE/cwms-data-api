@@ -200,7 +200,10 @@ final class StreamControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(stream.getOfficeId()))
+                .body(MESSAGE, equalTo("Stream successfully deleted from CWMS."))
+                .body(IDENTIFIER, equalTo(streamId));
 
         // Retrieve the Stream and assert that it does not exist
         given()
@@ -335,7 +338,10 @@ final class StreamControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(stream.getOfficeId()))
+                .body(MESSAGE, equalTo("Stream successfully deleted from CWMS."))
+                .body(IDENTIFIER, equalTo(streamId));
     }
 
 }

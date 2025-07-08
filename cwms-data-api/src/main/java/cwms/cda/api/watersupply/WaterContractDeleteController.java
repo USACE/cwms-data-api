@@ -92,7 +92,7 @@ public final class WaterContractDeleteController extends WaterSupplyControllerBa
             contractDao.deleteWaterContract(contract, deleteMethod);
             StatusResponse re = new StatusResponse(contract.getOfficeId(),
                     "Water Contract Deleted Successfully", contractName);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

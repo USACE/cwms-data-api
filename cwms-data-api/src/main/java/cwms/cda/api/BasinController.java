@@ -308,6 +308,6 @@ public class BasinController implements CrudHandler {
                 .build();
         basinDao.deleteBasin(basinId, deleteMethod.getRule());
         StatusResponse re = new StatusResponse(basinId.getOfficeId(), "Deleted CWMS Basin", basinId.getName());
-        ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
+        ctx.status(HttpServletResponse.SC_OK).json(re);
     }
 }

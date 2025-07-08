@@ -223,7 +223,7 @@ public final class TurbineController implements CrudHandler {
             method = HttpMethod.DELETE,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Turbine successfully deleted from CWMS."),
+                    @OpenApiResponse(status = STATUS_200, description = "Turbine successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the turbine was not found.")
             }
@@ -238,7 +238,7 @@ public final class TurbineController implements CrudHandler {
             TurbineDao dao = new TurbineDao(dsl);
             dao.deleteTurbine(name, office, deleteMethod.getRule());
             StatusResponse re = new StatusResponse(office, "Turbine successfully deleted from CWMS", name);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }
