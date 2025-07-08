@@ -67,7 +67,7 @@ public final class WaterContractTypeCreateController extends WaterSupplyControll
                     + "display value already exists. Default: true")
         },
         responses = {
-            @OpenApiResponse(status = "204", description = "Contract type successfully stored to CWMS."),
+            @OpenApiResponse(status = "201", description = "Contract type successfully stored to CWMS."),
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
         },
         description = "Create a new water contract type",
