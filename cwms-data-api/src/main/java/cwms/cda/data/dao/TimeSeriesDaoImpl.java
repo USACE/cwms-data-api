@@ -932,6 +932,17 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     DSL.val(unitSystem, String.class))
                     .as(DEFAULT_UNITS);
 
+            Condition whereCondition = AV_CWMS_TS_ID2.CWMS_TS_ID.in(tsIds)
+                    .and(AV_TSV_DQU.AV_TSV_DQU.VALUE.isNotNull())
+                    .and(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME.lt(futuredate))
+                    .and(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME.gt(pastdate))
+                    .and(AV_TSV_DQU.AV_TSV_DQU.START_DATE.le(futuredate))
+                    .and(AV_TSV_DQU.AV_TSV_DQU.END_DATE.gt(pastdate));
+
+            if (office != null) {
+                whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID.eq(office));
+            }
+
             SelectConditionStep<? extends Record> innerSelect = dsl.select(
                             AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID,
                             AV_TSV_DQU.AV_TSV_DQU.CWMS_TS_ID,
@@ -951,14 +962,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .from(AV_TSV_DQU.AV_TSV_DQU.join(AV_CWMS_TS_ID2)
                             .on(AV_TSV_DQU.AV_TSV_DQU.TS_CODE.eq(
                                     AV_CWMS_TS_ID2.TS_CODE.cast(Long.class))))
-                    .where(
-                            AV_CWMS_TS_ID2.CWMS_TS_ID.in(tsIds)
-                                    .and(AV_TSV_DQU.AV_TSV_DQU.VALUE.isNotNull())
-                                    .and(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME.lt(futuredate))
-                                    .and(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME.gt(pastdate))
-                                    .and(AV_TSV_DQU.AV_TSV_DQU.START_DATE.le(futuredate))
-                                    .and(AV_TSV_DQU.AV_TSV_DQU.END_DATE.gt(pastdate)))
-                                    .and(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID.eq(office));
+                    .where(whereCondition);
 
             // We want to use some of the fields from the innerSelect statement in our WHERE clause
             // Its cleaner if we call them out individually.
