@@ -103,6 +103,151 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    void test_lrl_timeseries_psuedo_reg1week() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/lrl/pseudo_reg_1week.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, "UTF-8");
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+        String units = ts.get("units").asText();
+
+        try {
+            createLocation(location, true, officeId);
+
+            TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+            // inserting the time series
+            given()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .accept(Formats.JSONV2)
+                    .contentType(Formats.JSONV2)
+                    .body(tsData)
+                    .header("Authorization",user.toHeaderValue())
+                    .queryParam("office",officeId)
+            .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .post("/timeseries/")
+            .then()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK));
+
+            // get it back
+            given()
+                    .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .accept(Formats.JSONV2)
+                    .header("Authorization", user.toHeaderValue())
+                    .queryParam("office", officeId)
+                    .queryParam("units",units)
+                    .queryParam("name", ts.get("name").asText())
+                    .queryParam("begin","2024-12-15T15:00:00+00:00")
+                    .queryParam("end","2024-12-17T15:00:00+00:00")
+                    .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .get("/timeseries/")
+                    .then()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK))
+                    .body("values[0][1]", closeTo(11.1,0.0001))
+            ;
+        } catch (SQLException ex) {
+            throw new RuntimeException("Unable to create location for TS", ex);
+        }
+    }
+
+    @Test
+    void test_lrl_timeseries_lrts_reg1week() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/lrl/pseudo_reg_1week.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, "UTF-8");
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+        String units = ts.get("units").asText();
+
+        String tsDataPsuedoOff = tsData.replace("2024-12-16T15:00:00+00:00", "2024-12-16T15:23:00+00:00");
+
+        try {
+            createLocation(location, true, officeId);
+
+            TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+            // inserting the PRTS
+            given()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .accept(Formats.JSONV2)
+                    .contentType(Formats.JSONV2)
+                    .body(tsData)
+                    .header("Authorization",user.toHeaderValue())
+                    .queryParam("office",officeId)
+                    .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .post("/timeseries/")
+                    .then()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK));
+
+            // inserting the LRTS at same time
+            given()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .accept(Formats.JSONV2)
+                    .contentType(Formats.JSONV2)
+                    .body(tsData)
+                    .header("Authorization",user.toHeaderValue())
+                    .queryParam("office",officeId)
+                    .queryParam("create-as-lrts", "true")
+                    .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .post("/timeseries/")
+                    .then()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK));
+
+            // get it back
+            given()
+                    .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .accept(Formats.JSONV2)
+                    .header("Authorization", user.toHeaderValue())
+                    .queryParam("office", officeId)
+                    .queryParam("units",units)
+                    .queryParam("name", ts.get("name").asText())
+                    .queryParam("begin","2024-12-15T15:00:00+00:00")
+                    .queryParam("end","2024-12-17T15:00:00+00:00")
+                    .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .get("/timeseries/")
+                    .then()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_OK))
+                    .body("values[0][1]", closeTo(11.1,0.0001))
+            ;
+        } catch (SQLException ex) {
+            throw new RuntimeException("Unable to create location for TS", ex);
+        }
+    }
+
+
+    @Test
     void test_lrl_1day() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
