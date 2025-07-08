@@ -24,6 +24,9 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.data.dao.JooqDao.REQUIRE_NEW_LRTS_ID_FORMAT;
+import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
+
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationCategory;
@@ -69,6 +72,8 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
+
 /**
  * Helper class to manage cycling tests multiple times against a database.
  * NOTE: Not thread safe, do not run parallel tests. That may be future work though.
@@ -317,6 +322,26 @@ public class DataApiTestIT {
     protected static void createTimeseries(String office, String timeseries, int offset) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection((c)-> {
+            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery)) {
+                stmt.setString(1, office);
+                stmt.setString(2, timeseries);
+                stmt.setInt(3, offset);
+                stmt.execute();
+            } catch (SQLException ex) {
+                if (ex.getErrorCode() == 20003) {
+                    return; // TS already exists. that's fine for these tests.
+                }
+                throw new RuntimeException("Unable to create timeseries",ex);
+            }
+        }, "cwms_20");
+    }
+
+    protected static void createTimeseriesWithNewLRTSInterval(String office, String timeseries, int offset) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection((c)-> {
+            org.jooq.Configuration configuration = DSL.using(c).configuration();
+            CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(configuration,
+                SESSION_USE_LRTS_ID_FORMAT, "T", REQUIRE_NEW_LRTS_ID_FORMAT);
             try(PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery)) {
                 stmt.setString(1, office);
                 stmt.setString(2, timeseries);

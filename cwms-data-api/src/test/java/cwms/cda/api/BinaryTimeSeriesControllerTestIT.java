@@ -1,6 +1,7 @@
 package cwms.cda.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cwms.cda.ApiServlet;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import cwms.cda.formatters.Formats;
@@ -21,7 +22,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
+import static cwms.cda.api.BinaryTimeSeriesController.REPLACE_ALL;
 import static cwms.cda.api.Controllers.BLOB_ID;
 import static cwms.cda.api.Controllers.VERSION_DATE;
 import static io.restassured.RestAssured.given;
@@ -37,7 +38,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
-public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
+final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
     private static final String OFFICE = "SPK";
     private static final String locationId = "TsBinTestLoc";
     private static byte[] LARGE_BYTES;
@@ -46,7 +47,7 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
     private String tsId;
 
     @BeforeAll
-    public static void create() throws Exception {
+    static void create() throws Exception {
         createLocation(locationId, true, OFFICE);
         LARGE_BYTES = new byte[1024 * 100];
         Random random = new Random();
@@ -54,7 +55,7 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
     }
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
         tsId = locationId + ".Flow.Inst.1Hour.0." + Instant.now().getEpochSecond() + (int)(Math.random() * 100);
         createTimeseries(OFFICE, tsId, 0);
     }
@@ -74,10 +75,10 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .queryParam("office", OFFICE)
-            .queryParam("name", tsId)
-            .queryParam("begin", BEGIN_STR)
-            .queryParam("end", END_STR)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN, BEGIN_STR)
+            .queryParam(Controllers.END, END_STR)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -117,10 +118,10 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .queryParam("office", OFFICE)
-            .queryParam("name", tsId)
-            .queryParam("begin", BEGIN_STR)
-            .queryParam("end", END_STR)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN, BEGIN_STR)
+            .queryParam(Controllers.END, END_STR)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -153,6 +154,48 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
                 .withVersionDate(bts.getVersionDate())
                 .withIntervalOffset(bts.getIntervalOffset())
                 .build();
+        return om.writeValueAsString(bts);
+    }
+
+    @NotNull
+    private String getTsBodyNewLRTSInterval(String tsIdent) throws IOException {
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/bin_ts_create_lrts.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        BinaryTimeSeries bts = om.readValue(tsData, BinaryTimeSeries.class);
+        bts = new BinaryTimeSeries.Builder()
+            .withBinaryValues(bts.getBinaryValues())
+            .withName(tsIdent)
+            .withOfficeId(OFFICE)
+            .withTimeZone(bts.getTimeZone())
+            .withDateVersionType(bts.getDateVersionType())
+            .withVersionDate(bts.getVersionDate())
+            .withIntervalOffset(bts.getIntervalOffset())
+            .build();
+        return om.writeValueAsString(bts);
+    }
+
+    @NotNull
+    private String getTsBodyIrregular(String tsIdent) throws IOException {
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/bin_ts_create_irr.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        BinaryTimeSeries bts = om.readValue(tsData, BinaryTimeSeries.class);
+        bts = new BinaryTimeSeries.Builder()
+            .withBinaryValues(bts.getBinaryValues())
+            .withName(tsIdent)
+            .withOfficeId(OFFICE)
+            .withTimeZone(bts.getTimeZone())
+            .withDateVersionType(bts.getDateVersionType())
+            .withVersionDate(bts.getVersionDate())
+            .withIntervalOffset(bts.getIntervalOffset())
+            .build();
         return om.writeValueAsString(bts);
     }
 
@@ -223,10 +266,10 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .queryParam("office", OFFICE)
-            .queryParam("name", tsId)
-            .queryParam("begin", BEGIN_STR)
-            .queryParam("end", END_STR)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN, BEGIN_STR)
+            .queryParam(Controllers.END, END_STR)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -244,14 +287,14 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
-            .queryParam("office", OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .queryParam("office", OFFICE)
-            .queryParam("begin", BEGIN_STR)
-            .queryParam("end", END_STR)
-            .queryParam("office", OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.BEGIN, BEGIN_STR)
+            .queryParam(Controllers.END, END_STR)
+            .queryParam(Controllers.OFFICE, OFFICE)
             .delete("/timeseries/binary/" + tsId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -267,11 +310,207 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .queryParam("office", OFFICE)
-            .queryParam("name", tsId)
-            .queryParam("begin", BEGIN_STR)
-            .queryParam("end", END_STR)
-            .queryParam("version-date", versionDateStr)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN, BEGIN_STR)
+            .queryParam(Controllers.END, END_STR)
+            .queryParam(Controllers.VERSION_DATE, versionDateStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("binary-values.size()", equalTo(0))
+        ;
+    }
+
+    @Test
+    void test_create_get_irregular() throws Exception {
+        // Test for issue found here: https://github.com/HydrologicEngineeringCenter/cwms-database/issues/28
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String tsIdentifier = "TsBinTestLoc.Binary.Inst.0.0.irreg";
+        String tsData = getTsBodyIrregular(tsIdentifier);
+
+        createTimeseries(OFFICE, tsIdentifier);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.BEGIN, "2020-05-01T12:00:00Z")
+            .queryParam(Controllers.END, "2027-05-19T16:00:00Z")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("name", equalTo(tsIdentifier))
+            .body("binary-values.size()", equalTo(3))
+        ;
+    }
+
+    @Test
+    void test_create_get_delete_get_lrts() throws Exception {
+
+        // Structure of test:
+        //
+        // 1)Try to create the binary time series using new LRTS format without the new LRTS format header
+        // 2)Create the binary time series with LRTS
+        // 3)Retrieve the binary time series with the new header and assert that it exists
+        // 3)Retrieve the binary time series without the new header and assert that it exists
+        // 5)Delete the binary time series
+        // 6)Retrieve the binary time series and assert that it does not exist
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String tsIdentifier = "TsBinTestLoc.Binary.Inst.1DayLocal.0.lrts";
+        String legacyTsIdentifier = "TsBinTestLoc.Binary.Inst.~1Day.0.lrts";
+        String tsData = getTsBodyNewLRTSInterval(tsIdentifier);
+
+        createTimeseriesWithNewLRTSInterval(OFFICE, tsIdentifier, -480);
+
+        // Step 1)
+        // Try to create the binary time series without LRTS header set
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
+        // Step 2)
+        // Create the binary time series
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+            .queryParam(REPLACE_ALL , true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Step 3)
+        // Retrieve the binary time series and assert that it exists
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.BEGIN, "2004-05-01T12:00:00Z")
+            .queryParam(Controllers.END, "2027-05-19T16:00:00Z")
+            .header(ApiServlet.IS_NEW_LRTS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("name", equalTo(tsIdentifier))
+            .body("binary-values.size()", equalTo(3))
+        ;
+
+        // Step 4)
+        // Retrieve the binary time series without the header and assert that it exists
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .header(ApiServlet.IS_NEW_LRTS, false)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, legacyTsIdentifier)
+            .queryParam(Controllers.BEGIN, "2004-05-01T12:00:00Z")
+            .queryParam(Controllers.END, "2027-05-19T16:00:00Z")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/binary/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("name", equalTo(legacyTsIdentifier))
+            .body("binary-values.size()", equalTo(3))
+        ;
+
+        // Step 5)
+        // Delete the binary time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.BEGIN, BEGIN_STR)
+            .queryParam(Controllers.END, END_STR)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .delete("/timeseries/binary/" + tsIdentifier)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        Date versionDate = new Date(1139911000L);
+        Instant instant = versionDate.toInstant();
+        String versionDateStr = instant.toString();
+
+        // Step 6)
+        // Retrieve the binary time series and assert that it does not exist
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.BEGIN, BEGIN_STR)
+            .queryParam(Controllers.END, END_STR)
+            .queryParam(Controllers.VERSION_DATE, versionDateStr)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -301,10 +540,10 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .queryParam("office", OFFICE)
-            .queryParam("name", tsId)
-            .queryParam("begin", BEGIN_STR)
-            .queryParam("end", END_STR)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN, BEGIN_STR)
+            .queryParam(Controllers.END, END_STR)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -321,7 +560,6 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Create the binary time series
 
         String tsData = getTsBody();
-        InputStream resource;
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
@@ -389,10 +627,10 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .queryParam("office", OFFICE)
-            .queryParam("name", tsId)
-            .queryParam("begin", BEGIN_STR)
-            .queryParam("end", END_STR)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN, BEGIN_STR)
+            .queryParam(Controllers.END, END_STR)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -443,10 +681,10 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .queryParam("office", OFFICE)
-            .queryParam("name", tsId)
-            .queryParam("begin", BEGIN_STR)
-            .queryParam("end", END_STR)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN, BEGIN_STR)
+            .queryParam(Controllers.END, END_STR)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -486,10 +724,10 @@ public class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         String valueUrl = given()
                             .log().ifValidationFails(LogDetail.ALL, true)
                             .accept(Formats.JSONV2)
-                            .queryParam("office", OFFICE)
-                            .queryParam("name", tsId)
-                            .queryParam("begin", BEGIN_STR)
-                            .queryParam("end", END_STR)
+                            .queryParam(Controllers.OFFICE, OFFICE)
+                            .queryParam(Controllers.NAME, tsId)
+                            .queryParam(Controllers.BEGIN, BEGIN_STR)
+                            .queryParam(Controllers.END, END_STR)
                         .when()
                             .redirects().follow(true)
                             .redirects().max(3)
