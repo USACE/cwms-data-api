@@ -83,6 +83,7 @@ public final class WaterContractUpdateController extends WaterSupplyControllerBa
                     required = true)
         },
         responses = {
+            @OpenApiResponse(status = "200", description = "Contract successfully renamed in CWMS."),
             @OpenApiResponse(status = "404", description = "The provided combination of "
                     + "parameters did not find a contract"),
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")

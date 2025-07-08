@@ -202,7 +202,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body("office-id", equalTo(CONTRACT.getOfficeId()))
             .body("water-user.entity-name", equalTo(CONTRACT.getWaterUser().getEntityName()))
             .body("water-user.project-id.office-id", equalTo(CONTRACT.getWaterUser()
                     .getProjectId().getOfficeId()))

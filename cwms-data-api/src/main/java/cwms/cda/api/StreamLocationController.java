@@ -44,7 +44,7 @@ import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STAGE_UNIT;
 import static cwms.cda.api.Controllers.STATION_UNIT;
 import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STREAM_ID;
 import static cwms.cda.api.Controllers.STREAM_ID_MASK;
@@ -192,7 +192,7 @@ public final class StreamLocationController implements CrudHandler {
             method = HttpMethod.POST,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Stream Location successfully stored to CWMS.")
+                    @OpenApiResponse(status = STATUS_201, description = "Stream Location successfully stored to CWMS.")
             }
     )
     @Override
@@ -206,8 +206,7 @@ public final class StreamLocationController implements CrudHandler {
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.storeStreamLocation(streamLocation, failIfExists);
             StatusResponse re = new StatusResponse(streamLocation.getId().getOfficeId(),
-                    "Stream Location successfully stored to CWMS.",
-                    streamLocation.getId().getName());
+                    "Stream Location successfully stored to CWMS.", streamLocation.getId().getName());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
@@ -235,8 +234,7 @@ public final class StreamLocationController implements CrudHandler {
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.updateStreamLocation(streamLocation);
             StatusResponse re = new StatusResponse(streamLocation.getId().getOfficeId(),
-                    "Stream Location successfully updated to CWMS.",
-                    streamLocation.getId().getName());
+                    "Stream Location successfully updated to CWMS.", streamLocation.getId().getName());
             ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }

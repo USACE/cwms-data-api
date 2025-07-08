@@ -80,7 +80,7 @@ public final class WaterContractTypeDeleteController extends WaterSupplyControll
             WaterContractDao dao = new WaterContractDao(dsl);
             dao.deleteWaterContractType(office, displayValue);
             StatusResponse re = new StatusResponse(office, "Contract type successfully deleted from CWMS.", displayValue);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

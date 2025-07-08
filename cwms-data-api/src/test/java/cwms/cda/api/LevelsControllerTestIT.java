@@ -1624,7 +1624,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED))
             .body(OFFICE_ID, equalTo(OFFICE))
             .body(MESSAGE, equalTo("Created Location Level"))
-            .body(IDENTIFIER, equalTo("seasonalLoc6.Elev.Ave.1Day.tst"));
+            .body(IDENTIFIER, equalTo(levelId));
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)

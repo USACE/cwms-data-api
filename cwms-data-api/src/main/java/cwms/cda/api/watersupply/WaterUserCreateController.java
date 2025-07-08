@@ -66,7 +66,7 @@ public final class WaterUserCreateController extends WaterSupplyControllerBase i
             },
             required = true),
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Water user successfully stored to CWMS."),
+            @OpenApiResponse(status = STATUS_201, description = "Water user successfully stored to CWMS."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
         description = "Stores a water user to CWMS.",

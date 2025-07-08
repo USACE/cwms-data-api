@@ -169,8 +169,7 @@ public final class EmbankmentController  implements CrudHandler {
             EmbankmentDao dao = new EmbankmentDao(dsl);
             dao.storeEmbankment(embankment, failIfExists);
             StatusResponse re = new StatusResponse(embankment.getLocation().getOfficeId(),
-                    "Embankment successfully stored to CWMS",
-                    embankment.getLocation().getName());
+                    "Embankment successfully stored to CWMS", embankment.getLocation().getName());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
 

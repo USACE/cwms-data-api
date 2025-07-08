@@ -187,7 +187,10 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(CONTRACT_TYPE.getOfficeId()))
+            .body(MESSAGE, equalTo("Contract type successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(CONTRACT_TYPE.getDisplayValue()))
         ;
 
         // get water contract type and assert that it does not exist

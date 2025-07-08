@@ -354,13 +354,11 @@ public class LocationController implements CrudHandler {
                 //if name changed then delete location with old name
                 locationsDao.renameLocation(locationId, updatedLocation);
                 ctx.status(HttpServletResponse.SC_OK).json(new StatusResponse(updatedLocation.getOfficeId(),
-                        "Updated and renamed Location",
-                        updatedLocation.getName()));
+                        "Updated and renamed Location", updatedLocation.getName()));
             } else {
                 locationsDao.storeLocation(updatedLocation, false);
                 ctx.status(HttpServletResponse.SC_OK).json(new StatusResponse(updatedLocation.getOfficeId(),
-                        "Updated Location",
-                        updatedLocation.getName()));
+                        "Updated Location", updatedLocation.getName()));
             }
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
@@ -392,6 +390,7 @@ public class LocationController implements CrudHandler {
             path = "/locations",
             tags = {"Locations"},
             responses = {
+                @OpenApiResponse(status = STATUS_200, description = "Location successfully deleted from CWMS."),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the location was not found.")
             }

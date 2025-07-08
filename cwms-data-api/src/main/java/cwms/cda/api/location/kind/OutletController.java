@@ -20,7 +20,20 @@
 
 package cwms.cda.api.location.kind;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.METHOD;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_201;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;

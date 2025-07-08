@@ -159,7 +159,7 @@ public final class LookupTypeController implements CrudHandler {
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Lookup Type successfully updated to CWMS.")
+                    @OpenApiResponse(status = STATUS_200, description = "Lookup Type successfully updated to CWMS.")
             }
     )
     @Override

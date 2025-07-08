@@ -103,7 +103,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("category", equalTo(property.getCategory()))
-            .body(OFFICE_ID, equalTo(office))
+            .body("office-id", equalTo(office))
             .body("comment", equalTo(property.getComment()))
             .body("value", equalTo(property.getValue()))
             .body("name", equalTo(property.getName()))
