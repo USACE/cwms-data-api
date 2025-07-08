@@ -915,7 +915,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 
     @Override
-    public List<RecentValue> findMostRecentsInRange(List<String> tsIds, Timestamp pastdate,
+    public List<RecentValue> findMostRecentsInRange(String office, List<String> tsIds, Timestamp pastdate,
                                                     Timestamp futuredate, UnitSystem unitSystem) {
         List<RecentValue> retval = Collections.emptyList();
 
@@ -957,7 +957,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                     .and(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME.lt(futuredate))
                                     .and(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME.gt(pastdate))
                                     .and(AV_TSV_DQU.AV_TSV_DQU.START_DATE.le(futuredate))
-                                    .and(AV_TSV_DQU.AV_TSV_DQU.END_DATE.gt(pastdate)));
+                                    .and(AV_TSV_DQU.AV_TSV_DQU.END_DATE.gt(pastdate)))
+                                    .and(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID.eq(office));
 
             // We want to use some of the fields from the innerSelect statement in our WHERE clause
             // Its cleaner if we call them out individually.

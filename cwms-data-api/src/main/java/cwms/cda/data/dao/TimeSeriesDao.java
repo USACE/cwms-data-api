@@ -35,7 +35,7 @@ public interface TimeSeriesDao {
     List<RecentValue> findRecentsInRange(String office, String categoryId, String groupId,
                                          Timestamp pastLimit, Timestamp futureLimit, UnitSystem unitSystem);
 
-    List<RecentValue> findMostRecentsInRange(List<String> tsIds, Timestamp pastLimit,
+    List<RecentValue> findMostRecentsInRange(String office, List<String> tsIds, Timestamp pastLimit,
                                              Timestamp futureLimit, UnitSystem unitSystem);
 
 }
