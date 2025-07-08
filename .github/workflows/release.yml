@@ -76,7 +76,7 @@ jobs:
       - name: Create GitHub Release
         id: create_release
         # Allow testing without creating a release
-        if: github.event_name != 'pull_request' && github.event.ref == 'refs/heads/develop'
+        if: github.event_name != 'pull_request' && (github.event.ref == 'refs/heads/develop' || startsWith(github.event.ref, 'refs/tags'))
         uses: softprops/action-gh-release@v2.1.0
         with:
           files: cwms-data-api/build/libs/cwms-data-api-${{env.VERSION}}.war

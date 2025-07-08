@@ -33,8 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
-import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
+import cwms.cda.ApiServlet;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.Formats;
@@ -47,7 +46,6 @@ import io.restassured.response.ResponseBody;
 import io.restassured.response.ValidatableResponse;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -88,7 +86,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
     private static String LARGE_STRING;
 
     @BeforeAll
-    public static void create() throws Exception {
+    static void create() throws Exception {
         createLocation(locationId, true, OFFICE);
 
         createTimeseries(OFFICE, tsId, 0);  // offset needs to be valid for 1Hour
@@ -110,13 +108,13 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
     }
 
     @BeforeEach
-    public void load_data() throws Exception {
+    void load_data() throws Exception {
 
         loadSqlDataFromResource(REG_LOAD_RESOURCE);
     }
 
     @AfterEach
-    public void deload_data() throws Exception {
+    void deload_data() throws Exception {
         loadSqlDataFromResource(REG_DELETE_RESOURCE);
 
     }
@@ -198,6 +196,136 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .body("regular-text-values[0].text-value", equalTo("newly created text value"))
                 .statusCode(is(HttpServletResponse.SC_OK));
 
+    }
+
+    @Test
+    void test_create_local_regular_new_LRTS_identifier() throws Exception {
+        // The basic structure of the test is to:
+        // 1.  make sure the row doesn't exist
+        // 2.  create/store the row
+        // 3.  retrieve the row and verify it is there
+        // 4.  delete the row
+        // 5.  retrieve the row again and verify it is gone
+        // 6.  attempt to store the row again with the same identifier
+        //     with the old LRTS identifier and verify it fails
+
+        // make sure it doesn't exist
+        // this will return 200 but the lists should be empty.
+        String startStr = "2005-02-01T08:00:00Z";
+        String endStr = "2005-02-01T14:00:00Z";
+        String tsIdentifier = "TsTextTestLoc.Flow.Inst.1DayLocal.0.lrts-test";
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.BEGIN,startStr)
+            .queryParam(Controllers.END,endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
+        // create
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/local_regular_text_ts.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header(AUTHORIZATION, user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        //retrieve and verify
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.BEGIN,startStr)
+            .queryParam(Controllers.END,endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .body("standard-text-catalog", nullValue())
+            .body("standard-text-values", nullValue())
+            .body("regular-text-values.size()", equalTo(1))
+            .body("regular-text-values[0].text-value", equalTo("newly created text value"))
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .header(AUTHORIZATION, user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.TEXT_MASK, "*")
+            .queryParam(Controllers.BEGIN, startStr)
+            .queryParam(Controllers.END, endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/timeseries/text/" + tsIdentifier )
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.BEGIN,startStr)
+            .queryParam(Controllers.END,endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .body("standard-text-catalog", nullValue())
+            .body("standard-text-values", nullValue())
+            .body("regular-text-values.size()", equalTo(0))
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header(AUTHORIZATION, user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
     @Test
