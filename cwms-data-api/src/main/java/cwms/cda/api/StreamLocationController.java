@@ -221,7 +221,7 @@ public final class StreamLocationController implements CrudHandler {
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_200, description = "Stream Location successfully updated to CWMS.")
+                    @OpenApiResponse(status = STATUS_200, description = "Updated Stream Location")
             }
     )
     @Override
@@ -234,7 +234,7 @@ public final class StreamLocationController implements CrudHandler {
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.updateStreamLocation(streamLocation);
             StatusResponse re = new StatusResponse(streamLocation.getId().getOfficeId(),
-                    "Stream Location successfully updated to CWMS.", streamLocation.getId().getName());
+                    "Updated Stream Location", streamLocation.getId().getName());
             ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }

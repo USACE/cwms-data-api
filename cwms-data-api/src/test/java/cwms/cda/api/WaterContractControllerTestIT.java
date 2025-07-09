@@ -609,23 +609,23 @@ class WaterContractControllerTestIT extends DataApiTestIT {
 
         // delete contract
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .queryParam(METHOD, "DELETE ALL")
-                .header(AUTH_HEADER, user.toHeaderValue())
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/projects/" + OFFICE_ID + "/"
-                        + CONTRACT.getWaterUser().getProjectId().getName() + "/water-user/"
-                        + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
-                        + "NEW CONTRACT")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
-                .body(MESSAGE, equalTo("Water Contract Deleted Successfully"))
-                .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(METHOD, "DELETE ALL")
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/projects/" + OFFICE_ID + "/"
+                    + CONTRACT.getWaterUser().getProjectId().getName() + "/water-user/"
+                    + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
+                    + "NEW CONTRACT")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Deleted Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
     }
 

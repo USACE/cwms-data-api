@@ -159,7 +159,7 @@ public final class LookupTypeController implements CrudHandler {
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_200, description = "Lookup Type successfully updated to CWMS.")
+                    @OpenApiResponse(status = STATUS_200, description = "Updated Lookup Type")
             }
     )
     @Override
@@ -173,7 +173,7 @@ public final class LookupTypeController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LookupTypeDao dao = new LookupTypeDao(dsl);
             dao.updateLookupType(category, prefix, lookupType);
-            StatusResponse re = new StatusResponse(lookupType.getOfficeId(), "Lookup Type successfully updated to CWMS.",
+            StatusResponse re = new StatusResponse(lookupType.getOfficeId(), "Updated Lookup Type",
                     lookupType.getDisplayValue());
             ctx.status(HttpServletResponse.SC_OK).json(re);
         }
