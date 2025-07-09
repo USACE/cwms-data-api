@@ -70,6 +70,7 @@ import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 
 
 public abstract class JooqDao<T> extends Dao<T> {
@@ -78,6 +79,9 @@ public abstract class JooqDao<T> extends Dao<T> {
     public static final int DEFAULT_FETCH_SIZE = 1000;
     public static final int DEFAULT_SMALL_FETCH_SIZE = 500;
     public static final int ORACLE_ECID_MAX_LENGTH = 22;
+    public static final int REQUIRE_NEW_LRTS_ID_FORMAT = 6;
+    public static final int REQUIRE_OLD_LRTS_ID_FORMAT = 0;
+    public static final String SESSION_USE_LRTS_ID_FORMAT = "USE_NEW_LRTS_ID_FORMAT";
 
     static ExecuteListener listener = new ExceptionWrappingListener();
     private static final Pattern INVALID_OFFICE_ID = Pattern.compile(
@@ -128,6 +132,9 @@ public abstract class JooqDao<T> extends Dao<T> {
         DSLContext retVal;
         final String officeId = ctx.attribute(ApiServlet.OFFICE_ID);
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
+        final Boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) == null
+                ? null : Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
+
         if (dataSource != null) {
             DataSource wrappedDataSource = new ConnectionPreparingDataSource(connection ->
                     setClientInfo(ctx, connection), dataSource);
@@ -142,6 +149,12 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         retVal.configuration().set(new DefaultExecuteListenerProvider(listener));
 
+        if (isNewLRTS != null) {
+            String requireBool = isNewLRTS ? "T" : "F";
+            int requireIntValue = isNewLRTS ? REQUIRE_NEW_LRTS_ID_FORMAT : REQUIRE_OLD_LRTS_ID_FORMAT;
+            CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(retVal.configuration(),
+                SESSION_USE_LRTS_ID_FORMAT, requireBool, requireIntValue);
+        }
         return retVal;
     }
 
@@ -270,6 +283,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildInvalidOffice(input);
         } else if (isValueTooLargeException(input)) {
             retVal = buildValueTooLongException(input);
+        } else if (isTSIDInvalidIntervalException(input)) {
+            retVal = buildInvalidTSIDIntervalException(input);
         }
 
         return retVal;
@@ -344,7 +359,36 @@ public abstract class JooqDao<T> extends Dao<T> {
         return getSqlException(input.getCause()).map(sqlException -> hasCodeOrMessage(sqlException,
                 Arrays.asList(6502, 12899, 20041),
                 Arrays.asList("value too large for column", "character string buffer too small",
-                        "Error while writing value at JDBC bind index:"))).orElse(false);
+                        "Error while writing value at JDBC bind index:")))
+            .orElse(false);
+    }
+
+    public static boolean isTSIDInvalidIntervalException(RuntimeException input) {
+        return getSqlException(input.getCause()).map(sqlException -> hasCodeAndMessage(sqlException,
+                Arrays.asList(20205),
+                Arrays.asList("Invalid Time Series Description", "is not a valid interval")))
+            .orElse(false);
+    }
+
+    static InvalidItemException buildInvalidTSIDIntervalException(RuntimeException input) {
+        Throwable cause = input.getCause();
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        String localizedMessage = cause.getLocalizedMessage();
+
+        if (localizedMessage != null) {
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 2) {
+                    return new InvalidItemException(String.format("Invalid Time Series Description: %s is not a valid interval",
+                        parts[1]), cause);
+                }
+            }
+        }
+        return new InvalidItemException("Invalid Time Series Description", cause);
     }
 
     public static boolean isInvalidItem(RuntimeException input) {
