@@ -903,30 +903,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<RecentValue> retval = Collections.emptyList();
 
         if (tsIds != null && !tsIds.isEmpty()) {
-            String tsFieldName = "TSVIEW_CWMS_TS_ID";
-            Field<String> tsField = AV_CWMS_TS_ID2.CWMS_TS_ID.as(tsFieldName);
+            String tsFieldName = CWMS_TS_ID;
 
-            Field<Timestamp> maxDateField = max(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME)
-                    .over(partitionBy(AV_TSV_DQU.AV_TSV_DQU.TS_CODE))
-                    .as(MAX_DATE_TIME);
-
-            Field<String> defUnitsField = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
-                    CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(AV_TSV_DQU.AV_TSV_DQU.TS_CODE),
-                    DSL.val(unitSystem, String.class))
-                    .as(DEFAULT_UNITS);
-
-            Condition whereCondition = AV_CWMS_TS_ID2.CWMS_TS_ID.in(tsIds)
-                    .and(AV_TSV_DQU.AV_TSV_DQU.VALUE.isNotNull())
-                    .and(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME.lt(futuredate))
-                    .and(AV_TSV_DQU.AV_TSV_DQU.DATE_TIME.gt(pastdate))
-                    .and(AV_TSV_DQU.AV_TSV_DQU.START_DATE.le(futuredate))
-                    .and(AV_TSV_DQU.AV_TSV_DQU.END_DATE.gt(pastdate));
-
-            if (office != null) {
-                whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID.eq(office));
-            }
-
-            // lines 1 through 8
+            // create baseIds alias
             CommonTableExpression<?> baseIds = name("base_ids").as(
                     selectDistinct(AV_CWMS_TS_ID2.TS_CODE, AV_CWMS_TS_ID2.CWMS_TS_ID)
                             .from(AV_CWMS_TS_ID2)
@@ -1031,9 +1010,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                             convertUnits.as("value_at_max_date")
                     )
                     .from(maxValues)
-                    .where(field(name(maxValues.getName(), DATE_TIME)).eq(field(name(maxValues.getName(), MAX_DATE_TIME))));
+                    .where(field(name(maxValues.getName(), DATE_TIME), Date.class).eq(field(name(maxValues.getName(), MAX_DATE_TIME), Date.class)));
 
             logger.fine(() -> query.getSQL(ParamType.INLINED));
+            // TODO: Update query.fetch() and function return since we no longer return an instance of RecentValue
             retval = query.fetch(r -> buildRecentValue(AV_TSV_DQU.AV_TSV_DQU, r, tsFieldName));
         }
         return retval;
