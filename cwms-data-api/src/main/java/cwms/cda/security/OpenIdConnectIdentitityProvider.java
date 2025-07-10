@@ -70,6 +70,9 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
             timeout = Integer.parseInt(timeoutStr);
         }
         try {
+            if (wellKnownUrl == null || wellKnownUrl.isEmpty()) {
+                throw new IOException("OpenID Connect well-known URL is not set.");
+            }
             config = new OpenIDConfig(new URL(wellKnownUrl), altAuthUrl);
             jwtParser = Jwts.parserBuilder()
                         .requireIssuer(issuer)
