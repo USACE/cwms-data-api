@@ -72,7 +72,7 @@ public final class MeasurementTimeExtentsGetController implements Handler {
                     })
             },
             description = "Returns matching downstream stream locations.",
-            tags = {StreamLocationController.TAG}
+            tags = {MeasurementsController.TAG}
     )
     public void handle(@NotNull Context ctx) throws Exception {
         String officeIdMask = ctx.queryParam(OFFICE_MASK);
