@@ -29,7 +29,7 @@ package cwms.cda.api.watersupply;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
-import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.WATER_USER;
@@ -40,6 +40,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -82,7 +83,7 @@ public final class WaterUserUpdateController extends WaterSupplyControllerBase i
                     required = true)
         },
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Water user successfully updated in CWMS."),
+            @OpenApiResponse(status = STATUS_200, description = "Water user successfully updated in CWMS."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
         description = "Updates a water user in CWMS.",
@@ -104,7 +105,8 @@ public final class WaterUserUpdateController extends WaterSupplyControllerBase i
             CwmsId location = CwmsId.buildCwmsId(office, locationId);
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.renameWaterUser(oldName, newName, location);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Water user renamed successfully.");
+            StatusResponse re = new StatusResponse(office, "Water user successfully updated in CWMS.", newName);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
 
     }

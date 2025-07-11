@@ -44,12 +44,13 @@ import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STAGE_UNIT;
 import static cwms.cda.api.Controllers.STATION_UNIT;
 import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STREAM_ID;
 import static cwms.cda.api.Controllers.STREAM_ID_MASK;
 import static cwms.cda.api.Controllers.requiredParam;
 import cwms.cda.data.dao.StreamLocationDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -191,7 +192,7 @@ public final class StreamLocationController implements CrudHandler {
             method = HttpMethod.POST,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Stream Location successfully stored to CWMS.")
+                    @OpenApiResponse(status = STATUS_201, description = "Stream Location successfully stored to CWMS.")
             }
     )
     @Override
@@ -204,7 +205,9 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.storeStreamLocation(streamLocation, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Stream Location");
+            StatusResponse re = new StatusResponse(streamLocation.getId().getOfficeId(),
+                    "Stream Location successfully stored to CWMS.", streamLocation.getId().getName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 
@@ -218,7 +221,7 @@ public final class StreamLocationController implements CrudHandler {
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Stream Location successfully updated to CWMS.")
+                    @OpenApiResponse(status = STATUS_200, description = "Updated Stream Location")
             }
     )
     @Override
@@ -230,7 +233,9 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.updateStreamLocation(streamLocation);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Updated Stream Location");
+            StatusResponse re = new StatusResponse(streamLocation.getId().getOfficeId(),
+                    "Updated Stream Location", streamLocation.getId().getName());
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 
@@ -249,7 +254,7 @@ public final class StreamLocationController implements CrudHandler {
             method = HttpMethod.DELETE,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Stream Location successfully deleted from CWMS."),
+                    @OpenApiResponse(status = STATUS_200, description = "Stream Location successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Stream Location not found.")
             }
     )
@@ -261,7 +266,9 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.deleteStreamLocation(officeId, streamId, locationId);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Deleted Stream Location");
+            StatusResponse re = new StatusResponse(officeId,
+                    "Stream Location successfully deleted from CWMS.", streamId);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

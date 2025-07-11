@@ -63,6 +63,9 @@ final class EmbankmentControllerIT extends DataApiTestIT {
     private static final Location PROJECT_LOC;
     private static final Location EMBANKMENT_LOC;
     private static final Embankment EMBANKMENT;
+    private static final String OFFICE_ID = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
     static {
         try(InputStream projectStream = EmbankmentControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location.json");
             InputStream embankmentStream = EmbankmentControllerIT.class.getResourceAsStream("/cwms/cda/api/embankment.json")) {
@@ -145,6 +148,9 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(EMBANKMENT.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Embankment successfully stored to CWMS"))
+            .body(IDENTIFIER, equalTo(EMBANKMENT.getLocation().getName()))
         ;
         String office = EMBANKMENT.getLocation().getOfficeId();
         // Retrieve the Embankment and assert that it exists
@@ -186,7 +192,10 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(EMBANKMENT.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Embankment successfully deleted from CWMS"))
+            .body(IDENTIFIER, equalTo(EMBANKMENT.getLocation().getName()))
         ;
 
         // Retrieve a Embankment and assert that it does not exist
@@ -267,6 +276,9 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(EMBANKMENT.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Embankment successfully stored to CWMS"))
+            .body(IDENTIFIER, equalTo(EMBANKMENT.getLocation().getName()))
         ;
         String office = EMBANKMENT.getLocation().getOfficeId();
         // Retrieve the Embankment and assert that it exists
@@ -309,7 +321,10 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(EMBANKMENT.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Embankment successfully deleted from CWMS"))
+            .body(IDENTIFIER, equalTo(EMBANKMENT.getLocation().getName()))
         ;
     }
 
