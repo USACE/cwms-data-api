@@ -926,13 +926,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             CommonTableExpression<?> avTsvLimited = name("av_tsv_limited").as(
                     select(asterisk())
                             .from(AT_TSV_2023_TABLE)
-                            .where(field(AT_TSV_2023_TABLE.getName(), DATE_TIME, java.sql.Date.class).between(startDate, endDate))
-                            .and(field(AT_TSV_2023_TABLE.getName(), TS_CODE, BigDecimal.class).in(tsCodeSubquery))
+                            .where(field(name(AT_TSV_2023_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
+                            .and(field(name(AT_TSV_2023_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery))
                             .unionAll(
                                     select(asterisk())
                                             .from(AT_TSV_2024_TABLE)
-                                            .where(field(AT_TSV_2024_TABLE.getName(), DATE_TIME, java.sql.Date.class).between(startDate, endDate))
-                                            .and(field(AT_TSV_2024_TABLE.getName(), TS_CODE, BigDecimal.class).in(tsCodeSubquery))
+                                            .where(field(name(AT_TSV_2024_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
+                                            .and(field(name(AT_TSV_2024_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery))
                             )
             );
 
