@@ -29,6 +29,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.PropertyDao;
 import cwms.cda.data.dto.Property;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -175,7 +176,9 @@ public final class PropertyController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);
             dao.storeProperty(property);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Property");
+            StatusResponse re = new StatusResponse(property.getOfficeId(),
+                    "Property successfully stored to CWMS.", property.getName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
 
     }
@@ -190,7 +193,7 @@ public final class PropertyController implements CrudHandler {
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                @OpenApiResponse(status = STATUS_204, description = "Property successfully stored to CWMS.")
+                @OpenApiResponse(status = STATUS_200, description = "Property successfully updated in CWMS.")
             }
     )
     @Override
@@ -202,7 +205,9 @@ public final class PropertyController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);
             dao.updateProperty(property);
-            ctx.status(HttpServletResponse.SC_OK).json("Updated Property");
+            StatusResponse re = new StatusResponse(property.getOfficeId(),
+                    "Property successfully updated in CWMS.", property.getName());
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
 
     }
@@ -222,7 +227,7 @@ public final class PropertyController implements CrudHandler {
             method = HttpMethod.DELETE,
             tags = {TAG},
             responses = {
-                @OpenApiResponse(status = STATUS_204, description = "Property successfully deleted from CWMS."),
+                @OpenApiResponse(status = STATUS_200, description = "Property successfully deleted from CWMS."),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the property was not found.")
             }
@@ -235,7 +240,8 @@ public final class PropertyController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             PropertyDao dao = new PropertyDao(dsl);
             dao.deleteProperty(office, category, name);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(name + " Deleted");
+            StatusResponse re = new StatusResponse(office, "Property successfully deleted from CWMS.", name);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

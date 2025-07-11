@@ -29,6 +29,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dto.LookupType;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -138,7 +139,9 @@ public final class LookupTypeController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LookupTypeDao dao = new LookupTypeDao(dsl);
             dao.storeLookupType(category, prefix, lookupType);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Lookup Type");
+            StatusResponse re = new StatusResponse(lookupType.getOfficeId(), "Lookup Type successfully stored to CWMS.",
+                    lookupType.getDisplayValue());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 
@@ -156,7 +159,7 @@ public final class LookupTypeController implements CrudHandler {
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Lookup Type successfully stored to CWMS.")
+                    @OpenApiResponse(status = STATUS_200, description = "Updated Lookup Type")
             }
     )
     @Override
@@ -170,7 +173,9 @@ public final class LookupTypeController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LookupTypeDao dao = new LookupTypeDao(dsl);
             dao.updateLookupType(category, prefix, lookupType);
-            ctx.status(HttpServletResponse.SC_OK).json("Updated Lookup Type");
+            StatusResponse re = new StatusResponse(lookupType.getOfficeId(), "Updated Lookup Type",
+                    lookupType.getDisplayValue());
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 
@@ -184,7 +189,7 @@ public final class LookupTypeController implements CrudHandler {
             method = HttpMethod.DELETE,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Lookup Type successfully deleted from CWMS."),
+                    @OpenApiResponse(status = STATUS_200, description = "Lookup Type successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of inputs provided the lookup type was not found.")
             }
     )
@@ -197,7 +202,8 @@ public final class LookupTypeController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LookupTypeDao dao = new LookupTypeDao(dsl);
             dao.deleteLookupType(category, prefix, officeId, displayValue);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(displayValue + " Deleted");
+            StatusResponse re = new StatusResponse(officeId, "Lookup Type successfully deleted from CWMS.", displayValue);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 
