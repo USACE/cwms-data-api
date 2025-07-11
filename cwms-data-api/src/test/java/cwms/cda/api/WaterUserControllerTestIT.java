@@ -436,7 +436,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
             .body(MESSAGE, equalTo("Water user deleted successfully."))
-            .body(IDENTIFIER, equalTo(waterUser.getEntityName()))
+            .body(IDENTIFIER, equalTo(WATER_USER.getEntityName()))
         ;
 
         // delete WaterUser

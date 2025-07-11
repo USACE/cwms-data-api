@@ -264,7 +264,7 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK));
 
         // Delete the StreamLocation2
         given()
@@ -281,6 +281,6 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK));
     }
 }
