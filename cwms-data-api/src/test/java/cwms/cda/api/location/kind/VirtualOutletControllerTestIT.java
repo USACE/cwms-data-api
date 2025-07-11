@@ -279,7 +279,7 @@ class VirtualOutletControllerTestIT  extends ProjectStructureIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+            .statusCode(is(HttpServletResponse.SC_OK));
 
         //Confirm deletion of virtual outlet
         given()

@@ -156,7 +156,7 @@ public class VirtualOutletController extends BaseCrudHandler {
             method = HttpMethod.DELETE,
             tags = {OutletController.TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Virtual Outlet successfully deleted from CWMS."),
+                    @OpenApiResponse(status = STATUS_200, description = "Virtual Outlet successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the virtual outlet was not found.")
             }
@@ -172,7 +172,7 @@ public class VirtualOutletController extends BaseCrudHandler {
             OutletDao dao = new OutletDao(dsl);
             dao.deleteVirtualOutlet(office, projectId, name, deleteMethod.getRule());
             StatusResponse re = new StatusResponse(office, "Virtual Outlet successfully deleted from CWMS.", name);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(re);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }
