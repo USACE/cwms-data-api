@@ -206,6 +206,9 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(PROJECT_LOC.getOfficeId()))
+            .body(MESSAGE, equalTo("Turbine successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(PROJECT_LOC.getName()))
         ;
 
 

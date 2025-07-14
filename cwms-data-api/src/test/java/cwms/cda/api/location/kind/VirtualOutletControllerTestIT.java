@@ -279,7 +279,10 @@ class VirtualOutletControllerTestIT  extends ProjectStructureIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(MISSING_VIRTUAL_OUTLET.getVirtualOutletId().getOfficeId()))
+            .body(MESSAGE, equalTo("Virtual Outlet successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(MISSING_VIRTUAL_OUTLET.getVirtualOutletId().getName()));
 
         //Confirm deletion of virtual outlet
         given()
