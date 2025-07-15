@@ -8,7 +8,6 @@ import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
-import org.junit.jupiter.api.Disabled;
 import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
 
 import org.apache.commons.io.IOUtils;
@@ -253,7 +252,6 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @Disabled("Disabled until the retrieval returns the new LRTS interval identifier")
     void test_create_get_delete_get_lrts() throws Exception {
 
         // Structure of test:
