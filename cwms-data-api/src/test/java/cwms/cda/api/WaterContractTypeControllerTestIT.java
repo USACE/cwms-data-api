@@ -61,6 +61,9 @@ import java.util.logging.Logger;
 class WaterContractTypeControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SWT";
     private static final LookupType CONTRACT_TYPE;
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
     public static final Logger LOGGER =
             Logger.getLogger(WaterContractTypeControllerTestIT.class.getName());
     static {
@@ -97,6 +100,9 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(CONTRACT_TYPE.getOfficeId()))
+            .body(MESSAGE, equalTo("Contract type successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(CONTRACT_TYPE.getDisplayValue()))
         ;
 
         // get water contract type and assert that it exists
@@ -145,6 +151,9 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(CONTRACT_TYPE.getOfficeId()))
+            .body(MESSAGE, equalTo("Contract type successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(CONTRACT_TYPE.getDisplayValue()))
         ;
 
         // get water contract type and assert that it exists
@@ -178,7 +187,10 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(CONTRACT_TYPE.getOfficeId()))
+            .body(MESSAGE, equalTo("Contract type successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(CONTRACT_TYPE.getDisplayValue()))
         ;
 
         // get water contract type and assert that it does not exist

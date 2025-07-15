@@ -37,6 +37,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
@@ -82,6 +83,7 @@ public final class WaterContractUpdateController extends WaterSupplyControllerBa
                     required = true)
         },
         responses = {
+            @OpenApiResponse(status = "200", description = "Contract successfully renamed in CWMS."),
             @OpenApiResponse(status = "404", description = "The provided combination of "
                     + "parameters did not find a contract"),
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
@@ -107,7 +109,9 @@ public final class WaterContractUpdateController extends WaterSupplyControllerBa
                     .withProjectId(waterContract.getWaterUser().getProjectId())
                     .withWaterRight(waterContract.getWaterUser().getWaterRight()).build();
             contractDao.renameWaterContract(ref, contractName, newName);
-            ctx.status(HttpServletResponse.SC_OK).json("Contract renamed successfully");
+            StatusResponse re = new StatusResponse(waterContract.getOfficeId(),
+                    "Contract Renamed Successfully", newName);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
 
     }

@@ -30,7 +30,7 @@ import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -41,6 +41,7 @@ import com.codahale.metrics.Timer;
 import cwms.cda.api.BaseCrudHandler;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.OutletDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.Outlet;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -80,7 +81,7 @@ public class OutletController extends BaseCrudHandler {
         method = HttpMethod.POST,
         tags = {TAG},
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Outlet successfully stored to CWMS.")
+            @OpenApiResponse(status = STATUS_201, description = "Outlet successfully stored to CWMS.")
         }
     )
     @Override
@@ -94,7 +95,9 @@ public class OutletController extends BaseCrudHandler {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
             dao.storeOutlet(outlet, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Outlet");
+            StatusResponse re = new StatusResponse(outlet.getLocation().getOfficeId(),
+                    "Outlet successfully stored to CWMS.", outlet.getLocation().getName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 
@@ -182,7 +185,7 @@ public class OutletController extends BaseCrudHandler {
         method = HttpMethod.PATCH,
         tags = {TAG},
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "CWMS Outlet successfully renamed.")
+            @OpenApiResponse(status = STATUS_200, description = "CWMS Outlet successfully renamed.")
         }
     )
     @Override
@@ -193,7 +196,8 @@ public class OutletController extends BaseCrudHandler {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
             dao.renameOutlet(office, name, newOutletId);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(name + " successfully renamed to " + newOutletId);
+            StatusResponse re = new StatusResponse(office, "CWMS Outlet successfully renamed.", newOutletId);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 
@@ -212,7 +216,7 @@ public class OutletController extends BaseCrudHandler {
         method = HttpMethod.DELETE,
         tags = {TAG},
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Outlet successfully deleted from CWMS."),
+            @OpenApiResponse(status = STATUS_200, description = "Outlet successfully deleted from CWMS."),
             @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                 + "inputs provided the outlet was not found.")
         }
@@ -226,7 +230,8 @@ public class OutletController extends BaseCrudHandler {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
             dao.deleteOutlet(office, name, deleteMethod.getRule());
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(name + " Deleted");
+            StatusResponse re = new StatusResponse(office, "Outlet successfully deleted from CWMS.", name);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }
