@@ -253,16 +253,13 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_create_get_delete_get_lrts() throws Exception {
-
         // Structure of test:
-        //
-        // 1)Create the spec
-        // 2)Retrieve the spec and assert that it exists
-        // 3)Delete the spec
-        // 4)Retrieve the spec and assert that it does not exist
+        // 1) Create the spec
+        // 2) Retrieve the spec and assert that it exists
+        // 3) Delete the spec
+        // 4) Retrieve the spec and assert that it does not exist
 
         String specId = "TEST-SPEC-LRTS";
-
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         // Step 1)
@@ -314,7 +311,9 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .body("time-series-ids[1]", equalTo("TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid2"))
             .body("time-series-ids[2]", equalTo("TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid3"))
         ;
+
         truncateFcstTimeSeries();
+
         // Step 3)
         // Delete the spec
         given()
