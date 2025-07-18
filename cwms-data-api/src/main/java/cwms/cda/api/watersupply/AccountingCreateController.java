@@ -94,7 +94,7 @@ public class AccountingCreateController implements Handler {
                     + "accounting.", required = true),
         },
         responses = {
-            @OpenApiResponse(status = STATUS_200, description = "The pump accounting entry was created."),
+            @OpenApiResponse(status = STATUS_201, description = "The pump accounting entry was created."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
         description = "Create a new pump accounting entry associated with a water supply contract.",

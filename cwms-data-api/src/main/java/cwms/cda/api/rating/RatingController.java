@@ -149,7 +149,7 @@ public class RatingController implements CrudHandler {
             String ratingSet = deserializeRatingSet(ctx, storeTemplate);
             ratingDao.create(ratingSet, false);
             StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Created RatingSet");
-            ctx.status(HttpServletResponse.SC_OK).json(re);
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("Failed to process request to update RatingSet");
             logger.log(Level.SEVERE, re.toString(), ex);

@@ -214,7 +214,7 @@ class VirtualOutletControllerTestIT  extends ProjectStructureIT {
             .post("/projects/virtual-outlets")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
             .body(OFFICE_ID_TEXT, equalTo(MISSING_VIRTUAL_OUTLET.getVirtualOutletId().getOfficeId()))
             .body(MESSAGE, equalTo("Virtual Outlet successfully stored to CWMS."))

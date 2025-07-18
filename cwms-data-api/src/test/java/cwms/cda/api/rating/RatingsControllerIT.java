@@ -54,10 +54,11 @@ import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
-
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyString;
 import org.junit.jupiter.api.AfterEach;
 
-import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;

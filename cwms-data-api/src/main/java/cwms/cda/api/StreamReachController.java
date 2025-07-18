@@ -246,7 +246,7 @@ public final class StreamReachController implements CrudHandler {
             method = HttpMethod.DELETE,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Stream Reach successfully deleted from CWMS.")
+                    @OpenApiResponse(status = STATUS_200, description = "Stream Reach successfully deleted from CWMS.")
             }
     )
     @Override
