@@ -20,11 +20,11 @@
                                     </ul>
                                 </div>
                                 <div id="mobile-menu">
-                                    <span class="burger-bar" id="burgerBtn" onclick="openNav()">&#9776;</span>
+                                    <span class="burger-bar" id="burgerBtn">&#9776;</span>
                                 </div>
                             </div>
                             <div id="mobileNav" class="overlay">
-                                <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+                                <a href="javascript:void(0)" class="closeBtn">&times;</a>
                                 <div id="mobileNavContent" class="overlay-content">
                                     <a class="home mobile-top-level-menu" href="./swagger-docs">Swagger Docs</a>
                                     <a class="home mobile-top-level-menu" href="./swagger-ui.html">Swagger UI</a>
@@ -48,8 +48,9 @@
                 </div>
 
                 <!-- Burger Bar Control -->
-                <script defer type="text/javascript" src="./js/header.js"></script>
+                <script defer type="text/javascript" src="./js/header.js?_=2"></script>
                 <script type="text/javascript">
+                    console.log("test2")
                     // Setup the page's collapses
                     let coll_legend = document.getElementsByClassName("collapsible-legend");
                     for (var i = 0; i < coll_legend.length; i++) {

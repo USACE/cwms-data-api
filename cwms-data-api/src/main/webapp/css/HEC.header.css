@@ -373,14 +373,14 @@ a {
 	color: #f1f1f1;
 }
 
-.overlay .closebtn {
+.overlay .closeBtn {
 	position: absolute;
 	top: 20px;
 	right: 45px;
 	font-size: 60px;
 }
 
-.closebtn:hover::before {
+.closeBtn:hover::before {
 	content: "";
 }
 
@@ -598,7 +598,7 @@ a {
 		display: inline-block;
 	}
 
-	.overlay .closebtn {
+	.overlay .closeBtn {
 		font-size: 40px;
 		top: -5px;
 		right: 5px;
