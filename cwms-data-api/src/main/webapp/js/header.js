@@ -1,6 +1,6 @@
 // Setup the page's collapses
 let coll_mob = document.getElementsByClassName("collapsible-mobile");
-for (const col_m_idx = 0; col_m_idx < coll_mob.length; col_m_idx++) {
+for (let col_m_idx = 0; col_m_idx < coll_mob.length; col_m_idx++) {
     coll_mob[col_m_idx].addEventListener("click", function (e) {
         this.classList.toggle("active");
         const content = this.nextElementSibling;
