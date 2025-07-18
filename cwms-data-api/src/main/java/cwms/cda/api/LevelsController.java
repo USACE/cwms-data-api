@@ -43,6 +43,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.LocationLevelsDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevels;
@@ -119,7 +120,8 @@ public class LevelsController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.storeLocationLevel(level);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Location Level");
+            StatusResponse re = new StatusResponse(level.getOfficeId(),"Created Location Level", level.getLocationLevelId());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to parse the request body", e);
         }
@@ -185,7 +187,8 @@ public class LevelsController implements CrudHandler {
                     ? DateUtils.parseUserDate(dateString, timezone) : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete);
-            ctx.status(HttpServletResponse.SC_OK).json(levelId + " Deleted");
+            StatusResponse re = new StatusResponse(office,"CWMS Location Level Deleted", levelId);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 
@@ -411,7 +414,8 @@ public class LevelsController implements CrudHandler {
             if (!oldLevelId.equals(newLevelId)) {
                 //if name changed then delete location with old name
                 levelsDao.renameLocationLevel(oldLevelId, newLevelId, officeId);
-                ctx.status(HttpServletResponse.SC_OK).json("Renamed Location Level");
+                StatusResponse re = new StatusResponse(officeId,"Renamed Location Level", newLevelId);
+                ctx.status(HttpServletResponse.SC_OK).json(re);
             } else {
                 String dateString = queryParamAsClass(ctx,
                     new String[]{EFFECTIVE_DATE, DATE}, String.class, null, metrics,
@@ -432,7 +436,8 @@ public class LevelsController implements CrudHandler {
                     levelFromBody, unmarshalledDateTime);
 
                 levelsDao.storeLocationLevel(updatedLocationLevel);
-                ctx.status(HttpServletResponse.SC_OK).json("Updated Location Level");
+                StatusResponse re = new StatusResponse(officeId,"Updated Location Level", newLevelId);
+                ctx.status(HttpServletResponse.SC_OK).json(re);
             }
         } catch (JsonProcessingException ex) {
             throw new FormattingException("Failed to format location level update request", ex);

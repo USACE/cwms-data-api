@@ -67,6 +67,9 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
     private static final List<Stream> TEST_STREAMS = new ArrayList<>();
     private static final List<String> TEST_STREAM_LOC_IDS = new ArrayList<>();
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
     @BeforeAll
     public static void setup() throws SQLException {
@@ -156,7 +159,10 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body(OFFICE_ID_TEXT, equalTo(measurement.getOfficeId()))
+                .body(MESSAGE, equalTo("Measurement(s) successfully stored."))
+                .body(IDENTIFIER, isEmptyString());
 
         String locationId = measurement.getLocationId();
         String number = measurement.getNumber();
@@ -235,7 +241,10 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(measurement.getOfficeId()))
+                .body(MESSAGE, equalTo("Measurement successfully deleted for specified location-id."))
+                .body(IDENTIFIER, equalTo(measurement.getLocationId()));
 
         // Retrieve the Measurement and assert that it does not exist
         given()
@@ -283,7 +292,10 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body(OFFICE_ID_TEXT, equalTo(measurement1.getOfficeId()))
+                .body(MESSAGE, equalTo("Measurement(s) successfully stored."))
+                .body(IDENTIFIER, isEmptyString());
 
         // Retrieve the Measurements and assert that they exists
         given()
@@ -411,7 +423,10 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(measurement1.getOfficeId()))
+                .body(MESSAGE, equalTo("Measurement successfully deleted for specified location-id."))
+                .body(IDENTIFIER, equalTo(measurement1.getLocationId()));
 
         // Retrieve the Measurements and assert that they do not exist
         given()
