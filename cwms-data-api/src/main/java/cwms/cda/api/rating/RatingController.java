@@ -139,7 +139,10 @@ public class RatingController implements CrudHandler {
                 @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
                         description = "Also store updates to the rating template. Default: true")
             },
-            method = HttpMethod.POST, path = "/ratings", tags = {TAG})
+            method = HttpMethod.POST, path = "/ratings", tags = {TAG},
+            responses = {
+                @OpenApiResponse(status = STATUS_200, description = "Ratin Set successfully stored to CWMS.")
+            })
     public void create(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime(CREATE)) {
