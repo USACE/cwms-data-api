@@ -44,6 +44,7 @@ import static cwms.cda.api.Controllers.REPLACE_BASE_CURVE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.STORE_TEMPLATE;
@@ -141,7 +142,7 @@ public class RatingController implements CrudHandler {
             },
             method = HttpMethod.POST, path = "/ratings", tags = {TAG},
             responses = {
-                @OpenApiResponse(status = STATUS_200, description = "Rating Set successfully stored to CWMS.")
+                @OpenApiResponse(status = STATUS_201, description = "Rating Set successfully stored to CWMS.")
             })
     public void create(@NotNull Context ctx) {
 

@@ -200,7 +200,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED))
-                .body(OFFICE_ID, equalTo(streamReach.getStreamId().getOfficeId()))
+                .body(OFFICE_ID_TEXT, equalTo(streamReach.getStreamId().getOfficeId()))
                 .body(MESSAGE, equalTo("Stream Reach successfully stored to CWMS."))
                 .body(IDENTIFIER, equalTo(streamReach.getStreamId().getName()));
 
@@ -258,9 +258,9 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body(OFFICE_ID, equalTo(streamReach.getStreamId().getOfficeId()))
+                .body(OFFICE_ID_TEXT, equalTo(streamReach.getStreamId().getOfficeId()))
                 .body(MESSAGE, equalTo("Stream Reach successfully deleted from CWMS."))
-                .body(IDENTIFIER, equalTo(streamReach.getStreamId().getName()));
+                .body(IDENTIFIER, equalTo(streamReachId));
 
         // Retrieve the StreamReach and assert that it does not exist
         given()
@@ -345,7 +345,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED))
-                .body(OFFICE_ID, equalTo(streamReach.getStreamId().getOfficeId()))
+                .body(OFFICE_ID_TEXT, equalTo(streamReach.getStreamId().getOfficeId()))
                 .body(MESSAGE, equalTo("Stream Reach successfully stored to CWMS."))
                 .body(IDENTIFIER, equalTo(streamReach.getStreamId().getName()));
 
@@ -404,7 +404,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body(OFFICE_ID, equalTo(streamReach.getStreamId().getOfficeId()))
+                .body(OFFICE_ID_TEXT, equalTo(streamReach.getStreamId().getOfficeId()))
                 .body(MESSAGE, equalTo("Stream Reach successfully deleted from CWMS."))
                 .body(IDENTIFIER, equalTo(streamReach.getStreamId().getName()));
 
