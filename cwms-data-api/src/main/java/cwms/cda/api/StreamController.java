@@ -51,6 +51,7 @@ import static cwms.cda.api.Controllers.requiredParam;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.StreamDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -197,7 +198,9 @@ public final class StreamController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamDao dao = new StreamDao(dsl);
             dao.storeStream(stream, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Stream");
+            StatusResponse re = new StatusResponse(stream.getOfficeId(), "Stream successfully stored to CWMS.",
+                    stream.getId().getName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
 
     }
@@ -227,7 +230,8 @@ public final class StreamController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamDao dao = new StreamDao(dsl);
             dao.renameStream(office, streamId, newStreamId);
-            ctx.status(HttpServletResponse.SC_OK).json("Renamed Stream");
+            StatusResponse re = new StatusResponse(office, "Stream successfully renamed in CWMS.", newStreamId);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 
@@ -247,7 +251,7 @@ public final class StreamController implements CrudHandler {
             method = HttpMethod.DELETE,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Stream successfully deleted from CWMS."),
+                    @OpenApiResponse(status = STATUS_200, description = "Stream successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the stream was not found.")
             }
@@ -276,7 +280,8 @@ public final class StreamController implements CrudHandler {
                             + deleteMethod);
             }
             dao.deleteStream(office, streamId, deleteRule);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(streamId + " Deleted");
+            StatusResponse re = new StatusResponse(office, "Stream successfully deleted from CWMS.", streamId);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

@@ -101,6 +101,11 @@ import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.UpstreamLocationsGetController;
 import cwms.cda.api.auth.ApiKeyController;
+import cwms.cda.api.auth.users.UserProfileController;
+import cwms.cda.api.auth.users.UsersController;
+import cwms.cda.api.auth.users.roles.AddRoleController;
+import cwms.cda.api.auth.users.roles.DeleteRolesController;
+import cwms.cda.api.auth.users.roles.GetRolesController;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.CdaError;
@@ -168,7 +173,6 @@ import cwms.cda.security.CdaAccessManager;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
-import cwms.cda.spi.CdaIdentityProviders;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
@@ -199,13 +203,13 @@ import java.nio.file.Paths;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 import javax.annotation.Resource;
-import javax.management.ServiceNotFoundException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -254,7 +258,10 @@ import org.owasp.html.PolicyFactory;
     "/project-lock-rights/*",
     "/properties/*",
     "/lookup-types/*",
-    "/embankments/*"
+    "/embankments/*",
+    "/user/*",
+    "/users/*",
+    "/roles/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -268,6 +275,7 @@ public class ApiServlet extends HttpServlet {
     public static final String DATA_SOURCE = "data_source";
     public static final String RAW_DATA_SOURCE = "data_source";
     public static final String DATABASE = "database";
+    public static final String IS_NEW_LRTS = "X-CWMS-LRTS-Formatting";
 
     // The VERSION should match the gradle version but not contain the patch version.
     // For example 2.4 not 2.4.13
@@ -278,6 +286,9 @@ public class ApiServlet extends HttpServlet {
     public static final String PROVIDER_KEY = "cwms.dataapi.access.provider";
     public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
+
+
+
 
     private MetricRegistry metrics;
     private Meter totalRequests;
@@ -290,6 +301,7 @@ public class ApiServlet extends HttpServlet {
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
+    private CdaAccessManager cdaAccessManager;
 
     public static String getApiVersion() {
         return VERSION != null ? VERSION : "Not Yet Known";
@@ -327,12 +339,13 @@ public class ApiServlet extends HttpServlet {
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
         APP_CONTEXT = this.getServletContext().getContextPath();
+        cdaAccessManager = new CdaAccessManager();
         javalin = Javalin.createStandalone(config -> {
                     config.defaultContentType = "application/json";
                     getOpenApiOptions(config);
                     config.autogenerateEtags = true;
                     config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
-                    config.accessManager(new CdaAccessManager());
+                    config.accessManager(cdaAccessManager);
                 })
                 .attribute("PolicyFactory", sanitizer)
                 .attribute("ObjectMapper", om)
@@ -397,7 +410,14 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(AlreadyExists.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Already Exists.");
+                    CdaError re;
+                    if (e.getMessage() == null || e.getMessage().isEmpty()) {
+                        re = new CdaError("Already exists");
+                    } else {
+                        Map<String, String> details = new HashMap<>();
+                        details.put("message", e.getMessage());
+                        re = new CdaError("Already exists", details);
+                    }
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
                 })
@@ -676,17 +696,31 @@ public class ApiServlet extends HttpServlet {
 
         addProjectLocksHandlers("/project-locks/{name}", requiredRoles);
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
+
+
+        addUserManagementHandlers();
+    }
+
+    private void addUserManagementHandlers() {
+        RouteRole[] adminRoles = new RouteRole[] { new Role("CWMS User Admins")};
+        RouteRole[] userRoles = new RouteRole[] {new Role("CWMS Users")};
+        crud("/users/{user-name}", new UsersController(metrics), adminRoles);
+        get("/roles", new GetRolesController(metrics), adminRoles);
+        get("/user/profile", new UserProfileController(metrics), userRoles);
+        post("/user/{user-name}/roles/{office-id}", new AddRoleController(metrics), adminRoles);
+        delete("/user/{user-name}/roles/{office-id}", new DeleteRolesController(metrics), adminRoles);
+        
     }
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {
-        post(format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID),
-            new RateValuesController(metrics), requiredRoles);
-        post(format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID),
-            new RateTimeSeriesController(metrics), requiredRoles);
-        post(format("/ratings/reverse-rate-values/{%s}/{%s}", OFFICE, RATING_ID),
-            new ReverseRateValuesController(metrics), requiredRoles);
-        post(format("/ratings/reverse-rate-ts/{%s}/{%s}", OFFICE, RATING_ID),
-            new ReverseRateTimeSeriesController(metrics), requiredRoles);
+        String rateValues = format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID);
+        post(rateValues, new RateValuesController(metrics));
+        String rateTs = format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID);
+        post(rateTs, new RateTimeSeriesController(metrics));
+        String reverseRateValues = format("/ratings/reverse-rate-values/{%s}/{%s}", OFFICE, RATING_ID);
+        post(reverseRateValues, new ReverseRateValuesController(metrics));
+        String reverseRateTs = format("/ratings/reverse-rate-ts/{%s}/{%s}", OFFICE, RATING_ID);
+        post(reverseRateTs, new ReverseRateTimeSeriesController(metrics));
         cdaCrudCache("/ratings/template/{template-id}",
                 new RatingTemplateController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/ratings/spec/{rating-id}",
@@ -696,6 +730,19 @@ public class ApiServlet extends HttpServlet {
         get("/ratings/{rating-id}/latest", new RatingLatestController(metrics));
         cdaCrudCache("/ratings/{rating-id}",
                 new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        addRateLimit(rateTs, requiredRoles);
+        addRateLimit(reverseRateTs, requiredRoles);
+        addRateLimit(reverseRateValues, requiredRoles);
+        addRateLimit(rateValues, requiredRoles);
+    }
+
+    /**
+     * Add a rate limiter to a specified endpoint path, allowing authorized users to bypass the limit.
+     * @param path the path to add the rate limiter to.
+     * @param requiredRoles the user roles required to access the path.
+     */
+    private void addRateLimit(String path, RouteRole[] requiredRoles) {
+        cdaAccessManager.addRateLimitedEndpoint(path, requiredRoles);
     }
 
     private void addAccountingHandlers(String path, RouteRole[] requiredRoles) {

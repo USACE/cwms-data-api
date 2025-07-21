@@ -67,7 +67,7 @@ public class LocationLevelsDaoTest extends DaoTest
             levelToStore = buildExampleLevel("TEST_LOC");
             LocationsDao locationsDao = new LocationsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
             location = buildTestLocation("TEST_LOC");
-            locationsDao.storeLocation(location);
+            locationsDao.storeLocation(location, false);
             LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
             levelsDao.storeLocationLevel(levelToStore);
             LocationLevel retrievedLevel = levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelToStore.getLevelDate(), "LRL");
@@ -90,7 +90,7 @@ public class LocationLevelsDaoTest extends DaoTest
         LocationLevel levelToStore = buildExampleLevel("TEST_LOC5");
         LocationsDao locationsDao = new LocationsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
         Location location = buildTestLocation("TEST_LOC5");
-        locationsDao.storeLocation(location);
+        locationsDao.storeLocation(location, false);
         levelsDao.storeLocationLevel(levelToStore);
         LocationLevel retrievedLevel = levelsDao.retrieveLocationLevel(levelToStore.getLocationLevelId(), UnitSystem.EN.getValue(), levelToStore.getLevelDate(), OFFICE_ID);
         assertNotNull(retrievedLevel);
@@ -108,7 +108,7 @@ public class LocationLevelsDaoTest extends DaoTest
         LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(getDslContext(getConnection(), OFFICE_ID));
         Location location = buildTestLocation("TEST_LOC6");
         try {
-            locationsDao.storeLocation(location);
+            locationsDao.storeLocation(location, false);
             levelsDao.storeLocationLevel(levelToStore);
             String body = getRenamedExampleJSON();
             String format = Formats.JSON;

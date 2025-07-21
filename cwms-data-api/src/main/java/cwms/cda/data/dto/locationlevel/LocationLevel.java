@@ -67,6 +67,8 @@ import hec.data.level.JDomLocationLevelImpl;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(oneOf = {ConstantLocationLevel.class, TimeSeriesLocationLevel.class,
+    SeasonalLocationLevel.class, VirtualLocationLevel.class}, accessMode = Schema.AccessMode.READ_ONLY)
 public abstract class LocationLevel extends CwmsDTO {
     @JsonProperty(required = true)
     @Schema(description = "Name of the location level")

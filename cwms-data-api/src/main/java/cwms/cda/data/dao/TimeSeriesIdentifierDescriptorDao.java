@@ -53,7 +53,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
     public void create(TimeSeriesIdentifierDescriptor tsid, boolean versionedFlag,
                        Number intervalForward, Number intervalBackward, boolean failIfExists
     ) {
-        dsl.connection(c -> {
+        connection(dsl, c -> {
             BigDecimal tsCode = CWMS_TS_PACKAGE.call_CREATE_TS_CODE(
                 getDslContext(c,tsid.getOfficeId()).configuration(),
                 tsid.getTimeSeriesId(),

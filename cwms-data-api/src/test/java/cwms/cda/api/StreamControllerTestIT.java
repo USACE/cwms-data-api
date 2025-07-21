@@ -67,6 +67,10 @@ final class StreamControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
 
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
+
     @BeforeAll
     public static void setup() throws SQLException {
         String testLoc = "Stream123Test"; //match the stream name in the json file
@@ -142,7 +146,10 @@ final class StreamControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body(OFFICE_ID_TEXT, equalTo(stream.getOfficeId()))
+                .body(MESSAGE, equalTo("Stream successfully stored to CWMS."))
+                .body(IDENTIFIER, equalTo(stream.getId().getName()));
 
         String streamId = stream.getId().getName();
 
@@ -193,7 +200,10 @@ final class StreamControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(stream.getOfficeId()))
+                .body(MESSAGE, equalTo("Stream successfully deleted from CWMS."))
+                .body(IDENTIFIER, equalTo(streamId));
 
         // Retrieve the Stream and assert that it does not exist
         given()
@@ -274,7 +284,10 @@ final class StreamControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body(OFFICE_ID_TEXT, equalTo(stream.getOfficeId()))
+                .body(MESSAGE, equalTo("Stream successfully stored to CWMS."))
+                .body(IDENTIFIER, equalTo(stream.getId().getName()));
 
         String office = stream.getId().getOfficeId();
         String streamId = stream.getId().getName();
@@ -325,7 +338,10 @@ final class StreamControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(stream.getOfficeId()))
+                .body(MESSAGE, equalTo("Stream successfully deleted from CWMS."))
+                .body(IDENTIFIER, equalTo(streamId));
     }
 
 }

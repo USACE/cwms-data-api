@@ -40,6 +40,7 @@ import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.JooqDao.DeleteMethod;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -89,7 +90,9 @@ public final class WaterContractDeleteController extends WaterSupplyControllerBa
             CwmsId projectLocation = CwmsId.buildCwmsId(office, locationId);
             WaterUserContract contract = contractDao.getWaterContract(contractName, projectLocation, entityName);
             contractDao.deleteWaterContract(contract, deleteMethod);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(contractName + " deleted successfully");
+            StatusResponse re = new StatusResponse(contract.getOfficeId(),
+                    "Water Contract Deleted Successfully", contractName);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

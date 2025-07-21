@@ -168,17 +168,17 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
                 throw new RuntimeException(e);
             }
             try {
-                locationsDao.storeLocation(pump1);
+                locationsDao.storeLocation(pump1, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             try {
-                locationsDao.storeLocation(pump2);
+                locationsDao.storeLocation(pump2, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             try {
-                locationsDao.storeLocation(pump3);
+                locationsDao.storeLocation(pump3, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
