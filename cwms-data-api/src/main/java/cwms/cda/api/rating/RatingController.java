@@ -141,7 +141,7 @@ public class RatingController implements CrudHandler {
             },
             method = HttpMethod.POST, path = "/ratings", tags = {TAG},
             responses = {
-                @OpenApiResponse(status = STATUS_200, description = "Ratin Set successfully stored to CWMS.")
+                @OpenApiResponse(status = STATUS_200, description = "Rating Set successfully stored to CWMS.")
             })
     public void create(@NotNull Context ctx) {
 
@@ -151,7 +151,7 @@ public class RatingController implements CrudHandler {
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
             String ratingSet = deserializeRatingSet(ctx, storeTemplate);
             ratingDao.create(ratingSet, false);
-            StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Created RatingSet");
+            StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Rating Set successfully stored to CWMS.");
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("Failed to process request to update RatingSet");
