@@ -77,6 +77,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private static final String TS_CODE = "TS_CODE";
     private static final String VALUE = "VALUE";
     private static final String CWMS_TS_ID = "CWMS_TS_ID";
+    private static final String AT_TS_EXTENTS = "AT_TS_EXTENTS";
+    private static final String VALUE_AT_MAX_DATE = "value_at_max_date";
+    private static final String CWMS_20 = "CWMS_20";
 
     public static final boolean OVERRIDE_PROTECTION = true;
     public static final int TS_ID_MISSING_CODE = 20001;
@@ -157,7 +160,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (includeEntryDate) {
             Record entryDateSupport = dsl.select(asterisk()).from(table("ALL_TYPES"))
                     .where(field("TYPE_NAME").eq("ZTSV_ENTRY_TYPE"))
-                    .and(field("OWNER").eq("CWMS_20")).fetchOne();
+                    .and(field("OWNER").eq(CWMS_20)).fetchOne();
 
             if (entryDateSupport == null) {
                 throw new DataAccessException("Data entry date retrieval is not supported by this database");
@@ -914,61 +917,66 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             java.sql.Date startDate = new java.sql.Date(pastdate.getTime());
             java.sql.Date endDate = new java.sql.Date(futuredate.getTime());
 
+            // extract year
+            LocalDate localEndDate = endDate.toLocalDate();
+            int year = localEndDate.getYear();
+
+
             // helper subquery for SELECT ts_code FROM base_ids
             Select<Record1<BigDecimal>> tsCodeSubquery = select(baseIds.field(AV_CWMS_TS_ID2.TS_CODE))
                     .from(baseIds);
 
-            // references to appropriate year tables
-            Table<?> AT_TSV_2023_TABLE = table(name("AT_TSV_2023"));
-            Table<?> AT_TSV_2024_TABLE = table(name("AT_TSV_2024"));
+            // references to appropriate year tables, current year and past year
+            Table<?> AT_TSV_PREV_YEAR_TABLE = table(name(CWMS_20, "AT_TSV_" + (year - 1)));
+            Table<?> AT_TSV_CURR_YEAR_TABLE = table(name(CWMS_20, "AT_TSV_" + year));
 
-            // create avTsvLimited alias
-            CommonTableExpression<?> avTsvLimited = name("av_tsv_limited").as(
+            // create tsvLimited alias
+            CommonTableExpression<?> tsvLimited = name("tsv_limited").as(
                     select(asterisk())
-                            .from(AT_TSV_2023_TABLE)
-                            .where(field(name(AT_TSV_2023_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
-                            .and(field(name(AT_TSV_2023_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery))
+                            .from(AT_TSV_PREV_YEAR_TABLE)
+                            .where(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
+                            .and(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery))
                             .unionAll(
                                     select(asterisk())
-                                            .from(AT_TSV_2024_TABLE)
-                                            .where(field(name(AT_TSV_2024_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
-                                            .and(field(name(AT_TSV_2024_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery))
+                                            .from(AT_TSV_CURR_YEAR_TABLE)
+                                            .where(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
+                                            .and(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery))
                             )
             );
 
             // Create table and field references for AT_TS_EXTENTS
-            Table<?> AT_TS_EXTENTS_TABLE = table(name("AT_TS_EXTENTS"));
-            Field<BigDecimal> AT_TS_EXTENTS_TS_CODE = field(name("AT_TS_EXTENTS", TS_CODE), BigDecimal.class);
-            Field<java.sql.Date> AT_TS_EXTENTS_VERSION_TIME = field(name("AT_TS_EXTENTS", "VERSION_TIME"), java.sql.Date.class);
-            Field<Timestamp> AT_TS_EXTENTS_EARLIEST_ENTRY_TIME = field(name("AT_TS_EXTENTS", "EARLIEST_ENTRY_TIME"), Timestamp.class);
-            Field<Timestamp> AT_TS_EXTENTS_LATEST_ENTRY_TIME = field(name("AT_TS_EXTENTS", "LATEST_ENTRY_TIME"), Timestamp.class);
+            Table<?> AT_TS_EXTENTS_TABLE = table(name(CWMS_20, AT_TS_EXTENTS));
+            Field<BigDecimal> AT_TS_EXTENTS_TS_CODE = field(name(CWMS_20, AT_TS_EXTENTS, TS_CODE), BigDecimal.class);
+            Field<java.sql.Date> AT_TS_EXTENTS_VERSION_TIME = field(name(CWMS_20, AT_TS_EXTENTS, "VERSION_TIME"), java.sql.Date.class);
+            Field<Timestamp> AT_TS_EXTENTS_EARLIEST_ENTRY_TIME = field(name(CWMS_20, AT_TS_EXTENTS, "EARLIEST_ENTRY_TIME"), Timestamp.class);
+            Field<Timestamp> AT_TS_EXTENTS_LATEST_ENTRY_TIME = field(name(CWMS_20, AT_TS_EXTENTS, "LATEST_ENTRY_TIME"), Timestamp.class);
 
             // Extract repeated TsCode and DateTime
-            Field<BigDecimal> avTsvLimitedTsCode = field(name(avTsvLimited.getName(), TS_CODE), BigDecimal.class);
-            Field<java.sql.Date> avTsvLimitedDateTime = field(name(avTsvLimited.getName(), DATE_TIME), java.sql.Date.class);
+            Field<BigDecimal> tsvLimitedTsCode = field(name(tsvLimited.getName(), TS_CODE), BigDecimal.class);
+            Field<java.sql.Date> tsvLimitedDateTime = field(name(tsvLimited.getName(), DATE_TIME), java.sql.Date.class);
 
             // create max_values alias
             CommonTableExpression<?> maxValues = name("max_values").as(
                     select(
                             field(name(baseIds.getName(), CWMS_TS_ID), String.class),
-                            avTsvLimitedTsCode,
-                            avTsvLimitedDateTime,
-                            field(name(avTsvLimited.getName(), VALUE), BigDecimal.class),
-                            field(name(avTsvLimited.getName(), VERSION_DATE), java.sql.Date.class),
-                            field(name(avTsvLimited.getName(), DATA_ENTRY_DATE), java.sql.Date.class),
-                            field(name(avTsvLimited.getName(), QUALITY_CODE), Integer.class),
+                            tsvLimitedTsCode,
+                            tsvLimitedDateTime,
+                            field(name(tsvLimited.getName(), VALUE), BigDecimal.class),
+                            field(name(tsvLimited.getName(), VERSION_DATE), java.sql.Date.class),
+                            field(name(tsvLimited.getName(), DATA_ENTRY_DATE), java.sql.Date.class),
+                            field(name(tsvLimited.getName(), QUALITY_CODE), Integer.class),
                             AT_TS_EXTENTS_EARLIEST_ENTRY_TIME.as(START_DATE),
                             AT_TS_EXTENTS_LATEST_ENTRY_TIME.as(END_DATE),
-                            max(avTsvLimitedDateTime)
-                                    .over(partitionBy(avTsvLimitedTsCode))
+                            max(tsvLimitedDateTime)
+                                    .over(partitionBy(tsvLimitedTsCode))
                                     .as(MAX_DATE_TIME)
                     )
-                            .from(avTsvLimited)
-                            .join(baseIds).on(field(name(baseIds.getName(), TS_CODE), BigDecimal.class).equal(avTsvLimitedTsCode))
+                            .from(tsvLimited)
+                            .join(baseIds).on(field(name(baseIds.getName(), TS_CODE), BigDecimal.class).equal(tsvLimitedTsCode))
                             .join(AT_TS_EXTENTS_TABLE).on(
-                                    AT_TS_EXTENTS_TS_CODE.equal(avTsvLimitedTsCode)
+                                    AT_TS_EXTENTS_TS_CODE.equal(tsvLimitedTsCode)
                                             .and(AT_TS_EXTENTS_VERSION_TIME
-                                                    .equal(field(name(avTsvLimited.getName(), VERSION_DATE), java.sql.Date.class)))
+                                                    .equal(field(name(tsvLimited.getName(), VERSION_DATE), java.sql.Date.class)))
                             )
             );
 
@@ -993,8 +1001,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             );
 
             // Final query
-            ResultQuery<?> query = dsl.with(baseIds)
-                    .with(avTsvLimited)
+            SelectConditionStep<Record10<String, java.sql.Date, java.sql.Date, java.sql.Date, Integer, java.sql.Date, java.sql.Date, String, java.sql.Date, Double>> query = dsl.with(baseIds)
+                    .with(tsvLimited)
                     .with(maxValues)
                     .select(
                             field(name(maxValues.getName(), CWMS_TS_ID), String.class),
@@ -1006,16 +1014,30 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                             field(name(maxValues.getName(), END_DATE), java.sql.Date.class),
                             getDefaultUnits.as(DEFAULT_UNITS),
                             field(name(maxValues.getName(), DATE_TIME), java.sql.Date.class).as(MAX_DATE_TIME),
-                            convertUnits.as("value_at_max_date")
+                            convertUnits.as(VALUE_AT_MAX_DATE)
                     )
                     .from(maxValues)
                     .where(field(name(maxValues.getName(), DATE_TIME), java.sql.Date.class)
                             .eq(field(name(maxValues.getName(), MAX_DATE_TIME), java.sql.Date.class)));
 
             logger.fine(() -> query.getSQL(ParamType.INLINED));
-            // TODO: Update query.fetch() and function return since we no longer return an instance of RecentValue
-            retval = query.fetch(r -> buildRecentValue(AV_TSV_DQU.AV_TSV_DQU, r, tsFieldName));
+            retval = query.fetch(r -> {
+                TsvDqu tsv = new TsvDqu.Builder()
+                        .withOfficeId(office)
+                        .withCwmsTsId(r.getValue(CWMS_TS_ID, String.class))
+                        .withUnitId(r.getValue(DEFAULT_UNITS, String.class))
+                        .withDateTime(r.getValue(DATE_TIME, java.sql.Date.class))
+                        .withVersionDate(r.getValue(VERSION_DATE, java.sql.Date.class))
+                        .withDataEntryDate(r.getValue(DATA_ENTRY_DATE, java.sql.Date.class))
+                        .withValue(r.getValue(VALUE_AT_MAX_DATE, Double.class))
+                        .withQualityCode(r.getValue(QUALITY_CODE, Long.class))
+                        .withStartDate(r.getValue(START_DATE, java.sql.Date.class))
+                        .withEndDate(r.getValue(END_DATE, java.sql.Date.class))
+                        .build();
+                return new RecentValue(r.getValue(CWMS_TS_ID, String.class), tsv);
+            });
         }
+
         return retval;
     }
 
