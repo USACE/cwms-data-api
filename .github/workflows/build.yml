@@ -34,7 +34,7 @@ jobs:
         with:
           annotate_only: true
           include_passed: true
-          report_paths: '**/test/TEST-*.xml'
+          report_paths: '**/TEST-*.xml'
   build-docker-image:
     runs-on: ubuntu-latest
     steps:
