@@ -1148,7 +1148,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         String tsId = r.getValue(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID.getName(), String.class);
                         TsvDqu tsv = new TsvDqu.Builder()
                                 .withOfficeId(r.getValue(tsvView.OFFICE_ID))
-                                .withCwmsTsId(r.getValue(tsvView.CWMS_TS_ID.as(tsId)))
+                                .withCwmsTsId(r.getValue(tsvView.CWMS_TS_ID.as(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID.getName())))
                                 .withUnitId(r.getValue(tsvView.UNIT_ID))
                                 .withDateTime(r.getValue(tsvView.DATE_TIME))
                                 .withVersionDate(r.getValue(tsvView.VERSION_DATE))
