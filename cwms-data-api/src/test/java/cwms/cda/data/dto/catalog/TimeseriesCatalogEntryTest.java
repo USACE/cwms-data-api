@@ -1,11 +1,18 @@
 package cwms.cda.data.dto.catalog;
 
+import cwms.cda.formatters.json.JsonV2;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 
 import io.restassured.path.json.JsonPath;
 import io.restassured.path.xml.XmlPath;
 import java.util.Arrays;
+import java.util.Collection;
+import org.apache.commons.io.IOUtils;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 import cwms.cda.data.dto.Catalog;
@@ -109,6 +116,22 @@ class TimeseriesCatalogEntryTest
 		assertFalse(xml.contains("cursor"));
 	}
 
+	@Test
+	void test_json_deserialization() throws IOException {
+		InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/time-series-catalog-entry.json");
+		assertNotNull(resource);
+		String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
+		TimeseriesCatalogEntry deserialized = JsonV2.buildObjectMapper().readValue(json, TimeseriesCatalogEntry.class);
+		assertEquals("Pine Flat-Outflow.Stage.Inst.15Minutes.0.one", deserialized.getName());
+		assertEquals("SPK", deserialized.getOffice());
+		assertEquals("m", deserialized.getUnits());
+		assertEquals("15Minutes", deserialized.getInterval());
+		Collection<TimeSeriesAlias> aliases = deserialized.getAliases();
+		assertEquals(1, aliases.size());
+		TimeSeriesAlias alias = aliases.iterator().next();
+		assertEquals("Test Category-LessThan3", alias.getName());
+		assertEquals("test alias 1", alias.getValue());
+	}
 
 	private TimeseriesCatalogEntry buildEntry()
 	{
