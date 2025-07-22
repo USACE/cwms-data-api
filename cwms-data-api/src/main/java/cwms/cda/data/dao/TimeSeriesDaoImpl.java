@@ -945,7 +945,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             // build whereCondition depending on office
             Condition whereCondition = AV_CWMS_TS_ID2.CWMS_TS_ID.in(tsIds);
             if (office != null) {
-                whereCondition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office));
+                whereCondition = whereCondition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office));
             }
 
             // create baseIds alias
