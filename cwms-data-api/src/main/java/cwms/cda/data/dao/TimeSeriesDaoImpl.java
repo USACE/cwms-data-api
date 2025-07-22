@@ -115,6 +115,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private static final String AT_TS_EXTENTS = "AT_TS_EXTENTS";
     private static final String VALUE_AT_MAX_DATE = "value_at_max_date";
     private static final String CWMS_20 = "CWMS_20";
+    private static final String UNIT_ID = "UNIT_ID";
 
     public static final boolean OVERRIDE_PROTECTION = true;
     public static final int TS_ID_MISSING_CODE = 20001;
@@ -944,7 +945,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             // create baseIds alias
             CommonTableExpression<?> baseIds = name("base_ids").as(
-                    selectDistinct(AV_CWMS_TS_ID2.TS_CODE, AV_CWMS_TS_ID2.CWMS_TS_ID)
+                    selectDistinct(AV_CWMS_TS_ID2.TS_CODE, AV_CWMS_TS_ID2.CWMS_TS_ID, AV_CWMS_TS_ID2.UNIT_ID)
                             .from(AV_CWMS_TS_ID2)
                             .where(AV_CWMS_TS_ID2.CWMS_TS_ID.in(tsIds)));
 
@@ -994,6 +995,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             CommonTableExpression<?> maxValues = name("max_values").as(
                     select(
                             field(name(baseIds.getName(), CWMS_TS_ID), String.class),
+                            field(name(baseIds.getName(), UNIT_ID), String.class),
                             tsvLimitedTsCode,
                             tsvLimitedDateTime,
                             field(name(tsvLimited.getName(), VALUE), BigDecimal.class),
@@ -1015,24 +1017,17 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                             )
             );
 
+            // Set default units and convert
             Field<String> getDefaultUnits = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
                             CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(field(name(maxValues.getName(), TS_CODE), BigDecimal.class)),
-                            DSL.val(unitSystem, String.class))
-                    .as(DEFAULT_UNITS);
+                            DSL.val(unitSystem, String.class));
 
-            Field<String> getSIUnits = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
-                            CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(field(name(maxValues.getName(), TS_CODE), BigDecimal.class)),
-                            DSL.val("SI", String.class));
-
-            Field<String> getENUnits = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
-                            CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(field(name(maxValues.getName(), TS_CODE), BigDecimal.class)),
-                            DSL.val("EN", String.class));
             Field<Double> value = field(name(maxValues.getName(), VALUE), Double.class);
 
             Field<Double> convertUnits = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(
                     value,
-                    getSIUnits,
-                    getENUnits
+                    field(name(maxValues.getName(), UNIT_ID), String.class),
+                    getDefaultUnits
             );
 
             // Final query
