@@ -81,7 +81,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 public final class MeasurementController implements CrudHandler {
 
-    static final String TAG = "Measurements";
+    public static final String TAG = "Measurements";
 
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
