@@ -941,13 +941,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<RecentValue> retval = Collections.emptyList();
 
         if (tsIds != null && !tsIds.isEmpty()) {
-            String tsFieldName = CWMS_TS_ID;
+
+            // build whereCondition depending on office
+            Condition whereCondition = AV_CWMS_TS_ID2.CWMS_TS_ID.in(tsIds);
+            if (office != null) {
+                whereCondition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office));
+            }
 
             // create baseIds alias
             CommonTableExpression<?> baseIds = name("base_ids").as(
                     selectDistinct(AV_CWMS_TS_ID2.TS_CODE, AV_CWMS_TS_ID2.CWMS_TS_ID, AV_CWMS_TS_ID2.UNIT_ID)
                             .from(AV_CWMS_TS_ID2)
-                            .where(AV_CWMS_TS_ID2.CWMS_TS_ID.in(tsIds)));
+                            .where(whereCondition));
 
             // convert timestamp to date
             java.sql.Date startDate = new java.sql.Date(pastdate.getTime());
