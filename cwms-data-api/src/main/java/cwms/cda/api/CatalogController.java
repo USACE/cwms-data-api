@@ -2,6 +2,7 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.ACCEPT;
+import static cwms.cda.api.Controllers.INCLUDE_ALIASES;
 import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
 import static cwms.cda.api.Controllers.CURSOR;
 import static cwms.cda.api.Controllers.EXCLUDE_EMPTY;
@@ -168,6 +169,10 @@ public class CatalogController implements CrudHandler {
                     description = "Posix <a href=\"regexp.html\">regular expression</a> matching "
                         + "against the location type."
                 ),
+            @OpenApiParam(name = INCLUDE_ALIASES, type = Boolean.class,
+                    description = "Whether to add aliases to the catalog entries. "
+                            + "Default is false. If true, the aliases will be added to the "
+                            + "catalog entries in the response."),
         },
         pathParams = {
             @OpenApiParam(name = "dataset",
@@ -230,7 +235,8 @@ public class CatalogController implements CrudHandler {
 
             String locationType = queryParamAsClass(ctx, new String[]{LOCATION_TYPE_LIKE},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
-
+            boolean includeAliases = ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class)
+                    .getOrDefault(false);
             String acceptHeader = ctx.header(ACCEPT);
             ContentType contentType = Formats.parseHeader(acceptHeader, Catalog.class);
             Catalog cat = null;
@@ -254,6 +260,7 @@ public class CatalogController implements CrudHandler {
                         .withExcludeEmpty(excludeExtents)
                         .withLocationKind(locationKind)
                         .withLocationType(locationType)
+                        .withIncludeAliases(includeAliases)
                         .build();
 
                 cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, parameters);

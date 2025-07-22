@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import io.restassured.path.json.JsonPath;
 import io.restassured.path.xml.XmlPath;
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 import cwms.cda.data.dto.Catalog;
@@ -42,6 +43,10 @@ class TimeseriesCatalogEntryTest
 		Object tmp = path.get("catalog.entries.entry.extents");
 		assertThat(path.getString("catalog.entries.entry.extents.extents.earliest-time"), equalTo("2017-07-27T05:00:00Z"));
 		assertThat(path.getString("catalog.entries.entry.extents.extents.latest-time"), equalTo("2017-11-24T22:30:00Z"));
+		assertThat(path.getString("catalog.entries.entry.aliases.alias[0].@name"), equalTo("alias1"));
+		assertThat(path.getString("catalog.entries.entry.aliases.alias[0].value"), equalTo("value1"));
+		assertThat(path.getString("catalog.entries.entry.aliases.alias[1].@name"), equalTo("alias2"));
+		assertThat(path.getString("catalog.entries.entry.aliases.alias[1].value"), equalTo("value2"));
 
 	}
 
@@ -66,6 +71,10 @@ class TimeseriesCatalogEntryTest
 		assertThat(path.getString("entries[0].time-zone"), equalTo("US/Central"));
 		assertThat(path.getString("entries[0].extents[0].earliest-time"), equalTo("2017-07-27T05:00:00Z"));
 		assertThat(path.getString("entries[0].extents[0].latest-time"), equalTo("2017-11-24T22:30:00Z"));
+		assertThat(path.getString("entries[0].aliases[0].name"), equalTo("alias1"));
+		assertThat(path.getString("entries[0].aliases[0].value"), equalTo("value1"));
+		assertThat(path.getString("entries[0].aliases[1].name"), equalTo("alias2"));
+		assertThat(path.getString("entries[0].aliases[1].value"), equalTo("value2"));
 
 	}
 
@@ -113,7 +122,10 @@ class TimeseriesCatalogEntryTest
 						.withEarliestTime(ZonedDateTime.parse("2017-07-27T05:00:00Z"))
 						.withLatestTime(ZonedDateTime.parse("2017-11-24T22:30:00Z"))
 						.withLastUpdate(ZonedDateTime.parse("2017-11-24T22:30:00Z"))
-						.build());
+						.build())
+				.withAliases(Arrays.asList(
+						new TimeSeriesAlias.Builder().withName("alias1").withValue("value1").build(),
+						new TimeSeriesAlias.Builder().withName("alias2").withValue("value2").build()));
 		return builder
 				.build();
 
