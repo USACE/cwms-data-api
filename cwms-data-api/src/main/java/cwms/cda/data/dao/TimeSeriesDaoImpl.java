@@ -1051,6 +1051,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                             .eq(field(name(maxValues.getName(), MAX_DATE_TIME), java.sql.Date.class)));
 
             logger.fine(() -> query.getSQL(ParamType.INLINED));
+
+            // fetch and build records
             retval = query.fetch(r -> {
                 TsvDqu tsv = new TsvDqu.Builder()
                         .withOfficeId(office)
@@ -1069,31 +1071,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         return retval;
-    }
-
-
-    @NotNull
-    private RecentValue buildRecentValue(AV_TSV_DQU tsvView, Record jrecord, String tsColumnName) {
-
-        TsvDqu tsv = buildTsvDqu(tsvView, jrecord, tsColumnName);
-        String tsId = jrecord.getValue(tsColumnName, String.class);
-        return new RecentValue(tsId, tsv);
-    }
-
-    @NotNull
-    private TsvDqu buildTsvDqu(AV_TSV_DQU tsvView, Record jrecord, String tsColumnName) {
-        return new TsvDqu.Builder()
-                .withOfficeId(jrecord.getValue(tsvView.OFFICE_ID))
-                .withCwmsTsId(jrecord.getValue(tsvView.CWMS_TS_ID.as(tsColumnName)))
-                .withUnitId(jrecord.getValue(tsvView.UNIT_ID))
-                .withDateTime(jrecord.getValue(tsvView.DATE_TIME))
-                .withVersionDate(jrecord.getValue(tsvView.VERSION_DATE))
-                .withDataEntryDate(jrecord.getValue(tsvView.DATA_ENTRY_DATE))
-                .withValue(jrecord.getValue(tsvView.VALUE))
-                .withQualityCode(jrecord.getValue(tsvView.QUALITY_CODE))
-                .withStartDate(jrecord.getValue(tsvView.START_DATE))
-                .withEndDate(jrecord.getValue(tsvView.END_DATE))
-                .build();
     }
 
     @Override
@@ -1162,8 +1139,22 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .from(innerSelect)
                 .where(dateTime.eq(maxDateTimeField).and(defUnitsField.eq(unit)))
                 .orderBy(field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE.getName()))
-                .fetch(r -> buildRecentValue(tsvView, r, AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID.getName()))
-                ;
+                .fetch(r -> {
+                        String tsId = r.getValue(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID.getName(), String.class);
+                        TsvDqu tsv = new TsvDqu.Builder()
+                                .withOfficeId(r.getValue(tsvView.OFFICE_ID))
+                                .withCwmsTsId(r.getValue(tsvView.CWMS_TS_ID.as(tsId)))
+                                .withUnitId(r.getValue(tsvView.UNIT_ID))
+                                .withDateTime(r.getValue(tsvView.DATE_TIME))
+                                .withVersionDate(r.getValue(tsvView.VERSION_DATE))
+                                .withDataEntryDate(r.getValue(tsvView.DATA_ENTRY_DATE))
+                                .withValue(r.getValue(tsvView.VALUE))
+                                .withQualityCode(r.getValue(tsvView.QUALITY_CODE))
+                                .withStartDate(r.getValue(tsvView.START_DATE))
+                                .withEndDate(r.getValue(tsvView.END_DATE))
+                                .build();
+                        return new RecentValue(tsId, tsv);
+                });
     }
 
 
