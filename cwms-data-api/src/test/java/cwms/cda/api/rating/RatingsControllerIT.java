@@ -143,7 +143,7 @@ class RatingsControllerIT extends DataApiTestIT{
         .then()
         .assertThat()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpServletResponse.SC_OK))
+                .statusCode(is(HttpServletResponse.SC_CREATED))
                 .body(OFFICE_ID, equalTo(SPK))
                 .body(MESSAGE, equalTo("Created RatingSet"))
                 .body(IDENTIFIER, isEmptyString());
