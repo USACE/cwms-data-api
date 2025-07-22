@@ -595,10 +595,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 if (params.isIncludeExtents()) {
                     builder.withExtents(new ArrayList<>());
                 }
-                tsIdExtentMap.put(officeTsId, builder);
+                if(includeAliases) {
+                    if(row.get(AV_CWMS_TS_ID2.ALIASED_ITEM) == null) {
+                        tsIdExtentMap.put(officeTsId, builder); //only add non-aliases... aliases get added as a node to each entry later
+                    }
+                } else {
+                    tsIdExtentMap.put(officeTsId, builder);
+                }
+
             }
-            if(includeAliases)
-            {
+            if(includeAliases) {
                 updateAliasMapping(tsCodeAliasMap, tsIdToCodeMap, row, officeTsId);
             }
 
@@ -609,7 +615,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         .withLastUpdate(DateUtils.toZdt(row.get(AV_TS_EXTENTS_UTC.LAST_UPDATE)))
                         .withVersionTime(DateUtils.toZdt(row.get(AV_TS_EXTENTS_UTC.VERSION_TIME)))
                         .build();
-                tsIdExtentMap.get(officeTsId).withExtent(extents);
+                TimeseriesCatalogEntry.Builder entryBuilder = tsIdExtentMap.get(officeTsId);
+                if(entryBuilder != null) {
+                    entryBuilder.withExtent(extents);
+                }
             }
         });
 

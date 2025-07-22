@@ -201,6 +201,13 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                 .withName("Test Category-LessThan3")
                 .withValue("test alias 1")
                 .build()));
+        //make sure no entries exist with name "test alias 1"
+        List<TimeseriesCatalogEntry> aliasesAsAnEntry = entries
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(e -> e.getName().equals("test alias 1"))
+                .collect(Collectors.toList());
+        assertTrue(aliasesAsAnEntry.isEmpty(), "Found entries with name 'test alias 1', which should not exist.");
     }
 
 
