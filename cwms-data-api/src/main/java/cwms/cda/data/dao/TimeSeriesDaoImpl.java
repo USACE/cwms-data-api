@@ -172,14 +172,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Timestamp tsCursor = null;
         Integer total = null;
 
-        if (includeEntryDate) {
-            Record entryDateSupport = dsl.select(asterisk()).from(table("ALL_TYPES"))
-                    .where(field("TYPE_NAME").eq("ZTSV_ENTRY_TYPE"))
-                    .and(field("OWNER").eq("CWMS_20")).fetchOne();
+        Record entryDateSupport = dsl.select(asterisk()).from(table("ALL_TYPES"))
+            .where(field("TYPE_NAME").eq("ZTSV_ENTRY_TYPE"))
+            .and(field("OWNER").eq("CWMS_20")).fetchOne();
 
-            if (entryDateSupport == null) {
-                throw new DataAccessException("Data entry date retrieval is not supported by this database");
-            }
+        if (includeEntryDate && entryDateSupport == null) {
+            throw new DataAccessException("Data entry date retrieval is not supported by this database");
         }
 
         if (page != null && !page.isEmpty()) {
@@ -364,11 +362,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         );
 
+        String retrievalMethod;
+        if (entryDateSupport != null) {
+            retrievalMethod = "cwms_20.cwms_ts.retrieve_ts_entry_out_tab";  // New method that supports entry date
+        } else {
+            retrievalMethod = "cwms_20.cwms_ts.retrieve_ts_out_tab";    // Legacy method without entry date
+        }
+
         // Now we're going to call the retrieve_ts_entry_out_tab function to get the data and build an
         // internal table from it so we can manipulate it further
         // This code assumes the database timezone is in UTC (per Oracle recommendation)
         SQL retrieveSelectData = DSL.sql(
-                "table(cwms_20.cwms_ts.retrieve_ts_entry_out_tab(?,?,"
+                "table(" + retrievalMethod + "(?,?,"
                         + "cwms_20.cwms_util.to_timestamp(?), cwms_20.cwms_util.to_timestamp(?), 'UTC',"
                         + "?,?,?,?,?,"
                         + getVersionPart(versionDate) + ",?,?) ) retrieveTs",
@@ -410,7 +415,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             if (pageSize > 0) {
                 query.limit(DSL.val(pageSize + 1));
-                query2.limit(DSL.val(pageSize + 1));
+                if (entryDateSupport != null) {
+                    query2.limit(DSL.val(pageSize + 1));
+                }
             }
 
             if (includeEntryDate) {
