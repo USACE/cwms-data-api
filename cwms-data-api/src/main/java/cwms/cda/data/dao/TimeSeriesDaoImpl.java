@@ -1,10 +1,14 @@
 package cwms.cda.data.dao;
 
+
 import cwms.cda.data.dao.rsql.FieldResolver;
 import cwms.cda.data.dao.rsql.MapFieldResolver;
 import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
 import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
+import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.helpers.DateUtils;
+import java.util.HashSet;
+import java.util.Set;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.countDistinct;
 import static org.jooq.impl.DSL.field;
@@ -14,6 +18,7 @@ import static org.jooq.impl.DSL.noCondition;
 import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
+import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
@@ -90,7 +95,6 @@ import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
@@ -113,7 +117,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     /** To be able to use a named inner table (otherwise JOOQ creates a random alias which messes
      * with the planner) we need to use fixed names to be able to reference the required columns.
     ) */
-    private static final AV_CWMS_TS_ID cwmsTsIdView = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
     private static final AV_TS_GRP_ASSGN tsGroupView = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
     private static final AV_LOC_GRP_ASSGN locGroupView = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
 
@@ -134,7 +137,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                             + ".expireAfterSeconds", 600), TimeUnit.SECONDS)
             .recordStats()
             .build();
-
+    private static final FieldMapping AV_CWMS_TS_ID2_FIELD_MAP = new CwmsTsId2FieldMapping();
+    private static final FieldMapping AV_CWMS_TS_ID_FIELD_MAP = new CwmsTsIdFieldMapping();
 
     public TimeSeriesDaoImpl(DSLContext dsl) {
         this(dsl, null);
@@ -595,11 +599,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String cursorTsId = "*";
         String cursorOffice = null;
         Catalog.CatalogPage catPage = null;
+        FieldMapping cwmsTsIdFields = inputParams.includeAliases() ? AV_CWMS_TS_ID2_FIELD_MAP : AV_CWMS_TS_ID_FIELD_MAP;
+        Table<?> table = inputParams.includeAliases() ? AV_CWMS_TS_ID2 : AV_CWMS_TS_ID.AV_CWMS_TS_ID;
         if (page == null || page.isEmpty()) {
-            CommonTableExpression<?> limiter = buildWithClause(inputParams, buildWhereConditions(inputParams),
+            CommonTableExpression<?> limiter = buildWithClause(cwmsTsIdFields, inputParams, buildWhereConditions(inputParams),
                     new ArrayList<>(), pageSize, true);
             SelectJoinStep<Record1<Integer>> totalQuery = dsl.with(limiter)
-                    .select(countDistinct(limiter.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)))
+                    .select(countDistinct(limiter.field(cwmsTsIdFields.getTsCode())))
                     .from(limiter);
             logger.fine(() -> totalQuery.getSQL(ParamType.INLINED));
             total = totalQuery.fetchOne(0, int.class);
@@ -626,20 +632,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
         final CatalogRequestParameters params = inputParams;
 
-        List<TableField<?,?>> pageEntryFields = new ArrayList<>(getCwmsTsIdFields());
+        List<Field<?>> pageEntryFields = new ArrayList<>(getCwmsTsIdFieldsToIncludeInQuery(cwmsTsIdFields));
         if (params.isIncludeExtents()) {
             pageEntryFields.addAll(getExtentsFields());
         }
 
         List<Condition> whereConditions = buildWhereConditions(params);
-        List<Condition> pagingConditions = buildPagingConditions(cursorOffice, cursorTsId);
-        CommonTableExpression<?> limiter = buildWithClause(params, whereConditions, pagingConditions, pageSize, false);
-        Field<BigDecimal> limiterCode = limiter.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE);
+        List<Condition> pagingConditions = buildPagingConditions(cwmsTsIdFields, cursorOffice, cursorTsId);
+        CommonTableExpression<?> limiter = buildWithClause(cwmsTsIdFields, params, whereConditions, pagingConditions, pageSize, false);
+        Field<BigDecimal> limiterCode = limiter.field(cwmsTsIdFields.getTsCode());
         SelectJoinStep<?> tmpQuery = dsl.with(limiter)
                                         .select(pageEntryFields)
                                         .from(limiter)
-                                        .join(AV_CWMS_TS_ID.AV_CWMS_TS_ID)
-                                            .on(limiterCode.eq(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE));
+                                        .join(table).on(limiterCode.eq(cwmsTsIdFields.getTsCode()));
 
         if (params.isIncludeExtents()) {
 
@@ -648,30 +653,43 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                          .eq(AV_TS_EXTENTS_UTC.TS_CODE.coerce(limiterCode)));
         }
         final SelectSeekStep2<?, String, String> overallQuery = tmpQuery
-                .orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID,
-                    AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID);
+                .orderBy(cwmsTsIdFields.getDbOfficeId(),
+                        cwmsTsIdFields.getCwmsTsId());
         logger.fine(() -> overallQuery.getSQL(ParamType.INLINED));
         Result<?> result = overallQuery.fetch();
 
         Map<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap = new LinkedHashMap<>();
+        Map<String, Set<TimeSeriesAlias>> tsCodeAliasMap = new LinkedHashMap<>();
+        Map<String, String> tsIdToCodeMap = new LinkedHashMap<>(); //this is only for non-aliases
+        boolean includeAliases = params.includeAliases();
         result.forEach(row -> {
-            String officeTsId = row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID)
+            String officeTsId = row.get(cwmsTsIdFields.getDbOfficeId())
                     + "/"
-                    + row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID);
+                    + row.get(cwmsTsIdFields.getCwmsTsId());
             if (!tsIdExtentMap.containsKey(officeTsId)) {
                 TimeseriesCatalogEntry.Builder builder = new TimeseriesCatalogEntry.Builder()
-                        .officeId(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID))
-                        .cwmsTsId(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID))
-                        .units(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.UNIT_ID))
-                        .interval(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_ID))
-                        .intervalOffset(row.get(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_UTC_OFFSET));
+                        .officeId(row.get(cwmsTsIdFields.getDbOfficeId()))
+                        .cwmsTsId(row.get(cwmsTsIdFields.getCwmsTsId()))
+                        .units(row.get(cwmsTsIdFields.getUnitId()))
+                        .interval(row.get(cwmsTsIdFields.getIntervalId()))
+                        .intervalOffset(row.get(cwmsTsIdFields.getIntervalUtcOffset()));
 
                 builder.timeZone(row.get("TIME_ZONE_ID", String.class));
 
                 if (params.isIncludeExtents()) {
                     builder.withExtents(new ArrayList<>());
                 }
-                tsIdExtentMap.put(officeTsId, builder);
+                if(includeAliases) {
+                    if(row.get(AV_CWMS_TS_ID2.ALIASED_ITEM) == null) {
+                        tsIdExtentMap.put(officeTsId, builder); //only add non-aliases... aliases get added as a node to each entry later
+                    }
+                } else {
+                    tsIdExtentMap.put(officeTsId, builder);
+                }
+
+            }
+            if(includeAliases) {
+                updateAliasMapping(tsCodeAliasMap, tsIdToCodeMap, row, officeTsId);
             }
 
             if (params.isIncludeExtents()) {
@@ -681,9 +699,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         .withLastUpdate(DateUtils.toZdt(row.get(AV_TS_EXTENTS_UTC.LAST_UPDATE)))
                         .withVersionTime(DateUtils.toZdt(row.get(AV_TS_EXTENTS_UTC.VERSION_TIME)))
                         .build();
-                tsIdExtentMap.get(officeTsId).withExtent(extents);
+                TimeseriesCatalogEntry.Builder entryBuilder = tsIdExtentMap.get(officeTsId);
+                if(entryBuilder != null) {
+                    entryBuilder.withExtent(extents);
+                }
             }
         });
+
+        if(includeAliases) {
+            addAliasesToBuilders(tsIdExtentMap, tsCodeAliasMap, tsIdToCodeMap);
+        }
 
         List<? extends CatalogEntry> entries = tsIdExtentMap.values().stream()
                 .map(TimeseriesCatalogEntry.Builder::build)
@@ -721,18 +746,49 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return filterConditions;
     }
 
-    private static @NotNull List<Condition> buildPagingConditions(String cursorOffice, String cursorTsId) {
+
+    private void addAliasesToBuilders(Map<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap, Map<String, Set<TimeSeriesAlias>> tsCodeAliasMap, Map<String, String> tsIdToCodeMap) {
+        for (Map.Entry<String, Set<TimeSeriesAlias>> entry : tsCodeAliasMap.entrySet()) {
+            String tsCode = entry.getKey();
+            Set<TimeSeriesAlias> aliases = entry.getValue();
+            for (Map.Entry<String, String> e : tsIdToCodeMap.entrySet()) {
+                String tsId = e.getKey();
+                String code = e.getValue();
+                if (code.equals(tsCode)) {
+                    tsIdExtentMap.get(tsId).withAliases(aliases);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void updateAliasMapping(Map<String, Set<TimeSeriesAlias>> tsCodeAliasMap, Map<String, String> tsIdToCodeMap, Record row, String officeTsId) {
+        boolean isAlias = row.get(AV_CWMS_TS_ID2.ALIASED_ITEM) != null;
+        String tsCode = row.get(AV_CWMS_TS_ID2.TS_CODE).toString();
+        if(isAlias) {
+            tsCodeAliasMap.computeIfAbsent(tsCode, k -> new HashSet<>())
+                .add(new TimeSeriesAlias.Builder()
+                    .withName(row.get(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY) + "-" + row.get(AV_CWMS_TS_ID2.TS_ALIAS_GROUP))
+                    .withValue(row.get(AV_CWMS_TS_ID2.CWMS_TS_ID))
+                    .build());
+        } else {
+            tsIdToCodeMap.put(officeTsId, tsCode);
+        }
+    }
+
+    private static @NotNull List<Condition> buildPagingConditions(FieldMapping cwmsTsIdFields, String cursorOffice, String cursorTsId) {
+
         List<Condition> pagingConditions = new ArrayList<>();
 
         // Can't do the rownum thing here b/c we want global ordering, not ordering within the page.
         //pagingConditions.add(DSL.noCondition());
 
         if (cursorOffice != null) {
-            Condition moreInSameOffice = AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID
+            Condition moreInSameOffice = cwmsTsIdFields.getDbOfficeId()
                     .eq(cursorOffice.toUpperCase())
-                    .and(DSL.upper(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID)
+                    .and(DSL.upper(cwmsTsIdFields.getCwmsTsId())
                             .greaterThan(cursorTsId));
-            Condition nextOffice = AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID
+            Condition nextOffice = cwmsTsIdFields.getDbOfficeId()
                     .greaterThan(cursorOffice.toUpperCase());
             pagingConditions.add(moreInSameOffice.or(nextOffice));
         }
@@ -748,16 +804,21 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return extentsFields;
     }
 
-    private @NotNull List<TableField<?,?>> getCwmsTsIdFields() {
-        List<TableField<?,?>> cwmsTsIdFields = new ArrayList<>();
-        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID);
-        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID);
-        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.UNIT_ID);
-        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_ID);
-        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_UTC_OFFSET);
-        cwmsTsIdFields.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TIME_ZONE_ID);
-
-        return cwmsTsIdFields;
+    private @NotNull List<Field<?>> getCwmsTsIdFieldsToIncludeInQuery(FieldMapping cwmsTsIdFields) {
+        List<Field<?>> retVal = new ArrayList<>();
+        retVal.add(cwmsTsIdFields.getDbOfficeId());
+        retVal.add(cwmsTsIdFields.getCwmsTsId());
+        retVal.add(cwmsTsIdFields.getUnitId());
+        retVal.add(cwmsTsIdFields.getIntervalId());
+        retVal.add(cwmsTsIdFields.getIntervalUtcOffset());
+        retVal.add(cwmsTsIdFields.getTimeZoneId());
+        if(cwmsTsIdFields.includesAliases()) {
+            retVal.add(AV_CWMS_TS_ID2.ALIASED_ITEM);
+            retVal.add(AV_CWMS_TS_ID2.TS_CODE);
+            retVal.add(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY);
+            retVal.add(AV_CWMS_TS_ID2.TS_ALIAS_GROUP);
+        }
+        return retVal;
     }
 
     private @NotNull List<Condition> buildWhereConditions(CatalogRequestParameters params) {
@@ -770,34 +831,33 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return conditions;
     }
 
-    private static @NotNull CommonTableExpression<?> buildWithClause(CatalogRequestParameters params,
-            List<Condition> whereConditions, List<Condition> pagingConditions, int pageSize, boolean forCount) {
-        TableLike<?> fromTable = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
-
+    private static @NotNull CommonTableExpression<?> buildWithClause(FieldMapping cwmsTsIdFields, CatalogRequestParameters params,
+                                                                     List<Condition> whereConditions, List<Condition> pagingConditions, int pageSize, boolean forCount) {
+        Table<?> fromTable = params.includeAliases() ? AV_CWMS_TS_ID2 : AV_CWMS_TS_ID.AV_CWMS_TS_ID;
         List<Field<?>> selectFields = new ArrayList<>();
-        selectFields.add(fromTable.field(cwmsTsIdView.TS_CODE));
-        selectFields.add(fromTable.field(cwmsTsIdView.DB_OFFICE_ID));
+        selectFields.add(fromTable.field(cwmsTsIdFields.getTsCode()));
+        selectFields.add(fromTable.field(cwmsTsIdFields.getDbOfficeId()));
 
-        selectFields.add(fromTable.field(cwmsTsIdView.CWMS_TS_ID));
+        selectFields.add(fromTable.field(cwmsTsIdFields.getCwmsTsId()));
         TableOnConditionStep<Record> on = null;
-
+        Table<?> table = params.includeAliases() ? AV_CWMS_TS_ID2 : AV_CWMS_TS_ID.AV_CWMS_TS_ID;
         if (params.needs(tsGroupView)) {
-            on = AV_CWMS_TS_ID.AV_CWMS_TS_ID
+            on = table
                     .join(tsGroupView)
-                    .on(cwmsTsIdView.TS_CODE.eq(tsGroupView.TS_CODE));
+                    .on(cwmsTsIdFields.getTsCode().eq(tsGroupView.TS_CODE));
             fromTable = on;
         }
 
         if (params.needs(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)) {
             if (on == null) {
-                on = AV_CWMS_TS_ID.AV_CWMS_TS_ID
+                on = table
                         .leftJoin(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)
-                        .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.LOCATION_CODE
+                        .on(cwmsTsIdFields.getLocationCode()
                                 .eq(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.LOCATION_CODE));
             } else {
                 on = on
                         .leftJoin(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN)
-                        .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.LOCATION_CODE
+                        .on(cwmsTsIdFields.getLocationCode()
                                 .eq(AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN.LOCATION_CODE));
             }
             fromTable = on;
@@ -805,16 +865,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         if (params.needs(AV_LOC.AV_LOC)) {
             if (on == null) {
-                on = AV_CWMS_TS_ID.AV_CWMS_TS_ID
+                on = table
                         .leftJoin(AV_LOC.AV_LOC)
                         .on(AV_LOC.AV_LOC.LOCATION_CODE
-                                .eq(AV_CWMS_TS_ID.AV_CWMS_TS_ID.LOCATION_CODE
+                                .eq(cwmsTsIdFields.getLocationCode()
                                         .coerce(AV_LOC.AV_LOC.LOCATION_CODE)));
             } else {
                 on = on
                         .leftJoin(AV_LOC.AV_LOC)
                         .on(AV_LOC.AV_LOC.LOCATION_CODE
-                                .eq(AV_CWMS_TS_ID.AV_CWMS_TS_ID.LOCATION_CODE
+                                .eq(cwmsTsIdFields.getLocationCode()
                                         .coerce(AV_LOC.AV_LOC.LOCATION_CODE)));
             }
             selectFields.add(AV_LOC.AV_LOC.BOUNDING_OFFICE_ID);
@@ -823,17 +883,17 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         if (params.isExcludeEmpty()) {
             if (on == null) {
-                on = AV_CWMS_TS_ID.AV_CWMS_TS_ID
+                on = table
                         .leftJoin(AV_TS_EXTENTS_UTC)
-                        .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE
+                        .on(cwmsTsIdFields.getTsCode()
                                 .eq(AV_TS_EXTENTS_UTC.TS_CODE
-                                        .coerce(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)));
+                                        .coerce(cwmsTsIdFields.getTsCode())));
             } else {
                 on = on
                         .leftJoin(AV_TS_EXTENTS_UTC)
-                        .on(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE
+                        .on(cwmsTsIdFields.getTsCode()
                                 .eq(AV_TS_EXTENTS_UTC.TS_CODE
-                                        .coerce(AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE)));
+                                        .coerce(cwmsTsIdFields.getTsCode())));
             }
             fromTable = on;
         }
@@ -841,23 +901,23 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         TableLike<?> innerSelect = selectDistinct(selectFields)
                                      .from(fromTable)
                                      .where(whereConditions).and(DSL.and(pagingConditions))
-                                     .orderBy(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID,
-                                             AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID)
+                                     .orderBy(cwmsTsIdFields.getDbOfficeId(),
+                                             cwmsTsIdFields.getCwmsTsId())
                                      .asTable("limiterInner");
         if (forCount) {
             return name("limiter").as(
                     select(asterisk())
                     .from(innerSelect)
-                    .orderBy(innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID),
-                            innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID))
+                    .orderBy(innerSelect.field(cwmsTsIdFields.getDbOfficeId()),
+                            innerSelect.field(cwmsTsIdFields.getCwmsTsId()))
                     );
         } else {
             return name("limiter").as(
                     select(asterisk())
                     .from(innerSelect)
                     .where(field("rownum").lessOrEqual(pageSize))
-                    .orderBy(innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID),
-                            innerSelect.field(AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID))
+                    .orderBy(innerSelect.field(cwmsTsIdFields.getDbOfficeId()),
+                            innerSelect.field(cwmsTsIdFields.getCwmsTsId()))
                     );
         }
     }
@@ -918,14 +978,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     private Collection<? extends Condition> buildCwmsTsIdConditions(CatalogRequestParameters params) {
         List<Condition> retval = new ArrayList<>();
-
+        FieldMapping cwmsTsIdFields = params.includeAliases() ? AV_CWMS_TS_ID2_FIELD_MAP : AV_CWMS_TS_ID_FIELD_MAP;
         if (params.getOffice() != null) {
-            retval.add(AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID.eq(params.getOffice().toUpperCase()));
+            retval.add(cwmsTsIdFields.getDbOfficeId().eq(params.getOffice().toUpperCase()));
         }
 
         retval.add(
             caseInsensitiveLikeRegexNullTrue(
-                AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID,
+                cwmsTsIdFields.getCwmsTsId(),
                 params.getIdLike()));
 
         return retval;
@@ -1494,6 +1554,112 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             public DeleteOptions build() {
                 return new DeleteOptions(this);
             }
+        }
+    }
+  
+    private interface FieldMapping {
+        Field<BigDecimal> getTsCode();
+        Field<BigDecimal> getLocationCode();
+        Field<String> getDbOfficeId();
+        Field<String> getCwmsTsId();
+        Field<String> getUnitId();
+        Field<String> getIntervalId();
+        Field<BigDecimal> getIntervalUtcOffset();
+        Field<String> getTimeZoneId();
+        boolean includesAliases();
+    }
+
+    private static class CwmsTsIdFieldMapping implements FieldMapping {
+        @Override
+        public Field<BigDecimal> getTsCode() {
+            return AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE;
+        }
+
+        @Override
+        public Field<BigDecimal> getLocationCode() {
+            return AV_CWMS_TS_ID.AV_CWMS_TS_ID.LOCATION_CODE;
+        }
+
+        @Override
+        public Field<String> getDbOfficeId() {
+            return AV_CWMS_TS_ID.AV_CWMS_TS_ID.DB_OFFICE_ID;
+        }
+
+        @Override
+        public Field<String> getCwmsTsId() {
+            return AV_CWMS_TS_ID.AV_CWMS_TS_ID.CWMS_TS_ID;
+        }
+
+        @Override
+        public Field<String> getUnitId() {
+            return AV_CWMS_TS_ID.AV_CWMS_TS_ID.UNIT_ID;
+        }
+
+        @Override
+        public Field<String> getIntervalId() {
+            return AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_ID;
+        }
+
+        @Override
+        public Field<BigDecimal> getIntervalUtcOffset() {
+            return AV_CWMS_TS_ID.AV_CWMS_TS_ID.INTERVAL_UTC_OFFSET;
+        }
+
+        @Override
+        public Field<String> getTimeZoneId() {
+            return AV_CWMS_TS_ID.AV_CWMS_TS_ID.TIME_ZONE_ID;
+        }
+
+        @Override
+        public boolean includesAliases() {
+            return false;
+        }
+    }
+
+    private static class CwmsTsId2FieldMapping implements FieldMapping {
+        @Override
+        public Field<BigDecimal> getTsCode() {
+            return AV_CWMS_TS_ID2.TS_CODE;
+        }
+
+        @Override
+        public Field<BigDecimal> getLocationCode() {
+            return AV_CWMS_TS_ID2.LOCATION_CODE;
+        }
+
+        @Override
+        public Field<String> getDbOfficeId() {
+            return AV_CWMS_TS_ID2.DB_OFFICE_ID;
+        }
+
+        @Override
+        public Field<String> getCwmsTsId() {
+            return AV_CWMS_TS_ID2.CWMS_TS_ID;
+        }
+
+        @Override
+        public Field<String> getUnitId() {
+            return AV_CWMS_TS_ID2.UNIT_ID;
+        }
+
+        @Override
+        public Field<String> getIntervalId() {
+            return AV_CWMS_TS_ID2.INTERVAL_ID;
+        }
+
+        @Override
+        public Field<BigDecimal> getIntervalUtcOffset() {
+            return AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET;
+        }
+
+        @Override
+        public Field<String> getTimeZoneId() {
+            return AV_CWMS_TS_ID2.TIME_ZONE_ID;
+        }
+
+        @Override
+        public boolean includesAliases() {
+            return true;
         }
     }
 

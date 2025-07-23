@@ -20,6 +20,7 @@ public class CatalogRequestParameters {
     private final boolean excludeEmpty;
     private final String locationKind;
     private final String locationType;
+    private final boolean includeAliases;
 
     private CatalogRequestParameters(Builder builder) {
         this.office = builder.office;
@@ -34,6 +35,7 @@ public class CatalogRequestParameters {
         this.excludeEmpty = builder.excludeEmpty;
         this.locationKind = builder.locationKind;
         this.locationType = builder.locationType;
+        this.includeAliases = builder.includeAliases;
     }
 
     public String getBoundingOfficeLike() {
@@ -84,6 +86,10 @@ public class CatalogRequestParameters {
         return locationType;
     }
 
+    public boolean includeAliases() {
+        return includeAliases;
+    }
+
 
     public static class Builder {
         String office;
@@ -98,6 +104,7 @@ public class CatalogRequestParameters {
         private boolean excludeEmpty = true;
         String locationKind;
         String locationType;
+        private boolean includeAliases = false;
 
         public Builder() {
 
@@ -160,6 +167,11 @@ public class CatalogRequestParameters {
 
         public Builder withLocationType(String locationType) {
             this.locationType = locationType;
+            return this;
+        }
+
+        public Builder withIncludeAliases(boolean includeAliases) {
+            this.includeAliases = includeAliases;
             return this;
         }
 
