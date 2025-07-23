@@ -406,7 +406,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .body(OFFICE_ID_TEXT, equalTo(streamReach.getStreamId().getOfficeId()))
                 .body(MESSAGE, equalTo("Stream Reach successfully deleted from CWMS."))
-                .body(IDENTIFIER, equalTo(streamReach.getStreamId().getName()));
+                .body(IDENTIFIER, equalTo(streamReachId));
 
         //verify deletion
         given()
