@@ -112,6 +112,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private static final String TS_CODE = "TS_CODE";
     private static final String VALUE = "VALUE";
     private static final String CWMS_TS_ID = "CWMS_TS_ID";
+    private static final String TS_ID = "TS_ID";
     private static final String AT_TS_EXTENTS = "AT_TS_EXTENTS";
     private static final String VALUE_AT_MAX_DATE = "value_at_max_date";
     private static final String CWMS_20 = "CWMS_20";
@@ -960,7 +961,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             // extract year
             LocalDate localEndDate = endDate.toLocalDate();
-            int year = localEndDate.getYear();
+            LocalDate localStartDate = startDate.toLocalDate();
+            int year1 = localStartDate.getYear();
+            int year2 = localEndDate.getYear();
 
 
             // helper subquery for SELECT ts_code FROM base_ids
@@ -968,22 +971,26 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .from(baseIds);
 
             // references to appropriate year tables, current year and past year
-            Table<?> AT_TSV_PREV_YEAR_TABLE = table(name(CWMS_20, "AT_TSV_" + (year - 1)));
-            Table<?> AT_TSV_CURR_YEAR_TABLE = table(name(CWMS_20, "AT_TSV_" + year));
+            Table<?> AT_TSV_PREV_YEAR_TABLE = table(name(CWMS_20, "AT_TSV_" + year1));
+            Table<?> AT_TSV_CURR_YEAR_TABLE = table(name(CWMS_20, "AT_TSV_" + year2));
 
-            // create tsvLimited alias
-            CommonTableExpression<?> tsvLimited = name("tsv_limited").as(
-                    select(asterisk())
-                            .from(AT_TSV_PREV_YEAR_TABLE)
-                            .where(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
-                            .and(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery))
-                            .unionAll(
-                                    select(asterisk())
-                                            .from(AT_TSV_CURR_YEAR_TABLE)
-                                            .where(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
-                                            .and(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery))
-                            )
-            );
+            Select<Record> prevYearSelect = select(asterisk())
+                    .from(AT_TSV_PREV_YEAR_TABLE)
+                    .where(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
+                    .and(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
+
+            Select<Record> currYearSelect = select(asterisk())
+                    .from(AT_TSV_CURR_YEAR_TABLE)
+                    .where(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
+                    .and(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
+
+            Select<Record> combinedSelect = prevYearSelect;
+            // union tables if start and end date are not in the same year
+            if (year1 != year2) {
+                combinedSelect = prevYearSelect.unionAll(currYearSelect);
+            }
+
+            CommonTableExpression<?> tsvLimited = name("tsv_limited").as(combinedSelect);
 
             // Create table and field references for AT_TS_EXTENTS
             Table<?> AT_TS_EXTENTS_TABLE = table(name(CWMS_20, AT_TS_EXTENTS));
@@ -1082,84 +1089,154 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public List<RecentValue> findRecentsInRange(String office, String categoryId, String groupId,
                                                 @NotNull Timestamp pastLimit, @NotNull Timestamp futureLimit,
                                                  @NotNull UnitSystem unitSystem) {
-        AV_TSV_DQU tsvView = AV_TSV_DQU.AV_TSV_DQU;  // should we look at the daterange and
-        // possible use 30D view?
 
-        Condition whereCondition =
-                tsvView.VALUE.isNotNull()
-                        .and(tsvView.DATE_TIME.lt(futureLimit))
-                        .and(tsvView.DATE_TIME.gt(pastLimit))
-                        .and(tsvView.START_DATE.le(futureLimit))
-                        .and(tsvView.END_DATE.gt(pastLimit));
+        List<RecentValue> retval;
 
+        // Create whereCondition for filtering by category, group, and office
+        Condition whereCondition = DSL.trueCondition();
+        if (categoryId != null) {
+            whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.CATEGORY_ID.eq(categoryId));
+        }
+        if (groupId != null) {
+            whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.GROUP_ID.eq(groupId));
+        }
         if (office != null) {
             whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID.eq(office));
         }
 
-        if (categoryId != null) {
-            whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.CATEGORY_ID.eq(categoryId));
+        CommonTableExpression<?> baseIds = name("base_ids").as(
+                selectDistinct(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_CODE, AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID)
+                        .from(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN)
+                        .where(whereCondition));
+
+        // convert timestamp to date
+        java.sql.Date startDate = new java.sql.Date(pastLimit.getTime());
+        java.sql.Date endDate = new java.sql.Date(futureLimit.getTime());
+
+        // extract year
+        LocalDate localEndDate = endDate.toLocalDate();
+        LocalDate localStartDate = startDate.toLocalDate();
+        int year1 = localStartDate.getYear();
+        int year2 = localEndDate.getYear();
+
+
+        // helper subquery for SELECT ts_code FROM base_ids
+        Select<Record1<BigDecimal>> tsCodeSubquery = select(baseIds.field(AV_CWMS_TS_ID2.TS_CODE))
+                .from(baseIds);
+
+        // references to appropriate year tables, current year and past year
+        Table<?> AT_TSV_PREV_YEAR_TABLE = table(name(CWMS_20, "AT_TSV_" + year1));
+        Table<?> AT_TSV_CURR_YEAR_TABLE = table(name(CWMS_20, "AT_TSV_" + year2));
+
+        Select<Record> prevYearSelect = select(asterisk())
+                .from(AT_TSV_PREV_YEAR_TABLE)
+                .where(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
+                .and(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
+
+        Select<Record> currYearSelect = select(asterisk())
+                .from(AT_TSV_CURR_YEAR_TABLE)
+                .where(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
+                .and(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
+
+        Select<Record> combinedSelect = prevYearSelect;
+        // union tables if start and end date are not in the same year
+        if (year1 != year2) {
+            combinedSelect = prevYearSelect.unionAll(currYearSelect);
         }
 
-        if (groupId != null) {
-            whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.GROUP_ID.eq(groupId));
-        }
+        CommonTableExpression<?> tsvLimited = name("tsv_limited").as(combinedSelect);
 
-        Field<String> defUnitsField = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
-                        CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(AV_TSV_DQU.AV_TSV_DQU.TS_CODE),
-                        DSL.val(unitSystem, String.class))
-                .as(DEFAULT_UNITS);
-        Field<Timestamp> maxDateTimeField = max(tsvView.DATE_TIME).over(partitionBy(tsvView.TS_CODE))
-                .as(MAX_DATE_TIME);
+        // Create table and field references for AT_TS_EXTENTS
+        Table<?> AT_TS_EXTENTS_TABLE = table(name(CWMS_20, AT_TS_EXTENTS));
+        Field<BigDecimal> AT_TS_EXTENTS_TS_CODE = field(name(CWMS_20, AT_TS_EXTENTS, TS_CODE), BigDecimal.class);
+        Field<java.sql.Date> AT_TS_EXTENTS_VERSION_TIME = field(name(CWMS_20, AT_TS_EXTENTS, "VERSION_TIME"), java.sql.Date.class);
+        Field<Timestamp> AT_TS_EXTENTS_EARLIEST_ENTRY_TIME = field(name(CWMS_20, AT_TS_EXTENTS, "EARLIEST_ENTRY_TIME"), Timestamp.class);
+        Field<Timestamp> AT_TS_EXTENTS_LATEST_ENTRY_TIME = field(name(CWMS_20, AT_TS_EXTENTS, "LATEST_ENTRY_TIME"), Timestamp.class);
 
-        SelectConditionStep<? extends Record> innerSelect
-                = dsl.select(tsvView.OFFICE_ID, tsvView.TS_CODE, tsvView.DATE_TIME,
-                        tsvView.VERSION_DATE, tsvView.DATA_ENTRY_DATE, tsvView.VALUE,
-                        tsvView.QUALITY_CODE, tsvView.START_DATE, tsvView.END_DATE, tsvView.UNIT_ID,
-                        defUnitsField,
-                        maxDateTimeField,
-                        AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE,
-                        AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID)
-                .from(tsvView.join(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN)
-                        .on(tsvView.TS_CODE.eq(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_CODE.cast(Long.class))))
-                .where(whereCondition);
+        // Extract repeated TsCode and DateTime
+        Field<BigDecimal> tsvLimitedTsCode = field(name(tsvLimited.getName(), TS_CODE), BigDecimal.class);
+        Field<java.sql.Date> tsvLimitedDateTime = field(name(tsvLimited.getName(), DATE_TIME), java.sql.Date.class);
 
-        Field<Timestamp> dateTime = innerSelect.field(tsvView.DATE_TIME);
-        Field<String> unit = innerSelect.field(tsvView.UNIT_ID);
+        // Create max_values alias
+        CommonTableExpression<?> maxValues = name("max_values").as(
+                select(
+                        field(name(baseIds.getName(), TS_ID), String.class),
+                        AV_CWMS_TS_ID2.UNIT_ID,
+                        tsvLimitedTsCode,
+                        tsvLimitedDateTime,
+                        field(name(tsvLimited.getName(), VALUE), BigDecimal.class),
+                        field(name(tsvLimited.getName(), VERSION_DATE), java.sql.Date.class),
+                        field(name(tsvLimited.getName(), DATA_ENTRY_DATE), java.sql.Date.class),
+                        field(name(tsvLimited.getName(), QUALITY_CODE), Integer.class),
+                        AT_TS_EXTENTS_EARLIEST_ENTRY_TIME.as(START_DATE),
+                        AT_TS_EXTENTS_LATEST_ENTRY_TIME.as(END_DATE),
+                        max(tsvLimitedDateTime)
+                                .over(partitionBy(tsvLimitedTsCode))
+                                .as(MAX_DATE_TIME)
+                )
+                        .from(tsvLimited)
+                        .join(baseIds).on(field(name(baseIds.getName(), TS_CODE), BigDecimal.class).equal(tsvLimitedTsCode))
+                        .join(AV_CWMS_TS_ID2).on(field(name(baseIds.getName(), TS_CODE), BigDecimal.class).equal(AV_CWMS_TS_ID2.TS_CODE))
+                        .join(AT_TS_EXTENTS_TABLE).on(
+                                AT_TS_EXTENTS_TS_CODE.equal(tsvLimitedTsCode)
+                                        .and(AT_TS_EXTENTS_VERSION_TIME
+                                                .equal(field(name(tsvLimited.getName(), VERSION_DATE), java.sql.Date.class)))
+                        )
+        );
 
-        Field[] queryFields = new Field[]{
-            innerSelect.field(tsvView.OFFICE_ID),
-            innerSelect.field(tsvView.TS_CODE),
-            innerSelect.field(tsvView.VERSION_DATE),
-            innerSelect.field(tsvView.DATA_ENTRY_DATE),
-            innerSelect.field(tsvView.VALUE),
-            innerSelect.field(tsvView.QUALITY_CODE),
-            innerSelect.field(tsvView.START_DATE),
-            innerSelect.field(tsvView.END_DATE),
-            dateTime,
-            unit,
-            innerSelect.field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID),
-            innerSelect.field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE)};
+        // Set default units and convert
+        Field<String> getDefaultUnits = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
+                CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(field(name(maxValues.getName(), TS_CODE), BigDecimal.class)),
+                DSL.val(unitSystem, String.class));
 
-        return dsl.select(queryFields)
-                .from(innerSelect)
-                .where(dateTime.eq(maxDateTimeField).and(defUnitsField.eq(unit)))
-                .orderBy(field(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE.getName()))
-                .fetch(r -> {
-                        String tsId = r.getValue(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID.getName(), String.class);
-                        TsvDqu tsv = new TsvDqu.Builder()
-                                .withOfficeId(r.getValue(tsvView.OFFICE_ID))
-                                .withCwmsTsId(r.getValue(tsvView.CWMS_TS_ID.as(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID.getName())))
-                                .withUnitId(r.getValue(tsvView.UNIT_ID))
-                                .withDateTime(r.getValue(tsvView.DATE_TIME))
-                                .withVersionDate(r.getValue(tsvView.VERSION_DATE))
-                                .withDataEntryDate(r.getValue(tsvView.DATA_ENTRY_DATE))
-                                .withValue(r.getValue(tsvView.VALUE))
-                                .withQualityCode(r.getValue(tsvView.QUALITY_CODE))
-                                .withStartDate(r.getValue(tsvView.START_DATE))
-                                .withEndDate(r.getValue(tsvView.END_DATE))
-                                .build();
-                        return new RecentValue(tsId, tsv);
-                });
+        Field<Double> value = field(name(maxValues.getName(), VALUE), Double.class);
+
+        Field<Double> convertUnits = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(
+                value,
+                field(name(maxValues.getName(), UNIT_ID), String.class),
+                getDefaultUnits
+        );
+
+        // Final query
+        SelectConditionStep<Record10<String, java.sql.Date, java.sql.Date, java.sql.Date, Integer, java.sql.Date, java.sql.Date, String, java.sql.Date, Double>> query = dsl.with(baseIds)
+                .with(tsvLimited)
+                .with(maxValues)
+                .select(
+                        field(name(maxValues.getName(), TS_ID), String.class),
+                        field(name(maxValues.getName(), DATE_TIME), java.sql.Date.class),
+                        field(name(maxValues.getName(), VERSION_DATE), java.sql.Date.class),
+                        field(name(maxValues.getName(), DATA_ENTRY_DATE), java.sql.Date.class),
+                        field(name(maxValues.getName(), QUALITY_CODE), Integer.class),
+                        field(name(maxValues.getName(), START_DATE), java.sql.Date.class),
+                        field(name(maxValues.getName(), END_DATE), java.sql.Date.class),
+                        getDefaultUnits.as(DEFAULT_UNITS),
+                        field(name(maxValues.getName(), DATE_TIME), java.sql.Date.class).as(MAX_DATE_TIME),
+                        convertUnits.as(VALUE_AT_MAX_DATE)
+                )
+                .from(maxValues)
+                .where(field(name(maxValues.getName(), DATE_TIME), java.sql.Date.class)
+                        .eq(field(name(maxValues.getName(), MAX_DATE_TIME), java.sql.Date.class)));
+
+        logger.fine(() -> query.getSQL(ParamType.INLINED));
+
+        // fetch and build records
+        retval = query.fetch(r -> {
+            TsvDqu tsv = new TsvDqu.Builder()
+                    .withOfficeId(office)
+                    .withCwmsTsId(r.getValue(TS_ID, String.class))
+                    .withUnitId(r.getValue(DEFAULT_UNITS, String.class))
+                    .withDateTime(r.getValue(DATE_TIME, java.sql.Date.class))
+                    .withVersionDate(r.getValue(VERSION_DATE, java.sql.Date.class))
+                    .withDataEntryDate(r.getValue(DATA_ENTRY_DATE, java.sql.Date.class))
+                    .withValue(r.getValue(VALUE_AT_MAX_DATE, Double.class))
+                    .withQualityCode(r.getValue(QUALITY_CODE, Long.class))
+                    .withStartDate(r.getValue(START_DATE, java.sql.Date.class))
+                    .withEndDate(r.getValue(END_DATE, java.sql.Date.class))
+                    .build();
+            return new RecentValue(r.getValue(TS_ID, String.class), tsv);
+        });
+
+        return retval;
     }
 
 
