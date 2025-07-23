@@ -1,13 +1,24 @@
 package cwms.cda.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
 import static cwms.cda.api.Controllers.EXCLUDE_EMPTY;
+import static cwms.cda.api.Controllers.INCLUDE_ALIASES;
 import static cwms.cda.api.Controllers.LIKE;
 import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
 import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE;
 import static cwms.cda.api.Controllers.LOCATION_KIND_LIKE;
 import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
 import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
+import cwms.cda.data.dto.catalog.TimeSeriesAlias;
+import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
+import cwms.cda.formatters.json.JsonV2;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.data.dao.DeleteRule;
@@ -123,6 +134,80 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("$",hasKey("total"))
             .body("total",is(4))
             .body("entries.size()",is(4));
+    }
+
+    @Test
+    void test_no_aliases_returned() {
+        Integer numAliases = given().accept(Formats.JSONV2)
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EXCLUDE_EMPTY, false)
+        .when()
+            .get("/catalog/TIMESERIES")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .extract()
+            .jsonPath()
+            .getObject("entries.aliases.aliases.size()", Integer.class);
+        assertEquals(0, (int) numAliases, "Expected no aliases, but found some.");
+    }
+
+    @Test
+    void test_aliases_returned() {
+        Integer numAliases = given().accept(Formats.JSONV2)
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EXCLUDE_EMPTY,false)
+            .queryParam(INCLUDE_ALIASES,true)
+        .when()
+            .get("/catalog/TIMESERIES")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(200))
+            .extract()
+            .jsonPath()
+            .getObject("entries.aliases.aliases.size()", Integer.class);
+        assertTrue(numAliases > 0, "Expected aliases, but found none.");
+    }
+
+    @Test
+    void test_alias_is_correct() throws JsonProcessingException {
+        Response response = given().accept(Formats.JSONV2)
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(EXCLUDE_EMPTY, false)
+                .queryParam(INCLUDE_ALIASES, true)
+        .when()
+                .get("/catalog/TIMESERIES");
+        String json = response.body().asPrettyString();
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        JsonNode root = om.readTree(json);
+        JsonNode entriesNode = root.get("entries");
+        String entriesJson = om.writeValueAsString(entriesNode);
+        List<TimeseriesCatalogEntry> entries = om.readValue(entriesJson, new TypeReference<List<TimeseriesCatalogEntry>>() {});
+        assertNotNull(entries);
+        TimeseriesCatalogEntry alias = entries
+                .stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()).stream()
+                .filter(e -> e.getName().equals("Pine Flat-Outflow.Stage.Inst.15Minutes.0.one"))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(alias);
+        assertTrue(alias.getAliases().contains(new TimeSeriesAlias.Builder()
+                .withName("Test Category-LessThan3")
+                .withValue("test alias 1")
+                .build()));
+        //make sure no entries exist with name "test alias 1"
+        List<TimeseriesCatalogEntry> aliasesAsAnEntry = entries
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(e -> e.getName().equals("test alias 1"))
+                .collect(Collectors.toList());
+        assertTrue(aliasesAsAnEntry.isEmpty(), "Found entries with name 'test alias 1', which should not exist.");
     }
 
 
