@@ -94,7 +94,7 @@ public class TimeSeriesTest {
 
 		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
 		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
-		ZonedDateTime versionDate = Instant.now().atZone(ZoneId.of("UTC"));
+		ZonedDateTime versionDate = ZonedDateTime.parse("2025-07-22T14:00:00-00:00[UTC]");
 		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, vdi, versionDate, null);
 		ts.addValue(Timestamp.from(Instant.now()), 12.34567, 0);
 		ts.addValue(Timestamp.from(Instant.now().plusSeconds(60)), 12.34567, 0);
@@ -106,7 +106,7 @@ public class TimeSeriesTest {
 
 		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
 		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
-		ZonedDateTime versionDate = Instant.now().atZone(ZoneId.of("UTC"));
+		ZonedDateTime versionDate = ZonedDateTime.parse("2025-07-22T14:00:00-00:00[UTC]");
 		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, null, versionDate, null);
 		ts.addValue(Timestamp.from(Instant.now()), 12.34567, 0);
 		ts.addValue(Timestamp.from(Instant.now().plusSeconds(60)), 12.34567, 0);
@@ -119,7 +119,7 @@ public class TimeSeriesTest {
 
 		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
 		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
-		ZonedDateTime versionDate = Instant.now().atZone(ZoneId.of("UTC"));
+		ZonedDateTime versionDate = ZonedDateTime.parse("2025-07-22T14:00:00-00:00[UTC]");
 		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, null, versionDate, null);
 		ts.addValue(Timestamp.from(Instant.now()), 12.34567, 0, Timestamp.from(Instant.now()));
 		ts.addValue(Timestamp.from(Instant.now().plusSeconds(60)), 12.34567, 0, Timestamp.from(Instant.now()));
