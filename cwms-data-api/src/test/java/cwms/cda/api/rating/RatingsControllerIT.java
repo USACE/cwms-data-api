@@ -145,7 +145,7 @@ class RatingsControllerIT extends DataApiTestIT{
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpServletResponse.SC_CREATED))
                 .body(OFFICE_ID, equalTo(SPK))
-                .body(MESSAGE, equalTo("Created RatingSet"))
+                .body(MESSAGE, equalTo("Rating Set successfully stored to CWMS."))
                 .body(IDENTIFIER, isEmptyString());
     }
 
