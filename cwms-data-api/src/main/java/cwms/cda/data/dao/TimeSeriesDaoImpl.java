@@ -101,7 +101,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private static final Logger logger = Logger.getLogger(TimeSeriesDaoImpl.class.getName());
 
     /**
-     * String constants for accessing alias table columns in FindMostRecentsRange
+     * String constants for accessing alias tables and columns in TimeSeriesRecent querying
      */
     private static final String DATE_TIME = "DATE_TIME";
     private static final String VERSION_DATE = "VERSION_DATE";
@@ -984,11 +984,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .where(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
                     .and(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
 
-            Select<Record> combinedSelect = prevYearSelect;
             // union tables if start and end date are not in the same year
-            if (year1 != year2) {
-                combinedSelect = prevYearSelect.unionAll(currYearSelect);
-            }
+            Select<Record> combinedSelect = (year1 == year2)
+                    ? prevYearSelect
+                    : prevYearSelect.unionAll(currYearSelect);
 
             CommonTableExpression<?> tsvLimited = name("tsv_limited").as(combinedSelect);
 
@@ -1034,10 +1033,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                             CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(field(name(maxValues.getName(), TS_CODE), BigDecimal.class)),
                             DSL.val(unitSystem, String.class));
 
-            Field<Double> value = field(name(maxValues.getName(), VALUE), Double.class);
-
             Field<Double> convertUnits = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(
-                    value,
+                    field(name(maxValues.getName(), VALUE), Double.class),
                     field(name(maxValues.getName(), UNIT_ID), String.class),
                     getDefaultUnits
             );
@@ -1138,11 +1135,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .where(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
                 .and(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
 
-        Select<Record> combinedSelect = prevYearSelect;
         // union tables if start and end date are not in the same year
-        if (year1 != year2) {
-            combinedSelect = prevYearSelect.unionAll(currYearSelect);
-        }
+        Select<Record> combinedSelect = (year1 == year2)
+                ? prevYearSelect
+                : prevYearSelect.unionAll(currYearSelect);
 
         CommonTableExpression<?> tsvLimited = name("tsv_limited").as(combinedSelect);
 
@@ -1189,10 +1185,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(field(name(maxValues.getName(), TS_CODE), BigDecimal.class)),
                 DSL.val(unitSystem, String.class));
 
-        Field<Double> value = field(name(maxValues.getName(), VALUE), Double.class);
-
         Field<Double> convertUnits = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(
-                value,
+                field(name(maxValues.getName(), VALUE), Double.class),
                 field(name(maxValues.getName(), UNIT_ID), String.class),
                 getDefaultUnits
         );
