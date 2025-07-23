@@ -1201,7 +1201,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         SelectConditionStep<Record10<String, java.sql.Date, java.sql.Date, java.sql.Date, Integer, java.sql.Date, java.sql.Date, String, java.sql.Date, Double>> query = dsl.with(baseIds)
                 .with(tsvLimited)
                 .with(maxValues)
-                .select(
+                .selectDistinct(
                         field(name(maxValues.getName(), TS_ID), String.class),
                         field(name(maxValues.getName(), DATE_TIME), java.sql.Date.class),
                         field(name(maxValues.getName(), VERSION_DATE), java.sql.Date.class),
