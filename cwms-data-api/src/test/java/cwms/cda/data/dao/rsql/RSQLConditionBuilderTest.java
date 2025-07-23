@@ -38,6 +38,37 @@ class RSQLConditionBuilderTest {
     }
 
     @Test
+    void testBuildBadConditions() {
+        // Create a field resolver using the JooqFieldResolver
+        JooqFieldResolver resolver = new JooqFieldResolver(AV_TSV_DQU.AV_TSV_DQU);
+        RSQLConditionBuilder builder = new RSQLConditionBuilder(resolver);
+        // What happens if a bad user thinks they can use this end-point to inject SQL?
+        // SQL injection is NOT going to work with RSQL, but this test demos how it would be handled.
+        assertThrows(IllegalArgumentException.class, () -> {
+            builder.buildCondition("Robert'; DROP TABLE Students; --");  // Little Bobby Tables we call him
+        });
+
+        // zero length
+        assertThrows(IllegalArgumentException.class, () -> builder.buildCondition(""));
+
+        // null
+        assertThrows(IllegalArgumentException.class, () -> builder.buildCondition(null));
+
+        // single space
+        assertThrows(IllegalArgumentException.class, () -> builder.buildCondition(" "));
+
+        // newline
+        assertThrows(IllegalArgumentException.class, () -> builder.buildCondition("\n"));
+
+        // C end of string char
+        assertThrows(IllegalArgumentException.class, () -> builder.buildCondition("\0"));
+
+        // partially good query with bogus junk on end.
+        assertThrows(IllegalArgumentException.class, () -> builder.buildCondition("unit_id==EN;value>25;fhgbass"));
+
+    }
+
+    @Test
     void testBuildConditionWithMapFieldResolver() {
         // Create a map of field names to fields
         Map<String, org.jooq.Field<?>> fieldMap = new HashMap<>();

@@ -1,6 +1,7 @@
 package cwms.cda.data.dao.rsql;
 
 import cz.jirutka.rsql.parser.RSQLParser;
+import cz.jirutka.rsql.parser.RSQLParserException;
 import cz.jirutka.rsql.parser.ast.Node;
 import org.jooq.Condition;
 
@@ -31,15 +32,19 @@ public class RSQLConditionBuilder {
      */
     public Condition buildCondition(String rsqlQuery) {
         if (rsqlQuery == null || rsqlQuery.trim().isEmpty()) {
-            throw new IllegalArgumentException("RSQL query cannot be null or empty");
+            throw new EmptyQueryException("RSQL query cannot be null or empty");
         }
 
-        // Parse the RSQL query string into a Node
-        Node rootNode = new RSQLParser().parse(rsqlQuery);
+        try {
+            // Parse the RSQL query string into a Node
+            Node rootNode = new RSQLParser().parse(rsqlQuery);
 
-        // Use the RSQLJooqConditionVisitor to convert the Node to a Condition
-        RSQLJooqConditionVisitor visitor = new RSQLJooqConditionVisitor(fieldResolver);
-        return rootNode.accept(visitor);
+            // Use the RSQLJooqConditionVisitor to convert the Node to a Condition
+            RSQLJooqConditionVisitor visitor = new RSQLJooqConditionVisitor(fieldResolver);
+            return rootNode.accept(visitor);
+        } catch (RSQLParserException e){
+            throw new InvalidRSQLException("Invalid RSQL query: " + rsqlQuery, e);
+        }
     }
 
     /**
