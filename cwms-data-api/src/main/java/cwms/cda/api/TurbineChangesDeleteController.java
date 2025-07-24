@@ -52,6 +52,7 @@ import com.codahale.metrics.Timer;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.location.kind.TurbineDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.TurbineChange;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -105,7 +106,7 @@ public final class TurbineChangesDeleteController implements Handler {
         method = HttpMethod.DELETE,
         tags = {TurbineController.TAG},
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Turbine successfully deleted from CWMS."),
+            @OpenApiResponse(status = STATUS_200, description = "Turbine successfully deleted from CWMS."),
             @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                 + "inputs provided the project was not found.")
         }
@@ -125,7 +126,8 @@ public final class TurbineChangesDeleteController implements Handler {
                 .withOfficeId(office)
                 .build();
             dao.deleteOperationalChanges(cwmsId, begin, end, overrideProtection);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(projectId + " Deleted");
+            StatusResponse re = new StatusResponse(office, "Turbine successfully deleted from CWMS.", projectId);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }
