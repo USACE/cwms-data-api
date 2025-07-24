@@ -123,7 +123,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                             .withOfficeId("HQ")
                             .withVolumeName(TeamCityUtilities.cleanupBranchName(ORACLE_VOLUME))
                             .withSchemaImage(CWMS_DB_IMAGE);
-            cwmsDb.withImagePullPolicy(PullPolicy.defaultPolicy());
+            cwmsDb.withImagePullPolicy(PullPolicy.alwaysPull());
             cwmsDb.start();
 
             final String jdbcUrl = cwmsDb.getJdbcUrl();
