@@ -26,10 +26,13 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
+import static cwms.cda.api.Controllers.DESIGNATOR;
+import static cwms.cda.api.Controllers.ID_MASK;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
@@ -158,6 +161,96 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .body("time-series-ids.size()", equalTo(3))
         ;
 
+
+    }
+
+
+    @Test
+    void test_get_create_get_null_designator() throws IOException {
+
+
+        // Structure of test:
+        // 1)Retrieve a ForecastSpec and assert that it does not exist
+        // 2)Create the ForecastSpec
+        // 3)Retrieve the ForecastSpec and assert that it exists
+
+        // Step 1)
+        // Retrieve a ForecastSpec and assert that it does not exist
+        //Read
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH + SPEC_ID + "-NULL-DESIGNATOR")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
+
+        // Step 2)
+        // Create the ForecastSpec
+
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/forecast_spec_create_null_designator.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Step 3)
+        // Retrieve the spec and assert that it exists
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH + SPEC_ID + "-NULL-DESIGNATOR")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("designator", isEmptyOrNullString())
+            .body("time-series-ids.size()", equalTo(3))
+        ;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(ID_MASK, SPEC_ID + "-NULL-DESIGNATOR")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("[0].designator", isEmptyOrNullString())
+            .body("[0].time-series-ids.size()", equalTo(3))
+        ;
 
     }
 

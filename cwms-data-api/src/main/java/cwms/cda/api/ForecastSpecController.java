@@ -81,7 +81,7 @@ public final class ForecastSpecController implements CrudHandler {
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "owning office of the forecast spec whose data is to be deleted."),
-                @OpenApiParam(name = DESIGNATOR, required = true, description = "Specifies the "
+                @OpenApiParam(name = DESIGNATOR, description = "Specifies the "
                         + "designator of the forecast spec whose data is to be deleted."),
                 @OpenApiParam(name = METHOD, description = "Specifies the delete method used. " +
                         "Defaults to \"DELETE_KEY\"",
@@ -97,7 +97,7 @@ public final class ForecastSpecController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
-        String designator = requiredParam(ctx, DESIGNATOR);
+        String designator = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).allowNullable().get();
 
         JooqDao.DeleteMethod deleteMethod = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class)
                 .getOrDefault(JooqDao.DeleteMethod.DELETE_KEY);
@@ -136,7 +136,9 @@ public final class ForecastSpecController implements CrudHandler {
                         + "the spec IDs to be included in the response."),
                 @OpenApiParam(name = DESIGNATOR_MASK, description = "Posix "
                         + "<a href=\"regexp.html\">regular expression</a>  that specifies the "
-                        + "designator of the forecast spec whose data to be included in the response."),
+                        + "designator of the forecast spec whose data to be included in the response. "
+                        + "Default behavior when this parameter is not provided is to search for forecast "
+                        + "specifications with a null designator. "),
                 @OpenApiParam(name = SOURCE_ENTITY, description = "Specifies the source identity "
                         + "of the forecast spec whose data is to be included in the response.")
             },
@@ -157,7 +159,7 @@ public final class ForecastSpecController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = ctx.queryParam(OFFICE);
             String names = ctx.queryParamAsClass(ID_MASK, String.class).getOrDefault("*");
-            String designator = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).getOrDefault("*");
+            String designator = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).allowNullable().get();
             String sourceEntity = ctx.queryParamAsClass(SOURCE_ENTITY, String.class).getOrDefault("*");
 
             DSLContext dsl = getDslContext(ctx);
@@ -187,7 +189,7 @@ public final class ForecastSpecController implements CrudHandler {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "owning office of the forecast spec whose data is to be included in the "
                         + "response."),
-                @OpenApiParam(name = DESIGNATOR, required = true, description = "Specifies the "
+                @OpenApiParam(name = DESIGNATOR, description = "Specifies the "
                         + "designator of the forecast spec whose data to be included in the response.")
             },
             responses = {
@@ -208,7 +210,7 @@ public final class ForecastSpecController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String name) {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             String office = requiredParam(ctx, OFFICE);
-            String designator = requiredParam(ctx, DESIGNATOR);
+            String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
 
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao dao = new ForecastSpecDao(dsl);

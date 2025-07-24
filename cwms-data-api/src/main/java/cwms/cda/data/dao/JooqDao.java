@@ -222,7 +222,9 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new CustomCondition() {
             @Override
             public void accept(org.jooq.Context<?> ctx) {
-                if (ctx.family() == ORACLE) {
+                if("*".equals(regex) || ".*".equals(regex)) {
+                    ctx.visit(DSL.trueCondition());
+                } else if (ctx.family() == ORACLE) {
                     ctx.visit(DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
                 } else {
                     ctx.visit(DSL.upper(field).likeRegex(regex.toUpperCase()));

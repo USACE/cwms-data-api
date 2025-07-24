@@ -219,8 +219,10 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                             + format(param, Controllers.NAME, URLEncoder.encode(specId, utf8))
                             + format(param, Controllers.FORECAST_DATE, URLEncoder.encode(forecastDate.toString(), utf8))
                             + format(param, Controllers.ISSUE_DATE, URLEncoder.encode(issueDate.toString(), utf8))
-                            + format(param, Controllers.DESIGNATOR, URLEncoder.encode(designator, utf8))
                             + format(param, Controllers.OFFICE, URLEncoder.encode(officeId, utf8));
+                    if(designator != null) {
+                        url += format(param, Controllers.DESIGNATOR, URLEncoder.encode(designator, utf8));
+                    }
                 } else {
                     try (InputStream is = blob.getBinaryStream()) {
                         fileData = BlobDao.readFully(is);

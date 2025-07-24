@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -123,7 +124,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                             .withOfficeId("HQ")
                             .withVolumeName(TeamCityUtilities.cleanupBranchName(ORACLE_VOLUME))
                             .withSchemaImage(CWMS_DB_IMAGE);
-            cwmsDb.withImagePullPolicy(PullPolicy.defaultPolicy());
+            cwmsDb.withImagePullPolicy(PullPolicy.ageBased(Duration.ofDays(1)));
             cwmsDb.start();
 
             final String jdbcUrl = cwmsDb.getJdbcUrl();
