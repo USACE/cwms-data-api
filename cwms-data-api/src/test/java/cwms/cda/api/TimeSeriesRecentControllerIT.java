@@ -31,6 +31,7 @@ import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import cwms.cda.api.enums.VersionType;
@@ -200,6 +201,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("size()", is(1))
+            .time(lessThan(5000L))
         ;
 
         // get recent data using timeseries id
@@ -219,6 +221,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("size()", is(1))
+            .time(lessThan(5000L))
         ;
     }
 
