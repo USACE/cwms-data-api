@@ -347,7 +347,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if(fp != null) {
             Map<String, Field<?>> nameToField = new LinkedHashMap<>();
             nameToField.put("value", valueCol);
-            nameToField.put("datetime", dateTimeCol);
+            nameToField.put("date_time", dateTimeCol);
             nameToField.put("quality", qualityCol);
             nameToField.put("data_entry_date", dataEntryDate);
             FieldResolver resolver = new MapFieldResolver(nameToField);
@@ -721,20 +721,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     @NotNull
     private static Condition getFilterCondition( @Nullable FilteredTimeSeriesParameters ip, FieldResolver resolver) {
-        // In Filter case we want to skip certain points in time....
         Condition filterConditions = noCondition();
         if(ip != null) {
-            Field<Object> valueCol = resolver.resolve("value");
-            if (ip.isFilterNulls()) {
-                filterConditions = filterConditions.and(valueCol.isNotNull());
-            }
-            if (ip.getMaxValue() != null) {
-                filterConditions = filterConditions.and(valueCol.le(ip.getMaxValue()));
-            }
-            if (ip.getMinValue() != null) {
-                filterConditions = filterConditions.and(valueCol.ge(ip.getMinValue()));
-            }
-
             String query = ip.getQuery();
             if(query != null) {
                 RSQLConditionBuilder builder = RSQLConditionBuilder.create(resolver);

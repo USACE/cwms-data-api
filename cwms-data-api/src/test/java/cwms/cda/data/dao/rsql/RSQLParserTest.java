@@ -46,7 +46,23 @@ class RSQLParserTest {
         Condition testCondition = root.accept(new RSQLJooqConditionVisitor(resolver));
         assertNotNull(testCondition);
         String condStr = testCondition.toString();
-        System.out.println( condStr );
+
         assertTrue( condStr.contains("\"UNIT_ID\" = 'EN'"));
     }
+
+
+
+
+    @Test
+    void testParseNullAndDate(){
+        Node root = new RSQLParser().parse("value!=null and date_time>2020-04-01T00:00:00Z and date_time<2024-04-01T00:00:00Z");
+
+        JooqFieldResolver resolver = new JooqFieldResolver(AV_TSV_DQU.AV_TSV_DQU);
+
+        Condition testCondition = root.accept(new RSQLJooqConditionVisitor(resolver));
+        // Just test that it parses.
+        assertNotNull(testCondition);
+    }
+
+
 }

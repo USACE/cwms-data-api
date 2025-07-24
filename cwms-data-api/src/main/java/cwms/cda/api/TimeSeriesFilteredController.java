@@ -126,15 +126,19 @@ public class TimeSeriesFilteredController implements Handler {
                             + "whether to include the data entry date of each value in the response. Including the data entry "
                             + "date will increase the size of the array containing each data value from three to four, "
                             + "changing the format of the response. Default is false."),
-                    @OpenApiParam(name = MIN_VALUE, type = Double.class, description = "Specifies "
-                            + "the minimum value to include in the results. Values below this threshold will be excluded."),
-                    @OpenApiParam(name = MAX_VALUE, type = Double.class, description = "Specifies "
-                            + "the maximum value to include in the results. Values above this threshold will be excluded."),
-                    @OpenApiParam(name = FILTER_NULLS, type = Boolean.class, description = "Specifies "
-                            + "whether to exclude null values from the results. Default is false."),
                     @OpenApiParam(name = QUERY, description = "Specifies "
                             + "an RSQL-like <a href=\"rsql.html\"> query string to filter the results.  " +
-                            "Expressions may reference \"value, datetime, quality, data_entry_date\""),
+                            "Expressions may reference \"value, date_time, quality, data_entry_date\".  " +
+                            "Example Queries:" +
+                            "\n* `value!=null` Excludes null values" +
+                            "\n* `date_time>2020-04-01T00:00:00Z and date_time<2024-04-01T00:00:00Z` Returns values within a date range." +
+                            "\n* `data_entry_date=2025-05-15T00:00:00Z` Returns data entered at a specific data_entry_date" +
+                            "\n* `value>=0 and value < 215.0` Returns points when the value is within a specified range." +
+                            "\n* `value<0 or value > 215.0` Returns points when the value is outside a specified range." +
+                            "\n* `(value==null or value<0) and date_time>2019-11-01T00:00:00Z and data_entry_date>2024-03-01T00:00:00Z and data_entry_date<2024-04-01T00:00:00Z` " +
+                            "Find null or negative values for times after start of pandemic that were entered in March 2024." +
+                            "\n* `quality=in=(255,256,1023,1024)` Returns points with specific quality codes."
+                    ),
                     @OpenApiParam(name = PAGE, description = "This end point can return large amounts "
                             + "of data as a series of pages. This parameter is used to describes the "
                             + "current location in the response stream.  This is an opaque "

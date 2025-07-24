@@ -26,8 +26,6 @@
     ],
     "filter-parameters": {
         "ascending": true,
-        "min-value": 450.0,
-        "max-value": 550.0,
-        "filter-nulls": true
+        "query" : "value!=null and value>=450 and value<=550"
     }
 }

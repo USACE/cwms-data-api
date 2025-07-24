@@ -52,11 +52,10 @@ class FilteredTimeSeriesTest {
         assertTrue(tsBody.contains("\"office-id\":\"SPK\""));
         assertTrue(tsBody.contains("\"units\":\"cfs\""));
 
-
         assertTrue(tsBody.contains("\"filter-parameters\""));
-        assertTrue(tsBody.contains("\"min-value\":450.0"));
-        assertTrue(tsBody.contains("\"max-value\":550.0"));
-        assertTrue(tsBody.contains("\"filter-nulls\":true"));
+        assertTrue(tsBody.contains("value > 450"));
+        assertTrue(tsBody.contains("value < 550"));
+        assertTrue(tsBody.contains("!=null"));
     }
 
     @Test
@@ -85,9 +84,8 @@ class FilteredTimeSeriesTest {
         assertTrue(tsData.contains("cfs"));
 
         assertTrue(tsData.contains("filter-parameters"));
-        assertTrue(tsData.contains("min-value"));
-        assertTrue(tsData.contains("max-value"));
-        assertTrue(tsData.contains("filter-nulls"));
+        assertTrue(tsData.contains("query"));
+
     }
 
     @NotNull
@@ -123,9 +121,7 @@ class FilteredTimeSeriesTest {
 
     private FilteredTimeSeriesParameters buildFilterParams() {
         return new FilteredTimeSeriesParameters.Builder()
-                .withMinValue(450.0)
-                .withMaxValue(550.0)
-                .withFilterNulls(true)
+                .withQuery("value!=null and value > 450 and value < 550")
                 .build();
     }
 

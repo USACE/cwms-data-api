@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -71,15 +72,10 @@ class RSQLConditionBuilderTest {
     @Test
     void testBuildConditionWithMapFieldResolver() {
         // Create a map of field names to fields
-        Map<String, org.jooq.Field<?>> fieldMap = new HashMap<>();
-        fieldMap.put("unit_id", AV_TSV_DQU.AV_TSV_DQU.UNIT_ID);
-        fieldMap.put("value", AV_TSV_DQU.AV_TSV_DQU.VALUE);
-
-        // Create a field resolver using the MapFieldResolver
-        MapFieldResolver resolver = new MapFieldResolver(fieldMap);
+        MapFieldResolver mapResolver = buildMapResolver();
 
         // Create the RSQLConditionBuilder
-        RSQLConditionBuilder builder = new RSQLConditionBuilder(resolver);
+        RSQLConditionBuilder builder = new RSQLConditionBuilder(mapResolver);
 
         // Build a condition from an RSQL query
         Condition condition = builder.buildCondition("unit_id==EN;value>25");
@@ -198,12 +194,7 @@ class RSQLConditionBuilderTest {
 
     @Test
     void testBuildConditionComparingFields() {
-        Map<String, org.jooq.Field<?>> fieldMap = new HashMap<>();
-        fieldMap.put("version_date", AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE);
-        fieldMap.put("data_entry_date", AV_TSV_DQU.AV_TSV_DQU.DATA_ENTRY_DATE);
-        fieldMap.put("date_time", AV_TSV_DQU.AV_TSV_DQU.DATE_TIME);
-
-        MapFieldResolver mapResolver = new MapFieldResolver(fieldMap);
+        MapFieldResolver mapResolver = buildMapResolver();
 
         RSQLConditionBuilder builder = new RSQLConditionBuilder(mapResolver);
 
@@ -215,4 +206,55 @@ class RSQLConditionBuilderTest {
         assertTrue(conditionString.contains("\"AV_TSV_DQU\".\"VERSION_DATE\" = timestamp '2021-04-05 00:00:00.0'"));
         assertTrue(conditionString.contains("\"AV_TSV_DQU\".\"DATA_ENTRY_DATE\" >= timestamp '2021-04-01 00:00:00.0'"));
     }
+
+    @Test
+    void testQueryParses() {
+        MapFieldResolver mapResolver = buildMapResolver();
+
+        RSQLConditionBuilder builder = new RSQLConditionBuilder(mapResolver);
+
+        Condition condition;
+        condition = builder.buildCondition(" (value==null or value<0) and date_time>2019-11-01T00:00:00Z");
+        assertNotNull(condition);
+        // System.out.println(condition.toString());
+
+        condition = builder.buildCondition(" (value==null or value<0) and date_time>2019-11-01T00:00:00Z and data_entry_date>2024-03-01T00:00:00Z and data_entry_date<2024-04-01T00:00:00Z");
+        assertNotNull(condition);
+
+        condition = builder.buildCondition("value!=null and quality==1024");
+        assertNotNull(condition);
+
+    }
+
+    @Test
+    void testQuality() {
+        MapFieldResolver mapResolver = buildMapResolver();
+
+        RSQLConditionBuilder builder = new RSQLConditionBuilder(mapResolver);
+
+        Condition condition;
+
+        condition = builder.buildCondition("quality==1024");
+        assertNotNull(condition);
+
+        condition = builder.buildCondition("quality==1024");
+        assertNotNull(condition);
+
+        condition = builder.buildCondition("quality=in=(255,256,1023,1024)");
+        assertNotNull(condition);
+
+    }
+
+    private static @NotNull MapFieldResolver buildMapResolver() {
+        Map<String, org.jooq.Field<?>> fieldMap = new HashMap<>();
+        fieldMap.put("value", AV_TSV_DQU.AV_TSV_DQU.VALUE);
+//        fieldMap.put("version_date", AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE);  // we aren't
+        fieldMap.put("data_entry_date", AV_TSV_DQU.AV_TSV_DQU.DATA_ENTRY_DATE);
+        fieldMap.put("date_time", AV_TSV_DQU.AV_TSV_DQU.DATE_TIME);
+        fieldMap.put("quality", AV_TSV_DQU.AV_TSV_DQU.QUALITY_CODE);
+
+        return new MapFieldResolver(fieldMap);
+    }
+
+
 }
