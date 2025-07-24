@@ -88,6 +88,9 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
     private static Location pump1;
     private static Location pump2;
     private static Location pump3;
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
     static {
         try (InputStream accountStream = WaterSupplyAccounting.class
@@ -292,6 +295,9 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+            .body(MESSAGE, equalTo("The pump accounting entry was created."))
+            .body(IDENTIFIER, equalTo(contract.getContractId().getName()))
         ;
 
         // retrieve pump accounting
@@ -354,6 +360,9 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+            .body(MESSAGE, equalTo("The pump accounting entry was created."))
+            .body(IDENTIFIER, equalTo(contract.getContractId().getName()))
         ;
 
         // retrieve pump accounting
