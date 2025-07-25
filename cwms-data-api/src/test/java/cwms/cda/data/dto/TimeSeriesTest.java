@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -96,8 +97,9 @@ public class TimeSeriesTest {
 		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
 		ZonedDateTime versionDate = ZonedDateTime.parse("2025-07-22T14:00:00-00:00[UTC]");
 		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, vdi, versionDate, null);
-		ts.addValue(Timestamp.from(Instant.now()), 12.34567, 0);
-		ts.addValue(Timestamp.from(Instant.now().plusSeconds(60)), 12.34567, 0);
+		Instant startInst = Instant.now().truncatedTo(ChronoUnit.MINUTES);
+		ts.addValue(Timestamp.from(startInst), 12.34567, 0);
+		ts.addValue(Timestamp.from(startInst.plusSeconds(60)), 12.34567, 0);
 		return ts;
 	}
 
@@ -108,9 +110,10 @@ public class TimeSeriesTest {
 		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
 		ZonedDateTime versionDate = ZonedDateTime.parse("2025-07-22T14:00:00-00:00[UTC]");
 		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, null, versionDate, null);
-		ts.addValue(Timestamp.from(Instant.now()), 12.34567, 0);
-		ts.addValue(Timestamp.from(Instant.now().plusSeconds(60)), 12.34567, 0);
-		ts.addValue(Timestamp.from(Instant.now().plusSeconds(120)), null, 0);
+		Instant startInst = Instant.now().truncatedTo(ChronoUnit.MINUTES);
+		ts.addValue(Timestamp.from(startInst), 12.34567, 0);
+		ts.addValue(Timestamp.from(startInst.plusSeconds(60)), 12.34567, 0);
+		ts.addValue(Timestamp.from(startInst.plusSeconds(120)), null, 0);
 		return ts;
 	}
 
@@ -121,9 +124,11 @@ public class TimeSeriesTest {
 		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
 		ZonedDateTime versionDate = ZonedDateTime.parse("2025-07-22T14:00:00-00:00[UTC]");
 		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, null, versionDate, null);
-		ts.addValue(Timestamp.from(Instant.now()), 12.34567, 0, Timestamp.from(Instant.now()));
-		ts.addValue(Timestamp.from(Instant.now().plusSeconds(60)), 12.34567, 0, Timestamp.from(Instant.now()));
-		ts.addValue(Timestamp.from(Instant.now().plusSeconds(120)), null, 0, Timestamp.from(Instant.now()));
+		Instant startInst = Instant.now().truncatedTo(ChronoUnit.MINUTES);
+
+		ts.addValue(Timestamp.from(startInst), 12.34567, 0, Timestamp.from(Instant.now()));
+		ts.addValue(Timestamp.from(startInst.plusSeconds(60)), 12.34567, 0, Timestamp.from(Instant.now()));
+		ts.addValue(Timestamp.from(startInst.plusSeconds(120)), null, 0, Timestamp.from(Instant.now()));
 		return ts;
 	}
 
