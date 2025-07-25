@@ -156,7 +156,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 		.then()
 			.assertThat()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.statusCode(is(HttpServletResponse.SC_OK));
+			.statusCode(is(HttpServletResponse.SC_CREATED));
 
 		//Create the second set
 		given()
@@ -173,7 +173,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL,true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK));
+			.statusCode(is(HttpServletResponse.SC_CREATED));
 
 		// Create the third set
 		given()
@@ -190,7 +190,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL,true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK));
+			.statusCode(is(HttpServletResponse.SC_CREATED));
 	}
 
 	@ParameterizedTest
