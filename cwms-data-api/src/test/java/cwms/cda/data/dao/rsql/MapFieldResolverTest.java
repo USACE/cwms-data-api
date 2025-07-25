@@ -64,7 +64,6 @@ class MapFieldResolverTest {
         // Verify the condition
         assertNotNull(testCondition);
         String condStr = testCondition.toString();
-        System.out.println("Condition string: " + condStr);
 
         // The actual format might be different, so we'll check for the field names and values
         // rather than the exact format

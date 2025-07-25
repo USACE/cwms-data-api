@@ -167,8 +167,7 @@ class RSQLConditionBuilderTest {
         // Create the RSQLConditionBuilder
         RSQLConditionBuilder builder = new RSQLConditionBuilder(resolver);
 
-        
-        // Build a condition from an RSQL query using VERSION_DATE
+
         Condition condition = builder.buildCondition("version_date==2021-04-05T00:00:00Z");
 
         // Verify the condition is not null and contains the expected SQL
@@ -216,7 +215,6 @@ class RSQLConditionBuilderTest {
         Condition condition;
         condition = builder.buildCondition(" (value==null or value<0) and date_time>2019-11-01T00:00:00Z");
         assertNotNull(condition);
-        // System.out.println(condition.toString());
 
         condition = builder.buildCondition(" (value==null or value<0) and date_time>2019-11-01T00:00:00Z and data_entry_date>2024-03-01T00:00:00Z and data_entry_date<2024-04-01T00:00:00Z");
         assertNotNull(condition);
@@ -247,11 +245,16 @@ class RSQLConditionBuilderTest {
 
     private static @NotNull MapFieldResolver buildMapResolver() {
         Map<String, org.jooq.Field<?>> fieldMap = new HashMap<>();
+
+        // In reality we aren't currently supporting all these fields,
+
         fieldMap.put("value", AV_TSV_DQU.AV_TSV_DQU.VALUE);
-//        fieldMap.put("version_date", AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE);  // we aren't
         fieldMap.put("data_entry_date", AV_TSV_DQU.AV_TSV_DQU.DATA_ENTRY_DATE);
         fieldMap.put("date_time", AV_TSV_DQU.AV_TSV_DQU.DATE_TIME);
         fieldMap.put("quality", AV_TSV_DQU.AV_TSV_DQU.QUALITY_CODE);
+        // These next two are just for the tests.
+        fieldMap.put("version_date", AV_TSV_DQU.AV_TSV_DQU.VERSION_DATE);
+        fieldMap.put("unit_id", AV_TSV_DQU.AV_TSV_DQU.UNIT_ID);
 
         return new MapFieldResolver(fieldMap);
     }
