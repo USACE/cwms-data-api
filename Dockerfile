@@ -1,4 +1,4 @@
-FROM gradle:8.5-jdk8 AS builder
+FROM gradle:8.5-jdk11 AS builder
 USER $USER
 RUN --mount=type=cache,target=/home/gradle/.gradle
 WORKDIR /builddir
@@ -8,7 +8,7 @@ RUN  gradle prepareDockerBuild --info --no-daemon
 FROM alpine:3.21.3 AS tomcat_base
 RUN apk --no-cache upgrade && \
     apk --no-cache add \
-        openjdk8-jre \
+        openjdk11-jre \
         curl \
         bash
 

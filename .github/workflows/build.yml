@@ -10,6 +10,10 @@ on:
 
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: [8, 11]
     name: build and test
     runs-on: ubuntu-latest
     outputs:
@@ -21,7 +25,7 @@ jobs:
         uses: actions/setup-java@v4.7.1
         with:
           distribution: 'temurin'
-          java-version: '8'
+          java-version: ${{matrix.jdk}}
           cache: 'gradle'
       - name: build and test
         id: thebuild
