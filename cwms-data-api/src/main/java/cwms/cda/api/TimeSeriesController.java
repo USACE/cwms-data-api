@@ -14,6 +14,7 @@ import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dao.TimeSeriesDeleteOptions;
+import cwms.cda.data.dao.TimeSeriesRequestParameters;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -31,17 +32,17 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
@@ -193,13 +194,9 @@ public class TimeSeriesController implements CrudHandler {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of "
                     + "the timeseries to be deleted."),
             @OpenApiParam(name = BEGIN, required = true, description = "The start of the time "
-                    + "window to delete. The format for this field is ISO 8601 extended, with "
-                    + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
-                    + EXAMPLE_DATE + "'."),
+                    + "window to delete. " + TIME_FORMAT_DESC),
             @OpenApiParam(name = END, required = true, description = "The end of the time "
-                    + "window to delete.The format for this field is ISO 8601 extended, with "
-                    + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
-                    + EXAMPLE_DATE + "'."),
+                    + "window to delete. " + TIME_FORMAT_DESC),
             @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone "
                     + "to be used if the format of the " + BEGIN + ", " + END + ", or "
                     + VERSION_DATE + " parameters do not include offset or time zone information. "
@@ -279,7 +276,7 @@ public class TimeSeriesController implements CrudHandler {
     @OpenApi(
             queryParams = {
                 @OpenApiParam(name = NAME, required = true, description = "Specifies the "
-                        + "name(s) of the time series whose data is to be included in the "
+                        + "name of the time series whose data is to be included in the "
                         + "response. A case insensitive comparison is used to match names."),
                 @OpenApiParam(name = OFFICE,  description = "Specifies the"
                         + " owning office of the time series(s) whose data is to be included "
@@ -310,9 +307,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "\n* `Other`  Any units returned in the response to the units URI "
                         + "request that is appropriate for the requested parameters."),
                 @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date of a "
-                        + "time series trace to be selected. The format for this field is ISO 8601 "
-                        + "extended, i.e., 'format', e.g., '2021-06-10T13:00:00-0700' .If field is "
-                        + "empty, query will return a max aggregate for the timeseries. "
+                        + "time series trace to be selected. " + TIME_FORMAT_DESC +
+                        "If field is empty, query will return a max aggregate for the timeseries. "
                         + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2),
                 @OpenApiParam(name = DATUM,  description = "Specifies the "
                         + "elevation datum of the response. This field affects only elevation"
@@ -325,16 +321,13 @@ public class TimeSeriesController implements CrudHandler {
                 @OpenApiParam(name = BEGIN,  description = "Specifies the "
                         + "start of the time window for data to be included in the response. "
                         + "If this field is not specified, any required time window begins 24"
-                        + " hours prior to the specified or default end time. The format for "
-                        + "this field is ISO 8601 extended, with optional offset and "
-                        + "timezone, i.e., '"
-                        + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                        + " hours prior to the specified or default end time. " +
+                        TIME_FORMAT_DESC),
                 @OpenApiParam(name = END,  description = "Specifies the "
                         + "end of the time window for data to be included in the response. If"
                         + " this field is not specified, any required time window ends at the"
-                        + " current time. The format for this field is ISO 8601 extended, "
-                        + "with optional timezone, i.e., '"
-                        + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                        + " current time. " +
+                        TIME_FORMAT_DESC),
                 @OpenApiParam(name = TIMEZONE,  description = "Specifies "
                         + "the time zone of the values of the begin and end fields (unless "
                         + "otherwise specified).  "
@@ -446,26 +439,24 @@ public class TimeSeriesController implements CrudHandler {
                 }
 
                 String office = requiredParam(ctx, OFFICE);
-                TimeSeries ts = dao.getTimeseries(cursor, pageSize, names, office, units,
-                        beginZdt, endZdt, versionDate, trim.getOrDefault(true), includeEntryDate);
+                TimeSeriesRequestParameters requestParameters = new TimeSeriesRequestParameters.Builder()
+                        .withNames(names)
+                        .withOffice(office)
+                        .withUnits(units)
+                        .withBeginTime(beginZdt)
+                        .withEndTime(endZdt)
+                        .withVersionDate(versionDate)
+                        .withShouldTrim(trim.getOrDefault(true))
+                        .withIncludeEntryDate(includeEntryDate)
+                        .build();
+                TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters);
 
                 results = Formats.format(contentType, ts);
 
                 ctx.status(HttpServletResponse.SC_OK);
 
-                // Send back the link to the next page in the response header
-                StringBuilder linkValue = new StringBuilder(600);
-                linkValue.append(String.format("<%s>; rel=self; type=\"%s\"",
-                        buildRequestUrl(ctx, ts, ts.getPage()), contentType));
+                addLinkHeader(ctx, ts, contentType);
 
-                if (ts.getNextPage() != null) {
-                    linkValue.append(",");
-                    linkValue.append(String.format("<%s>; rel=next; type=\"%s\"",
-                            buildRequestUrl(ctx, ts, ts.getNextPage()),
-                            contentType));
-                }
-
-                ctx.header("Link", linkValue.toString());
                 ctx.result(results).contentType(contentType.toString());
             } else {
                 if (versionDate != null) {
@@ -499,6 +490,28 @@ public class TimeSeriesController implements CrudHandler {
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.json(re);
+        }
+    }
+
+    private void addLinkHeader(@NotNull Context ctx, TimeSeries ts, ContentType contentType) {
+        try {
+            // Send back the link to the next page in the response header
+            StringBuilder linkValue = new StringBuilder(600);
+            String pageUrl = buildRequestUrl(ctx, ts, ts.getPage());
+            linkValue.append(String.format("<%s>; rel=self; type=\"%s\"",
+                    pageUrl, contentType));
+
+            if (ts.getNextPage() != null) {
+                linkValue.append(",");
+                String nextPageUrl = buildRequestUrl(ctx, ts, ts.getNextPage());
+                linkValue.append(String.format("<%s>; rel=next; type=\"%s\"",
+                        nextPageUrl,
+                        contentType));
+            }
+
+            ctx.header("Link", linkValue.toString());
+        } catch (URISyntaxException ex) {
+            logger.log(Level.WARNING, null, ex);
         }
     }
 
@@ -581,35 +594,20 @@ public class TimeSeriesController implements CrudHandler {
      * @param ts the TimeSeries object that was used to generate the result
      * @return a URL that references the same query, but with a different "page" parameter
      */
-    private String buildRequestUrl(Context ctx, TimeSeries ts, String cursor) {
-        StringBuffer result = ctx.req.getRequestURL();
-        try {
-            result.append(String.format("?name=%s", URLEncoder.encode(ts.getName(),
-                    StandardCharsets.UTF_8.toString())));
-            result.append(String.format("&office=%s", URLEncoder.encode(ts.getOfficeId(),
-                    StandardCharsets.UTF_8.toString())));
-            result.append(String.format("&unit=%s", URLEncoder.encode(ts.getUnits(),
-                    StandardCharsets.UTF_8.toString())));
-            result.append(String.format("&begin=%s",
-                    URLEncoder.encode(ts.getBegin().format(DateTimeFormatter.ISO_ZONED_DATE_TIME),
-                            StandardCharsets.UTF_8.toString())));
-            result.append(String.format("&end=%s",
-                    URLEncoder.encode(ts.getEnd().format(DateTimeFormatter.ISO_ZONED_DATE_TIME),
-                            StandardCharsets.UTF_8.toString())));
+    public String buildRequestUrl(Context ctx, TimeSeries ts, String cursor) throws URISyntaxException {
+        URIBuilder builder = new URIBuilder(ctx.req.getRequestURL().toString()); // requestURL stops just before '?'
 
-            String format = ctx.queryParam(FORMAT);
-            if (format != null && !format.isEmpty()) {
-                result.append(String.format("&format=%s", format));
-            }
+        // Instead of adding specific parameters and risk forgetting to add one to this method
+        // Lets add all the previous parameters and then (cont.)
+        builder.setParameters(URLEncodedUtils.parse(ctx.req.getQueryString(), StandardCharsets.UTF_8));
 
-            if (cursor != null && !cursor.isEmpty()) {
-                result.append(String.format("&page=%s", URLEncoder.encode(cursor,
-                        StandardCharsets.UTF_8.toString())));
-            }
-        } catch (UnsupportedEncodingException ex) {
-            // We shouldn't get here
-            logger.log(Level.WARNING, null, ex);
+        // (cont.) override or add the page parameter with the new cursor value
+        if (cursor != null && !cursor.isEmpty()) {
+            builder.setParameter("page", cursor);
         }
-        return result.toString();
+
+        return builder.build().toString();
     }
+
+
 }
