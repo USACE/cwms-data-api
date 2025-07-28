@@ -341,10 +341,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         );
 
         // Give the TVQ (time, value, quality) columns names
-        Field<Timestamp> dateTimeCol = field("DATE_TIME", Timestamp.class).as("DATE_TIME");
-        Field<Double> valueCol = field("VALUE", Double.class).as("VALUE");
-        Field<Integer> qualityCol = field("QUALITY_CODE", Integer.class).as("QUALITY_CODE");
-        Field<Timestamp> dataEntryDate = field("DATA_ENTRY_DATE", Timestamp.class).as("data_entry_date");
+        Field<Timestamp> dateTimeCol = field(DATE_TIME, Timestamp.class).as(DATE_TIME);
+        Field<Double> valueCol = field(VALUE, Double.class).as(VALUE);
+        Field<Integer> qualityCol = field(QUALITY_CODE, Integer.class).as(QUALITY_CODE);
+        Field<Timestamp> dataEntryDate = field(DATA_ENTRY_DATE, Timestamp.class).as("data_entry_date");
 
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
