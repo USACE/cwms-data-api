@@ -497,6 +497,8 @@ public class LocationController implements CrudHandler {
                 ? existingLocation.getVerticalDatum() : updatedLocation.getVerticalDatum();
         Double updatedElevation = updatedLocation.getElevation() == null
                 ? existingLocation.getElevation() : updatedLocation.getElevation();
+        String updatedElevationUnits = updatedLocation.getElevationUnits() == null
+                ? existingLocation.getElevationUnits() : updatedLocation.getElevationUnits();
         String updatedMapLabel = updatedLocation.getMapLabel() == null
                 ? existingLocation.getMapLabel() : updatedLocation.getMapLabel();
         String updatedBoundingOfficeId = updatedLocation.getBoundingOfficeId() == null
@@ -519,6 +521,7 @@ public class LocationController implements CrudHandler {
                 .withPublishedLatitude(updatedPublishedLatitude)
                 .withVerticalDatum(updatedVerticalDatum)
                 .withElevation(updatedElevation)
+                .withElevationUnits(updatedElevationUnits)
                 .withMapLabel(updatedMapLabel)
                 .withBoundingOfficeId(updatedBoundingOfficeId)
                 .build();
