@@ -456,7 +456,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         );
 
         String retrievalMethod;
-        if (entryDateSupport != null) {
+        if (includeEntryDate) {
             retrievalMethod = "cwms_20.cwms_ts.retrieve_ts_entry_out_tab";  // New method that supports entry date
         } else {
             retrievalMethod = "cwms_20.cwms_ts.retrieve_ts_out_tab";    // Legacy method without entry date
@@ -508,7 +508,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             if (pageSize > 0) {
                 query.limit(DSL.val(pageSize + 1));
-                if (entryDateSupport != null) {
+                if (includeEntryDate) {
                     query2.limit(DSL.val(pageSize + 1));
                 }
             }
@@ -516,7 +516,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             if (requestParameters.isIncludeEntryDate()) {
                 logger.fine(() -> query2.getSQL(ParamType.INLINED));
                 try (Cursor<Record4<Timestamp, Double, BigDecimal, Timestamp>> recCursor = query2.fetchLazy()) {
-                    for(Record tsRecord: recCursor){
+                    for (Record tsRecord: recCursor) {
                         timeseries.addValue(
                                 tsRecord.getValue(dateTimeCol),
                                 tsRecord.getValue(valueCol),
@@ -527,7 +527,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             } else {
                 logger.fine(() -> query.getSQL(ParamType.INLINED));
                 try (Cursor<Record3<Timestamp, Double, BigDecimal>> recCursor = query.fetchLazy()) {
-                    for(Record tsRecord: recCursor){
+                    for (Record tsRecord: recCursor) {
                         timeseries.addValue(
                                 tsRecord.getValue(dateTimeCol),
                                 tsRecord.getValue(valueCol),
