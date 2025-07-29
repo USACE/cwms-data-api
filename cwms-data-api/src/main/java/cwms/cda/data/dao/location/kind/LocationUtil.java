@@ -25,10 +25,10 @@
 package cwms.cda.data.dao.location.kind;
 
 import cwms.cda.api.enums.Nation;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
-import java.time.ZoneId;
 import java.util.Optional;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
@@ -128,7 +128,7 @@ public final class LocationUtil {
         if (location != null) {
             retval = new Location.Builder(getLocationId(location.getLOCATION_REF()),
                 location.getLOCATION_KIND_ID(),
-                ZoneId.of(location.getTIME_ZONE_NAME()),
+                JooqDao.parseZoneIdWithAliases(location.getTIME_ZONE_NAME()),
                 buildDouble(location.getLATITUDE()),
                 buildDouble(location.getLONGITUDE()),
                 location.getHORIZONTAL_DATUM(),

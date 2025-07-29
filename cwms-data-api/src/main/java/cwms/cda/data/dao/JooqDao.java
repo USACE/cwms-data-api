@@ -24,6 +24,8 @@
 
 package cwms.cda.data.dao;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.Instant;
 import static org.jooq.SQLDialect.ORACLE;
@@ -45,8 +47,11 @@ import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
@@ -91,6 +96,58 @@ public abstract class JooqDao<T> extends Dao<T> {
         public DeleteRule getRule() {
             return rule;
         }
+    }
+
+    private static final Map<String, String> tzAliases = buildTimeZoneAliases();
+
+    private static Map<String, String> buildTimeZoneAliases() {
+        Map<String, String> aliases = new HashMap<>();
+
+        try {
+            Properties props = new Properties();
+            InputStream resource = JooqDao.class.getClassLoader()
+                    .getResourceAsStream("cwms/cda/data/dao/timezone-aliases.properties");
+
+            if (resource != null) {
+                props.load(resource);
+
+                // Find all alias entries by looking for .from properties
+                for (String key : props.stringPropertyNames()) {
+                    if (key.matches("alias\\.\\d+\\.from")) {
+                        String aliasNumber = key.substring(6, key.lastIndexOf('.'));
+                        String fromKey = "alias." + aliasNumber + ".from";
+                        String toKey = "alias." + aliasNumber + ".to";
+
+                        String fromValue = props.getProperty(fromKey);
+                        String toValue = props.getProperty(toKey);
+
+                        if (fromValue != null && toValue != null) {
+                            aliases.put(fromValue, toValue);
+                        }
+                    }
+                }
+            } else {
+                logger.atWarning().log("timezone-aliases.properties not found, using default aliases");
+                loadDefaultAliases(aliases);
+            }
+        } catch (IOException e) {
+            logger.atWarning().withCause(e).log("Failed to load timezone aliases from resource file, using defaults");
+            loadDefaultAliases(aliases);
+        }
+
+        // Fallback if no aliases were loaded
+        if (aliases.isEmpty()) {
+            loadDefaultAliases(aliases);
+        }
+
+        return aliases;
+    }
+
+    private static void loadDefaultAliases(Map<String, String> aliases) {
+        aliases.put("Canada/East-Saskatchewan", "Canada/Saskatchewan");
+        aliases.put("ROC", "Asia/Taipei");
+        aliases.put("US/Pacific-New", "US/Pacific");
+        aliases.put("Unknown or Not Applicable", "UTC");
     }
 
     protected JooqDao(DSLContext dsl) {
@@ -662,5 +719,9 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     public static double buildDouble(BigDecimal bigDecimal) {
         return (bigDecimal == null) ? 0.0 : bigDecimal.doubleValue();
+    }
+
+    public static ZoneId parseZoneIdWithAliases(String zoneId) {
+        return ZoneId.of(zoneId, tzAliases);
     }
 }

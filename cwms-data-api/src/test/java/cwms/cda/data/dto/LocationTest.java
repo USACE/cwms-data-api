@@ -50,6 +50,29 @@ class LocationTest
 
 	}
 
+	@Test
+	void deserializeWithAliasedTimezoneName() throws JsonProcessingException {
+		String input = "{\n" +
+				"  \"office-id\" : \"LRL\",\n" +
+				"  \"name\" : \"TEST_LOCATION2\",\n" +
+				"  \"latitude\" : 50.0,\n" +
+				"  \"longitude\" : 50.0,\n" +
+				"  \"active\" : true,\n" +
+				"  \"public-name\" : \"TEST_LOCATION2\",\n" +
+				"  \"long-name\" : \"TEST_LOCATION\",\n" +
+				"  \"description\" : \"for testing\",\n" +
+				"  \"timezone-name\" : \"Unknown or Not Applicable\",\n" +   // This is the key line for the test
+				"  \"location-kind\" : \"SITE\"\n" +
+				"}";
+
+		ObjectMapper om = JsonV1.buildObjectMapper();
+		Location location2 = om.readValue(input, Location.class);
+		assertNotNull(location2);
+
+		assertEquals("UTC", location2.getTimezoneName());
+	}
+
+
 	@ParameterizedTest
 	@ValueSource(strings = { Formats.JSONV2, Formats.XMLV2 })
 	void testSerializationRoundTrip(String format) throws JsonProcessingException
@@ -132,6 +155,9 @@ class LocationTest
 				.withDescription("for testing\r\n  next line\nhas a double quote \"\r\n this line has a single quote '\r")
 				.build();
 	}
+
+
+
 
 
 }

@@ -88,6 +88,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     private static final Logger logger = Logger.getLogger(LocationsDaoImpl.class.getName());
     private static final long DELETED_TS_MARKER = 0L;
 
+
+
     public LocationsDaoImpl(DSLContext dsl) {
         super(dsl);
     }
@@ -144,7 +146,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         String timeZoneName = loc.get(AV_LOC.TIME_ZONE_NAME); // may be null...
         ZoneId zone = null;
         if (timeZoneName != null) {
-            zone = ZoneId.of(timeZoneName);
+            zone = parseZoneIdWithAliases(timeZoneName);
         }
 
         Double latDouble = null;
