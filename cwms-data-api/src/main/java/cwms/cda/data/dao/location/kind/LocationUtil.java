@@ -30,6 +30,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LookupType;
 import java.util.Optional;
+import cwms.cda.helpers.ZoneIdHelper;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_OBJ_T;
@@ -128,7 +129,7 @@ public final class LocationUtil {
         if (location != null) {
             retval = new Location.Builder(getLocationId(location.getLOCATION_REF()),
                 location.getLOCATION_KIND_ID(),
-                JooqDao.parseZoneIdWithAliases(location.getTIME_ZONE_NAME()),
+                ZoneIdHelper.parseZoneIdWithAliases(location.getTIME_ZONE_NAME()),
                 buildDouble(location.getLATITUDE()),
                 buildDouble(location.getLONGITUDE()),
                 location.getHORIZONTAL_DATUM(),

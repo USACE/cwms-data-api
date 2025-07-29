@@ -32,6 +32,7 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
+import cwms.cda.helpers.ZoneIdHelper;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.IntegrationTestNameGenerator;
 import fixtures.KeyCloakExtension;
@@ -91,7 +92,7 @@ public class DataApiTestIT {
     protected static final String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
     protected static final String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and apikey = ?";
 
-    protected final static Configuration freemarkerConfig = new Configuration(Configuration.VERSION_2_3_32);
+    protected static final Configuration freemarkerConfig = new Configuration(Configuration.VERSION_2_3_32);
 
     private ArrayList<LocationGroup> groupsCreated = new ArrayList<>();
     private ArrayList<LocationCategory> categoriesCreated = new ArrayList<>();
@@ -238,7 +239,7 @@ public class DataApiTestIT {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         Location loc = new Location.Builder(location,
                                             kind,
-                                            JooqDao.parseZoneIdWithAliases(timeZone),
+                                            ZoneIdHelper.parseZoneIdWithAliases(timeZone),
                                             latitude,
                                             longitude,
                                             horizontalDatum,

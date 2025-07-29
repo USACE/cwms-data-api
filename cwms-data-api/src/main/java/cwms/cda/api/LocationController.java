@@ -67,6 +67,7 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.UnsupportedFormatException;
+import cwms.cda.helpers.ZoneIdHelper;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -508,7 +509,7 @@ public class LocationController implements CrudHandler {
         String updatedOfficeId = updatedLocation.getOfficeId() == null
                 ? existingLocation.getOfficeId() : updatedLocation.getOfficeId();
         return new Location.Builder(updatedName, updatedLocationKind,
-                JooqDao.parseZoneIdWithAliases(updatedTimeZoneId), updatedLatitude, updatedLongitude,
+                ZoneIdHelper.parseZoneIdWithAliases(updatedTimeZoneId), updatedLatitude, updatedLongitude,
                 updatedHorizontalDatum, updatedOfficeId)
                 .withActive(updatedIsActive)
                 .withPublicName(updatedPublicName)

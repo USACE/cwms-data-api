@@ -120,57 +120,6 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
     }
 
-    private static final Map<String, String> tzAliases = buildTimeZoneAliases();
-
-    private static Map<String, String> buildTimeZoneAliases() {
-        Map<String, String> aliases = new HashMap<>();
-
-        try {
-            Properties props = new Properties();
-            InputStream resource = JooqDao.class.getClassLoader()
-                    .getResourceAsStream("cwms/cda/data/dao/timezone-aliases.properties");
-
-            if (resource != null) {
-                props.load(resource);
-
-                // Find all alias entries by looking for .from properties
-                for (String key : props.stringPropertyNames()) {
-                    if (key.matches("alias\\.\\d+\\.from")) {
-                        String aliasNumber = key.substring(6, key.lastIndexOf('.'));
-                        String fromKey = "alias." + aliasNumber + ".from";
-                        String toKey = "alias." + aliasNumber + ".to";
-
-                        String fromValue = props.getProperty(fromKey);
-                        String toValue = props.getProperty(toKey);
-
-                        if (fromValue != null && toValue != null) {
-                            aliases.put(fromValue, toValue);
-                        }
-                    }
-                }
-            } else {
-                logger.atWarning().log("timezone-aliases.properties not found, using default aliases");
-                loadDefaultAliases(aliases);
-            }
-        } catch (IOException e) {
-            logger.atWarning().withCause(e).log("Failed to load timezone aliases from resource file, using defaults");
-            loadDefaultAliases(aliases);
-        }
-
-        // Fallback if no aliases were loaded
-        if (aliases.isEmpty()) {
-            loadDefaultAliases(aliases);
-        }
-
-        return aliases;
-    }
-
-    private static void loadDefaultAliases(Map<String, String> aliases) {
-        aliases.put("Canada/East-Saskatchewan", "Canada/Saskatchewan");
-        aliases.put("ROC", "Asia/Taipei");
-        aliases.put("US/Pacific-New", "US/Pacific");
-        aliases.put("Unknown or Not Applicable", "UTC");
-    }
 
     protected JooqDao(DSLContext dsl) {
         super(dsl);
@@ -242,7 +191,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         try {
             final String apiVersion = ApiServlet.getApiVersion();
             connection.setClientInfo("OCSID.ECID",
-                                     ApiServlet.APPLICATION_TITLE + " " + 
+                                     ApiServlet.APPLICATION_TITLE + " " +
                                      apiVersion.substring(0,Math.min(ORACLE_ECID_MAX_LENGTH,apiVersion.length())));
             if (ctx.handlerType() == HandlerType.BEFORE) {
                 connection.setClientInfo("OCSID.MODULE", "BEFORE-HANDLER");
@@ -848,7 +797,4 @@ public abstract class JooqDao<T> extends Dao<T> {
         return (bigDecimal == null) ? 0.0 : bigDecimal.doubleValue();
     }
 
-    public static ZoneId parseZoneIdWithAliases(String zoneId) {
-        return ZoneId.of(zoneId, tzAliases);
-    }
 }
