@@ -28,11 +28,9 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.AT;
 import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DATE_FORMAT;
 import static cwms.cda.api.Controllers.DATUM;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.EXAMPLE_DATE;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
@@ -44,10 +42,12 @@ import static cwms.cda.api.Controllers.REPLACE_BASE_CURVE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.STORE_TEMPLATE;
 import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION_DATE;
@@ -63,6 +63,7 @@ import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -138,7 +139,10 @@ public class RatingController implements CrudHandler {
                 @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
                         description = "Also store updates to the rating template. Default: true")
             },
-            method = HttpMethod.POST, path = "/ratings", tags = {TAG})
+            method = HttpMethod.POST, path = "/ratings", tags = {TAG},
+            responses = {
+                @OpenApiResponse(status = STATUS_201, description = "Rating Set successfully stored to CWMS.")
+            })
     public void create(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime(CREATE)) {
@@ -147,7 +151,8 @@ public class RatingController implements CrudHandler {
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
             String ratingSet = deserializeRatingSet(ctx, storeTemplate);
             ratingDao.create(ratingSet, false);
-            ctx.status(HttpServletResponse.SC_OK).json("Created RatingSet");
+            StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Rating Set successfully stored to CWMS.");
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("Failed to process request to update RatingSet");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -212,13 +217,9 @@ public class RatingController implements CrudHandler {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of "
                     + "the ratings to be deleted."),
             @OpenApiParam(name = BEGIN, required = true, description = "The start of the time "
-                    + "window to delete. The format for this field is ISO 8601 extended, "
-                    + "with optional offset and timezone, i.e., '"
-                + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    + "window to delete. " + TIME_FORMAT_DESC),
             @OpenApiParam(name = END, required = true, description = "The end of the time window"
-                    + " to delete. The format for this field is ISO 8601 extended, with optional "
-                    + "offset and timezone, i.e., '"
-                + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    + " to delete. " + TIME_FORMAT_DESC),
             @OpenApiParam(name = TIMEZONE, description = "This field specifies a default "
                     + "timezone to be used if the format of the "
                 + BEGIN + ", " + END + ", or " + VERSION_DATE + " parameters do not include "
@@ -500,7 +501,8 @@ public class RatingController implements CrudHandler {
                     .getOrDefault(false);
             String ratingSet = deserializeRatingSet(ctx, storeTemplate);
             ratingDao.store(ratingSet, replaceBaseCurve);
-            ctx.status(HttpServletResponse.SC_OK).json("Updated RatingSet");
+            StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Updated RatingSet");
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("Failed to process request to update RatingSet");
             logger.log(Level.SEVERE, re.toString(), ex);

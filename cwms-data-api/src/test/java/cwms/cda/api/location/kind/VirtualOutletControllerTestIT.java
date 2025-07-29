@@ -51,6 +51,9 @@ import static org.hamcrest.Matchers.*;
 
 @Tag("integration")
 class VirtualOutletControllerTestIT  extends ProjectStructureIT {
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
     private static final String OUTLET_KIND = "OUTLET";
     private static final CwmsId VIRTUAL_OUTLET_RATING_GROUP = new CwmsId.Builder().withName("Rating-" + PROJECT_LOC2.getName() + "-VirtualOutlet")
                                                                                   .withOfficeId(OFFICE_ID)
@@ -211,8 +214,11 @@ class VirtualOutletControllerTestIT  extends ProjectStructureIT {
             .post("/projects/virtual-outlets")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(MISSING_VIRTUAL_OUTLET.getVirtualOutletId().getOfficeId()))
+            .body(MESSAGE, equalTo("Virtual Outlet successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(MISSING_VIRTUAL_OUTLET.getVirtualOutletId().getName()));
 
 
         //Read the virtual outlet
@@ -254,7 +260,10 @@ class VirtualOutletControllerTestIT  extends ProjectStructureIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(MISSING_VIRTUAL_OUTLET.getVirtualOutletId().getOfficeId()))
+            .body(MESSAGE, equalTo("Virtual Outlet successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(MISSING_VIRTUAL_OUTLET.getVirtualOutletId().getName()));
 
         //Delete the virtual outlet
         given()
@@ -270,7 +279,10 @@ class VirtualOutletControllerTestIT  extends ProjectStructureIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(MISSING_VIRTUAL_OUTLET.getVirtualOutletId().getOfficeId()))
+            .body(MESSAGE, equalTo("Virtual Outlet successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(MISSING_VIRTUAL_OUTLET.getVirtualOutletId().getName()));
 
         //Confirm deletion of virtual outlet
         given()

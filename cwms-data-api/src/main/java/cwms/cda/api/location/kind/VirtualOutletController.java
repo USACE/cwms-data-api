@@ -28,6 +28,7 @@ import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.OutletDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -155,7 +156,7 @@ public class VirtualOutletController extends BaseCrudHandler {
             method = HttpMethod.DELETE,
             tags = {OutletController.TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Virtual Outlet successfully deleted from CWMS."),
+                    @OpenApiResponse(status = STATUS_200, description = "Virtual Outlet successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the virtual outlet was not found.")
             }
@@ -170,7 +171,8 @@ public class VirtualOutletController extends BaseCrudHandler {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
             dao.deleteVirtualOutlet(office, projectId, name, deleteMethod.getRule());
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(name + " Deleted");
+            StatusResponse re = new StatusResponse(office, "Virtual Outlet successfully deleted from CWMS.", name);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

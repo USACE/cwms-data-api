@@ -110,6 +110,8 @@ dependencies {
         exclude group: "jakarta.xml.bind", module: "*"
     }
 
+    implementation 'cz.jirutka.rsql:rsql-parser:2.1.0'
+
     compileOnly(libs.javaee.web.api)
     compileOnly(libs.cwms.tomcat.auth)
 
