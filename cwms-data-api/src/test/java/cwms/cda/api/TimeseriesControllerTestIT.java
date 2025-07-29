@@ -909,6 +909,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @MinimumSchema(MINIMUM_SCHEMA)
     void test_attempt_store_with_entry_date() throws Exception
     {
         ObjectMapper mapper = new ObjectMapper();
@@ -1295,6 +1296,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @MinimumSchema(MINIMUM_SCHEMA)
     void test_lrl_trim_with_data_entry_date() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
