@@ -162,7 +162,8 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     @Override
     public LocationLevels getLocationLevels(String cursor, int pageSize,
                                             String levelIdMask, String office, @NotNull String unit,
-                                            String datum, ZonedDateTime beginZdt, ZonedDateTime endZdt) {
+                                            String datum, ZonedDateTime beginZdt, ZonedDateTime endZdt,
+                                            Boolean constantsOnly) {
         Integer total = null;
         int offset = 0;
         boolean totalSet = false;
@@ -189,6 +190,10 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         Condition whereCondition = (DSL.upper(view.UNIT_SYSTEM).eq(unit.toUpperCase()))
                 .or(virtView.LOCATION_LEVEL_ID.isNotNull());
+
+        if (constantsOnly != null && constantsOnly) {
+            whereCondition = whereCondition.and(view.CONSTANT_LEVEL.isNotNull());
+        }
 
         if (office != null && !office.isEmpty()) {
             whereCondition = whereCondition.and((DSL.upper(view.OFFICE_ID).eq(office.toUpperCase()))

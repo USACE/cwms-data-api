@@ -238,6 +238,9 @@ public class LevelsController implements CrudHandler {
                         + "\n* `xml`"
                         + "\n* `wml2` (only if name field is specified)"
                         + "\n* `json` (default)"),
+                @OpenApiParam(name = CONSTANTS_ONLY, type = Boolean.class, description = "If true, "
+                        + "only constant location levels will be returned. If false, all "
+                        + "location levels will be returned. Only available for JSON V2. Default is false."),
                 @OpenApiParam(name = PAGE, description = "This identifies where in the "
                         + "request you are. This is an opaque value, and can be obtained from "
                         + "the 'next-page' value in the response."),
@@ -265,6 +268,9 @@ public class LevelsController implements CrudHandler {
 
             String office = ctx.queryParam(OFFICE);
             String unit = ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.SI.getValue());
+            if (!unit.equalsIgnoreCase(UnitSystem.SI.getValue()) && !unit.equalsIgnoreCase(UnitSystem.EN.getValue())) {
+                unit = UnitSystem.SI.getValue();
+            }
             String datum = ctx.queryParam(DATUM);
             String begin = ctx.queryParam(BEGIN);
             String end = ctx.queryParam(END);
@@ -277,6 +283,9 @@ public class LevelsController implements CrudHandler {
             ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, format, LocationLevels.class);
             String version = contentType.getParameters()
                                           .getOrDefault(VERSION, "");
+
+            Boolean constantsOnly = ctx.queryParamAsClass(CONSTANTS_ONLY, Boolean.class)
+                .getOrDefault(false);
 
             boolean isLegacyVersion = version.equals("1");
 
@@ -291,7 +300,7 @@ public class LevelsController implements CrudHandler {
 
                 LocationLevels levels;
                 levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
-                        office, unit, datum, beginZdt, endZdt);
+                        office, unit, datum, beginZdt, endZdt, constantsOnly);
                 String result = Formats.format(contentType, levels);
 
                 ctx.result(result);

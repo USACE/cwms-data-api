@@ -80,6 +80,7 @@ public final class Controllers {
 
     public static final String LOCATION_CATEGORY_LIKE = "location-category-like";
     public static final String LOCATION_GROUP_LIKE = "location-group-like";
+    public static final String CONSTANTS_ONLY = "constants-only";
 
     public static final String TIMESERIES_GROUP_LIKE = "timeseries-group-like";
     public static final String ACCEPT = "Accept";

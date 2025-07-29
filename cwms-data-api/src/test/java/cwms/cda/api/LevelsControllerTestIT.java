@@ -43,6 +43,7 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import java.math.BigInteger;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
@@ -1847,6 +1848,93 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             _format = format;
             _expectedContentType = expectedContentType;
         }
+    }
+
+    @Test
+    void test_get_constants_over_time() throws Exception {
+        String locId = "level_get_constants_test";
+        String levelId = locId + ".Stor.Ave.1Day.Regulating";
+        createLocation(locId, true, OFFICE);
+        final ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America"
+            + "/Los_Angeles"));
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
+                .withOfficeId(OFFICE)
+                .withConstantValue(1.0)
+                .withLevelUnitsId("ac-ft")
+                .build();
+            LocationLevel level2 = new ConstantLocationLevel.Builder(levelId, time.plusDays(1))
+                .withOfficeId(OFFICE)
+                .withConstantValue(2.0)
+                .withLevelUnitsId("ac-ft")
+                .build();
+            LocationLevel level3 = new SeasonalLocationLevel.Builder(levelId, time.plusDays(2))
+                .withOfficeId(OFFICE)
+                .withIntervalMonths(2)
+                .withIntervalOrigin(time)
+                .withInterpolateString("T")
+                .withSeasonalValue(new SeasonalValueBean.Builder()
+                    .withValue(25.0)
+                    .withOffsetMonths(1)
+                    .withOffsetMinutes(BigInteger.ONE)
+                    .build())
+                .withLevelUnitsId("ac-ft")
+                .build();
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level);
+            dao.storeLocationLevel(level2);
+            dao.storeLocationLevel(level3);
+        });
+
+        Instant startTime = Instant.parse("2023-06-01T00:00:00Z");
+        Instant endTime = Instant.parse("2023-06-03T12:00:00Z");
+
+        // get location level constants over time
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(START, startTime.toString())
+            .queryParam(END, endTime.toString())
+            .queryParam(LEVEL_ID_MASK, levelId)
+            .queryParam(CONSTANTS_ONLY, true)
+            .queryParam(UNIT, "EN")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(2))
+            .body("levels[0].constant-value", equalTo(1.0f))
+            .body("levels[1].constant-value", equalTo(2.0f))
+        ;
+
+        // get location levels over time
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(START, startTime.toString())
+            .queryParam(END, endTime.toString())
+            .queryParam(UNIT, "EN")
+            .queryParam(LEVEL_ID_MASK, levelId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(3))
+            .body("levels[0].constant-value", equalTo(1.0f))
+            .body("levels[1].constant-value", equalTo(2.0f));
     }
 
     enum GetAllTestNewAliases {

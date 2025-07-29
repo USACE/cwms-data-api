@@ -51,7 +51,7 @@ public interface LocationLevelsDao {
 
     LocationLevels getLocationLevels(String cursor, int pageSize,
                                      String names, String office, String unit, String datum,
-                                     ZonedDateTime beginZdt, ZonedDateTime endZdt);
+                                     ZonedDateTime beginZdt, ZonedDateTime endZdt, Boolean constantsOnly);
 
     TimeSeries retrieveLocationLevelAsTimeSeries(ILocationLevelRef levelRef, Instant start, Instant end, Interval interval, String units);
 }
