@@ -179,7 +179,7 @@ public class TimeSeriesRecentController implements Handler {
                 // just group provided
                 latestValues = dao.findRecentsInRange(office, categoryId, groupId, pastLimit, futureLimit, unitSystem);
             } else {
-                latestValues = dao.findMostRecentsInRange(tsIds, pastLimit, futureLimit, unitSystem);
+                latestValues = dao.findMostRecentsInRange(office, tsIds, pastLimit, futureLimit, unitSystem);
             }
 
             String formatHeader = ctx.header(Header.ACCEPT);
