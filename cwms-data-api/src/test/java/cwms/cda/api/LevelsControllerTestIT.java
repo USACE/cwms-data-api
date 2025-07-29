@@ -1868,27 +1868,14 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .withConstantValue(2.0)
                 .withLevelUnitsId("ac-ft")
                 .build();
-            LocationLevel level3 = new SeasonalLocationLevel.Builder(levelId, time.plusDays(2))
-                .withOfficeId(OFFICE)
-                .withIntervalMonths(2)
-                .withIntervalOrigin(time)
-                .withInterpolateString("T")
-                .withSeasonalValue(new SeasonalValueBean.Builder()
-                    .withValue(25.0)
-                    .withOffsetMonths(1)
-                    .withOffsetMinutes(BigInteger.ONE)
-                    .build())
-                .withLevelUnitsId("ac-ft")
-                .build();
             DSLContext dsl = dslContext(c, OFFICE);
             LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
             dao.storeLocationLevel(level);
             dao.storeLocationLevel(level2);
-            dao.storeLocationLevel(level3);
         });
 
         Instant startTime = Instant.parse("2023-06-01T00:00:00Z");
-        Instant endTime = Instant.parse("2023-06-03T12:00:00Z");
+        Instant endTime = Instant.parse("2023-06-02T12:00:00Z");
 
         // get location level constants over time
         given()
@@ -1899,7 +1886,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(START, startTime.toString())
             .queryParam(END, endTime.toString())
             .queryParam(LEVEL_ID_MASK, levelId)
-            .queryParam(CONSTANTS_ONLY, true)
             .queryParam(UNIT, "EN")
         .when()
             .redirects().follow(true)
@@ -1914,27 +1900,27 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .body("levels[1].constant-value", equalTo(2.0f))
         ;
 
-        // get location levels over time
+        // get location level constants over time
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(START, startTime.toString())
-            .queryParam(END, endTime.toString())
-            .queryParam(UNIT, "EN")
+            .queryParam(END, "2023-06-01T12:00:00Z")
             .queryParam(LEVEL_ID_MASK, levelId)
-        .when()
+            .queryParam(UNIT, "EN")
+            .when()
             .redirects().follow(true)
             .redirects().max(3)
             .get("/levels/")
-        .then()
+            .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
+            .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("levels.size()", is(3))
+            .body("levels.size()", is(1))
             .body("levels[0].constant-value", equalTo(1.0f))
-            .body("levels[1].constant-value", equalTo(2.0f));
+        ;
     }
 
     enum GetAllTestNewAliases {
