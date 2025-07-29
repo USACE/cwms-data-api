@@ -1,0 +1,18 @@
+{
+  "office": "SPK",
+  "name": "Pine Flat-Outflow.Stage.Inst.15Minutes.0.one",
+  "units": "m",
+  "interval": "15Minutes",
+  "interval-offset": 2147483647,
+  "time-zone": "UTC",
+  "extents": [
+    {},
+    {}
+  ],
+  "aliases": [
+    {
+      "name": "Test Category-LessThan3",
+      "value": "test alias 1"
+    }
+  ]
+}

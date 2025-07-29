@@ -1,0 +1,16 @@
+{
+  "location-id": {
+    "office-id": "SPK",
+    "name": "Sacramento River"
+  },
+  "description": "River near Sacramento",
+  "parameter-list": [
+    "Depth",
+    "Temp-Water"
+  ],
+  "key-parameter": "Temp-Water",
+  "reference-ts-id": {
+    "name": "Sacramento River.Precip-Cumulative.Inst.1DayLocal.0.Raw",
+    "office-id": "SPK"
+  }
+}

@@ -27,9 +27,10 @@
 package cwms.cda.api;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static java.lang.String.format;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -43,6 +44,7 @@ import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
@@ -59,6 +61,9 @@ import java.util.logging.Logger;
 class WaterContractTypeControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SWT";
     private static final LookupType CONTRACT_TYPE;
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
     public static final Logger LOGGER =
             Logger.getLogger(WaterContractTypeControllerTestIT.class.getName());
     static {
@@ -95,6 +100,9 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(CONTRACT_TYPE.getOfficeId()))
+            .body(MESSAGE, equalTo("Contract type successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(CONTRACT_TYPE.getDisplayValue()))
         ;
 
         // get water contract type and assert that it exists
@@ -143,6 +151,9 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(CONTRACT_TYPE.getOfficeId()))
+            .body(MESSAGE, equalTo("Contract type successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(CONTRACT_TYPE.getDisplayValue()))
         ;
 
         // get water contract type and assert that it exists
@@ -176,7 +187,10 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(CONTRACT_TYPE.getOfficeId()))
+            .body(MESSAGE, equalTo("Contract type successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(CONTRACT_TYPE.getDisplayValue()))
         ;
 
         // get water contract type and assert that it does not exist
@@ -196,6 +210,35 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
         ;
         DTOMatch.assertDoesNotContainDto(results, CONTRACT_TYPE,
                 (i, s) -> i.getDisplayValue().equalsIgnoreCase(s.getDisplayValue()), "Contract Type not deleted");
+    }
+
+    @Test
+    void test_create_WaterContractType_values_too_long() throws Exception
+    {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        String invalidDisplayValue = RandomStringUtils.randomAlphabetic(35);
+        String invalidTooltip = RandomStringUtils.randomAlphabetic(260);
+        LookupType type = new LookupType.Builder().withActive(true).withOfficeId(OFFICE_ID)
+                .withDisplayValue(invalidDisplayValue).withTooltip(invalidTooltip).build();
+        String json = JsonV1.buildObjectMapper().writeValueAsString(type);
+
+        // create water contract type
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .queryParam("fail-if-exists", false)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + OFFICE_ID + "/contract-types")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body(containsString("One or more provided values exceeds the maximum length for the parameter."))
+        ;
     }
 
     private void cleanupType() throws SQLException {

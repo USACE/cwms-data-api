@@ -39,13 +39,16 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 final class PropertyControllerIT extends DataApiTestIT {
+    private static final String OFFICE_ID = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
 
 
@@ -79,6 +82,9 @@ final class PropertyControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(property.getOfficeId()))
+            .body(MESSAGE, equalTo("Property successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(property.getName()))
         ;
         String office = property.getOfficeId();
         // Retrieve the property and assert that it exists
@@ -117,7 +123,10 @@ final class PropertyControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(property.getOfficeId()))
+            .body(MESSAGE, equalTo("Property successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(property.getName()))
         ;
 
         // Retrieve a Property and assert that it does not exist
@@ -216,6 +225,9 @@ final class PropertyControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(property.getOfficeId()))
+            .body(MESSAGE, equalTo("Property successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(property.getName()))
         ;
         String office = property.getOfficeId();
         // Retrieve the property and assert that it exists
@@ -255,7 +267,10 @@ final class PropertyControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(property.getOfficeId()))
+            .body(MESSAGE, equalTo("Property successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(property.getName()))
         ;
     }
 }

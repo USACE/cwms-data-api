@@ -61,7 +61,7 @@ import java.time.ZoneId;
 
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
@@ -150,8 +150,8 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
             ProjectDao projectDao = new ProjectDao(ctx);
             WaterContractDao waterContractDao = new WaterContractDao(ctx);
             try {
-                locationsDao.storeLocation(parentLocation);
-                locationsDao.storeLocation(parentLocation2);
+                locationsDao.storeLocation(parentLocation, false);
+                locationsDao.storeLocation(parentLocation2, false);
                 projectDao.store(project1, true);
                 projectDao.store(project2, true);
                 waterContractDao.storeWaterUser(CONTRACT.getWaterUser(), false);
@@ -382,7 +382,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
         ;
     }
 
@@ -447,7 +447,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
         ;
     }
 }

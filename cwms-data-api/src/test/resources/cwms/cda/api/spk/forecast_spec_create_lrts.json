@@ -1,0 +1,12 @@
+{
+  "spec-id": "TEST-SPEC-LRTS",
+  "office-id": "SPK",
+  "source-entity-id": "USACE",
+  "designator": "designator",
+  "description": "description",
+  "time-series-ids": [
+    "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid1",
+    "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid2",
+    "TsBinTestLoc.Flow.Ave.1DayLocal.1Day.tsid3"
+  ]
+}

@@ -81,6 +81,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
     private final MetricRegistry metrics;
 
 
+
     public BinaryTimeSeriesController(MetricRegistry metrics) {
         this.metrics = metrics;
     }

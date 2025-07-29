@@ -49,10 +49,11 @@ begin
   cwms_sec.add_user_to_group('&user','CWMS Users', 'SPK');
   cwms_sec.add_user_to_group('&user','CWMS PD Users', 'SPK');
   cwms_sec.add_user_to_group('&user','CWMS DBA Users', 'SPK');
-  
-
+  execute immediate 'grant execute on cwms_upass to web_user';
   /** Add a couple of districts*/
   begin
+    -- DO NOT CREATE the q0hecoidc user here. That user is to test the
+    -- User creation workflow.
     cwms_sec.add_cwms_user('l2hectest',NULL,'SPK');    
     cwms_sec.update_edipi('l2hectest',1234567890);
     cwms_sec.add_user_to_group('l2hectest','CWMS Users','SPK');
@@ -68,11 +69,13 @@ begin
     cwms_sec.add_user_to_group('l2hectest_vt','All Users', 'HQ');
     cwms_sec.add_user_to_group('l2hectest_vt','CWMS Users', 'HQ');
     cwms_sec.add_user_to_group('l2hectest_vt','CWMS PD Users', 'HQ');
+    cwms_sec.add_user_to_group('l2hectest_vt','CWMS User Admins', 'HQ');
     cwms_sec.add_user_to_group('l2hectest_vt','CWMS DBA Users', 'HQ');
     cwms_sec.add_user_to_group('l2hectest_vt','All Users', 'SPK');
     cwms_sec.add_user_to_group('l2hectest_vt','CWMS Users', 'SPK');
     cwms_sec.add_user_to_group('l2hectest_vt','CWMS PD Users', 'SPK');
     cwms_sec.add_user_to_group('l2hectest_vt','CWMS DBA Users', 'SPK');
+    cwms_sec.add_user_to_group('l2hectest_vt','CWMS User Admins', 'SPK');
     cwms_sec.add_user_to_group('l2hectest_vt','TS ID Creator','SPK');
 
     cwms_sec.add_cwms_user('m5hectest', NULL, 'SWT');
@@ -88,4 +91,5 @@ begin
   exception
     when dup_val_on_index then null; -- user already exists
   end;
+
 end;

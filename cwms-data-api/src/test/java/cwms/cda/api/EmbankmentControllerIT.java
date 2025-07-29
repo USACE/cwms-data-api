@@ -40,7 +40,6 @@ import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
@@ -54,9 +53,8 @@ import java.sql.Timestamp;
 import java.time.Instant;
 
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
@@ -65,6 +63,9 @@ final class EmbankmentControllerIT extends DataApiTestIT {
     private static final Location PROJECT_LOC;
     private static final Location EMBANKMENT_LOC;
     private static final Embankment EMBANKMENT;
+    private static final String OFFICE_ID = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
     static {
         try(InputStream projectStream = EmbankmentControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location.json");
             InputStream embankmentStream = EmbankmentControllerIT.class.getResourceAsStream("/cwms/cda/api/embankment.json")) {
@@ -79,7 +80,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
     }
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             try {
@@ -87,7 +88,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
                 PROJECT_OBJ_T projectObjT = buildProject();
                 CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
-                locationsDao.storeLocation(EMBANKMENT_LOC);
+                locationsDao.storeLocation(EMBANKMENT_LOC, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -95,7 +96,7 @@ final class EmbankmentControllerIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -147,6 +148,9 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(EMBANKMENT.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Embankment successfully stored to CWMS"))
+            .body(IDENTIFIER, equalTo(EMBANKMENT.getLocation().getName()))
         ;
         String office = EMBANKMENT.getLocation().getOfficeId();
         // Retrieve the Embankment and assert that it exists
@@ -188,7 +192,10 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(EMBANKMENT.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Embankment successfully deleted from CWMS"))
+            .body(IDENTIFIER, equalTo(EMBANKMENT.getLocation().getName()))
         ;
 
         // Retrieve a Embankment and assert that it does not exist
@@ -269,6 +276,9 @@ final class EmbankmentControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(EMBANKMENT.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Embankment successfully stored to CWMS"))
+            .body(IDENTIFIER, equalTo(EMBANKMENT.getLocation().getName()))
         ;
         String office = EMBANKMENT.getLocation().getOfficeId();
         // Retrieve the Embankment and assert that it exists
@@ -311,7 +321,10 @@ final class EmbankmentControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(EMBANKMENT.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Embankment successfully deleted from CWMS"))
+            .body(IDENTIFIER, equalTo(EMBANKMENT.getLocation().getName()))
         ;
     }
 

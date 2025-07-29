@@ -94,7 +94,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .leftOuterJoin(ratView)
                 .on(specView.RATING_SPEC_CODE.eq(ratView.RATING_SPEC_CODE))
                 .where(condition)
-                .fetchSize(1000);
+                .fetchSize(DEFAULT_FETCH_SIZE);
 
         logger.fine(() -> query.getSQL(ParamType.INLINED));
 
@@ -248,7 +248,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .on(specView.RATING_SPEC_CODE.eq(ratView.RATING_SPEC_CODE))
                 .where(condition)
                 .orderBy(specView.OFFICE_ID, specView.RATING_ID, ratView.EFFECTIVE_DATE)
-                .fetchSize(1000);
+                .fetchSize(DEFAULT_FETCH_SIZE);
 
         logger.fine(() -> query.getSQL(ParamType.INLINED));
 

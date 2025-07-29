@@ -39,7 +39,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -49,6 +49,9 @@ final class LookupTypeControllerIT extends DataApiTestIT {
 
     private static final String CATEGORY_IT = "AT_EMBANK_STRUCTURE_TYPE";
     private static final String PREFIX_IT = "STRUCTURE_TYPE";
+    private static final String OFFICE_ID = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
     @Test
     void test_get_create_delete() throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/lookup_type.json");
@@ -81,6 +84,9 @@ final class LookupTypeControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(lookupType.getOfficeId()))
+            .body(MESSAGE, equalTo("Lookup Type successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(lookupType.getDisplayValue()))
         ;
         String office = user.getOperatingOffice();
         // Retrieve the lookup type and assert that it exists
@@ -119,7 +125,10 @@ final class LookupTypeControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(lookupType.getOfficeId()))
+            .body(MESSAGE, equalTo("Lookup Type successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(lookupType.getDisplayValue()))
         ;
 
         // Retrieve the lookup type and assert that it does not exist

@@ -1,12 +1,12 @@
 package cwms.cda.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dto.Blob;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -18,6 +18,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
@@ -40,20 +41,20 @@ public class BlobControllerTestIT extends DataApiTestIT {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .contentType(Formats.JSONV2)
-                .body(serializedBlob)
-                .header("Authorization",user.toHeaderValue())
-                .queryParam("office",SPK)
-                .queryParam("fail-if-exists",false)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/blobs/")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam("office",SPK)
+            .queryParam("fail-if-exists",false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/blobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
     }
 
     @Test
@@ -75,7 +76,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
 
 
     @Test
-    void test_create_getOne() throws JsonProcessingException
+    void test_create_getOne()
     {
         /* There is an issue with how javalin handles / in the path that are actually part
         of the object name (NOTE: good candidate for actually having a GUID or other "code"
@@ -128,6 +129,180 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .body( is("t value"));
     }
 
+    @Test
+    void testCreateUpdateDelete() throws Exception
+    {
+        String blobId = "TEST_BLOBIT_ID";
+        String blobValue = "testing value";
+        String origDesc = "testing description";
+        byte[] origBytes = blobValue.getBytes();
+
+        String mediaType = "application/octet-stream";
+        Blob blob = new Blob(SPK, blobId, origDesc, mediaType, origBytes);
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        String serializedBlob = om.writeValueAsString(blob);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Store new blob
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, SPK)
+            .queryParam(Controllers.FAIL_IF_EXISTS,false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/blobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // retrieve blob, assert value matches expected
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(is(blobValue));
+
+        // update blob
+        String newDescription = "new description";
+        String newBlobValue = "new blob value";
+        byte[] newBlobBytes = newBlobValue.getBytes();
+        blob = new Blob(SPK, blobId, newDescription, mediaType, newBlobBytes);
+        serializedBlob = om.writeValueAsString(blob);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // retrieve blob, assert value matches expected
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(is(newBlobValue));
+
+        // delete blob
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .delete("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        // retrieve blob, assert not found
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @Test
+    void testIdCase() throws Exception
+    {
+        String blobId = "test_blob_id_case";
+        String blobValue = "testing value";
+        String origDesc = "testing description";
+        byte[] origBytes = blobValue.getBytes();
+
+        String mediaType = "application/octet-stream";
+        Blob blob = new Blob(SPK, blobId, origDesc, mediaType, origBytes);
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        String serializedBlob = om.writeValueAsString(blob);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Store new blob
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, SPK)
+            .queryParam(Controllers.FAIL_IF_EXISTS,false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/blobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // retrieve blob, assert value matches expected
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(is(blobValue));
+
+        // delete blob
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .delete("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        // retrieve blob, assert not found
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
     @ParameterizedTest
     @EnumSource(GetAllTest.class)
     void test_blob_get_all_default_alias(GetAllTest test)
@@ -143,6 +318,38 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .contentType(is(test._expectedContentType));
+    }
+
+    @Test
+    void test_create_too_long_name() throws Exception
+    {
+        String blobId = RandomStringUtils.randomAlphabetic(300);
+        String blobValue = "test value";
+        String origDesc = "test description";
+        byte[] origBytes = blobValue.getBytes();
+
+        String mediaType = "application/octet-stream";
+        Blob blob = new Blob(SPK, blobId, origDesc, mediaType, origBytes);
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        String serializedBlob = om.writeValueAsString(blob);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam("office",SPK)
+            .queryParam("fail-if-exists",false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/blobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("message", containsString("One or more provided values exceeds the maximum length for the parameter."));
     }
 
     enum GetAllTest

@@ -17,6 +17,7 @@ import cwms.cda.security.Role;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.Connection;
@@ -24,6 +25,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -43,6 +45,8 @@ import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
+
+import static cwms.cda.data.dao.JooqDao.connection;
 
 public class AuthDao extends Dao<DataApiPrincipal> {
     public static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -65,6 +69,13 @@ public class AuthDao extends Dao<DataApiPrincipal> {
 
     private static final String USER_FOR_EDIPI =
         "select userid from cwms_20.at_sec_cwms_users where edipi = ?";
+
+    // NOTE: the column name *should* be principal_name. It was spelled incorrectly and never changed for the life of the schema.
+    private static final String USER_EXISTS =
+        "select userid from cwms_20.at_sec_cwms_users where principle_name = ?";
+
+    private static final String ADD_CWMS_USER = "CALL cwms_20.cwms_sec.create_user(?,?,?,?)";
+    private static final String UPDATE_INFO = "CALL cwms_20.cwms_upass.update_user_data(?,?,null,null,null,?,?)";
 
     public static final String CREATE_API_KEY = "insert into cwms_20.at_api_keys"
             + "(userid, key_name, apikey, created, expires) values(UPPER(?),?,?,?,?)";
@@ -138,10 +149,6 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         return getInstance(dsl, null);
     }
 
-    @Override
-    public List<DataApiPrincipal> getAll(String limitToOffice) {
-        throw new UnsupportedOperationException("Unimplemented method 'getAll'");
-    }
 
     /**
      * Reserved for future use, get user principal by presented unique name and office.
@@ -169,7 +176,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * @param conn the connection to setup.
      * @throws SQLException if there is an issue setting up the session.
      */
-    private void setSessionForAuthCheck(Connection conn) throws SQLException {
+    static void setSessionForAuthCheck(Connection conn) throws SQLException {
         if (hasCwmsEnvMultiOfficeAuthFix) {
             try (PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE)) {
                 setApiUser.setString(1,connectionUser);
@@ -240,6 +247,27 @@ public class AuthDao extends Dao<DataApiPrincipal> {
             } else {
                 throw ex;
             }
+        }
+    }
+
+    private String userForPrincipal(String principal) throws CwmsAuthException {
+        try {
+            return dsl.connectionResult(c -> {
+                setSessionForAuthCheck(c);
+                try (PreparedStatement userForEdipi = c.prepareStatement(USER_EXISTS)) {
+                    userForEdipi.setString(1, principal);
+                    try (ResultSet rs = userForEdipi.executeQuery()) {
+                        if (rs.next()) {
+                            return rs.getString(1);
+                        } else {
+                            return null;
+                        }
+                    }
+                }
+            });
+        } catch (DataAccessException ex) {
+            logger.atInfo().withCause(ex).log("Unable to lookup user.");
+            throw new CwmsAuthException("Unable to lookup user.", ex);
         }
     }
 
@@ -393,7 +421,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                     ZonedDateTime.now(ZoneId.of("UTC")),
                     sourceData.getExpires()
             );
-            dsl.connection(c -> {
+             connection(dsl, c -> {
                 setSessionForAuthCheck(c);
                 try (PreparedStatement createKey = c.prepareStatement(CREATE_API_KEY)) {
                     createKey.setString(1, newKey.getUserId());
@@ -408,6 +436,9 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                         createKey.setDate(5,null);
                     }
                     createKey.execute();
+                } catch (SQLException e) {
+                    DataAccessException re = new DataAccessException(e.getMessage(), e);
+                    throw JooqDao.wrapException(re);
                 }
             });
             return newKey;
@@ -492,5 +523,60 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      */
     public void resetContext(DSLContext dslContext) {
         this.dsl = dslContext;
+    }
+
+    /**
+     * Returns a principal from user if that user exists. otherwise empty optional
+     *
+     * Uses the "principle" column directly with the provided value as-is.
+     *
+     * @param principal provider + subject principal to lookup.
+     * @return
+     * @throws CwmsAuthException if anything goes wrong with the database query.
+     */
+    public Optional<DataApiPrincipal> getPrincipalFromPrincipal(String principal) throws CwmsAuthException {
+        String user = userForPrincipal(principal);
+        if (user != null) {
+            Set<RouteRole> roles = this.getRolesForUser(user);
+            // In this case "cac_auth" just means the user is an actually user verify by some sort of
+            // identify management system. E.g. "not an apikey"
+            roles.add(new Role("cac_auth"));
+            return Optional.of(new DataApiPrincipal(user, roles));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+
+    public DataApiPrincipal createUser(String username, String principal, String fullname, String email) throws CwmsAuthException {
+        try {
+            dsl.connection(c -> {
+                setSessionForAuthCheck(c);
+                try (PreparedStatement createUser = c.prepareStatement(ADD_CWMS_USER);
+                     PreparedStatement updateData = c.prepareStatement(UPDATE_INFO)) {
+                    createUser.setString(1, username);
+                    createUser.setNull(2, Types.VARCHAR);
+                    createUser.setNull(3, Types.ARRAY, "CWMS_T_CHAR_32_ARRAY");
+                    createUser.setNull(4, Types.VARCHAR);
+                    createUser.execute();
+
+                    updateData.setString(1, username);
+                    updateData.setString(2,fullname);
+                    updateData.setString(3, email);
+                    updateData.setString(4, principal);
+                    updateData.execute();
+                } 
+            });
+            logger.atInfo().log("Created user {} from principal {}", username, principal);
+            Optional<DataApiPrincipal> apiPrincipal = getPrincipalFromPrincipal(principal);
+            if (apiPrincipal.isPresent()) {
+                return apiPrincipal.get();
+            } else {
+                throw new CwmsAuthException("User " + username + " was created, however no principal object could be created.");
+            }
+        } catch (DataAccessException ex) {
+            logger.atInfo().withCause(ex).log("Unable to create user {}", username);
+            throw new CwmsAuthException("Unable to create user " + username, ex);
+        }
     }
 }

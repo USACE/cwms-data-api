@@ -3,7 +3,6 @@ package cwms.cda.api;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.ClobDao;
 import cwms.cda.data.dao.JooqDao;
@@ -12,7 +11,6 @@ import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -36,7 +34,6 @@ import static cwms.cda.api.Controllers.*;
 
 
 public class ClobController implements CrudHandler {
-    private static final FluentLogger log = FluentLogger.forEnclosingClass();
     private static final int DEFAULT_PAGE_SIZE = 20;
     public static final String TAG = "Clob";
     public static final String TEXT_PLAIN = "text/plain";
@@ -276,6 +273,7 @@ public class ClobController implements CrudHandler {
                 throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
                         "Clob id in body does not match id in path");
             }
+
             dao.update(clob, ignoreNulls);
         }
     }
