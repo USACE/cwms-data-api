@@ -17,6 +17,7 @@ import Layout from "./components/Layout";
 // Styles
 import "@usace/groundwork/dist/style.css";
 import "./css/index.css";
+import ErrorFallback from "./pages/data-query/components/ErrorFallBack";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const router = createBrowserRouter(
     {
       path: "/",
       element: <Layout />,
+      errorElement: <ErrorFallback />,
       children: [
         { index: true, element: <Home /> },
         {
