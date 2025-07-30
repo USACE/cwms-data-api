@@ -1,23 +1,36 @@
 import { Breadcrumbs as BC, BreadcrumbItem } from "@usace/groundwork";
-import { getPathname, getBasePath } from "../utils/base";
-import { useEffect } from "react";
-import { useState } from "react";
+import { useLocation } from "react-router-dom";
+
+// Replace hyphens with spaces and capitalize each word
+function formatSegment(segment) {
+  return segment
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
 
 export default function Breadcrumbs() {
-  const [path, setPath] = useState(null);
-  useEffect(() => {
-    // Split the pathname and remove the empty strings and base path
-    setPath(getPathname()
-        .split("/")
-        .filter(d=>d)
-        .filter(d=>d != getBasePath().replace("/", ""))
-    );
-  }, []);
-  // Wait for the path to be set before rendering
-  if (!path) return null;
+  const location = useLocation();
+  const basePath = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
+  const fullPath = location.pathname.replace(basePath, "");
+
+  const pathSegments = fullPath.split("/").filter(Boolean);
+
+  if (pathSegments.length === 0) return null; // Hide on root
+
+  // combine by base paths and format each segment
+  const breadcrumbs = pathSegments.map((segment, index) => {
+    const href = "/" + pathSegments.slice(0, index + 1).join("/");
+    return {
+      text: formatSegment(segment),
+      href,
+    };
+  });
+
   return (
-    <BC className="mt-0">
-      {path.map((item, index) => <BreadcrumbItem key={index} href={item} text={item} />)}
+    <BC className="ms-5 my-0">
+      {breadcrumbs.map(({ text, href }, i) => (
+        <BreadcrumbItem key={i} href={href} text={text} />
+      ))}
     </BC>
   );
 }
