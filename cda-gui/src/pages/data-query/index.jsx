@@ -29,7 +29,7 @@ const offices_api = new OfficesApi();
 //     .then((d) => d)
 // }
 
-export default function HydrologicQuery() {
+export default function DataQuery() {
   const [tsids, setTsids] = useState([]);
   const [visibleTSIDs, setVisibleTSIDs] = useState(tsids);
   //   const [location, setLocation] = useState(null);
@@ -170,16 +170,18 @@ export default function HydrologicQuery() {
       console.warn("No data to export");
       return;
     }
-    console.log({ timeseriesData, tsids });
-    const parameters = tsids.map(ts=>ts.split(".")[1])
-    const header = ["Date", parameters];
+    const parameters = visibleTSIDs.map((ts) => ts.split(".")[1]);
+    const header = ["Date", ...parameters];
     const rows = timeseriesData.dates.map((date) => {
       const formattedDate = dayjs(date).format("YYYY-MM-DD HH:mm:ss");
-      return [formattedDate, ...timeseriesData.values[date]];
+      const values = timeseriesData.values[date] || [];
+      const paddedValues = visibleTSIDs.map((_, i) => {
+        const val = values[i];
+        return val === null || val === undefined ? "" : val;
+      });
+      return [formattedDate, ...paddedValues];
     });
-    console.log({rows})
     const csvContent = [header, ...rows].map((row) => row.join(",")).join("\n");
-    console.log({csvContent})
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
 
@@ -312,7 +314,7 @@ export default function HydrologicQuery() {
             toggleTSID={toggleTSID}
           />
         </div>
-        <div>
+        <div className="overflow-auto max-w-[85vw]">
           <div className="mt-4">
             <Button
               onClick={handleDownloadCSV}
