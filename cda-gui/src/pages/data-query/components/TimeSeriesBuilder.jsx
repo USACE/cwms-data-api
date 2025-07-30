@@ -23,43 +23,13 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
     duration,
   });
 
-  // Reset fields when an earlier selection changes
-  useEffect(() => {
-    setParameter("");
-    setType("");
-    setInterval("");
-    setDuration("");
-    setVersion("");
-  }, [location]);
-
-  useEffect(() => {
-    setType("");
-    setInterval("");
-    setDuration("");
-    setVersion("");
-  }, [parameter]);
-
-  useEffect(() => {
-    setInterval("");
-    setDuration("");
-    setVersion("");
-  }, [type]);
-
-  useEffect(() => {
-    setDuration("");
-    setVersion("");
-  }, [interval]);
-
-  useEffect(() => {
-    setVersion("");
-  }, [duration]);
-
   // Compose TSID
   useEffect(() => {
     const parts = [location, parameter, type, interval, duration, version];
     if (parts.every(Boolean)) {
       const fullTsid =
         location +
+        "." +
         parameter +
         "." +
         type +
@@ -117,7 +87,6 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
           value: p,
           label: p,
         }))}
-        disabled={!location}
         loading={descriptors.isLoading}
       />
       <Dropdown
@@ -128,7 +97,6 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
           value: t,
           label: t,
         }))}
-        disabled={!parameter}
         loading={descriptors.isLoading}
       />
       <Dropdown
@@ -139,7 +107,6 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
           value: i,
           label: i,
         }))}
-        disabled={!type}
         loading={descriptors.isLoading}
       />
       <Dropdown
@@ -150,7 +117,6 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
           value: d,
           label: d,
         }))}
-        disabled={!interval}
         loading={descriptors.isLoading}
       />
       <Dropdown
@@ -161,7 +127,6 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
           value: v,
           label: v,
         }))}
-        disabled={!duration}
         loading={descriptors.isLoading}
       />
     </div>
@@ -187,7 +152,7 @@ function Dropdown({
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
-        <option value="">
+        <option>
           {loading ? `Loading ${label}...` : `Select ${label}`}
         </option>
         {!loading &&
