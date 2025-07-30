@@ -270,13 +270,16 @@ export default function DataQuery() {
                   </option>
                 ))}
               </select>
-              <Toggle
-                checked={mode === "advanced"}
-                onChange={() =>
-                  setMode((prev) => (prev === "basic" ? "advanced" : "basic"))
-                }
-                label={mode === "basic" ? "Guided Mode" : "Manual Mode"}
-              />{" "}
+
+              {office && (
+                <Toggle
+                  checked={mode === "advanced"}
+                  onChange={() =>
+                    setMode((prev) => (prev === "basic" ? "advanced" : "basic"))
+                  }
+                  label={mode === "basic" ? "Guided Mode" : "Manual Mode"}
+                />
+              )}
             </div>
             {office && (
               <>
