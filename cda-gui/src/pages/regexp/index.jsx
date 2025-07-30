@@ -4,7 +4,7 @@ import { UsaceBox, BadgeButton } from "@usace/groundwork";
 export default function RegExp() {
   return (
     <>
-      <UsaceBox className="mt-8" title="Regular Expressions">
+      <UsaceBox title="Regular Expressions">
         Several of the Data API endpoints will filter the results by user
         provided Regular Expressions. Regular Expressions (regex) are a powerful
         tool for matching patterns in text.
