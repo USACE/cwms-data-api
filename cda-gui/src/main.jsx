@@ -1,19 +1,52 @@
+// Routing
 import React from "react";
 import ReactDOM from "react-dom/client";
-// import getStore from "./app-bundles";
+import { Link, createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import { LinkProvider } from "@usace/groundwork";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import App from "./App.jsx";
+
+// Pages
+import Home from "./pages/Home";
+import NotFound from "./pages/NotFound";
+import SwaggerUI from "./pages/swagger-ui/index";
+import Regexp from "./pages/regexp/index";
+import DataQuery from "./pages/data-query";
+import Layout from "./components/Layout";
+
+// Styles
+import "@usace/groundwork/dist/style.css";
 import "./css/index.css";
-// import "ag-grid-community/styles/ag-grid.css"; 
-// import "ag-grid-community/styles/ag-theme-quartz.css";
 
 const queryClient = new QueryClient();
+
+
+const router = createBrowserRouter(
+  [
+    {
+      path: "/",
+      element: <Layout />,
+      children: [
+        { index: true, element: <Home /> },
+        {
+          path: "swagger-ui",
+          element: <SwaggerUI />,
+        },
+        { path: "data-query", element: <DataQuery /> },
+        { path: "regexp", element: <Regexp /> },
+        { path: "*", element: <NotFound /> },
+      ],
+    },
+  ],
+  { basename: "/cwms-data" }
+);
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
       <QueryClientProvider client={queryClient}>
-        <App />
+      <LinkProvider component={Link} hrefMap="to">
+        <RouterProvider router={router} />
+      </LinkProvider>
       </QueryClientProvider>
   </React.StrictMode>
 );
