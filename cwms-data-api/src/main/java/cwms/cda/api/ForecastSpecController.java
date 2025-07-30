@@ -97,7 +97,7 @@ public final class ForecastSpecController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
-        String designator = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).allowNullable().get();
+        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
 
         JooqDao.DeleteMethod deleteMethod = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class)
                 .getOrDefault(JooqDao.DeleteMethod.DELETE_KEY);
