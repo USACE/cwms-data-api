@@ -29,27 +29,29 @@ export default function DataTabs({
               )}-${begin.toISOString()}-${end.toISOString()}`}
               className="relative z-10 bg-white"
             >
-              <CWMSTable
-                begin={cdaParams.begin}
-                end={cdaParams.end}
-                office={cdaParams.office}
-                timeseriesParams={timeseriesParams}
-                dateFormat="YYYY-MM-DD HH:mm:ss"
-                interval="5"
-                missingString="---"
-                sortAscending
-                trim
-                tableOptions={{
-                  bleed: true,
-                  dense: true,
-                  grid: true,
-                  overflow: true,
-                  striped: true,
-                  stickyHeader: true,
-                  overflowHeight: "max-h-[55vh]",
-                }}
-                inputTSValues={timeseriesData?.raw}
-              />
+              {timeseriesParams.length > 0 && (
+                <CWMSTable
+                  begin={cdaParams.begin}
+                  end={cdaParams.end}
+                  office={cdaParams.office}
+                  timeseriesParams={timeseriesParams}
+                  dateFormat="YYYY-MM-DD HH:mm:ss"
+                  interval="5"
+                  missingString="---"
+                  sortAscending
+                  trim
+                  tableOptions={{
+                    bleed: true,
+                    dense: true,
+                    grid: true,
+                    overflow: true,
+                    striped: true,
+                    stickyHeader: true,
+                    overflowHeight: "max-h-[55vh]",
+                  }}
+                  inputTSValues={timeseriesData?.raw}
+                />
+              )}
             </div>
           ),
         },
@@ -110,7 +112,7 @@ DataTabs.propTypes = {
   timeseriesData: PropTypes.object,
   isLoading: PropTypes.bool,
   cdaParams: PropTypes.object,
-  timeseriesParams: PropTypes.object,
+  timeseriesParams: PropTypes.array,
   begin: PropTypes.object.isRequired,
   end: PropTypes.object.isRequired,
 };
