@@ -4,14 +4,29 @@ import { Link } from "react-router-dom";
 function Home() {
   return (
     <>
-      <UsaceBox title="Introduction">
+      <UsaceBox title="Introduction" className="mt-8">
         Welcome to the US Army Corps of Engineers Corps Water Management System
-        Data API. At the Swagger UI link above you will find a REST styled
-        interface for retrieving any data available publicly.
+        Data API.
+      </UsaceBox>
+      <UsaceBox title="Quick Links">
+        <ul className="ms-5 pl-5 list-disc list-outside [&_ul]:list-[revert]">
+          <li>
+            <Link className="underline" to="/swagger-ui">Swagger UI</Link> - Interactive API
+            documentation
+          </li>
+          <li>
+            <Link className="underline" to="/data-query">Data Query Tool</Link> - A tool for querying
+            and retrieving data from the API.
+          </li>
+          <li>
+            <Link className="underline" to="/regexp">Regular Expressions</Link> - A guide to using
+            regular expressions in the API.
+          </li>
+        </ul>
       </UsaceBox>
       <UsaceBox title="Some Quick Notes">
         <div>
-            <Link to="/swagger-ui">Swagger UI</Link>
+          <Link to="/swagger-ui">Swagger UI</Link>
           <ul className="pl-5 list-disc list-outside [&_ul]:list-[revert]">
             <li>
               Dates and Intervals/Durations are always in either the ISO 8601 or
