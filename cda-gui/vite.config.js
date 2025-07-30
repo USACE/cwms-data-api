@@ -12,7 +12,12 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        "^/cwms-data/.*": {
+        "^/cwms-data/timeseries/.*": {
+          target: "https://cwms-data.usace.army.mil",
+          changeOrigin: true,
+          secure: false,
+        },
+         "^/cwms-data/catalog/.*": {
           target: "https://cwms-data.usace.army.mil",
           changeOrigin: true,
           secure: false,
