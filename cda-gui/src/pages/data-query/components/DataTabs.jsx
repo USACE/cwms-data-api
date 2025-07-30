@@ -65,6 +65,7 @@ export default function DataTabs({
                       ? " (" + timeseriesData?.tsids?.[index]?.units + ")"
                       : ""
                   }`,
+                  units: timeseriesData?.tsids?.[index]?.units,
                   yaxis: `y${index + 1}`,
                 },
               }))}

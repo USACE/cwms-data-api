@@ -113,7 +113,7 @@ function CWMSPlot({
     if (!(yaxis_id in defaultLayout)) {
       defaultLayout[yaxis_id] = {
         title: {
-          text: item.id.split(".")[1],
+          text: item.id.split(".")[1] + (item?.traceOptions?.units ? " (" + item.traceOptions.units + ")" : ""),
           font: {
             family: "Arial, sans-serif",
             size: 14,
