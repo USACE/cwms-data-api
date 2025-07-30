@@ -1,6 +1,6 @@
 import { Tabs, Skeleton } from "@usace/groundwork";
 import CWMSPlot from "./CWMSPlot";
-import CWMSTable from "./CWMSTable";
+import { CWMSTable } from "@usace-watermanagement/groundwork-water";
 import MetaDataTab from "./MetaDataTab";
 
 export default function DataTabs({
@@ -38,8 +38,19 @@ export default function DataTabs({
                 dateFormat="YYYY-MM-DD HH:mm:ss"
                 interval="5"
                 missingString="---"
-                sortAscending={true}
-                trim={true}
+                sortAscending
+                trim
+                tableOptions={
+                    {
+                        bleed: true,
+                        dense: true,
+                        grid: true,
+                        overflow: true,
+                        striped: true,
+                        stickyHeader: true
+                    }
+                }
+
                 inputTSValues={timeseriesData?.raw}
               />
             </div>

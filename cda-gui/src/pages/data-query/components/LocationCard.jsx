@@ -1,6 +1,7 @@
 import { UsaceBox, Badge, H3 } from "@usace/groundwork";
-import { FaMapMarkerAlt, FaRulerVertical, FaCity } from "react-icons/fa";
+import { FaMapMarkerAlt, FaRulerVertical } from "react-icons/fa";
 import { MdLocationCity, MdPublic, MdOutlineAccessTime } from "react-icons/md";
+import PropTypes from "prop-types";
 
 export default function LocationCard({ location }) {
   if (!location) return null;
@@ -89,3 +90,28 @@ export default function LocationCard({ location }) {
     </UsaceBox>
   );
 }
+
+
+LocationCard.propTypes = {
+  location: PropTypes.shape({
+    officeId: PropTypes.string,
+    name: PropTypes.string,
+    publicName: PropTypes.string,
+    description: PropTypes.string,
+    timezoneName: PropTypes.string,
+    latitude: PropTypes.number,
+    longitude: PropTypes.number,
+    elevation: PropTypes.number,
+    elevationUnits: PropTypes.string,
+    nearestCity: PropTypes.string,
+    stateInitial: PropTypes.string,
+    countyName: PropTypes.string,
+    nation: PropTypes.string,
+    locationType: PropTypes.string,
+    locationKind: PropTypes.string,
+    horizontalDatum: PropTypes.string,
+    verticalDatum: PropTypes.string,
+    mapLabel: PropTypes.string,
+    active: PropTypes.bool,
+  }),
+};
