@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.ApiServlet;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
@@ -41,6 +42,8 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 @Tag("integration")
 class TimeseriesControllerTestIT extends DataApiTestIT {
+    public static final int MINIMUM_SCHEMA = 999999;
+
     @Test
     void test_lrl_timeseries_psuedo_reg1hour() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
@@ -108,6 +111,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @MinimumSchema(MINIMUM_SCHEMA)
     void test_local_regular_new_LRTS_ID() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
@@ -380,6 +384,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @MinimumSchema(MINIMUM_SCHEMA)
     void test_lrl_1day_max_version_with_entry_date() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
@@ -709,6 +714,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @MinimumSchema(MINIMUM_SCHEMA)
     void test_include_data_entry_date() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
@@ -903,6 +909,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @MinimumSchema(MINIMUM_SCHEMA)
     void test_attempt_store_with_entry_date() throws Exception
     {
         ObjectMapper mapper = new ObjectMapper();
@@ -1289,6 +1296,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    @MinimumSchema(MINIMUM_SCHEMA)
     void test_lrl_trim_with_data_entry_date() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 

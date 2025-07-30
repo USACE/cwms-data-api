@@ -455,11 +455,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         );
 
+        String retrievalMethod;
+        if (includeEntryDate) {
+            retrievalMethod = "cwms_20.cwms_ts.retrieve_ts_entry_out_tab";  // New method that supports entry date
+        } else {
+            retrievalMethod = "cwms_20.cwms_ts.retrieve_ts_out_tab";    // Legacy method without entry date
+        }
+
         // Now we're going to call the retrieve_ts_entry_out_tab function to get the data and build an
         // internal table from it so we can manipulate it further
         // This code assumes the database timezone is in UTC (per Oracle recommendation)
         SQL retrieveSelectData = DSL.sql(
-                "table(cwms_20.cwms_ts.retrieve_ts_entry_out_tab(?,?,"
+                "table(" + retrievalMethod + "(?,?,"
                         + "cwms_20.cwms_util.to_timestamp(?), cwms_20.cwms_util.to_timestamp(?), 'UTC',"
                         + "?,?,?,?,?,"
                         + getVersionPart(versionDate) + ",?,?) ) retrieveTs",
@@ -501,13 +508,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             if (pageSize > 0) {
                 query.limit(DSL.val(pageSize + 1));
-                query2.limit(DSL.val(pageSize + 1));
+                if (includeEntryDate) {
+                    query2.limit(DSL.val(pageSize + 1));
+                }
             }
 
             if (requestParameters.isIncludeEntryDate()) {
                 logger.fine(() -> query2.getSQL(ParamType.INLINED));
                 try (Cursor<Record4<Timestamp, Double, BigDecimal, Timestamp>> recCursor = query2.fetchLazy()) {
-                    for(Record tsRecord: recCursor){
+                    for (Record tsRecord: recCursor) {
                         timeseries.addValue(
                                 tsRecord.getValue(dateTimeCol),
                                 tsRecord.getValue(valueCol),
@@ -518,7 +527,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             } else {
                 logger.fine(() -> query.getSQL(ParamType.INLINED));
                 try (Cursor<Record3<Timestamp, Double, BigDecimal>> recCursor = query.fetchLazy()) {
-                    for(Record tsRecord: recCursor){
+                    for (Record tsRecord: recCursor) {
                         timeseries.addValue(
                                 tsRecord.getValue(dateTimeCol),
                                 tsRecord.getValue(valueCol),
@@ -1684,7 +1693,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         }
     }
-  
+
     private interface FieldMapping {
         Field<BigDecimal> getTsCode();
         Field<BigDecimal> getLocationCode();
