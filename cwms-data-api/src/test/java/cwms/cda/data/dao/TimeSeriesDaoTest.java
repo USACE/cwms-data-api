@@ -1,6 +1,5 @@
 package cwms.cda.data.dao;
 
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -24,7 +23,6 @@ import cwms.cda.data.dto.TimeSeries;
 import usace.cwms.db.dao.util.CwmsDatabaseVersionInfo;
 import usace.cwms.db.dao.util.TimeValueQuality;
 import usace.cwms.db.jooq.JooqCwmsDatabaseVersionInfoFactory;
-import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC;
 import usace.cwms.db.jooq.dao.CwmsDbLocJooq;
 import usace.cwms.db.jooq.dao.CwmsDbTsJooq;
@@ -114,7 +112,7 @@ public class TimeSeriesDaoTest
 
 
 	@Test
-	public void testCreateEmpty() throws Exception
+	void testCreateEmpty() throws Exception
 	{
 
 		String officeId = "LRL";
@@ -144,7 +142,7 @@ public class TimeSeriesDaoTest
 	}
 
 	@Test
-	public void testCreateWithData() throws Exception
+	void testCreateWithData() throws Exception
 	{
 
 		String officeId = "LRL";
@@ -153,7 +151,6 @@ public class TimeSeriesDaoTest
 			DSLContext lrl = getDslContext(connection, officeId);
 			TimeSeriesDao dao = new TimeSeriesDaoImpl(lrl);
 
-			Calendar instance = Calendar.getInstance();
 			String tsId = TIME_SERIES_ID;
 			// Do I need to somehow check whether the location exists?  Its not going to exist if I add the millis to it...
 			if(!locationExists(connection, "RYAN3"))
@@ -171,7 +168,9 @@ public class TimeSeriesDaoTest
 			int count = 60 / 15; // do I need a +1?  ie should this be 12 or 13?
 			// Also, should end be the last point or the next interval?
 
-			TimeSeries ts = new TimeSeries(null, -1, 0, tsId, officeId, start, end, "m", Duration.ofMinutes(minutes));
+			TimeSeries ts = new TimeSeries(null, -1, 0, tsId,
+					officeId, start, end, "m", Duration.ofMinutes(minutes), null,
+					null, null, null, null);
 
 			ZonedDateTime next = start;
 			for(int i = 0; i < count; i++)
@@ -209,17 +208,8 @@ public class TimeSeriesDaoTest
 				locationId, null, null, true, true);
 	}
 
-	private BigDecimal retrieveTsCode(Connection connection, String tsId) throws Exception
-	{
-		BigDecimal bigD = DSL.using(connection).select(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_CODE).from(
-				AV_CWMS_TS_ID2.AV_CWMS_TS_ID2).where(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID.eq(tsId)).fetchOptional(
-				AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_CODE).orElse(null);
-
-		return bigD;
-	}
-
 	@Test
-	public void testTimeSeriesStoreRetrieve() throws Exception
+	void testTimeSeriesStoreRetrieve() throws Exception
 	{
 		Connection connection = getConnection();
 
@@ -265,15 +255,15 @@ public class TimeSeriesDaoTest
 		}
 		catch(Exception e)
 		{
+			LOGGER.log(Level.CONFIG, "Unable to create TimeSeries: " + e.getMessage());
 		}
 	}
 
 	@Test
-	public void testVersion() throws SQLException
+	void testVersion() throws SQLException
 	{
 		JooqCwmsDatabaseVersionInfoFactory fac = new JooqCwmsDatabaseVersionInfoFactory();
 
-		String officeId = "LRL";
 		try(Connection connection = getConnection())
 		{
 			CwmsDatabaseVersionInfo info = fac.retrieveVersionInfo(connection);

@@ -1,6 +1,8 @@
 package cwms.cda.helpers;
 
 import com.google.common.flogger.FluentLogger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -41,18 +43,31 @@ public class DateUtils {
         // utility class
     }
 
+    @NotNull
+    public static ZonedDateTime parseUserDate(@NotNull String text) {
+        return parseUserDate(text, "UTC");
+    }
+
     /**
      * Parse a string into a ZonedDateTime.
      * @param text The string to parse
      * @param timezone The timezone to use if the string doesn't have one.
      * @return The parsed ZonedDateTime
      */
-    public static ZonedDateTime parseUserDate(String text, String timezone) {
+    @NotNull
+    public static ZonedDateTime parseUserDate(@NotNull String text, @NotNull String timezone) {
         ZoneId tz = ZoneId.of(timezone);
         return parseUserDate(text, tz, ZonedDateTime.now(tz));
     }
 
-    public static ZonedDateTime parseUserDate(String text, ZoneId tz, ZonedDateTime now) {
+    @NotNull
+    public static ZonedDateTime parseUserDate(@NotNull String text, @NotNull ZoneId tz){
+        return parseUserDate(text, tz, ZonedDateTime.now(tz));
+    }
+
+
+    @NotNull
+    public static ZonedDateTime parseUserDate(@NotNull String text, @NotNull ZoneId tz, @NotNull ZonedDateTime now) {
 
         if (text.startsWith("PT")) {
             return parseUserDuration(text, now);
@@ -63,7 +78,8 @@ public class DateUtils {
         }
     }
 
-    private static ZonedDateTime parseFullDate(String text, ZoneId tz) {
+    @NotNull
+    private static ZonedDateTime parseFullDate(@NotNull String text, @NotNull ZoneId tz) {
 
         if (hasZone(text)) {
             return parseZonedDateTime(text);
@@ -97,12 +113,13 @@ public class DateUtils {
      * @param text The string to check
      * @return true if the string ends with a timezone indicator
      */
-    public static boolean hasZone(String text) {
+    public static boolean hasZone(@NotNull String text) {
         return WITH_TZ_INFO.matcher(text).matches();
     }
 
 
-    private static ZonedDateTime parseZonedDateTime(String text) {
+    @NotNull
+    private static ZonedDateTime parseZonedDateTime(@NotNull String text) {
         ZonedDateTime zdt;
         try {
             // Try to use the default ZonedDateTime format first.
@@ -122,7 +139,8 @@ public class DateUtils {
         return zdt;
     }
 
-    private static Optional<ZonedDateTime> firstMatch(String text, String[] possibleDateFormats) {
+    @NotNull
+    private static Optional<ZonedDateTime> firstMatch(@NotNull String text, @Nullable String[] possibleDateFormats) {
         Optional<ZonedDateTime> retval = Optional.empty();
 
         if (possibleDateFormats != null) {
@@ -136,7 +154,8 @@ public class DateUtils {
         return retval;
     }
 
-    public static Optional<ZonedDateTime> parseWithPattern(String text, String pattern) {
+    @NotNull
+    public static Optional<ZonedDateTime> parseWithPattern(@NotNull String text, @NotNull String pattern) {
         Optional<ZonedDateTime> retval = Optional.empty();
         try {
             DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder();
@@ -153,7 +172,8 @@ public class DateUtils {
         return retval;
     }
 
-    private static DateTimeFormatterBuilder appendZoneId(DateTimeFormatterBuilder builder) {
+    @NotNull
+    private static DateTimeFormatterBuilder appendZoneId(@NotNull DateTimeFormatterBuilder builder) {
         return builder.optionalStart()  // This is to allow for bracket zoneId like [Europe/Paris]
             .appendLiteral('[')
             .parseCaseSensitive()
@@ -161,19 +181,22 @@ public class DateUtils {
             .appendLiteral(']');
     }
 
-    private static ZonedDateTime parserUserPeriod(String text, ZonedDateTime now) {
+    @NotNull
+    private static ZonedDateTime parserUserPeriod(@NotNull String text, @NotNull ZonedDateTime now) {
         Period period = Period.parse(text);
         return now.plusYears(period.getYears())
                 .plusMonths(period.getMonths())
                 .plusDays(period.getDays());
     }
 
-    private static ZonedDateTime parseUserDuration(String text, ZonedDateTime now) {
+    @NotNull
+    private static ZonedDateTime parseUserDuration(@NotNull String text, @NotNull ZonedDateTime now) {
         Duration duration = Duration.parse(text);
         return now.plus(duration);
     }
 
-    public static ZonedDateTime toZdt(final Timestamp time) {
+    @Nullable
+    public static ZonedDateTime toZdt(@Nullable final Timestamp time) {
         if (time != null) {
             return ZonedDateTime.ofInstant(time.toInstant(), ZoneId.of("UTC"));
         } else {

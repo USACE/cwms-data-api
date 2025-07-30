@@ -10,12 +10,15 @@ import cwms.cda.data.dto.Clob;
 import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.County;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.LocationLevels;
+import cwms.cda.data.dto.locationlevel.LocationLevels;
 import cwms.cda.data.dto.Office;
 import cwms.cda.data.dto.State;
 import cwms.cda.data.dto.basinconnectivity.Basin;
 import cwms.cda.data.dto.project.LockRevokerRights;
 import cwms.cda.data.dto.project.Project;
+import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv2Office;
+
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -148,7 +151,7 @@ class FormatsTest {
     
     @ParameterizedTest
     @EnumSource(ParseQueryOrParamTest.class)
-    void test_header_or_query_parm(ParseQueryOrParamTest test) throws Exception {
+    void test_header_or_query_parm(ParseQueryOrParamTest test) {
         ContentType ct = Formats.parseQueryOrHeaderParam(test.header, test.query, test.dto);
         System.out.println(ct.toString());
         assertTrue(ContentType.equivalent(ct.toString(), test.type), "In correct content type returned.");
@@ -183,7 +186,7 @@ class FormatsTest {
         //The following header comes from firefox
         ContentType contentType = Formats.parseHeader(FIREFOX_HEADER, Catalog.class);
         assertNotNull(contentType);
-        assertEquals(Formats.DEFAULT, contentType.toString());
+        assertEquals(Formats.XML, contentType.toString());
     }
 
     @EnumSource(ParseHeaderClassAliasTest.class)
@@ -270,7 +273,6 @@ class FormatsTest {
         final String query;
         final Class<? extends CwmsDTOBase> dto;
         final String type;
-        
 
         ParseQueryOrParamTest(String header, String query, Class<? extends CwmsDTOBase> dto, String type)
         {
@@ -279,7 +281,32 @@ class FormatsTest {
             this.dto = dto;
             this.type = type;
         }
-        
 
+    }
+
+
+    @ParameterizedTest
+    @EnumSource(ContentTypeFormatterSource.class)
+    void test_formatter_retrieval(ContentTypeFormatterSource test) {
+        ContentType ct = Formats.parseHeader(test.contentType, test.dto);
+        OutputFormatter formatterActual = Formats.getOutputFormatter(ct, test.dto);
+        assertNotNull(formatterActual, "No formatters available for given Content-Type and DTO.");
+        assertEquals(test.formatter, formatterActual.getClass(), "Expected Formatter was not returned.");
+    }
+
+    public enum ContentTypeFormatterSource {
+        OFFICE_DEFAULT("*/*", Office.class, JsonV2.class),
+        OFFICE_FIREFOX_DEFAULT("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", Office.class, XMLv2Office.class)
+
+        ;
+        final String contentType;
+        final Class<? extends CwmsDTOBase> dto;
+        final Class<? extends OutputFormatter> formatter;
+
+        ContentTypeFormatterSource(String contentType, Class<? extends CwmsDTOBase> dto, Class<? extends OutputFormatter> formatter) {
+            this.contentType = contentType;
+            this.dto = dto;
+            this.formatter = formatter;
+        }
     }
 }

@@ -28,9 +28,10 @@ package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import cwms.cda.api.enums.VersionType;
@@ -160,7 +161,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
 
         group = new TimeSeriesGroup(category, OFFICE_ID, GROUP_ID, "USACE Include group", null, TS_ID);
         List<AssignedTimeSeries> tsList = Collections
-                .singletonList(new AssignedTimeSeries(OFFICE_ID, TS_ID, null, null, TS_ID, 0));
+                .singletonList(new AssignedTimeSeries(OFFICE_ID, TS_ID, null, TS_ID, 0));
         group = new TimeSeriesGroup(group, tsList);
         json = JsonV1.buildObjectMapper().writeValueAsString(group);
 
@@ -200,6 +201,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("size()", is(1))
+            .time(lessThan(5000L))
         ;
 
         // get recent data using timeseries id
@@ -219,6 +221,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("size()", is(1))
+            .time(lessThan(5000L))
         ;
     }
 

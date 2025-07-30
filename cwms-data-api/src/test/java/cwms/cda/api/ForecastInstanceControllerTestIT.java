@@ -1,6 +1,7 @@
 package cwms.cda.api;
 
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.ApiServlet;
 import cwms.cda.data.dto.forecast.ForecastInstance;
 import cwms.cda.data.dto.forecast.ForecastSpec;
 import cwms.cda.formatters.Formats;
@@ -28,7 +29,7 @@ import java.util.Objects;
 import java.util.Random;
 
 import static cwms.cda.api.ForecastSpecControllerTestIT.*;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.toMap;
 import static org.hamcrest.Matchers.*;
@@ -36,8 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
-@Disabled("Full implementation not in available database schemas.")
-public class ForecastInstanceControllerTestIT extends DataApiTestIT {
+final class ForecastInstanceControllerTestIT extends DataApiTestIT {
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE = "SPK";
     private static final String SPEC_ID = "TEST-SPEC";
@@ -50,7 +50,7 @@ public class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
 
     @BeforeAll
-    public static void create() throws Exception {
+    static void create() throws Exception {
         createLocation(locationId, true, OFFICE);
         createTimeSeries(locationId);
         LARGE_BYTES = new byte[1024 * 100];
@@ -59,7 +59,7 @@ public class ForecastInstanceControllerTestIT extends DataApiTestIT {
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         truncateFcstTimeSeries();
         deleteSpec();
     }
@@ -403,6 +403,130 @@ public class ForecastInstanceControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
+    }
+
+    @Test
+    void test_create_get_delete_get_lrts() throws Exception {
+
+        // Structure of test:
+        //
+        // 1)Create the inst
+        // 2)Retrieve the inst and assert that it exists
+        // 3)Delete the inst
+        // 4)Retrieve the inst and assert that it does not exist
+
+        String specId = "TEST-SPEC-LRTS";
+
+        // Step 1)
+        // Create the inst
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/forecast_inst_create_lrts.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        ForecastSpec spec = JsonV2.buildObjectMapper().readValue(tsData, ForecastInstance.class).getSpec();
+        String specJson = JsonV2.buildObjectMapper().writeValueAsString(spec);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        createTimeseriesWithNewLRTSInterval(OFFICE, "FcstInstTestLoc.Flow.Ave.1DayLocal.1Day.tsid1", 0);
+        createTimeseriesWithNewLRTSInterval(OFFICE, "FcstInstTestLoc.Flow.Ave.1DayLocal.1Day.tsid2", 0);
+        createTimeseriesWithNewLRTSInterval(OFFICE, "FcstInstTestLoc.Flow.Ave.1DayLocal.1Day.tsid3", 0);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(specJson)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/forecast-spec/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Step 2)
+        // Retrieve the inst and assert that it exists
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(Controllers.FORECAST_DATE, forecastDate)
+            .queryParam(Controllers.ISSUE_DATE, issueDate)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH + specId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("spec.spec-id", equalTo(specId))
+            .body("date-time", equalTo(1624284000000L))
+            .body("issue-date-time", equalTo(1653220980000L))
+            .body("max-age", equalTo(5))
+            .body("notes", equalTo("test notes"))
+            .body("filename", equalTo("testFilename.txt"))
+            .body("file-data", equalTo("dGVzdCBmaWxlIGNvbnRlbnQ="))
+        ;
+
+        // Step 3)
+        // Delete the inst
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, specId)
+            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(Controllers.FORECAST_DATE, forecastDate)
+            .queryParam(Controllers.ISSUE_DATE, issueDate)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete(PATH + specId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        // Step 4)
+        // Retrieve the inst and assert that it does not exist
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(Controllers.FORECAST_DATE, forecastDate)
+            .queryParam(Controllers.ISSUE_DATE, issueDate)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH + specId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
         ;
     }
 

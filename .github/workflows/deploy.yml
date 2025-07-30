@@ -1,0 +1,69 @@
+---
+name: Deploy
+on:
+  workflow_call:
+    inputs:
+      api_image:
+        type: string
+        required: true
+      migration_image:
+        type: string
+        required: true
+      region:
+        type: string
+        required: true
+      iam_role:
+        type: string
+        required: true
+    secrets:
+      token:
+       required: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # This is required for requesting the JWT
+      contents: read # This is required for actions/checkout
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.region }}
+          role-to-assume: ${{ inputs.iam_role }}
+          output-credentials: true
+    # Hello from AWS: WhoAmI
+      - name: Sts GetCallerIdentity
+        run: |
+          aws sts get-caller-identity
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
+      - name: Push API Image to ECR Repo
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: cwms-wmes-data-api
+          IMAGE_TAG: latest
+        run: |
+          docker pull ${{inputs.api_image}}
+          docker tag ${{inputs.api_image}} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag ${{inputs.api_image}} $ECR_REGISTRY/$ECR_REPOSITORY:dev 
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev
+      - name: Push API Migration Image to ECR Repo
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: cwms-wmes-schema_installer
+          IMAGE_TAG: latest
+        run: |
+          docker pull ${{inputs.migration_image}}
+          docker tag ${{inputs.migration_image}} $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag ${{inputs.migration_image}} $ECR_REGISTRY/$ECR_REPOSITORY:dev 
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:dev
+      - name: ECR Logout
+        if: always()
+        run: docker logout ${{ steps.login-ecr.outputs.registry }}
+    # TODO after verification this works: create or consume appropriate schema_installer image

@@ -90,7 +90,7 @@ public class XMLv1 implements OutputFormatter {
         }
     }
 
-    private static @NotNull XmlMapper buildObjectMapper() {
+    public static @NotNull XmlMapper buildObjectMapper() {
         XmlMapper retval = new XmlMapper();
 
         retval.findAndRegisterModules();

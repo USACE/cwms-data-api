@@ -26,6 +26,7 @@
 
 package cwms.cda.api;
 
+import cwms.cda.ApiServlet;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
@@ -49,7 +50,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -73,7 +74,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
     private TimeSeriesProfile tsProfile3;
 
     @BeforeEach
-    public void setup() throws Exception {
+    void setup() throws Exception {
         assertNotNull(resource);
         assertNotNull(resource2);
         assertNotNull(resource3);
@@ -92,7 +93,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
     }
 
     @AfterEach
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         // cleans up time series profiles between tests
         // this is necessary because the tests reuse the same profiles
         cleanupTS(tsProfile.getLocationId().getName(), tsProfile.getKeyParameter());
@@ -188,6 +189,63 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .body("description", is(tsProfile3.getDescription()))
             .body("parameter-list[1]", equalTo(tsProfile3.getKeyParameter()))
             .body("reference-ts-id.name", is(tsProfile3.getReferenceTsId().getName()))
+        ;
+    }
+
+    @Test
+    void test_store_retrieve_with_ref_LRTS() throws Exception {
+        // create a new TimeSeries to reference
+        String oldTsId = tsProfile3.getReferenceTsId().getName();
+        String newTsId = "Sacramento River.Elev.Total.1DayLocal.0.Raw";
+        String location = newTsId.split("\\.")[0];
+        createLocation(location, true, OFFICE_ID);
+
+        createTimeseriesWithNewLRTSInterval(OFFICE_ID, newTsId, 0);
+
+        tsData3 = tsData3.replace(oldTsId, newTsId);
+
+        // Create a new TimeSeriesProfile
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .body(tsData3)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/profile/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // Retrieve the TimeSeriesProfile
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(LOCATION_ID, tsProfile3.getLocationId().getName())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/profile/" + tsProfile3.getLocationId().getName() + "/" + tsProfile3.getKeyParameter())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("location-id.name", is(tsProfile3.getLocationId().getName()))
+            .body("key-parameter", is(tsProfile3.getKeyParameter()))
+            .body("location-id.office-id", is(tsProfile3.getLocationId().getOfficeId()))
+            .body("description", is(tsProfile3.getDescription()))
+            .body("parameter-list[1]", equalTo(tsProfile3.getKeyParameter()))
+            .body("reference-ts-id.name", is(newTsId))
         ;
     }
 
@@ -465,7 +523,6 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
-            .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(LOCATION_ID, "nonexistent")
