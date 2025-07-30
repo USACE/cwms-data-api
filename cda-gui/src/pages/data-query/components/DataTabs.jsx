@@ -13,8 +13,6 @@ export default function DataTabs({
   begin,
   end,
 }) {
- 
-
   if (!tsids || !tsids.length) return null;
   if (isLoading) return <Skeleton type="card" className="w-full h-[500px]" />;
 
@@ -40,18 +38,15 @@ export default function DataTabs({
                 missingString="---"
                 sortAscending
                 trim
-                tableOptions={
-                    {
-                        bleed: true,
-                        dense: true,
-                        grid: true,
-                        overflow: true,
-                        striped: true,
-                        stickyHeader: true,
-                        overflowHeight: "max-h-[55vh]"
-                    }
-                }
-
+                tableOptions={{
+                  bleed: true,
+                  dense: true,
+                  grid: true,
+                  overflow: true,
+                  striped: true,
+                  stickyHeader: true,
+                  overflowHeight: "max-h-[55vh]",
+                }}
                 inputTSValues={timeseriesData?.raw}
               />
             </div>
@@ -65,8 +60,10 @@ export default function DataTabs({
               timeSeries={tsids.map((tsid, index) => ({
                 id: tsid,
                 traceOptions: {
-                  name: `${tsid.split(".")[1]}${
-                  timeseriesData?.tsids?.[index]?.units ? " (" +timeseriesData?.tsids?.[index]?.units  + ")" : ""
+                  name: `${tsid.split(".").join(" ")}${
+                    timeseriesData?.tsids?.[index]?.units
+                      ? " (" + timeseriesData?.tsids?.[index]?.units + ")"
+                      : ""
                   }`,
                   yaxis: `y${index + 1}`,
                 },
@@ -76,12 +73,18 @@ export default function DataTabs({
                 height: 500 + tsids.length * 100, // Dynamically adjust height based on number of timeseries
                 showlegend: true,
                 legend: {
+                  orientation: "h",
+                  y: -0.2,
+                  x: 0.5,
+                  xanchor: "center",
                   font: {
-                    family: "Arial, sans-serif",
-                    size: 10,
+                    family: "mono, monospace",
                   },
                 },
                 responsive: true,
+                margin: {
+                    b: 100 // ensure room for legend
+                }
               }}
               unit="EN"
               office={office}
@@ -92,7 +95,7 @@ export default function DataTabs({
         },
         {
           name: "Metadata",
-          content: <MetaDataTab tsids={tsids}  office={office} />,
+          content: <MetaDataTab tsids={tsids} office={office} />,
         },
       ]}
     />
