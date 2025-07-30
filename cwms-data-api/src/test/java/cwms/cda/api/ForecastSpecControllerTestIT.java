@@ -73,6 +73,10 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
                 .connection(c -> {
                     OracleDSL.using(c).truncateTable(DSL.table("CWMS_20.AT_FCST_TIME_SERIES"))
                             .execute();
+                    OracleDSL.using(c).truncateTable(DSL.table("CWMS_20.AT_FCST_INFO"))
+                            .execute();
+                    OracleDSL.using(c).truncateTable(DSL.table("CWMS_20.AT_FCST_INST"))
+                            .execute();
                 }, "CWMS_20");
     }
 
@@ -80,7 +84,9 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
        try {
            CwmsDataApiSetupCallback.getDatabaseLink()
                    .connection(c -> {
-                       CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), SPEC_ID, designator,
+                       CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), SPEC_ID, "designator",
+                               DeleteRule.DELETE_ALL.getRule(), OFFICE);
+                       CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), SPEC_ID + "-NULL-DESIGNATOR", null,
                                DeleteRule.DELETE_ALL.getRule(), OFFICE);
                    });
        } catch (DataAccessException e) {
