@@ -7,7 +7,7 @@ export default function TimeSeriesManager({
 }) {
   return (
     <div
-      className={`bg-gray-50 border p-2 rounded shadow-sm w-1/5 md:mt-4 md:w-2/5 overflow-auto h-[20vh] max-h-[40vh] ${
+      className={`bg-gray-50 border p-2 w-3/4 rounded shadow-sm md:mt-4 md:w-2/5 overflow-auto h-[20vh] max-h-[40vh] ${
         tsids.length == 0 ? "hidden" : ""
       }`}
     >

@@ -47,7 +47,8 @@ export default function DataTabs({
                         grid: true,
                         overflow: true,
                         striped: true,
-                        stickyHeader: true
+                        stickyHeader: true,
+                        overflowHeight: "max-h-[55vh]"
                     }
                 }
 

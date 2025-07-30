@@ -67,9 +67,9 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
   }, [searchTerm, office]);
 
   return (
-    <div className="flex w-3/4 m-auto">
-      <label className="my-4">Select a timeseries:</label>
-      <div className="flex flex-col my-4 w-3/4 m-auto">
+    <div className="flex w-full">
+      <label className="mb-4 mt-6">Select a timeseries:</label>
+      <div className="flex flex-col my-4 w-3/4 ms-2 me-auto">
         <Combobox
           value={tsids[0] || ""}
           onChange={(value) => {
