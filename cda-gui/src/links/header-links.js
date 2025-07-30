@@ -1,6 +1,3 @@
-import { getBasePath } from "./utils/base";
-
-
 export default [
     {
         id: "home",
@@ -65,7 +62,7 @@ export default [
         children: [
             {
                 id: "github-devs",
-                text: "Developers",
+                text: "CDA Developers",
                 href: "https://github.com/USACE/cwms-data-api/graphs/contributors",
             },
             {
