@@ -7,6 +7,7 @@ import {
 } from "@headlessui/react";
 import { CatalogApi, Configuration } from "cwmsjs";
 import dayjs from "dayjs";
+import PropTypes from "prop-types";
 
 const catalogApi = new CatalogApi(
   new Configuration({
@@ -16,22 +17,21 @@ const catalogApi = new CatalogApi(
 );
 
 function getFreshnessColor(lastUpdateIso) {
-    if (!lastUpdateIso) return "gray";
-  
-    const now = dayjs();
-    const updated = dayjs(lastUpdateIso);
-  
-    const diffHours = now.diff(updated, "hour");
-    const diffDays = now.diff(updated, "day");
-    
-    // Data is current if updated within the last hour
-    if (diffHours <= 24) return "green";
-    // Data is semi-current if updated within the last 7 days
-    if (diffDays <= 7) return "yellow";
-    // Data is stale if older than 7 days
-    return "red";
-  }
-  
+  if (!lastUpdateIso) return "gray";
+
+  const now = dayjs();
+  const updated = dayjs(lastUpdateIso);
+
+  const diffHours = now.diff(updated, "hour");
+  const diffDays = now.diff(updated, "day");
+
+  // Data is current if updated within the last hour
+  if (diffHours <= 24) return "green";
+  // Data is semi-current if updated within the last 7 days
+  if (diffDays <= 7) return "yellow";
+  // Data is stale if older than 7 days
+  return "red";
+}
 
 export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -77,8 +77,9 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
               return;
             }
             if ((value.match(/\./g) || []).length === 5) {
-              setTsids((prev) => (prev.includes(value) ? prev : [...prev, value]));
-
+              setTsids((prev) =>
+                prev.includes(value) ? prev : [...prev, value]
+              );
             } else {
               alert(
                 "TSID must have 6 parts: Location.Parameter.Type.Interval.Duration.Version"
@@ -114,7 +115,7 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
                               : suggestion_color === "yellow"
                               ? "bg-yellow-400"
                               : suggestion_color === "gray"
-                                ? "bg-gray-500"
+                              ? "bg-gray-500"
                               : "bg-red-500"
                           }`}
                         />
@@ -131,3 +132,9 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
     </div>
   );
 }
+
+TimeSeriesDropdown.propTypes = {
+  office: PropTypes.string.isRequired,
+  tsids: PropTypes.array.isRequired,
+  setTsids: PropTypes.func.isRequired,
+};

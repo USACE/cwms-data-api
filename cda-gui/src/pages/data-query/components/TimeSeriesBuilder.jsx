@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Badge, H4, Skeleton } from "@usace/groundwork";
 import useAliases from "../hooks/useAliases";
-import useParams from "../hooks/useParams";
 import useDescriptors from "../hooks/useDescriptors";
+import PropTypes from "prop-types";
 
 export default function TimeSeriesBuilder({ office, setTsids }) {
   const aliases = useAliases({ office, kind: "PROJECT" });
@@ -152,9 +152,7 @@ function Dropdown({
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
-        <option>
-          {loading ? `Loading ${label}...` : `Select ${label}`}
-        </option>
+        <option>{loading ? `Loading ${label}...` : `Select ${label}`}</option>
         {!loading &&
           options.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -165,3 +163,22 @@ function Dropdown({
     </div>
   );
 }
+
+Dropdown.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.string.isRequired,
+  onChange: PropTypes.func.isRequired,
+  options: PropTypes.arrayOf(
+    PropTypes.shape({
+      value: PropTypes.string.isRequired,
+      label: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  disabled: PropTypes.bool,
+  loading: PropTypes.bool,
+};
+
+TimeSeriesBuilder.propTypes = {
+  office: PropTypes.string.isRequired,
+  setTsids: PropTypes.func.isRequired,
+};

@@ -1,5 +1,6 @@
 import { Field, Label, Switch } from "@headlessui/react";
 import { gwMerge } from "@usace/groundwork";
+import PropTypes from "prop-types";
 
 export default function Toggle({
   checked,
@@ -28,3 +29,10 @@ export default function Toggle({
     </Field>
   );
 }
+
+Toggle.propTypes = {
+  checked: PropTypes.bool.isRequired,
+  onChange: PropTypes.func.isRequired,
+  label: PropTypes.string,
+  className: PropTypes.string
+};

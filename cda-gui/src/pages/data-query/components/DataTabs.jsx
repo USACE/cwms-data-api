@@ -2,6 +2,7 @@ import { Tabs, Skeleton } from "@usace/groundwork";
 import CWMSPlot from "./CWMSPlot";
 import { CWMSTable } from "@usace-watermanagement/groundwork-water";
 import MetaDataTab from "./MetaDataTab";
+import PropTypes from "prop-types";
 
 export default function DataTabs({
   office,
@@ -84,8 +85,8 @@ export default function DataTabs({
                 },
                 responsive: true,
                 margin: {
-                    b: 100 // ensure room for legend
-                }
+                  b: 100, // ensure room for legend
+                },
               }}
               unit="EN"
               office={office}
@@ -102,3 +103,14 @@ export default function DataTabs({
     />
   );
 }
+
+DataTabs.propTypes = {
+  office: PropTypes.string.isRequired,
+  tsids: PropTypes.array.isRequired,
+  timeseriesData: PropTypes.object,
+  isLoading: PropTypes.bool,
+  cdaParams: PropTypes.object,
+  timeseriesParams: PropTypes.object,
+  begin: PropTypes.object.isRequired,
+  end: PropTypes.object.isRequired,
+};

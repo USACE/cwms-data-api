@@ -4,6 +4,7 @@ import Plotly from "plotly.js-basic-dist";
 import { gwMerge, Skeleton } from "@usace/groundwork";
 import deepmerge from "deepmerge";
 import { useMemo } from "react";
+import PropTypes from "prop-types";
 
 /**
  * Normalize a data prop to an array of objects
@@ -352,6 +353,24 @@ function CWMSPlot({
     </div>
   );
 }
+CWMSPlot.propTypes = {
+  begin: PropTypes.any,
+  end: PropTypes.any,
+  unit: PropTypes.string,
+  office: PropTypes.string,
+  timeSeries: PropTypes.any,
+  pageSize: PropTypes.number,
+  locationLevels: PropTypes.any,
+  inputTSValues: PropTypes.any,
+  layoutOptions: PropTypes.object,
+  className: PropTypes.string,
+  responsive: PropTypes.bool,
+  datum: PropTypes.any,
+  timezone: PropTypes.string,
+  trim: PropTypes.any,
+  staticTraces: PropTypes.any,
+  cdaUrl: PropTypes.string,
+};
 
 export default CWMSPlot;
 export { CWMSPlot };

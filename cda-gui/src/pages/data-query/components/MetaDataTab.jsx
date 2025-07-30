@@ -1,6 +1,7 @@
 import { Skeleton } from "@usace/groundwork";
 import { useCdaLocation } from "@usace-watermanagement/groundwork-water";
 import LocationCard from "./LocationCard";
+import PropTypes from "prop-types";
 
 
 export default function MetaDataTab({ office, tsids }) {
@@ -25,9 +26,13 @@ export default function MetaDataTab({ office, tsids }) {
 
     if (metaData.isLoading)
         return <Skeleton type="card" className="w-full h-[500px]" />;
-
     return (
         <LocationCard location={metaData.data} />
     )
 
 }
+
+MetaDataTab.propTypes = {
+    office: PropTypes.string.isRequired,
+    tsids: PropTypes.arrayOf(PropTypes.string).isRequired,
+};

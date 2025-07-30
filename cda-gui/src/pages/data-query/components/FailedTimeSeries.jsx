@@ -1,5 +1,6 @@
 import { Accordion, Badge } from "@usace/groundwork";
 import { IoWarning } from "react-icons/io5";
+import PropTypes from "prop-types";
 
 export default function FailedTimeSeries({ failedTS }) {
   if (!failedTS || failedTS.length === 0) return null;
@@ -30,3 +31,8 @@ export default function FailedTimeSeries({ failedTS }) {
     </div>
   );
 }
+
+FailedTimeSeries.propTypes = {
+  failedTS: PropTypes.arrayOf(PropTypes.string)
+};
+

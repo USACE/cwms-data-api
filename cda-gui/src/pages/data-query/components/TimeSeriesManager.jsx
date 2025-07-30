@@ -1,4 +1,6 @@
 import { FaTrash, FaEye, FaEyeSlash } from "react-icons/fa";
+import PropTypes from "prop-types";
+
 export default function TimeSeriesManager({
   tsids,
   visibleTSIDs,
@@ -49,3 +51,10 @@ export default function TimeSeriesManager({
     </div>
   );
 }
+
+TimeSeriesManager.propTypes = {
+  tsids: PropTypes.arrayOf(PropTypes.string).isRequired,
+  visibleTSIDs: PropTypes.arrayOf(PropTypes.string).isRequired,
+  setTsids: PropTypes.func.isRequired,
+  toggleTSID: PropTypes.func.isRequired,
+};
