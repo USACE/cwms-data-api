@@ -152,7 +152,7 @@ function Dropdown({
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
-        <option>{loading ? `Loading ${label}...` : `Select ${label}`}</option>
+        <option value="">{loading ? `Loading ${label}...` : `Select ${label}`}</option>
         {!loading &&
           options.map((opt) => (
             <option key={opt.value} value={opt.value}>

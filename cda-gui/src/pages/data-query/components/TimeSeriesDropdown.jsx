@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from "react";
+import { useState, Fragment } from "react";
 import {
   Combobox,
   ComboboxInput,
@@ -8,7 +8,10 @@ import {
 import { CatalogApi, Configuration } from "cwmsjs";
 import dayjs from "dayjs";
 import PropTypes from "prop-types";
+import { useQuery } from "@tanstack/react-query";
+import { useDebounce } from "use-debounce";
 
+// Catalog client
 const catalogApi = new CatalogApi(
   new Configuration({
     basePath: import.meta.env.CDA_URL,
@@ -18,53 +21,40 @@ const catalogApi = new CatalogApi(
 
 function getFreshnessColor(lastUpdateIso) {
   if (!lastUpdateIso) return "gray";
-
   const now = dayjs();
   const updated = dayjs(lastUpdateIso);
-
   const diffHours = now.diff(updated, "hour");
   const diffDays = now.diff(updated, "day");
-
-  // Data is current if updated within the last hour
   if (diffHours <= 24) return "green";
-  // Data is semi-current if updated within the last 7 days
   if (diffDays <= 7) return "yellow";
-  // Data is stale if older than 7 days
   return "red";
 }
 
 export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [debouncedSearchTerm] = useDebounce(searchTerm, 400);
 
-  useEffect(() => {
-    if (searchTerm.length < 3) {
-      setSuggestions([]);
-      return;
-    }
-
-    const timeout = setTimeout(async () => {
-      try {
-        setLoading(true);
-        const { entries } = await catalogApi.getCatalogWithDataset({
-          dataset: "TIMESERIES",
-          excludeEmpty: false,
-          like: `*${searchTerm}*`,
-          office,
-          pageSize: 20,
-        });
-        setSuggestions(entries);
-      } catch (e) {
-        console.error("Catalog fetch failed", e);
-        setSuggestions([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 400);
-
-    return () => clearTimeout(timeout);
-  }, [searchTerm, office]);
+  const {
+    data: suggestions = [],
+    isFetching: loading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["tsid-catalog", office, debouncedSearchTerm],
+    queryFn: async () => {
+      if (!debouncedSearchTerm || debouncedSearchTerm.length < 3 || !office)
+        return [];
+      const { entries } = await catalogApi.getCatalogWithDataset({
+        dataset: "TIMESERIES",
+        excludeEmpty: false,
+        like: `*${debouncedSearchTerm}*`,
+        office,
+        pageSize: 500,
+      });
+      return entries;
+    },
+    enabled: !!office && debouncedSearchTerm.length >= 3,
+  });
 
   return (
     <div className="flex w-full">
@@ -73,17 +63,11 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
         <Combobox
           value={tsids[0] || ""}
           onChange={(value) => {
-            if (!value) {
-              return;
-            }
+            if (!value) return;
             if ((value.match(/\./g) || []).length === 5) {
-              setTsids((prev) =>
-                prev.includes(value) ? prev : [...prev, value]
-              );
+              setTsids((prev) => (prev.includes(value) ? prev : [...prev, value]));
             } else {
-              alert(
-                "TSID must have 6 parts: Location.Parameter.Type.Interval.Duration.Version"
-              );
+              alert("TSID must have 6 parts: Location.Parameter.Type.Interval.Duration.Version");
             }
           }}
         >
@@ -95,18 +79,16 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
           <ComboboxOptions className="bg-white border mt-1 max-h-60 overflow-auto">
             {loading ? (
               <li className="p-2 text-gray-500 italic">Searching...</li>
+            ) : isError ? (
+              <li className="p-2 text-red-600">Error: {error.message}</li>
             ) : (
               suggestions.map((entry, idx) => {
-                const suggestion_color = getFreshnessColor(
-                  entry.extents?.[0]?.lastUpdate
-                );
+                const suggestion_color = getFreshnessColor(entry.extents?.[0]?.lastUpdate);
                 return (
                   <ComboboxOption key={idx} value={entry.name} as={Fragment}>
                     {({ active }) => (
                       <li
-                        className={`flex items-center gap-2 ${
-                          active ? "bg-blue-100" : ""
-                        } p-2 cursor-pointer`}
+                        className={`flex items-center gap-2 ${active ? "bg-blue-100" : ""} p-2 cursor-pointer`}
                       >
                         <span
                           className={`inline-block w-2 h-2 rounded-full ${

@@ -303,7 +303,6 @@ export default function DataQuery() {
                   beginDateTime={beginDateTime}
                   endDateTime={endDateTime}
                 />
-                <FailedTimeSeries failedTS={timeseriesData?.failed} />
               </>
             )}
             {!office && (
@@ -319,6 +318,11 @@ export default function DataQuery() {
         </div>
         <div className="overflow-auto max-w-[85vw]">
           <div className="mt-4">
+            <FailedTimeSeries
+              failedTS={timeseriesData?.failed}
+              className="w-3/4 mx-auto"
+            />
+
             <Button
               onClick={handleDownloadCSV}
               className={`mb-4 bg-blue-500 text-white px-4 py-2 rounded ${
@@ -345,9 +349,19 @@ export default function DataQuery() {
             <Skeleton type="card" className="w-full h-[500px]" />
           ) : tsids.length > 0 &&
             timeseriesData?.raw?.every((ts) => ts?.values?.length === 0) ? (
-            <div className="text-center text-red-600 font-semibold mt-4">
-              TimeSeries is empty.
-            </div>
+            <>
+              <div className="text-center text-red-600 font-semibold mt-4">
+                No TimeSeries values found for the selected parameters, office,
+                or date range.
+              </div>
+              <Badge
+                color="blue"
+                className="my-2 mx-auto block w-1/2 text-center"
+              >
+                Try expanding the date range if querying daily, monthly, or
+                yearly data.
+              </Badge>
+            </>
           ) : (
             <DataTabs
               begin={beginDateTime}
