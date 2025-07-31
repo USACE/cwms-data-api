@@ -19,7 +19,8 @@
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",
     "react-router-dom": "^7.1.2",
-    "swagger-ui-dist": "^5.17.7"
+    "swagger-ui-dist": "^5.17.7",
+    "use-debounce": "^10.0.5"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",
