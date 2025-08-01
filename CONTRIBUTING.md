@@ -135,9 +135,9 @@ When submitting a bug report, please be sure to include accurate and thorough in
 
 * Steps to reproduce the problem,
 * What you expected to happen,
-* What actually happened (or didn't happen), and
-* Technical details including the specific version number of OpenDCS you are using
-* Sanitized logs, if possible.
+* What actually happened (or did not happen), 
+* Technical details including the specific version number of CWMS Data API (CDA) you are using,
+* Sanitized logs - NO IP Addresses, usernames, etc.
 
 ## Submitting Code
 

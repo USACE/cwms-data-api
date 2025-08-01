@@ -4,6 +4,7 @@ import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.forecast.ForecastSpec;
 import cwms.cda.formatters.UnsupportedFormatException;
 
+import org.jooq.SelectConditionStep;
 import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_FCST_LOCATION;
 import usace.cwms.db.jooq.codegen.tables.AV_FCST_SPEC;
@@ -57,12 +58,18 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
     public List<ForecastSpec> getForecastSpecs(String office, String specIdRegex,
             String designator, String sourceEntity) {
        AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
-       return forecastSpecQuery(dsl)
-               .where(JooqDao.caseInsensitiveLikeRegex(spec.OFFICE_ID, office))
-               .and(JooqDao.caseInsensitiveLikeRegex(spec.FCST_SPEC_ID, specIdRegex))
-               .and(JooqDao.caseInsensitiveLikeRegex(spec.FCST_DESIGNATOR, designator))
-               .and(JooqDao.caseInsensitiveLikeRegex(spec.ENTITY_ID, sourceEntity))
-               .fetch()
+        SelectConditionStep<Record7<String, String, String, String, String, String, String>> query =
+            forecastSpecQuery(dsl)
+                .where(JooqDao.caseInsensitiveLikeRegex(spec.OFFICE_ID, office))
+                .and(JooqDao.caseInsensitiveLikeRegex(spec.FCST_SPEC_ID, specIdRegex))
+                .and(JooqDao.caseInsensitiveLikeRegex(spec.ENTITY_ID, sourceEntity));
+        //Designator is a nullable column in the database.
+        if(designator == null) {
+            query = query.and(spec.FCST_DESIGNATOR.isNull());
+        } else {
+            query = query.and(JooqDao.caseInsensitiveLikeRegex(spec.FCST_DESIGNATOR, designator));
+        }
+        return query.fetch()
                .map(ForecastSpecDao::map);
     }
 
@@ -104,20 +111,24 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
                 .build();
     }
 
-    public ForecastSpec getForecastSpec(String office, String name, String designator) {        
-       AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
-
-       Record7<String, String, String, String, String, String, String> fetch = forecastSpecQuery(dsl)
-               .where(spec.OFFICE_ID.eq(office))
-               .and(spec.FCST_SPEC_ID.eq(name))
-               .and(spec.FCST_DESIGNATOR.eq(designator))
-               .fetchOne();
-       if (fetch == null) {
-           throw new NotFoundException(
-                   format("Could not find forecast instance for office id: %s, spec id: %s, designator: %s",
-                           office, name, designator));
-       }
-       return map(fetch);
+    public ForecastSpec getForecastSpec(String office, String name, String designator) {
+        AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
+        SelectConditionStep<Record7<String, String, String, String, String, String, String>> query =
+            forecastSpecQuery(dsl)
+                .where(spec.OFFICE_ID.eq(office))
+                .and(spec.FCST_SPEC_ID.eq(name));
+        if(designator != null) {
+            query = query.and(spec.FCST_DESIGNATOR.eq(designator));
+        } else {
+            query = query.and(spec.FCST_DESIGNATOR.isNull());
+        }
+        Record7<String, String, String, String, String, String, String> fetch = query.fetchOne();
+        if (fetch == null) {
+            throw new NotFoundException(
+                format("Could not find forecast instance for office id: %s, spec id: %s, designator: %s",
+                    office, name, designator));
+        }
+        return map(fetch);
     }
 
     public void update(ForecastSpec forecastSpec) {

@@ -53,7 +53,7 @@ final class TurbineChangeTest {
     @ParameterizedTest
     @CsvSource({Formats.JSON, Formats.JSONV1, Formats.DEFAULT})
     void testTurbineSerializationRoundTrip(String format) {
-        TurbineChange turbine = buildTestChange(Instant.now(), true);
+        TurbineChange turbine = buildTestChange(ZonedDateTime.of(2024, 3, 4, 0, 0, 0, 0, ZoneId.of("UTC")).toInstant(), true);
         ContentType contentType = Formats.parseHeader(format, TurbineChange.class);
         String serialized = Formats.format(contentType, turbine);
         TurbineChange deserialized = Formats.parseContent(contentType, serialized, TurbineChange.class);

@@ -92,7 +92,7 @@ public final class ForecastInstanceController implements CrudHandler {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "owning office of the forecast spec associated with the forecast instance "
                         + "to be deleted."),
-                @OpenApiParam(name = DESIGNATOR, required = true, description = "Specifies the "
+                @OpenApiParam(name = DESIGNATOR, description = "Specifies the "
                         + "designator of the forecast spec associated with the forecast instance "
                         + "to be deleted."),
             },
@@ -107,7 +107,7 @@ public final class ForecastInstanceController implements CrudHandler {
     public void delete(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
 
-        String designator = requiredParam(ctx, DESIGNATOR);
+        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
         Instant forecastInstant = DateUtils.parseUserDate(forecastDate, "UTC").toInstant();
@@ -148,7 +148,7 @@ public final class ForecastInstanceController implements CrudHandler {
     public void getAll(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = ctx.queryParam(OFFICE);
-            String desionatorMask = ctx.queryParam(DESIGNATOR_MASK);
+            String designatorMask = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).allowNullable().get();
             String name = ctx.queryParam(NAME);
 
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
@@ -166,7 +166,7 @@ public final class ForecastInstanceController implements CrudHandler {
                     .withTemplate(url)
                     .withOperatorKey("{spec-id}");
             List<ForecastInstance> instances = dao.getForecastInstances(KILO_BYTE_LIMIT, urlBuilder,
-                    office, name, desionatorMask);
+                    office, name, designatorMask);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, ForecastInstance.class);
             String result = Formats.format(contentType, instances, ForecastInstance.class);
@@ -195,7 +195,7 @@ public final class ForecastInstanceController implements CrudHandler {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "owning office of the forecast spec whose forecast instance is to be "
                         + "included in the response."),
-                @OpenApiParam(name = DESIGNATOR, required = true, description = "Specifies the "
+                @OpenApiParam(name = DESIGNATOR, description = "Specifies the "
                         + "designator of the forecast spec whose forecast instance data to be included "
                         + "in the response."),
             },
@@ -216,7 +216,7 @@ public final class ForecastInstanceController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
-        String designator = requiredParam(ctx, DESIGNATOR);
+        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
         Instant forecastInstant = DateUtils.parseUserDate(forecastDate, "UTC").toInstant();

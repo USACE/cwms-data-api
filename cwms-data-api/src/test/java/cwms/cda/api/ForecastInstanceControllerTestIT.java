@@ -167,6 +167,219 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    void test_get_create_get_null_designator() throws IOException {
+
+
+        // Structure of test:
+        // 1)Retrieve a ForecastInstance and assert that it does not exist
+        // 2)Create the ForecastInstance
+        // 3)Retrieve the ForecastInstance and assert that it exists
+
+        // Step 1)
+        // Retrieve a ForecastInstance and assert that it does not exist
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.FORECAST_DATE, forecastDate)
+            .queryParam(Controllers.ISSUE_DATE, issueDate)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH + SPEC_ID + "-NULL-DESIGNATOR")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
+
+        // Step 2)
+        // Create the ForecastInstance
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/forecast_inst_create_null_designator.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        ForecastSpec spec = JsonV2.buildObjectMapper().readValue(tsData, ForecastInstance.class).getSpec();
+        String specJson = JsonV2.buildObjectMapper().writeValueAsString(spec);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(specJson)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/forecast-spec/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Step 3)
+        // Retrieve the inst and assert that it exists
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.FORECAST_DATE, forecastDate)
+            .queryParam(Controllers.ISSUE_DATE, issueDate)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH + SPEC_ID + "-NULL-DESIGNATOR")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("spec.designator", isEmptyOrNullString())
+            .body("spec.spec-id", equalTo(SPEC_ID + "-NULL-DESIGNATOR"))
+            .body("date-time", equalTo(1624284000000L))
+            .body("issue-date-time", equalTo(1653220980000L))
+            .body("max-age", equalTo(5))
+            .body("notes", equalTo("test notes"))
+            .body("filename", equalTo("testFilename.txt"))
+            .body("file-data", equalTo("dGVzdCBmaWxlIGNvbnRlbnQ="))
+        ;
+
+    }
+
+    @Test
+    void test_large_file_download_null_designator() throws IOException, URISyntaxException {
+
+        // Structure of test:
+        // 1)Create the ForecastInstance with large file
+        // 3)Retrieve the ForecastInstance and assert that it has a download url
+        // 3)Use that download url to download the blob
+
+
+        // Step 1)
+        // Create the ForecastInstance with large file
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/forecast_inst_create_null_designator.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        ForecastInstance instance = JsonV2.buildObjectMapper().readValue(tsData, ForecastInstance.class);
+        instance = new ForecastInstance.Builder().from(instance)
+                .withFileData(LARGE_BYTES)
+                .build();
+        ForecastSpec spec = instance.getSpec();
+        String specJson = JsonV2.buildObjectMapper().writeValueAsString(spec);
+        String largeInstanceJson = JsonV2.buildObjectMapper().writeValueAsString(instance);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(specJson)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/forecast-spec/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(largeInstanceJson)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Step 3)
+        // Retrieve the inst and assert that it exists
+        String fileDataUrl = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.FORECAST_DATE, forecastDate)
+                .queryParam(Controllers.ISSUE_DATE, issueDate)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get(PATH + SPEC_ID + "-NULL-DESIGNATOR")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("file-data", is(nullValue()))
+                .body("file-data-url", is(notNullValue()))
+                .extract()
+                .response()
+                .path("file-data-url");
+
+        // Step 4)
+        // Use the URL returned in the JSON to download the large byte[]
+        URIBuilder builder = new URIBuilder(fileDataUrl);
+        Map<String, String> params = builder.getQueryParams()
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(s -> s.getName() != null)
+                .filter(s -> s.getValue() != null)
+                .collect(toMap(NameValuePair::getName, NameValuePair::getValue));
+        ResponseBody body = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .queryParams(params)
+                .basePath("")
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get(builder.getPath())
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .header("Transfer-Encoding", equalTo("chunked"))
+                .contentType(equalTo("text/plain"))
+                .extract()
+                .response()
+                .body();
+
+        byte[] data = new byte[LARGE_BYTES.length];
+        try (ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+             InputStream is = body.asInputStream()) {
+            int nRead;
+            while ((nRead = is.read(data, 0, data.length)) != -1) {
+                buffer.write(data, 0, nRead);
+            }
+            assertArrayEquals(LARGE_BYTES, buffer.toByteArray());
+        }
+    }
+
+    @Test
     void test_large_file_download() throws IOException, URISyntaxException {
 
         // Structure of test:
@@ -549,7 +762,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .queryParam(Controllers.OFFICE, OFFICE)
-                 .queryParam(Controllers.DESIGNATOR, designator)
+                .queryParam(Controllers.DESIGNATOR, designator)
                 .queryParam(Controllers.FORECAST_DATE, forecastDate)
                 .queryParam(Controllers.ISSUE_DATE, issueDate)
             .when()
@@ -662,7 +875,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .queryParam(Controllers.OFFICE, OFFICE)
-                 .queryParam(Controllers.DESIGNATOR, designator)
+                .queryParam(Controllers.DESIGNATOR, designator)
                 .queryParam(Controllers.FORECAST_DATE, forecastDate)
                 .queryParam(Controllers.ISSUE_DATE, issueDate)
             .when()

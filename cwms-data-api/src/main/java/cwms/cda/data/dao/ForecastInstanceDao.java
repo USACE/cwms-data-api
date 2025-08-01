@@ -99,15 +99,15 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
 
     private static final String GET_ALL_CONDITIONS = " WHERE (? IS NULL OR spec_office_id = ?)" +
             " AND (? IS NULL OR spec_id = ?)" +
-            " AND (? IS NULL OR spec_designator = ?)";
+            " AND ((spec_designator = ?) OR (spec_designator IS NULL AND ? IS NULL))";
     private static final String GET_ONE_CONDITIONS = " WHERE (spec_office_id = ?)" +
             " AND (spec_id = ?)" +
-            " AND (spec_designator = ?)" +
+            " AND ((spec_designator = ?) OR (spec_designator IS NULL AND ? IS NULL))" +
             " AND (inst.FCST_DATE_TIME = cwms_20.cwms_util.to_timestamp(?))" +
             " AND (inst.ISSUE_DATE_TIME = cwms_20.cwms_util.to_timestamp(?))";
     private static final String FILE_CONDITIONS = " WHERE (spec.OFFICE_CODE = CWMS_UTIL.GET_DB_OFFICE_CODE(?))" +
             " AND (spec.FCST_SPEC_ID = ?)" +
-            " AND (spec.FCST_DESIGNATOR = ?)" +
+            " AND ((spec.FCST_DESIGNATOR = ?) OR (spec.FCST_DESIGNATOR IS NULL AND ? IS NULL))" +
             " AND (inst.FCST_DATE_TIME = cwms_20.cwms_util.to_timestamp(?))" +
             " AND (inst.ISSUE_DATE_TIME = cwms_20.cwms_util.to_timestamp(?))";
 
@@ -219,8 +219,10 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                             + format(param, Controllers.NAME, URLEncoder.encode(specId, utf8))
                             + format(param, Controllers.FORECAST_DATE, URLEncoder.encode(forecastDate.toString(), utf8))
                             + format(param, Controllers.ISSUE_DATE, URLEncoder.encode(issueDate.toString(), utf8))
-                            + format(param, Controllers.DESIGNATOR, URLEncoder.encode(designator, utf8))
                             + format(param, Controllers.OFFICE, URLEncoder.encode(officeId, utf8));
+                    if(designator != null) {
+                        url += format(param, Controllers.DESIGNATOR, URLEncoder.encode(designator, utf8));
+                    }
                 } else {
                     try (InputStream is = blob.getBinaryStream()) {
                         fileData = BlobDao.readFully(is);
@@ -261,8 +263,9 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                 preparedStatement.setString(1, office);
                 preparedStatement.setString(2, name);
                 preparedStatement.setString(3, designator);
-                preparedStatement.setLong(4, forecastDate.toEpochMilli());
-                preparedStatement.setLong(5, issueDate.toEpochMilli());
+                preparedStatement.setString(4, designator);
+                preparedStatement.setLong(5, forecastDate.toEpochMilli());
+                preparedStatement.setLong(6, issueDate.toEpochMilli());
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         return map(byteLimit, urlBuilder, resultSet);
@@ -310,8 +313,9 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                 preparedStatement.setString(1, office);
                 preparedStatement.setString(2, name);
                 preparedStatement.setString(3, designator);
-                preparedStatement.setLong(4, forecastDate.toEpochMilli());
-                preparedStatement.setLong(5, issueDate.toEpochMilli());
+                preparedStatement.setString(4, designator);
+                preparedStatement.setLong(5, forecastDate.toEpochMilli());
+                preparedStatement.setLong(6, issueDate.toEpochMilli());
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         Struct blobFile = resultSet.getObject(1, Struct.class);
