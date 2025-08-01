@@ -12,14 +12,10 @@ eclipse {
     }
 }
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
-    }
-}
-
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
 }
 
 test {
@@ -34,7 +30,7 @@ checkstyle {
 }
 
 jacoco {
-    toolVersion = "0.8.7"
+    toolVersion = "0.8.9"
 }
 
 jacocoTestReport {
