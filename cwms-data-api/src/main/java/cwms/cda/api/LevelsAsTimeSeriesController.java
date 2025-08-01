@@ -47,7 +47,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -77,16 +76,13 @@ public class LevelsAsTimeSeriesController implements Handler {
                     @OpenApiParam(name = BEGIN, description = "Specifies the "
                             + "start of the time window for data to be included in the response. "
                             + "If this field is not specified, any required time window begins 24"
-                            + " hours prior to the specified or default end time. The format for "
-                            + "this field is ISO 8601 extended, with optional offset and "
-                            + "timezone, i.e., '"
-                            + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                            + " hours prior to the specified or default end time. " +
+                            TIME_FORMAT_DESC),
                     @OpenApiParam(name = END,  description = "Specifies the "
                             + "end of the time window for data to be included in the response. If"
                             + " this field is not specified, any required time window ends at the"
-                            + " current time. The format for this field is ISO 8601 extended, "
-                            + "with optional timezone, i.e., '"
-                            + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                            + " current time. " +
+                            TIME_FORMAT_DESC),
                     @OpenApiParam(name = TIMEZONE,  description = "Specifies "
                             + "the time zone of the values of the begin and end fields (unless "
                             + "otherwise specified), as well as the time zone of any times in the"

@@ -4,6 +4,7 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -25,9 +26,30 @@ public interface TimeSeriesDao {
 
     void delete(String officeId, String tsId, TimeSeriesDeleteOptions options);
 
+    /**
+     *
+     * @param cursor
+     * @param pageSize
+     * @param names
+     * @param office
+     * @param unit
+     * @param begin
+     * @param end
+     * @param versionDate
+     * @param trim
+     * @param includeEntryDate
+     * @return requested TimeSeries
+     * @deprecated Use {@link #getTimeseries(String, int, TimeSeriesRequestParameters)}
+     *             instead.  Create a {@link TimeSeriesRequestParameters} instance and
+     *             call that overload.
+     */
+    @Deprecated
     TimeSeries getTimeseries(String cursor, int pageSize, String names, String office,
                              String unit, ZonedDateTime begin, ZonedDateTime end,
                              ZonedDateTime versionDate, boolean trim, boolean includeEntryDate);
+
+    TimeSeries getTimeseries(String cursor, int pageSize, TimeSeriesRequestParameters requestParameters);
+    FilteredTimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters, FilteredTimeSeriesParameters filterParams);
 
     String getTimeseries(String format, String names, String office, String unit, String datum,
                          ZonedDateTime begin, ZonedDateTime end, ZoneId timezone);
@@ -35,7 +57,7 @@ public interface TimeSeriesDao {
     List<RecentValue> findRecentsInRange(String office, String categoryId, String groupId,
                                          Timestamp pastLimit, Timestamp futureLimit, UnitSystem unitSystem);
 
-    List<RecentValue> findMostRecentsInRange(List<String> tsIds, Timestamp pastLimit,
+    List<RecentValue> findMostRecentsInRange(String office, List<String> tsIds, Timestamp pastLimit,
                                              Timestamp futureLimit, UnitSystem unitSystem);
 
 }

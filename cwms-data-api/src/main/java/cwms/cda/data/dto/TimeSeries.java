@@ -186,6 +186,15 @@ public class TimeSeries extends CwmsDTOPaginated {
         return timeZone;
     }
 
+    /**
+     * Clears the pagination information (page, nextPage. total) for this TimeSeries.
+     */
+    public void clearPagination() {
+        this.page = null;
+        this.nextPage = null;
+        this.total = null;
+    }
+
     public ZonedDateTime getVersionDate() {
         return versionDate;
     }
