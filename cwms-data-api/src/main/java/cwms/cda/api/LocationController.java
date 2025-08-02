@@ -25,22 +25,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.CASCADE_DELETE;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DATUM;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.FORMAT;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.UNIT;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -78,6 +63,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -90,7 +76,6 @@ import org.jooq.exception.DataAccessException;
 
 public class LocationController implements CrudHandler {
     public static final Logger logger = Logger.getLogger(LocationController.class.getName());
-    public static final String NAMES = "names";
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -118,8 +103,12 @@ public class LocationController implements CrudHandler {
                         + "the location level(s) whose data is to be included in the response"
                         + ". If this field is not specified, matching location level "
                         + "information from all offices shall be returned."),
+                @OpenApiParam(name = IGNORE_KINDS, description = "Specifies the location kind(s) to ignore "
+                    + "in the response. This parameter is a comma-separated list of location kinds to ignore. "
+                    + "If this parameter is not specified, all location kinds will be included in the response. "
+                    + "Only supported for JSON format."),
                 @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
-                        + " of the response. Valid values for the unit field are:"
+                        + " of the response. Default is SI. Valid values for the unit field are:"
                         + "\n* `EN`  Specifies English unit system.  Location level values will be in"
                         + " the default English units for their parameters."
                         + "\n* `SI`  Specifies the SI unit system.  Location level values will be in "
@@ -127,6 +116,11 @@ public class LocationController implements CrudHandler {
                         + "\n* `Other`  Any unit "
                         + "returned in the response to the units URI request that is "
                         + "appropriate for the requested parameters."),
+                @OpenApiParam(name = FILTER_BASE_LOCATIONS, type = Boolean.class,
+                        description = "Specifies whether to filter the locations based on the "
+                                + "base location. Default: false. If true, only sublocations "
+                                + "locations will be returned. If false, all locations will be returned. "
+                                + "Only supported for JSON format."),
                 @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
                         + " the response. This field affects only vertical datum. "
                         + "Valid values for this field are:"
@@ -174,6 +168,14 @@ public class LocationController implements CrudHandler {
             String units = ctx.queryParam(UNIT);
             String datum = ctx.queryParam(DATUM);
             String office = ctx.queryParam(OFFICE);
+            Boolean filterBaseLocations = ctx.queryParamAsClass(FILTER_BASE_LOCATIONS, Boolean.class)
+                .getOrDefault(false);
+            String ignoreKinds = ctx.queryParam(IGNORE_KINDS);
+
+            List<String> ignoredKindsList = null;
+            if (ignoreKinds != null && !ignoreKinds.isEmpty()) {
+                ignoredKindsList = Arrays.asList(ignoreKinds.split(","));
+            }
 
             String formatParm = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String formatHeader = ctx.header(Header.ACCEPT);
@@ -192,7 +194,8 @@ public class LocationController implements CrudHandler {
                 requestResultSize.update(ctx.res.getBufferSize());
                 ctx.contentType(contentType.toString());
             } else if (formatParm.isEmpty() && !isLegacyFormat) {
-                List<Location> locations = locationsDao.getLocations(names, units, datum, office);
+                List<Location> locations = locationsDao
+                    .getLocations(names, units, datum, office, ignoredKindsList, filterBaseLocations);
                 results = Formats.format(contentType, locations, Location.class);
                 ctx.result(results);
                 requestResultSize.update(results.length());
@@ -307,7 +310,8 @@ public class LocationController implements CrudHandler {
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             locationsDao.storeLocation(locationFromBody, failIfExists);
-            StatusResponse re = new StatusResponse(locationFromBody.getOfficeId(),"Created Location", locationFromBody.getName());
+            StatusResponse re = new StatusResponse(locationFromBody.getOfficeId(),
+                "Created Location", locationFromBody.getName());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("failed to process request");

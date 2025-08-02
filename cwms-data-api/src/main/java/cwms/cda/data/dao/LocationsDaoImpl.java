@@ -107,11 +107,21 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
     @Override
     public List<Location> getLocations(String nameRegex, String unitSystem, String datum, String officeId) {
+        return getLocations(nameRegex, unitSystem, datum, officeId, new ArrayList<>(), false);
+    }
+
+    @Override
+    public List<Location> getLocations(String nameRegex, String unitSystem, String datum, String officeId,
+        List<String> ignoredKinds, boolean filterBaseLocations) {
 
         Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
 
         if (officeId != null) {
             whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
+        }
+
+        if (filterBaseLocations) {
+            whereCondition = whereCondition.and(AV_LOC.SUB_LOCATION_ID.isNotNull());
         }
 
         if (unitSystem != null) {
@@ -120,6 +130,12 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         if (datum != null) {
             whereCondition = whereCondition.and(AV_LOC.VERTICAL_DATUM.equalIgnoreCase(datum));
+        }
+
+        if (ignoredKinds != null) {
+            for (String kind : ignoredKinds) {
+                whereCondition = whereCondition.and(AV_LOC.LOCATION_KIND_ID.notEqualIgnoreCase(kind));
+            }
         }
 
         return dsl.select(AV_LOC.asterisk())

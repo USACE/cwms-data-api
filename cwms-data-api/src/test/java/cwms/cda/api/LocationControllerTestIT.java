@@ -24,6 +24,8 @@
 
 package cwms.cda.api;
 
+import cwms.cda.api.enums.UnitSystem;
+import fixtures.TestAccounts;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -620,6 +622,131 @@ class LocationControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
             .body(containsString("One or more provided values exceeds the maximum length for the parameter."));
+    }
+
+    @Test
+    void testGetValidLocations() throws Exception{
+        String officeId = "SPK";
+        String json = loadResourceAsString("cwms/cda/api/valid_base_location.json");
+        Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
+            json, Location.class))
+            .withOfficeId(officeId)
+            .build();
+        String baseLocationName = location.getName();
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // create base location
+        createLocation(baseLocationName, true, officeId, location.getLocationKind());
+
+        json = loadResourceAsString("cwms/cda/api/valid_sub_location.json");
+        location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
+            json, Location.class))
+            .withOfficeId(officeId)
+            .build();
+        String subLocationName = location.getName();
+
+        // create sub-location
+        createLocation(subLocationName, true, officeId, location.getLocationKind());
+
+        json = loadResourceAsString("cwms/cda/api/valid_sub_location2.json");
+        location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
+            json, Location.class))
+            .withOfficeId(officeId)
+            .build();
+        String subLocation2Name = location.getName();
+
+        // create second sub-location
+        createLocation(subLocation2Name, true, officeId, location.getLocationKind());
+
+        json = loadResourceAsString("cwms/cda/api/valid_sub_location3.json");
+        location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
+            json, Location.class))
+            .withOfficeId(officeId)
+            .build();
+        String subLocation3Name = location.getName();
+
+        // create second sub-location
+        createLocation(subLocation3Name, true, officeId, location.getLocationKind());
+
+        // get all valid locations using base location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(NAMES, "VALID_LOC_TEST-*")
+            .queryParam(UNIT, UnitSystem.SI.getValue())
+            .queryParam(FILTER_BASE_LOCATIONS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", is(3));
+
+        // get valid locations using base location, filtering out BASIN kind
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(NAMES, "VALID_LOC_TEST-*")
+            .queryParam(IGNORE_KINDS, "OUTLET")
+            .queryParam(UNIT, UnitSystem.SI.getValue())
+            .queryParam(FILTER_BASE_LOCATIONS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", is(2));
+
+        // get valid locations using base location, filtering out STREAM kind
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(NAMES, "VALID_LOC_TEST-*")
+            .queryParam(IGNORE_KINDS, "STREAM")
+            .queryParam(UNIT, UnitSystem.SI.getValue())
+            .queryParam(FILTER_BASE_LOCATIONS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", is(1));
+
+        // get valid locations using base location, filtering out expected kinds. Should return 0 locations
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(NAMES, "VALID_LOC_TEST-*")
+            .queryParam(UNIT, UnitSystem.SI.getValue())
+            .queryParam(IGNORE_KINDS, "STREAM")
+            .queryParam(FILTER_BASE_LOCATIONS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", is(0));
     }
 
     enum GetAllTest
