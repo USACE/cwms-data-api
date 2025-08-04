@@ -24,6 +24,11 @@
 
 package cwms.cda.data.dao;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.Timestamp;
+import java.time.Instant;
+
 import static org.jooq.SQLDialect.ORACLE;
 
 import com.google.common.flogger.FluentLogger;
@@ -48,8 +53,11 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
@@ -111,6 +119,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             return rule;
         }
     }
+
 
     protected JooqDao(DSLContext dsl) {
         super(dsl);
@@ -182,7 +191,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         try {
             final String apiVersion = ApiServlet.getApiVersion();
             connection.setClientInfo("OCSID.ECID",
-                                     ApiServlet.APPLICATION_TITLE + " " + 
+                                     ApiServlet.APPLICATION_TITLE + " " +
                                      apiVersion.substring(0,Math.min(ORACLE_ECID_MAX_LENGTH,apiVersion.length())));
             if (ctx.handlerType() == HandlerType.BEFORE) {
                 connection.setClientInfo("OCSID.MODULE", "BEFORE-HANDLER");
@@ -787,4 +796,5 @@ public abstract class JooqDao<T> extends Dao<T> {
     public static double buildDouble(BigDecimal bigDecimal) {
         return (bigDecimal == null) ? 0.0 : bigDecimal.doubleValue();
     }
+
 }
