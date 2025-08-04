@@ -1,12 +1,17 @@
-# Data Types use Calendar Versioning
+##################################
+Data Types use Calendar Versioning
+##################################
 
-## Summary
+Summary
+=======
 
 Instead of versioning the entire API, though the API has a version, we version the data types.
 
-## Opinions
+Opinions
+========
 
-### Opinion 1
+Opinion 1
+---------
 
 Summary: Versioning the API itself, at the level of the path, will lead to too many paths to manage and be awkward for the clients
 
@@ -23,9 +28,10 @@ The header, Accept, informs the API what format, or formats, we are willing to a
 
 
 
-## Decision Status
+Decision Status
+---------------
 
-proposed
+partial acceptance
 
 Data, by content-types, are versioned. In the past there was some severe confusion on this part and it was treated as anything new was "version=2" in the content-type. To allow this design but reduce confusion going forward
 
@@ -40,11 +46,13 @@ Version format is `YYYY-MM-DD`
 
 [comment:] <> (Status: request for comments | proposed | accepted | rejected | deprecated | superseded)
 
-## References
+References
+==========
 
 I have several, I will dig them up likely next week
 
-## Notes
+Notes
+=====
 
 The initial idea in CDA was that the first version of any data type was, we'll just stick with JSON for each of message,
 "application/json;version=1" with "application/json" being the alias to the latest format version. However, this was not

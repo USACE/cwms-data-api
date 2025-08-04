@@ -1,12 +1,17 @@
-# API Versioning and Reporting
+############################
+API Versioning and Reporting
+############################
 
-## Summary
+Summary
+=======
 
 API should provide a reason version and list/matrix of capabilities for a given instance of CDA
 
-## Opinions
+Opinions
+========
 
-### Opinion 1 Calendar versioning
+Opinion 1 Calendar versioning
+-----------------------------
 
 @MikeNeilson
 
@@ -22,23 +27,27 @@ With Calendar Versioning automation tools can just pick the current date when ap
 perhaps by merged into a particular branch.
 
 
-### Opinion 2 Users
+Opinion 2 Users
+---------------
 
 Summary: It has been asked more than once that a version be provided
 
 Having a version allows client to better respond to what's available instead of failing in obtuse ways.
 
 
-## Decision Status
+Decision Status
+===============
 
 accepted
 
 1. Provide endpoint to retrieve current API version.
 2. Likely include capability list or matrix.
 
-## References
+References
+==========
 
 
-## Related decisions
+Related decisions
+=================
 
 - data-versioning

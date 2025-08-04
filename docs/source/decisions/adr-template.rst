@@ -1,10 +1,16 @@
-# Title
+#####
+Title
+#####
 
-## Summary
 
-## Opinions
+Summary
+=======
 
-### Opinion 1
+Opinions
+========
+
+Opinion 1
+---------
 
 Summary: 
 
@@ -12,8 +18,10 @@ Author
 
 descriptive text
 
-## Decision Status
+Decision Status
+===============
 
 [comment:] <> (Status: request for comments | proposed | accepted | rejected | deprecated | superseded)
 
-## References
+References
+==========
