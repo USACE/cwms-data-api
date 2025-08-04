@@ -57,7 +57,7 @@ jobs:
         uses: actions/setup-java@v4.7.1
         with:
           distribution: 'temurin'
-          java-version: '8'
+          java-version: '11'
           cache: 'gradle'
       - name: Set version
         if: inputs.nightly == true
