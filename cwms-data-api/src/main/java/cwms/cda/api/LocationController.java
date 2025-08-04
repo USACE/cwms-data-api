@@ -59,6 +59,7 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.DeleteConflictException;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.LocationsDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.Location;
@@ -66,6 +67,7 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.UnsupportedFormatException;
+import cwms.cda.helpers.ZoneIdHelper;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -77,7 +79,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -508,7 +509,7 @@ public class LocationController implements CrudHandler {
         String updatedOfficeId = updatedLocation.getOfficeId() == null
                 ? existingLocation.getOfficeId() : updatedLocation.getOfficeId();
         return new Location.Builder(updatedName, updatedLocationKind,
-                ZoneId.of(updatedTimeZoneId), updatedLatitude, updatedLongitude,
+                ZoneIdHelper.parseZoneIdWithAliases(updatedTimeZoneId), updatedLatitude, updatedLongitude,
                 updatedHorizontalDatum, updatedOfficeId)
                 .withActive(updatedIsActive)
                 .withPublicName(updatedPublicName)
