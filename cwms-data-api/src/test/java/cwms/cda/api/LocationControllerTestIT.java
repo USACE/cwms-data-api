@@ -625,7 +625,7 @@ class LocationControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void testGetValidLocations() throws Exception{
+    void testFilterLocations() throws Exception{
         String officeId = "SPK";
         String json = loadResourceAsString("cwms/cda/api/valid_base_location.json");
         Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
@@ -668,6 +668,8 @@ class LocationControllerTestIT extends DataApiTestIT {
 
         // create second sub-location
         createLocation(subLocation3Name, true, officeId, location.getLocationKind());
+
+        loadSqlDataFromResource("cwms/cda/data/sql/set_test_filter_loc_kinds.sql");
 
         // get all valid locations using base location
         given()
@@ -736,7 +738,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .queryParam(OFFICE, officeId)
             .queryParam(NAMES, "VALID_LOC_TEST-*")
             .queryParam(UNIT, UnitSystem.SI.getValue())
-            .queryParam(IGNORE_KINDS, "STREAM")
+            .queryParam(IGNORE_KINDS, "STREAM,OUTLET")
             .queryParam(FILTER_BASE_LOCATIONS, true)
         .when()
             .redirects().follow(true)
