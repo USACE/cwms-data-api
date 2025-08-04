@@ -28,9 +28,11 @@ import static cwms.cda.data.dao.JooqDao.REQUIRE_NEW_LRTS_ID_FORMAT;
 import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
 
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
+import cwms.cda.helpers.ZoneIdHelper;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.IntegrationTestNameGenerator;
 import fixtures.KeyCloakExtension;
@@ -45,7 +47,6 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -88,10 +89,10 @@ public class DataApiTestIT {
     protected static String createLocationQuery = null;
     protected static String createTimeseriesQuery = null;
     protected static String createTimeseriesOffsetQuery = null;
-    protected final static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
-    protected final static String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and apikey = ?";
+    protected static final String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
+    protected static final String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and apikey = ?";
 
-    protected final static Configuration freemarkerConfig = new Configuration(Configuration.VERSION_2_3_32);
+    protected static final Configuration freemarkerConfig = new Configuration(Configuration.VERSION_2_3_32);
 
     private ArrayList<LocationGroup> groupsCreated = new ArrayList<>();
     private ArrayList<LocationCategory> categoriesCreated = new ArrayList<>();
@@ -238,7 +239,7 @@ public class DataApiTestIT {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         Location loc = new Location.Builder(location,
                                             kind,
-                                            ZoneId.of(timeZone),
+                                            ZoneIdHelper.parseZoneIdWithAliases(timeZone),
                                             latitude,
                                             longitude,
                                             horizontalDatum,

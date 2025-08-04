@@ -64,6 +64,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import cwms.cda.helpers.ZoneIdHelper;
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 import org.geojson.Point;
@@ -91,6 +92,8 @@ import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao {
     private static final Logger logger = Logger.getLogger(LocationsDaoImpl.class.getName());
     private static final long DELETED_TS_MARKER = 0L;
+
+
 
     public LocationsDaoImpl(DSLContext dsl) {
         super(dsl);
@@ -148,7 +151,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         String timeZoneName = loc.get(AV_LOC.TIME_ZONE_NAME); // may be null...
         ZoneId zone = null;
         if (timeZoneName != null) {
-            zone = ZoneId.of(timeZoneName);
+            zone = ZoneIdHelper.parseZoneIdWithAliases(timeZoneName);
         }
 
         Double latDouble = null;
