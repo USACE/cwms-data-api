@@ -33,9 +33,6 @@ import org.geojson.FeatureCollection;
 public interface LocationsDao {
     String getLocations(String names, String format, String units, String datum, String officeId);
 
-    List<Location> getLocations(String names, String units, String datum, String officeId,
-        List<String> ignoredKinds, boolean filterBaseLocations);
-
     List<Location> getLocations(String names, String units, String datum, String officeId);
 
     Location getLocation(String locationName, String unitSystem, String officeId) throws IOException;

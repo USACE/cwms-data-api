@@ -108,23 +108,12 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 names, format, units, datum, officeId);
     }
 
-    @Override
     public List<Location> getLocations(String nameRegex, String unitSystem, String datum, String officeId) {
-        return getLocations(nameRegex, unitSystem, datum, officeId, new ArrayList<>(), false);
-    }
-
-    @Override
-    public List<Location> getLocations(String nameRegex, String unitSystem, String datum, String officeId,
-        List<String> ignoredKinds, boolean filterBaseLocations) {
 
         Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
 
         if (officeId != null) {
             whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
-        }
-
-        if (filterBaseLocations) {
-            whereCondition = whereCondition.and(AV_LOC.SUB_LOCATION_ID.isNotNull());
         }
 
         if (unitSystem != null) {
@@ -133,12 +122,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         if (datum != null) {
             whereCondition = whereCondition.and(AV_LOC.VERTICAL_DATUM.equalIgnoreCase(datum));
-        }
-
-        if (ignoredKinds != null) {
-            for (String kind : ignoredKinds) {
-                whereCondition = whereCondition.and(AV_LOC.LOCATION_KIND_ID.notEqualIgnoreCase(kind));
-            }
         }
 
         return dsl.select(AV_LOC.asterisk())
@@ -524,6 +507,16 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 params.getLocationKind()));
         condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_TYPE,
                 params.getLocationType()));
+
+        if (params.filterBaseLocations()) {
+            condition = condition.and(AV_LOC2.AV_LOC2.SUB_LOCATION_ID.isNotNull());
+        }
+
+        if (params.getExcludedKinds() != null && !params.getExcludedKinds().isEmpty()) {
+            for (String kind : params.getExcludedKinds().split(",")) {
+                condition = condition.and(AV_LOC2.AV_LOC2.LOCATION_KIND_ID.notEqualIgnoreCase(kind));
+            }
+        }
 
         return condition;
     }

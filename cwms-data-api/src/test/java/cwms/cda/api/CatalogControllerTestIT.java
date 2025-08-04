@@ -4,21 +4,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
-import static cwms.cda.api.Controllers.EXCLUDE_EMPTY;
-import static cwms.cda.api.Controllers.INCLUDE_ALIASES;
-import static cwms.cda.api.Controllers.LIKE;
-import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
-import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE;
-import static cwms.cda.api.Controllers.LOCATION_KIND_LIKE;
-import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
-import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
+import static cwms.cda.api.Controllers.*;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
 import cwms.cda.formatters.json.JsonV2;
+import fixtures.TestAccounts;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.data.dao.DeleteRule;
@@ -30,6 +26,7 @@ import java.sql.SQLException;
 import java.time.Duration;
 
 import java.time.ZoneId;
+import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -58,7 +55,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     ////
 
     @BeforeAll
-    public static void setup_data() throws Exception {
+    static void setup_data() throws Exception {
         // Create some locations and create some ts.
         createLocation("Alder Springs",true, OFFICE);
         createLocation("Wet Meadows",true, OFFICE);
@@ -113,7 +110,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void deload_data() throws Exception {
+    static void deload_data() throws Exception {
         loadSqlDataFromResource("cwms/cda/data/sql/ts_catalog_cleanup.sql");
         deleteProject("Flat Project", OFFICE);
     }
@@ -443,6 +440,133 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("entries.size()", is(1))
             .body("entries[0].name", equalTo("Flat Project"))
         ;
+    }
+
+    @Test
+    void testFilterLocations() throws Exception{
+        String officeId = "SPK";
+        String json = loadResourceAsString("cwms/cda/api/valid_base_location.json");
+        Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
+            json, Location.class))
+            .withOfficeId(officeId)
+            .build();
+        String baseLocationName = location.getName();
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // create base location
+        createLocation(baseLocationName, true, officeId, location.getLocationKind());
+
+        json = loadResourceAsString("cwms/cda/api/valid_sub_location.json");
+        location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
+            json, Location.class))
+            .withOfficeId(officeId)
+            .build();
+        String subLocationName = location.getName();
+
+        // create sub-location
+        createLocation(subLocationName, true, officeId, location.getLocationKind());
+
+        json = loadResourceAsString("cwms/cda/api/valid_sub_location2.json");
+        location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
+            json, Location.class))
+            .withOfficeId(officeId)
+            .build();
+        String subLocation2Name = location.getName();
+
+        // create second sub-location
+        createLocation(subLocation2Name, true, officeId, location.getLocationKind());
+
+        json = loadResourceAsString("cwms/cda/api/valid_sub_location3.json");
+        location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
+            json, Location.class))
+            .withOfficeId(officeId)
+            .build();
+        String subLocation3Name = location.getName();
+
+        // create second sub-location
+        createLocation(subLocation3Name, true, officeId, location.getLocationKind());
+
+        loadSqlDataFromResource("cwms/cda/data/sql/set_test_filter_loc_kinds.sql");
+
+        // get all valid locations using base location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(LIKE, "VALID_LOC_TEST-*")
+            .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
+            .queryParam(FILTER_BASE_LOCATIONS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.size()", is(3));
+
+        // get valid locations using base location, filtering out OUTLET kind
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(LIKE, "VALID_LOC_TEST-*")
+            .queryParam(EXCLUDE_KINDS, "OUTLET")
+            .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
+            .queryParam(FILTER_BASE_LOCATIONS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.size()", is(2));
+
+        // get valid locations using base location, filtering out STREAM kind
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(LIKE, "VALID_LOC_TEST-*")
+            .queryParam(EXCLUDE_KINDS, "STREAM")
+            .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
+            .queryParam(FILTER_BASE_LOCATIONS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.size()", is(1));
+
+        // get valid locations using base location, filtering out expected kinds. Should return 0 locations
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(LIKE, "VALID_LOC_TEST-*")
+            .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
+            .queryParam(EXCLUDE_KINDS, "STREAM,OUTLET")
+            .queryParam(FILTER_BASE_LOCATIONS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.size()", is(0));
     }
 
 }

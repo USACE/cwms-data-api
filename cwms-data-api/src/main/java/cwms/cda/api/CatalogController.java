@@ -2,6 +2,8 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.ACCEPT;
+import static cwms.cda.api.Controllers.FILTER_BASE_LOCATIONS;
+import static cwms.cda.api.Controllers.EXCLUDE_KINDS;
 import static cwms.cda.api.Controllers.INCLUDE_ALIASES;
 import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
 import static cwms.cda.api.Controllers.CURSOR;
@@ -165,6 +167,14 @@ public class CatalogController implements CrudHandler {
                         + "by using Regular Expression OR clauses. For example: "
                         + "\"(SITE|STREAM)\""
                 ),
+            @OpenApiParam(name = FILTER_BASE_LOCATIONS, type = Boolean.class,
+                description = "Specifies whether to filter the locations based on the "
+                    + "base location. Default: false. If true, only sublocations "
+                    + "locations will be returned. If false, all locations will be returned. "
+                    + "Only supported for JSON format."),
+            @OpenApiParam(name = EXCLUDE_KINDS, description = "Specifies the location kind(s) to ignore "
+                + "in the response. This parameter is a comma-separated list of location kinds to ignore. "
+                + "If this parameter is not specified, all location kinds will be included in the response."),
             @OpenApiParam(name = LOCATION_TYPE_LIKE,
                     description = "Posix <a href=\"regexp.html\">regular expression</a> matching "
                         + "against the location type."
@@ -233,6 +243,12 @@ public class CatalogController implements CrudHandler {
             String locationKind = queryParamAsClass(ctx, new String[]{LOCATION_KIND_LIKE},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
+            String excludedKinds = ctx.queryParamAsClass(EXCLUDE_KINDS, String.class)
+                    .getOrDefault(null);
+
+            Boolean filterBaseLocations = ctx.queryParamAsClass(FILTER_BASE_LOCATIONS, Boolean.class)
+                    .getOrDefault(false);
+
             String locationType = queryParamAsClass(ctx, new String[]{LOCATION_TYPE_LIKE},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
             boolean includeAliases = ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class)
@@ -279,6 +295,8 @@ public class CatalogController implements CrudHandler {
                         .withBoundingOfficeLike(boundingOfficeLike)
                         .withLocationKind(locationKind)
                         .withLocationType(locationType)
+                        .withExcludedKinds(excludedKinds)
+                        .withFilterBaseLocations(filterBaseLocations)
                         .build();
 
                 LocationsDao dao = new LocationsDaoImpl(dsl);
