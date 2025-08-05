@@ -87,21 +87,21 @@ public class ClobControllerTestIT extends DataApiTestIT {
         String serializedClob = om.writeValueAsString(clob);
 
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .body(serializedClob)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam("office", clob.getOfficeId())
-                .queryParam("fail-if-exists", true) // This time we fail if it already exists
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/clobs/")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(HttpServletResponse.SC_CONFLICT); // Expect 409 Conflict
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(serializedClob)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", clob.getOfficeId())
+            .queryParam("fail-if-exists", true) // This time we fail if it already exists
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/clobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(HttpServletResponse.SC_CONFLICT); // Expect 409 Conflict
     }
 
     @Test
