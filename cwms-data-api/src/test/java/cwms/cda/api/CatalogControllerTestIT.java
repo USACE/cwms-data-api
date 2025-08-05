@@ -10,11 +10,11 @@ import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
 import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.data.dao.DeleteRule;
@@ -444,48 +444,32 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
     @Test
     void testFilterLocations() throws Exception{
-        String officeId = "SPK";
-        String json = loadResourceAsString("cwms/cda/api/valid_base_location.json");
-        Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
-            json, Location.class))
-            .withOfficeId(officeId)
-            .build();
-        String baseLocationName = location.getName();
-
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String officeId = "SPK";
+
+        List<String> locationNames = Arrays.asList("VALID_LOC_TEST", "VALID_LOC_TEST-VALID_LOC",
+            "VALID_LOC_TEST-VALID_LOC2", "VALID_LOC_TEST-VALID_LOC3");
+        List<String> locationKinds = Arrays.asList("SITE", "STREAM", "OUTLET", "STREAM");
+
+        String baseLocationName = locationNames.get(0);
 
         // create base location
-        createLocation(baseLocationName, true, officeId, location.getLocationKind());
+        createLocation(baseLocationName, true, officeId, locationKinds.get(0));
 
-        json = loadResourceAsString("cwms/cda/api/valid_sub_location.json");
-        location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
-            json, Location.class))
-            .withOfficeId(officeId)
-            .build();
-        String subLocationName = location.getName();
+        String subLocationName = locationNames.get(1);
 
         // create sub-location
-        createLocation(subLocationName, true, officeId, location.getLocationKind());
+        createLocation(subLocationName, true, officeId, locationKinds.get(1));
 
-        json = loadResourceAsString("cwms/cda/api/valid_sub_location2.json");
-        location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
-            json, Location.class))
-            .withOfficeId(officeId)
-            .build();
-        String subLocation2Name = location.getName();
+        String subLocation2Name = locationNames.get(2);
 
         // create second sub-location
-        createLocation(subLocation2Name, true, officeId, location.getLocationKind());
+        createLocation(subLocation2Name, true, officeId, locationKinds.get(2));
 
-        json = loadResourceAsString("cwms/cda/api/valid_sub_location3.json");
-        location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
-            json, Location.class))
-            .withOfficeId(officeId)
-            .build();
-        String subLocation3Name = location.getName();
+        String subLocation3Name = locationNames.get(3);
 
         // create second sub-location
-        createLocation(subLocation3Name, true, officeId, location.getLocationKind());
+        createLocation(subLocation3Name, true, officeId, locationKinds.get(3));
 
         loadSqlDataFromResource("cwms/cda/data/sql/set_test_filter_loc_kinds.sql");
 
@@ -538,6 +522,26 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .queryParam(LIKE, "VALID_LOC_TEST-*")
             .queryParam(LOCATION_KIND_LIKE, "^(STREAM)*$")
             .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
+            .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
+            .queryParam(FILTER_BASE_LOCATIONS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.size()", is(1));
+
+        // get valid locations using base location, filtering out STREAM kind using NOT operator
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(LIKE, "VALID_LOC_TEST-*")
+            .queryParam(LOCATION_KIND_LIKE, "NOT:^(STREAM)*$")
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
             .queryParam(FILTER_BASE_LOCATIONS, true)
         .when()

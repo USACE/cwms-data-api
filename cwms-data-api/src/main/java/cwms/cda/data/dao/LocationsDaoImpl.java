@@ -503,7 +503,11 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID,
                 params.getBoundingOfficeLike()));
-        if (params.isNegateLocationKindLike()) {
+        if (params.isNegateLocationKindLike()
+            || (params.getLocationKind() != null && params.getLocationKind().toUpperCase().startsWith("NOT:"))) {
+            if (params.getLocationKind().toUpperCase().startsWith("NOT:")) {
+                params = stripNot(params);
+            }
             condition = condition.and(caseInsensitiveNotLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_KIND_ID,
                 params.getLocationKind()));
         } else {
@@ -518,6 +522,25 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         }
 
         return condition;
+    }
+
+    private static CatalogRequestParameters stripNot(CatalogRequestParameters params) {
+        int stringLength = params.getLocationKind().length();
+        return CatalogRequestParameters.Builder.from(params)
+                .withLocationKind(params.getLocationKind().substring(4, stringLength))
+                .withNegateLocationKindLike(true)
+                .withBoundingOfficeLike(params.getBoundingOfficeLike())
+                .withLocationType(params.getLocationType())
+                .withIdLike(params.getIdLike())
+                .withLocCatLike(params.getLocCatLike())
+                .withLocGroupLike(params.getLocGroupLike())
+                .withUnitSystem(params.getUnitSystem())
+                .withOffice(params.getOffice())
+                .withIncludeExtents(params.isIncludeExtents())
+                .withExcludeEmpty(params.isExcludeEmpty())
+                .withFilterBaseLocations(params.filterBaseLocations())
+                .withIncludeAliases(params.includeAliases())
+                .build();
     }
 
     private static Condition addCursorConditions(Condition condition, String cursorOffice, String cursorLocation) {
