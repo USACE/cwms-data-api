@@ -22,7 +22,7 @@ public class CatalogRequestParameters {
     private final String locationType;
     private final boolean includeAliases;
     private final boolean filterBaseLocations;
-    private final String excludedKinds;
+    private final boolean negateLocationKindLike;
 
     private CatalogRequestParameters(Builder builder) {
         this.office = builder.office;
@@ -39,7 +39,7 @@ public class CatalogRequestParameters {
         this.locationType = builder.locationType;
         this.includeAliases = builder.includeAliases;
         this.filterBaseLocations = builder.filterBaseLocations;
-        this.excludedKinds = builder.excludedKinds;
+        this.negateLocationKindLike = builder.negateLocationKindLike;
     }
 
     public String getBoundingOfficeLike() {
@@ -98,10 +98,9 @@ public class CatalogRequestParameters {
         return filterBaseLocations;
     }
 
-    public String getExcludedKinds() {
-        return excludedKinds;
+    public boolean isNegateLocationKindLike() {
+        return negateLocationKindLike;
     }
-
 
     public static class Builder {
         String office;
@@ -118,7 +117,7 @@ public class CatalogRequestParameters {
         String locationType;
         private boolean includeAliases = false;
         private boolean filterBaseLocations = false;
-        private String excludedKinds;
+        private boolean negateLocationKindLike = false;
 
         public Builder() {
 
@@ -194,8 +193,8 @@ public class CatalogRequestParameters {
             return this;
         }
 
-        public Builder withExcludedKinds(String excludedKinds) {
-            this.excludedKinds = excludedKinds;
+        public Builder withNegateLocationKindLike(boolean negateLocationKindLike) {
+            this.negateLocationKindLike = negateLocationKindLike;
             return this;
         }
 
@@ -215,7 +214,7 @@ public class CatalogRequestParameters {
                     .withLocationKind(params.locationKind)
                     .withLocationType(params.locationType)
                     .withFilterBaseLocations(params.filterBaseLocations)
-                    .withExcludedKinds(params.excludedKinds)
+                    .withNegateLocationKindLike(params.negateLocationKindLike)
                     ;
         }
 

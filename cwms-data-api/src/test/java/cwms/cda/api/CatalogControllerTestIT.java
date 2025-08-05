@@ -515,7 +515,8 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, "VALID_LOC_TEST-*")
-            .queryParam(EXCLUDE_KINDS, "OUTLET")
+            .queryParam(LOCATION_KIND_LIKE, "^(OUTLET)$")
+            .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
             .queryParam(FILTER_BASE_LOCATIONS, true)
         .when()
@@ -535,7 +536,8 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, "VALID_LOC_TEST-*")
-            .queryParam(EXCLUDE_KINDS, "STREAM")
+            .queryParam(LOCATION_KIND_LIKE, "^(STREAM)*$")
+            .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
             .queryParam(FILTER_BASE_LOCATIONS, true)
         .when()
@@ -556,7 +558,8 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, "VALID_LOC_TEST-*")
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
-            .queryParam(EXCLUDE_KINDS, "STREAM,OUTLET")
+            .queryParam(LOCATION_KIND_LIKE, "^(OUTLET|STREAM)*$")
+            .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
             .queryParam(FILTER_BASE_LOCATIONS, true)
         .when()
             .redirects().follow(true)
@@ -568,5 +571,4 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("entries.size()", is(0));
     }
-
 }

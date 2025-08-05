@@ -1,32 +1,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.ACCEPT;
-import static cwms.cda.api.Controllers.FILTER_BASE_LOCATIONS;
-import static cwms.cda.api.Controllers.EXCLUDE_KINDS;
-import static cwms.cda.api.Controllers.INCLUDE_ALIASES;
-import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
-import static cwms.cda.api.Controllers.CURSOR;
-import static cwms.cda.api.Controllers.EXCLUDE_EMPTY;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.INCLUDE_EXTENTS;
-import static cwms.cda.api.Controllers.LIKE;
-import static cwms.cda.api.Controllers.LOCATIONS;
-import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
-import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE;
-import static cwms.cda.api.Controllers.LOCATION_KIND_LIKE;
-import static cwms.cda.api.Controllers.LOCATION_TYPE_LIKE;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.TIMESERIES;
-import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
-import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
-import static cwms.cda.api.Controllers.UNIT_SYSTEM;
-import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.*;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -172,9 +147,8 @@ public class CatalogController implements CrudHandler {
                     + "base location. Default: false. If true, only sublocations "
                     + "locations will be returned. If false, all locations will be returned. "
                     + "Only supported for JSON format."),
-            @OpenApiParam(name = EXCLUDE_KINDS, description = "Specifies the location kind(s) to ignore "
-                + "in the response. This parameter is a comma-separated list of location kinds to ignore. "
-                + "If this parameter is not specified, all location kinds will be included in the response."),
+            @OpenApiParam(name = NEGATE_LOCATION_KIND_LIKE, description = "Whether to use the location kind "
+                    + "regular expression to exclude locations with the specified kinds. Default is false."),
             @OpenApiParam(name = LOCATION_TYPE_LIKE,
                     description = "Posix <a href=\"regexp.html\">regular expression</a> matching "
                         + "against the location type."
@@ -243,10 +217,10 @@ public class CatalogController implements CrudHandler {
             String locationKind = queryParamAsClass(ctx, new String[]{LOCATION_KIND_LIKE},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
-            String excludedKinds = ctx.queryParamAsClass(EXCLUDE_KINDS, String.class)
-                    .getOrDefault(null);
+            boolean negateLocationKind = ctx.queryParamAsClass(NEGATE_LOCATION_KIND_LIKE, Boolean.class)
+                    .getOrDefault(false);
 
-            Boolean filterBaseLocations = ctx.queryParamAsClass(FILTER_BASE_LOCATIONS, Boolean.class)
+            boolean filterBaseLocations = ctx.queryParamAsClass(FILTER_BASE_LOCATIONS, Boolean.class)
                     .getOrDefault(false);
 
             String locationType = queryParamAsClass(ctx, new String[]{LOCATION_TYPE_LIKE},
@@ -295,8 +269,8 @@ public class CatalogController implements CrudHandler {
                         .withBoundingOfficeLike(boundingOfficeLike)
                         .withLocationKind(locationKind)
                         .withLocationType(locationType)
-                        .withExcludedKinds(excludedKinds)
                         .withFilterBaseLocations(filterBaseLocations)
+                        .withNegateLocationKindLike(negateLocationKind)
                         .build();
 
                 LocationsDao dao = new LocationsDaoImpl(dsl);

@@ -24,8 +24,6 @@
 
 package cwms.cda.data.dao;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.Instant;
 
@@ -47,17 +45,12 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.DateTimeException;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
@@ -240,6 +233,24 @@ public abstract class JooqDao<T> extends Dao<T> {
         };
     }
 
+    /**
+     * Oracle supports case insensitive regexp search but the syntax for calling it is a
+     * bit weird.  This method lets Dao classes add a case-insensitive regexp search in
+     * an easy to read manner without having to worry about the syntax.
+     */
+    public static Condition caseInsensitiveNotLikeRegex(Field<String> field, String regex) {
+        return new CustomCondition() {
+            @Override
+            public void accept(org.jooq.Context<?> ctx) {
+                if (ctx.family() == ORACLE) {
+                    ctx.visit(DSL.condition("{not regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
+                } else {
+                    ctx.visit(DSL.upper(field).notLikeRegex(regex.toUpperCase()));
+                }
+            }
+        };
+    }
+
     protected static Condition filterExact(Field<String> field, String filter) {
         if (filter == null) {
             return DSL.noCondition();
@@ -260,6 +271,20 @@ public abstract class JooqDao<T> extends Dao<T> {
             return DSL.noCondition();
         }
         return caseInsensitiveLikeRegex(field, regex);
+    }
+
+    /**
+     * Oracle supports case insensitive regexp search but the syntax for calling it is a
+     * bit weird.  This method lets Dao classes add a case-insensitive regexp search in
+     * an easy to read manner without having to worry about the syntax.
+     * <p/>
+     * A null regex will return a condition that always evaluates to true
+     */
+    public static Condition caseInsensitiveNotLikeRegexNullTrue(Field<String> field, String regex) {
+        if (regex == null) {
+            return DSL.noCondition();
+        }
+        return caseInsensitiveNotLikeRegex(field, regex);
     }
 
     /**
@@ -389,12 +414,10 @@ public abstract class JooqDao<T> extends Dao<T> {
         String localizedMessage = cause.getLocalizedMessage();
 
         if (localizedMessage != null) {
-            if (localizedMessage != null) {
-                String[] parts = localizedMessage.split("\n");
-                if (parts.length > 2) {
-                    return new InvalidItemException(String.format("Invalid Time Series Description: %s is not a valid interval",
-                        parts[1]), cause);
-                }
+            String[] parts = localizedMessage.split("\n");
+            if (parts.length > 2) {
+                return new InvalidItemException(String.format("Invalid Time Series Description: %s is not a valid interval",
+                    parts[1]), cause);
             }
         }
         return new InvalidItemException("Invalid Time Series Description", cause);

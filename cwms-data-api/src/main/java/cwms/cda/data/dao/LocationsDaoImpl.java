@@ -503,19 +503,18 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID,
                 params.getBoundingOfficeLike()));
-        condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_KIND_ID,
+        if (params.isNegateLocationKindLike()) {
+            condition = condition.and(caseInsensitiveNotLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_KIND_ID,
                 params.getLocationKind()));
+        } else {
+            condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_KIND_ID,
+                params.getLocationKind()));
+        }
         condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_TYPE,
                 params.getLocationType()));
 
         if (params.filterBaseLocations()) {
             condition = condition.and(AV_LOC2.AV_LOC2.SUB_LOCATION_ID.isNotNull());
-        }
-
-        if (params.getExcludedKinds() != null && !params.getExcludedKinds().isEmpty()) {
-            for (String kind : params.getExcludedKinds().split(",")) {
-                condition = condition.and(AV_LOC2.AV_LOC2.LOCATION_KIND_ID.notEqualIgnoreCase(kind));
-            }
         }
 
         return condition;
