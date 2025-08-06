@@ -236,7 +236,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     /**
      * Oracle supports case insensitive regexp search but the syntax for calling it is a
      * bit weird.  This method lets Dao classes add a case-insensitive regexp search in
-     * an easy to read manner without having to worry about the syntax.
+     * an easy to read manner without having to worry about the syntax. Used to exclude results.
      */
     public static Condition caseInsensitiveNotLikeRegex(Field<String> field, String regex) {
         return new CustomCondition() {
@@ -276,7 +276,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     /**
      * Oracle supports case insensitive regexp search but the syntax for calling it is a
      * bit weird.  This method lets Dao classes add a case-insensitive regexp search in
-     * an easy to read manner without having to worry about the syntax.
+     * an easy to read manner without having to worry about the syntax. Used to exclude results.
      * <p/>
      * A null regex will return a condition that always evaluates to true
      */
