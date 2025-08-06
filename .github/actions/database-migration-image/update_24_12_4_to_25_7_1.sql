@@ -90,7 +90,6 @@ alter table UPLOADED_XLS_FILE_ROWS_T modify USER_ID_LAST_UPDATED varchar2(128);
 
 PROMPT ################################################################################
 PROMPT ALTERING VIEWS
-@/cwmsdb/schema/src/cwms/
 @/cwmsdb/schema/src/cwms/views/av_cwms_ts_id.sql
 @/cwmsdb/schema/src/cwms/views/av_location_level.sql
 
