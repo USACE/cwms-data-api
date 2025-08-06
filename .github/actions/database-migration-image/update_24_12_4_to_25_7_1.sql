@@ -90,39 +90,40 @@ alter table UPLOADED_XLS_FILE_ROWS_T modify USER_ID_LAST_UPDATED varchar2(128);
 
 PROMPT ################################################################################
 PROMPT ALTERING VIEWS
-@../cwms/views/av_cwms_ts_id.sql
-@../cwms/views/av_location_level.sql
+@/cwmsdb/schema/src/cwms/
+@/cwmsdb/schema/src/cwms/views/av_cwms_ts_id.sql
+@/cwmsdb/schema/src/cwms/views/av_location_level.sql
 
 PROMPT ################################################################################
 PROMPT adding Data acquisition groups
-@./25_07_01/data_acquisition
+@/schema/src/updateScripts/25_07_01/data_acquisition
 
 PROMPT ################################################################################
 PROMPT CREATING AND ALTERING TYPE SPECIFICATIONS
 select systimestamp from dual;
 
 drop type ztsv_type force;
-@../cwms/types/ztsv_type
-@../cwms/types/ztsv_entry_type
-@../cwms/types/ztsv_entry_array
+@/cwmsdb/schema/src/cwms/types/ztsv_type
+@/cwmsdb/schema/src/cwms/types/ztsv_entry_type
+@/cwmsdb/schema/src/cwms/types/ztsv_entry_array
 create or replace public synonym cwms_t_ztsv_entry for ztsv_entry_type;
 
 PROMPT ################################################################################
 PROMPT CREATING AND ALTERING TYPE BODIES
 select systimestamp from dual;
 
-@../cwms/types/loc_lvl_indicator_cond_t-body
-@../cwms/types/rating_t-body
-@../cwms/types/streamflow_meas_t-body
-@../cwms/types/streamflow_meas2_t-body
+@/cwmsdb/schema/src/cwms/types/loc_lvl_indicator_cond_t-body
+@/cwmsdb/schema/src/cwms/types/rating_t-body
+@/cwmsdb/schema/src/cwms/types/streamflow_meas_t-body
+@/cwmsdb/schema/src/cwms/types/streamflow_meas2_t-body
 
 PROMPT ################################################################################
 PROMPT UPDATING PACKAGE SPECIFICATIONS
 
-@../cwms/cwms_cache_pkg
-@../cwms/cwms_sec_pkg
-@../cwms/cwms_ts_pkg
-@../cwms/cwms_util_pkg
+@/cwmsdb/schema/src/cwms/cwms_cache_pkg
+@/cwmsdb/schema/src/cwms/cwms_sec_pkg
+@/cwmsdb/schema/src/cwms/cwms_ts_pkg
+@/cwmsdb/schema/src/cwms/cwms_util_pkg
 
 PROMPT ################################################################################
 PROMPT UPDATING PACKAGE BODIES
@@ -130,18 +131,18 @@ select systimestamp from dual;
 
 define builduser = BUILDUSER
 
-@../cwms/cwms_cache_pkg_body
-@../cwms/cwms_display_pkg_body
-@../cwms/cwms_env_pkg_body
-@../cwms/cwms_lock_pkg_body
-@../cwms/cwms_msg_pkg_body
-@../cwms/cwms_priv_pkg_body
-@../cwms/cwms_project_pkg_body
-@../cwms/cwms_sec_pkg_body
-@../cwms/cwms_rating_pkg_body
-@../cwms/cwms_shef_pkg_body
-@../cwms/cwms_ts_pkg_body
-@../cwms/cwms_util_pkg_body
+@/cwmsdb/schema/src/cwms/cwms_cache_pkg_body
+@/cwmsdb/schema/src/cwms/cwms_display_pkg_body
+@/cwmsdb/schema/src/cwms/cwms_env_pkg_body
+@/cwmsdb/schema/src/cwms/cwms_lock_pkg_body
+@/cwmsdb/schema/src/cwms/cwms_msg_pkg_body
+@/cwmsdb/schema/src/cwms/cwms_priv_pkg_body
+@/cwmsdb/schema/src/cwms/cwms_project_pkg_body
+@/cwmsdb/schema/src/cwms/cwms_sec_pkg_body
+@/cwmsdb/schema/src/cwms/cwms_rating_pkg_body
+@/cwmsdb/schema/src/cwms/cwms_shef_pkg_body
+@/cwmsdb/schema/src/cwms/cwms_ts_pkg_body
+@/cwmsdb/schema/src/cwms/cwms_util_pkg_body
 
 PROMPT ################################################################################
 PROMPT UPDATING TRIGGERS
@@ -243,7 +244,7 @@ end;
 PROMPT ################################################################################
 PROMPT RECOMPILING SCHEMA
 select systimestamp from dual;
-@./util/compile_objects
+@/cwmsdb/schema/src/updateScripts/util/compile_objects
 
 --promp ################################################################################
 --PROMPT REMAINING INVALID OBJECTS...
@@ -269,7 +270,7 @@ select systimestamp from dual;
 PROMPT ################################################################################
 PROMPT UPDATING DB_CHANGE_LOG
 select systimestamp from dual;
-@@./25_07_01/update_db_change_log
+@/cwmsdb/schema/src/updateScripts/25_07_01/update_db_change_log
 --select substr(version, 1, 10) as version,
 --       to_char(version_date, 'yyyy-mm-dd hh24:mi') as version_date,
 --       to_char(apply_date, 'yyyy-mm-dd hh24:mi') as apply_date
