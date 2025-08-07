@@ -74,9 +74,28 @@ alter table at_project_lock modify os_user varchar2(128);
 alter table at_sec_cwms_users modify userid varchar2(128);
 alter table at_sec_cwms_users modify createdby varchar2(128);
 -- at_sec_cwms_users.principle_name takes more work since it's used in a virtual column
-alter table at_sec_cwms_users drop column edipi;
-alter table at_sec_cwms_users modify principle_name varchar2(512);
-alter table at_sec_cwms_users add (edipi number(*,0) generated always as (case when length(principle_name)>10 then case  when  regexp_like (substr(principle_name,1,10),'^[[:digit:]]+$') then to_number(substr(principle_name,1,10)) else null end  else null end) virtual);alter table at_sec_locked_users modify username varchar2(128);
+declare
+   principal_len integer;
+begin
+   -- this is run as the cwms_20 user, use user_ tables for the data dictionary
+   select data_length into principal_len from user_tab_columns where table_name = 'AT_SEC_CWMS_USERS' and COLUMN_NAME='PRINCIPLE_NAME'; 
+   if principal_len < 512 then
+      execute immediate 'alter table at_sec_cwms_users drop column edipi';
+      execute immediate 'alter table at_sec_cwms_users modify principle_name varchar2(512)';
+      execute immediate 'alter table at_sec_cwms_users add 
+         (edipi number(*,0) generated always as 
+            (case 
+               when length(principle_name)>10 then 
+                  case 
+                     when regexp_like (substr(principle_name,1,10),''^[[:digit:]]+$'') then to_number(substr(principle_name,1,10)) 
+                     else null 
+                  end
+                  else null end) 
+         virtual)';
+   end if;
+end;
+/
+
 alter table at_sec_locked_users modify username varchar2(128);
 alter table at_sec_service_user modify userid varchar2(128);
 alter table at_sec_session modify userid varchar2(128);
@@ -269,7 +288,8 @@ select systimestamp from dual;
 PROMPT ################################################################################
 PROMPT UPDATING DB_CHANGE_LOG
 select systimestamp from dual;
-@/cwmsdb/schema/src/updateScripts/25_07_01/update_db_change_log
+update cwms_db_change_log set apply_date = systimestamp;
+--@/cwmsdb/schema/src/updateScripts/25_07_01/update_db_change_log
 --select substr(version, 1, 10) as version,
 --       to_char(version_date, 'yyyy-mm-dd hh24:mi') as version_date,
 --       to_char(apply_date, 'yyyy-mm-dd hh24:mi') as apply_date
