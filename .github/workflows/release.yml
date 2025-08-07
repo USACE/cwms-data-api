@@ -87,7 +87,7 @@ jobs:
         uses: docker/setup-buildx-action@v3.11.1
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5.7.0
+        uses: docker/metadata-action@v5.8.0
         with:
           # this is triggered by the schedule so we want to actually use the checked out information
           # and not the context from the workflow itself.
