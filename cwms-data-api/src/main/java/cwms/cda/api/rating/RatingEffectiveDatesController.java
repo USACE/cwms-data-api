@@ -6,9 +6,9 @@ import static com.codahale.metrics.MetricRegistry.name;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import static cwms.cda.api.Controllers.OFFICE_MASK;
+import static cwms.cda.api.Controllers.RATING_ID_MASK;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.SPEC_ID_MASK;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 import cwms.cda.data.dao.RatingSpecDao;
@@ -44,7 +44,7 @@ public final class RatingEffectiveDatesController implements Handler {
             queryParams = {
                     @OpenApiParam(name = OFFICE_MASK, description =
                             "Office Id used to filter the results."),
-                    @OpenApiParam(name = SPEC_ID_MASK, description =
+                    @OpenApiParam(name = RATING_ID_MASK, description =
                             "Spec Id used to filter the results. " +
                             "Defaults to '*'")
             },
@@ -59,7 +59,7 @@ public final class RatingEffectiveDatesController implements Handler {
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         String officeIdMask = ctx.queryParam(OFFICE_MASK);
-        String specIdMask = ctx.queryParamAsClass(SPEC_ID_MASK, String.class).getOrDefault("*");
+        String specIdMask = ctx.queryParamAsClass(RATING_ID_MASK, String.class).getOrDefault("*");
         try (Timer.Context ignored = markAndTime()) {
             DSLContext dsl = getDslContext(ctx);
             RatingSpecDao dao = new RatingSpecDao(dsl);

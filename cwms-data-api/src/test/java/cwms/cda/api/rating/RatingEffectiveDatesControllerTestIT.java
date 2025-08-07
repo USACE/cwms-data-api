@@ -172,7 +172,7 @@ final class RatingEffectiveDatesControllerTestIT extends DataApiTestIT {
             .contentType(Formats.XMLV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE_MASK, SPK)
-            .queryParam(Controllers.SPEC_ID_MASK, EXISTING_SPEC)
+            .queryParam(Controllers.RATING_ID_MASK, EXISTING_SPEC)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
