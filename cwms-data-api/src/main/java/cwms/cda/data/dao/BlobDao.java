@@ -175,12 +175,12 @@ public class BlobDao extends JooqDao<Blob> {
         String cursorOffice = null;
         String cursorId = null;
 
-        AV_CWMS_MEDIA_TYPE cwmsMediaType = AV_CWMS_MEDIA_TYPE.AV_CWMS_MEDIA_TYPE;
-        AV_OFFICE vOffice = AV_OFFICE.AV_OFFICE;
+        AV_CWMS_MEDIA_TYPE cwmsMediaType = AV_CWMS_MEDIA_TYPE.AV_CWMS_MEDIA_TYPE.as("cmt");
+        AV_OFFICE vOffice = AV_OFFICE.AV_OFFICE.as("vo");
 
         // 2025-07-28 AT_BLOB does not seem to be in the codegen but I'd still like to use the DSL style.
         // Manually create the blob table and fields.
-        Table<?> atBlob = table(name("CWMS_20", "AT_BLOB"));
+        Table<?> atBlob = table(name("CWMS_20", "AT_BLOB")).as("bt");
         Field<String> blobIdFld = field(name(atBlob.getName(), ID), String.class);
         Field<String> descFld = field(name(atBlob.getName(), DESCRIPTION), String.class);
         Field<Long> officeCodeFld = field(name(atBlob.getName(), OFFICE_CODE), Long.class);
