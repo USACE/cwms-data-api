@@ -106,6 +106,7 @@ public final class Controllers {
     public static final String START = "start";
     public static final String RATING_ID_MASK = "rating-id-mask";
     public static final String RATING_ID = "rating-id";
+    public static final String SPEC_ID_MASK = "spec-id-mask";
     public static final String TEMPLATE_ID = "template-id";
     public static final String TEMPLATE_ID_MASK = "template-id-mask";
     public static final String STORE_TEMPLATE = "store-template";

@@ -31,6 +31,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
+import cwms.cda.api.rating.RatingEffectiveDatesController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -733,6 +734,7 @@ public class ApiServlet extends HttpServlet {
         cdaCrudCache("/ratings/metadata/{rating-id}",
                 new RatingMetadataController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         get("/ratings/{rating-id}/latest", new RatingLatestController(metrics));
+        get("/ratings/effective-dates", new RatingEffectiveDatesController(metrics));
         cdaCrudCache("/ratings/{rating-id}",
                 new RatingController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         addRateLimit(rateTs, requiredRoles);
