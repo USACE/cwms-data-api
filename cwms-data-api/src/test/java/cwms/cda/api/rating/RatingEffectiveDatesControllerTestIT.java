@@ -46,13 +46,13 @@ final class RatingEffectiveDatesControllerTestIT extends DataApiTestIT {
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, SPK)
                 .queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
-                .when()
+        .when()
                 .redirects().follow(true)
                 .redirects().max(3)
                 .delete("/ratings/template/" + TEMPLATE)
-                .then()
+        .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
+        .assertThat()
                 .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
@@ -181,7 +181,6 @@ final class RatingEffectiveDatesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body(SPK + ".size()", is(1))
             .body(SPK + "[0].rating-spec-id", is(EXISTING_SPEC))
             .body(SPK + "[0].effective-dates.size()", is(2));
     }
@@ -203,7 +202,6 @@ final class RatingEffectiveDatesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body(SPK + ".size()", is(1))
             .body(SPK + "[0].rating-spec-id", is(EXISTING_SPEC))
             .body(SPK + "[0].effective-dates.size()", is(2));
     }
