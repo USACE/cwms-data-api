@@ -169,7 +169,7 @@ final class RatingEffectiveDatesControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .contentType(Formats.XMLV2)
+            .contentType(Formats.JSONV1)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE_MASK, SPK)
             .queryParam(Controllers.RATING_ID_MASK, EXISTING_SPEC)
@@ -191,7 +191,7 @@ final class RatingEffectiveDatesControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .contentType(Formats.XMLV2)
+            .contentType(Formats.JSONV1)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE_MASK, SPK)
         .when()
