@@ -413,11 +413,11 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         );
     }
 
-    public RatingEffectiveDatesMap retrieveSpecEffectiveDates(String officeIdMask, String specIdMask) {
+    public RatingEffectiveDatesMap retrieveSpecEffectiveDates(String officeIdMask, String specIdMask, Instant begin, Instant end) {
         return connectionResult(dsl, conn -> {
             //office->spec->dates
             NavigableMap<String, NavigableMap<String, NavigableSet<Instant>>> specDateMap = new TreeMap<>();
-            ResultSet rs = catRatings(conn, officeIdMask, specIdMask);
+            ResultSet rs = catRatings(conn, officeIdMask, specIdMask, begin, end);
             OracleTypeMap.checkMetaData(rs.getMetaData(), RATINGS_COLUMN_LIST, "Ratings");
             while(rs.next()) {
                 String officeId = rs.getString(OFFICE_ID);
@@ -456,7 +456,11 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         return builder.build();
     }
 
-    private ResultSet catRatings(Connection conn, String officeIdMask, String specIdMask) throws SQLException {
+    private ResultSet catRatings(Connection conn, String officeIdMask, String specIdMask, Instant begin, Instant end) throws SQLException {
+
+        Timestamp pEffectiveDateStart = begin == null ? null : Timestamp.from(begin);
+        Timestamp pEffectiveDateEnd = end == null ? null : Timestamp.from(end);
+
         // This object does not need to be closed, it eagerly fetches the data from the statement.
         CachedRowSet output = RowSetProvider.newFactory()
                 .createCachedRowSet();
@@ -465,9 +469,9 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         {
             statement.registerOutParameter(1, Types.REF_CURSOR);
             statement.setString(2, specIdMask);
-            statement.setTimestamp(3, null, GMT_CALENDAR);
-            statement.setTimestamp(4, null, GMT_CALENDAR);
-            statement.setString(5, null);
+            statement.setTimestamp(3, pEffectiveDateStart, GMT_CALENDAR);
+            statement.setTimestamp(4, pEffectiveDateEnd, GMT_CALENDAR);
+            statement.setString(5, "UTC");
             statement.setString(6, officeIdMask);
             statement.execute();
 
