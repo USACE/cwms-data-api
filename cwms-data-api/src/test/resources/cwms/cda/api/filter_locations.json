@@ -1,9 +1,9 @@
 [
   {
-    "name": "VALID_LOC_TEST",
+    "name": "Pine Flat Area",
     "latitude": 38.5816,
     "longitude": -121.4944,
-    "public-name": "VALID_LOC_TEST",
+    "public-name": "Pine Flat Area",
     "long-name": "LOCATION_TEST",
     "description": "For Testing",
     "timezone-name": "UTC",
@@ -21,10 +21,10 @@
     "bounding-office-id": "SPK",
     "office-id": "SPK"
   }, {
-    "name": "VALID_LOC_TEST-VALID_LOC",
+    "name": "Pine Flat Area-STREAM1",
     "latitude": 38.5816,
     "longitude": -121.4944,
-    "public-name": "VALID_LOC_TEST-VALID_LOC",
+    "public-name": "Pine Flat Area-STREAM1",
     "long-name": "VALID LOCATION_TEST",
     "description": "For Testing",
     "timezone-name": "UTC",
@@ -42,14 +42,14 @@
     "bounding-office-id": "SPK",
     "office-id": "SPK"
   }, {
-    "name": "VALID_LOC_TEST-VALID_LOC2",
+    "name": "Pine Flat Area-BASIN1",
     "latitude": 38.5816,
     "longitude": -121.4944,
-    "public-name": "VALID_LOC_TEST-VALID_LOC2",
+    "public-name": "Pine Flat Area-BASIN1",
     "long-name": "VALID LOCATION_TEST",
     "description": "For Testing",
     "timezone-name": "UTC",
-    "location-kind": "OUTLET",
+    "location-kind": "BASIN",
     "nation": "US",
     "state-initial": "CA",
     "county-name": "Yolo",
@@ -63,10 +63,10 @@
     "bounding-office-id": "SPK",
     "office-id": "SPK"
   }, {
-    "name": "VALID_LOC_TEST-VALID_LOC3",
+    "name": "Pine Flat Area-STREAM2",
     "latitude": 38.5816,
     "longitude": -121.4944,
-    "public-name": "VALID_LOC_TEST-VALID_LOC3",
+    "public-name": "Pine Flat Area-STREAM2",
     "long-name": "VALID LOCATION_TEST",
     "description": "For Testing",
     "timezone-name": "UTC",

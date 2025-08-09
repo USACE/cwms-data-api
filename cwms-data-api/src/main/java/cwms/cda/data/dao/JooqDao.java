@@ -224,28 +224,19 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new CustomCondition() {
             @Override
             public void accept(org.jooq.Context<?> ctx) {
-                if (ctx.family() == ORACLE) {
-                    ctx.visit(DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
+                if (regex.toUpperCase().startsWith("NOT:")) {
+                    String finalRegex = regex.substring(4);
+                    if (ctx.family() == ORACLE) {
+                        ctx.visit(DSL.condition("{not regexp_like}({0}, {1}, 'i')", field, DSL.val(finalRegex)));
+                    } else {
+                        ctx.visit(DSL.upper(field).notLikeRegex(finalRegex.toUpperCase()));
+                    }
                 } else {
-                    ctx.visit(DSL.upper(field).likeRegex(regex.toUpperCase()));
-                }
-            }
-        };
-    }
-
-    /**
-     * Oracle supports case insensitive regexp search but the syntax for calling it is a
-     * bit weird.  This method lets Dao classes add a case-insensitive regexp search in
-     * an easy to read manner without having to worry about the syntax. Used to exclude results.
-     */
-    public static Condition caseInsensitiveNotLikeRegex(Field<String> field, String regex) {
-        return new CustomCondition() {
-            @Override
-            public void accept(org.jooq.Context<?> ctx) {
-                if (ctx.family() == ORACLE) {
-                    ctx.visit(DSL.condition("{not regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
-                } else {
-                    ctx.visit(DSL.upper(field).notLikeRegex(regex.toUpperCase()));
+                    if (ctx.family() == ORACLE) {
+                        ctx.visit(DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
+                    } else {
+                        ctx.visit(DSL.upper(field).likeRegex(regex.toUpperCase()));
+                    }
                 }
             }
         };
@@ -271,20 +262,6 @@ public abstract class JooqDao<T> extends Dao<T> {
             return DSL.noCondition();
         }
         return caseInsensitiveLikeRegex(field, regex);
-    }
-
-    /**
-     * Oracle supports case insensitive regexp search but the syntax for calling it is a
-     * bit weird.  This method lets Dao classes add a case-insensitive regexp search in
-     * an easy to read manner without having to worry about the syntax. Used to exclude results.
-     * <p/>
-     * A null regex will return a condition that always evaluates to true
-     */
-    public static Condition caseInsensitiveNotLikeRegexNullTrue(Field<String> field, String regex) {
-        if (regex == null) {
-            return DSL.noCondition();
-        }
-        return caseInsensitiveNotLikeRegex(field, regex);
     }
 
     /**

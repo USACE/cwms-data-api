@@ -6,11 +6,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import static cwms.cda.api.Controllers.*;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.data.dao.StreamDao;
+import cwms.cda.data.dao.basin.BasinDao;
+import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.basin.Basin;
 import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
+import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -54,6 +60,9 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     public static final String EVENS = "Evens";
     public static final String TEST_CATEGORY = "Test Category";
     ////
+
+    private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
+    private static final List<Basin> BASINS_CREATED = new ArrayList<>();
 
     @BeforeAll
     static void setup_data() throws Exception {
@@ -101,6 +110,24 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         });
     }
 
+    private static void createStream(Stream stream) throws SQLException {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            StreamDao streamDao = new StreamDao(dsl);
+            streamDao.storeStream(stream, true);
+            STREAMS_CREATED.add(stream);
+        });
+    }
+
+    private static void createBasin(Basin basin) throws SQLException {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            BasinDao basinDao = new BasinDao(dsl);
+            basinDao.storeBasin(basin);
+            BASINS_CREATED.add(basin);
+        });
+    }
+
     private static void deleteProject(String id, String office) throws SQLException {
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
             DSLContext dsl = dslContext(c, OFFICE);
@@ -110,10 +137,32 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         });
     }
 
+    private static void deleteStream(CwmsId streamId) throws SQLException {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            StreamDao streamDao = new StreamDao(dsl);
+            streamDao.deleteStream(streamId.getOfficeId(), streamId.getName(), DeleteRule.DELETE_ALL);
+        });
+    }
+
+    private static void deleteBasin(CwmsId basinId) throws SQLException {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            BasinDao basinDao = new BasinDao(dsl);
+            basinDao.deleteBasin(basinId, DeleteRule.DELETE_ALL);
+        });
+    }
+
     @AfterAll
     static void deload_data() throws Exception {
         loadSqlDataFromResource("cwms/cda/data/sql/ts_catalog_cleanup.sql");
         deleteProject("Flat Project", OFFICE);
+        for (Basin basin : BASINS_CREATED) {
+            deleteBasin(basin.getBasinId());
+        }
+        for (Stream stream : STREAMS_CREATED) {
+            deleteStream(stream.getId());
+        }
     }
 
     @Test
@@ -449,7 +498,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         String officeId = "SPK";
 
         String json = loadResourceAsString("cwms/cda/api/filter_locations.json");
-        ContentType contentType = new ContentType(Formats.JSONV2);
+        ContentType contentType = new ContentType(Formats.JSON);
         List<Location> locations = Formats.parseContentList(contentType, json, Location.class);
 
         String baseLocationName = locations.get(0).getName();
@@ -462,17 +511,29 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // create sub-location
         createLocation(subLocationName, true, officeId, locations.get(1).getLocationKind());
 
+        String downStreamJson1 = loadResourceAsString("cwms/cda/api/loc_filter_stream1.json");
+        Stream stream1 = Formats.parseContent(contentType, downStreamJson1, Stream.class);
+        createStream(stream1);
+
         String subLocation2Name = locations.get(2).getName();
 
         // create second sub-location
         createLocation(subLocation2Name, true, officeId, locations.get(2).getLocationKind());
+
+        String basinJson = loadResourceAsString("cwms/cda/api/loc_filter_basin.json");
+        Basin basin = Formats.parseContent(contentType, basinJson, Basin.class);
+        createBasin(basin);
 
         String subLocation3Name = locations.get(3).getName();
 
         // create second sub-location
         createLocation(subLocation3Name, true, officeId, locations.get(3).getLocationKind());
 
-        loadSqlDataFromResource("cwms/cda/data/sql/set_test_filter_loc_kinds.sql");
+        String downStreamJson2 = loadResourceAsString("cwms/cda/api/loc_filter_stream2.json");
+        Stream stream2 = Formats.parseContent(contentType, downStreamJson2, Stream.class);
+        createStream(stream2);
+
+        String stringToMatch = String.format("%s-.*", baseLocationName);
 
         // get all valid locations
         given()
@@ -480,7 +541,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
-            .queryParam(LIKE, "VALID_LOC_TEST*")
+            .queryParam(LIKE, String.format("%s*", baseLocationName))
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
         .when()
             .redirects().follow(true)
@@ -502,9 +563,8 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
-            .queryParam(LIKE, "VALID_LOC_TEST-*")
+            .queryParam(LIKE, stringToMatch)
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
-            .queryParam(FILTER_BASE_LOCATIONS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -524,11 +584,10 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
-            .queryParam(LIKE, "VALID_LOC_TEST-*")
-            .queryParam(LOCATION_KIND_LIKE, "^(OUTLET)$")
+            .queryParam(LIKE, stringToMatch)
+            .queryParam(LOCATION_KIND_LIKE, "^(BASIN)$")
             .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
-            .queryParam(FILTER_BASE_LOCATIONS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -547,11 +606,10 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
-            .queryParam(LIKE, "VALID_LOC_TEST-*")
+            .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "^(STREAM)*$")
             .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
-            .queryParam(FILTER_BASE_LOCATIONS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -569,10 +627,9 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
-            .queryParam(LIKE, "VALID_LOC_TEST-*")
+            .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "NOT:^(STREAM)*$")
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
-            .queryParam(FILTER_BASE_LOCATIONS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -590,10 +647,9 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
-            .queryParam(LIKE, "VALID_LOC_TEST-*")
+            .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "NOT:^(STREAM)*$")
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
-            .queryParam(FILTER_BASE_LOCATIONS, true)
             .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
         .when()
             .redirects().follow(true)
@@ -612,11 +668,10 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
-            .queryParam(LIKE, "VALID_LOC_TEST-*")
+            .queryParam(LIKE, stringToMatch)
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
-            .queryParam(LOCATION_KIND_LIKE, "^(OUTLET|STREAM)*$")
+            .queryParam(LOCATION_KIND_LIKE, "^(BASIN|STREAM)*$")
             .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
-            .queryParam(FILTER_BASE_LOCATIONS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
