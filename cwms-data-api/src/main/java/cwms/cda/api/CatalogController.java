@@ -151,9 +151,7 @@ public class CatalogController implements CrudHandler {
                     + "regular expression to exclude locations with the specified kinds. Default is false."),
             @OpenApiParam(name = LOCATION_TYPE_LIKE,
                     description = "Posix <a href=\"regexp.html\">regular expression</a> matching "
-                        + "against the location type. When prepended with `NOT:`, this parameter is treated as "
-                        + "an exclusion filter (NOT LIKE), sharing the same effect as the "
-                        + "`NEGATE_LOCATION_KIND_LIKE` parameter."
+                        + "against the location type."
                 ),
             @OpenApiParam(name = INCLUDE_ALIASES, type = Boolean.class,
                     description = "Whether to add aliases to the catalog entries. "
