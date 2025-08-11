@@ -1,0 +1,26 @@
+{
+  "SPK": [
+    {
+      "rating-spec-id": "Abc.Stage;Flow.V1.V1",
+      "effective-dates": [
+        "2020-03-01T00:00:00Z",
+        "2021-03-01T00:00:00Z"
+      ]
+    },
+    {
+      "rating-spec-id": "Abc2.Stage;Flow.V1.V1",
+      "effective-dates": [
+        "2020-03-02T00:00:00Z",
+        "2021-03-02T00:00:00Z"
+      ]
+    }
+  ],
+  "SWT": [
+    {
+      "rating-spec-id": "Xyz.Stage2;Flow.V2.V1",
+      "effective-dates": [
+        "2022-01-01T00:00:00Z"
+      ]
+    }
+  ]
+}

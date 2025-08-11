@@ -98,7 +98,7 @@ import org.jooq.DSLContext;
 
 public class RatingController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingController.class.getName());
-    private static final String TAG = "Ratings";
+    static final String TAG = "Ratings";
 
     private final MetricRegistry metrics;
 
