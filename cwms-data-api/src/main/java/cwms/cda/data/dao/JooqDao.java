@@ -194,7 +194,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             connection.setClientInfo("OCSID.ACTION", ctx.method());
             connection.setClientInfo("OCSID.CLIENTID", ctx.url().replace(ctx.path(), "") + ctx.contextPath());
         } catch (SQLClientInfoException ex) {
-            logger.atWarning()
+            logger.atFinest() // this is usually useless information
                     .withCause(ex)
                     .log("Unable to set client info on connection.");
         }
