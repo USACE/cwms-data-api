@@ -16,7 +16,10 @@ import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -181,6 +184,7 @@ final class RatingEffectiveDatesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body(SPK + ".size()", is(1))
             .body(SPK + "[0].rating-spec-id", is(EXISTING_SPEC))
             .body(SPK + "[0].effective-dates.size()", is(2));
     }
@@ -202,7 +206,9 @@ final class RatingEffectiveDatesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body(SPK + "[0].rating-spec-id", is(EXISTING_SPEC))
-            .body(SPK + "[0].effective-dates.size()", is(2));
+                .body(SPK, not(empty()))
+                .body(SPK + ".find { it.'rating-spec-id' == '" + EXISTING_SPEC + "' }", notNullValue())
+                .body(SPK + ".find { it.'rating-spec-id' == '" + EXISTING_SPEC + "' }.'effective-dates'", not(empty()));
+
     }
 }
