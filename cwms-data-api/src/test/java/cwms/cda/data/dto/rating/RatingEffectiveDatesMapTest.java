@@ -24,7 +24,7 @@ final class RatingEffectiveDatesMapTest {
                 this.getClass().getResourceAsStream("/cwms/cda/data/dto/rating/rating_effective_dates.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        ContentType contentType = new ContentType(Formats.JSON);
+        ContentType contentType = new ContentType(Formats.JSONV2);
         RatingEffectiveDatesMap deserialized = Formats.parseContent(contentType, json, RatingEffectiveDatesMap.class);
         Map<String, List<RatingSpecEffectiveDates>> expectedMap = new HashMap<>();
         expectedMap.put("SPK", Arrays.asList(
@@ -49,7 +49,7 @@ final class RatingEffectiveDatesMapTest {
                         .build()
         ));
         RatingEffectiveDatesMap expected = new RatingEffectiveDatesMap.Builder()
-                .withOfficeToSpecDatesMap(expectedMap)
+                .withOfficeToSpecDates(expectedMap)
                 .build();
         DTOMatch.assertMatch(expected, deserialized);
     }
@@ -79,9 +79,9 @@ final class RatingEffectiveDatesMapTest {
                         .build()
         ));
         RatingEffectiveDatesMap dto = new RatingEffectiveDatesMap.Builder()
-                .withOfficeToSpecDatesMap(expectedMap)
+                .withOfficeToSpecDates(expectedMap)
                 .build();
-        ContentType contentType = new ContentType(Formats.JSON);
+        ContentType contentType = new ContentType(Formats.JSONV2);
         String serialized = Formats.format(contentType, dto);
 
         RatingEffectiveDatesMap deserialized = Formats.parseContent(contentType, serialized, RatingEffectiveDatesMap.class);

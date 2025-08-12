@@ -67,22 +67,22 @@ class RatingSpecDaoTest {
         officeToSpecDatesMap.put("SWT", specDatesMap2);
         RatingEffectiveDatesMap result = RatingSpecDao.buildRatingEffectiveDatesMap(officeToSpecDatesMap);
         assertNotNull(result);
-        assertFalse(result.getOfficeToSpecDatesMap().isEmpty());
-        assertFalse(result.getOfficeToSpecDatesMap().get("SPK").isEmpty());
-        assertFalse(result.getOfficeToSpecDatesMap().get("SWT").isEmpty());
-        RatingSpecEffectiveDates spec1Dates = result.getOfficeToSpecDatesMap().get("SPK").stream()
+        assertFalse(result.getOfficeToSpecDates().isEmpty());
+        assertFalse(result.getOfficeToSpecDates().get("SPK").isEmpty());
+        assertFalse(result.getOfficeToSpecDates().get("SWT").isEmpty());
+        RatingSpecEffectiveDates spec1Dates = result.getOfficeToSpecDates().get("SPK").stream()
                 .filter(spec -> spec.getRatingSpecId().equals("SPEC1"))
                 .findFirst()
                 .orElse(null);
-        RatingSpecEffectiveDates spec2Dates = result.getOfficeToSpecDatesMap().get("SPK").stream()
+        RatingSpecEffectiveDates spec2Dates = result.getOfficeToSpecDates().get("SPK").stream()
                 .filter(spec -> spec.getRatingSpecId().equals("SPEC2"))
                 .findFirst()
                 .orElse(null);
-        RatingSpecEffectiveDates specADates = result.getOfficeToSpecDatesMap().get("SWT").stream()
+        RatingSpecEffectiveDates specADates = result.getOfficeToSpecDates().get("SWT").stream()
                 .filter(spec -> spec.getRatingSpecId().equals("SPECA"))
                 .findFirst()
                 .orElse(null);
-        RatingSpecEffectiveDates specBDates = result.getOfficeToSpecDatesMap().get("SWT").stream()
+        RatingSpecEffectiveDates specBDates = result.getOfficeToSpecDates().get("SWT").stream()
                 .filter(spec -> spec.getRatingSpecId().equals("SPECB"))
                 .findFirst()
                 .orElse(null);

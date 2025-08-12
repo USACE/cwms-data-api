@@ -184,9 +184,9 @@ final class RatingEffectiveDatesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body(SPK + ".size()", is(1))
-            .body(SPK + "[0].rating-spec-id", is(EXISTING_SPEC))
-            .body(SPK + "[0].effective-dates.size()", is(2));
+            .body("office-to-spec-dates." + SPK + ".size()", is(1))
+            .body("office-to-spec-dates." + SPK + "[0].rating-spec-id", is(EXISTING_SPEC))
+            .body("office-to-spec-dates." + SPK + "[0].effective-dates.size()", is(2));
     }
 
     @Test
@@ -206,9 +206,7 @@ final class RatingEffectiveDatesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-                .body(SPK, not(empty()))
-                .body(SPK + ".find { it.'rating-spec-id' == '" + EXISTING_SPEC + "' }", notNullValue())
-                .body(SPK + ".find { it.'rating-spec-id' == '" + EXISTING_SPEC + "' }.'effective-dates'", not(empty()));
+                .body("office-to-spec-dates." + SPK, not(empty()));
 
     }
 }

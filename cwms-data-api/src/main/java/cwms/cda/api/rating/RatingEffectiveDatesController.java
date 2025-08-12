@@ -61,7 +61,7 @@ public final class RatingEffectiveDatesController implements Handler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(type = Formats.JSONV1, from = RatingEffectiveDatesMap.class)
+                            @OpenApiContent(type = Formats.JSONV2, from = RatingEffectiveDatesMap.class)
                     })
             },
             description = "Returns mapping of office -> spec id -> effective date-times for all matching offices and spec ids.",

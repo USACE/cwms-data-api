@@ -434,7 +434,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
 
     //package scoped for unit testing
     static RatingEffectiveDatesMap buildRatingEffectiveDatesMap(NavigableMap<String, NavigableMap<String, NavigableSet<Instant>>> specDateMap) {
-        RatingEffectiveDatesMap.Builder builder = new RatingEffectiveDatesMap.Builder();
+        Map<String, List<RatingSpecEffectiveDates>> officeToSpecDatesMap = new LinkedHashMap<>(specDateMap.size());
         for(Map.Entry<String, NavigableMap<String, NavigableSet<Instant>>> entry : specDateMap.entrySet()) {
             String officeId = entry.getKey();
             List<RatingSpecEffectiveDates> specEffectiveDatesForOffice = new ArrayList<>();
@@ -451,9 +451,11 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                         .build();
                 specEffectiveDatesForOffice.add(datesForSpec);
             }
-            builder.withOfficeToSpecDates(officeId, specEffectiveDatesForOffice);
+            officeToSpecDatesMap.put(officeId, specEffectiveDatesForOffice);
         }
-        return builder.build();
+        return new RatingEffectiveDatesMap.Builder()
+                .withOfficeToSpecDates(officeToSpecDatesMap)
+                .build();
     }
 
     private ResultSet catRatings(Connection conn, String officeIdMask, String specIdMask, Instant begin, Instant end) throws SQLException {
