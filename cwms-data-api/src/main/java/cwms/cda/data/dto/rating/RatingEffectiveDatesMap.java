@@ -1,7 +1,5 @@
 package cwms.cda.data.dto.rating;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -14,33 +12,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = RatingEffectiveDatesMap.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class RatingEffectiveDatesMap extends CwmsDTOBase {
-    private final Map<String, List<RatingSpecEffectiveDates>> officeToSpecDatesMap;
+
+    private final Map<String, List<RatingSpecEffectiveDates>> officeToSpecDates;
 
     public RatingEffectiveDatesMap(Builder builder) {
-        this.officeToSpecDatesMap = builder.officeToSpecDatesMap;
+        this.officeToSpecDates = builder.officeToSpecDates;
     }
 
-    @JsonAnyGetter
-    public Map<String, List<RatingSpecEffectiveDates>> getOfficeToSpecDatesMap() {
-        return officeToSpecDatesMap;
+    public Map<String, List<RatingSpecEffectiveDates>> getOfficeToSpecDates() {
+        return officeToSpecDates;
     }
 
     public static class Builder {
-        private Map<String, List<RatingSpecEffectiveDates>> officeToSpecDatesMap = new HashMap<>();
+        private Map<String, List<RatingSpecEffectiveDates>> officeToSpecDates = new HashMap<>();
 
-        @JsonAnySetter
-        public Builder withOfficeToSpecDates(String officeId, List<RatingSpecEffectiveDates> specDates) {
-            this.officeToSpecDatesMap.put(officeId, specDates);
-            return this;
-        }
-
-        public Builder withOfficeToSpecDatesMap(Map<String, List<RatingSpecEffectiveDates>> officeToSpecDatesMap) {
-            this.officeToSpecDatesMap = officeToSpecDatesMap;
+        public Builder withOfficeToSpecDates(Map<String, List<RatingSpecEffectiveDates>> officeToSpecDates) {
+            this.officeToSpecDates = officeToSpecDates;
             return this;
         }
 
@@ -48,4 +40,5 @@ public final class RatingEffectiveDatesMap extends CwmsDTOBase {
             return new RatingEffectiveDatesMap(this);
         }
     }
+
 }

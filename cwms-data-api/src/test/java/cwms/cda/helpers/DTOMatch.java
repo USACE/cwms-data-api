@@ -605,9 +605,9 @@ public final class DTOMatch {
 
     public static void assertMatch(RatingEffectiveDatesMap first, RatingEffectiveDatesMap second) {
         assertAll(
-            () -> assertEquals(first.getOfficeToSpecDatesMap().keySet(), second.getOfficeToSpecDatesMap().keySet(), "Office Ids do not match"),
-            () -> first.getOfficeToSpecDatesMap().forEach((officeId, firstDates) -> {
-                List<RatingSpecEffectiveDates> secondDates = second.getOfficeToSpecDatesMap().get(officeId);
+            () -> assertEquals(first.getOfficeToSpecDates().keySet(), second.getOfficeToSpecDates().keySet(), "Office Ids do not match"),
+            () -> first.getOfficeToSpecDates().forEach((officeId, firstDates) -> {
+                List<RatingSpecEffectiveDates> secondDates = second.getOfficeToSpecDates().get(officeId);
                 assertEquals(firstDates.size(), secondDates.size(), "Number of specs do not match for office ID: " + officeId);
                 assertAll(IntStream.range(0, firstDates.size())
                     .mapToObj(i -> () -> assertMatch(firstDates.get(i), secondDates.get(i))));
