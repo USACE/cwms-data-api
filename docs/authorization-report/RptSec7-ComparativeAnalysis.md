@@ -293,7 +293,7 @@ flowchart TB
     Client --> AuthService
     AuthService --> OPA
     OPA --> Cache
-    AuthService -->|"+ x-cwms-auth-context header"| API
+    AuthService -->|"Set header<br/>x-cwms-auth-context"| API
     API --> Helper
     Helper -->|"Parse header & set context"| VPD
     Helper -.->|"Future migration"| RLS
@@ -344,3 +344,4 @@ OPA with policy rules provides the optimal solution for CWMS authorization needs
 5. **Security**: Default-deny stance with comprehensive audit trails
 
 The policy-driven approach enables CWMS to implement sophisticated authorization rules while maintaining clean separation of concerns and preparing for future cloud migration. This positions the system for long-term success and adaptability as requirements evolve.
+
