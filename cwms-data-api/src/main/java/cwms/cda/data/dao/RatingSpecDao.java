@@ -40,6 +40,7 @@ import java.sql.Types;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -74,7 +75,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_RATING;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 
 public class RatingSpecDao extends JooqDao<RatingSpec> {
-    public static final Calendar GMT_CALENDAR = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    public static final Calendar GMT_CALENDAR = getGmtCalendar();
     private static final Logger logger = Logger.getLogger(RatingSpecDao.class.getName());
     public static final String OFFICE_ID = "OFFICE_ID";
     public static final String SPECIFICATION_ID = "SPECIFICATION_ID";
@@ -94,6 +95,12 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         return Arrays.stream(items)
                 .sorted()
                 .collect(toList());
+    }
+
+    private static Calendar getGmtCalendar() {
+        Calendar retVal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        retVal.set(Calendar.MILLISECOND, 0); //this is what the OracleTypeMap does, without this we get back some millisecond offset that is incorrect
+        return retVal;
     }
 
     public RatingSpecDao(DSLContext dsl) {
