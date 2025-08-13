@@ -22,7 +22,7 @@ The report is intended for technical stakeholders, system architects, and decisi
 ## Table of Contents
 
 - [Current Oracle VPD Architecture & Analysis](./RptSec1-VPD.md)
-- [Inventory & Analyze the CWMS-Data-API Code](./RptSec2-API.md)
+- [Inventory & Analysis the CWMS-Data-API Code](./RptSec2-API.md)
 - [Gather Use-Cases & Dependencies](./RptSec3-UseCases.md)
 - [CRUD-Permission Gap Analysis](./RptSec4-CRUDGapAnalysis.md)
 - [Candidate Policy Model Alternatives](./RptSec5-PolicyCandidates.md)
