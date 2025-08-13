@@ -21,6 +21,8 @@ public class CatalogRequestParameters {
     private final String locationKind;
     private final String locationType;
     private final boolean includeAliases;
+    private final boolean filterBaseLocations;
+    private final boolean negateLocationKindLike;
 
     private CatalogRequestParameters(Builder builder) {
         this.office = builder.office;
@@ -36,6 +38,8 @@ public class CatalogRequestParameters {
         this.locationKind = builder.locationKind;
         this.locationType = builder.locationType;
         this.includeAliases = builder.includeAliases;
+        this.filterBaseLocations = builder.filterBaseLocations;
+        this.negateLocationKindLike = builder.negateLocationKindLike;
     }
 
     public String getBoundingOfficeLike() {
@@ -90,6 +94,13 @@ public class CatalogRequestParameters {
         return includeAliases;
     }
 
+    public boolean filterBaseLocations() {
+        return filterBaseLocations;
+    }
+
+    public boolean isNegateLocationKindLike() {
+        return negateLocationKindLike;
+    }
 
     public static class Builder {
         String office;
@@ -105,6 +116,8 @@ public class CatalogRequestParameters {
         String locationKind;
         String locationType;
         private boolean includeAliases = false;
+        private boolean filterBaseLocations = false;
+        private boolean negateLocationKindLike = false;
 
         public Builder() {
 
@@ -175,6 +188,16 @@ public class CatalogRequestParameters {
             return this;
         }
 
+        public Builder withFilterBaseLocations(boolean filterBaseLocations) {
+            this.filterBaseLocations = filterBaseLocations;
+            return this;
+        }
+
+        public Builder withNegateLocationKindLike(boolean negateLocationKindLike) {
+            this.negateLocationKindLike = negateLocationKindLike;
+            return this;
+        }
+
         public static Builder from(CatalogRequestParameters params) {
             // This NEEDS to include every field in the CatalogRequestParameters
             return new Builder()
@@ -190,6 +213,8 @@ public class CatalogRequestParameters {
                     .withExcludeEmpty(params.excludeEmpty)
                     .withLocationKind(params.locationKind)
                     .withLocationType(params.locationType)
+                    .withFilterBaseLocations(params.filterBaseLocations)
+                    .withNegateLocationKindLike(params.negateLocationKindLike)
                     ;
         }
 

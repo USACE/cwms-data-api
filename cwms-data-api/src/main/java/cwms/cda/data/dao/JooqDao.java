@@ -24,8 +24,6 @@
 
 package cwms.cda.data.dao;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Timestamp;
 import java.time.Instant;
 
@@ -47,17 +45,12 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.DateTimeException;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
@@ -231,10 +224,19 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new CustomCondition() {
             @Override
             public void accept(org.jooq.Context<?> ctx) {
-                if (ctx.family() == ORACLE) {
-                    ctx.visit(DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
+                if (regex.toUpperCase().startsWith("NOT:")) {
+                    String finalRegex = regex.substring(4);
+                    if (ctx.family() == ORACLE) {
+                        ctx.visit(DSL.condition("{not regexp_like}({0}, {1}, 'i')", field, DSL.val(finalRegex)));
+                    } else {
+                        ctx.visit(DSL.upper(field).notLikeRegex(finalRegex.toUpperCase()));
+                    }
                 } else {
-                    ctx.visit(DSL.upper(field).likeRegex(regex.toUpperCase()));
+                    if (ctx.family() == ORACLE) {
+                        ctx.visit(DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
+                    } else {
+                        ctx.visit(DSL.upper(field).likeRegex(regex.toUpperCase()));
+                    }
                 }
             }
         };
@@ -389,12 +391,10 @@ public abstract class JooqDao<T> extends Dao<T> {
         String localizedMessage = cause.getLocalizedMessage();
 
         if (localizedMessage != null) {
-            if (localizedMessage != null) {
-                String[] parts = localizedMessage.split("\n");
-                if (parts.length > 2) {
-                    return new InvalidItemException(String.format("Invalid Time Series Description: %s is not a valid interval",
-                        parts[1]), cause);
-                }
+            String[] parts = localizedMessage.split("\n");
+            if (parts.length > 2) {
+                return new InvalidItemException(String.format("Invalid Time Series Description: %s is not a valid interval",
+                    parts[1]), cause);
             }
         }
         return new InvalidItemException("Invalid Time Series Description", cause);

@@ -145,6 +145,7 @@ public final class Controllers {
     public static final String ISSUE_DATE = "issue-date";
     public static final String LOCATION_KIND_LIKE = "location-kind-like";
     public static final String LOCATION_TYPE_LIKE = "location-type-like";
+    public static final String NEGATE_LOCATION_KIND_LIKE = "negate-location-kind-like";
     public static final String INCLUDE_ALIASES = "include-aliases";
     public static final String MIN_NUMBER = "min-number";
     public static final String MAX_NUMBER = "max-number";
@@ -154,7 +155,9 @@ public final class Controllers {
     public static final String MAX_FLOW = "max-flow";
     public static final String AGENCY = "agency";
     public static final String QUALITY = "quality";
-
+    public static final String NAMES = "names";
+    public static final String EXCLUDE_KINDS = "exclude-kinds";
+    public static final String FILTER_BASE_LOCATIONS = "filter-base-locations";
 
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";

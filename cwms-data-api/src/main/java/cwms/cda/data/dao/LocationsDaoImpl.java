@@ -108,7 +108,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 names, format, units, datum, officeId);
     }
 
-    @Override
     public List<Location> getLocations(String nameRegex, String unitSystem, String datum, String officeId) {
 
         Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
@@ -504,10 +503,20 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID,
                 params.getBoundingOfficeLike()));
+
+        String regexLocationKind = params.getLocationKind();
+        if (params.isNegateLocationKindLike() && !regexLocationKind.toUpperCase().startsWith("NOT:")) {
+            regexLocationKind = String.format("NOT:%s", regexLocationKind);
+        }
         condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_KIND_ID,
-                params.getLocationKind()));
+            regexLocationKind));
+
         condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_TYPE,
                 params.getLocationType()));
+
+        if (params.filterBaseLocations()) {
+            condition = condition.and(AV_LOC2.AV_LOC2.SUB_LOCATION_ID.isNotNull());
+        }
 
         return condition;
     }
