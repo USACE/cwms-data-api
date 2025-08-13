@@ -45,7 +45,6 @@ This model is simple and office-centric, but lacks support for fine-grained pers
 - **Persona**: A user type or role with specific access needs
 - **Q-38**: Legacy CWMS role model with office-centric permissions
 
-https://github.com/USACE/cwms-data-api/issues/1134
 
 ## Current VPD Implementation
 
