@@ -46,6 +46,7 @@ import cwms.cda.api.errors.DeleteConflictException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.LocationsDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
+import cwms.cda.data.dto.CwmsIdLocationKind;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
@@ -135,6 +136,7 @@ public class LocationController implements CrudHandler {
                             @OpenApiContent(isArray = true, type = Formats.JSONV2, from = Location.class),
                             @OpenApiContent(type = Formats.JSON),
                             @OpenApiContent(type = Formats.TAB),
+                            @OpenApiContent(type = Formats.JSONV2_CATALOG, from = CwmsIdLocationKind.class),
                             @OpenApiContent(type = Formats.CSV),
                             @OpenApiContent(type = Formats.XML),
                             @OpenApiContent(type = Formats.WML2),
@@ -170,10 +172,16 @@ public class LocationController implements CrudHandler {
 
             if (contentType.getType().equals(Formats.GEOJSON)) {
                 FeatureCollection collection = locationsDao.buildFeatureCollection(names, units,
-                        office);
+                    office);
                 ctx.json(collection);
 
                 requestResultSize.update(ctx.res.getBufferSize());
+                ctx.contentType(contentType.toString());
+            } else if (contentType.toString().equals(Formats.JSONV2_CATALOG)) {
+                List<CwmsIdLocationKind> locationKinds = locationsDao.getLocationKinds(names, units, datum, office);
+                results = Formats.format(contentType, locationKinds, CwmsIdLocationKind.class);
+                ctx.result(results);
+                requestResultSize.update(results.length());
                 ctx.contentType(contentType.toString());
             } else if (formatParm.isEmpty() && !isLegacyFormat) {
                 List<Location> locations = locationsDao.getLocations(names, units, datum, office);

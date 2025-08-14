@@ -51,6 +51,7 @@ public class Formats {
     public static final String JSON = "application/json";
     public static final String JSONV1 = "application/json;version=1";
     public static final String JSONV2 = "application/json;version=2";
+    public static final String JSONV2_CATALOG = "application/json;version=2;catalog=true";
     public static final String XML = "application/xml";
     public static final String XMLV1 = "application/xml;version=1";
     public static final String XMLV2 = "application/xml;version=2";
@@ -77,7 +78,7 @@ public class Formats {
     static {
         contentTypeList.addAll(
                 Stream.of(DEFAULT, JSON, JSONV1, XML, XMLV1, XMLV2, WML2, JSONV2,
-                        TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON)
+                        TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON, JSONV2_CATALOG)
                         .map(ContentType::new)
                         .collect(Collectors.toList()));
     }
@@ -103,8 +104,7 @@ public class Formats {
     private Formats() {
     }
 
-    public static String getLegacyTypeFromContentType(ContentType contentType)
-    {
+    public static String getLegacyTypeFromContentType(ContentType contentType) {
         return typeMap.entrySet()
                       .stream()
                       .filter(e -> e.getValue().equals(contentType.getType()))

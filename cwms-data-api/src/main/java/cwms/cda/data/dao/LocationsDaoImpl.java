@@ -47,6 +47,8 @@ import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.Catalog;
+import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.CwmsIdLocationKind;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.LocationAlias;
@@ -132,6 +134,29 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     @Override
+    public List<CwmsIdLocationKind> getLocationKinds(String nameRegex, String unitSystem, String datum, String officeId) {
+        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
+
+        if (officeId != null) {
+            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
+        }
+
+        if (unitSystem != null) {
+            whereCondition = whereCondition.and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
+        }
+
+        if (datum != null) {
+            whereCondition = whereCondition.and(AV_LOC.VERTICAL_DATUM.equalIgnoreCase(datum));
+        }
+
+        return dsl.select(AV_LOC.LOCATION_ID, AV_LOC.DB_OFFICE_ID, AV_LOC.LOCATION_KIND_ID)
+                    .from(AV_LOC)
+                    .where(whereCondition)
+                    .fetchSize(DEFAULT_SMALL_FETCH_SIZE)
+                    .fetch(this::buildLocationKind);
+    }
+
+    @Override
     public Location getLocation(String locationName, String unitSystem, String officeId) {
         Record loc = dsl.select(AV_LOC.asterisk())
                 .from(AV_LOC)
@@ -144,6 +169,13 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                     + "system:" + unitSystem + " and id:" + locationName);
         }
         return buildLocation(loc);
+    }
+
+    private CwmsIdLocationKind buildLocationKind(Record loc) {
+        CwmsIdLocationKind.Builder builder = new CwmsIdLocationKind.Builder();
+        builder.withLocationKindId(loc.get(AV_LOC.LOCATION_KIND_ID));
+        builder.withLocationId(CwmsId.buildCwmsId(loc.get(AV_LOC.DB_OFFICE_ID), loc.get(AV_LOC.LOCATION_ID)));
+        return builder.build();
     }
 
     private Location buildLocation(Record loc) {
