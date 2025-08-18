@@ -26,6 +26,7 @@
 
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -35,6 +36,7 @@ import cwms.cda.formatters.json.JsonV2;
 
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class,
     aliases = {Formats.JSON, Formats.DEFAULT})
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonDeserialize(builder = CwmsIdLocationKind.Builder.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class CwmsIdLocationKind extends CwmsDTOBase {
