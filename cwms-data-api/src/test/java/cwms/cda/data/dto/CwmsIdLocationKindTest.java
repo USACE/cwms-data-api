@@ -45,7 +45,7 @@ final class CwmsIdLocationKindTest {
                 .withLocationId(CwmsId.buildCwmsId(office, locationId))
                 .withLocationKindId(kindName).build();
 
-        ContentType contentType = new ContentType(Formats.JSONV2_CATALOG);
+        ContentType contentType = new ContentType(Formats.JSONV2);
         String json = Formats.format(contentType, kind);
 
         CwmsIdLocationKind parsedKind = Formats.parseContent(contentType, json, CwmsIdLocationKind.class);

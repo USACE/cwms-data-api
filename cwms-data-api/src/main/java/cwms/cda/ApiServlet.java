@@ -138,6 +138,7 @@ import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
 import cwms.cda.api.rating.ReverseRateTimeSeriesController;
 import cwms.cda.api.rating.ReverseRateValuesController;
+import cwms.cda.api.LocationKindController;
 import cwms.cda.api.watersupply.AccountingCatalogController;
 import cwms.cda.api.watersupply.AccountingCreateController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCatalogController;
@@ -263,7 +264,8 @@ import org.owasp.html.PolicyFactory;
     "/embankments/*",
     "/user/*",
     "/users/*",
-    "/roles/*"
+    "/roles/*",
+    "/location-kinds/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -703,6 +705,7 @@ public class ApiServlet extends HttpServlet {
         addProjectLocksHandlers("/project-locks/{name}", requiredRoles);
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
 
+        get("/location-kinds/", new LocationKindController(metrics));
 
         addUserManagementHandlers();
     }

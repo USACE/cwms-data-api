@@ -51,7 +51,6 @@ public class Formats {
     public static final String JSON = "application/json";
     public static final String JSONV1 = "application/json;version=1";
     public static final String JSONV2 = "application/json;version=2";
-    public static final String JSONV2_CATALOG = "application/json;version=2;catalog=true";
     public static final String XML = "application/xml";
     public static final String XMLV1 = "application/xml;version=1";
     public static final String XMLV2 = "application/xml;version=2";
@@ -78,7 +77,7 @@ public class Formats {
     static {
         contentTypeList.addAll(
                 Stream.of(DEFAULT, JSON, JSONV1, XML, XMLV1, XMLV2, WML2, JSONV2,
-                        TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON, JSONV2_CATALOG)
+                        TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON)
                         .map(ContentType::new)
                         .collect(Collectors.toList()));
     }
@@ -287,7 +286,7 @@ public class Formats {
     /**
      * For endpoints that still allow either for transition, favors the query parameter as that's the likely user
      * expectation since machine systems wouldn't said both.
-     * @param header content type from a header
+     * @param headerParam content type from a header
      * @param queryParam content type from a query parameter
      * @param klass DTO to find a matching formatter for.
      * @return ContentType appropriate to the given selection.

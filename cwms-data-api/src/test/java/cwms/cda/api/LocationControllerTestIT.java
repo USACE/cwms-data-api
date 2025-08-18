@@ -24,7 +24,6 @@
 
 package cwms.cda.api;
 
-import cwms.cda.api.enums.UnitSystem;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -621,54 +620,6 @@ class LocationControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
             .body(containsString("One or more provided values exceeds the maximum length for the parameter."));
-    }
-
-    @Test
-    void test_get_location_kinds() throws Exception {
-        KeyUser user = KeyUser.SPK_NORMAL;
-
-        String officeId = "SPK";
-        String randomName = RandomStringUtils.randomAlphabetic(20);
-
-        // create location
-        createLocation(randomName, true, officeId, "SITE");
-
-        // get all locations
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2_CATALOG)
-            .contentType(Formats.JSONV2_CATALOG)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(UNIT, UnitSystem.SI.getValue())
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/locations/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-        // get specified location
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2_CATALOG)
-            .contentType(Formats.JSONV2_CATALOG)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(NAMES, randomName)
-            .queryParam(UNIT, UnitSystem.SI.getValue())
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/locations/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .body("size()", is(1))
-            .body("[0].location-id.name", equalTo(randomName))
-            .body("[0].location-id.office-id", equalTo(officeId))
-            .body("[0].location-kind-id", equalTo("SITE"));
     }
 
     enum GetAllTest

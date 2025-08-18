@@ -33,8 +33,8 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 
-@FormattableWith(contentType = Formats.JSONV2_CATALOG, formatter = JsonV2.class,
-    aliases = {Formats.JSONV2, Formats.DEFAULT})
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class,
+    aliases = {Formats.JSON, Formats.DEFAULT})
 @JsonDeserialize(builder = CwmsIdLocationKind.Builder.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class CwmsIdLocationKind extends CwmsDTOBase {
