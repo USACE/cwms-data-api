@@ -44,7 +44,7 @@ Additional names not used
 Both names have been discarded. We use "Virtual" in too many other places with a more direct meaning of that word. 
 For Period-of-Record, while that is the primary use-case, the concept is useful in other situations as well.
 
-Hence generically have have a "composite time series"
+Hence generically we have a "composite time series"
 
 Axioms
 ------
@@ -52,10 +52,11 @@ Axioms
 #. Composite Time Series are Irregular
 #. The definition of the composite time series is stored within the CWMS database
 #. The members of a composite time series define a continuous range
-   #. The date ranges of a composite time series *MUST* not overlap
-   #. The date ranges of a composite time series *MUST* have any gaps
+   #. The date ranges of a member *MUST* not overlap
+   #. The date ranges of a member *MUST* not have any gaps
    #. Data may have gaps, an explanation range should be provided.
 #. The members of a composite time measure the same thing. (e.g. all members are Elevation, not some are elevation and some are stage.)
+#. The interval and duration of each member *MAY* be different.
 
 
 Time Series Naming
@@ -107,6 +108,87 @@ Option 2
 
 The zero's could also be var
 
+
+Option 3
+~~~~~~~~
+
+`<Location Id>.<Parameter>.<Parameter Type>.<Interval>.<Duration>.Composite`
+
+
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+| Element                | Description                                                                                                            |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Location Id             |As the normal CWMS TS ID, the location for this measure                                                                 |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Parameter               |As the normal CWMS TS ID, the measurement (e.g. Stage, Precip, Elevation, flow, etc)                                    |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Parameter Type          |Marker that this time series does not have a fix information and is build of various member time series.                |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Interval                |Interval of data elements. may change over time with new members, duration will be indicated in the member definition   |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Duration                |Duration of average or total. may change over time with new members, duration will be indicated in the member definition|
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Version                 |Composite or POR ... or check for composite at the front/back?                                                          |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+
+From Daniel 
+
+Argument Against: the "Version" field it freeform and we often encode other information in it. 
+Argument Against above argument: That said, perhaps forcing the version to be "clean" is the right choice here.
+
+
+Option 4
+~~~~~~~~
+
+`<Location Id>.<Parameter>[Composite].<Parameter Type>.<Interval>.<Duration>.<Version>`
+
+
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+| Element                | Description                                                                                                            |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Location Id             |As the normal CWMS TS ID, the location for this measure                                                                 |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Parameter               |As the normal CWMS TS ID, the measurement (e.g. Stage, Precip, Elevation, flow, etc)                                    |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Parameter Type          |Marker that this time series does not have a fix information and is build of various member time series.                |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Interval                |Interval of data elements. may change over time with new members, duration will be indicated in the member definition   |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Duration                |Duration of average or total. may change over time with new members, duration will be indicated in the member definition|
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Version                 |As Normal CWMS TS ID                                                                                                    |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+
+
+This form with something in [] has been discussed for embedded TimeZone and Offset information into the interval. Arguably this code go in any field.
+
+
+Option 4
+~~~~~~~~
+
+`<Location Id>.<Parameter>.<Parameter Type>.<Interval>.<Duration>.<Version>` and/or arbitrary TS "alias"
+
+
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+| Element                | Description                                                                                                            |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Location Id             |As the normal CWMS TS ID, the location for this measure                                                                 |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Parameter               |As the normal CWMS TS ID, the measurement (e.g. Stage, Precip, Elevation, flow, etc)                                    |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Parameter Type          |Marker that this time series does not have a fix information and is build of various member time series.                |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Interval                |Interval of data elements. may change over time with new members, duration will be indicated in the member definition   |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Duration                |Duration of average or total. may change over time with new members, duration will be indicated in the member definition|
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+|Version                 |As Normal CWMS TS ID                                                                                                    |
++------------------------+------------------------------------------------------------------------------------------------------------------------+
+
+However, on request for the timeseries the list of composite time series is consulted and used if present, otherwise passthrough to normal
+time series retrieval.
+
+
 Composite Time Series Definition
 ================================
 
@@ -115,21 +197,13 @@ Composite Time Series Definition
     {
     "office": "<string>",   
     "name": "<ts id name>",
-    "is-period-of-record": true, // or is authoritative. to distinguish between other possible use-cases?
+    "is-authoritative": true, // or is authoritative. to distinguish between other possible use-cases?
     "members": [
         {
             "time-series-id": "TS ID for this range",
-            "start": "start date of this",
-            "end": "end date of this range",
-            "notes": "text",
-            "version", "version date", // maybe not? could just use POR or period-of-record in the ts id version
-            // if values that equals the start or end timestamp are included
-            "start-inclusive": true,
-            "end-inclusive": false
-            // suggest default of "start-inclusive": true, "end-inclusive": false
-            // it may also make sense to just make this *always* the above and not let the user set it.
-            // alternatively if this is always [) then only start is required.
-            // however, the class would required and end field as the actual Time Series output needs to know the actual end.
+            "start": "start date of this", // Inclusive
+            "end": "end date of this range", // Exclusive
+            "notes": "text",            
         }
     ]
     // array above *should* be sorted by start when provided to user.
@@ -163,13 +237,12 @@ Supported Operations:
 
 * Get, through existing TimeSeries classes.
 
-Does it make sense to support writing directly to a composite time series. While the write of each element *could* be sent to the underlying member, this seems ripe for error when editing or updating any data. It is likely that any edits would always be to the most recent time series, and configured in some other system.
 
 Storage of member information
 ================================
 
-#. Store in Clob as we refine the design
-#. Create appropriate tables once the design is stable.
+#. Store in Clob as we refine the design - cache appropriately in member to avoid any major performance issues.
+#. Create appropriate tables once the design is stable - still cache things.
 
 System responsibility for "knowing" to process composite.
 =========================================================
@@ -187,9 +260,14 @@ Add nullable "members" property.
 TimeSeriesDao
 -------------
 
-If the system sees the "Composite" marker retrieve the members for the range and build the time series.
+If the system sees the "Composite" marker/determines is composite retrieve the members for the range and build the time series.
 
-NOTE: considering the user may request the *entire* Period-of-record, this is a good opportunity to see that, start the retrieval in a job queue, and return a status URL to the user for future download. I have see such mechanism for bulk data in other systems. Maybe return an "I'm working on it variant" that the controller can know how to format.
+.. NOTE:: 
+    Considering the user may request the *entire* Period-of-record, this is a good opportunity to see that,
+    start the retrieval in a job queue, and return a status URL to the user for future download. I have see such mechanism 
+    for bulk data in other systems. Maybe return an "I'm working on it variant" that the controller can know how to format.
+
+    Perhaps we do this for data beyond "x amount"?
 
 Error handling and other conditions.
 ====================================
@@ -197,13 +275,13 @@ Error handling and other conditions.
 Versioned (date) time series
 ----------------------------
 
-As the composite time series is comprised of multiple other time series should this always be an error to specify?
-The marker for always latest or always first may make sense to allow, however, at the time series is supposed to be authoritative, that would add ambiguity.
+It is an error to specify a Version (date) when requesting composite data.
 
 Datum conversions
 -----------------
 
-Retrievers of the Period-of-Record *SHOULD* be able to retrieve the data as a single datum. Composite retrieval should respond as https://github.com/USACE/cwms-data-api/issues/1102 and convert each member as appropriate
+Retrievers of the Period-of-Record *SHOULD* be able to retrieve the data as a single datum. Composite retrieval should respond
+ as https://github.com/USACE/cwms-data-api/issues/1102 and convert each member as appropriate
 
 
 On the saving of a composite definition
