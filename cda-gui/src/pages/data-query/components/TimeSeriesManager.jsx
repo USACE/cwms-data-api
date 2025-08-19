@@ -8,7 +8,6 @@ export default function TimeSeriesManager({
   setTsids,
   toggleTSID,
 }) {
-  console.log({ status });
   return (
     <div
       className={`bg-gray-50 border p-2 w-3/4 rounded shadow-sm md:mt-4 md:w-2/5 overflow-auto h-[20vh] max-h-[40vh] ${

@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
-         "^/cwms-data/catalog/.*": {
+        "^/cwms-data/catalog/.*": {
           target: "https://cwms-data.usace.army.mil",
           changeOrigin: true,
           secure: false,
@@ -26,7 +26,6 @@ export default defineConfig(({ mode }) => {
     },
     experimental: {
       renderBuiltUrl(filename, { hostType }) {
-        console.log("render url", filename);
         if (hostType === "js" || hostType === "css") {
           return { runtime: `window.__toCdnUrl(${JSON.stringify(filename)})` };
         } else {
