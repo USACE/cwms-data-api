@@ -5,7 +5,7 @@ Composite Time Series
 Purpose
 =======
 
-It is a challenge for users to identity what the correct authoritative time series is for a given measurement at a location, when there are multiple time series a the same location. Additionally these time series often change over time, either being completely new or changing their interval as newer technologies become available.
+It is a challenge for users to identity what the correct authoritative time series is for a given measurement at a location, when there are multiple time series at the same location. Additionally these time series often change over time, either being completely new or changing their interval as newer technologies become available.
 
 Gather an entire Period of Record for the value at a location is also rather difficult. And the POR record and "authoritative timeseries" may be one-in-the same.
 
