@@ -5,7 +5,7 @@ Composite Time Series
 Purpose
 =======
 
-It is a challenge for users to identity what the correct authoritative time series is for a given measurement at a location. Additionally these time series often change over time, either being completely new or changing their interval as newer technologies become available.
+It is a challenge for users to identity what the correct authoritative time series is for a given measurement at a location, when there are multiple time series a the same location. Additionally these time series often change over time, either being completely new or changing their interval as newer technologies become available.
 
 Gather an entire Period of Record for the value at a location is also rather difficult. And the POR record and "authoritative timeseries" may be one-in-the same.
 
@@ -13,7 +13,7 @@ Gather an entire Period of Record for the value at a location is also rather dif
 Need
 ====
 
-#. CWMS and Access-2-Water require a simple mechanism to allow users of data to retrieve the Authoritative Period of Record data for a given measurement without having to  understand all of the possible component time series that may be involved. 
+#. CWMS and Access-2-Water require a simple mechanism to allow users of data to retrieve the Authoritative Period of Record data for a given measurement without having to understand all of the possible component time series that may be involved. 
 #. Period-of-Record time series *should* not be created by duplicating data from the component time series and merging them into a new one.
 #. The naming of the time series should fit within the excepting CWMS Time Series Identifier design and not unreasonably interfere with existing usages.
 
@@ -32,8 +32,8 @@ Description
 -----------
 
 CDA should handle a concept of a "Composite Time Series". Whether a Time Series is considered composite will be determined by a specific element of the Time Series Identifier.
-Data Administrators will configure which Time Series, and the range there-in, are part of the composite time series.
-CDA will use this stored information to build the Time Series per the question.
+Data Administrators will configure which Time Series (members), and the date-time range there-in, to define the composite time series.
+CDA will use this stored information to build the Composite Time Series during a query.
 
 Additional names not used
 -------------------------
@@ -52,10 +52,12 @@ Axioms
 #. Composite Time Series are Irregular
 #. The definition of the composite time series is stored within the CWMS database
 #. The members of a composite time series define a continuous range
-   #. The date ranges of a member *MUST* not overlap
-   #. The date ranges of a member *MUST* not have any gaps
+
+   #. The date ranges of members *MUST* not overlap
+   #. The date ranges of members *MUST* not have any gaps
    #. Data may have gaps, an explanation range should be provided.
-#. The members of a composite time measure the same thing. (e.g. all members are Elevation, not some are elevation and some are stage.)
+
+#. The members of a composite time measure the same thing. (e.g. all members are Elevation; you *cannot* combine elevation and stage as members.)
 #. The interval and duration of each member *MAY* be different.
 
 
@@ -133,7 +135,7 @@ Option 3
 
 From Daniel 
 
-Argument Against: the "Version" field it freeform and we often encode other information in it. 
+Argument Against: the "Version" field is freeform and we often encode other information in it. 
 Argument Against above argument: That said, perhaps forcing the version to be "clean" is the right choice here.
 
 
@@ -160,7 +162,7 @@ Option 4
 +------------------------+------------------------------------------------------------------------------------------------------------------------+
 
 
-This form with something in [] has been discussed for embedded TimeZone and Offset information into the interval. Arguably this code go in any field.
+This form with something in [] has been discussed for embedded TimeZone and Offset information into the interval. Arguably this could go in any field.
 
 
 Option 4
@@ -287,7 +289,7 @@ Retrievers of the Period-of-Record *SHOULD* be able to retrieve the data as a si
 On the saving of a composite definition
 ---------------------------------------
 
-The even if only a single member is added, the full definition needs to be check to ensure the ranges are still overlapping and continuous.
+When only a single member is added, the full definition needs to be check to ensure the ranges are still overlapping and continuous.
 
 References
 ==========
