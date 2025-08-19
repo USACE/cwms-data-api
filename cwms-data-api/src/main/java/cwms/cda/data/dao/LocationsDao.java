@@ -36,7 +36,7 @@ public interface LocationsDao {
 
     List<Location> getLocations(String names, String units, String datum, String officeId);
 
-    List<CwmsIdLocationKind> getLocationKinds(String names, String units, String datum, String officeId);
+    List<CwmsIdLocationKind> getLocationKinds(String idRegexMask, String units, String datum, String officeId);
 
     Location getLocation(String locationName, String unitSystem, String officeId) throws IOException;
 

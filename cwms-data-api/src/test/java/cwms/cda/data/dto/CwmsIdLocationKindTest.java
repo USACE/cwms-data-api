@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DTOMatch;
+import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 
 final class CwmsIdLocationKindTest {
@@ -53,5 +54,16 @@ final class CwmsIdLocationKindTest {
         // Verify that the parsed kind matches the original
         DTOMatch.assertMatch(kind.getLocationId(), parsedKind.getLocationId());
         assertEquals(kind.getLocationKindId(), parsedKind.getLocationKindId());
+    }
+
+    @Test
+    void test_SerializeFromFile() {
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/cwmsid_location_kind.json");
+        ContentType contentType = new ContentType(Formats.JSONV2);
+        CwmsIdLocationKind parsedKind = Formats.parseContent(contentType, resource, CwmsIdLocationKind.class);
+
+        assertEquals("Pine Flat Area", parsedKind.getLocationId().getName());
+        assertEquals("Outlet", parsedKind.getLocationKindId());
+        assertEquals("SPK", parsedKind.getLocationId().getOfficeId());
     }
 }

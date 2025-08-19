@@ -134,8 +134,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     @Override
-    public List<CwmsIdLocationKind> getLocationKinds(String nameRegex, String unitSystem, String datum, String officeId) {
-        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
+    public List<CwmsIdLocationKind> getLocationKinds(String idRegexMask, String unitSystem, String datum, String officeId) {
+        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, idRegexMask);
 
         if (officeId != null) {
             whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
