@@ -40,6 +40,7 @@ export default function DataTabs({
                   missingString="---"
                   sortAscending
                   trim
+                  pageSize={1000000}
                   tableOptions={{
                     bleed: true,
                     dense: true,
