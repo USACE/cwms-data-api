@@ -90,7 +90,7 @@ public class LocationKindController implements Handler {
         description = "Returns CWMS Location Data.  The Catalog end-point is also capable of "
             + "retrieving lists of locations and can filter on additional fields.",
         method = HttpMethod.GET,
-        path = "/location-kinds",
+        path = "/locations/with-kind",
         tags = {TAG}
     )
     @Override
