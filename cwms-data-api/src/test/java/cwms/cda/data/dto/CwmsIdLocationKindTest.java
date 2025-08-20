@@ -57,7 +57,7 @@ final class CwmsIdLocationKindTest {
     }
 
     @Test
-    void test_SerializeFromFile() {
+    void test_DeserializeFromFile() {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/cwmsid_location_kind.json");
         ContentType contentType = new ContentType(Formats.JSONV2);
         CwmsIdLocationKind parsedKind = Formats.parseContent(contentType, resource, CwmsIdLocationKind.class);

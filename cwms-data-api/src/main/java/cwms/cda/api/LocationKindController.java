@@ -27,13 +27,12 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.LOCATION_KIND_LIKE;
 import static cwms.cda.api.Controllers.NAMES;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.LocationController.getLocationsDao;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -60,13 +59,12 @@ import org.jooq.DSLContext;
 public class LocationKindController implements Handler {
     public static final String TAG = "REGI";
 
-    private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
     public LocationKindController(MetricRegistry metrics) {
-        this.metrics = metrics;
+        MetricRegistry controllerMetrics = metrics;
         String className = this.getClass().getName();
-        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
+        requestResultSize = controllerMetrics.histogram((name(className, RESULTS, SIZE)));
     }
 
     @OpenApi(
@@ -74,27 +72,14 @@ public class LocationKindController implements Handler {
             @OpenApiParam(name = NAMES, description = "Specifies the name(s) of the "
                 + "location(s) whose data is to be included in the response. This parameter is a "
                 + "Posix <a href=\"regexp.html\">regular expression</a> matching against the id"),
+            @OpenApiParam(name = LOCATION_KIND_LIKE, description = "Specifies the location kind(s) "
+                + "whose data is to be included in the response. This parameter is a "
+                + "Posix <a href=\"regexp.html\">regular expression</a> matching against the location kind. "
+                + "If this field is not specified, all location kinds shall be returned."),
             @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
                 + "the location level(s) whose data is to be included in the response"
                 + ". If this field is not specified, matching location level "
                 + "information from all offices shall be returned."),
-            @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
-                + " of the response. Default is SI. Valid values for the unit field are:"
-                + "\n* `EN`  Specifies English unit system.  Location level values will be in"
-                + " the default English units for their parameters."
-                + "\n* `SI`  Specifies the SI unit system.  Location level values will be in "
-                + "the default SI units for their parameters."
-                + "\n* `Other`  Any unit "
-                + "returned in the response to the units URI request that is "
-                + "appropriate for the requested parameters."),
-            @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
-                + " the response. This field affects only vertical datum. "
-                + "Valid values for this field are:"
-                + "\n* `NAVD88`  The elevation "
-                + "values will in the specified or default units above the NAVD-88 "
-                + "datum."
-                + "\n* `NGVD29`  The elevation values will be in the "
-                + "specified or default units above the NGVD-29 datum."),
         },
         responses = {
             @OpenApiResponse(status = STATUS_200,
@@ -115,8 +100,7 @@ public class LocationKindController implements Handler {
         LocationsDao locationsDao = getLocationsDao(dsl);
 
         String names = ctx.queryParam(NAMES);
-        String units = ctx.queryParam(UNIT);
-        String datum = ctx.queryParam(DATUM);
+        String kindRegexMask = ctx.queryParam(LOCATION_KIND_LIKE);
         String office = ctx.queryParam(OFFICE);
 
         String formatParm = ctx.queryParamAsClass(Formats.JSONV2, String.class).getOrDefault("");
@@ -125,7 +109,7 @@ public class LocationKindController implements Handler {
 
         String results;
 
-        List<CwmsIdLocationKind> locationKinds = locationsDao.getLocationKinds(names, units, datum, office);
+        List<CwmsIdLocationKind> locationKinds = locationsDao.getLocationKinds(names, kindRegexMask, office);
         results = Formats.format(contentType, locationKinds, CwmsIdLocationKind.class);
         ctx.result(results);
         requestResultSize.update(results.length());

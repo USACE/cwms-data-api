@@ -53,6 +53,7 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.catalog.LocationCatalogEntry;
+import cwms.cda.helpers.ZoneIdHelper;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -66,7 +67,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import cwms.cda.helpers.ZoneIdHelper;
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 import org.geojson.Point;
@@ -134,22 +134,17 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     @Override
-    public List<CwmsIdLocationKind> getLocationKinds(String idRegexMask, String unitSystem, String datum, String officeId) {
+    public List<CwmsIdLocationKind> getLocationKinds(String idRegexMask, String kindRegexMask, String officeId) {
         Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, idRegexMask);
+
+        whereCondition = whereCondition
+            .and(JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_KIND_ID, kindRegexMask));
 
         if (officeId != null) {
             whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
         }
 
-        if (unitSystem != null) {
-            whereCondition = whereCondition.and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
-        }
-
-        if (datum != null) {
-            whereCondition = whereCondition.and(AV_LOC.VERTICAL_DATUM.equalIgnoreCase(datum));
-        }
-
-        return dsl.select(AV_LOC.LOCATION_ID, AV_LOC.DB_OFFICE_ID, AV_LOC.LOCATION_KIND_ID)
+        return dsl.selectDistinct(AV_LOC.LOCATION_ID, AV_LOC.DB_OFFICE_ID, AV_LOC.LOCATION_KIND_ID)
                     .from(AV_LOC)
                     .where(whereCondition)
                     .fetchSize(DEFAULT_SMALL_FETCH_SIZE)

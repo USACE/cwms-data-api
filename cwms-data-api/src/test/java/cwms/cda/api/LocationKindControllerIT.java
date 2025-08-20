@@ -26,13 +26,15 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.LOCATION_KIND_LIKE;
 import static cwms.cda.api.Controllers.NAMES;
-import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.OFFICE;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.basin.Basin;
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
@@ -59,7 +61,6 @@ final class LocationKindControllerIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
-            .queryParam(UNIT, UnitSystem.SI.getValue())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -76,7 +77,8 @@ final class LocationKindControllerIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam(NAMES, randomName)
-            .queryParam(UNIT, UnitSystem.SI.getValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(LOCATION_KIND_LIKE, "SITE")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -91,4 +93,36 @@ final class LocationKindControllerIT extends DataApiTestIT {
             .body("[0].location-kind-id", equalTo("SITE"));
     }
 
+    @Test
+    void testLocationKindLike() throws Exception {
+        String locationName = RandomStringUtils.randomAlphabetic(20);
+        String officeId = "SPK";
+        createLocation(locationName, true, officeId);
+        Basin basin = new Basin.Builder().withBasinId(CwmsId.buildCwmsId(officeId, locationName))
+                                         .withAreaUnit("m2")
+                                         .withContributingDrainageArea(2500.0)
+                                         .withTotalDrainageArea(3500.0)
+                                         .withSortOrder(1.0)
+                                         .build();
+
+        createBasin(basin);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(LOCATION_KIND_LIKE, "BASIN")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location-kinds")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("[0].location-kind-id", equalTo("BASIN"));
+    }
 }
