@@ -103,8 +103,7 @@ public class Formats {
     private Formats() {
     }
 
-    public static String getLegacyTypeFromContentType(ContentType contentType)
-    {
+    public static String getLegacyTypeFromContentType(ContentType contentType) {
         return typeMap.entrySet()
                       .stream()
                       .filter(e -> e.getValue().equals(contentType.getType()))
@@ -287,7 +286,7 @@ public class Formats {
     /**
      * For endpoints that still allow either for transition, favors the query parameter as that's the likely user
      * expectation since machine systems wouldn't said both.
-     * @param header content type from a header
+     * @param headerParam content type from a header
      * @param queryParam content type from a query parameter
      * @param klass DTO to find a matching formatter for.
      * @return ContentType appropriate to the given selection.
