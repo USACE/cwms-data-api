@@ -13,7 +13,7 @@ services:
     ports:
       - "1525:1521"
     healthcheck:
-      test: ["CMD","tnsping", "FREEPDB1"]
+      test: ["CMD-SHELL","sqlplus -s -L sys/badSYSpassword@localhost:1521/FREEPDB1 as sysdba <<< 'exit;'"]
       interval: 30s
       timeout: 50s
       retries: 50
@@ -55,12 +55,13 @@ services:
       target: api
       context: .
       dockerfile: Dockerfile
-    command: bash -c "/conf/installcerts.sh && /usr/local/tomcat/bin/catalina.sh run"
+    #command: bash -c "/conf/installcerts.sh && /usr/local/tomcat/bin/catalina.sh run"
     restart: unless-stopped
     volumes:
       - ./compose_files/pki/certs:/conf/
       - ./compose_files/tomcat/logging.properties:/usr/local/tomcat/conf/logging.properties:ro
     environment:
+      - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005
       - CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
       - CDA_JDBC_URL=jdbc:oracle:thin:@db/FREEPDB1
       - CDA_JDBC_USERNAME=s0webtest
@@ -78,6 +79,7 @@ services:
       - cwms.dataapi.access.openid.issuer=http://localhost:${APP_PORT:-8081}/auth/realms/cwms
     expose:
       - 7000
+      - 5005
     healthcheck:
       test: ["CMD","/usr/bin/curl", "-I","localhost:7000/cwms-data/offices/HEC"]
       interval: 5s
@@ -88,6 +90,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.data-api.rule=PathPrefix(`/cwms-data`)"
       - "traefik.http.routers.data-api.entryPoints=web"
+      - "traefik.http.services.data-api.loadbalancer.server.port=7000"
 
   auth:
     image: quay.io/keycloak/keycloak:19.0.1
