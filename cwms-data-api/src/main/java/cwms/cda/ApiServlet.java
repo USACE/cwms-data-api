@@ -138,6 +138,7 @@ import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
 import cwms.cda.api.rating.ReverseRateTimeSeriesController;
 import cwms.cda.api.rating.ReverseRateValuesController;
+import cwms.cda.api.LocationKindController;
 import cwms.cda.api.watersupply.AccountingCatalogController;
 import cwms.cda.api.watersupply.AccountingCreateController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCatalogController;
@@ -539,6 +540,7 @@ public class ApiServlet extends HttpServlet {
                 new LocationCategoryController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
         cdaCrudCache("/location/group/{group-id}",
                 new LocationGroupController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+        get("/locations/with-kinds/", new LocationKindController(metrics));
         cdaCrudCache("/locations/{location-id}",
                 new LocationController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
         cdaCrudCache("/states/{state}",
@@ -709,7 +711,6 @@ public class ApiServlet extends HttpServlet {
 
         addProjectLocksHandlers("/project-locks/{name}", requiredRoles);
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
-
 
         addUserManagementHandlers();
     }
