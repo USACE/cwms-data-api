@@ -156,7 +156,6 @@ public final class Controllers {
     public static final String AGENCY = "agency";
     public static final String QUALITY = "quality";
     public static final String NAMES = "names";
-    public static final String EXCLUDE_KINDS = "exclude-kinds";
     public static final String FILTER_BASE_LOCATIONS = "filter-base-locations";
 
     public static final String GROUP_ID = "group-id";
