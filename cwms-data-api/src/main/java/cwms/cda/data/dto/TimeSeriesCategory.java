@@ -25,19 +25,15 @@
 package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import cwms.cda.api.errors.FieldException;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import io.swagger.v3.oas.annotations.media.Schema;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
 
 @Schema(description = "A representation of a TimeSeries category")
-@XmlRootElement(name="timeseries-category")
-@XmlAccessorType(XmlAccessType.FIELD)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@JsonRootName("timeseries-category")
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class TimeSeriesCategory extends CwmsDTO
 {
 	private String id;
@@ -98,11 +94,5 @@ public class TimeSeriesCategory extends CwmsDTO
 		result = 31 * result + (getId() != null ? getId().hashCode() : 0);
 		result = 31 * result + (getDescription() != null ? getDescription().hashCode() : 0);
 		return result;
-	}
-
-	@Override
-	public void validate() throws FieldException {
-		// TODO Auto-generated method stub
-
 	}
 }

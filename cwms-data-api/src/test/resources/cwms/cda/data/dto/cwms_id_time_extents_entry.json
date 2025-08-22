@@ -1,0 +1,10 @@
+{
+  "id": {
+    "office-id": "SWT",
+    "name": "ARBU"
+  },
+  "time-extents": {
+    "earliest-time": "2024-12-06T00:00:00Z",
+    "latest-time": "2024-12-06T12:00:00Z"
+  }
+}

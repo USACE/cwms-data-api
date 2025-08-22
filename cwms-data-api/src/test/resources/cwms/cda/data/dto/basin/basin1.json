@@ -1,0 +1,15 @@
+{
+  "basin-id": {
+    "office-id": "MVR",
+    "name": "TEST_LOCATION2"
+  },
+  "sort-order": 1.0,
+  "total-drainage-area": 1005.0,
+  "contributing-drainage-area": 850.0,
+  "parent-basin-id": {},
+  "area-unit": "m2",
+  "primary-stream-id": {
+    "office-id": "MVP",
+    "name": "TEST_LOCATION4"
+  }
+}

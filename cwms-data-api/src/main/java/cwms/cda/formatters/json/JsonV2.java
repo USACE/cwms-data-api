@@ -30,13 +30,18 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OutputFormatter;
+import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.time.ZoneId;
 import java.util.List;
 
 /**
@@ -47,21 +52,12 @@ public class JsonV2 implements OutputFormatter {
     private final ObjectMapper om;
 
     public JsonV2() {
-        this(new ObjectMapper());
-    }
-
-    public JsonV2(ObjectMapper om) {
-        this.om = buildObjectMapper(om);
+        this.om = buildObjectMapper();
     }
 
     @NotNull
     public static ObjectMapper buildObjectMapper() {
-        return buildObjectMapper(new ObjectMapper());
-    }
-
-    @NotNull
-    public static ObjectMapper buildObjectMapper(ObjectMapper om) {
-        ObjectMapper retVal = om.copy();
+        ObjectMapper retVal = new ObjectMapper();
 
         retVal.findAndRegisterModules();
         // Without these two disables an Instant gets written as 3333333.335000000
@@ -71,6 +67,11 @@ public class JsonV2 implements OutputFormatter {
         retVal.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         retVal.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         retVal.registerModule(new JavaTimeModule());
+
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());
+        retVal.registerModule(module);
+
         return retVal;
     }
 
@@ -97,4 +98,30 @@ public class JsonV2 implements OutputFormatter {
         }
     }
 
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
+        try {
+            return om.readValue(content, type);
+        } catch (JsonProcessingException e) {
+            throw new FormattingException(String.format(DESERIALIZE_CONTENT_MESSAGE, content, type), e);
+        }
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(InputStream content, Class<T> type) {
+        try {
+            return om.readValue(content, type);
+        } catch (IOException e) {
+            throw new FormattingException(String.format(DESERIALIZE_CONTENT_MESSAGE, content, type), e);
+        }
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> List<T> parseContentList(String content, Class<T> type) {
+        try {
+            return om.readValue(content, om.getTypeFactory().constructCollectionType(List.class, type));
+        } catch (IOException e) {
+            throw new FormattingException(String.format(DESERIALIZE_CONTENT_MESSAGE, content, type), e);
+        }
+    }
 }

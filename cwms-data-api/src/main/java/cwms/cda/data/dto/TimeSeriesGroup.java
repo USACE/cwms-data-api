@@ -25,7 +25,9 @@
 package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import cwms.cda.api.errors.FieldException;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
@@ -33,14 +35,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlRootElement;
 
 @Schema(description = "A representation of a timeseries group")
-@XmlRootElement(name = "timeseries-group")
-@XmlAccessorType(XmlAccessType.FIELD)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
+@JsonRootName("timeseries-group")
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class TimeSeriesGroup extends CwmsDTO {
     private String id;
     private TimeSeriesCategory timeSeriesCategory;
@@ -161,10 +160,5 @@ public class TimeSeriesGroup extends CwmsDTO {
         result = 31 * result + (getSharedRefTsId() != null ? getSharedRefTsId().hashCode() : 0);
         result = 31 * result + (assignedTimeSeries != null ? assignedTimeSeries.hashCode() : 0);
         return result;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        // Nothing to validate
     }
 }

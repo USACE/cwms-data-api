@@ -1,7 +1,8 @@
 plugins {
     id 'java'
-    id 'eclipse'
     id 'checkstyle'
+    id 'jacoco'
+    id 'org.owasp.dependencycheck'
 }
 
 eclipse {
@@ -11,27 +12,31 @@ eclipse {
     }
 }
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
-    }
-}
-
-compileJava {
-    sourceCompatibility = "1.8"
-    targetCompatibility = "1.8"
-}
-
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
 }
 
 test {
     useJUnitPlatform() {
         excludeTags "integration"
     }
+    finalizedBy jacocoTestReport
 }
 
 checkstyle {
     toolVersion = '9.3'
+}
+
+jacoco {
+    toolVersion = "0.8.9"
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml')
+    }
 }

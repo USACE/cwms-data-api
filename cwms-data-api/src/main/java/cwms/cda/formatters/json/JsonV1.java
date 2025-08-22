@@ -2,8 +2,11 @@ package cwms.cda.formatters.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
@@ -12,7 +15,11 @@ import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OfficeFormatV1;
 import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import io.javalin.http.BadRequestResponse;
+import java.io.IOException;
+import java.io.InputStream;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,28 +33,24 @@ public class JsonV1 implements OutputFormatter {
     private final ObjectMapper om;
 
     public JsonV1() {
-        this(new ObjectMapper());
-    }
+        this.om = buildObjectMapper();
 
-    public JsonV1(ObjectMapper om) {
-        this.om = om.copy();
-        this.om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
-        this.om.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        this.om.registerModule(new JavaTimeModule());
     }
 
     @NotNull
     public static ObjectMapper buildObjectMapper() {
-        return buildObjectMapper(new ObjectMapper());
-    }
-
-    @NotNull
-    public static ObjectMapper buildObjectMapper(ObjectMapper om) {
-        ObjectMapper retVal = om.copy();
+        ObjectMapper retVal = new ObjectMapper();
 
         retVal.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         retVal.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        retVal.disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS);
+        retVal.disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
         retVal.registerModule(new JavaTimeModule());
+
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());
+        retVal.registerModule(module);
+
         return retVal;
     }
 
@@ -73,6 +76,33 @@ public class JsonV1 implements OutputFormatter {
             return om.writeValueAsString(wrapped);
         } catch (JsonProcessingException e) {
             throw new FormattingException("Could not format list:" + dtoList, e);
+        }
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
+        try {
+            return om.readValue(content, type);
+        } catch (JsonProcessingException e) {
+            throw new FormattingException(String.format(DESERIALIZE_CONTENT_MESSAGE, content, type), e);
+        }
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> T parseContent(InputStream content, Class<T> type) {
+        try {
+            return om.readValue(content, type);
+        } catch (IOException e) {
+            throw new FormattingException(String.format(DESERIALIZE_CONTENT_MESSAGE, content, type), e);
+        }
+    }
+
+    @Override
+    public <T extends CwmsDTOBase> List<T> parseContentList(String content, Class<T> type) {
+        try {
+            return om.readValue(content, om.getTypeFactory().constructCollectionType(List.class, type));
+        } catch (IOException e) {
+            throw new FormattingException(String.format(DESERIALIZE_CONTENT_MESSAGE, content, type), e);
         }
     }
 
@@ -104,7 +134,7 @@ public class JsonV1 implements OutputFormatter {
     private boolean isFormattableWith(Class<?> klass) {
         FormattableWith[] formats = klass.getAnnotationsByType(FormattableWith.class);
         for (FormattableWith format : formats) {
-            /**
+            /*
              * Compare against the actual formatter not the name
              */
             if (format.formatter().equals(JsonV1.class)) {

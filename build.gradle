@@ -1,7 +1,26 @@
+buildscript {
+    repositories {
+        gradlePluginPortal()
+    }
+}
+
 plugins {
     id 'base'
+    id 'eclipse'
+    id 'idea'
+    id "com.palantir.git-version" version "3.1.0"
 }
+
+def static versionLabel(gitInfo) {
+    def branch = gitInfo.branchName // all branches are snapshots, only tags get released
+    def tag = gitInfo.lastTag
+    // tag is returned as is. Branch may need cleanup
+    // our primary versioning is branch+date, the tag will be used for the final "release"
+    return branch == null ? tag : new Date().format("yyyy.MM.dd-") + branch.replace("/", "-")
+}
+
 allprojects {
+    apply plugin: 'cda.java-conventions'
     group = 'mil.army.usace.hec.cwms'
-    version = '3.1.0'   // ApiServlet.VERSION should be updated to match MAJOR.MINOR changes.
+    version = project.findProperty("versionOverride") ?: versionLabel(versionDetails())
 }

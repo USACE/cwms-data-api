@@ -1,7 +1,6 @@
 package cwms.cda.data.dto.auth;
 
 import java.time.ZonedDateTime;
-import java.util.Date;
 
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
@@ -27,7 +26,6 @@ public class ApiKey {
 
     private String apiKey;
 
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @JsonFormat(shape = Shape.STRING, pattern = TimeSeries.ZONED_DATE_TIME_FORMAT)
     @Schema(
         accessMode = AccessMode.READ_ONLY,

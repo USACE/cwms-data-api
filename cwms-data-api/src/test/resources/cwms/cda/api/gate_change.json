@@ -1,0 +1,39 @@
+[ {
+  "type" : "gate-change",
+  "project-id" : {
+    "office-id" : "SPK",
+    "name" : "BIGH"
+  },
+  "change-date" : 1704096000000,
+  "pool-elevation" : 3.0,
+  "protected" : true,
+  "discharge-computation-type" : {
+    "office-id" : "SPK",
+    "display-value" : "A",
+    "tooltip" : "Adjusted by an automated method",
+    "active" : true
+  },
+  "reason-type" : {
+    "office-id" : "SPK",
+    "display-value" : "O",
+    "tooltip" : "Other release",
+    "active" : true
+  },
+  "notes" : "Test notes",
+  "new-total-discharge-override" : 1.0,
+  "old-total-discharge-override" : 2.0,
+  "discharge-units" : "cfs",
+  "tailwater-elevation" : 4.0,
+  "elevation-units" : "ft",
+  "settings" : [ {
+    "type" : "gate-setting",
+    "location-id" : {
+      "office-id" : "SPK",
+      "name" : "BIGH-CG100"
+    },
+    "opening" : 10.0,
+    "opening-parameter" : "Opening",
+    "opening-units" : "ft",
+    "invert-elevation" : 20.0
+  } ]
+} ]

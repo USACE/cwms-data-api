@@ -1,5 +1,6 @@
 package cwms.cda.data.dto;
 
+import cwms.cda.data.dao.CatalogRequestParameters;
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.Test;
@@ -30,14 +31,12 @@ class CatalogTest
 
 	@Test
 	void test_catalog_page_round_trip() {
+		CatalogRequestParameters params = new CatalogRequestParameters.Builder()
+				.withIdLike(".*")
+				.build();
+
 		final CatalogPage page = new CatalogPage("SPK/a", 
-											null,
-											".*",
-											null,
-											null,
-											null,
-											null,
-											null);
+											params);
 		final String pageString = Catalog.encodeCursor(page.toString(),10,100);
 		final CatalogPage fromString = new CatalogPage(pageString);
 		assertEquals(100,fromString.getTotal());

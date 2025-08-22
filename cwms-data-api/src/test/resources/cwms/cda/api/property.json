@@ -1,0 +1,7 @@
+{
+  "category": "PropertyControllerIT",
+  "name": "test_get_create_delete",
+  "office-id": "SPK",
+  "value": "test value",
+  "comment": "integration test"
+}

@@ -1,175 +1,61 @@
 ---
-name: Build CWMS Data API
+name: Build And Test CWMS Data API
 on:
   push:
     branches:
       - develop
-      - 'release/**'
   pull_request:
     branches:
       - develop
 
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: [8, 11]
     name: build and test
     runs-on: ubuntu-latest
     outputs:
       thewar: ${{steps.thebuild.outputs.WARFILE}}
     steps:
       - name: checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4.2.2
       - name: setup java
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v4.7.1
         with:
-          java-version: '8'
-          java-package: jdk
+          distribution: 'temurin'
+          java-version: ${{matrix.jdk}}
+          cache: 'gradle'
       - name: build and test
         id: thebuild
         run: ./gradlew build --info --init-script init.gradle
-      - name: Upload WAR
-        uses: actions/upload-artifact@v2
+      - name: integration tests
+        run: ./gradlew integrationtest --info --init-script init.gradle
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v5
+        if: success() || failure() # always run even if the previous step fails
         with:
-          name: warfile
-          path: cwms-data-api/build/libs/${{steps.thebuild.outputs.WARFILE}}
-          retention-days: 1
-          if-no-files-found: error
+          annotate_only: true
+          include_passed: true
+          report_paths: '**/TEST-*.xml'
+  build-docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout code
+        uses: actions/checkout@v4.2.2
       - name: Build docker image
         run: docker build -t cda:build-latest .
-
-  release:
-    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/release')
-    name: Create and push releases
-    needs: build
+  build-schema-migration-image:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v2
-      - name: setup java
-        uses: actions/setup-java@v1
+        uses: actions/checkout@v4.2.2
+      - name: Build Migration image
+        uses: ./.github/actions/database-migration-image
         with:
-          java-version: '8'
-          java-package: jdk
-      - name: Download all workflow run artifacts from build
-        id: artifacts
-        uses: actions/download-artifact@v2
-        with:
-          path: ./
-      - name: get version
-        id: get_version
-        run: .github/workflows/get_version.sh
-      - name: show version
-        run: echo ${VERSION}
-      - name: tag repo
-        uses: actions/github-script@v3
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            github.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: "refs/tags/${{env.VERSION}}",
-              sha: context.sha
-            })
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{env.VERSION}}
-          release_name: Release ${{env.VERSION}}
-      - name: Upload Tomcat War
-        id: upload-war
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: warfile/${{ needs.build.outputs.thewar}}
-          asset_name: ${{ env.WAR_FILE_NAME}}
-          asset_content_type: application/x-webarchive
-      - name: Login to Alt Registry
-        uses: docker/login-action@v2.0.0
-        id: login-alt
-        with:
-          registry: ${{ secrets.ALT_REGISTRY }}
-          username: ${{ secrets.ALT_REG_USER }}
-          password: ${{ secrets.ALT_REG_PASSWORD }}
-      - name: Build docker image
-        env:
-          IMAGE_TAG: ${{env.VERSION}}
-          ALT_REGISTRY: ${{secrets.ALT_REGISTRY}}
-        run: |
-          docker build -t cda:build-latest .
-          docker tag cda:build-latest $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
-          docker tag cda:build-latest $ALT_REGISTRY/cwms/data-api:latest
-          docker push $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
-          docker push $ALT_REGISTRY/cwms/data-api:latest
-      - name: Logout of ALT registry
-        if: ${{ always() }}
-        run: docker logout ${{ steps.login-alt.outputs.registry }}
+          base-image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer
+          # TODO get current target image from build information
+          tag: latest-dev
 
-
-  publish:
-    if: github.event_name == 'push' && startsWith(github.ref,'refs/heads/develop')
-    name: API Container Image
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
-    needs: build
-    # Steps represent a sequence of tasks that will be executed as part of the job
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: checkout code
-        uses: actions/checkout@v2
-      - name: setup java
-        uses: actions/setup-java@v1
-        with:
-          java-version: '8'
-          java-package: jdk
-      - name: get Data-API version
-        id: get_version
-        run: .github/workflows/get_version.sh
-      - name: Configure AWS credentials
-        if: ${{ always() }}
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.CWBICI_DEVELOP_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.CWBICI_DEVELOP_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.CWBICI_DEVELOP_AWS_REGION }}
-      - name: Login to Amazon ECR
-        if: ${{ success() }}
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-      - name: Login to Alt Registry
-        uses: docker/login-action@v2.0.0
-        id: login-alt
-        with:
-          registry: ${{ secrets.ALT_REGISTRY }}
-          username: ${{ secrets.ALT_REG_USER }}
-          password: ${{ secrets.ALT_REG_PASSWORD }}
-      - name: Build, tag, and push image to Amazon ECR (cwms/data-api)
-        if: ${{ success() }}
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          # do not change to cwms-data-api; upstream config also requires change
-          ECR_REPOSITORY: cwms-radar-api
-          IMAGE_TAG: ${{env.VERSION}}
-          ALT_REGISTRY: ${{ secrets.ALT_REGISTRY }}
-        run: |
-          docker build -t cda:build-latest .
-
-          docker tag cda:build-latest $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker tag cda:build-latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-
-          docker tag cda:build-latest $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
-          docker tag cda:build-latest $ALT_REGISTRY/cwms/data-api:latest-dev
-          docker push $ALT_REGISTRY/cwms/data-api:$IMAGE_TAG
-          docker push $ALT_REGISTRY/cwms/data-api:latest-dev
-      - name: Logout of Amazon ECR
-        if: ${{ always() }}
-        run: docker logout ${{ steps.login-ecr.outputs.registry }}
-      - name: Logout of ALT registry
-        if: ${{ always() }}
-        run: docker logout ${{ steps.login-alt.outputs.registry }}
+      # No uploads, we're just verifying that nothing broke the docker image.

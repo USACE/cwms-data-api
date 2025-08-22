@@ -16,7 +16,7 @@ import java.time.ZoneId;
 @JsonDeserialize(builder = cwms.cda.data.dto.TimeSeriesIdentifierDescriptor.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class TimeSeriesIdentifierDescriptor extends CwmsDTO {
     private final String timeSeriesId;
     private final String timezoneName;
@@ -45,11 +45,6 @@ public class TimeSeriesIdentifierDescriptor extends CwmsDTO {
 
     public boolean isActive() {
         return active;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        // Nothing to validate
     }
 
     @JsonPOJOBuilder

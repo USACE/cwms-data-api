@@ -3,17 +3,16 @@ package cwms.cda.data.dto;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import cwms.cda.api.ClobController;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
 
-import javax.xml.bind.JAXBException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class ClobTest {
 
@@ -39,26 +38,7 @@ class ClobTest {
 
 
     @Test
-    void testRoundtripXML() throws JAXBException {
-        Clob clob = new Clob("MYOFFICE", "MYID", "MYDESC", "MYVALUE");
-
-        XMLv2 xml = new XMLv2();
-        String output = xml.format(clob);
-
-        assertNotNull(output);
-
-        Clob clob2 = ClobController.deserializeJAXB(output);
-
-        assertNotNull(clob2);
-
-        assertEquals(clob.getId(), clob2.getId());
-        assertEquals(clob.getOfficeId(), clob2.getOfficeId());
-        assertEquals(clob.getDescription(), clob2.getDescription());
-        assertEquals(clob.getValue(), clob2.getValue());
-    }
-
-    @Test
-    void testRoundtripXML2() throws JsonProcessingException {
+    void testRoundtripXML2() {
         Clob clob = new Clob("MYOFFICE", "MYID", "MYDESC", "MYVALUE");
 
         XMLv2 xml = new XMLv2();
@@ -74,8 +54,7 @@ class ClobTest {
         //    <value>MYVALUE</value>
         // </clob>
 
-        ClobController controller = new ClobController(new MetricRegistry());
-        Clob clob2 = controller.deserialize(output, Formats.XMLV2);
+        Clob clob2 = Formats.parseContent(Formats.parseHeader(Formats.XMLV2, Clob.class), output, Clob.class);
 
         assertNotNull(clob2);
 
@@ -85,6 +64,29 @@ class ClobTest {
         assertEquals(clob.getValue(), clob2.getValue());
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.XMLV2, Formats.JSONV2})
+    void testRoundtripXML2Clobs(String format)  {
+        Clob clob = new Clob("MYOFFICE", "MYID", "MYDESC", "MYVALUE");
+        Clobs clobs = new Clobs.Builder("cursor", 1, 1)
+                .addClob(clob)
+                .build();
+        String output = Formats.format(Formats.parseHeader(format, Clobs.class), clobs);
 
+        Clobs clobs2 = Formats.parseContent(Formats.parseHeader(format, Clobs.class), output, Clobs.class);
+
+        assertNotNull(clobs2);
+
+        assertEquals(1, clobs2.getPageSize());
+        assertEquals(1, clobs2.getTotal());
+        assertEquals("Y3Vyc29yfHwxfHwx", clobs2.getPage());
+        assertEquals("VFZsUFJrWkpRMFY4ZkUxWlNVUT18fDF8fDE=", clobs2.getNextPage());
+        assertEquals(clob.getOfficeId(), Clobs.getOffice(clobs2.getNextPage()));
+        assertEquals(clob.getId(), Clobs.getId(clobs2.getNextPage()));
+        assertEquals(clob.getId(), clobs2.getClobs().get(0).getId());
+        assertEquals(clob.getOfficeId(), clobs2.getClobs().get(0).getOfficeId());
+        assertEquals(clob.getDescription(), clobs2.getClobs().get(0).getDescription());
+        assertEquals(clob.getValue(), clobs2.getClobs().get(0).getValue());
+    }
 
 }

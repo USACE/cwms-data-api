@@ -25,20 +25,38 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.CWMS_OFFICE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.GROUP_ID;
+import static cwms.cda.api.Controllers.GROUP_OFFICE_ID;
+import static cwms.cda.api.Controllers.INCLUDE_ASSIGNED;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_TS;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
+import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.TimeSeriesGroupDao;
 import cwms.cda.data.dto.TimeSeriesGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV1;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -50,10 +68,10 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class TimeSeriesGroupController implements CrudHandler {
@@ -75,36 +93,39 @@ public class TimeSeriesGroupController implements CrudHandler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    @OpenApi(queryParams = {
-            @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
-                    + "timeseries group(s) whose data is to be included in the response. If this "
-                    + "field is not specified, matching timeseries groups information from all "
-                    + "offices shall be returned."),
-            @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
-                    + " the assigned timeseries in the returned timeseries groups. (default: true)"),
-            @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                    + "matching against the timeseries category id"),
-            @OpenApiParam(name = TIMESERIES_GROUP_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                    + "matching against the timeseries group id")
-    },
+    @OpenApi(
+            queryParams = {
+                @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
+                        + "timeseries assigned to the group(s) whose data is to be included in the response. If this "
+                        + "field is not specified, group information for all assigned TS offices shall be returned."),
+                @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
+                        + " the assigned timeseries in the returned timeseries groups. (default: true)"),
+                @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                        + "matching against the timeseries category id"),
+                @OpenApiParam(name = CATEGORY_OFFICE_ID, description = "Specifies the owning office of the "
+                    + "timeseries group category"),
+                @OpenApiParam(name = TIMESERIES_GROUP_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                        + "matching against the timeseries group id")
+            },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            content = {@OpenApiContent(isArray = true, from =
-                                    TimeSeriesGroup.class, type = Formats.JSON)
-                            }
-                    ),
-                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                            + "inputs provided the timeseries group(s) were not found."),
-                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
-                            + "implemented")}, description = "Returns CWMS Timeseries Groups "
-            + "Data", tags = {TAG})
+                @OpenApiResponse(status = STATUS_200,
+                        content = {@OpenApiContent(isArray = true, from =
+                                TimeSeriesGroup.class, type = Formats.JSON)
+                        }),
+                @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
+                        + "inputs provided the timeseries group(s) were not found."),
+                @OpenApiResponse(status = STATUS_501, description = "request format is not "
+                        + "implemented")}, description = "Returns CWMS Timeseries Groups Data",
+            tags = {TAG})
     @Override
-    public void getAll(Context ctx) {
-        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+    public void getAll(@NotNull Context ctx) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
-            String office = ctx.queryParam(OFFICE);
+            String tsOffice = ctx.queryParam(OFFICE);
+            String groupOffice = ctx.queryParam(GROUP_OFFICE_ID);
+            String categoryOffice = ctx.queryParam(CATEGORY_OFFICE_ID);
 
             boolean includeAssigned = queryParamAsClass(ctx, new String[]{INCLUDE_ASSIGNED},
                     Boolean.class, true, metrics, name(TimeSeriesGroupController.class.getName(),
@@ -114,14 +135,15 @@ public class TimeSeriesGroupController implements CrudHandler {
             String tsGroupLike = queryParamAsClass(ctx, new String[]{TIMESERIES_GROUP_LIKE},
                     String.class, null, metrics, name(TimeSeriesGroupController.class.getName(), GET_ALL));
 
-            List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(office, includeAssigned, tsCategoryLike, tsGroupLike);
+            List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(tsOffice, groupOffice, categoryOffice,
+                    includeAssigned, tsCategoryLike, tsGroupLike);
             if (grps.isEmpty()) {
                 CdaError re = new CdaError("No data found for The provided office");
                 logger.info(() -> re + " for request " + ctx.fullUrl());
                 ctx.status(HttpCode.NOT_FOUND).json(re);
             } else {
                 String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+                ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
 
                 String result = Formats.format(contentType, grps, TimeSeriesGroup.class);
 
@@ -136,39 +158,47 @@ public class TimeSeriesGroupController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = GROUP_ID, required = true, description = "Specifies "
-                            + "the timeseries group whose data is to be included in the response")
+                @OpenApiParam(name = GROUP_ID, required = true, description = "Specifies "
+                        + "the timeseries group whose data is to be included in the response")
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "owning office of the timeseries group whose data is to be included"
-                            + " in the response."),
-                    @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies"
-                            + " the category containing the timeseries group whose data is to be "
-                            + "included in the response."),
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                        + "owning office of the timeseries assigned to the group whose data is to be included"
+                        + " in the response. This will limit the assigned timeseries returned to only those"
+                        + " assigned to the specified office."),
+                @OpenApiParam(name = CATEGORY_OFFICE_ID, description = "Specifies the owning office of the "
+                        + "timeseries group category", required = true),
+                @OpenApiParam(name = GROUP_OFFICE_ID, description = "Specifies the owning office of the "
+                        + "timeseries group", required = true),
+                @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies"
+                        + " the category containing the timeseries group whose data is to be "
+                        + "included in the response."),
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON),
-                    }
-
-                    )},
+                @OpenApiResponse(status = STATUS_200, content = {
+                    @OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON),
+                })
+            },
             description = "Retrieves requested timeseries group", tags = {"Timeseries Groups"})
     @Override
-    public void getOne(Context ctx, String groupId) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+    public void getOne(@NotNull Context ctx, @NotNull String groupId) {
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
-            String office = ctx.queryParam(OFFICE);
+            String tsOffice = ctx.queryParam(OFFICE);
             String categoryId = ctx.queryParam(CATEGORY_ID);
 
+            // Not marked as required to maintain backwards compatibility with existing clients
+            String groupOffice = ctx.queryParam(GROUP_OFFICE_ID);
+            String categoryOffice = ctx.queryParam(CATEGORY_OFFICE_ID);
+
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
 
             TimeSeriesGroup group = null;
-            List<TimeSeriesGroup> timeSeriesGroups = dao.getTimeSeriesGroups(office, categoryId,
-                    groupId);
+            List<TimeSeriesGroup> timeSeriesGroups = dao.getTimeSeriesGroups(tsOffice, groupOffice, categoryOffice,
+                    categoryId, groupId);
             if (timeSeriesGroups != null && !timeSeriesGroups.isEmpty()) {
                 if (timeSeriesGroups.size() == 1) {
                     group = timeSeriesGroups.get(0);
@@ -178,7 +208,7 @@ public class TimeSeriesGroupController implements CrudHandler {
                             "Multiple TimeSeriesGroups returned from getTimeSeriesGroups "
                                     + "for:%s category:%s groupId:%s At most one match was "
                                     + "expected. Found:%s",
-                            office, categoryId, groupId, timeSeriesGroups);
+                            groupOffice, categoryId, groupId, timeSeriesGroups);
                     throw new IllegalArgumentException(message);
                 }
             }
@@ -216,38 +246,32 @@ public class TimeSeriesGroupController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void create(Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE)){
+    public void create(@NotNull Context ctx) {
+        try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
-            TimeSeriesGroup deserialize = deserialize(body, formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
+            TimeSeriesGroup deserialize = Formats.parseContent(contentType, body, TimeSeriesGroup.class);
+
+            if (!deserialize.getTimeSeriesCategory().getOfficeId().equalsIgnoreCase(CWMS_OFFICE)
+                    && (!deserialize.getOfficeId().equalsIgnoreCase(deserialize.getTimeSeriesCategory().getOfficeId())
+                    || deserialize.getOfficeId().equalsIgnoreCase(CWMS_OFFICE))) {
+                throw new IllegalArgumentException("TimeSeries Group office ID cannot be CWMS and must match the "
+                        + "TimeSeries Category office ID");
+            }
+
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
             dao.create(deserialize, failIfExists);
             ctx.status(HttpServletResponse.SC_CREATED);
-        } catch (JsonProcessingException ex) {
-            CdaError re = new CdaError("Failed to process create request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-    }
-
-    private TimeSeriesGroup deserialize(String body, String format) throws JsonProcessingException {
-        TimeSeriesGroup retval;
-        if (ContentType.equivalent(Formats.JSON, format)) {
-            ObjectMapper om = JsonV1.buildObjectMapper();
-            retval = om.readValue(body, TimeSeriesGroup.class);
-        } else {
-            throw new IllegalArgumentException("Unsupported format: " + format);
-        }
-        return retval;
     }
 
     @OpenApi(
-        description = "Update existing TimeSeriesGroup",
+        description = "Update existing TimeSeriesGroup. Allows for renaming of the group, "
+            + "assigning new time series, and unassigning all time series from the group.",
         requestBody = @OpenApiRequestBody(
             content = {
                 @OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON)
@@ -258,35 +282,33 @@ public class TimeSeriesGroupController implements CrudHandler {
                 + "unassign all existing time series before assigning new time series specified in the content body "
                 + "Default: false"),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                + "owning office of the time series group to be updated"),
+                + "office of the user making the request. This is the office that the timeseries, group, and category "
+                + "belong to. If the group and/or category belong to the CWMS office, "
+                + "this only identifies the timeseries."),
         },
         method = HttpMethod.PATCH,
         tags = {TAG}
     )
     @Override
-    public void update(Context ctx, String oldGroupId) {
-
-        try (Timer.Context ignored = markAndTime(CREATE)){
+    public void update(@NotNull Context ctx, @NotNull String oldGroupId) {
+        try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
-            TimeSeriesGroup deserialize = deserialize(body, formatHeader);
-            boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_TS, Boolean.class).getOrDefault(false);
+            String office = requiredParam(ctx, OFFICE);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
+            TimeSeriesGroup deserialize = Formats.parseContent(contentType, body, TimeSeriesGroup.class);
+            boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_TS, Boolean.class)
+                .getOrDefault(false);
             TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
-            if (!oldGroupId.equals(deserialize.getId())) {
+            if (!office.equalsIgnoreCase(CWMS_OFFICE) && !oldGroupId.equals(deserialize.getId())) {
                 timeSeriesGroupDao.renameTimeSeriesGroup(oldGroupId, deserialize);
             }
             if (replaceAssignedTs) {
-                timeSeriesGroupDao.unassignAllTs(deserialize);
+                timeSeriesGroupDao.unassignAllTs(deserialize, office);
             }
-            timeSeriesGroupDao.assignTs(deserialize);
-            ctx.status(HttpServletResponse.SC_ACCEPTED);
-        } catch (JsonProcessingException ex) {
-            CdaError re = new CdaError("Failed to process create request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+            timeSeriesGroupDao.assignTs(deserialize, office);
+            ctx.status(HttpServletResponse.SC_OK);
         }
     }
 
@@ -305,8 +327,8 @@ public class TimeSeriesGroupController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, @NonNull String groupId) {
-        try (Timer.Context ignored = markAndTime(UPDATE)){
+    public void delete(@NotNull Context ctx, @NonNull String groupId) {
+        try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);

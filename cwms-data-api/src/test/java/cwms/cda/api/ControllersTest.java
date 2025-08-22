@@ -12,6 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.codahale.metrics.MetricRegistry;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
@@ -316,6 +317,18 @@ class ControllersTest {
     }
 
     @Test
+    void testUnitSystemValidationRegistration() throws ClassNotFoundException {
+
+        // Trigger static initialization of Controllers class
+        Class<?> ignored = Class.forName("cwms.cda.api.Controllers");
+        assertNotNull(ignored);
+
+        assertTrue(JavalinValidation.INSTANCE.hasConverter(UnitSystem.class));
+        assertEquals(UnitSystem.EN, JavalinValidation.INSTANCE.convertValue(UnitSystem.class, "EN"));
+        assertEquals(UnitSystem.SI, JavalinValidation.INSTANCE.convertValue(UnitSystem.class, "SI"));
+    }
+
+    @Test
     void testMissingRequiredParams(){
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
@@ -336,7 +349,89 @@ class ControllersTest {
         assertThrows(RequiredQueryParameterException.class, () -> Controllers.requiredZdt(ctx, Controllers.BEGIN));
     }
 
+    @Test
+    void testQueryParamAsType(){
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
 
+        Map<String, String> urlParams = new LinkedHashMap<>();
+        urlParams.put(Controllers.METHOD, "DELETE_KEY");
+        String paramStr = ControllerTest.buildParamStr(urlParams);
+        when(request.getQueryString()).thenReturn(paramStr);
 
+        // build real context that uses the mock request/response
+        Context ctx = new Context(request, response, new LinkedHashMap<String, String>());
 
+        // if its present it should work
+        assertEquals(JooqDao.DeleteMethod.DELETE_KEY, Controllers.queryParamAsClass(ctx, JooqDao.DeleteMethod.class, null, Controllers.METHOD));
+    }
+
+    @Test
+    void testMissingQueryParamAsType(){
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        Map<String, String> urlParams = new LinkedHashMap<>();
+        urlParams.put(Controllers.METHOD, "DELETE_KEY");
+        String paramStr = ControllerTest.buildParamStr(urlParams);
+        when(request.getQueryString()).thenReturn(paramStr);
+
+        // build real context that uses the mock request/response
+        Context ctx = new Context(request, response, new LinkedHashMap<String, String>());
+
+        // if its present it should work
+        assertNull(Controllers.queryParamAsClass(ctx, JooqDao.DeleteMethod.class, null, "Not a key"));
+    }
+
+    @Test
+    void testAliasedQueryParamAsType(){
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        Map<String, String> urlParams = new LinkedHashMap<>();
+        urlParams.put(Controllers.METHOD, "DELETE_KEY");
+        String paramStr = ControllerTest.buildParamStr(urlParams);
+        when(request.getQueryString()).thenReturn(paramStr);
+
+        // build real context that uses the mock request/response
+        Context ctx = new Context(request, response, new LinkedHashMap<String, String>());
+
+        // if its present it should work
+        assertEquals(JooqDao.DeleteMethod.DELETE_KEY, Controllers.queryParamAsClass(ctx, JooqDao.DeleteMethod.class, null, "Not a key", Controllers.METHOD));
+    }
+
+    @Test
+    void testRequiredParamAs() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        Map<String, String> urlParams = new LinkedHashMap<>();
+        urlParams.put("boring", "the_value");
+        String paramStr = ControllerTest.buildParamStr(urlParams);
+        when(request.getQueryString()).thenReturn(paramStr);
+        Context ctx = new Context(request, response, new LinkedHashMap<String, String>());
+        assertEquals("the_value", Controllers.requiredParamAs(ctx, "boring", String.class));
+        assertThrows(RequiredQueryParameterException.class,
+            () -> Controllers.requiredParamAs(ctx, Controllers.OFFICE, String.class));
+    }
+
+    @Test
+    void testQueryParamAsDouble() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        Map<String, String> urlParams = new LinkedHashMap<>();
+        urlParams.put("a_double", "1.0");
+        urlParams.put("an_int", "1");
+        String paramStr = ControllerTest.buildParamStr(urlParams);
+        when(request.getQueryString()).thenReturn(paramStr);
+        Context ctx = new Context(request, response, new LinkedHashMap<String, String>());
+
+        Double retVal = Controllers.queryParamAsDouble(ctx, "a_double");
+        assertEquals(1.0, retVal);
+
+        Double retVal2 = Controllers.queryParamAsDouble(ctx, "an_int");
+        assertEquals(1.0, retVal2);
+
+        Double retVal3 = Controllers.queryParamAsDouble(ctx, "null");
+        assertNull(retVal3);
+    }
 }

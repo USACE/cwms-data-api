@@ -24,29 +24,23 @@
 
 package cwms.cda.data.dto;
 
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import java.util.ArrayList;
-
 @Schema(description = "A representation of a state")
-@XmlRootElement(name="state")
-@XmlAccessorType(XmlAccessType.FIELD)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
-public class State implements CwmsDTOBase {
-    @XmlElement(name="state-initial")
+@JsonRootName("state")
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.JSON, Formats.DEFAULT})
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+public class State extends CwmsDTOBase {
+    @JsonProperty(required = true)
     private String stateInitial;
-    @XmlElement(name="name")
+    @JsonProperty(required = true)
     private String name;
 
     public State(){}
@@ -60,19 +54,5 @@ public class State implements CwmsDTOBase {
 
     public String getStateInitial() {
         return stateInitial;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        ArrayList<String> missingFields = new ArrayList<>();
-        if (this.getName() == null) {
-            missingFields.add("Name");
-        }
-        if (this.getStateInitial() == null) {
-            missingFields.add("State Initial");
-        }
-        if (!missingFields.isEmpty()) {
-            throw new RequiredFieldException(missingFields);
-        }
     }
 }

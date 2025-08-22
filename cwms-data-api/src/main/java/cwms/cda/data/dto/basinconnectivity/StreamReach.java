@@ -96,11 +96,4 @@ public class StreamReach extends CwmsDTO
             return new StreamReach(this);
         }
     }
-
-    @Override
-    public void validate() throws FieldException {
-        // TODO Auto-generated method stub
-
-    }
-
 }

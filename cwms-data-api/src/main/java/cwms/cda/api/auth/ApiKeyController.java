@@ -1,15 +1,36 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 package cwms.cda.api.auth;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.AuthDao;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.formatters.Formats;
 import cwms.cda.security.CwmsAuthException;
@@ -22,6 +43,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -29,12 +52,10 @@ import org.jooq.DSLContext;
 public class ApiKeyController implements CrudHandler {
     public final MetricRegistry metrics;
 
-    private final Histogram requestResultSize;
 
     public ApiKeyController(MetricRegistry metrics) {
         this.metrics = metrics;
 
-        requestResultSize = this.metrics.histogram((name(this.getClass().getName(), RESULTS, SIZE)));
     }
 
     @OpenApi(
@@ -49,7 +70,8 @@ public class ApiKeyController implements CrudHandler {
                     },
                     status = STATUS_201
         ),
-        description = "Create a new API Key for user. The randomly generated key is returned to the caller. A provided key will be ignored.",
+        description = "Create a new API Key for user. The randomly generated key is returned "
+                + "to the caller. A provided key will be ignored.",
         tags = {"Authorization"}
     )
     @Override
@@ -69,17 +91,12 @@ public class ApiKeyController implements CrudHandler {
             if (ex.getMessage().equals(AuthDao.ONLY_OWN_KEY_MESSAGE)) {
                 ctx.json(new CdaError(ex.getMessage(), true)).status(ex.getAuthFailCode());
             } else {
-                throw ex;
+                throw JooqDao.wrapException(ex);
             }
         }
     }
 
     @OpenApi(
-        requestBody = @OpenApiRequestBody(
-                    content = {
-                        @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
-                    }
-        ),
         responses = @OpenApiResponse(
                     content = {
                         @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
@@ -97,7 +114,6 @@ public class ApiKeyController implements CrudHandler {
         AuthDao auth = AuthDao.getInstance(dsl);
         auth.deleteKeyForUser(p, keyName);
         ctx.status(HttpCode.NO_CONTENT);
-
     }
 
     @OpenApi(
@@ -107,6 +123,9 @@ public class ApiKeyController implements CrudHandler {
                     },
                     status = STATUS_201
         ),
+        security = {
+                @OpenApiSecurity(name = "gets overridden allows lock icon.")
+            },
         description = "View all keys for the current user",
         tags = {"Authorization"}
     )
@@ -132,6 +151,9 @@ public class ApiKeyController implements CrudHandler {
                     },
                     status = STATUS_201
         ),
+        security = {
+            @OpenApiSecurity(name = "gets overridden allows lock icon.")
+        },
         description = "View specific key",
         tags = {"Authorization"}
     )

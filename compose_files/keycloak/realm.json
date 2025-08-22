@@ -26,7 +26,7 @@
   "oauth2DeviceCodeLifespan": 600,
   "oauth2DevicePollingInterval": 5,
   "enabled": true,
-  "sslRequired": "external",
+  "sslRequired": "none",
   "registrationAllowed": false,
   "registrationEmailAsUsername": false,
   "rememberMe": false,
@@ -662,7 +662,8 @@
       "alwaysDisplayInConsole": true,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
-        "cwms-data.test"
+        "https://cwms-data.test:8444/*",
+        "https://localhost:5010/*"
       ],
       "webOrigins": [
         "*"
@@ -671,7 +672,7 @@
       "bearerOnly": false,
       "consentRequired": false,
       "standardFlowEnabled": true,
-      "implicitFlowEnabled": false,
+      "implicitFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "publicClient": true,
@@ -2291,6 +2292,8 @@
     {
       "username": "m5hectest",
       "enabled": true,
+      "email": "noreply@data.test",
+      "emailVerified": true,
       "credentials": [
         {
           "type": "password",
@@ -2299,6 +2302,22 @@
       ],
       "realmRoles": [
           "cwms_user"
+      ]
+    },
+    {
+      "username": "q0hecoidc",
+      "enabled": true,
+      "email": "noreply-oidc@data.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "q0hecoidc"
+      }
+      ],
+      "realmRoles": [
+          "cwms_user",
+          "new_user"
       ]
     }
   ]

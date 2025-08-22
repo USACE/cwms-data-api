@@ -24,21 +24,21 @@
 
 package cwms.cda.data.dao;
 
-import cwms.cda.data.dto.LocationLevel;
-import cwms.cda.data.dto.LocationLevels;
+import cwms.cda.data.dto.locationlevel.LocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevels;
 import cwms.cda.data.dto.TimeSeries;
 import hec.data.level.ILocationLevelRef;
+
 import mil.army.usace.hec.metadata.Interval;
 
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 public interface LocationLevelsDao {
     void deleteLocationLevel(String locationLevelName, ZonedDateTime date, String officeId,
                              Boolean cascadeDelete);
 
-    void storeLocationLevel(LocationLevel level, ZoneId zoneId);
+    void storeLocationLevel(LocationLevel level);
 
     void renameLocationLevel(String oldLocationLevelName, String newLocationLevelName, String officeId);
 

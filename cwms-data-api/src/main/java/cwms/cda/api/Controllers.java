@@ -24,23 +24,27 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
-
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.jetbrains.annotations.Nullable;
-
-import static com.codahale.metrics.MetricRegistry.name;
-
 
 public final class Controllers {
 
@@ -59,7 +63,10 @@ public final class Controllers {
     public static final String SIZE = "size";
 
     public static final String OFFICE = "office";
+    public static final String CATEGORY_OFFICE_ID = "category-office-id";
+    public static final String GROUP_OFFICE_ID = "group-office-id";
     public static final String UNIT = "unit";
+    public static final String UNITS = "units";
     public static final String COUNT = "count";
     public static final String TIME = "time";
     public static final String RESULTS = "results";
@@ -69,12 +76,10 @@ public final class Controllers {
     public static final String UNIT_SYSTEM = "unit-system";
 
     public static final String TIMESERIES_CATEGORY_LIKE = "timeseries-category-like";
+    public static final String INCLUDE_ENTRY_DATE = "include-entry-date";
 
     public static final String LOCATION_CATEGORY_LIKE = "location-category-like";
     public static final String LOCATION_GROUP_LIKE = "location-group-like";
-
-
-
 
     public static final String TIMESERIES_GROUP_LIKE = "timeseries-group-like";
     public static final String ACCEPT = "Accept";
@@ -87,6 +92,7 @@ public final class Controllers {
     public static final String DATE = "date";
     public static final String LEVEL_ID = "level-id";
     public static final String LEVEL_ID_MASK = "level-id-mask";
+    public static final String LOCATION_MASK = "location-mask";
     public static final String NAME = "name";
     public static final String CASCADE_DELETE = "cascade-delete";
     public static final String DATUM = "datum";
@@ -103,6 +109,7 @@ public final class Controllers {
     public static final String TEMPLATE_ID = "template-id";
     public static final String TEMPLATE_ID_MASK = "template-id-mask";
     public static final String STORE_TEMPLATE = "store-template";
+    public static final String REPLACE_BASE_CURVE = "replace-base-curve";
 
     public static final String TIMESERIES_ID_REGEX = "timeseries-id-regex";
     public static final String TIMESERIES_ID = "timeseries-id";
@@ -112,7 +119,7 @@ public final class Controllers {
     public static final String INTERVAL_OFFSET = "interval-offset";
     public static final String INTERVAL = "interval";
     public static final String CATEGORY_ID = "category-id";
-    public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-0700[PST8PDT]";
+    public static final String CATEGORY_ID_MASK = "category-id-mask";
     public static final String VERSION_DATE = "version-date";
 
     public static final String CREATE_AS_LRTS = "create-as-lrts";
@@ -123,22 +130,48 @@ public final class Controllers {
     public static final String MAX_VERSION = "max-version";
     public static final String TIMESERIES = "timeseries";
     public static final String LOCATIONS = "locations";
+    public static final String WATER_USER = "water-user";
+    public static final String CONTRACT_NAME = "contract-name";
+    public static final String PARAMETER_ID = "parameter-id";
+    public static final String PARAMETER_ID_MASK = "parameter-id-mask";
+    public static final String VERSION_MASK = "version-mask";
+    public static final String PROFILE_DATA = "profile-data";
+    public static final String PREVIOUS = "previous";
+    public static final String NEXT = "next";
 
     public static final String LOCATION_ID = "location-id";
     public static final String SOURCE_ENTITY = "source-entity";
     public static final String FORECAST_DATE = "forecast-date";
     public static final String ISSUE_DATE = "issue-date";
+    public static final String LOCATION_KIND_LIKE = "location-kind-like";
+    public static final String LOCATION_TYPE_LIKE = "location-type-like";
+    public static final String NEGATE_LOCATION_KIND_LIKE = "negate-location-kind-like";
+    public static final String INCLUDE_ALIASES = "include-aliases";
+    public static final String MIN_NUMBER = "min-number";
+    public static final String MAX_NUMBER = "max-number";
+    public static final String MIN_HEIGHT = "min-height";
+    public static final String MAX_HEIGHT = "max-height";
+    public static final String MIN_FLOW = "min-flow";
+    public static final String MAX_FLOW = "max-flow";
+    public static final String AGENCY = "agency";
+    public static final String QUALITY = "quality";
+    public static final String NAMES = "names";
+    public static final String FILTER_BASE_LOCATIONS = "filter-base-locations";
 
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
     public static final String REPLACE_ASSIGNED_TS = "replace-assigned-ts";
     public static final String TS_IDS = "ts-ids";
+
+    public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-07:00";
     public static final String DATE_FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
+    public static final String TIME_FORMAT_DESC = "The <a href=\"times.html\">format for this field</a> is ISO 8601 extended" +
+            ", with optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."            ;
+
     public static final String INCLUDE_ASSIGNED = "include-assigned";
     public static final String ANY_MASK = "*";
     public static final String OFFICE_MASK = "office-mask";
     public static final String ID_MASK = "id-mask";
-    public static final String LOCATION_MASK = "location-mask";
     public static final String NAME_MASK = "name-mask";
     public static final String BOTTOM_MASK = "bottom-mask";
     public static final String TOP_MASK = "top-mask";
@@ -152,23 +185,62 @@ public final class Controllers {
     public static final String HAS_DATA = "has-data";
     public static final String STATUS_200 = "200";
     public static final String STATUS_201 = "201";
+    public static final String STATUS_204 = "204";
     public static final String STATUS_404 = "404";
     public static final String STATUS_501 = "501";
     public static final String STATUS_400 = "400";
+    public static final String STATUS_401 = "401";
     public static final String TEXT_MASK = "text-mask";
     public static final String DELETE_MODE = "delete-mode";
-    public static final String MIN_ATTRIBUTE = "min-attribute";
-    public static final String MAX_ATTRIBUTE = "max-attribute";
     public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
     public static final String STANDARD_TEXT_ID = "standard-text-id";
+    public static final String STREAM_ID_MASK = "stream-id-mask";
+    public static final String STREAM_ID = "stream-id";
+    public static final String DIVERTS_FROM_STREAM_ID_MASK = "diverts-from-stream-id-mask";
+    public static final String FLOWS_INTO_STREAM_ID_MASK = "flows-into-stream-id-mask";
+    public static final String REACH_ID_MASK = "reach-id-mask";
+    public static final String CONFIGURATION_ID_MASK = "configuration-id-mask";
+    public static final String ALL_DOWNSTREAM = "all-downstream";
+    public static final String ALL_UPSTREAM = "all-upstream";
+    public static final String SAME_STREAM_ONLY = "same-stream-only";
+    public static final String AREA_UNIT = "area-unit";
+    public static final String STATION_UNIT = "station-unit";
+    public static final String STAGE_UNIT = "stage-unit";
     public static final String TRIM = "trim";
     public static final String DESIGNATOR = "designator";
     public static final String DESIGNATOR_MASK = "designator-mask";
+    public static final String INCLUDE_EXTENTS = "include-extents";
+    public static final String EXCLUDE_EMPTY = "exclude-empty";
+    public static final String DEFAULT_VALUE = "default-value";
+    public static final String CATEGORY = "category";
+    public static final String PREFIX = "prefix";
+    public static final String PROJECT_LIKE = "project-like";
+
+    public static final String APPLICATION_ID = "application-id";
+    public static final String REVOKE_EXISTING = "revoke-existing";
+    public static final String REVOKE_TIMEOUT = "revoke-timeout";
+    public static final String PROJECT_MASK = "project-mask";
+    public static final String APPLICATION_MASK = "application-mask";
+    public static final String USER_ID = "user-id";
+    public static final String LOCK_ID = "lock-id";
+    public static final String ALLOW = "allow";
+    public static final String SOURCE_ID = "source-id";
+
+    public static final String CWMS_OFFICE = "CWMS";
+
+    public static final String OFFICE_DESCRIPTION = "Office Identifier 3/4 letter as returned by the office endpoint.";
+
+    private static final String DEPRECATED_HEADER = "CWMS-DATA-Format-Deprecated";
+    private static final String DEPRECATED_TAB = "2024-11-01 TAB is not used often.";
+    private static final String DEPRECATED_CSV = "2024-11-01 CSV is not used often.";
+
+    public static final String QUERY = "query";
 
 
     static {
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
         JavalinValidation.register(VersionType.class, VersionType::versionTypeFor);
+        JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
     }
 
     private Controllers() {
@@ -189,6 +261,27 @@ public final class Controllers {
         meter.mark();
         Timer timer = registry.timer(name(className, subject, TIME));
         return timer.time();
+    }
+
+    /**
+     * Returns the first matching query param or the provided default value if no match is found.
+     *
+     * @param ctx          Request Context
+     * @param name         Name of the query param
+     * @param aliases      Alternative names for the query parameter that could be coming in
+     * @param clazz        Return value type.
+     * @param defaultValue Value to return if no matching queryParam is found.
+     * @return value
+     */
+    public static <T> T queryParamAsClass(io.javalin.http.Context ctx,
+                                          Class<T> clazz, T defaultValue, String name, String... aliases) {
+        List<String> items = new ArrayList<>();
+        items.add(name);
+        if (aliases != null) {
+            items.addAll(Arrays.asList(aliases));
+        }
+
+        return queryParamAsClass(ctx, items.toArray(new String[]{}), clazz, defaultValue);
     }
 
     /**
@@ -269,6 +362,12 @@ public final class Controllers {
         return retval;
     }
 
+    /**
+     * Gets the delete method based on the input string.
+     *
+     * @param input The input string representing the delete method.
+     * @return JooqDao.DeleteMethod representing the delete method, or null if the input is null.
+     */
     public static JooqDao.DeleteMethod getDeleteMethod(String input) {
         JooqDao.DeleteMethod retval = null;
 
@@ -294,6 +393,28 @@ public final class Controllers {
         return param;
     }
 
+    /**
+     * Returns the first matching query param or throws RequiredQueryParameterException.
+     * @param ctx Request Context
+     * @param name Query parameter name
+     * @return value of the parameter
+     * @throws RequiredQueryParameterException if the parameter is not found
+     */
+    public static <T> T requiredParamAs(io.javalin.http.Context ctx, String name, Class<T> type) {
+        return ctx.queryParamAsClass(name, type)
+            .getOrThrow(e -> new RequiredQueryParameterException(name));
+    }
+
+    @Nullable
+    public static Double queryParamAsDouble(Context ctx, String param) {
+        Double retVal = null;
+        String numberStr = ctx.queryParam(param);
+        if (numberStr != null) {
+            retVal = Double.parseDouble(numberStr);
+        }
+        return retVal;
+    }
+
     @Nullable
     public static ZonedDateTime queryParamAsZdt(Context ctx, String param, String timezone) {
         ZonedDateTime beginZdt = null;
@@ -309,11 +430,21 @@ public final class Controllers {
         return queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
     }
 
+    /**
+     * Retrieves the value of the specified query parameter and converts it to an Instant object.
+     *
+     * @param ctx   The context of the request.
+     * @param param The name of the query parameter to retrieve.
+     * @return The query parameter value as an Instant object, or null if the parameter is not
+     *     found or cannot be parsed.
+     */
     @Nullable
     public static Instant queryParamAsInstant(Context ctx, String param) {
-        ZonedDateTime zonedDateTime = queryParamAsZdt(ctx, param, ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC"));
+        ZonedDateTime zonedDateTime = queryParamAsZdt(ctx, param,
+                ctx.queryParamAsClass(TIMEZONE, String.class)
+                        .getOrDefault("UTC"));
         Instant retval = null;
-        if(zonedDateTime != null) {
+        if (zonedDateTime != null) {
             retval = zonedDateTime.toInstant();
         }
         return retval;
@@ -349,5 +480,11 @@ public final class Controllers {
         return retval;
     }
 
-
+    public static void addDeprecatedContentTypeWarning(Context ctx, ContentType type) {
+        if (type.getType().equalsIgnoreCase(Formats.TAB)) {
+            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_TAB);
+        } else if (type.getType().equalsIgnoreCase(Formats.CSV)) {
+            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_CSV);
+        }
+    }
 }

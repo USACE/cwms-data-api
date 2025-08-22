@@ -1,55 +1,34 @@
-#name: cwms
 volumes:
-  oracle_data:
+  oracle_data_1:
   auth_data:
 services:
   db:
-    # if using gvenzl/oracle-xe you'll need to adjust the environment below
-    image: ${ORACLE_DOCKER_IMAGE}
-    volumes:
-      - oracle_data:/opt/oracle/oradata
+    image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev
     environment:
-      - ORACLE_PDB=CWMS
-      - ORACLE_PWD=badSYSpassword
-      - ORACLE_EDITION=enterprise
-    ports:
-      - "1521:1521"
-    healthcheck:
-      test: ["CMD","tnsping", "CWMS"]
-      interval: 1m30s
-      timeout: 30s
-      retries: 5
-      start_period: 40m
-  db_install:
-    depends_on:
-      db:
-        condition: service_healthy
-    image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry.hecdev.net/cwms/schema_installer:23.03.16}
-    pull_policy: always
-    tty: true
-    environment:
-      - DB_HOST_PORT=db:1521
-      - DB_NAME=/CWMS
+      #- ORACLE_DATABASE=FREEPDB1
+      - ORACLE_PASSWORD=badSYSpassword
       - CWMS_PASSWORD=simplecwmspasswD1
-      - SYS_PASSWORD=badSYSpassword
-      # set to HEC/q0 for any national system work
-      - OFFICE_ID=HEC
-      - OFFICE_EROC=q0
-      - INSTALLONCE=1
-      - QUIET=1
-    restart: "no"
-
+      - OFFICE_ID=HQ
+      - OFFICE_EROC=s0
+    ports:
+      - "1525:1521"
+    healthcheck:
+      test: ["CMD-SHELL","sqlplus -s -L sys/badSYSpassword@localhost:1521/FREEPDB1 as sysdba <<< 'exit;'"]
+      interval: 30s
+      timeout: 50s
+      retries: 50
+      start_period: 40m
   db_webuser_permissions:
-    image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry.hecdev.net/cwms/schema_installer:23.03.16}
+    image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry-public.hecdev.net/cwms/schema_installer:latest-dev}
     restart: "no"
     environment:
       - DB_HOST_PORT=db:1521
-      - DB_NAME=/CWMS
+      - DB_NAME=/FREEPDB1
       - CWMS_PASSWORD=simplecwmspasswD1
       - SYS_PASSWORD=badSYSpassword
       # set to HQ/q0 for any national system work
       - OFFICE_ID=HQ
-      - OFFICE_EROC=q0
+      - OFFICE_EROC=s0
       - INSTALLONCE=1
       - QUIET=1
     command: >
@@ -59,84 +38,87 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      db_install:
-        condition: service_completed_successfully
 
 
   data-api:
     depends_on:
+      auth:
+        condition: service_healthy
       db:
         condition: service_healthy
-      db_install:
-        condition: service_completed_successfully
       db_webuser_permissions:
         condition: service_completed_successfully
       traefik:
         condition: service_healthy
-    image: cwms-rest-api:3.0-compose
+    image: cwms-rest-api:local-dev
     build:
       target: api
       context: .
       dockerfile: Dockerfile
-    command: bash -c "/conf/installcerts.sh && /usr/local/tomcat/bin/catalina.sh run"
+    #command: bash -c "/conf/installcerts.sh && /usr/local/tomcat/bin/catalina.sh run"
     restart: unless-stopped
     volumes:
       - ./compose_files/pki/certs:/conf/
       - ./compose_files/tomcat/logging.properties:/usr/local/tomcat/conf/logging.properties:ro
     environment:
+      - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005
       - CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
-      - CDA_JDBC_URL=jdbc:oracle:thin:@db/CWMS
-      - CDA_JDBC_USERNAME=q0webtest
+      - CDA_JDBC_URL=jdbc:oracle:thin:@db/FREEPDB1
+      - CDA_JDBC_USERNAME=s0webtest
       - CDA_JDBC_PASSWORD=simplecwmspasswD1
       - CDA_POOL_INIT_SIZE=5
       - CDA_POOL_MAX_ACTIVE=10
       - CDA_POOL_MAX_IDLE=5
       - CDA_POOL_MIN_IDLE=2
       - cwms.dataapi.access.provider=MultipleAccessManager
-      - cwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID
-      - cwms.dataapi.access.openid.wellKnownUrl=https://auth.test:8444/auth/realms/cwms/.well-known/openid-configuration
-      - cwms.dataapi.access.openid.issuer=https://auth.test:8444/auth/realms/cwms
-      - cwms.dataapi.access.openid.altAuthUrl=https://authc.test:8444
+      - cwms.dataapi.access.providers=KeyAccessManager,OpenID
+      - cwms.dataapi.access.openid.create_users=true
+      - cwms.dataapi.access.openid.wellKnownUrl=http://auth:${APP_PORT:-8081}/auth/realms/cwms/.well-known/openid-configuration
+      - cwms.dataapi.access.openid.altAuthUrl=http://localhost:${APP_PORT:-8081}
+      - cwms.dataapi.access.openid.useAltWellKnown=true
+      - cwms.dataapi.access.openid.issuer=http://localhost:${APP_PORT:-8081}/auth/realms/cwms
     expose:
       - 7000
+      - 5005
     healthcheck:
       test: ["CMD","/usr/bin/curl", "-I","localhost:7000/cwms-data/offices/HEC"]
-      interval: 1m30s
+      interval: 5s
       timeout: 1s
-      retries: 10
+      retries: 100
       start_period: 2s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.data-api.rule=Host(`cwms-data.test`)"
-      - "traefik.http.routers.data-api.entryPoints=web-secure"
-      - "traefik.http.routers.data-api.tls=true"
+      - "traefik.http.routers.data-api.rule=PathPrefix(`/cwms-data`)"
+      - "traefik.http.routers.data-api.entryPoints=web"
+      - "traefik.http.services.data-api.loadbalancer.server.port=7000"
 
   auth:
     image: quay.io/keycloak/keycloak:19.0.1
-    command: ["start", "--features-disabled=admin2","--import-realm"]
+    command: ["start-dev", "--features-disabled=admin2","--import-realm"]
+    healthcheck:
+      test: "/usr/bin/curl -If localhost:${APP_PORT:-8081}/auth/health/ready || exit 1"
+      interval: 5s
+      timeout: 1s
+      retries: 100
+      start_period: 2s
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HEALTH_ENABLED=true
       - KC_FEATURES=admin-fine-grained-authz
-      - KC_HOSTNAME=auth.test:8444
-      - KC_HOSTNAME_URL=https://auth.test:8444
+      - KC_HTTP_PORT=${APP_PORT:-8081}
+      - KEYCLOAK_FRONTEND_URL=http://localhost:${APP_PORT:-8081}
       - KC_HOSTNAME_STRICT=false
-      - KC_PROXY=edge
+      - KC_PROXY=none
       - KC_HTTP_ENABLED=true
       - KC_HTTP_RELATIVE_PATH=/auth
-      - KC_HTTPS_KEY_STORE_FILE=/conf/server.keystore
-      - KC_HTTPS_KEY_STORE_PASSWORD=badpassword
     volumes:
-      - ./compose_files/pki/certs/main.ks:/conf/server.keystore:ro
       - ./compose_files/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.auth.rule=Host(`auth.test`)"
-      - "traefik.http.routers.auth.entryPoints=web-secure"
-      - "traefik.http.routers.auth.tls=true"
-    expose:
-      - 8080
-      - 8443
+      - "traefik.http.routers.auth.rule=PathPrefix(`/auth`)"
+      - "traefik.http.routers.auth.entryPoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=${APP_PORT:-8081}"
     depends_on:
       traefik:
         condition: service_healthy
@@ -145,22 +127,23 @@ services:
 
   # Proxy for HTTPS for OpenID
   traefik:
-    image: "traefik:v2.9"
-    container_name: "traefik"
+    image: "traefik:v3.3.3"
     ports:
-      - "81:81"
-      - "8444:8443"
+      - "${APP_PORT:-8081}:80"
     expose:
       - "8080"
     volumes:
-      - ./compose_files/traefik/traefik.yml:/etc/traefik/traefik.yaml:ro
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - ./compose_files/pki/certs:/certs:ro
     healthcheck:
       test: traefik healthcheck --ping
+    command:
+      - "--entrypoints.web.address=:80"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--ping"
+      - "--log.level=DEBUG"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`traefik.test`)"
-      - "traefik.http.routers.api.entryPoints=traefik"
-      - "traefik.http.routers.api.service=api@internal"
-      - "traefik.http.routers.api.tls=true"
+      - "traefik.http.routers.traefik.rule=PathPrefix(`/traefik`)"
+      - "traefik.http.routers.traefik.service=api@internal"

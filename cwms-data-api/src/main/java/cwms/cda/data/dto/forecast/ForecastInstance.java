@@ -1,76 +1,70 @@
 package cwms.cda.data.dto.forecast;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.data.dto.CwmsDTO;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.time.Instant;
 import java.util.Map;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 
-@XmlRootElement(name = "forecast-instance")
-@XmlAccessorType(XmlAccessType.FIELD)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@JsonRootName("forecast-instance")
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = ForecastInstance.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class ForecastInstance implements CwmsDTOBase {
+public class ForecastInstance extends CwmsDTOBase {
 
     @Schema(description = "Forecast Spec")
-    @XmlElement(name = "spec")
     private final ForecastSpec spec;
 
-    @XmlAttribute(name = "date-time")
+    @JacksonXmlProperty(isAttribute = true)
     private final Instant dateTime;
 
-    @XmlAttribute(name = "issue-date-time")
+    @JacksonXmlProperty(isAttribute = true)
     private final Instant issueDateTime;
 
-    @XmlAttribute(name = "first-date-time")
+    @JacksonXmlProperty(isAttribute = true)
     private final Instant firstDateTime;
 
-    @XmlAttribute(name = "last-date-time")
+    @JacksonXmlProperty(isAttribute = true)
     private final Instant lastDateTime;
 
-    @XmlAttribute(name = "max-age")
+    @JacksonXmlProperty(isAttribute = true)
     private final Integer maxAge;
 
-    @XmlAttribute(name = "time-series-count")
-    private final Integer timeSeriesCount;
-
     @Schema(description = "Forecast Instance Notes")
-    @XmlAttribute
+    @JacksonXmlProperty(isAttribute = true)
     private final String notes;
 
-    @XmlAttribute(name = "metadata")
+    @JacksonXmlProperty(isAttribute = true)
     private final Map<String, String> metadata;
 
     @Schema(description = "Forecast Filename")
-    @XmlAttribute(name = "filename")
+    @JacksonXmlProperty(isAttribute = true)
     private final String filename;
 
     @Schema(description = "Description of Forecast File")
-    @XmlAttribute
+    @JacksonXmlProperty(isAttribute = true)
     private final String fileDescription;
 
+    @Schema(description = "Forecast File Media Type")
+    @JacksonXmlProperty(isAttribute = true)
+    private final String fileMediaType;
+
     @Schema(description = "Forecast File binary data")
-    @XmlElement(name = "forecast-data")
     private final byte[] fileData;
 
     @Schema(description = "Link to Forecast File binary data")
-    @XmlAttribute
+    @JacksonXmlProperty(isAttribute = true)
     private final String fileDataUrl;
 
 
@@ -82,11 +76,11 @@ public class ForecastInstance implements CwmsDTOBase {
         this.firstDateTime = builder.firstDateTime;
         this.lastDateTime = builder.lastDateTime;
         this.maxAge = builder.maxAge;
-        this.timeSeriesCount = builder.timeSeriesCount;
         this.notes = builder.notes;
         this.metadata = builder.metadata;
         this.filename = builder.filename;
         this.fileDescription = builder.fileDescription;
+        this.fileMediaType = builder.fileMediaType;
         this.fileData = builder.fileData;
         this.fileDataUrl = builder.fileDataUrl;
     }
@@ -116,10 +110,6 @@ public class ForecastInstance implements CwmsDTOBase {
         return maxAge;
     }
 
-    public Integer getTimeSeriesCount() {
-        return timeSeriesCount;
-    }
-
     public String getNotes() {
         return notes;
     }
@@ -136,6 +126,10 @@ public class ForecastInstance implements CwmsDTOBase {
         return fileDescription;
     }
 
+    public String getFileMediaType() {
+        return fileMediaType;
+    }
+
     public byte[] getFileData() {
         return fileData;
     }
@@ -144,8 +138,23 @@ public class ForecastInstance implements CwmsDTOBase {
         return fileDataUrl;
     }
 
-    public void validate() throws FieldException {
-        //TODO
+    @Override
+    public String toString() {
+        return "ForecastInstance{" +
+                "spec=" + spec +
+                ", dateTime=" + dateTime +
+                ", issueDateTime=" + issueDateTime +
+                ", firstDateTime=" + firstDateTime +
+                ", lastDateTime=" + lastDateTime +
+                ", maxAge=" + maxAge +
+                ", notes='" + notes + '\'' +
+                ", metadata=" + metadata +
+                ", filename='" + filename + '\'' +
+                ", fileDescription='" + fileDescription + '\'' +
+                ", fileMediaType='" + fileMediaType + '\'' +
+                ", fileData=" + fileData +
+                ", fileDataUrl='" + fileDataUrl + '\'' +
+                '}';
     }
 
     @JsonPOJOBuilder
@@ -157,13 +166,13 @@ public class ForecastInstance implements CwmsDTOBase {
         private Instant firstDateTime;
         private Instant lastDateTime;
         private Integer maxAge;
-        private Integer timeSeriesCount;
         private String notes;
         private Map<String, String> metadata;
         private String filename;
         private String fileDescription;
         private byte[] fileData;
         private String fileDataUrl;
+        private String fileMediaType;
 
         public Builder() {
         }
@@ -200,11 +209,6 @@ public class ForecastInstance implements CwmsDTOBase {
             return this;
         }
 
-        public Builder withTimeSeriesCount(Integer timeSeriesCount) {
-            this.timeSeriesCount = timeSeriesCount;
-            return this;
-        }
-
         public Builder withNotes(String notes) {
             this.notes = notes;
             return this;
@@ -222,6 +226,11 @@ public class ForecastInstance implements CwmsDTOBase {
 
         public Builder withFileDescription(String fileDescription) {
             this.fileDescription = fileDescription;
+            return this;
+        }
+
+        public Builder withFileMediaType(String fileMediaType) {
+            this.fileMediaType = fileMediaType;
             return this;
         }
 
@@ -246,11 +255,11 @@ public class ForecastInstance implements CwmsDTOBase {
                     .withFirstDateTime(other.firstDateTime)
                     .withLastDateTime(other.lastDateTime)
                     .withMaxAge(other.maxAge)
-                    .withTimeSeriesCount(other.timeSeriesCount)
                     .withNotes(other.notes)
                     .withMetadata(other.metadata)
                     .withFilename(other.filename)
                     .withFileDescription(other.fileDescription)
+                    .withFileMediaType(other.fileMediaType)
                     .withFileData(other.fileData)
                     .withFileDataUrl(other.fileDataUrl)
                     ;

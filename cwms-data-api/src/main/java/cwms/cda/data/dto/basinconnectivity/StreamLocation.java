@@ -146,10 +146,4 @@ public class StreamLocation extends CwmsDTO
         }
     }
 
-    @Override
-    public void validate() throws FieldException {
-        // TODO Auto-generated method stub
-
-    }
-
 }

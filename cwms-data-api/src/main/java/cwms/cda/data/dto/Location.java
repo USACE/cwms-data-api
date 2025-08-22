@@ -4,30 +4,32 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.enums.Nation;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
-
+import cwms.cda.formatters.xml.XMLv1;
+import cwms.cda.formatters.xml.XMLv2;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+@JsonRootName("Location")
 @JsonDeserialize(builder = Location.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+@FormattableWith(contentType = Formats.XMLV1, formatter = XMLv1.class)
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 public final class Location extends CwmsDTO {
     @JsonProperty(required = true)
     private final String name;
@@ -51,6 +53,11 @@ public final class Location extends CwmsDTO {
     private final Double elevation;
     private final String mapLabel;
     private final String boundingOfficeId;
+    private final String elevationUnits;
+
+    private Location() {
+        this(new Builder(null, null, null, null, null,null, null));
+    }
 
     private Location(Builder builder) {
         super(builder.officeId);
@@ -75,6 +82,7 @@ public final class Location extends CwmsDTO {
         this.elevation = builder.elevation;
         this.mapLabel = builder.mapLabel;
         this.boundingOfficeId = builder.boundingOfficeId;
+        this.elevationUnits = builder.elevationUnits;
     }
 
     public String getName() {
@@ -153,6 +161,10 @@ public final class Location extends CwmsDTO {
         return elevation;
     }
 
+    public String getElevationUnits() {
+        return elevationUnits;
+    }
+
     public String getMapLabel() {
         return mapLabel;
     }
@@ -189,7 +201,8 @@ public final class Location extends CwmsDTO {
                 && Objects.equals(getElevation(), location.getElevation())
                 && Objects.equals(getMapLabel(), location.getMapLabel())
                 && Objects.equals(getBoundingOfficeId(), location.getBoundingOfficeId())
-                && getOfficeId().equals(location.getOfficeId());
+                && getOfficeId().equals(location.getOfficeId())
+                && Objects.equals(getElevationUnits(), location.getElevationUnits());
     }
 
     @Override
@@ -199,7 +212,7 @@ public final class Location extends CwmsDTO {
                 getLocationType(), getLocationKind(), getNation(), getStateInitial(),
                 getCountyName(), getHorizontalDatum(), getPublishedLongitude(),
                 getPublishedLatitude(), getVerticalDatum(), getElevation(), getMapLabel(),
-                getBoundingOfficeId(), getOfficeId());
+                getBoundingOfficeId(), getOfficeId(), getElevationUnits());
     }
 
     @Override
@@ -223,7 +236,8 @@ public final class Location extends CwmsDTO {
                 + ", publishedLongitude=" + publishedLongitude
                 + ", publishedLatitude=" + publishedLatitude
                 + ", verticalDatum='" + verticalDatum + '\''
-                + ", elevation=" + elevation
+                + ", elevation=" + elevation + '\''
+                + ", elevationUnits=" + elevationUnits + '\''
                 + ", mapLabel='" + mapLabel + '\''
                 + ", boundingOfficeId='" + boundingOfficeId + '\''
                 + ", officeId='" + getOfficeId() + '\''
@@ -237,7 +251,7 @@ public final class Location extends CwmsDTO {
         private Double latitude;
         private Double longitude;
         private String officeId;
-        private boolean active = true;
+        private Boolean active = true;
         private String publicName;
         private String longName;
         private String description;
@@ -255,12 +269,13 @@ public final class Location extends CwmsDTO {
         private Double elevation;
         private String mapLabel;
         private String boundingOfficeId;
+        private String elevationUnits;
         private static final String MISSING_NAME_ERROR_MSG = "Location name is a required field";
         private final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
         @JsonCreator
-        public Builder(@JsonProperty(value = "name") String name, @JsonProperty(value = "location"
-                + "-kind") String locationKind,
+        public Builder(@JsonProperty(value = "name") String name,
+                       @JsonProperty(value = "location-kind") String locationKind,
                        @JsonProperty(value = "timezone-name") ZoneId timezoneName,
                        @JsonProperty(value = "latitude") Double latitude,
                        @JsonProperty(value = "longitude") Double longitude,
@@ -274,6 +289,18 @@ public final class Location extends CwmsDTO {
             this.longitude = longitude;
             this.horizontalDatum = horizontalDatum;
             this.officeId = officeId;
+            buildPropertyFunctions();
+        }
+
+        public Builder(String office, String name) {
+            this.officeId = office;
+            this.name = name;
+            buildPropertyFunctions();
+        }
+
+        public Builder(CwmsId cwmsId) {
+            this.officeId = cwmsId.getOfficeId();
+            this.name = cwmsId.getName();
             buildPropertyFunctions();
         }
 
@@ -300,6 +327,7 @@ public final class Location extends CwmsDTO {
             this.elevation = location.getElevation();
             this.mapLabel = location.getMapLabel();
             this.boundingOfficeId = location.getBoundingOfficeId();
+            this.elevationUnits = location.getElevationUnits();
             buildPropertyFunctions();
         }
 
@@ -345,6 +373,8 @@ public final class Location extends CwmsDTO {
             propertyFunctionMap.put("map-label", mapLabelVal -> withMapLabel((String) mapLabelVal));
             propertyFunctionMap.put("bounding-office-id",
                 boundingOfficeIdVal -> withBoundingOfficeId((String) boundingOfficeIdVal));
+            propertyFunctionMap.put("elevation-units",
+                    elevUnits -> withElevationUnits((String) elevUnits));
         }
 
         @JsonIgnore
@@ -398,7 +428,7 @@ public final class Location extends CwmsDTO {
             return this;
         }
 
-        public Builder withActive(boolean active) {
+        public Builder withActive(Boolean active) {
             this.active = active;
             return this;
         }
@@ -461,6 +491,11 @@ public final class Location extends CwmsDTO {
             return this;
         }
 
+        public Builder withElevationUnits(String elevationUnits) {
+            this.elevationUnits = elevationUnits;
+            return this;
+        }
+
         public Builder withMapLabel(String mapLabel) {
             this.mapLabel = mapLabel;
             return this;
@@ -487,31 +522,14 @@ public final class Location extends CwmsDTO {
     }
 
     @Override
-    public void validate() throws FieldException {
-        ArrayList<String> missingFields = new ArrayList<>();
-        if (this.getName() == null) {
-            missingFields.add("Name");
-        }
-        if (this.getLocationKind() == null) {
-            missingFields.add("Location Kind");
-        }
-        if (this.getTimezoneName() == null) {
-            missingFields.add("Timezone ID");
-        }
-        if (this.getOfficeId() == null) {
-            missingFields.add("Office ID");
-        }
-        if (this.getHorizontalDatum() == null) {
-            missingFields.add("Horizontal Datum");
-        }
-        if (this.getLongitude() == null) {
-            missingFields.add("Longitude");
-        }
-        if (this.getLatitude() == null) {
-            missingFields.add("Latitude");
-        }
-        if (!missingFields.isEmpty()) {
-            throw new RequiredFieldException(missingFields);
-        }
+    protected void validateInternal(CwmsDTOValidator validator) {
+        super.validateInternal(validator);
+        validator.required(getName(), "name");
+        validator.required(getLocationKind(), "location-kind");
+        validator.required(getTimezoneName(), "timezone-name");
+        validator.required(getOfficeId(), "office-id");
+        validator.required(getHorizontalDatum(), "horizontal-datum");
+        validator.required(getLongitude(), "longitude");
+        validator.required(getLatitude(), "latitude");
     }
 }

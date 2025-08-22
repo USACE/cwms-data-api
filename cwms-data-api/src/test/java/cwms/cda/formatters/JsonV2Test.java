@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.ZonedDateTime;
+
+import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import org.junit.jupiter.api.Test;
 
-import cwms.cda.data.dto.LocationLevel;
-import cwms.cda.data.dto.LocationLevels;
+import cwms.cda.data.dto.locationlevel.LocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevels;
 import cwms.cda.formatters.json.JsonV2;
 
 class JsonV2Test extends TimeSeriesTestBase {
@@ -34,7 +36,7 @@ class JsonV2Test extends TimeSeriesTestBase {
 
         // Make sure that Formats can format it when asked to use JSONV2
         // This will fail if JSONv2 is missing the class in the @FormatService annotation.
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2);
+        ContentType contentType = new ContentType(Formats.JSONV2);
         String formatted2 = Formats.format(contentType, level);
         assertNotNull(formatted2);
         assertTrue(formatted2.contains(crazyName));
@@ -42,7 +44,7 @@ class JsonV2Test extends TimeSeriesTestBase {
 
     private LocationLevel buildLevel(String crazyName) {
         ZonedDateTime efDate = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
-        return new LocationLevel.Builder(crazyName, efDate).build();
+        return new ConstantLocationLevel.Builder(crazyName, efDate).build();
     }
 
     @Test
@@ -59,7 +61,7 @@ class JsonV2Test extends TimeSeriesTestBase {
 
         // Make sure that Formats can format it when asked to use JSONV2
         // This will fail if JSONv2 is missing the class in the @FormatService annotation.
-        ContentType contentType = Formats.parseHeader(Formats.JSONV2);
+        ContentType contentType = new ContentType(Formats.JSONV2);
         String formatted2 = Formats.format(contentType, levels);
         assertNotNull(formatted2);
         assertTrue(formatted2.contains(crazyName));

@@ -24,30 +24,26 @@
 
 package cwms.cda.data.dto;
 
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.RequiredFieldException;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import java.util.ArrayList;
-
 @Schema(description = "A representation of a county")
-@XmlRootElement(name = "county")
-@XmlAccessorType(XmlAccessType.FIELD)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
-public class County implements CwmsDTOBase {
+@JsonRootName("county")
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+public class County extends CwmsDTOBase {
 
-    @XmlElement(name = "name")
+    @JsonProperty(required = true)
     private String name;
-    @XmlElement(name = "county-id")
+    @JsonProperty(required = true)
     private String countyId;
-    @XmlElement(name = "state-initial")
+    @JsonProperty(required = true)
     private String stateInitial;
 
     public County() {
@@ -69,22 +65,5 @@ public class County implements CwmsDTOBase {
 
     public String getStateInitial() {
         return stateInitial;
-    }
-
-    @Override
-    public void validate() throws FieldException {
-        ArrayList<String> missingFields = new ArrayList<>();
-        if (this.getName() == null) {
-            missingFields.add("Name");
-        }
-        if (this.getCountyId() == null) {
-            missingFields.add("County ID");
-        }
-        if (this.getStateInitial() == null) {
-            missingFields.add("State Initial");
-        }
-        if (!missingFields.isEmpty()) {
-            throw new RequiredFieldException(missingFields);
-        }
     }
 }

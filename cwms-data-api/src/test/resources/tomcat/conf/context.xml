@@ -22,6 +22,7 @@
               logAbandoned="true"
               maxAge="3600000"
               factory="org.apache.tomcat.jdbc.pool.DataSourceFactory"
+              initSQL="ALTER SESSION SET TIME_ZONE = 'UTC'"
     />
 
     <ResourceLink

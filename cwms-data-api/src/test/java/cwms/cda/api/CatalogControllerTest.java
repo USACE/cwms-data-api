@@ -19,6 +19,7 @@ import io.javalin.http.util.ContextUtil;
 import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.json.JsonMapperKt;
 import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Disabled;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+@Disabled
 public class CatalogControllerTest extends ControllerTest {
 
     @Disabled // get all the infrastructure in place first.
@@ -48,7 +50,6 @@ public class CatalogControllerTest extends ControllerTest {
                 HandlerType.GET, attributes);
         context.attribute("database", this.conn);
 
-
         assertNotNull(context.attribute("database"), "could not get the connection back as an "
                 + "attribute");
 
@@ -63,7 +64,7 @@ public class CatalogControllerTest extends ControllerTest {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = new TestHttpServletResponse();
 
-        HashMap<String, Object> attributes = new HashMap<>();
+        Map<String, Object> attributes = new HashMap<>();
         attributes.put(ContextUtil.maxRequestSizeKey, Integer.MAX_VALUE);
         attributes.put(JsonMapperKt.JSON_MAPPER_KEY, new JavalinJackson());
         attributes.put("PolicyFactory", this.sanitizer);

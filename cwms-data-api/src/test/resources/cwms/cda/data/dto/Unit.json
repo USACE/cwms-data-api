@@ -1,0 +1,15 @@
+{
+  "abstract-parameter": "Volume Rate",
+  "name": "m3/sec",
+  "unit-system": "SI",
+  "long-name": "Cubic meters per second",
+  "description": "Volume rate of 1 cubic meter per second",
+  "alternate-names": [
+    "CMS",
+    "cms",
+    "cu-meters/sec",
+    "m3/s",
+    "M3/S",
+    "M3/SEC"
+  ]
+}

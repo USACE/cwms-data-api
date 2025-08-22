@@ -25,12 +25,18 @@
 package cwms.cda.data.dao;
 
 import cwms.cda.data.dto.Catalog;
+import cwms.cda.data.dto.CwmsIdLocationKind;
 import cwms.cda.data.dto.Location;
 import java.io.IOException;
+import java.util.List;
 import org.geojson.FeatureCollection;
 
 public interface LocationsDao {
     String getLocations(String names, String format, String units, String datum, String officeId);
+
+    List<Location> getLocations(String names, String units, String datum, String officeId);
+
+    List<CwmsIdLocationKind> getLocationKinds(String idRegexMask, String kindRegexMask, String officeId);
 
     Location getLocation(String locationName, String unitSystem, String officeId) throws IOException;
 
@@ -38,13 +44,15 @@ public interface LocationsDao {
 
     void deleteLocation(String locationName, String officeId, boolean cascadeDelete);
 
+    @Deprecated
     void storeLocation(Location location) throws IOException;
+
+    void storeLocation(Location location, boolean failIfExists) throws IOException;
 
     void renameLocation(String oldLocationName, Location renamedLocation) throws IOException;
 
     FeatureCollection buildFeatureCollection(String names, String units, String officeId);
 
-    Catalog getLocationCatalog(String cursor, int pageSize, String unitSystem, String office,
-                               String idLike, String categoryLike, String groupLike,
-                               String boundingOfficeLike);
+    Catalog getLocationCatalog(String cursor, int pageSize, CatalogRequestParameters params);
+
 }

@@ -1,22 +1,12 @@
 {
-  "spec-id": "test-spec",
+  "spec-id": "TEST-SPEC",
   "office-id": "SPK",
-  "location-id": "location",
-  "source-entity-id": "sourceEntity",
+  "source-entity-id": "USACE",
   "designator": "designator",
   "description": "description",
   "time-series-ids": [
-    {
-      "time-series-id": "tsid1",
-      "active": false
-    },
-    {
-      "time-series-id": "tsid2",
-      "active": false
-    },
-    {
-      "time-series-id": "tsid3",
-      "active": false
-    }
+    "TsBinTestLoc.Flow.Ave.1Day.1Day.tsid1",
+    "TsBinTestLoc.Flow.Ave.1Day.1Day.tsid2",
+    "TsBinTestLoc.Flow.Ave.1Day.1Day.tsid3"
   ]
 }

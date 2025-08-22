@@ -1,17 +1,12 @@
 package cwms.cda.data.dto.catalog;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlValue;
+import com.fasterxml.jackson.annotation.JsonRootName;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
-@XmlRootElement(name = "alias")
-@XmlAccessorType(XmlAccessType.FIELD)
+@JsonRootName("alias")
 public class LocationAlias {
-    @XmlAttribute
+    @JacksonXmlProperty(isAttribute = true)
     private String name;
-    @XmlValue
     private String value;
 
     @SuppressWarnings("unused") // for JAXB

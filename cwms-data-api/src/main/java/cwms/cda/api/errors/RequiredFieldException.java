@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class RequiredFieldException extends FieldException {
     public static final String MISSING_FIELDS = "missing fields";
@@ -21,6 +22,11 @@ public class RequiredFieldException extends FieldException {
     }
 
     public RequiredFieldException(List<String> fields) {
+        this();
+        details.get(MISSING_FIELDS).addAll(fields);
+    }
+
+    public RequiredFieldException(Set<String> fields) {
         this();
         details.get(MISSING_FIELDS).addAll(fields);
     }

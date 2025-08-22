@@ -1,96 +1,98 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2024 Hydrologic Engineering Center
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import cwms.cda.data.dto.TimeSeries.Record;
-import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
 import io.swagger.v3.oas.annotations.media.Schema;
+
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import javax.xml.bind.annotation.XmlAccessOrder;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorOrder;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlSeeAlso;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
-@XmlRootElement(name = "extents")
-@Schema(description = "TimeSeries extent information")
-@XmlSeeAlso(Record.class)
-@XmlAccessorType(XmlAccessType.FIELD)
-@XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
-@JsonPropertyOrder(alphabetic = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonDeserialize(builder = TimeSeriesExtents.Builder.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class TimeSeriesExtents {
+@Schema(description = "TimeSeries extent information")
+public class TimeSeriesExtents extends TimeExtents {
 
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @Schema(description = "TimeSeries version to which this extent information applies")
     @JsonFormat(shape = Shape.STRING)
-    ZonedDateTime versionTime;
+    private final ZonedDateTime versionTime;
 
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
-    @Schema(description = "Earliest value in the timeseries")
-    @JsonFormat(shape = Shape.STRING)
-    @XmlElement(name = "earliest-time")
-    ZonedDateTime earliestTime;
-
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
-    @Schema(description = "Latest value in the timeseries")
-    @JsonFormat(shape = Shape.STRING)
-    @XmlElement(name = "latest-time")
-    ZonedDateTime latestTime;
-
-    @XmlJavaTypeAdapter(ZonedDateTimeAdapter.class)
     @Schema(description = "Last update in the timeseries")
     @JsonFormat(shape = Shape.STRING)
-    @XmlElement(name = "last-update")
-    ZonedDateTime lastUpdate;
+    private final ZonedDateTime lastUpdate;
 
-    @SuppressWarnings("unused") // required so JAXB can initialize and marshal
-    private TimeSeriesExtents() {
-    }
-
-    public TimeSeriesExtents(final ZonedDateTime versionTime, final ZonedDateTime earliestTime,
-                             final ZonedDateTime latestTime, final ZonedDateTime lastUpdateTime) {
-        this.versionTime = versionTime;
-        this.earliestTime = earliestTime;
-        this.latestTime = latestTime;
-        this.lastUpdate = lastUpdateTime;
-    }
-
-    public TimeSeriesExtents(final Timestamp versionTime, final Timestamp earliestTime,
-                             final Timestamp latestTime, final Timestamp lastUpdateTime) {
-        this(toZdt(versionTime), toZdt(earliestTime), toZdt(latestTime), toZdt(lastUpdateTime));
-    }
-
-    private static ZonedDateTime toZdt(final Timestamp time) {
-        if (time != null) {
-            return ZonedDateTime.ofInstant(time.toInstant(), ZoneId.of("UTC"));
-        } else {
-            return null;
-        }
+    private TimeSeriesExtents(Builder builder) {
+        super(builder);
+        this.versionTime = builder.versionTime;
+        this.lastUpdate = builder.lastUpdate;
     }
 
     public ZonedDateTime getVersionTime() {
-        return this.versionTime;
-    }
-
-    public ZonedDateTime getEarliestTime() {
-        return this.earliestTime;
-    }
-
-    public ZonedDateTime getLatestTime() {
-        return this.latestTime;
+        return versionTime;
     }
 
     public ZonedDateTime getLastUpdate() {
-        return this.lastUpdate;
+        return lastUpdate;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder extends TimeExtents.Builder {
+        private ZonedDateTime versionTime;
+        private ZonedDateTime lastUpdate;
+
+        @Override
+        public Builder withLatestTime(ZonedDateTime end) {
+            return (Builder) super.withLatestTime(end);
+        }
+
+        @Override
+        public Builder withEarliestTime(ZonedDateTime start) {
+            return (Builder) super.withEarliestTime(start);
+        }
+
+        public Builder withVersionTime(ZonedDateTime versionTime) {
+            this.versionTime = versionTime;
+            return this;
+        }
+
+        public Builder withLastUpdate(ZonedDateTime lastUpdate) {
+            this.lastUpdate = lastUpdate;
+            return this;
+        }
+
+        public TimeSeriesExtents build() {
+            return new TimeSeriesExtents(this);
+        }
+    }
 }

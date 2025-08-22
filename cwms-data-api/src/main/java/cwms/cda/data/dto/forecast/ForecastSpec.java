@@ -1,71 +1,55 @@
 package cwms.cda.data.dto.forecast;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
-import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 import org.jetbrains.annotations.Nullable;
 
-@XmlRootElement(name = "forecast-spec")
-@XmlAccessorType(XmlAccessType.FIELD)
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
+import java.util.List;
+
+@JsonRootName("forecast-spec")
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = ForecastSpec.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class ForecastSpec extends CwmsDTO {
     @Schema(description = "Forecast Spec ID")
-    @XmlElement(name = "spec-id")
     private final String specId;
 
     @Schema(description = "Forecast Designator")
-    @XmlAttribute
+    @JacksonXmlProperty(isAttribute = true)
     private final String designator;
 
     @Schema(description = "Location IDs")
-    @XmlElement(name = "location-ids")
-    private final Set<String> locationIds;
+    private final String locationId;
 
     @Schema(description = "Source Entity ID")
-    @XmlElement(name = "source-entity-id")
     private final String sourceEntityId;
 
     @Schema(description = "Description of Forecast")
-    @XmlAttribute
+    @JacksonXmlProperty(isAttribute = true)
     private final String description;
 
     @Schema(description = "List of Time Series IDs belonging to this Forecast Spec")
-    @XmlAttribute(name = "time-series-ids")
-    private final List<TimeSeriesIdentifierDescriptor> timeSeriesIds;
+    @JacksonXmlProperty(isAttribute = true)
+    private final List<String> timeSeriesIds;
 
 
     private ForecastSpec(Builder builder) {
         super(builder.officeId);
         this.specId = builder.specId;
         this.designator = builder.designator;
-
-        if (builder.locationIds != null) {
-            this.locationIds = new LinkedHashSet<>(builder.locationIds);
-        } else {
-            this.locationIds = null;
-        }
-
+        this.locationId = builder.locationId;
         this.sourceEntityId = builder.sourceEntityId;
         this.description = builder.description;
         this.timeSeriesIds = builder.timeSeriesIds;
@@ -76,12 +60,8 @@ public class ForecastSpec extends CwmsDTO {
     }
 
     @Nullable
-    public Set<String> getLocationIds() {
-        if (locationIds == null) {
-            return null;
-        } else {
-            return Collections.unmodifiableSet(locationIds);
-        }
+    public String getLocationId() {
+        return locationId;
     }
 
     public String getSourceEntityId() {
@@ -96,12 +76,21 @@ public class ForecastSpec extends CwmsDTO {
         return description;
     }
 
-    public List<TimeSeriesIdentifierDescriptor> getTimeSeriesIds() {
+    public List<String> getTimeSeriesIds() {
         return timeSeriesIds;
     }
 
-    public void validate() throws FieldException {
-        //TODO
+    @Override
+    public String toString() {
+        return "ForecastSpec{" +
+                "specId='" + specId + '\'' +
+                ", designator='" + designator + '\'' +
+                ", locationId=" + locationId +
+                ", sourceEntityId='" + sourceEntityId + '\'' +
+                ", description='" + description + '\'' +
+                ", timeSeriesIds=" + timeSeriesIds +
+                ", officeId='" + officeId + '\'' +
+                '}';
     }
 
     @JsonPOJOBuilder
@@ -110,10 +99,10 @@ public class ForecastSpec extends CwmsDTO {
         private String officeId;
         private String specId;
         private String designator;
-        private Set<String> locationIds;
+        private String locationId;
         private String sourceEntityId;
         private String description;
-        private List<TimeSeriesIdentifierDescriptor> timeSeriesIds;
+        private List<String> timeSeriesIds;
 
         public Builder() {
 
@@ -134,8 +123,8 @@ public class ForecastSpec extends CwmsDTO {
             return this;
         }
 
-        public Builder withLocationIds(Set<String> locationIds) {
-            this.locationIds = locationIds;
+        public Builder withLocationId(String locationId) {
+            this.locationId = locationId;
             return this;
         }
 
@@ -149,7 +138,7 @@ public class ForecastSpec extends CwmsDTO {
             return this;
         }
 
-        public Builder withTimeSeriesIds(List<TimeSeriesIdentifierDescriptor> timeSeriesIds) {
+        public Builder withTimeSeriesIds(List<String> timeSeriesIds) {
             this.timeSeriesIds = timeSeriesIds;
             return this;
         }
@@ -159,7 +148,7 @@ public class ForecastSpec extends CwmsDTO {
             return withOfficeId(forecastSpec.getOfficeId())
                     .withSpecId(forecastSpec.getSpecId())
                     .withDesignator(forecastSpec.getDesignator())
-                    .withLocationIds(forecastSpec.getLocationIds())
+                    .withLocationId(forecastSpec.getLocationId())
                     .withSourceEntityId(forecastSpec.getSourceEntityId())
                     .withDescription(forecastSpec.getDescription())
                     .withTimeSeriesIds(forecastSpec.getTimeSeriesIds());

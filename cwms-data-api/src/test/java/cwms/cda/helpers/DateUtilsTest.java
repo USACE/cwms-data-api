@@ -2,8 +2,10 @@ package cwms.cda.helpers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import cwms.cda.api.Controllers;
 import cwms.cda.data.dto.TimeSeries;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -22,8 +24,7 @@ class DateUtilsTest {
     @ParameterizedTest
     @ArgumentsSource(FullDatesArguments.class)
     void test_iso_dates_from_user( String inputDate, ZoneId tz, ZonedDateTime expected){
-        ZonedDateTime result = DateUtils.parseUserDate(inputDate, tz,null); // now not used in this case force npe if
-                                                                            // someone accidentally sets that up.
+        ZonedDateTime result = DateUtils.parseUserDate(inputDate, tz);
         // isEqual returns true if the instant is the same.  They can have different zones.
         assertTrue(result.isEqual(expected), "Provided date input not correctly matched");
     }
@@ -31,7 +32,7 @@ class DateUtilsTest {
     @ParameterizedTest
     @ArgumentsSource(DateWithoutZoneArguments.class)
     void test_iso_dates_without_zone_from_user( String inputDate, ZoneId tz, ZonedDateTime expected){
-        ZonedDateTime result = DateUtils.parseUserDate(inputDate, tz,null);
+        ZonedDateTime result = DateUtils.parseUserDate(inputDate, tz);
         // This checks that the two times refer to the same instant on the time-line.
         assertTrue(result.isEqual(expected), "Provided date input not correctly matched");
         // All the args in this test don't have a timezone, so the result should be in the provided fallback zone.
@@ -68,7 +69,7 @@ class DateUtilsTest {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(TimeSeries.ZONED_DATE_TIME_FORMAT);  // FYI this pattern throws away milliseconds.
         String formatted = now.format(formatter);  // looks like: 2022-12-08T09:27:14-0800[America/Los_Angeles]
 
-        ZonedDateTime parsed = DateUtils.parseUserDate(formatted, losAngeles, null);
+        ZonedDateTime parsed = DateUtils.parseUserDate(formatted, losAngeles);
         assertEquals(now, parsed, "Date parsed from TimeSeries format does not match original date");
     }
 
@@ -102,13 +103,11 @@ class DateUtilsTest {
 
     @Test
     void test_not_versioned(){
-        Instant my_nv_inst = ZonedDateTime.of(1111,11,18,0,0,0,0,
+        Instant myNotVersionedInstant = ZonedDateTime.of(1111,11,18,0,0,0,0,
                 ZoneId.of("UTC")).toInstant();
 
         assertTrue(NumericalConstants.isNotVersioned(NumericalConstants.notVersioned()));
-        assertEquals(NumericalConstants.notVersioned(), my_nv_inst);
-//        assertTrue(NumericalConstants.isNotVersioned(my_nv_inst));
-
+        assertEquals(NumericalConstants.notVersioned(), myNotVersionedInstant);
     }
 
     @Test
@@ -120,6 +119,47 @@ class DateUtilsTest {
         ZonedDateTime ptChZdt = DateUtils.parseUserDate("PT-24H", centralZone, now);
 
         assertEquals(ptZdt.toInstant(), ptChZdt.toInstant(), "PT-24H should be the same in any zone");
+    }
+
+    @Test
+    void test_controllers_example_date(){
+        ZonedDateTime zdt =  DateUtils.parseUserDate(Controllers.EXAMPLE_DATE, "UTC");
+        assertNotNull(zdt);
+        Instant expected = ZonedDateTime.of(2021,6,10,13,0,0,0,
+                ZoneId.of("PST8PDT")).toInstant();
+        assertEquals(expected, zdt.toInstant());
+    }
+
+    @Test
+    void test_DateTimeFormatter_iso_zoned_example(){
+        String isoExample = "2011-12-03T10:15:30+01:00[Europe/Paris]";  // Example from java.time.format.DateTimeFormatter javadoc.
+        ZonedDateTime zdt =  DateUtils.parseUserDate(isoExample, "UTC");
+        assertNotNull(zdt);
+        Instant expected = ZonedDateTime.of(2011,12,3,10,15,30,0,
+                ZoneId.of("Europe/Paris")).toInstant();
+        assertEquals(expected, zdt.toInstant());
+    }
+
+    @Test
+    void test_double_check_times_html_examples(){
+        // I'm including some example strings in times.html helper file.  Just want to double check that those EXACT examples do parse.
+
+        /*
+           <li><code>2022-01-06T00:00:00Z</code> - UTC timezone (Z)</li>
+            <li><code>2022-01-06T07:00:01-07:00</code> - Offset timezone (-07:00)</li>
+            <li><code>2022-01-06T07:00:02-0700</code> - Offset timezone without colon</li>
+            <li><code>2021-06-10T13:00:23-07:00[PST8PDT]</code> - Offset with named timezone</li>
+            <li><code>2022-01-19T20:52:07+00:00[UTC]</code> - Zero offset with named timezone</li>
+            <li><code>2022-12-08T09:47:32-0800[America/Los_Angeles]</code> - Offset with region timezone</li>
+         */
+
+        assertNotNull(DateUtils.parseUserDate("2022-01-06T00:00:00Z"));
+        assertNotNull(DateUtils.parseUserDate("2022-01-06T07:00:01-07:00"));
+        assertNotNull(DateUtils.parseUserDate("2022-01-06T07:00:02-0700"));
+        assertNotNull(DateUtils.parseUserDate("2021-06-10T13:00:23-07:00[PST8PDT]"));
+        assertNotNull(DateUtils.parseUserDate("2022-01-19T20:52:07+00:00[UTC]"));
+        assertNotNull(DateUtils.parseUserDate("2022-12-08T09:47:32-0800[America/Los_Angeles]"));
+
     }
 
 }

@@ -1,13 +1,11 @@
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.*;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.BlobDao;
 import cwms.cda.data.dao.JooqDao;
@@ -17,36 +15,29 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
-import cwms.cda.formatters.json.JsonV2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
-import io.javalin.http.HttpResponseException;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Optional;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
 
 
 /**
  *
  */
 public class BlobController implements CrudHandler {
-    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final int DEFAULT_PAGE_SIZE = 20;
     public static final String TAG = "Blob";
 
@@ -92,8 +83,8 @@ public class BlobController implements CrudHandler {
         responses = {@OpenApiResponse(status = STATUS_200,
                 description = "A list of blobs.",
                 content = {
+                    @OpenApiContent(type = Formats.JSON, from = Blobs.class),
                     @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
-                    @OpenApiContent(type = Formats.XMLV2, from = Blobs.class)
                 })
         },
         tags = {TAG}
@@ -104,7 +95,6 @@ public class BlobController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
-
 
             String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
                     String.class, "", metrics, name(BlobController.class.getName(), GET_ALL));
@@ -122,7 +112,7 @@ public class BlobController implements CrudHandler {
             String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, "");
+            ContentType contentType = Formats.parseHeader(formatHeader, Blobs.class);
 
             BlobDao dao = new BlobDao(dsl);
             List<Blob> blobList = dao.getAll(office, like);
@@ -137,6 +127,8 @@ public class BlobController implements CrudHandler {
     }
 
     @OpenApi(
+            description = "Returns the binary value of the requested blob as a seekable stream with the "
+                    + "appropriate media type.",
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
             },
@@ -176,8 +168,7 @@ public class BlobController implements CrudHandler {
             description = "Create new Blob",
             requestBody = @OpenApiRequestBody(
                     content = {
-                        @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
-                        @OpenApiContent(from = Blob.class, type = Formats.XMLV2)
+                        @OpenApiContent(from = Blob.class, type = Formats.JSONV2)
                     },
                     required = true),
             queryParams = {
@@ -191,67 +182,80 @@ public class BlobController implements CrudHandler {
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
+            String formatHeader = ctx.req.getContentType();
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
+            Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
+            BlobDao dao = new BlobDao(dsl);
+            dao.create(blob, failIfExists, false);
+            ctx.status(HttpCode.CREATED);
+        }
+    }
+
+    @OpenApi(
+            description = "Update an existing Blob",
+            pathParams = {
+                    @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
+            },
+            requestBody = @OpenApiRequestBody(
+                    content = {
+                        @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
+                        @OpenApiContent(from = Blob.class, type = Formats.JSON)
+                    },
+                    required = true),
+            method = HttpMethod.PATCH,
+            tags = {TAG}
+    )
+    @Override
+    public void update(@NotNull Context ctx, @NotNull String blobId) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)) {
+            DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
 
-            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
+            Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
 
-            try {
-                ObjectMapper om = getObjectMapperForFormat(formatHeader);
-                Blob blob = om.readValue(ctx.bodyAsInputStream(), Blob.class);
-
-                if (blob.getOfficeId() == null) {
-                    throw new FormattingException("An officeId is required when creating a blob");
-                }
-
-                if (blob.getId() == null) {
-                    throw new FormattingException("An Id is required when creating a blob");
-                }
-
-                if (blob.getValue() == null) {
-                    throw new FormattingException("A non-empty value field is required when "
-                            + "creating a blob");
-                }
-
-                BlobDao dao = new BlobDao(dsl);
-                dao.create(blob, failIfExists, false);
-                ctx.status(HttpCode.CREATED);
-            } catch (IOException e) {
-                throw new HttpResponseException(HttpCode.NOT_ACCEPTABLE.getStatus(), "Unable to "
-                        + "parse request body");
+            if (blob.getOfficeId() == null) {
+                throw new FormattingException("An officeId is required when updating a blob");
             }
+
+            if (blob.getId() == null) {
+                throw new FormattingException("An Id is required when updating a blob");
+            }
+
+            if (blob.getValue() == null) {
+                throw new FormattingException("A non-empty value field is required when "
+                        + "updating a blob");
+            }
+
+            BlobDao dao = new BlobDao(dsl);
+            dao.update(blob, false);
+            ctx.status(HttpServletResponse.SC_OK);
         }
     }
 
-    private static ObjectMapper getObjectMapperForFormat(String format) {
-        ObjectMapper om;
-
-        if (ContentType.equivalent(Formats.XMLV2,format)) {
-            JacksonXmlModule module = new JacksonXmlModule();
-            module.setDefaultUseWrapper(false);
-            om = new XmlMapper(module);
-        } else if (ContentType.equivalent(Formats.JSONV2,format)) {
-            om = JsonV2.buildObjectMapper();
-        } else {
-            FormattingException fe = new FormattingException("Format specified is not currently supported for Blob");
-            logger.atFine().withCause(fe).log("Format %s not supported",format);
-            throw fe;
+    @OpenApi(
+            description = "Deletes requested blob",
+            pathParams = {
+                @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
+            },
+            queryParams = {
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                            + "owning office of the blob to be deleted"),
+            },
+            method = HttpMethod.DELETE,
+            tags = {TAG}
+    )
+    @Override
+    public void delete(@NotNull Context ctx, @NotNull String blobId) {
+        try (Timer.Context ignored = markAndTime(DELETE)) {
+            DSLContext dsl = getDslContext(ctx);
+            String office = requiredParam(ctx, OFFICE);
+            BlobDao dao = new BlobDao(dsl);
+            dao.delete(office, blobId);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
-        om.registerModule(new JavaTimeModule());
-        return om;
     }
-
-    @OpenApi(ignore = true)
-    @Override
-    public void update(Context ctx, @NotNull String blobId) {
-        ctx.status(HttpCode.NOT_IMPLEMENTED).json(CdaError.notImplemented());
-    }
-
-    @OpenApi(ignore = true)
-    @Override
-    public void delete(Context ctx, @NotNull String blobId) {
-        ctx.status(HttpCode.NOT_IMPLEMENTED).json(CdaError.notImplemented());
-    }
-
 }

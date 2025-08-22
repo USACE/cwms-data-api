@@ -1,0 +1,12 @@
+{
+  "remarks": "Remarks",
+  "current-rating": "Rating",
+  "control-condition": "Condition",
+  "flow-adjustment": "Adjustment",
+  "shift-used": 0.1,
+  "percent-difference": 5.0,
+  "delta-height": 0.05,
+  "delta-time": 10.0,
+  "air-temp": 20.0,
+  "water-temp": 15.0
+}

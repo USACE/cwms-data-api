@@ -24,26 +24,45 @@
 
 package cwms.cda.data.dao;
 
+import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
 import static cwms.cda.data.dto.rating.RatingSpec.Builder.buildIndependentRoundingSpecs;
 
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.rating.RatingSpec;
+import cwms.cda.data.dto.rating.RatingSpecEffectiveDates;
 import cwms.cda.data.dto.rating.RatingSpecs;
+import java.sql.CallableStatement;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TimeZone;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toList;
 import java.util.stream.Stream;
+import javax.sql.rowset.CachedRowSet;
+import javax.sql.rowset.RowSetProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -56,7 +75,33 @@ import usace.cwms.db.jooq.codegen.tables.AV_RATING;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 
 public class RatingSpecDao extends JooqDao<RatingSpec> {
+    public static final Calendar GMT_CALENDAR = getGmtCalendar();
     private static final Logger logger = Logger.getLogger(RatingSpecDao.class.getName());
+    public static final String OFFICE_ID = "OFFICE_ID";
+    public static final String SPECIFICATION_ID = "SPECIFICATION_ID";
+    public static final String LOCATION_ID = "LOCATION_ID";
+    public static final String VERSION = "VERSION";
+    public static final String EFFECTIVE_DATE = "EFFECTIVE_DATE";
+    public static final String CREATE_DATE = "CREATE_DATE";
+
+    private static final List<String> RATINGS_COLUMN_LIST = sortedUpperList(
+            OFFICE_ID,
+            SPECIFICATION_ID,
+            EFFECTIVE_DATE,
+            CREATE_DATE
+    );
+
+    private static List<String> sortedUpperList(String... items) {
+        return Arrays.stream(items)
+                .sorted()
+                .collect(toList());
+    }
+
+    private static Calendar getGmtCalendar() {
+        Calendar retVal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        retVal.set(Calendar.MILLISECOND, 0); //this is what the OracleTypeMap does, without this we get back some millisecond offset that is incorrect
+        return retVal;
+    }
 
     public RatingSpecDao(DSLContext dsl) {
         super(dsl);
@@ -95,7 +140,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .leftOuterJoin(ratView)
                 .on(specView.RATING_SPEC_CODE.eq(ratView.RATING_SPEC_CODE))
                 .where(condition)
-                .fetchSize(1000);
+                .fetchSize(DEFAULT_FETCH_SIZE);
 
         logger.fine(() -> query.getSQL(ParamType.INLINED));
 
@@ -249,7 +294,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .on(specView.RATING_SPEC_CODE.eq(ratView.RATING_SPEC_CODE))
                 .where(condition)
                 .orderBy(specView.OFFICE_ID, specView.RATING_ID, ratView.EFFECTIVE_DATE)
-                .fetchSize(1000);
+                .fetchSize(DEFAULT_FETCH_SIZE);
 
         logger.fine(() -> query.getSQL(ParamType.INLINED));
 
@@ -371,7 +416,78 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
             CWMS_RATING_PACKAGE.call_STORE_SPECS__3(
                 getDslContext(c,office).configuration(),
                 xml,
-                OracleTypeMap.formatBool(failIfExists))
+                formatBool(failIfExists))
         );
+    }
+
+    public RatingEffectiveDatesMap retrieveSpecEffectiveDates(String officeIdMask, String specIdMask, Instant begin, Instant end) {
+        return connectionResult(dsl, conn -> {
+            //office->spec->dates
+            NavigableMap<String, NavigableMap<String, NavigableSet<Instant>>> specDateMap = new TreeMap<>();
+            ResultSet rs = catRatings(conn, officeIdMask, specIdMask, begin, end);
+            OracleTypeMap.checkMetaData(rs.getMetaData(), RATINGS_COLUMN_LIST, "Ratings");
+            while(rs.next()) {
+                String officeId = rs.getString(OFFICE_ID);
+                String specId = rs.getString(SPECIFICATION_ID);
+                Timestamp timestamp = rs.getTimestamp(EFFECTIVE_DATE, GMT_CALENDAR);
+                Instant date = timestamp.toInstant();
+                NavigableSet<Instant> dateList = specDateMap.computeIfAbsent(officeId, k -> new TreeMap<>())
+                        .computeIfAbsent(specId, k -> new TreeSet<>());
+                dateList.add(date);
+            }
+            return buildRatingEffectiveDatesMap(specDateMap);
+        });
+    }
+
+    //package scoped for unit testing
+    static RatingEffectiveDatesMap buildRatingEffectiveDatesMap(NavigableMap<String, NavigableMap<String, NavigableSet<Instant>>> specDateMap) {
+        Map<String, List<RatingSpecEffectiveDates>> officeToSpecDatesMap = new LinkedHashMap<>(specDateMap.size());
+        for(Map.Entry<String, NavigableMap<String, NavigableSet<Instant>>> entry : specDateMap.entrySet()) {
+            String officeId = entry.getKey();
+            List<RatingSpecEffectiveDates> specEffectiveDatesForOffice = new ArrayList<>();
+            NavigableMap<String, NavigableSet<Instant>> specMap = entry.getValue();
+            for(Map.Entry<String, NavigableSet<Instant>> specEntry : specMap.entrySet()) {
+                String specId = specEntry.getKey();
+                NavigableSet<Instant> dateList = specEntry.getValue();
+                if (dateList.isEmpty()) {
+                    continue; // skip empty specs
+                }
+                RatingSpecEffectiveDates datesForSpec = new RatingSpecEffectiveDates.Builder()
+                        .withRatingSpecId(specId)
+                        .withEffectiveDates(dateList)
+                        .build();
+                specEffectiveDatesForOffice.add(datesForSpec);
+            }
+            officeToSpecDatesMap.put(officeId, specEffectiveDatesForOffice);
+        }
+        return new RatingEffectiveDatesMap.Builder()
+                .withOfficeToSpecDates(officeToSpecDatesMap)
+                .build();
+    }
+
+    private ResultSet catRatings(Connection conn, String officeIdMask, String specIdMask, Instant begin, Instant end) throws SQLException {
+
+        Timestamp pEffectiveDateStart = begin == null ? null : Timestamp.from(begin);
+        Timestamp pEffectiveDateEnd = end == null ? null : Timestamp.from(end);
+
+        // This object does not need to be closed, it eagerly fetches the data from the statement.
+        CachedRowSet output = RowSetProvider.newFactory()
+                .createCachedRowSet();
+
+        try (CallableStatement statement = conn.prepareCall("{CALL CWMS_20.CWMS_RATING.CAT_RATINGS(?, ?, ?, ?, ?, ?)}"))
+        {
+            statement.registerOutParameter(1, Types.REF_CURSOR);
+            statement.setString(2, specIdMask);
+            statement.setTimestamp(3, pEffectiveDateStart, GMT_CALENDAR);
+            statement.setTimestamp(4, pEffectiveDateEnd, GMT_CALENDAR);
+            statement.setString(5, "UTC");
+            statement.setString(6, officeIdMask);
+            statement.execute();
+
+            //The result set in the statement is closed when the statement is closed
+            output.populate(statement.getObject(1, ResultSet.class));
+        }
+
+        return output;
     }
 }

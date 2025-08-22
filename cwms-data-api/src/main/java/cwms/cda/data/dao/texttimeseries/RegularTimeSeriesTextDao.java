@@ -2,8 +2,10 @@ package cwms.cda.data.dao.texttimeseries;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
+import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dao.ClobDao;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.helpers.ReplaceUtils;
@@ -13,7 +15,6 @@ import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import org.jooq.exception.NoDataFoundException;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 
 import java.io.IOException;
@@ -71,12 +72,15 @@ public final class RegularTimeSeriesTextDao extends JooqDao {
 
         List<RegularTextTimeSeriesRow> rows = retrieveRows(officeId, tsId, textMask,
                 startTime, endTime, versionDate, kiloByteLimit, urlBuilder);
-
+        VersionType versionType = TimeSeriesDaoImpl.getVersionType(dsl, tsId, officeId, versionDate != null);
+        String timeZoneId = TimeSeriesDaoImpl.getTimeZoneId(dsl, tsId, officeId);
         TextTimeSeries.Builder builder = new TextTimeSeries.Builder();
         return builder.withName(tsId)
                 .withOfficeId(officeId)
                 .withRegularTextValues(rows)
+                .withDateVersionType(versionType)
                 .withVersionDate(versionDate)
+                .withTimeZone(timeZoneId)
                 .build();
     }
 
@@ -92,7 +96,7 @@ public final class RegularTimeSeriesTextDao extends JooqDao {
                 parameterizeRetrieveTsText(stmt, tsId, textMask, startTime, endTime, versionDate, officeId);
                 stmt.execute();
                 List<RegularTextTimeSeriesRow> rows = new ArrayList<>();
-                try(ResultSet rs = (ResultSet) stmt.getObject(1)) {
+                try (ResultSet rs = (ResultSet) stmt.getObject(1)) {
                     //UTF-16 conversion and assumes 2 bytes per character
                     long characterLimit = kiloByteLimit * 1024L / 2;
                     while (rs.next()) {
@@ -208,7 +212,7 @@ public final class RegularTimeSeriesTextDao extends JooqDao {
         dateTableType.add(Timestamp.from(dateTime));
         CWMS_TEXT_PACKAGE.call_STORE_TS_TEXT__2(configuration, tsId, textValue, dateTableType,
                 versionDate == null ? null : Timestamp.from(versionDate), "UTC",
-                "T", OracleTypeMap.formatBool(replaceAll), null, officeId);
+                "T", formatBool(replaceAll), null, officeId);
     }
 
     public void delete(String officeId, String tsId, String textMask,

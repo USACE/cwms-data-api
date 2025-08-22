@@ -15,7 +15,7 @@ class TimeSeriesGroupTest
 	void test_serialize_json(){
 		TimeSeriesGroup group = buildTimeSeriesGroup();
 
-		ContentType contentType = Formats.parseHeader(Formats.JSON);
+		ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesGroup.class);
 		String result = Formats.format(contentType, group);
 		assertNotNull(result);
 

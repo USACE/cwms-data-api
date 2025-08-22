@@ -24,15 +24,20 @@
 
 package cwms.cda.data.dto;
 
-import cwms.cda.api.errors.FieldException;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 
-public class AssignedLocation implements CwmsDTOBase
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
+public class AssignedLocation extends CwmsDTOBase
 {
 	private String locationId;
 	private String officeId;
 	private String aliasId;
 	private Number attribute;
-
 	private String refLocationId;
 
 	public AssignedLocation()
@@ -73,10 +78,5 @@ public class AssignedLocation implements CwmsDTOBase
 	public String getRefLocationId()
 	{
 		return refLocationId;
-	}
-
-	@Override
-	public void validate() throws FieldException {
-
 	}
 }

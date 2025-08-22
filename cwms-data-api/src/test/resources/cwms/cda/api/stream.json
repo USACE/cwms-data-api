@@ -1,0 +1,30 @@
+{
+  "starts-downstream": true,
+  "flows-into-stream-node": {
+    "stream-id": {
+      "office-id": "SPK",
+      "name": "DownstreamStream123"
+    },
+    "station": 123.45,
+    "bank": "L",
+    "station-units": "km"
+  },
+  "diverts-from-stream-node": {
+    "stream-id": {
+      "office-id": "SPK",
+      "name": "UpstreamStream123"
+    },
+    "station": 678.9,
+    "bank": "R",
+    "station-units": "km"
+  },
+  "length": 10.5,
+  "average-slope": 0.01,
+  "length-units": "km",
+  "slope-units": "%",
+  "comment": "This is a comment for the stream",
+  "id": {
+    "office-id": "SPK",
+    "name": "Stream123Test"
+  }
+}

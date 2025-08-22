@@ -1,22 +1,22 @@
 package cwms.cda.data.dto;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.RequiredFieldException;
+import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
 
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 class LocationTest
 {
@@ -51,6 +51,44 @@ class LocationTest
 	}
 
 	@Test
+	void deserializeWithAliasedTimezoneName() throws JsonProcessingException {
+		String input = "{\n" +
+				"  \"office-id\" : \"LRL\",\n" +
+				"  \"name\" : \"TEST_LOCATION2\",\n" +
+				"  \"latitude\" : 50.0,\n" +
+				"  \"longitude\" : 50.0,\n" +
+				"  \"active\" : true,\n" +
+				"  \"public-name\" : \"TEST_LOCATION2\",\n" +
+				"  \"long-name\" : \"TEST_LOCATION\",\n" +
+				"  \"description\" : \"for testing\",\n" +
+				"  \"timezone-name\" : \"Unknown or Not Applicable\",\n" +   // This is the key line for the test
+				"  \"location-kind\" : \"SITE\"\n" +
+				"}";
+
+		ObjectMapper om = JsonV1.buildObjectMapper();
+		Location location2 = om.readValue(input, Location.class);
+		assertNotNull(location2);
+
+		assertEquals("UTC", location2.getTimezoneName());
+	}
+
+
+	@ParameterizedTest
+	@ValueSource(strings = { Formats.JSONV2, Formats.XMLV2 })
+	void testSerializationRoundTrip(String format) throws JsonProcessingException
+	{
+		Location location = buildTestLocation();
+		assertNotNull(location);
+
+		String serialized = Formats.format(Formats.parseHeader(format, Location.class), location);
+		assertNotNull(serialized);
+
+		Location deserialized = Formats.parseContent(Formats.parseHeader(format, Location.class),
+			serialized, Location.class);
+		assertEquals(location, deserialized);
+	}
+
+	@Test
 	void canBuildNullLatLon(){
 		Location location = new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
 				null, null,  // lat/lon are null in this test
@@ -80,8 +118,8 @@ class LocationTest
 			assertNotNull(details);
 			assertTrue(details.containsKey(RequiredFieldException.MISSING_FIELDS));
 			List<String> missingFields = details.get(RequiredFieldException.MISSING_FIELDS);
-			assertTrue(missingFields.contains("Latitude"));
-			assertTrue(missingFields.contains("Longitude"));
+			assertTrue(missingFields.contains("latitude"));
+			assertTrue(missingFields.contains("longitude"));
 		}
 	}
 
@@ -98,6 +136,7 @@ class LocationTest
 				.withPublishedLatitude(50.0)
 				.withPublishedLongitude(50.0)
 				.withDescription("for testing")
+				.withElevationUnits("m")
 				.build();
 	}
 
@@ -116,6 +155,9 @@ class LocationTest
 				.withDescription("for testing\r\n  next line\nhas a double quote \"\r\n this line has a single quote '\r")
 				.build();
 	}
+
+
+
 
 
 }

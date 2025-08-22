@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,26 +14,33 @@ import org.apache.catalina.Manager;
 import org.apache.commons.io.IOUtils;
 
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainers;
+import mil.army.usace.hec.test.database.TeamCityUtilities;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import com.google.common.flogger.FluentLogger;
 
+import cwms.cda.data.dao.Dao;
+import cwms.cda.security.OpenIdConnectIdentitityProvider;
 import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
 import io.restassured.config.JsonConfig;
+import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
-
 import javax.servlet.http.HttpServletResponse;
+import org.testcontainers.images.PullPolicy;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 
 
 @SuppressWarnings("rawtypes")
+@ExtendWith(KeyCloakExtension.class)
 public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallback {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -40,12 +48,65 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     private static TomcatServer cdaInstance;
     private static CwmsDatabaseContainer<?> cwmsDb;
 
-    private static final String ORACLE_IMAGE = System.getProperty("CDA.oracle.database.image",System.getProperty("RADAR.oracle.database.image", CwmsDatabaseContainer.ORACLE_19C));
-    private static final String ORACLE_VOLUME = System.getProperty("CDA.oracle.database.volume",System.getProperty("RADAR.oracle.database.volume", "cwmsdb_data_api_volume"));
-    private static final String CWMS_DB_IMAGE = System.getProperty("CDA.cwms.database.image",System.getProperty("RADAR.cwms.database.image", "registry.hecdev.net/cwms/schema_installer:23.03.16"));
+    private static final String ORACLE_IMAGE =
+        System.getProperty("CDA.oracle.database.image",
+                           "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev"
+                       );
+    private static final String ORACLE_VOLUME =
+        System.getProperty("CDA.oracle.database.volume",
+                           "cwmsdb_data_api_volume"
+                          );
+    static final String CWMS_DB_IMAGE =
+        System.getProperty("CDA.cwms.database.image",
+                           "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer:latest-dev"
+                          );
 
 
     private static String webUser = null;
+
+    public static final String VERSION_STRING;
+    public static final int VERSION_INT;
+
+    static
+    {
+        VERSION_STRING = schemaVersion();
+        VERSION_INT = versionInt();
+    }
+
+    private static String schemaVersion()
+    {
+        String ret;
+        if (!System.getProperty(CwmsDatabaseContainers.BYPASS_URL,"").isEmpty())
+        {
+            ret = "Bypass";
+        }
+        else if (ORACLE_IMAGE.contains("database-ready"))
+        {
+            ret = ORACLE_IMAGE.split(":")[1];
+        }
+        else
+        {
+            ret = CWMS_DB_IMAGE.split(":")[1];
+        }
+        return ret;
+    }
+
+    private static int versionInt()
+    {
+        int ret;
+        String tmp = schemaVersion();
+        if (tmp.equalsIgnoreCase("latest-dev") || tmp.equalsIgnoreCase("Bypass")) {
+            ret = 999999;
+        }
+        else if(tmp.toLowerCase().endsWith("staging")) {
+            ret = 1009999;
+        }
+        else
+        {
+            ret = Dao.versionAsInteger(tmp);
+        }
+        return ret;
+    }
 
     @Override
     public void afterAll(ExtensionContext context) throws Exception {
@@ -56,16 +117,16 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     @Override
     @SuppressWarnings("unchecked")
-    public void beforeAll(ExtensionContext context) throws Exception {        
+    public void beforeAll(ExtensionContext context) throws Exception {
         if (cdaInstance == null ) {
-            cwmsDb = new CwmsDatabaseContainer(ORACLE_IMAGE)
+            cwmsDb = CwmsDatabaseContainers.createDatabaseContainer(ORACLE_IMAGE)
                             .withOfficeEroc("s0")
                             .withOfficeId("HQ")
-                            .withVolumeName(ORACLE_VOLUME)
+                            .withVolumeName(TeamCityUtilities.cleanupBranchName(ORACLE_VOLUME))
                             .withSchemaImage(CWMS_DB_IMAGE);
+            cwmsDb.withImagePullPolicy(PullPolicy.ageBased(Duration.ofDays(1)));
             cwmsDb.start();
 
-           
             final String jdbcUrl = cwmsDb.getJdbcUrl();
             webUser = cwmsDb.getPdUser().substring(0,2)+"webtest";
             final String pw = cwmsDb.getPassword();
@@ -80,6 +141,12 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             System.setProperty("CDA_JDBC_USERNAME", webUser);
             System.setProperty("CDA_JDBC_PASSWORD", pw);
 
+            // OIDC properties
+            System.setProperty("cwms.dataapi.access.providers","KeyAccessManager,OpenID,CwmsAccessManager");
+            System.setProperty(OpenIdConnectIdentitityProvider.CREATE_USERS_KEY,"true");
+            System.setProperty(OpenIdConnectIdentitityProvider.WELL_KNOWN_PROPERTY,KeyCloakExtension.getOidcWellKnown());
+            System.setProperty(OpenIdConnectIdentitityProvider.ISSUER_PROPERTY,KeyCloakExtension.getIssuer());
+
             logger.atInfo().log("warFile property:" + System.getProperty("warFile"));
 
             cdaInstance = new TomcatServer("build/tomcat",
@@ -90,7 +157,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             logger.atInfo().log("Tomcat Listing on " + cdaInstance.getPort());
             RestAssured.baseURI=CwmsDataApiSetupCallback.httpUrl();
             RestAssured.port = CwmsDataApiSetupCallback.httpPort();
-            RestAssured.basePath = "/cwms-data";
+            RestAssured.basePath = System.getProperty("warContext");
             // we only use doubles
             RestAssured.config()
                        .jsonConfig(
@@ -102,20 +169,22 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private static void healthCheck() throws InterruptedException {
         int attempts = 0;
-        int maxAttempts = 15;
+        int maxAttempts = 30;
         for (; attempts < maxAttempts; attempts++) {
             try {
                 given()
                 .when()
                     .get("/offices/SPK")
                 .then()
+                    .log().ifValidationFails(LogDetail.ALL)
                     .assertThat()
                     .statusCode(is(HttpServletResponse.SC_OK));
                 logger.atInfo().log("Server is up!");
                 break;
             } catch (Throwable e) {
                 logger.atInfo().log("Waiting for the server to start...");
-                Thread.sleep(100);
+                // yes, 100 millis *should* be fine. But at least my machine keeps lagging.
+                Thread.sleep(300);
             }
         }
         if (attempts == maxAttempts) {
@@ -128,7 +197,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         StringReader reader = new StringReader(csv);
         try {
             List<TsRandomSampler.TsSample> samples = TsRandomSampler.load_data(reader);
-            cwmsDb2.connection( (c) -> {
+            cwmsDb2.connection( c -> {
                 TsRandomSampler.save_to_db(samples, c);
             },"cwms_20");
         } catch (IOException e) {
@@ -143,7 +212,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     private void loadDefaultData(CwmsDatabaseContainer cwmsDb) throws SQLException {
         ArrayList<String> defaultList = getDefaultList();
         for( String data: defaultList){
-            String user_resource[] = data.split(":");
+            String[] user_resource = data.split(":");
             String user = user_resource[0];
             if( user.equalsIgnoreCase("dba")){
                 user = cwmsDb.getDbaUser();
@@ -161,7 +230,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     private ArrayList<String> getDefaultList() {
         ArrayList<String> list = new ArrayList<>();
         InputStream listStream = getClass().getResourceAsStream("/cwms/cda/data/sql/defaultload.txt");
-        try( BufferedReader br = new BufferedReader( new InputStreamReader(listStream) );) {
+        try( BufferedReader br = new BufferedReader(new InputStreamReader(listStream))) {
             String line = null;
             while( (line = br.readLine() ) != null){
                 if( line.trim().startsWith("#") ) continue;

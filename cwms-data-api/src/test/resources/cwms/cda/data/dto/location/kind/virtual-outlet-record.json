@@ -1,0 +1,16 @@
+{
+  "outlet-id": {
+    "office-id": "SPK",
+    "name": "TG01"
+  },
+  "downstream-outlet-ids": [
+    {
+      "office-id": "SPK",
+      "name": "TG02"
+    },
+    {
+      "office-id": "SPK",
+      "name": "TG03"
+    }
+  ]
+}

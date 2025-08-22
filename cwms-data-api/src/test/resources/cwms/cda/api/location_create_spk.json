@@ -14,7 +14,8 @@
   "horizontal-datum": "NGVD-29",
   "published-longitude": 38.5816,
   "published-latitude": -121.4944,
-  "elevation": 0.0,
+  "elevation": 0.2,
+  "elevation-units": "m",
   "map-label": "label",
   "bounding-office-id": "SPK",
   "office-id": "SPK"

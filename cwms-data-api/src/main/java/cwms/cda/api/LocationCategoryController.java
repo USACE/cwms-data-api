@@ -31,14 +31,11 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.LocationCategoryDao;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV1;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -50,7 +47,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -103,7 +99,7 @@ public class LocationCategoryController implements CrudHandler {
 
             if (!cats.isEmpty()) {
                 String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+                ContentType contentType = Formats.parseHeader(formatHeader, LocationCategory.class);
 
                 String result = Formats.format(contentType, cats, LocationCategory.class);
 
@@ -159,7 +155,7 @@ public class LocationCategoryController implements CrudHandler {
             Optional<LocationCategory> grp = dao.getLocationCategory(office, categoryId);
             if (grp.isPresent()) {
                 String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, null);
+                ContentType contentType = Formats.parseHeader(formatHeader, LocationCategory.class);
 
                 String result = Formats.format(contentType, grp.get());
 
@@ -198,29 +194,14 @@ public class LocationCategoryController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)){
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
+            String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
-            LocationCategory deserialize = deserialize(body, formatHeader);
+            ContentType contentType = Formats.parseHeader(formatHeader, LocationCategory.class);
+            LocationCategory deserialize = Formats.parseContent(contentType, body, LocationCategory.class);
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
             dao.create(deserialize);
             ctx.status(HttpServletResponse.SC_CREATED);
-        } catch (JsonProcessingException ex) {
-            CdaError re = new CdaError("Failed to process create request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-    }
-
-    private LocationCategory deserialize(String body, String format) throws JsonProcessingException {
-        LocationCategory retval;
-        if (ContentType.equivalent(Formats.JSON, format)) {
-            ObjectMapper om = JsonV1.buildObjectMapper();
-            retval = om.readValue(body, LocationCategory.class);
-        } else {
-            throw new IllegalArgumentException("Unsupported format: " + format);
-        }
-        return retval;
     }
 
     @OpenApi(ignore = true)
