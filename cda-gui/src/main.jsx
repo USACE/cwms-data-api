@@ -17,7 +17,7 @@ import Layout from "./components/Layout";
 // Styles
 import "@usace/groundwork/dist/style.css";
 import "./css/index.css";
-import ErrorFallback from "./pages/data-query/components/ErrorFallBack";
+import ErrorFallback from "./pages/ErrorFallback";
 import FilterExpressions from "./pages/rsql";
 
 const queryClient = new QueryClient();
