@@ -6,6 +6,7 @@ export default defineConfig(({ mode }) => {
   // const env = loadEnv(mode, process.cwd(), "");
   // const BASE_PATH = env?.BASE_PATH ?? "/cwms-data";
   return {
+    base: "/cwms-data",
     plugins: [react()],
     define: {
       "import.meta.env.CDA_URL": JSON.stringify("/cwms-data"),
