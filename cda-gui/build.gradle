@@ -1,0 +1,34 @@
+plugins {
+    id 'com.github.node-gradle.node' version '7.1.0'
+}
+
+task buildGui(type:NpxTask) {
+    dependsOn npmInstall
+    command = "npm"
+    args = ["run", "build", "--prod"]
+    inputs.files('package.json', 'package-lock.json', 'vite.config.js')
+    inputs.dir('src')
+    inputs.dir(fileTree("node_modules").exclude(".cache"))
+    outputs.dir('dist')
+}
+
+build.dependsOn buildGui
+
+
+task runGuiDev(type: Exec) {
+    dependsOn npmInstall
+    executable "npm"
+    args  "run", "dev"
+    workingDir project.layout.projectDirectory
+}
+
+sourceSets {
+    java {
+        main {
+            resources {
+                // This makes the processResources task automatically depend on the buildWebapp one
+                srcDir(buildGui)
+            }
+        }
+    }
+}

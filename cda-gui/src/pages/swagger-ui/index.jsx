@@ -14,7 +14,6 @@ export default function SwaggerUI() {
     // TODO: add endpoint that dynamic returns swagger generated doc
     SwaggerUIBundle({
       url: getBasePath() + "/swagger-docs",
-      configUrl: getBasePath() + "/swagger-config.yaml",
       dom_id: "#swagger-ui",
       deepLinking: false,
       presets: [SwaggerUIBundle.presets.apis],
