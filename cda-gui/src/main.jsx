@@ -18,9 +18,9 @@ import Layout from "./components/Layout";
 import "@usace/groundwork/dist/style.css";
 import "./css/index.css";
 import ErrorFallback from "./pages/data-query/components/ErrorFallBack";
+import FilterExpressions from "./pages/rsql";
 
 const queryClient = new QueryClient();
-
 
 const router = createBrowserRouter(
   [
@@ -36,6 +36,7 @@ const router = createBrowserRouter(
         },
         { path: "data-query", element: <DataQuery /> },
         { path: "regexp", element: <Regexp /> },
+        { path: "filter-expressions", element: <FilterExpressions /> },
         { path: "*", element: <NotFound /> },
       ],
     },
@@ -45,10 +46,10 @@ const router = createBrowserRouter(
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
       <LinkProvider component={Link} hrefMap="to">
         <RouterProvider router={router} />
       </LinkProvider>
-      </QueryClientProvider>
+    </QueryClientProvider>
   </React.StrictMode>
 );
