@@ -5,7 +5,8 @@ import { useLocation } from "react-router-dom";
 function formatSegment(segment) {
   return segment
     .replace(/-/g, " ")
-    .replace(/\b\w/g, char => char.toUpperCase());
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .replace("Ui", "UI"); // Easy workaround to make sure UI is always capitalized
 }
 
 export default function Breadcrumbs() {
