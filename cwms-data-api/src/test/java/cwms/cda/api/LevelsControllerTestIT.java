@@ -101,9 +101,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         });
     }
 
-    @Test
-    void test_location_level() throws Exception {
-        createLocation("level_as_single_value", true, OFFICE);
+    @ParameterizedTest
+    @ValueSource(strings = {"SPK", "SWT", "MVP"})
+    void test_location_level(String office) throws Exception {
+        createLocation("level_as_single_value", true, office);
         String levelId = "level_as_single_value.Stor.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
@@ -113,7 +114,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .build();
         levelList.add(level);
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            DSLContext dsl = dslContext(c, OFFICE);
+            DSLContext dsl = dslContext(c, office);
             LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
             dao.storeLocationLevel(level);
         });
@@ -123,7 +124,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .queryParam("office", OFFICE)
+            .queryParam("office", office)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
         .when()
             .redirects().follow(true)
@@ -143,7 +144,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .queryParam("office", OFFICE)
+            .queryParam("office", office)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
             .queryParam(UNIT, "ac-ft")
         .when()
