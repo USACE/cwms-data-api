@@ -19,6 +19,7 @@ import "@usace/groundwork/dist/style.css";
 import "./css/index.css";
 import ErrorFallback from "./pages/ErrorFallback";
 import FilterExpressions from "./pages/rsql";
+import Timestamps from "./pages/timestamps";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const router = createBrowserRouter(
         { path: "data-query", element: <DataQuery /> },
         { path: "regexp", element: <Regexp /> },
         { path: "filter-expressions", element: <FilterExpressions /> },
+        { path: "timestamps", element: <Timestamps /> },
         { path: "*", element: <NotFound /> },
       ],
     },
