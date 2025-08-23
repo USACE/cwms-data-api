@@ -6,7 +6,6 @@ import Controls from "./components/Controls";
 import { Configuration, OfficesApi, TimeSeriesApi } from "cwmsjs";
 import { getPrecision, mergeTimeseries } from "../../utils/timeseries";
 import FailedTimeSeries from "./components/FailedTimeSeries";
-// import useConfigList from "./hooks/useConfigList";
 import TimeSeriesDropdown from "./components/TimeSeriesDropdown";
 import DataTabs from "./components/DataTabs";
 import Toggle from "./components/Toggle";
@@ -22,19 +21,9 @@ const v2_config = new Configuration({
 const ts_api = new TimeSeriesApi(v2_config);
 const offices_api = new OfficesApi();
 
-// const config = cwmsConfigs["SWF"];
-// async function fetchConfig(configUrl) {
-//   return fetch(configUrl)
-//     .then((response) => response.json())
-//     .then((d) => d)
-// }
-
 export default function DataQuery() {
   const [tsids, setTsids] = useState([]);
   const [visibleTSIDs, setVisibleTSIDs] = useState(tsids);
-  //   const [location, setLocation] = useState(null);
-  //   const [parameter, setParameter] = useState(null);
-  //   const [interval, setInterval] = useState(null);
   const [office, setOffice] = useState("");
   const [mode, setMode] = useState("basic");
   useEffect(() => {
@@ -78,10 +67,7 @@ export default function DataQuery() {
         office,
         page: nextPage,
         pageSize: 25000,
-        // begin: beginDateTime.format(CDA_DATE_FORMAT),
-        // end: endDateTime.format(CDA_DATE_FORMAT),
       });
-      // if (!_result?.page) page = false
       nextPage = _result?.nextPage;
       endDate = _result?.end;
       values = values.concat(_result?.values);

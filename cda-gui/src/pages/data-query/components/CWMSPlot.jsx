@@ -114,7 +114,11 @@ function CWMSPlot({
     if (!(yaxis_id in defaultLayout)) {
       defaultLayout[yaxis_id] = {
         title: {
-          text: item.id.split(".")[1] + (item?.traceOptions?.units ? " (" + item.traceOptions.units + ")" : ""),
+          text:
+            item.id.split(".")[1] +
+            (item?.traceOptions?.units
+              ? " (" + item.traceOptions.units + ")"
+              : ""),
           font: {
             family: "Arial, sans-serif",
             size: 14,
@@ -148,16 +152,6 @@ function CWMSPlot({
       if (!inputTSValues) {
         let ts_promises = tsids.map(async (name) => {
           try {
-            // Currently, large page size calls are blocked, so the default of 500 is used
-            // let pageSize = 500;
-            // const delta = dayjs(end.value).diff(dayjs(start.value), "day", true)
-            // let interval = tsid.split(".")[3]
-            // if (interval.includes("Minute")) {
-            //   if (interval.includes("15")) { pageSize = delta * 100 }
-            //   if (interval.includes("1Minute")) { pageSize = delta * 1500 }
-            // }
-            // if (interval.includes("Hour")) { pageSize = delta * 10 }
-            // if (interval.includes("Day")) { pageSize = delta * 1 }
             return await ts_api.getTimeSeries({
               name,
               office,
