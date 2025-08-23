@@ -4,10 +4,11 @@
 
 Thanks for thinking about using or contributing to this software ("Project") and its documentation!
 
-* [Policy & Legal Info](#policy)
-* [Getting Started](#getting-started)
-* [Submitting an Issue](#submitting-an-issue)
-* [Submitting Code](#submitting-code)
+- [Policy & Legal Info](#policy)
+- [Getting Started](#getting-started)
+- [Submitting an Issue](#submitting-an-issue)
+- [Submitting Code](#submitting-code)
+- [CDA GUI Docs](/cda-gui.README.md)
 
 ## Policy
 
@@ -83,7 +84,6 @@ this repository and any help on the formatting code and such will be greatly app
 
 Now you're ready to [clone the repository](https://help.github.com/articles/cloning-a-repository/) and start looking at things. If you are going to submit any changes you make, please read the Submitting changes section below.
 
-
 ### Code Style
 
 If you are editing an existing file please be consistent with the style in the file.
@@ -92,13 +92,13 @@ Otherwise use the defined checkstyle format for new code.
 
 #### SQL Coding
 
-1. Use the JOOQ wrapper. Generally the wrapper provides sufficiently reasonable query generation. 
-However, *DO NOT* be afraid to say, "that looks terrible", and tweak it until it generates something better.
-    a. If the query you're making has nested queries name the queries. Example        
-       ```sql
+1. Use the JOOQ wrapper. Generally the wrapper provides sufficiently reasonable query generation.
+   However, _DO NOT_ be afraid to say, "that looks terrible", and tweak it until it generates something better.
+   a. If the query you're making has nested queries name the queries. Example  
+    `sql
        select a.* from (select col1,col2 from a_table) a;
-       ```
-       Otherwise JOOQ creates a new name each time the query is run which can starved the shared memory.
+       `
+   Otherwise JOOQ creates a new name each time the query is run which can starved the shared memory.
 
 2. Joins are your friend. They are a much better friend IF you let the database do them for you. Do not pull data into java just to do a join. Write the appropriate SQL.
 3. Whenever possible limit by office first.
@@ -115,15 +115,13 @@ However, *DO NOT* be afraid to say, "that looks terrible", and tweak it until it
 1. Assume the following when creating and naming your test:
    a. Someone will come in cold to the entire project.
    b. The tests will be used by API users to guide their client application designs
-3. For repeated tests with different, but very similar data, ParameterizedTests are preferred.
-4. In integration tests for data that should be cleaned up after all tests register them with the functions available in the base class. Create if reasonable.
-5. If it adds clarity, do not be afraid to use the `@Order` annotation to sequence tests. (See the [ApiKey Controller Test](https://github.com/USACE/cwms-data-api/blob/develop/cwms-data-api/src/test/java/cwms/cda/api/auth/ApiKeyControllerTestIT.java) for an example)
-6. Prefer disabling test by database schema version, if that does work use `EnabledIfProperty` and share a property name between related tests.
-7. Use "real" names for data in test data set. Either use actual real location/project/basin/etc names, or make up something that feels like one.
-  a. NOTE: within reason. Location names, absolutely, but otherwise make sure the purpose of the name is clear.
-8. Name files consistent with the purpose of the test.
-   
-
+2. For repeated tests with different, but very similar data, ParameterizedTests are preferred.
+3. In integration tests for data that should be cleaned up after all tests register them with the functions available in the base class. Create if reasonable.
+4. If it adds clarity, do not be afraid to use the `@Order` annotation to sequence tests. (See the [ApiKey Controller Test](https://github.com/USACE/cwms-data-api/blob/develop/cwms-data-api/src/test/java/cwms/cda/api/auth/ApiKeyControllerTestIT.java) for an example)
+5. Prefer disabling test by database schema version, if that does work use `EnabledIfProperty` and share a property name between related tests.
+6. Use "real" names for data in test data set. Either use actual real location/project/basin/etc names, or make up something that feels like one.
+   a. NOTE: within reason. Location names, absolutely, but otherwise make sure the purpose of the name is clear.
+7. Name files consistent with the purpose of the test.
 
 ## Submitting an Issue
 
@@ -133,22 +131,20 @@ You should feel free to [submit an issue](https://github.com/<needs name>) on ou
 
 When submitting a bug report, please be sure to include accurate and thorough information about the problem you're observing. Be sure to include:
 
-* Steps to reproduce the problem,
-* What you expected to happen,
-* What actually happened (or did not happen), 
-* Technical details including the specific version number of CWMS Data API (CDA) you are using,
-* Sanitized logs - NO IP Addresses, usernames, etc.
+- Steps to reproduce the problem,
+- What you expected to happen,
+- What actually happened (or did not happen),
+- Technical details including the specific version number of CWMS Data API (CDA) you are using,
+- Sanitized logs - NO IP Addresses, usernames, etc.
 
 ## Submitting Code
 
 Please [fork](https://help.github.com/en/articles/fork-a-repo) the repository on github and create a [branch in Git](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging) if you are making changes to existing code.
 
-
 Once you have made your changes submit a [pull request](https://help.github.com/en/articles/creating-a-pull-request-from-a-fork).
 Please submit all PRs to the develop branch.
 
 Barring nothing working at all or the code not being related to CWMS Data API your contributions will be accepted.
-
 
 ## Releases an branching
 
