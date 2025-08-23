@@ -14,7 +14,7 @@ import { useDebounce } from "use-debounce";
 // Catalog client
 const catalogApi = new CatalogApi(
   new Configuration({
-    basePath: import.meta.env.CDA_URL,
+    basePath: import.meta.env.VITE_CDA_API_ROOT,
     headers: { accept: "application/json;version=2" },
   })
 );
@@ -65,9 +65,13 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
           onChange={(value) => {
             if (!value) return;
             if ((value.match(/\./g) || []).length === 5) {
-              setTsids((prev) => (prev.includes(value) ? prev : [...prev, value]));
+              setTsids((prev) =>
+                prev.includes(value) ? prev : [...prev, value]
+              );
             } else {
-              alert("TSID must have 6 parts: Location.Parameter.Type.Interval.Duration.Version");
+              alert(
+                "TSID must have 6 parts: Location.Parameter.Type.Interval.Duration.Version"
+              );
             }
           }}
         >
@@ -83,12 +87,16 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
               <li className="p-2 text-red-600">Error: {error.message}</li>
             ) : (
               suggestions.map((entry, idx) => {
-                const suggestion_color = getFreshnessColor(entry.extents?.[0]?.lastUpdate);
+                const suggestion_color = getFreshnessColor(
+                  entry.extents?.[0]?.lastUpdate
+                );
                 return (
                   <ComboboxOption key={idx} value={entry.name} as={Fragment}>
                     {({ active }) => (
                       <li
-                        className={`flex items-center gap-2 ${active ? "bg-blue-100" : ""} p-2 cursor-pointer`}
+                        className={`flex items-center gap-2 ${
+                          active ? "bg-blue-100" : ""
+                        } p-2 cursor-pointer`}
                       >
                         <span
                           className={`inline-block w-2 h-2 rounded-full ${

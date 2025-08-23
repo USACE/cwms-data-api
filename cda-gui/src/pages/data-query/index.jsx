@@ -14,6 +14,7 @@ import TimeSeriesManager from "./components/TimeSeriesManager";
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
 
 const v2_config = new Configuration({
+  basePath: import.meta.env.VITE_CDA_API_ROOT,
   headers: {
     accept: "application/json;version=2",
   },
@@ -307,6 +308,7 @@ export default function DataQuery() {
             <FailedTimeSeries
               failedTS={timeseriesData?.failed}
               className="w-3/4 mx-auto"
+              office={office}
             />
 
             <Button
