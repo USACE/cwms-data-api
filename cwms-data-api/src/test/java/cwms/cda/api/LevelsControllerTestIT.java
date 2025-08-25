@@ -108,7 +108,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String levelId = "level_as_single_value.Stor.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
-                .withOfficeId(OFFICE)
+                .withOfficeId(office)
                 .withLevelUnitsId("ac-ft")
                 .withConstantValue(1.0)
                 .build();
