@@ -458,7 +458,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     @Override
     public LocationLevel retrieveLocationLevel(String locationLevelName, String pUnits,
-                                               ZonedDateTime effectiveDate, String officeId) {
+                                               ZonedDateTime effectiveDate, String officeId,boolean exactDateMatch) {
         Timestamp date = Timestamp.from(effectiveDate.toInstant());
         String[] levelIdParts = locationLevelIdParsingPattern.split(locationLevelName);
         if (levelIdParts.length <= 2) {
@@ -483,9 +483,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             LOCATION_LEVEL_T level = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOCATION_LEVEL__2(
                     configuration, locationLevelName, units, date,
                     "UTC", null, null,
-                    null, "F", officeId, "VN");
+                    null, formatBool(exactDateMatch), officeId, "VN");
             if (level == null) {
-                throw new NotFoundException("Location level not found: " + locationLevelName);
+                throw new NotFoundException("Location level not found: " + officeId + "/" + locationLevelName);
             }
             Timestamp pEffectiveDate = level.getLEVEL_DATE();
             ZonedDateTime realEffectiveDate = ZonedDateTime.ofInstant(pEffectiveDate.toInstant(), effectiveDate.getZone());

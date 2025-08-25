@@ -330,9 +330,14 @@ public class LevelsController implements CrudHandler {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "office of the Location Level to be returned"),
                 @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
-                        + "the effective date of Location Level to be returned. The most recent level "
-                        + "on or before this time will be returned."
+                        + "the effective date of Location Level to be returned."
                         + "Expected formats are `YYYY-MM-DDTHH:MM` or `YYYY-MM-DDTHH:MM:SS`"),
+                @OpenApiParam(name= EFFECTIVE_DATE_EXACT, required = false, description = "If true"
+                        + " only a level with the exact provided date will be returned. If false"
+                        + " The most recent level on or before this time will be returned."
+                        + " The default is false.",
+                        type = Boolean.class
+                ),
                 @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
                         + "the values of the effective date field (unless otherwise "
                         + "specified), as well as the time zone of any times in the response."
@@ -365,6 +370,8 @@ public class LevelsController implements CrudHandler {
         String dateString = queryParamAsClass(ctx, new String[]{EFFECTIVE_DATE, DATE},
                 String.class, null, metrics, name(LevelsController.class.getName(),
                         GET_ONE));
+        boolean exactDateMatch =  queryParamAsClass(ctx, new String[]{EFFECTIVE_DATE_EXACT},
+                Boolean.class, false, metrics, name(LevelsController.class.getName(),GET_ONE));
         String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
                 .getOrDefault("UTC");
 
@@ -375,7 +382,7 @@ public class LevelsController implements CrudHandler {
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             //retrieveLocationLevel will throw an error if level does not exist
             LocationLevel locationLevel = levelsDao.retrieveLocationLevel(levelId,
-                    units, unmarshalledDateTime, office);
+                    units, unmarshalledDateTime, office, exactDateMatch);
             ctx.json(locationLevel);
             ctx.status(HttpServletResponse.SC_OK);
         }
@@ -432,7 +439,7 @@ public class LevelsController implements CrudHandler {
                         ZoneId.systemDefault().getId());
                 //retrieveLocationLevel will throw an error if level does not exist
                 LocationLevel existingLevelLevel = levelsDao.retrieveLocationLevel(oldLevelId,
-                    UnitSystem.EN.getValue(), unmarshalledDateTime, officeId);
+                    UnitSystem.EN.getValue(), unmarshalledDateTime, officeId, true);
                 existingLevelLevel = updatedClearedFields(ctx.body(), contentType.getType(),
                     existingLevelLevel);
                 //only store (update) if level does exist

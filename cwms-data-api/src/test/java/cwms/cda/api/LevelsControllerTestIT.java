@@ -176,6 +176,24 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("level-units-id",equalTo("ac-ft"))
             .body("constant-value",equalTo(1.0F));
+
+        // test modified effective date using exact match
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", office)
+            .queryParam(EFFECTIVE_DATE, time.plusDays(1L).toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
+            .queryParam(UNIT, "ac-ft")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
     @Test
@@ -1355,6 +1373,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1372,6 +1391,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1389,6 +1409,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
