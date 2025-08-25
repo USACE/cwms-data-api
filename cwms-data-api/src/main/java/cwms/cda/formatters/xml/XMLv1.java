@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.CwmsDTOBase;
@@ -12,11 +13,13 @@ import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OutputFormatter;
+import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import io.javalin.http.InternalServerErrorResponse;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -87,7 +90,7 @@ public class XMLv1 implements OutputFormatter {
         }
     }
 
-    private static @NotNull XmlMapper buildObjectMapper() {
+    public static @NotNull XmlMapper buildObjectMapper() {
         XmlMapper retval = new XmlMapper();
 
         retval.findAndRegisterModules();
@@ -100,6 +103,10 @@ public class XMLv1 implements OutputFormatter {
         retval.registerModule(new JavaTimeModule());
         retval.addMixIn(VerticalDatumInfo.class, VerticalDatumInfoMixin.class);
         retval.addMixIn(VerticalDatumInfo.Builder.class, VerticalDatumInfoMixin.Builder.class);
+
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());
+        retval.registerModule(module);
         return retval;
     }
 

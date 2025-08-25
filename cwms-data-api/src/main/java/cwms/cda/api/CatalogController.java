@@ -1,29 +1,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.ACCEPT;
-import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
-import static cwms.cda.api.Controllers.CURSOR;
-import static cwms.cda.api.Controllers.EXCLUDE_EMPTY;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.INCLUDE_EXTENTS;
-import static cwms.cda.api.Controllers.LIKE;
-import static cwms.cda.api.Controllers.LOCATIONS;
-import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
-import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE;
-import static cwms.cda.api.Controllers.LOCATION_KIND_LIKE;
-import static cwms.cda.api.Controllers.LOCATION_TYPE_LIKE;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.TIMESERIES;
-import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
-import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
-import static cwms.cda.api.Controllers.UNIT_SYSTEM;
-import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.*;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -164,10 +142,21 @@ public class CatalogController implements CrudHandler {
                         + "by using Regular Expression OR clauses. For example: "
                         + "\"(SITE|STREAM)\""
                 ),
+            @OpenApiParam(name = FILTER_BASE_LOCATIONS, type = Boolean.class,
+                description = "Specifies whether to filter the locations based on the "
+                    + "base location. Default: false. If true, only sublocations "
+                    + "locations will be returned. If false, all locations will be returned. "
+                    + "Only supported for JSON format."),
+            @OpenApiParam(name = NEGATE_LOCATION_KIND_LIKE, description = "Whether to use the location kind "
+                    + "regular expression to exclude locations with the specified kinds. Default is false."),
             @OpenApiParam(name = LOCATION_TYPE_LIKE,
                     description = "Posix <a href=\"regexp.html\">regular expression</a> matching "
                         + "against the location type."
                 ),
+            @OpenApiParam(name = INCLUDE_ALIASES, type = Boolean.class,
+                    description = "Whether to add aliases to the catalog entries. "
+                            + "Default is false. If true, the aliases will be added to the "
+                            + "catalog entries in the response."),
         },
         pathParams = {
             @OpenApiParam(name = "dataset",
@@ -228,9 +217,16 @@ public class CatalogController implements CrudHandler {
             String locationKind = queryParamAsClass(ctx, new String[]{LOCATION_KIND_LIKE},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
 
+            boolean negateLocationKind = ctx.queryParamAsClass(NEGATE_LOCATION_KIND_LIKE, Boolean.class)
+                    .getOrDefault(false);
+
+            boolean filterBaseLocations = ctx.queryParamAsClass(FILTER_BASE_LOCATIONS, Boolean.class)
+                    .getOrDefault(false);
+
             String locationType = queryParamAsClass(ctx, new String[]{LOCATION_TYPE_LIKE},
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
-
+            boolean includeAliases = ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class)
+                    .getOrDefault(false);
             String acceptHeader = ctx.header(ACCEPT);
             ContentType contentType = Formats.parseHeader(acceptHeader, Catalog.class);
             Catalog cat = null;
@@ -254,6 +250,7 @@ public class CatalogController implements CrudHandler {
                         .withExcludeEmpty(excludeExtents)
                         .withLocationKind(locationKind)
                         .withLocationType(locationType)
+                        .withIncludeAliases(includeAliases)
                         .build();
 
                 cat = tsDao.getTimeSeriesCatalog(cursor, pageSize, parameters);
@@ -272,6 +269,8 @@ public class CatalogController implements CrudHandler {
                         .withBoundingOfficeLike(boundingOfficeLike)
                         .withLocationKind(locationKind)
                         .withLocationType(locationType)
+                        .withFilterBaseLocations(filterBaseLocations)
+                        .withNegateLocationKindLike(negateLocationKind)
                         .build();
 
                 LocationsDao dao = new LocationsDaoImpl(dsl);

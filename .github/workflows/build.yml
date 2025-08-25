@@ -10,6 +10,10 @@ on:
 
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: [8, 11]
     name: build and test
     runs-on: ubuntu-latest
     outputs:
@@ -18,10 +22,10 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v4.2.2
       - name: setup java
-        uses: actions/setup-java@v4.6.0
+        uses: actions/setup-java@v4.7.1
         with:
           distribution: 'temurin'
-          java-version: '8'
+          java-version: ${{matrix.jdk}}
           cache: 'gradle'
       - name: build and test
         id: thebuild
@@ -34,7 +38,7 @@ jobs:
         with:
           annotate_only: true
           include_passed: true
-          report_paths: '**/test/TEST-*.xml'
+          report_paths: '**/TEST-*.xml'
   build-docker-image:
     runs-on: ubuntu-latest
     steps:

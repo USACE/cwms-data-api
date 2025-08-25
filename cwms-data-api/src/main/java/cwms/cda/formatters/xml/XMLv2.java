@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.CwmsDTOBase;
@@ -12,11 +13,13 @@ import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OutputFormatter;
+import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import io.javalin.http.InternalServerErrorResponse;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -90,6 +93,10 @@ public class XMLv2 implements OutputFormatter {
         retval.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         retval.registerModule(new JavaTimeModule());
         retval.addMixIn(TimeSeries.class, TimeSeriesXmlMixin.class);
+
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());
+        retval.registerModule(module);
         return retval;
     }
 }

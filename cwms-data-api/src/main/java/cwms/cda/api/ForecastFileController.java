@@ -74,7 +74,7 @@ public final class ForecastFileController implements Handler {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                             + "owning office of the forecast spec whose forecast instance is to be "
                             + "included in the response."),
-                    @OpenApiParam(name = DESIGNATOR, required = true, description = "Specifies the "
+                    @OpenApiParam(name = DESIGNATOR, description = "Specifies the "
                             + "designator of the forecast spec whose forecast instance data to be included "
                             + "in the response."),
             },
@@ -95,7 +95,7 @@ public final class ForecastFileController implements Handler {
     public void handle(Context ctx) {
         String specId = requiredParam(ctx, NAME);
         String office = requiredParam(ctx, OFFICE);
-        String designator = requiredParam(ctx, DESIGNATOR);
+        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
         Instant forecastInstant = DateUtils.parseUserDate(forecastDate, "UTC").toInstant();

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
@@ -14,9 +15,11 @@ import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OfficeFormatV1;
 import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import io.javalin.http.BadRequestResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,12 +33,8 @@ public class JsonV1 implements OutputFormatter {
     private final ObjectMapper om;
 
     public JsonV1() {
-        this.om = new ObjectMapper();
-        this.om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
-        this.om.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        this.om.disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS);
-        this.om.disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
-        this.om.registerModule(new JavaTimeModule());
+        this.om = buildObjectMapper();
+
     }
 
     @NotNull
@@ -47,6 +46,11 @@ public class JsonV1 implements OutputFormatter {
         retVal.disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS);
         retVal.disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
         retVal.registerModule(new JavaTimeModule());
+
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());
+        retVal.registerModule(module);
+
         return retVal;
     }
 
@@ -130,7 +134,7 @@ public class JsonV1 implements OutputFormatter {
     private boolean isFormattableWith(Class<?> klass) {
         FormattableWith[] formats = klass.getAnnotationsByType(FormattableWith.class);
         for (FormattableWith format : formats) {
-            /**
+            /*
              * Compare against the actual formatter not the name
              */
             if (format.formatter().equals(JsonV1.class)) {

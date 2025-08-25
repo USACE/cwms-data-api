@@ -93,13 +93,13 @@ public class ProjectChildLocationHandlerIT extends DataApiTestIT {
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(dsl);
             Location location1 = buildTestLocation(OFFICE, locName1);
             try {
-                locationsDao.storeLocation(location1);
+                locationsDao.storeLocation(location1, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             Location location2 = buildTestLocation(OFFICE, locName2);
             try {
-                locationsDao.storeLocation(location2);
+                locationsDao.storeLocation(location2, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

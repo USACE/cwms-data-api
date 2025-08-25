@@ -32,6 +32,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -65,7 +66,7 @@ public final class WaterUserCreateController extends WaterSupplyControllerBase i
             },
             required = true),
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Water user successfully stored to CWMS."),
+            @OpenApiResponse(status = STATUS_201, description = "Water user successfully stored to CWMS."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
         description = "Stores a water user to CWMS.",
@@ -84,7 +85,9 @@ public final class WaterUserCreateController extends WaterSupplyControllerBase i
             boolean failIfExists = Boolean.parseBoolean(ctx.queryParam(FAIL_IF_EXISTS));
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.storeWaterUser(user, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json(user.getEntityName() + " user created successfully.");
+            StatusResponse re = new StatusResponse(user.getProjectId().getOfficeId(),
+                    "Water user successfully stored to CWMS.", user.getEntityName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 }

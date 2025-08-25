@@ -28,11 +28,9 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.AT;
 import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DATE_FORMAT;
 import static cwms.cda.api.Controllers.DATUM;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.EXAMPLE_DATE;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
@@ -40,13 +38,16 @@ import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RATING_ID;
+import static cwms.cda.api.Controllers.REPLACE_BASE_CURVE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.STORE_TEMPLATE;
 import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION_DATE;
@@ -62,6 +63,7 @@ import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -86,6 +88,7 @@ import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.transform.TransformerException;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -95,7 +98,7 @@ import org.jooq.DSLContext;
 
 public class RatingController implements CrudHandler {
     private static final Logger logger = Logger.getLogger(RatingController.class.getName());
-    private static final String TAG = "Ratings";
+    static final String TAG = "Ratings";
 
     private final MetricRegistry metrics;
 
@@ -136,18 +139,26 @@ public class RatingController implements CrudHandler {
                 @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
                         description = "Also store updates to the rating template. Default: true")
             },
-            method = HttpMethod.POST, path = "/ratings", tags = {TAG})
+            method = HttpMethod.POST, path = "/ratings", tags = {TAG},
+            responses = {
+                @OpenApiResponse(status = STATUS_201, description = "Rating Set successfully stored to CWMS.")
+            })
     public void create(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
             RatingDao ratingDao = getRatingDao(dsl);
-            String ratingSet = deserializeRatingSet(ctx);
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
-            ratingDao.create(ratingSet, storeTemplate);
-            ctx.status(HttpServletResponse.SC_OK).json("Created RatingSet");
-        } catch (IOException | RatingException ex) {
-            CdaError re = new CdaError("Failed to process create request");
+            String ratingSet = deserializeRatingSet(ctx, storeTemplate);
+            ratingDao.create(ratingSet, false);
+            StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Rating Set successfully stored to CWMS.");
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Failed to process request to update RatingSet");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        } catch (RatingException ex) {
+            CdaError re = new CdaError("Failed to process request to update RatingSet: " + ex.getLocalizedMessage());
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
@@ -157,27 +168,44 @@ public class RatingController implements CrudHandler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    private String deserializeRatingSet(Context ctx) throws IOException, RatingException {
+    private String deserializeRatingSet(Context ctx, boolean storeTemplate) throws IOException, RatingException {
         String formatHeader = ctx.req.getContentType();
         //Using placeholder CwmsDTOBase.class since we do not have a RatingSet DTO
         //The contentType will match against the standard listing of Formats constants
         ContentType contentType = Formats.parseHeader(formatHeader, CwmsDTOBase.class);
         String body = ctx.body();
-        return deserializeRatingSet(body, contentType.getType());
+        return deserializeRatingSet(body, contentType.getType(), storeTemplate);
     }
 
     //Package private for unit testing
-    String deserializeRatingSet(String body, String contentType) throws IOException, RatingException {
+    String deserializeRatingSet(String body, String contentType, boolean storeTemplate) throws IOException {
         String retval;
         if (Formats.XML.equals(contentType)) {
             retval = body;
         } else if (Formats.JSON.equals(contentType)) {
-            retval = RatingXmlFactory.toXml(JsonRatingUtils.fromJson(body), "");
+            retval = translateJsonToXml(body);
         } else {
             throw new IOException("Unexpected format:" + contentType);
         }
-
+        if(!storeTemplate)
+        {
+            retval = removeTemplate(retval);
+        }
         return retval;
+    }
+
+    private static String translateJsonToXml(String body) {
+        String retval;
+        try {
+            retval = JsonRatingUtils.jsonToXml(body);
+        } catch (IOException | TransformerException ex) {
+            throw new IllegalArgumentException("Failed to translate request into rating spec XML", ex);
+        }
+        return retval;
+    }
+
+    private String removeTemplate(String xml) {
+        return xml.replaceAll("(?s)<rating-template.*?</rating-template>", "");
     }
 
     @OpenApi(
@@ -189,13 +217,9 @@ public class RatingController implements CrudHandler {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of "
                     + "the ratings to be deleted."),
             @OpenApiParam(name = BEGIN, required = true, description = "The start of the time "
-                    + "window to delete. The format for this field is ISO 8601 extended, "
-                    + "with optional offset and timezone, i.e., '"
-                + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    + "window to delete. " + TIME_FORMAT_DESC),
             @OpenApiParam(name = END, required = true, description = "The end of the time window"
-                    + " to delete. The format for this field is ISO 8601 extended, with optional "
-                    + "offset and timezone, i.e., '"
-                + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."),
+                    + " to delete. " + TIME_FORMAT_DESC),
             @OpenApiParam(name = TIMEZONE, description = "This field specifies a default "
                     + "timezone to be used if the format of the "
                 + BEGIN + ", " + END + ", or " + VERSION_DATE + " parameters do not include "
@@ -235,8 +259,8 @@ public class RatingController implements CrudHandler {
                 + "parameters."
                 + "\n* `SI`   Specifies the SI unit system.  Rating values "
                 + "will be in the default SI units for their parameters."
-                + "\n* `Other`  Any unit returned in the response to the units URI request "
-                + "that is appropriate for the requested parameters."),
+                + "\n* `NATIVE`  Specifies the NATIVE units.  Rating values "
+                + "will be in the native units for their parameters."),
         @OpenApiParam(name = DATUM,  description = "Specifies the "
                 + "elevation datum of the response. This field affects only elevation"
                 + " Ratings. Valid values for this field are:"
@@ -297,13 +321,10 @@ public class RatingController implements CrudHandler {
 
             ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, RatingAliasMarker.class);
 
-            if (format.isEmpty())
-            {
+            if (format.isEmpty()) {
                 //Use the full content type here (i.e. application/json;version=2)
                 ctx.contentType(contentType.toString());
-            }
-            else
-            {
+            } else {
                 //Legacy content type only includes the basic type (i.e. application/json)
                 ctx.contentType(contentType.getType());
             }
@@ -452,15 +473,21 @@ public class RatingController implements CrudHandler {
 
     @Override
     @OpenApi(description = "Update a RatingSet",
+            pathParams = {
+            @OpenApiParam(name = RATING_ID, description = "Specifies the rating-id of "
+                    + "the rating to be updated."),
+            },
             requestBody = @OpenApiRequestBody(content = {
                 @OpenApiContent(type = Formats.XMLV2),
                 @OpenApiContent(type = Formats.JSONV2)
             }, required = true),
             queryParams = {
                 @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
-                        description = "Also store updates to the rating template. Default: true")
+                        description = "Also store updates to the rating template. Default: true"),
+                @OpenApiParam(name = REPLACE_BASE_CURVE, type = Boolean.class,
+                        description = "Replace the base curve of USGS stream flow rating. Default: false")
             },
-            method = HttpMethod.PUT, path = "/ratings", tags = {TAG})
+            method = HttpMethod.PATCH, path = "/ratings", tags = {TAG})
     public void update(@NotNull Context ctx, @NotNull String ratingId) {
 
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
@@ -470,11 +497,18 @@ public class RatingController implements CrudHandler {
 
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class)
                     .getOrDefault(true);
-            String ratingSet = deserializeRatingSet(ctx);
-            ratingDao.store(ratingSet, storeTemplate);
-            ctx.status(HttpServletResponse.SC_OK).json("Updated RatingSet");
-        } catch (IOException | RatingException ex) {
+            boolean replaceBaseCurve = ctx.queryParamAsClass(REPLACE_BASE_CURVE, Boolean.class)
+                    .getOrDefault(false);
+            String ratingSet = deserializeRatingSet(ctx, storeTemplate);
+            ratingDao.store(ratingSet, replaceBaseCurve);
+            StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Updated RatingSet");
+            ctx.status(HttpServletResponse.SC_OK).json(re);
+        } catch (IOException ex) {
             CdaError re = new CdaError("Failed to process request to update RatingSet");
+            logger.log(Level.SEVERE, re.toString(), ex);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        } catch (RatingException ex) {
+            CdaError re = new CdaError("Failed to process request to update RatingSet: " + ex.getLocalizedMessage());
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }

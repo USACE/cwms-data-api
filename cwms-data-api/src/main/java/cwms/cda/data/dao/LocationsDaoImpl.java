@@ -43,12 +43,17 @@ import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
 
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.enums.Unit;
+import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.Catalog;
+import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.CwmsIdLocationKind;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.catalog.LocationCatalogEntry;
+import cwms.cda.helpers.ZoneIdHelper;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -58,6 +63,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -82,11 +88,14 @@ import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
+import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 
 
 public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao {
     private static final Logger logger = Logger.getLogger(LocationsDaoImpl.class.getName());
     private static final long DELETED_TS_MARKER = 0L;
+
+
 
     public LocationsDaoImpl(DSLContext dsl) {
         super(dsl);
@@ -101,7 +110,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 names, format, units, datum, officeId);
     }
 
-    @Override
     public List<Location> getLocations(String nameRegex, String unitSystem, String datum, String officeId) {
 
         Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
@@ -126,6 +134,24 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     @Override
+    public List<CwmsIdLocationKind> getLocationKinds(String idRegexMask, String kindRegexMask, String officeId) {
+        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, idRegexMask);
+
+        whereCondition = whereCondition
+            .and(JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_KIND_ID, kindRegexMask));
+
+        if (officeId != null) {
+            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
+        }
+
+        return dsl.selectDistinct(AV_LOC.LOCATION_ID, AV_LOC.DB_OFFICE_ID, AV_LOC.LOCATION_KIND_ID)
+                    .from(AV_LOC)
+                    .where(whereCondition)
+                    .fetchSize(DEFAULT_SMALL_FETCH_SIZE)
+                    .fetch(this::buildLocationKind);
+    }
+
+    @Override
     public Location getLocation(String locationName, String unitSystem, String officeId) {
         Record loc = dsl.select(AV_LOC.asterisk())
                 .from(AV_LOC)
@@ -140,11 +166,18 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         return buildLocation(loc);
     }
 
+    private CwmsIdLocationKind buildLocationKind(Record loc) {
+        CwmsIdLocationKind.Builder builder = new CwmsIdLocationKind.Builder();
+        builder.withLocationKindId(loc.get(AV_LOC.LOCATION_KIND_ID));
+        builder.withLocationId(CwmsId.buildCwmsId(loc.get(AV_LOC.DB_OFFICE_ID), loc.get(AV_LOC.LOCATION_ID)));
+        return builder.build();
+    }
+
     private Location buildLocation(Record loc) {
         String timeZoneName = loc.get(AV_LOC.TIME_ZONE_NAME); // may be null...
         ZoneId zone = null;
         if (timeZoneName != null) {
-            zone = ZoneId.of(timeZoneName);
+            zone = ZoneIdHelper.parseZoneIdWithAliases(timeZoneName);
         }
 
         Double latDouble = null;
@@ -214,28 +247,50 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         });
     }
 
+    /**
+     * @deprecated Use {@link #storeLocation(Location, boolean)} instead.
+     */
+    @Deprecated
     @Override
     public void storeLocation(Location location) throws IOException {
+        storeLocation(location, false);
+    }
+
+    @Override
+    public void storeLocation(Location location, boolean failIfExists) throws IOException {
         location.validate();
         try {
             connection(dsl, c -> {
-                setOffice(c,location);
-                CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
-                String elevationUnits = location.getElevationUnits() == null
-                        ? Unit.METER.getValue() : location.getElevationUnits();
-                locJooq.store(c, location.getOfficeId(), location.getName(),
-                        location.getStateInitial(), location.getCountyName(),
-                        location.getTimezoneName(), location.getLocationType(),
-                        location.getLatitude(), location.getLongitude(), location.getElevation(),
-                        elevationUnits, location.getVerticalDatum(),
-                        location.getHorizontalDatum(), location.getPublicName(),
-                        location.getLongName(),
-                        location.getDescription(), location.getActive(),
-                        location.getLocationKind(), location.getMapLabel(),
-                        location.getPublishedLatitude(),
-                        location.getPublishedLongitude(), location.getBoundingOfficeId(),
-                        location.getNation().getName(), location.getNearestCity(), true);
-
+                setOffice(c, location);
+                LOCATION_OBJ_T locationObjT = getLocationObj(location);
+                Configuration configuration = getDslContext(c, location.getOfficeId()).configuration();
+                try {
+                    CWMS_LOC_PACKAGE.call_STORE_LOCATION__2(configuration, locationObjT,
+                        formatBool(failIfExists));
+                } catch (DataAccessException e) {
+                    try {
+                        String dbLocationName = CWMS_LOC_PACKAGE.call_GET_LOCATION_ID(
+                            configuration, location.getName(), location.getBoundingOfficeId());
+                        if (dbLocationName != null && !dbLocationName.isEmpty()) {
+                            String message;
+                            if (dbLocationName.equalsIgnoreCase(location.getName())) {
+                                message = String.format("The location with name: %s already exists in office: %s",
+                                    location.getName(), location.getBoundingOfficeId());
+                            } else {
+                                message = String.format("The location with alias: '%s' and proper name: "
+                                        + "'%s' already exists in office: '%s'.",
+                                    location.getName(), dbLocationName, location.getBoundingOfficeId());
+                            }
+                            throw new AlreadyExists(message, e);
+                        } else {
+                            throw wrapException(e);
+                        }
+                    } catch (DataAccessException | NotFoundException ignored) {
+                        // If we can't find the location by name, then it doesn't exist.
+                        // We can throw the original exception.
+                        throw wrapException(e);
+                    }
+                }
             });
         } catch (DataAccessException ex) {
             throw new IOException("Failed to store Location", ex);
@@ -475,10 +530,20 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID,
                 params.getBoundingOfficeLike()));
+
+        String regexLocationKind = params.getLocationKind();
+        if (params.isNegateLocationKindLike() && !regexLocationKind.toUpperCase().startsWith("NOT:")) {
+            regexLocationKind = String.format("NOT:%s", regexLocationKind);
+        }
         condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_KIND_ID,
-                params.getLocationKind()));
+            regexLocationKind));
+
         condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_TYPE,
                 params.getLocationType()));
+
+        if (params.filterBaseLocations()) {
+            condition = condition.and(AV_LOC2.AV_LOC2.SUB_LOCATION_ID.isNotNull());
+        }
 
         return condition;
     }
@@ -525,8 +590,10 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 .timeZone(loc.getTIME_ZONE_NAME())
                 .latitude(loc.getLATITUDE() != null ? loc.getLATITUDE().doubleValue() : null)
                 .longitude(loc.getLONGITUDE() != null ? loc.getLONGITUDE().doubleValue() : null)
-                .publishedLatitude(loc.getPUBLISHED_LATITUDE() != null ? loc.getPUBLISHED_LATITUDE().doubleValue() : null)
-                .publishedLongitude(loc.getPUBLISHED_LONGITUDE() != null ? loc.getPUBLISHED_LONGITUDE().doubleValue() : null)
+                .publishedLatitude(loc.getPUBLISHED_LATITUDE() != null
+                    ? loc.getPUBLISHED_LATITUDE().doubleValue() : null)
+                .publishedLongitude(loc.getPUBLISHED_LONGITUDE() != null
+                    ? loc.getPUBLISHED_LONGITUDE().doubleValue() : null)
                 .horizontalDatum(loc.getHORIZONTAL_DATUM())
                 .elevation(loc.getELEVATION())
                 .unit(loc.getUNIT_ID())
@@ -541,4 +608,35 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 .build();
     }
 
+    private static LOCATION_OBJ_T getLocationObj(Location location) {
+        LOCATION_OBJ_T retval = null;
+        if (location != null) {
+            retval = new LOCATION_OBJ_T();
+            String elevationUnits = location.getElevationUnits() == null
+                ? Unit.METER.getValue() : location.getElevationUnits();
+            retval.setLOCATION_REF(LocationUtil.getLocationRef(location.getName(), location.getOfficeId()));
+            retval.setLOCATION_KIND_ID(location.getLocationKind());
+            retval.setTIME_ZONE_NAME(location.getTimezoneName());
+            retval.setLATITUDE(toBigDecimal(location.getLatitude()));
+            retval.setLONGITUDE(toBigDecimal(location.getLongitude()));
+            retval.setHORIZONTAL_DATUM(location.getHorizontalDatum());
+            retval.setACTIVE_FLAG(formatBool(location.getActive()));
+            retval.setDESCRIPTION(location.getDescription());
+            retval.setELEVATION(toBigDecimal(location.getElevation()));
+            retval.setELEV_UNIT_ID(elevationUnits);
+            retval.setCOUNTY_NAME(location.getCountyName());
+            retval.setBOUNDING_OFFICE_ID(location.getBoundingOfficeId());
+            retval.setNATION_ID(Optional.ofNullable(location.getNation()).map(Nation::getName).orElse(null));
+            retval.setMAP_LABEL(location.getMapLabel());
+            retval.setPUBLIC_NAME(location.getPublicName());
+            retval.setPUBLISHED_LATITUDE(toBigDecimal(location.getPublishedLatitude()));
+            retval.setPUBLISHED_LONGITUDE(toBigDecimal(location.getPublishedLongitude()));
+            retval.setVERTICAL_DATUM(location.getVerticalDatum());
+            retval.setLONG_NAME(location.getLongName());
+            retval.setSTATE_INITIAL(location.getStateInitial());
+            retval.setLOCATION_TYPE(location.getLocationType());
+            retval.setNEAREST_CITY(location.getNearestCity());
+        }
+        return retval;
+    }
 }

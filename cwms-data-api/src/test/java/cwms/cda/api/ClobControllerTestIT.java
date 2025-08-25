@@ -79,6 +79,32 @@ public class ClobControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    void test_failIfExists() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        ObjectMapper om = JsonV2.buildObjectMapper();
+
+        Clob clob = new Clob(SPK, EXISTING_CLOB_ID, EXISTING_CLOB_DESC, EXISTING_CLOB_VALUE);
+        String serializedClob = om.writeValueAsString(clob);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(serializedClob)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office", clob.getOfficeId())
+            .queryParam("fail-if-exists", true) // This time we fail if it already exists
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/clobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(HttpServletResponse.SC_CONFLICT); // Expect 409 Conflict
+    }
+
+    @Test
     void test_getOne_notFound() throws UnsupportedEncodingException {
         String clobId = "TEST";
         String urlencoded = URLEncoder.encode(clobId, "UTF-8");

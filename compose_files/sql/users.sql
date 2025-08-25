@@ -54,6 +54,7 @@ begin
     -- intentionally no extra permissions.
     --cwms_sec.add_user_to_group('l2hectest','CWMS Users', 'SPL');
 
+
    cwms_sec.add_cwms_user(
       'm5hectest',
       null,
@@ -141,6 +142,18 @@ begin
               '&&API_KEY',
               to_date('2025-06-10 16:10:42','YYYY-MM-DD HH24:MI:SS'),
               to_date('2029-06-16 16:10:46','YYYY-MM-DD HH24:MI:SS') );
+
+    cwms_sec.add_cwms_user('m5hectest',NULL,'SWT');
+    cwms_sec.add_user_to_group('m5hectest','All Users', 'SWT');
+    cwms_sec.add_user_to_group('m5hectest','CWMS Users', 'SWT');
+    execute immediate 'grant execute on cwms_20.cwms_upass to web_user';
+
+
+    cwms_sec.add_cwms_user('m5testadmin', NULL, 'LRL');
+    cwms_sec.add_user_to_group('m5testadmin','All Users', 'LRL');
+    cwms_sec.add_user_to_group('m5testadmin','CWMS Users', 'LRL');
+    cwms_sec.add_user_to_group('m5testadmin','CWMS User Admins', 'LRL');
+
 end;
 /
 quit;

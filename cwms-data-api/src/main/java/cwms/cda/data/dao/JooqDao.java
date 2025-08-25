@@ -24,6 +24,9 @@
 
 package cwms.cda.data.dao;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+
 import static org.jooq.SQLDialect.ORACLE;
 
 import com.google.common.flogger.FluentLogger;
@@ -42,9 +45,7 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.DateTimeException;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,6 +71,7 @@ import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 
 
 public abstract class JooqDao<T> extends Dao<T> {
@@ -78,10 +80,19 @@ public abstract class JooqDao<T> extends Dao<T> {
     public static final int DEFAULT_FETCH_SIZE = 1000;
     public static final int DEFAULT_SMALL_FETCH_SIZE = 500;
     public static final int ORACLE_ECID_MAX_LENGTH = 22;
+    public static final int REQUIRE_NEW_LRTS_ID_FORMAT = 6;
+    public static final int REQUIRE_OLD_LRTS_ID_FORMAT = 0;
+    public static final String SESSION_USE_LRTS_ID_FORMAT = "USE_NEW_LRTS_ID_FORMAT";
 
     static ExecuteListener listener = new ExceptionWrappingListener();
     private static final Pattern INVALID_OFFICE_ID = Pattern.compile(
         "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
+    private static final Pattern INVALID_UNIT = Pattern.compile(
+            "(.+\\R+){6}ORA-20102: The unit: \\S+"
+                    + " is not a recognized CWMS Database unit for the .+(.+\\R+){10}");
+    private static final Pattern CONVERSION_ERROR = Pattern.compile(
+            "^ORA-20998: ERROR: Cannot convert ((parameter .+ from specified units: .+$)"
+                    + "|(from unit .+ to unit .+$))");
     private static final Pattern VALUE_TOO_LONG = Pattern.compile(
             "^ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
                     + "\\(actual: (\\d+), maximum: (\\d+)\\)\\R*$");
@@ -101,6 +112,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             return rule;
         }
     }
+
 
     protected JooqDao(DSLContext dsl) {
         super(dsl);
@@ -122,6 +134,9 @@ public abstract class JooqDao<T> extends Dao<T> {
         DSLContext retVal;
         final String officeId = ctx.attribute(ApiServlet.OFFICE_ID);
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
+        final Boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) == null
+                ? null : Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
+
         if (dataSource != null) {
             DataSource wrappedDataSource = new ConnectionPreparingDataSource(connection ->
                     setClientInfo(ctx, connection), dataSource);
@@ -136,6 +151,12 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         retVal.configuration().set(new DefaultExecuteListenerProvider(listener));
 
+        if (isNewLRTS != null) {
+            String requireBool = isNewLRTS ? "T" : "F";
+            int requireIntValue = isNewLRTS ? REQUIRE_NEW_LRTS_ID_FORMAT : REQUIRE_OLD_LRTS_ID_FORMAT;
+            CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(retVal.configuration(),
+                SESSION_USE_LRTS_ID_FORMAT, requireBool, requireIntValue);
+        }
         return retVal;
     }
 
@@ -163,7 +184,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         try {
             final String apiVersion = ApiServlet.getApiVersion();
             connection.setClientInfo("OCSID.ECID",
-                                     ApiServlet.APPLICATION_TITLE + " " + 
+                                     ApiServlet.APPLICATION_TITLE + " " +
                                      apiVersion.substring(0,Math.min(ORACLE_ECID_MAX_LENGTH,apiVersion.length())));
             if (ctx.handlerType() == HandlerType.BEFORE) {
                 connection.setClientInfo("OCSID.MODULE", "BEFORE-HANDLER");
@@ -173,7 +194,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             connection.setClientInfo("OCSID.ACTION", ctx.method());
             connection.setClientInfo("OCSID.CLIENTID", ctx.url().replace(ctx.path(), "") + ctx.contextPath());
         } catch (SQLClientInfoException ex) {
-            logger.atWarning()
+            logger.atFinest() // this is usually useless information
                     .withCause(ex)
                     .log("Unable to set client info on connection.");
         }
@@ -203,10 +224,19 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new CustomCondition() {
             @Override
             public void accept(org.jooq.Context<?> ctx) {
-                if (ctx.family() == ORACLE) {
-                    ctx.visit(DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
+                if (regex.toUpperCase().startsWith("NOT:")) {
+                    String finalRegex = regex.substring(4);
+                    if (ctx.family() == ORACLE) {
+                        ctx.visit(DSL.condition("{not regexp_like}({0}, {1}, 'i')", field, DSL.val(finalRegex)));
+                    } else {
+                        ctx.visit(DSL.upper(field).notLikeRegex(finalRegex.toUpperCase()));
+                    }
                 } else {
-                    ctx.visit(DSL.upper(field).likeRegex(regex.toUpperCase()));
+                    if (ctx.family() == ORACLE) {
+                        ctx.visit(DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
+                    } else {
+                        ctx.visit(DSL.upper(field).likeRegex(regex.toUpperCase()));
+                    }
                 }
             }
         };
@@ -264,6 +294,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildInvalidOffice(input);
         } else if (isValueTooLargeException(input)) {
             retVal = buildValueTooLongException(input);
+        } else if (isTSIDInvalidIntervalException(input)) {
+            retVal = buildInvalidTSIDIntervalException(input);
         }
 
         return retVal;
@@ -338,7 +370,34 @@ public abstract class JooqDao<T> extends Dao<T> {
         return getSqlException(input.getCause()).map(sqlException -> hasCodeOrMessage(sqlException,
                 Arrays.asList(6502, 12899, 20041),
                 Arrays.asList("value too large for column", "character string buffer too small",
-                        "Error while writing value at JDBC bind index:"))).orElse(false);
+                        "Error while writing value at JDBC bind index:")))
+            .orElse(false);
+    }
+
+    public static boolean isTSIDInvalidIntervalException(RuntimeException input) {
+        return getSqlException(input.getCause()).map(sqlException -> hasCodeAndMessage(sqlException,
+                Arrays.asList(20205),
+                Arrays.asList("Invalid Time Series Description", "is not a valid interval")))
+            .orElse(false);
+    }
+
+    static InvalidItemException buildInvalidTSIDIntervalException(RuntimeException input) {
+        Throwable cause = input.getCause();
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        String localizedMessage = cause.getLocalizedMessage();
+
+        if (localizedMessage != null) {
+            String[] parts = localizedMessage.split("\n");
+            if (parts.length > 2) {
+                return new InvalidItemException(String.format("Invalid Time Series Description: %s is not a valid interval",
+                    parts[1]), cause);
+            }
+        }
+        return new InvalidItemException("Invalid Time Series Description", cause);
     }
 
     public static boolean isInvalidItem(RuntimeException input) {
@@ -419,6 +478,9 @@ public abstract class JooqDao<T> extends Dao<T> {
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
 
+        } else if (input instanceof AlreadyExists) {
+            // If the input is already an AlreadyExists exception, then we can just return true.
+            retVal = true;
         }
         return retVal;
     }
@@ -430,14 +492,18 @@ public abstract class JooqDao<T> extends Dao<T> {
             DataAccessException dae = (DataAccessException) input;
             cause = dae.getCause();
         }
+        AlreadyExists exception;
+        if (cause instanceof AlreadyExists) {
+            exception = (AlreadyExists) cause;
+        } else {
+            exception = new AlreadyExists(cause);
 
-        AlreadyExists exception = new AlreadyExists(cause);
-
-        String localizedMessage = cause.getLocalizedMessage();
-        if (localizedMessage != null) {
-            String[] parts = localizedMessage.split("\n");
-            if (parts.length > 1) {
-                exception = new AlreadyExists(parts[0], cause);
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    exception = new AlreadyExists(parts[0], cause);
+                }
             }
         }
         return exception;
@@ -505,12 +571,21 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
             String message = sqlException.getLocalizedMessage();
-            int errorCode = sqlException.getErrorCode();
 
-            retVal = errorCode == 20998
-                    && message.contains("ORA-20102: The unit")
-                    && message.contains("is not a recognized CWMS Database unit for the")
-                ;
+            if (INVALID_UNIT.matcher(message).matches()) {
+                retVal = true;
+            }
+
+            if (message != null) {
+                String[] parts = message.split("\n");
+                if (parts.length > 1) {
+                    message = parts[0];
+                }
+            }
+
+            if (CONVERSION_ERROR.matcher(message).matches()) {
+                retVal = true;
+            }
         }
         return retVal;
     }
@@ -524,6 +599,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
 
         String localizedMessage = cause.getLocalizedMessage();
+        boolean isConversionError = false;
         if (localizedMessage != null) {
             // skip ahead in localizedMessage to "ORA-20102:"
             String searchFor = "ORA-20102:";
@@ -534,10 +610,23 @@ public abstract class JooqDao<T> extends Dao<T> {
                 if (parts.length >= 1) {
                     localizedMessage = parts[0];
                 }
+            } else {
+                searchFor = "ORA-20998: ERROR: ";
+                start = localizedMessage.indexOf(searchFor);
+                if (start >= 0) {
+                    localizedMessage = localizedMessage.substring(start + searchFor.length());
+                    String[] parts = localizedMessage.split("\n");
+                    if (parts.length >= 1) {
+                        localizedMessage = parts[0];
+                    }
+                    isConversionError = true;
+                }
             }
         }
 
-        localizedMessage = sanitizeOrNull(localizedMessage);
+        if (!isConversionError) {
+            localizedMessage = sanitizeOrNull(localizedMessage);
+        }
 
         if (localizedMessage == null || localizedMessage.isEmpty()) {
             localizedMessage = "Invalid Units.";
@@ -707,4 +796,5 @@ public abstract class JooqDao<T> extends Dao<T> {
     public static double buildDouble(BigDecimal bigDecimal) {
         return (bigDecimal == null) ? 0.0 : bigDecimal.doubleValue();
     }
+
 }

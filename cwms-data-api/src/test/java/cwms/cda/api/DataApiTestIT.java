@@ -24,10 +24,19 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.data.dao.JooqDao.REQUIRE_NEW_LRTS_ID_FORMAT;
+import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
+
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.StreamDao;
+import cwms.cda.data.dao.basin.BasinDao;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
+import cwms.cda.data.dto.basin.Basin;
+import cwms.cda.data.dto.stream.Stream;
+import cwms.cda.helpers.ZoneIdHelper;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.IntegrationTestNameGenerator;
 import fixtures.KeyCloakExtension;
@@ -42,10 +51,10 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -69,6 +78,8 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
+
 /**
  * Helper class to manage cycling tests multiple times against a database.
  * NOTE: Not thread safe, do not run parallel tests. That may be future work though.
@@ -83,13 +94,15 @@ public class DataApiTestIT {
     protected static String createLocationQuery = null;
     protected static String createTimeseriesQuery = null;
     protected static String createTimeseriesOffsetQuery = null;
-    protected final static String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
-    protected final static String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and apikey = ?";
+    protected static final String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
+    protected static final String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and apikey = ?";
 
-    protected final static Configuration freemarkerConfig = new Configuration(Configuration.VERSION_2_3_32);
+    protected static final Configuration freemarkerConfig = new Configuration(Configuration.VERSION_2_3_32);
 
     private ArrayList<LocationGroup> groupsCreated = new ArrayList<>();
     private ArrayList<LocationCategory> categoriesCreated = new ArrayList<>();
+    private static List<Stream> streamsCreated = new ArrayList<>();
+    private static List<Basin> basinsCreated = new ArrayList<>();
 
     static {
         freemarkerConfig.setClassForTemplateLoading(DataApiTestIT.class, "/");
@@ -233,7 +246,7 @@ public class DataApiTestIT {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         Location loc = new Location.Builder(location,
                                             kind,
-                                            ZoneId.of(timeZone),
+                                            ZoneIdHelper.parseZoneIdWithAliases(timeZone),
                                             latitude,
                                             longitude,
                                             horizontalDatum,
@@ -329,6 +342,54 @@ public class DataApiTestIT {
                 throw new RuntimeException("Unable to create timeseries",ex);
             }
         }, "cwms_20");
+    }
+
+    protected static void createTimeseriesWithNewLRTSInterval(String office, String timeseries, int offset) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection((c)-> {
+            org.jooq.Configuration configuration = DSL.using(c).configuration();
+            CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(configuration,
+                SESSION_USE_LRTS_ID_FORMAT, "T", REQUIRE_NEW_LRTS_ID_FORMAT);
+            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery)) {
+                stmt.setString(1, office);
+                stmt.setString(2, timeseries);
+                stmt.setInt(3, offset);
+                stmt.execute();
+            } catch (SQLException ex) {
+                if (ex.getErrorCode() == 20003) {
+                    return; // TS already exists. that's fine for these tests.
+                }
+                throw new RuntimeException("Unable to create timeseries",ex);
+            }
+        }, "cwms_20");
+    }
+
+    /**
+     * Create a stream, saving the data for later deletion.
+     * @param stream Stream to create
+     * @throws SQLException Any error saving the data
+     */
+    public static void createStream(Stream stream) throws SQLException {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, stream.getOfficeId());
+            StreamDao streamDao = new StreamDao(dsl);
+            streamDao.storeStream(stream, true);
+            streamsCreated.add(stream);
+        });
+    }
+
+    /**
+     * Create a basin, saving the data for later deletion.
+     * @param basin Basin to create
+     * @throws SQLException Any error saving the data
+     */
+    public static void createBasin(Basin basin) throws SQLException {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, basin.getBasinId().getOfficeId());
+            BasinDao basinDao = new BasinDao(dsl);
+            basinDao.storeBasin(basin);
+            basinsCreated.add(basin);
+        });
     }
 
     /**
@@ -471,6 +532,47 @@ public class DataApiTestIT {
         });
     }
 
+    /**
+     * Cleanup all basins created by tests that did not remove them.
+     * This is a static method so it can be called from the static cleanup methods.
+     * This is not assigned an @AfterEach or @AfterAll because the order can be important for test teardown
+     * @throws Exception
+     */
+    public static void cleanupBasins() throws Exception {
+        if (basinsCreated.isEmpty()) {
+            logger.atInfo().log("No basins to cleanup.");
+            return;
+        }
+        logger.atInfo().log("Cleaning up basins test did not remove.");
+        CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
+        cwmsDb.connection(c -> {
+            for (Basin basin : basinsCreated) {
+                BasinDao basinDao = new BasinDao(dslContext(c, basin.getBasinId().getOfficeId()));
+                basinDao.deleteBasin(basin.getBasinId(), DeleteRule.DELETE_ALL);
+            }
+        });
+    }
+
+    /**
+     * Cleanup all streams created by tests that did not remove them.
+     * This is a static method so it can be called from the static cleanup methods.
+     * This is not assigned an @AfterEach or @AfterAll because the order can be important for test teardown
+     * @throws Exception
+     */
+    public static void cleanupStreams() throws Exception {
+        if (streamsCreated.isEmpty()) {
+            logger.atInfo().log("No streams to cleanup.");
+            return;
+        }
+        logger.atInfo().log("Cleaning up streams test did not remove.");
+        CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
+        cwmsDb.connection(c -> {
+            for (Stream stream : streamsCreated) {
+                StreamDao streamDao = new StreamDao(dslContext(c, stream.getOfficeId()));
+                streamDao.deleteStream(stream.getOfficeId(), stream.getId().getName(), DeleteRule.DELETE_ALL);
+            }
+        });
+    }
 
     // Resource Template operations
     /**

@@ -137,7 +137,7 @@ class TimeSeriesIdentifierDescriptorDaoTest {
         DSLContext dsl = getDslContext(OFFICE);
 
         LocationsDaoImpl locationsDao = new LocationsDaoImpl(dsl);
-        locationsDao.storeLocation(location);
+        locationsDao.storeLocation(location, false);
 
     }
 

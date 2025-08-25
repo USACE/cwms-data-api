@@ -54,13 +54,39 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("integration")
 class RatingsControllerTestIT extends DataApiTestIT
 {
-	private static final String EXISTING_LOC = "RatingsControllerTestIT";
+	static final String EXISTING_LOC = "RatingsControllerTestIT";
 	private static final String EXISTING_SPEC = EXISTING_LOC + ".Stage;Flow.COE.Production";
 	private static final String TEMPLATE = "Stage;Flow.COE";
-	private static final String SPK = "SPK";
+	static final String SPK = "SPK";
 
 	@BeforeAll
-	static void beforeAll() throws Exception
+	static void beforeAll() throws Exception {
+		store(false);
+	}
+
+	@AfterAll
+	static void cleanUp()
+	{
+		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+		// Delete Template
+		given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.contentType(Formats.XMLV2)
+				.header("Authorization", user.toHeaderValue())
+				.queryParam(OFFICE, SPK)
+				.queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
+		.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.delete("/ratings/template/" + TEMPLATE)
+		.then()
+				.log().ifValidationFails(LogDetail.ALL,true)
+		.assertThat()
+				.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+	}
+
+	static void store(boolean storeTemplate) throws Exception
 	{
 		//Make sure we always have something.
 		createLocation(EXISTING_LOC, true, SPK);
@@ -68,7 +94,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 		String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
 		ratingXml = ratingXml.replaceAll("Zanesville", EXISTING_LOC);
 		String ratingXml2 = ratingXml.replaceAll("2002-04-09T13:53:01Z", "2016-06-06T00:00:00Z");
-		String ratingXml3 = ratingXml.replaceAll("2002-04-09T13:53:01Z", "2025-06-06T00:00:00Z");
+		String ratingXml3 = ratingXml.replaceAll("2002-04-09T13:53:01Z", "2085-06-06T00:00:00Z");
 		RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
 		RatingSetContainer container2 = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml2);
 		RatingSetContainer container3 = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml3);
@@ -122,7 +148,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.body(setXml)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, SPK)
-			.queryParam(STORE_TEMPLATE, false)
+			.queryParam(STORE_TEMPLATE, storeTemplate)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -130,7 +156,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 		.then()
 			.assertThat()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.statusCode(is(HttpServletResponse.SC_OK));
+			.statusCode(is(HttpServletResponse.SC_CREATED));
 
 		//Create the second set
 		given()
@@ -139,7 +165,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.body(setXml2)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, SPK)
-			.queryParam(STORE_TEMPLATE, false)
+			.queryParam(STORE_TEMPLATE, storeTemplate)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -147,7 +173,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL,true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK));
+			.statusCode(is(HttpServletResponse.SC_CREATED));
 
 		// Create the third set
 		given()
@@ -156,7 +182,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.body(setXml3)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, SPK)
-			.queryParam(STORE_TEMPLATE, false)
+			.queryParam(STORE_TEMPLATE, storeTemplate)
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
@@ -164,82 +190,77 @@ class RatingsControllerTestIT extends DataApiTestIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL,true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK));
-	}
-
-	@AfterAll
-	static void afterAll()
-	{
-		TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-
-		// Delete Template
-		given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.contentType(Formats.XMLV2)
-			.header("Authorization", user.toHeaderValue())
-			.queryParam(OFFICE, SPK)
-			.queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.delete("/ratings/template/" + TEMPLATE)
-		.then()
-			.log().ifValidationFails(LogDetail.ALL,true)
-		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+			.statusCode(is(HttpServletResponse.SC_CREATED));
 	}
 
 	@ParameterizedTest
 	@EnumSource(GetAllLegacyTest.class)
-	void test_getAll_legacy(GetAllLegacyTest test)
-	{
+	void test_getAll_legacy(GetAllLegacyTest test) {
 		given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.queryParam(FORMAT, test.queryParam)
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.queryParam(FORMAT, test.queryParam)
 		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/ratings")
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("/ratings")
 		.then()
-			.assertThat()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.contentType(is(test.expectedContentType));
+		.assertThat()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_OK))
+				.contentType(is(test.expectedContentType));
+
 	}
 
 	@ParameterizedTest
 	@EnumSource(GetAllTest.class)
-	void test_getAll(GetAllTest test)
+	void test_getAll(GetAllTest test) {
+		given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.accept(test.accept)
+		.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("/ratings")
+		.then()
+		.assertThat()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_OK))
+				.contentType(is(test.expectedContentType));
+	}
+
+	@ParameterizedTest
+	@EnumSource(GetOneTest.class)
+	void test_getOne(GetOneTest test) {
+		given()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.accept(test.accept)
+				.queryParam(OFFICE, SPK)
+		.when()
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("/ratings/" + EXISTING_SPEC)
+		.then()
+		.assertThat()
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_OK))
+				.contentType(is(test.expectedContentType));
+	}
+
+	@ParameterizedTest
+	@EnumSource(GetAllTest.class)
+	void test_getAll_NATIVE_units(GetAllTest test)
 	{
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
 			.accept(test.accept)
+			.queryParam(UNIT, "NATIVE")
 		.when()
 			.redirects().follow(true)
 			.redirects().max(3)
 			.get("/ratings")
 		.then()
-			.assertThat()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.contentType(is(test.expectedContentType));
-	}
-
-	@ParameterizedTest
-	@EnumSource(GetOneTest.class)
-	void test_getOne(GetOneTest test)
-	{
-		given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(test.accept)
-			.queryParam(OFFICE, SPK)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/ratings/" + EXISTING_SPEC)
-		.then()
-			.assertThat()
-			.log().ifValidationFails(LogDetail.ALL,true)
+		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_OK))
 			.contentType(is(test.expectedContentType));
 	}
@@ -248,49 +269,49 @@ class RatingsControllerTestIT extends DataApiTestIT
 	void test_get_one_latest() {
 		// get latest json
 		ExtractableResponse<Response> response = given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.contentType(Formats.JSONV2)
-			.queryParam(OFFICE, SPK)
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.contentType(Formats.JSONV2)
+				.queryParam(OFFICE, SPK)
 		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/ratings/" + EXISTING_SPEC + "/latest")
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("/ratings/" + EXISTING_SPEC + "/latest")
 		.then()
 		.assertThat()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.contentType(is(Formats.JSONV2))
-			.extract();
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.statusCode(is(HttpServletResponse.SC_OK))
+				.contentType(is(Formats.JSONV2))
+				.extract();
 
 		String effectiveDate = response.path("ratings.simple-rating[0].effective-date");
 		if (effectiveDate == null) {
 			effectiveDate = response.path("simple-rating.effective-date");
 		}
 		assertNotNull(effectiveDate);
-		assertEquals("2025-06-06T00:00:00Z", effectiveDate);
+		assertEquals("2016-06-06T00:00:00Z", effectiveDate);
 
 		// get latest xml
 		response = given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.contentType(Formats.XMLV2)
-			.queryParam(OFFICE, SPK)
+				.log().ifValidationFails(LogDetail.ALL,true)
+				.contentType(Formats.XMLV2)
+				.queryParam(OFFICE, SPK)
 		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/ratings/" + EXISTING_SPEC + "/latest")
+				.redirects().follow(true)
+				.redirects().max(3)
+				.get("/ratings/" + EXISTING_SPEC + "/latest")
 		.then()
-			.log().ifValidationFails(LogDetail.ALL,true)
+				.log().ifValidationFails(LogDetail.ALL,true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.contentType(is(Formats.XMLV2))
-			.extract();
+				.statusCode(is(HttpServletResponse.SC_OK))
+				.contentType(is(Formats.XMLV2))
+				.extract();
 
 		effectiveDate = response.path("ratings.simple-rating[0].effective-date");
 		if (effectiveDate == null) {
 			effectiveDate = response.path("simple-rating.effective-date");
 		}
 		assertNotNull(effectiveDate);
-		assertEquals("2025-06-06T00:00:00Z", effectiveDate);
+		assertEquals("2016-06-06T00:00:00Z", effectiveDate);
 	}
 
 	enum GetOneTest
