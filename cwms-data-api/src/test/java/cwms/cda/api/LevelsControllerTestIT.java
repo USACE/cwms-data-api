@@ -101,19 +101,20 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         });
     }
 
-    @Test
-    void test_location_level() throws Exception {
-        createLocation("level_as_single_value", true, OFFICE);
+    @ParameterizedTest
+    @ValueSource(strings = {"SPK", "SWT", "MVP"})
+    void test_location_level(String office) throws Exception {
+        createLocation("level_as_single_value", true, office);
         String levelId = "level_as_single_value.Stor.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
-                .withOfficeId(OFFICE)
+                .withOfficeId(office)
                 .withLevelUnitsId("ac-ft")
                 .withConstantValue(1.0)
                 .build();
         levelList.add(level);
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            DSLContext dsl = dslContext(c, OFFICE);
+            DSLContext dsl = dslContext(c, office);
             LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
             dao.storeLocationLevel(level);
         });
@@ -123,7 +124,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .queryParam("office", OFFICE)
+            .queryParam("office", office)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
         .when()
             .redirects().follow(true)
@@ -143,7 +144,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .queryParam("office", OFFICE)
+            .queryParam("office", office)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
             .queryParam(UNIT, "ac-ft")
         .when()
@@ -156,6 +157,43 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("level-units-id",equalTo("ac-ft"))
             .body("constant-value",equalTo(1.0F));
+
+        // test modified effective date
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", office)
+            .queryParam(EFFECTIVE_DATE, time.plusDays(1L).toInstant().toString())
+            .queryParam(UNIT, "ac-ft")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id",equalTo("ac-ft"))
+            .body("constant-value",equalTo(1.0F));
+
+        // test modified effective date using exact match
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", office)
+            .queryParam(EFFECTIVE_DATE, time.plusDays(1L).toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
+            .queryParam(UNIT, "ac-ft")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
     @Test
@@ -968,6 +1006,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -984,6 +1023,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .queryParam("office", OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
             .queryParam(UNIT, "ft")
         .when()
             .redirects().follow(true)
@@ -1001,6 +1041,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .queryParam("office", OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
             .queryParam(UNIT, "EN")
         .when()
             .redirects().follow(true)
@@ -1019,6 +1060,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .queryParam("office", OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
             .queryParam(UNIT, "ft3")
         .when()
             .redirects().follow(true)
@@ -1137,6 +1179,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1154,6 +1197,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1171,6 +1215,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1335,6 +1380,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1352,6 +1398,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1369,6 +1416,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1525,6 +1573,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1542,6 +1591,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .queryParam("office", OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
             .queryParam(UNIT, "ft3")
         .when()
             .redirects().follow(true)
