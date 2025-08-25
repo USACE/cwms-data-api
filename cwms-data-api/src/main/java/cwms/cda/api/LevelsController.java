@@ -330,7 +330,8 @@ public class LevelsController implements CrudHandler {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "office of the Location Level to be returned"),
                 @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
-                        + "the effective date of Location Level to be returned. "
+                        + "the effective date of Location Level to be returned. The most recent level "
+                        + "on or before this time will be returned."
                         + "Expected formats are `YYYY-MM-DDTHH:MM` or `YYYY-MM-DDTHH:MM:SS`"),
                 @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
                         + "the values of the effective date field (unless otherwise "

@@ -483,7 +483,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             LOCATION_LEVEL_T level = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOCATION_LEVEL__2(
                     configuration, locationLevelName, units, date,
                     "UTC", null, null,
-                    null, "T", officeId, "VN");
+                    null, "F", officeId, "VN");
             if (level == null) {
                 throw new NotFoundException("Location level not found: " + locationLevelName);
             }
