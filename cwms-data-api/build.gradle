@@ -163,16 +163,10 @@ dependencies {
 }
 
 task extractWebJars(type: Copy) {
-    doFirst {
-        project.mkdir("$buildDir/extra/")
-    }
+    dependsOn configurations.webjars
     from zipTree(configurations.webjars.singleFile)
     into file("$buildDir/extra")
     includeEmptyDirs false
-    eachFile {
-        path -= ~/^.+?\/.+?\/.+?\/.+?\/.+?\//
-    }
-    //include "/META-INF/resources/webjars/**"
     includeEmptyDirs = false
 }
 
