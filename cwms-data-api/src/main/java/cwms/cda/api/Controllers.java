@@ -110,6 +110,7 @@ public final class Controllers {
     public static final String TEMPLATE_ID_MASK = "template-id-mask";
     public static final String STORE_TEMPLATE = "store-template";
     public static final String REPLACE_BASE_CURVE = "replace-base-curve";
+    public static final String EFFECTIVE_DATE_EXACT = "use-exact-effective-date";
 
     public static final String TIMESERIES_ID_REGEX = "timeseries-id-regex";
     public static final String TIMESERIES_ID = "timeseries-id";
