@@ -15,16 +15,16 @@ RUN apk --no-cache upgrade && \
 
 RUN mkdir /download && \
     cd /download && \
-    wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.102/bin/apache-tomcat-9.0.102.tar.gz && \
-    echo "cbe407f17c813d9f83cab459e603df171f2e5782c3a0cdb4cfa00b0391a89cedf865c6d8972fc7e12210c69a8467ede5939f35bb0f3b41fa173b9ee83199768a *apache-tomcat-9.0.102.tar.gz" > checksum.txt && \
+    wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.105/bin/apache-tomcat-9.0.105.tar.gz && \
+    echo "904f10378ee2c7c68529edfefcba50c77eb677aa4586cfac0603e44703b0278f71f683b0295774f3cdcb027229d146490ef2c8868d8c2b5a631cf3db61ff9956 *apache-tomcat-9.0.105.tar.gz" > checksum.txt && \
     sha512sum -c checksum.txt && \
     tar xzf apache-tomcat-*tar.gz && \
-    mv apache-tomcat-9.0.102 /usr/local/tomcat/ && \
+    mv apache-tomcat-9.0.105 /usr/local/tomcat/ && \
     cd / && \
     rm -rf /download && \
     rm -rf /usr/local/tomcat/webapps/* && \
     mkdir /usr/local/tomcat/webapps/ROOT && \
-    echo "<html><body>Nothing to see here</body></html>" > /usr/local/tomcat/webapps/ROOT/index.html
+    echo "<html><body>Nothing to see here.Add /cwms-data to the URL.</body></html>" > /usr/local/tomcat/webapps/ROOT/index.html
 CMD ["/usr/local/tomcat/bin/catalina.sh","run"]
 
 FROM tomcat_base AS api
@@ -38,17 +38,16 @@ COPY --from=builder /builddir/cwms-data-api/build/docker/libs/ /usr/local/tomcat
 ENV CDA_JDBC_DRIVER="oracle.jdbc.driver.OracleDriver"
 ENV CDA_JDBC_URL=""
 ENV CDA_JDBC_USERNAME=""
-ENV CDA_JDBC_PASSWORD=""
 ENV CDA_POOL_INIT_SIZE="5"
-ENV CDA_POOL_MAX_ACTIVE="30"
+ENV CDA_POOL_MAX_ACTIVE="150"
 ENV CDA_POOL_MAX_IDLE="10"
 ENV CDA_POOL_MIN_IDLE="5"
 ENV cwms.dataapi.access.providers="KeyAccessManager,OpenID"
-ENV cwms.dataapi.access.openid.wellKnownUrl="https://<prefix>/.well-known/openid-configuration"
-ENV cwms.dataapi.access.openid.issuer="<issuer>"
+ENV cwms.dataapi.access.openid.wellKnownUrl="https://identity-test.cwbi.us/auth/realms/cwbi/.well-known/openid-configuration"
+ENV cwms.dataapi.access.openid.issuer="https://identity-test.cwbi.us/auth/realms/cwbi"
 ENV cwms.dataapi.access.openid.timeout="604800"
-#ENV cwms.dataapi.access.openid.altAuthUrl="https://identityc-test.cwbi.us/auth/realms/cwbi"
+ENV cwms.dataapi.access.openid.altAuthUrl="https://identityc-test.cwbi.us/auth/realms/cwbi"
 
 # used to simplify redeploy in certain contexts. Update to match -<marker> in image label
-ENV IMAGE_MARKER="a"
+ENV IMAGE_MARKER="e"
 EXPOSE 7000
