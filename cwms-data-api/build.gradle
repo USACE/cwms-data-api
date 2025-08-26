@@ -153,11 +153,9 @@ dependencies {
     testImplementation(libs.cwms.tomcat.auth)
     testImplementation(libs.apache.freemarker)
 
-    testRuntimeOnly("org.slf4j:slf4j-jdk14:2.0.16")
+    testRuntimeOnly("org.slf4j:slf4j-jdk14:2.0.16")    
 
-    webjars(libs.swagger.ui) {
-        transitive = false
-    }
+    webjars(project(":cda-gui"))
 
 
     // override versions
@@ -165,22 +163,14 @@ dependencies {
 }
 
 task extractWebJars(type: Copy) {
-    doFirst {
-        project.mkdir("$buildDir/extra/swagger-ui")
-    }
+    dependsOn configurations.webjars
     from zipTree(configurations.webjars.singleFile)
     into file("$buildDir/extra")
     includeEmptyDirs false
-    eachFile {
-        path -= ~/^.+?\/.+?\/.+?\/.+?\/.+?\//
-    }
-    exclude "**/index.html*"
-    include "/META-INF/resources/webjars/swagger-ui/**"
     includeEmptyDirs = false
 }
 
 war {
-    //dependsOn extractInfo
     dependsOn extractWebJars
     from "$buildDir/extra"
     from "src/resources/"
