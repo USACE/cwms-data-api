@@ -29,7 +29,7 @@ package cwms.cda.api.watersupply;
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.WATER_USER;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -40,6 +40,7 @@ import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.watersupply.WaterSupplyAccountingDao;
 import cwms.cda.data.dto.LookupType;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.formatters.ContentType;
@@ -93,7 +94,7 @@ public class AccountingCreateController implements Handler {
                     + "accounting.", required = true),
         },
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "The pump accounting entry was created."),
+            @OpenApiResponse(status = STATUS_201, description = "The pump accounting entry was created."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
         description = "Create a new pump accounting entry associated with a water supply contract.",
@@ -132,7 +133,8 @@ public class AccountingCreateController implements Handler {
             }
 
             waterSupplyAccountingDao.storeAccounting(accounting);
-            ctx.status(HttpServletResponse.SC_CREATED).json(contractId + " created successfully");
+            StatusResponse re = new StatusResponse(office, "The pump accounting entry was created.", contractId);
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 

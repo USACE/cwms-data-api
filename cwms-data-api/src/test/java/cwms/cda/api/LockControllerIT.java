@@ -28,7 +28,7 @@ import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -45,7 +45,8 @@ import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dao.location.kind.LockDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationLevel;
+import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.location.kind.LockLocationLevelRef;
 import cwms.cda.formatters.ContentType;
@@ -90,6 +91,9 @@ final class LockControllerIT extends DataApiTestIT {
     private static final Lock STORABLE_LOCK;
     private static List<LocationLevel> locationLevelsToCleanup = new ArrayList<>();
     private static Lock lockToCleanup;
+    private static final String OFFICE_ID = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
     static {
         try (
@@ -139,20 +143,20 @@ final class LockControllerIT extends DataApiTestIT {
     }
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             try {
                 DSLContext context = getDslContext(c, LOCK_LOC.getOfficeId());
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
-                locationsDao.storeLocation(PROJECT_LOC);
-                locationsDao.storeLocation(PROJECT_LOC2);
+                locationsDao.storeLocation(PROJECT_LOC, false);
+                locationsDao.storeLocation(PROJECT_LOC2, false);
                 PROJECT_OBJ_T projectObjT = buildProject(PROJECT_LOC);
                 PROJECT_OBJ_T projectObjT2 = buildProject(PROJECT_LOC2);
                 CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
                 CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT2, "T");
-                locationsDao.storeLocation(LOCK_LOC);
-                locationsDao.storeLocation(LOCK_LOC2);
+                locationsDao.storeLocation(LOCK_LOC, false);
+                locationsDao.storeLocation(LOCK_LOC2, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -160,7 +164,7 @@ final class LockControllerIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -285,6 +289,9 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(LOCK.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(LOCK.getLocation().getName()))
         ;
         String office = LOCK.getLocation().getOfficeId();
         // Retrieve the Lock and assert that it exists
@@ -340,7 +347,10 @@ final class LockControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(LOCK.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(LOCK.getLocation().getName()))
         ;
 
         // Retrieve a Lock and assert that it does not exist
@@ -422,6 +432,9 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(metricLock.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(metricLock.getLocation().getName()))
         ;
         String office = metricLock.getLocation().getOfficeId();
 
@@ -488,7 +501,10 @@ final class LockControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(LOCK.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(LOCK.getLocation().getName()))
         ;
 
         // Retrieve a Lock and assert that it does not exist
@@ -641,6 +657,9 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(metricLock.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(metricLock.getLocation().getName()))
         ;
 
         lockToCleanup = metricLockProj2;
@@ -678,6 +697,9 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(metricLock.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(metricLock.getLocation().getName()))
         ;
 
         String office = metricLock.getLocation().getOfficeId();
@@ -789,7 +811,10 @@ final class LockControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(LOCK.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(LOCK.getLocation().getName()))
         ;
 
         // Retrieve a Lock and assert that it does not exist
@@ -820,7 +845,10 @@ final class LockControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(LOCK.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(LOCK.getLocation().getName()))
         ;
 
         // Retrieve a Lock and assert that it does not exist
@@ -881,7 +909,7 @@ final class LockControllerIT extends DataApiTestIT {
             .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
+                .statusCode(is(HttpServletResponse.SC_CREATED))
             ;
         }
 
@@ -949,6 +977,9 @@ final class LockControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(LOCK.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(LOCK.getLocation().getName()))
         ;
         String office = LOCK.getLocation().getOfficeId();
         // Retrieve the Lock and assert that it exists
@@ -981,7 +1012,10 @@ final class LockControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(LOCK.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Lock successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(LOCK.getLocation().getName()))
         ;
     }
 
@@ -1010,39 +1044,40 @@ final class LockControllerIT extends DataApiTestIT {
 
     private List<LocationLevel> createLocationLevelList(Lock lock) {
         List<LocationLevel> retVal = new ArrayList<>();
-        LocationLevel lowLowerLevel = new LocationLevel.Builder(lock.getLowWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        ConstantLocationLevel lowLowerLevel = new ConstantLocationLevel.Builder(lock.getLowWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
                 .withLevelUnitsId(lock.getElevationUnits())
-                .withConstantValue(lock.getLowWaterLowerPoolLocationLevel().getLevelValue())
                 .withOfficeId(lock.getLowWaterLowerPoolLocationLevel().getOfficeId())
                 .withSpecifiedLevelId(lock.getLowWaterLowerPoolLocationLevel().getSpecifiedLevelId())
+                .withConstantValue(lock.getLowWaterLowerPoolLocationLevel().getLevelValue())
                 .build();
         retVal.add(lowLowerLevel);
-        LocationLevel lowUpperLevel = new LocationLevel.Builder(lock.getLowWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        ConstantLocationLevel lowUpperLevel = new ConstantLocationLevel.Builder(lock.getLowWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
                 .withLevelUnitsId(lock.getElevationUnits())
-                .withConstantValue(lock.getLowWaterUpperPoolLocationLevel().getLevelValue())
                 .withOfficeId(lock.getLowWaterUpperPoolLocationLevel().getOfficeId())
                 .withSpecifiedLevelId(lock.getLowWaterUpperPoolLocationLevel().getSpecifiedLevelId())
+                .withConstantValue(lock.getLowWaterUpperPoolLocationLevel().getLevelValue())
                 .build();
         retVal.add(lowUpperLevel);
-        LocationLevel highLowerLevel = new LocationLevel.Builder(lock.getHighWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        ConstantLocationLevel highLowerLevel = new ConstantLocationLevel.Builder(lock.getHighWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
                 .withLevelUnitsId(lock.getElevationUnits())
-                .withConstantValue(lock.getHighWaterLowerPoolLocationLevel().getLevelValue())
                 .withOfficeId(lock.getHighWaterLowerPoolLocationLevel().getOfficeId())
                 .withSpecifiedLevelId(lock.getHighWaterLowerPoolLocationLevel().getSpecifiedLevelId())
+                .withConstantValue(lock.getHighWaterLowerPoolLocationLevel().getLevelValue())
                 .build();
         retVal.add(highLowerLevel);
-        LocationLevel highUpperLevel = new LocationLevel.Builder(lock.getHighWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        ConstantLocationLevel highUpperLevel = new ConstantLocationLevel.Builder(lock.getHighWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
                 .withLevelUnitsId(lock.getElevationUnits())
-                .withConstantValue(lock.getHighWaterUpperPoolLocationLevel().getLevelValue())
+
                 .withOfficeId(lock.getHighWaterUpperPoolLocationLevel().getOfficeId())
                 .withSpecifiedLevelId(lock.getHighWaterUpperPoolLocationLevel().getSpecifiedLevelId())
+                .withConstantValue(lock.getHighWaterUpperPoolLocationLevel().getLevelValue())
                 .build();
         retVal.add(highUpperLevel);
-        LocationLevel warningBuffer = new LocationLevel.Builder(String.format("%s.Elev-Closure.Inst.0.Warning Buffer", lock.getLocation().getName()), ZonedDateTime.now())
+        ConstantLocationLevel warningBuffer = new ConstantLocationLevel.Builder(String.format("%s.Elev-Closure.Inst.0.Warning Buffer", lock.getLocation().getName()), ZonedDateTime.now())
                 .withLevelUnitsId(lock.getElevationUnits())
-                .withConstantValue(lock.getHighWaterLowerPoolWarningLevel())
                 .withOfficeId(lock.getLocation().getOfficeId())
                 .withSpecifiedLevelId("Warning Buffer")
+                .withConstantValue(lock.getHighWaterLowerPoolWarningLevel())
                 .build();
         retVal.add(warningBuffer);
         return retVal;

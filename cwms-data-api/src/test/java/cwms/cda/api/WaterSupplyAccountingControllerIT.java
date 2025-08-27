@@ -65,7 +65,7 @@ import java.util.logging.Logger;
 
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -88,6 +88,9 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
     private static Location pump1;
     private static Location pump2;
     private static Location pump3;
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
     static {
         try (InputStream accountStream = WaterSupplyAccounting.class
@@ -168,17 +171,17 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
                 throw new RuntimeException(e);
             }
             try {
-                locationsDao.storeLocation(pump1);
+                locationsDao.storeLocation(pump1, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             try {
-                locationsDao.storeLocation(pump2);
+                locationsDao.storeLocation(pump2, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             try {
-                locationsDao.storeLocation(pump3);
+                locationsDao.storeLocation(pump3, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -292,6 +295,9 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+            .body(MESSAGE, equalTo("The pump accounting entry was created."))
+            .body(IDENTIFIER, equalTo(contract.getContractId().getName()))
         ;
 
         // retrieve pump accounting
@@ -354,6 +360,9 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+            .body(MESSAGE, equalTo("The pump accounting entry was created."))
+            .body(IDENTIFIER, equalTo(contract.getContractId().getName()))
         ;
 
         // retrieve pump accounting

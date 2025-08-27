@@ -26,10 +26,11 @@ package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -75,6 +76,9 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
     private static final Location TURBINE_LOC;
     private static final Turbine TURBINE;
     private static final List<TurbineChange> TURBINE_CHANGES;
+    private static final String OFFICE_ID = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
     static {
         Class<TurbineChangesControllerIT> c = TurbineChangesControllerIT.class;
@@ -96,7 +100,7 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
     }
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             try {
@@ -104,7 +108,7 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
                 PROJECT_OBJ_T projectObjT = buildProject();
                 CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), projectObjT, "T");
-                locationsDao.storeLocation(TURBINE_LOC);
+                locationsDao.storeLocation(TURBINE_LOC, false);
                 Turbine turbine = new Turbine.Builder()
                     .withProjectId(new CwmsId.Builder()
                         .withOfficeId(PROJECT_LOC.getOfficeId())
@@ -120,7 +124,7 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE);
@@ -156,6 +160,9 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(PROJECT_LOC.getOfficeId()))
+            .body(MESSAGE, equalTo("Created Turbine Changes"))
+            .body(IDENTIFIER, isEmptyString())
         ;
         String office = TURBINE.getLocation().getOfficeId();
 
@@ -198,7 +205,10 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(PROJECT_LOC.getOfficeId()))
+            .body(MESSAGE, equalTo("Turbine successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(PROJECT_LOC.getName()))
         ;
 
 

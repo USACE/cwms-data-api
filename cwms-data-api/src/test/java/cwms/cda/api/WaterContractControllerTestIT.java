@@ -38,7 +38,6 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.project.Project;
-import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -49,6 +48,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -62,7 +62,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
@@ -71,6 +71,9 @@ import static org.hamcrest.Matchers.*;
 class WaterContractControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SWT";
     private static final WaterUserContract CONTRACT;
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
     static {
         try (InputStream contractStream = WaterContractCreateController.class
@@ -119,7 +122,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
             WaterContractDao waterContractDao = new WaterContractDao(ctx);
             try {
-                locationsDao.storeLocation(projectLocation);
+                locationsDao.storeLocation(projectLocation, false);
                 lookupTypeDao.storeLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE", contractType);
                 projectDao.store(project, true);
                 waterContractDao.storeWaterUser(CONTRACT.getWaterUser(), true);
@@ -179,6 +182,9 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Created Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         // get contract
@@ -381,7 +387,10 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Deleted Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         // get contract, assert that it doesn't exist
@@ -426,6 +435,9 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Created Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         // rename contract
@@ -445,6 +457,9 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Contract Renamed Successfully"))
+            .body(IDENTIFIER, equalTo(NEW_CONTRACT_NAME))
         ;
 
         // get contract, assert name is changed
@@ -462,7 +477,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("office-id", equalTo(CONTRACT.getOfficeId()))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
             .body("contract-id.name", equalTo(NEW_CONTRACT_NAME))
         ;
 
@@ -481,7 +496,10 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Deleted Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
     }
 
@@ -507,6 +525,9 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Created Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         WaterUserContract waterContract = new WaterUserContract.Builder()
@@ -540,6 +561,9 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Created Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         // get all contracts
@@ -577,25 +601,62 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Deleted Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
         ;
 
         // delete contract
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .queryParam(METHOD, "DELETE ALL")
-                .header(AUTH_HEADER, user.toHeaderValue())
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/projects/" + OFFICE_ID + "/"
-                        + CONTRACT.getWaterUser().getProjectId().getName() + "/water-user/"
-                        + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
-                        + "NEW CONTRACT")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(METHOD, "DELETE ALL")
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/projects/" + OFFICE_ID + "/"
+                    + CONTRACT.getWaterUser().getProjectId().getName() + "/water-user/"
+                    + CONTRACT.getWaterUser().getEntityName() + "/contracts/"
+                    + "NEW CONTRACT")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(CONTRACT.getOfficeId()))
+            .body(MESSAGE, equalTo("Water Contract Deleted Successfully"))
+            .body(IDENTIFIER, equalTo(CONTRACT.getWaterUser().getEntityName()))
+        ;
+    }
+
+    @Test
+    void test_create_too_long_WaterUserContract()
+    {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
+        String office = CONTRACT.getOfficeId();
+
+        // create contract with too long name
+        String tooLongName = RandomStringUtils.randomAlphabetic(80);
+        json = json.replace(CONTRACT.getContractId().getName(), tooLongName);
+
+        // Create contract
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + office + "/" + CONTRACT.getWaterUser().getProjectId().getName()
+                    + "/water-user/" + CONTRACT.getWaterUser().getEntityName() + "/contracts")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body(containsString("One or more provided values exceeds the maximum length for the parameter."))
         ;
     }
 }

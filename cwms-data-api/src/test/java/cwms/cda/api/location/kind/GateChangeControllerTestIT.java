@@ -54,7 +54,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -100,11 +100,21 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
                                                            .withSecond(0)
                                                            .withNano(0)
                                                            .toInstant();
+    private static final Instant JAN_THIRD = ZonedDateTime.now()
+                                                           .withYear(2024)
+                                                           .withMonth(1)
+                                                           .withDayOfMonth(3)
+                                                           .withHour(0)
+                                                           .withMinute(0)
+                                                           .withSecond(0)
+                                                           .withNano(0)
+                                                           .toInstant();
     private static final GateChange CHANGE_1 = buildTestGateChange(PROJECT_1_ID, JAN_FIRST,
                                                                    buildTestGateSetting(CONDUIT_GATE_1_ID, 10, 20));
     private static final GateChange CHANGE_2 = buildTestGateChange(PROJECT_1_ID, JAN_SECOND,
                                                                    buildTestGateSetting(CONDUIT_GATE_1_ID, 1, 2),
                                                                    buildTestGateSetting(CONDUIT_GATE_2_ID, 3, 4));
+    private static final GateChange CHANGE_3 = buildTestGateChange(PROJECT_1_ID, JAN_THIRD);
 
     @BeforeAll
     public static void setup() throws Exception {
@@ -145,7 +155,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
 
     @Test
     void test_changes_crud() {
-        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, GateChange.class), Arrays.asList(CHANGE_1, CHANGE_2), GateChange.class);
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, GateChange.class), Arrays.asList(CHANGE_1, CHANGE_2, CHANGE_3), GateChange.class);
 
         //Create the gate changes
         given()
@@ -172,7 +182,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
                                     .redirects()
                                     .max(3)
                                     .queryParam(BEGIN, JAN_FIRST.toString())
-                                    .queryParam(END, JAN_SECOND.toString())
+                                    .queryParam(END, JAN_THIRD.toString())
                                     .queryParam(START_TIME_INCLUSIVE, true)
                                     .queryParam(END_TIME_INCLUSIVE, true)
                                     .get("projects/" + OFFICE_ID + "/" + PROJECT_1_ID.getName() + "/gate-changes")
@@ -189,6 +199,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
 
         DTOMatch.assertContainsDto(changes, CHANGE_1, this::isSimilar, DTOMatch::assertMatch, "Does not contain modified change for " + CHANGE_1.getChangeDate());
         DTOMatch.assertContainsDto(changes, CHANGE_2, this::isSimilar, DTOMatch::assertMatch, "Does not contain modified change for " + CHANGE_2.getChangeDate());
+        DTOMatch.assertContainsDto(changes, CHANGE_3, this::isSimilar, DTOMatch::assertMatch, "Does not contain modified change for " + CHANGE_2.getChangeDate());
 
         GateSetting modifiedSetting = buildTestGateSetting(CONDUIT_GATE_2_ID, 30, 40);
         GateChange modifiedChange = new GateChange.Builder(CHANGE_1).withSettings(Collections.singletonList(modifiedSetting))
@@ -219,7 +230,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
                              .redirects()
                              .max(3)
                              .queryParam(BEGIN, JAN_FIRST.toString())
-                             .queryParam(END, JAN_SECOND.toString())
+                             .queryParam(END, JAN_THIRD.toString())
                              .queryParam(START_TIME_INCLUSIVE, true)
                              .queryParam(END_TIME_INCLUSIVE, true)
                              .get("projects/" + OFFICE_ID + "/" + PROJECT_1_ID.getName() + "/gate-changes")
@@ -241,7 +252,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .header(AUTH_HEADER, USER.toHeaderValue())
             .queryParam(BEGIN, JAN_FIRST.toString())
-            .queryParam(END, JAN_SECOND.toString())
+            .queryParam(END, JAN_THIRD.toString())
             .queryParam(OVERRIDE_PROTECTION, "true")
             .queryParam(FAIL_IF_EXISTS, "false")
         .when()
@@ -263,7 +274,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
             .redirects()
             .max(3)
             .queryParam(BEGIN, JAN_FIRST.toString())
-            .queryParam(END, JAN_SECOND.toString())
+            .queryParam(END, JAN_THIRD.toString())
             .queryParam(START_TIME_INCLUSIVE, true)
             .queryParam(END_TIME_INCLUSIVE, true)
             .get("projects/" + OFFICE_ID + "/" + PROJECT_1_ID.getName() + "/gate-changes")

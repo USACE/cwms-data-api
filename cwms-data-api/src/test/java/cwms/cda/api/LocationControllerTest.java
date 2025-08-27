@@ -1,6 +1,5 @@
 package cwms.cda.api;
 
-import java.io.IOException;
 import java.util.HashMap;
 
 import javax.servlet.http.HttpServletRequest;
@@ -10,7 +9,6 @@ import com.codahale.metrics.MetricRegistry;
 
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationLevel;
 import cwms.cda.formatters.Formats;
 import fixtures.TestHttpServletResponse;
 import fixtures.TestServletInputStream;
@@ -21,7 +19,6 @@ import io.javalin.plugin.json.JavalinJackson;
 import io.javalin.plugin.json.JsonMapperKt;
 import org.junit.jupiter.api.Test;
 
-import static cwms.cda.api.DataApiTestIT.getResourceTemplateStatic;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
@@ -29,10 +26,8 @@ import static org.mockito.Mockito.when;
 
 class LocationControllerTest extends ControllerTest
 {
-    private static final String OFFICE_ID = "LRL";
-
     @Test
-    void testDeserializeLocationXml() throws IOException
+    void testDeserializeLocationXml()
     {
         String xml = loadResourceAsString("cwms/cda/api/location_create.xml");
         assertNotNull(xml);
@@ -47,7 +42,7 @@ class LocationControllerTest extends ControllerTest
     }
 
     @Test
-    void testDeserializeLocationJSON() throws Exception
+    void testDeserializeLocationJSON()
     {
         final String OFFICE = "SPK";
         final String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
@@ -67,7 +62,7 @@ class LocationControllerTest extends ControllerTest
      * Test of getOne method, of class LocationController.
      */
     @Test
-    public void test_basic_operations() throws Exception {
+    void test_basic_operations() throws Exception {
         final String testBody = "";
         LocationController instance = new LocationController(new MetricRegistry());
         HttpServletRequest request = mock(HttpServletRequest.class);
@@ -78,19 +73,16 @@ class LocationControllerTest extends ControllerTest
 
         when(request.getInputStream()).thenReturn(new TestServletInputStream(testBody));
 
-        final Context context = ContextUtil.init(request,response,"*",new HashMap<String,String>(), HandlerType.GET,attributes);
+        final Context context = ContextUtil.init(request,response,"*", new HashMap<>(), HandlerType.GET,attributes);
         context.attribute("database",getTestConnection());
 
         when(request.getAttribute("database")).thenReturn(getTestConnection());
 
         assertNotNull( context.attribute("database"), "could not get the connection back as an attribute");
 
-        String Location_id = "SimpleNoAlias";
+        String locationId = "SimpleNoAlias";
 
-        instance.getOne(context, Location_id);
+        instance.getOne(context, locationId);
         assertEquals(200,context.status(), "incorrect status code returned");
-
-
     }
-
 }

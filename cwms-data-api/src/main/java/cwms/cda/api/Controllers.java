@@ -66,6 +66,7 @@ public final class Controllers {
     public static final String CATEGORY_OFFICE_ID = "category-office-id";
     public static final String GROUP_OFFICE_ID = "group-office-id";
     public static final String UNIT = "unit";
+    public static final String UNITS = "units";
     public static final String COUNT = "count";
     public static final String TIME = "time";
     public static final String RESULTS = "results";
@@ -75,6 +76,7 @@ public final class Controllers {
     public static final String UNIT_SYSTEM = "unit-system";
 
     public static final String TIMESERIES_CATEGORY_LIKE = "timeseries-category-like";
+    public static final String INCLUDE_ENTRY_DATE = "include-entry-date";
 
     public static final String LOCATION_CATEGORY_LIKE = "location-category-like";
     public static final String LOCATION_GROUP_LIKE = "location-group-like";
@@ -107,6 +109,8 @@ public final class Controllers {
     public static final String TEMPLATE_ID = "template-id";
     public static final String TEMPLATE_ID_MASK = "template-id-mask";
     public static final String STORE_TEMPLATE = "store-template";
+    public static final String REPLACE_BASE_CURVE = "replace-base-curve";
+    public static final String EFFECTIVE_DATE_EXACT = "use-exact-effective-date";
 
     public static final String TIMESERIES_ID_REGEX = "timeseries-id-regex";
     public static final String TIMESERIES_ID = "timeseries-id";
@@ -117,7 +121,6 @@ public final class Controllers {
     public static final String INTERVAL = "interval";
     public static final String CATEGORY_ID = "category-id";
     public static final String CATEGORY_ID_MASK = "category-id-mask";
-    public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-07:00";
     public static final String VERSION_DATE = "version-date";
 
     public static final String CREATE_AS_LRTS = "create-as-lrts";
@@ -143,6 +146,8 @@ public final class Controllers {
     public static final String ISSUE_DATE = "issue-date";
     public static final String LOCATION_KIND_LIKE = "location-kind-like";
     public static final String LOCATION_TYPE_LIKE = "location-type-like";
+    public static final String NEGATE_LOCATION_KIND_LIKE = "negate-location-kind-like";
+    public static final String INCLUDE_ALIASES = "include-aliases";
     public static final String MIN_NUMBER = "min-number";
     public static final String MAX_NUMBER = "max-number";
     public static final String MIN_HEIGHT = "min-height";
@@ -151,13 +156,19 @@ public final class Controllers {
     public static final String MAX_FLOW = "max-flow";
     public static final String AGENCY = "agency";
     public static final String QUALITY = "quality";
-
+    public static final String NAMES = "names";
+    public static final String FILTER_BASE_LOCATIONS = "filter-base-locations";
 
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
     public static final String REPLACE_ASSIGNED_TS = "replace-assigned-ts";
     public static final String TS_IDS = "ts-ids";
+
+    public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-07:00";
     public static final String DATE_FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
+    public static final String TIME_FORMAT_DESC = "The <a href=\"times.html\">format for this field</a> is ISO 8601 extended" +
+            ", with optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."            ;
+
     public static final String INCLUDE_ASSIGNED = "include-assigned";
     public static final String ANY_MASK = "*";
     public static final String OFFICE_MASK = "office-mask";
@@ -179,6 +190,7 @@ public final class Controllers {
     public static final String STATUS_404 = "404";
     public static final String STATUS_501 = "501";
     public static final String STATUS_400 = "400";
+    public static final String STATUS_401 = "401";
     public static final String TEXT_MASK = "text-mask";
     public static final String DELETE_MODE = "delete-mode";
     public static final String STANDARD_TEXT_ID_MASK = "standard-text-id-mask";
@@ -217,9 +229,13 @@ public final class Controllers {
 
     public static final String CWMS_OFFICE = "CWMS";
 
+    public static final String OFFICE_DESCRIPTION = "Office Identifier 3/4 letter as returned by the office endpoint.";
+
     private static final String DEPRECATED_HEADER = "CWMS-DATA-Format-Deprecated";
     private static final String DEPRECATED_TAB = "2024-11-01 TAB is not used often.";
     private static final String DEPRECATED_CSV = "2024-11-01 CSV is not used often.";
+
+    public static final String QUERY = "query";
 
 
     static {
@@ -465,7 +481,7 @@ public final class Controllers {
         return retval;
     }
 
-    static void addDeprecatedContentTypeWarning(Context ctx, ContentType type) {
+    public static void addDeprecatedContentTypeWarning(Context ctx, ContentType type) {
         if (type.getType().equalsIgnoreCase(Formats.TAB)) {
             ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_TAB);
         } else if (type.getType().equalsIgnoreCase(Formats.CSV)) {

@@ -99,8 +99,8 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
             WaterContractDao contractDao = new WaterContractDao(ctx);
             LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
             try {
-                dao.storeLocation(testLocation);
-                dao.storeLocation(testLocation2);
+                dao.storeLocation(testLocation, false);
+                dao.storeLocation(testLocation2, false);
                 lookupTypeDao.storeLookupType("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE", testTransferType);
                 projectDao.store(testProject, true);
                 projectDao.store(testProject2, true);

@@ -25,6 +25,8 @@ configurations.all {
 }
 
 dependencies {
+    annotationProcessor(libs.com.google.auto.service)
+    compileOnly(libs.com.google.auto.service.annotations)
     implementation(libs.jaxb.api)
     implementation(libs.jaxb.core)
     implementation(libs.jaxb.impl)
@@ -108,6 +110,8 @@ dependencies {
         exclude group: "jakarta.xml.bind", module: "*"
     }
 
+    implementation 'cz.jirutka.rsql:rsql-parser:2.1.0'
+
     compileOnly(libs.javaee.web.api)
     compileOnly(libs.cwms.tomcat.auth)
 
@@ -149,9 +153,9 @@ dependencies {
     testImplementation(libs.cwms.tomcat.auth)
     testImplementation(libs.apache.freemarker)
 
-    webjars(libs.swagger.ui) {
-        transitive = false
-    }
+    testRuntimeOnly("org.slf4j:slf4j-jdk14:2.0.16")    
+
+    webjars(project(":cda-gui"))
 
 
     // override versions
@@ -159,22 +163,14 @@ dependencies {
 }
 
 task extractWebJars(type: Copy) {
-    doFirst {
-        project.mkdir("$buildDir/extra/swagger-ui")
-    }
+    dependsOn configurations.webjars
     from zipTree(configurations.webjars.singleFile)
     into file("$buildDir/extra")
     includeEmptyDirs false
-    eachFile {
-        path -= ~/^.+?\/.+?\/.+?\/.+?\/.+?\//
-    }
-    exclude "**/index.html*"
-    include "/META-INF/resources/webjars/swagger-ui/**"
     includeEmptyDirs = false
 }
 
 war {
-    //dependsOn extractInfo
     dependsOn extractWebJars
     from "$buildDir/extra"
     from "src/resources/"

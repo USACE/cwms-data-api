@@ -344,7 +344,10 @@ public class OutletDao extends JooqDao<Outlet> {
     }
 
     private static GateChange map(GATE_CHANGE_OBJ_T change) {
-        List<GateSetting> settings = change.getSETTINGS().stream().map(OutletDao::map).collect(Collectors.toList());
+        GATE_SETTING_TAB_T settingsTable = change.getSETTINGS();
+        List<GateSetting> settings = settingsTable == null
+                                   ? new ArrayList<>()
+                                   : settingsTable.stream().map(OutletDao::map).collect(Collectors.toList());
         CwmsId projectId = LocationUtil.getLocationIdentifier(change.getPROJECT_LOCATION_REF());
         LookupType compType = LocationUtil.getLookupType(change.getDISCHARGE_COMPUTATION());
         return new GateChange.Builder().withProjectId(projectId)
