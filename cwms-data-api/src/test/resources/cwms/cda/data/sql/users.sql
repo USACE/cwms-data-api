@@ -41,6 +41,9 @@ begin
   cwms_sec.add_user_to_group('&webuser','CWMS Users', 'SWT');
   cwms_sec.add_user_to_group('&webuser','CWMS PD Users', 'SWT');
   cwms_sec.add_user_to_group('&webuser','CWMS DBA Users', 'SWT');
+
+  cwms_sec.add_user_to_group('&webuser','All Users', 'MVP');
+
   cwms_sec.add_user_to_group('&user','All Users', 'HQ');
   cwms_sec.add_user_to_group('&user','CWMS Users', 'HQ');
   cwms_sec.add_user_to_group('&user','CWMS PD Users', 'HQ');
@@ -49,6 +52,14 @@ begin
   cwms_sec.add_user_to_group('&user','CWMS Users', 'SPK');
   cwms_sec.add_user_to_group('&user','CWMS PD Users', 'SPK');
   cwms_sec.add_user_to_group('&user','CWMS DBA Users', 'SPK');
+  cwms_sec.add_user_to_group('&user','All Users', 'SWT');
+  cwms_sec.add_user_to_group('&user','CWMS Users', 'SWT');
+  cwms_sec.add_user_to_group('&user','CWMS PD Users', 'SWT');
+  cwms_sec.add_user_to_group('&user','CWMS DBA Users', 'SWT');
+  cwms_sec.add_user_to_group('&user','All Users', 'MVP');
+  cwms_sec.add_user_to_group('&user','CWMS Users', 'MVP');
+  cwms_sec.add_user_to_group('&user','CWMS PD Users', 'MVP');
+  cwms_sec.add_user_to_group('&user','CWMS DBA Users', 'MVP');
   execute immediate 'grant execute on cwms_upass to web_user';
   /** Add a couple of districts*/
   begin

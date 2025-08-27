@@ -110,6 +110,7 @@ public final class Controllers {
     public static final String TEMPLATE_ID_MASK = "template-id-mask";
     public static final String STORE_TEMPLATE = "store-template";
     public static final String REPLACE_BASE_CURVE = "replace-base-curve";
+    public static final String EFFECTIVE_DATE_EXACT = "use-exact-effective-date";
 
     public static final String TIMESERIES_ID_REGEX = "timeseries-id-regex";
     public static final String TIMESERIES_ID = "timeseries-id";
@@ -156,7 +157,6 @@ public final class Controllers {
     public static final String AGENCY = "agency";
     public static final String QUALITY = "quality";
     public static final String NAMES = "names";
-    public static final String EXCLUDE_KINDS = "exclude-kinds";
     public static final String FILTER_BASE_LOCATIONS = "filter-base-locations";
 
     public static final String GROUP_ID = "group-id";
