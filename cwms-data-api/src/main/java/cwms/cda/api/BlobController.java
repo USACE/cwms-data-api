@@ -14,6 +14,7 @@ import cwms.cda.data.dto.Blobs;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
