@@ -3,7 +3,16 @@ USER $USER
 RUN --mount=type=cache,target=/home/gradle/.gradle
 WORKDIR /builddir
 COPY . /builddir/
-RUN  gradle prepareDockerBuild --info --no-daemon
+RUN apt update && apt install -y curl
+ENV NVM_DIR="/root/.nvm"
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+ENV NODE_VERSION=22.17.0
+# Ensure nvm is sourced for subsequent commands
+SHELL ["/bin/bash", "-c"]
+RUN . "$NVM_DIR/nvm.sh" && nvm install $NODE_VERSION && nvm use $NODE_VERSION
+ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
+ENV PATH=$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+RUN gradle prepareDockerBuild --info --no-daemon
 
 FROM alpine:3.21.3 AS tomcat_base
 RUN apk --no-cache upgrade && \
