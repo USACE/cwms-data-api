@@ -23,7 +23,6 @@ import java.sql.SQLException;
 import java.sql.Struct;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -203,18 +202,25 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                 fileName = (String) attributes[0];
                 mediaType = (String) attributes[1];
                 Blob blob = (Blob) attributes[4];
-                if (blob.length() > byteLimit) {
-                    String param = "&%s=%s";
-                    String utf8 = "UTF-8";
-                    url = urlBuilder.build().apply(specId) + "?"
-                            + format(param, Controllers.NAME, URLEncoder.encode(specId, utf8))
-                            + format(param, Controllers.FORECAST_DATE, URLEncoder.encode(forecastDate.toString(), utf8))
-                            + format(param, Controllers.ISSUE_DATE, URLEncoder.encode(issueDate.toString(), utf8))
-                            + format(param, Controllers.DESIGNATOR, URLEncoder.encode(designator, utf8))
-                            + format(param, Controllers.OFFICE, URLEncoder.encode(officeId, utf8));
-                } else {
-                    try (InputStream is = blob.getBinaryStream()) {
-                        fileData = BlobDao.readFully(is);
+                try {
+                    if (blob.length() > byteLimit) {
+                        String param = "&%s=%s";
+                        String utf8 = "UTF-8";
+                        url = urlBuilder.build().apply(specId) + "?"
+                                + format(param, Controllers.NAME, URLEncoder.encode(specId, utf8))
+                                + format(param, Controllers.FORECAST_DATE, URLEncoder.encode(forecastDate.toString(), utf8))
+                                + format(param, Controllers.ISSUE_DATE, URLEncoder.encode(issueDate.toString(), utf8))
+                                + format(param, Controllers.DESIGNATOR, URLEncoder.encode(designator, utf8))
+                         + format(param, Controllers.OFFICE, URLEncoder.encode(officeId, utf8));
+
+                    } else {
+                        try (InputStream is = blob.getBinaryStream()) {
+                            fileData = BlobDao.readFully(is);
+                        }
+                    }
+                } finally {
+                    if (blob != null) {
+                        blob.free();
                     }
                 }
             }
@@ -314,8 +320,14 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                                     mediaType = "application/octet-stream";
                                 }
                                 Blob blob = (Blob) attributes[4];
-                                consumer.accept(blob, mediaType);
-                                return;
+                                try {
+                                    consumer.accept(blob, mediaType);
+                                    return;
+                                } finally {
+                                    if (blob != null) {
+                                        blob.free();
+                                    }
+                                }
                             }
                         }
                     }

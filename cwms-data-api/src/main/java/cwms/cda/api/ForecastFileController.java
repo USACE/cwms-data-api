@@ -109,8 +109,9 @@ public final class ForecastFileController implements Handler {
                 } else {
                     long size = blob.length();
                     requestResultSize.update(size);
-                    InputStream is = blob.getBinaryStream();
-                    ctx.seekableStream(is, mediaType, size);
+                    try (InputStream is = blob.getBinaryStream()) {
+                        ctx.seekableStream(is, mediaType, size);
+                    }
                 }
             });
         }

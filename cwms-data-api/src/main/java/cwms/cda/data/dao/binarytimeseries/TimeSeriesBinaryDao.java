@@ -223,19 +223,28 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 .withQualityCode(0L)
                 .withDestFlag(0);
         Blob b = rs.getBlob(VALUE);
-        if (b.length() > byteLimit) {
-            String binaryId = rs.getString(ID);
-            String url = urlBuilder.build().apply(dateTime.toString())
-                    //Hard-coding for now. Will be removed with schema update
-                    + format("&%s=%s", Controllers.BLOB_ID, URLEncoder.encode(binaryId, "UTF-8"));
-            builder.withValueUrl(url);
-        } else {
-            try (InputStream is = b.getBinaryStream()) {
-                byte[] bytes = BlobDao.readFully(is);
-                builder.withBinaryValue(bytes);
+        try {
+            if(b != null) {
+                if (b.length() > byteLimit) {
+                    String binaryId = rs.getString(ID);
+                    String url = urlBuilder.build().apply(dateTime.toString())
+                            //Hard-coding for now. Will be removed with schema update
+                            + format("&%s=%s", Controllers.BLOB_ID, URLEncoder.encode(binaryId, "UTF-8"));
+                    builder.withValueUrl(url);
+                } else {
+                    try (InputStream is = b.getBinaryStream()) {
+                        byte[] bytes = BlobDao.readFully(is);
+                        builder.withBinaryValue(bytes);
+                    }
+                }
+            }
+
+            return builder.build();
+        } finally {
+            if (b != null) {
+                b.free();
             }
         }
-        return builder.build();
     }
 
     private void parameterizeRetrieveTsBinText(CallableStatement stmt, String tsId, String mask,

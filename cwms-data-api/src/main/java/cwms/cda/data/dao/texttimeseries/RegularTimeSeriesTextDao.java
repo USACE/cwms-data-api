@@ -145,14 +145,22 @@ public final class RegularTimeSeriesTextDao extends JooqDao {
                 .withFilename(dateTime.getEpochSecond() + ".txt")
                 .withMediaType("text/plain");
         Clob clob = rs.getClob(TEXT);
-        if (clob.length() > characterLimit) {
-            String textId = rs.getString(TEXT_ID);
-            String url = urlBuilder.build().apply(dateTime.toString())
-                    //Hard-coding for now. Will be removed with schema update
-                    + format("&%s=%s", Controllers.CLOB_ID, URLEncoder.encode(textId, "UTF-8"));
-            builder.withValueUrl(url);
-        } else {
-            builder.withTextValue(ClobDao.readFully(clob));
+        try {
+            if (clob != null) {
+                if (clob.length() > characterLimit) {
+                    String textId = rs.getString(TEXT_ID);
+                    String url = urlBuilder.build().apply(dateTime.toString())
+                            //Hard-coding for now. Will be removed with schema update
+                            + format("&%s=%s", Controllers.CLOB_ID, URLEncoder.encode(textId, "UTF-8"));
+                    builder.withValueUrl(url);
+                } else {
+                    builder.withTextValue(ClobDao.readFully(clob));
+                }
+            }
+        } finally {
+            if (clob != null) {
+                clob.free();
+            }
         }
         return builder.build();
     }

@@ -104,10 +104,16 @@ public class BlobDao extends JooqDao<Blob> {
         });
     }
 
-    private static void handleResultSet(ResultSet resultSet, BlobConsumer consumer) throws SQLException {
+    private static void handleResultSet(ResultSet resultSet, BlobConsumer consumer) throws SQLException, IOException {
         String mediaType = resultSet.getString("MEDIA_TYPE_ID");
         java.sql.Blob blob = resultSet.getBlob("VALUE");
-        consumer.accept(blob, mediaType);
+        try {
+            consumer.accept(blob, mediaType);
+        } finally {
+            if (blob != null) {
+                blob.free();
+            }
+        }
     }
 
 
@@ -190,6 +196,6 @@ public class BlobDao extends JooqDao<Blob> {
 
     @FunctionalInterface
     public interface BlobConsumer {
-        void accept(java.sql.Blob blob, String mediaType) throws SQLException;
+        void accept(java.sql.Blob blob, String mediaType) throws SQLException, IOException;
     }
 }
