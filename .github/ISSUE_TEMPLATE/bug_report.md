@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: 'bug, priority-medium'
+labels: 'bug, priority:medium'
 assignees: '@CWMS Developers'
 
 ---
