@@ -2,7 +2,7 @@
 name: Feature request
 about: Suggest an idea for this project
 title: ''
-labels: priority:low, enhancement
+labels: 'priority:low, documentation, enhancement, blob, catalog, clobs, ratings, timeseries, web-ui'
 assignees: ''
 
 ---
