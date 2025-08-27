@@ -27,6 +27,18 @@ jobs:
           distribution: 'temurin'
           java-version: ${{matrix.jdk}}
           cache: 'gradle'
+      - name: install node for cda-gui audit
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: cda-gui/package-lock.json
+
+      - name: run cda-gui audit for high CVE
+        working-directory: ./cda-gui
+        run: |
+          npm install --package-lock-only
+          npm audit --audit-level=high
       - name: build and test
         id: thebuild
         run: ./gradlew build --info --init-script init.gradle
