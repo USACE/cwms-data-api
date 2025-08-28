@@ -25,22 +25,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.CASCADE_DELETE;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DATUM;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.FORMAT;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.UNIT;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -59,7 +44,6 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.DeleteConflictException;
 import cwms.cda.api.errors.NotFoundException;
-import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.LocationsDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.Location;
@@ -91,7 +75,6 @@ import org.jooq.exception.DataAccessException;
 
 public class LocationController implements CrudHandler {
     public static final Logger logger = Logger.getLogger(LocationController.class.getName());
-    public static final String NAMES = "names";
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -120,7 +103,7 @@ public class LocationController implements CrudHandler {
                         + ". If this field is not specified, matching location level "
                         + "information from all offices shall be returned."),
                 @OpenApiParam(name = UNIT, description = "Specifies the unit or unit system"
-                        + " of the response. Valid values for the unit field are:"
+                        + " of the response. Default is SI. Valid values for the unit field are:"
                         + "\n* `EN`  Specifies English unit system.  Location level values will be in"
                         + " the default English units for their parameters."
                         + "\n* `SI`  Specifies the SI unit system.  Location level values will be in "
@@ -308,7 +291,8 @@ public class LocationController implements CrudHandler {
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             locationsDao.storeLocation(locationFromBody, failIfExists);
-            StatusResponse re = new StatusResponse(locationFromBody.getOfficeId(),"Created Location", locationFromBody.getName());
+            StatusResponse re = new StatusResponse(locationFromBody.getOfficeId(),
+                "Created Location", locationFromBody.getName());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("failed to process request");

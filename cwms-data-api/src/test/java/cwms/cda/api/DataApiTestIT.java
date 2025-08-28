@@ -28,10 +28,14 @@ import static cwms.cda.data.dao.JooqDao.REQUIRE_NEW_LRTS_ID_FORMAT;
 import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
 
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.StreamDao;
+import cwms.cda.data.dao.basin.BasinDao;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
+import cwms.cda.data.dto.basin.Basin;
+import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.helpers.ZoneIdHelper;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.IntegrationTestNameGenerator;
@@ -50,6 +54,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -96,6 +101,8 @@ public class DataApiTestIT {
 
     private ArrayList<LocationGroup> groupsCreated = new ArrayList<>();
     private ArrayList<LocationCategory> categoriesCreated = new ArrayList<>();
+    private static List<Stream> streamsCreated = new ArrayList<>();
+    private static List<Basin> basinsCreated = new ArrayList<>();
 
     static {
         freemarkerConfig.setClassForTemplateLoading(DataApiTestIT.class, "/");
@@ -358,6 +365,34 @@ public class DataApiTestIT {
     }
 
     /**
+     * Create a stream, saving the data for later deletion.
+     * @param stream Stream to create
+     * @throws SQLException Any error saving the data
+     */
+    public static void createStream(Stream stream) throws SQLException {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, stream.getOfficeId());
+            StreamDao streamDao = new StreamDao(dsl);
+            streamDao.storeStream(stream, true);
+            streamsCreated.add(stream);
+        });
+    }
+
+    /**
+     * Create a basin, saving the data for later deletion.
+     * @param basin Basin to create
+     * @throws SQLException Any error saving the data
+     */
+    public static void createBasin(Basin basin) throws SQLException {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, basin.getBasinId().getOfficeId());
+            BasinDao basinDao = new BasinDao(dsl);
+            basinDao.storeBasin(basin);
+            basinsCreated.add(basin);
+        });
+    }
+
+    /**
      * If necessary for a specific test add the TEST user to the appropriate office CWMS Group.
      *
      * @param user CWMS User Name
@@ -497,6 +532,47 @@ public class DataApiTestIT {
         });
     }
 
+    /**
+     * Cleanup all basins created by tests that did not remove them.
+     * This is a static method so it can be called from the static cleanup methods.
+     * This is not assigned an @AfterEach or @AfterAll because the order can be important for test teardown
+     * @throws Exception
+     */
+    public static void cleanupBasins() throws Exception {
+        if (basinsCreated.isEmpty()) {
+            logger.atInfo().log("No basins to cleanup.");
+            return;
+        }
+        logger.atInfo().log("Cleaning up basins test did not remove.");
+        CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
+        cwmsDb.connection(c -> {
+            for (Basin basin : basinsCreated) {
+                BasinDao basinDao = new BasinDao(dslContext(c, basin.getBasinId().getOfficeId()));
+                basinDao.deleteBasin(basin.getBasinId(), DeleteRule.DELETE_ALL);
+            }
+        });
+    }
+
+    /**
+     * Cleanup all streams created by tests that did not remove them.
+     * This is a static method so it can be called from the static cleanup methods.
+     * This is not assigned an @AfterEach or @AfterAll because the order can be important for test teardown
+     * @throws Exception
+     */
+    public static void cleanupStreams() throws Exception {
+        if (streamsCreated.isEmpty()) {
+            logger.atInfo().log("No streams to cleanup.");
+            return;
+        }
+        logger.atInfo().log("Cleaning up streams test did not remove.");
+        CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
+        cwmsDb.connection(c -> {
+            for (Stream stream : streamsCreated) {
+                StreamDao streamDao = new StreamDao(dslContext(c, stream.getOfficeId()));
+                streamDao.deleteStream(stream.getOfficeId(), stream.getId().getName(), DeleteRule.DELETE_ALL);
+            }
+        });
+    }
 
     // Resource Template operations
     /**

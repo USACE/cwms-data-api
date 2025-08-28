@@ -47,10 +47,13 @@ import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.Catalog;
+import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.CwmsIdLocationKind;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.catalog.LocationCatalogEntry;
+import cwms.cda.helpers.ZoneIdHelper;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -64,7 +67,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import cwms.cda.helpers.ZoneIdHelper;
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 import org.geojson.Point;
@@ -108,7 +110,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 names, format, units, datum, officeId);
     }
 
-    @Override
     public List<Location> getLocations(String nameRegex, String unitSystem, String datum, String officeId) {
 
         Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
@@ -133,6 +134,24 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     @Override
+    public List<CwmsIdLocationKind> getLocationKinds(String idRegexMask, String kindRegexMask, String officeId) {
+        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, idRegexMask);
+
+        whereCondition = whereCondition
+            .and(JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_KIND_ID, kindRegexMask));
+
+        if (officeId != null) {
+            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
+        }
+
+        return dsl.selectDistinct(AV_LOC.LOCATION_ID, AV_LOC.DB_OFFICE_ID, AV_LOC.LOCATION_KIND_ID)
+                    .from(AV_LOC)
+                    .where(whereCondition)
+                    .fetchSize(DEFAULT_SMALL_FETCH_SIZE)
+                    .fetch(this::buildLocationKind);
+    }
+
+    @Override
     public Location getLocation(String locationName, String unitSystem, String officeId) {
         Record loc = dsl.select(AV_LOC.asterisk())
                 .from(AV_LOC)
@@ -145,6 +164,13 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                     + "system:" + unitSystem + " and id:" + locationName);
         }
         return buildLocation(loc);
+    }
+
+    private CwmsIdLocationKind buildLocationKind(Record loc) {
+        CwmsIdLocationKind.Builder builder = new CwmsIdLocationKind.Builder();
+        builder.withLocationKindId(loc.get(AV_LOC.LOCATION_KIND_ID));
+        builder.withLocationId(CwmsId.buildCwmsId(loc.get(AV_LOC.DB_OFFICE_ID), loc.get(AV_LOC.LOCATION_ID)));
+        return builder.build();
     }
 
     private Location buildLocation(Record loc) {
@@ -504,10 +530,20 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID,
                 params.getBoundingOfficeLike()));
+
+        String regexLocationKind = params.getLocationKind();
+        if (params.isNegateLocationKindLike() && !regexLocationKind.toUpperCase().startsWith("NOT:")) {
+            regexLocationKind = String.format("NOT:%s", regexLocationKind);
+        }
         condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_KIND_ID,
-                params.getLocationKind()));
+            regexLocationKind));
+
         condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_TYPE,
                 params.getLocationType()));
+
+        if (params.filterBaseLocations()) {
+            condition = condition.and(AV_LOC2.AV_LOC2.SUB_LOCATION_ID.isNotNull());
+        }
 
         return condition;
     }

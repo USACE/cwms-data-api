@@ -12,3 +12,4 @@ rootProject.name = 'Cwms Data Api Service'
 
 include ":access-manager-api"
 include ":cwms-data-api"
+include ":cda-gui"

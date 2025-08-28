@@ -39,6 +39,8 @@ import cwms.cda.data.dto.measurement.Measurement;
 import cwms.cda.data.dto.measurement.StreamflowMeasurement;
 import cwms.cda.data.dto.measurement.SupplementalStreamflowMeasurement;
 import cwms.cda.data.dto.measurement.UsgsMeasurement;
+import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
+import cwms.cda.data.dto.rating.RatingSpecEffectiveDates;
 import cwms.cda.data.dto.stream.StreamLocationNode;
 
 import cwms.cda.data.dto.CwmsId;
@@ -598,6 +600,25 @@ public final class DTOMatch {
         assertAll(
             () -> assertMatch(first.getId(), second.getId()),
             () -> assertMatch(first.getTimeExtents(), second.getTimeExtents())
+        );
+    }
+
+    public static void assertMatch(RatingEffectiveDatesMap first, RatingEffectiveDatesMap second) {
+        assertAll(
+            () -> assertEquals(first.getOfficeToSpecDates().keySet(), second.getOfficeToSpecDates().keySet(), "Office Ids do not match"),
+            () -> first.getOfficeToSpecDates().forEach((officeId, firstDates) -> {
+                List<RatingSpecEffectiveDates> secondDates = second.getOfficeToSpecDates().get(officeId);
+                assertEquals(firstDates.size(), secondDates.size(), "Number of specs do not match for office ID: " + officeId);
+                assertAll(IntStream.range(0, firstDates.size())
+                    .mapToObj(i -> () -> assertMatch(firstDates.get(i), secondDates.get(i))));
+            })
+        );
+    }
+
+    public static void assertMatch(RatingSpecEffectiveDates first, RatingSpecEffectiveDates second) {
+        assertAll(
+            () -> assertEquals(first.getRatingSpecId(), second.getRatingSpecId(), "Rating Spec ID does not match"),
+            () -> assertEquals(first.getEffectiveDates(), second.getEffectiveDates(), "Effective dates doe not match")
         );
     }
 

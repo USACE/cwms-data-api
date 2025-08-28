@@ -43,7 +43,7 @@ public interface LocationLevelsDao {
     void renameLocationLevel(String oldLocationLevelName, String newLocationLevelName, String officeId);
 
     LocationLevel retrieveLocationLevel(String locationLevelName, String unitSystem,
-                                        ZonedDateTime effectiveDate, String officeId);
+                                        ZonedDateTime effectiveDate, String officeId, boolean exactDateMatch);
 
     String getLocationLevels(String format, String names, String office, String unit,
                              String datum, String begin,
