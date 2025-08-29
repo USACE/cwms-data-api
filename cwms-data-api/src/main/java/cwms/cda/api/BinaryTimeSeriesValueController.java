@@ -100,7 +100,7 @@ public class BinaryTimeSeriesValueController implements Handler {
                     long size = blob.length();
                     requestResultSize.update(size);
                     try (InputStream is = blob.getBinaryStream()) {
-                        ctx.seekableStream(is, mediaType, size);
+                        RangeRequestUtil.seekableStream(ctx, is, mediaType, size);
                     }
                 }
             });

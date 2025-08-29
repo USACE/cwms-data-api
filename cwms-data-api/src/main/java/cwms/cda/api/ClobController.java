@@ -178,7 +178,7 @@ public class ClobController implements CrudHandler {
                                 + "clob based on given parameters"));
                     } else {
                         try (InputStream is = c.getAsciiStream()) {
-                            ctx.seekableStream(is, TEXT_PLAIN, c.length());
+                            RangeRequestUtil.seekableStream(ctx, is, TEXT_PLAIN, c.length());
                         }
                     }
                 });

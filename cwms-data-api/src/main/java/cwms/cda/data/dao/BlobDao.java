@@ -71,14 +71,22 @@ public class BlobDao extends JooqDao<Blob> {
         // what we want javalin to do with the stream as a consumer.
         //
 
-        dsl.connection(connection -> {
+        connection(dsl, connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(BLOB_WITH_OFFICE)) {
                 preparedStatement.setString(1, office);
                 preparedStatement.setString(2, id);
 
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
-                        handleResultSet(resultSet, consumer);
+                        String mediaType = resultSet.getString("MEDIA_TYPE_ID");
+                        java.sql.Blob blob = resultSet.getBlob("VALUE");
+                        try {
+                            consumer.accept(blob, mediaType);
+                        } finally {
+                            if (blob != null) {
+                                blob.free();
+                            }
+                        }
                     } else {
                         throw new NotFoundException("Unable to find blob with id " + id + " in office " + office);
                     }
@@ -89,13 +97,21 @@ public class BlobDao extends JooqDao<Blob> {
 
     public void getBlob(String id, BlobConsumer consumer) {
 
-        dsl.connection(connection -> {
+        connection(dsl, connection -> {
             try (PreparedStatement preparedStatement = connection.prepareStatement(BLOB_QUERY)) {
                 preparedStatement.setString(1, id);
 
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
-                        handleResultSet(resultSet, consumer);
+                        String mediaType = resultSet.getString("MEDIA_TYPE_ID");
+                        java.sql.Blob blob = resultSet.getBlob("VALUE");
+                        try {
+                            consumer.accept(blob, mediaType);
+                        } finally {
+                            if (blob != null) {
+                                blob.free();
+                            }
+                        }
                     } else {
                         throw new NotFoundException("Unable to find blob with id " + id);
                     }
@@ -104,25 +120,12 @@ public class BlobDao extends JooqDao<Blob> {
         });
     }
 
-    private static void handleResultSet(ResultSet resultSet, BlobConsumer consumer) throws SQLException, IOException {
-        String mediaType = resultSet.getString("MEDIA_TYPE_ID");
-        java.sql.Blob blob = resultSet.getBlob("VALUE");
-        try {
-            consumer.accept(blob, mediaType);
-        } finally {
-            if (blob != null) {
-                blob.free();
-            }
-        }
-    }
-
-    public List<Blob> getAll(String  officeId, String like) {
+    public List<Blob> getAll(String officeId, String like) {
         String queryStr = "SELECT AT_BLOB.ID, AT_BLOB.DESCRIPTION, CWMS_MEDIA_TYPE.MEDIA_TYPE_ID, CWMS_OFFICE.OFFICE_ID\n"
                 + " FROM CWMS_20.AT_BLOB \n"
                 + "join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
                 + "join CWMS_20.CWMS_OFFICE on AT_BLOB.OFFICE_CODE = CWMS_OFFICE.OFFICE_CODE \n"
-                + " where REGEXP_LIKE (upper(AT_BLOB.ID), upper(?))"
-                ;
+                + " where REGEXP_LIKE (upper(AT_BLOB.ID), upper(?))";
 
         ResultQuery<Record> query;
         if (officeId != null) {
@@ -147,22 +150,22 @@ public class BlobDao extends JooqDao<Blob> {
         String pIgnoreNulls = formatBool(ignoreNulls);
 
         connection(dsl, c ->
-            CWMS_TEXT_PACKAGE.call_STORE_BINARY(
-                getDslContext(c, blob.getOfficeId()).configuration(),
-                blob.getValue(),
-                blob.getId(),
-                blob.getMediaTypeId(),
-                blob.getDescription(),
-                pFailIfExists,
-                pIgnoreNulls,
-                blob.getOfficeId()));
+                CWMS_TEXT_PACKAGE.call_STORE_BINARY(
+                        getDslContext(c, blob.getOfficeId()).configuration(),
+                        blob.getValue(),
+                        blob.getId(),
+                        blob.getMediaTypeId(),
+                        blob.getDescription(),
+                        pFailIfExists,
+                        pIgnoreNulls,
+                        blob.getOfficeId()));
     }
 
     public void update(Blob blob, boolean ignoreNulls) {
         String pFailIfExists = formatBool(false);
         String pIgnoreNulls = formatBool(ignoreNulls);
 
-        if(blob == null){
+        if (blob == null) {
             throw new NotFoundException("Null blob provided to update");
         }
 
