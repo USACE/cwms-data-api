@@ -1,8 +1,8 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
+name: CDA Feature request
+about: Suggest an idea for CWMS-Data-API project
 title: ''
-labels: 'priority:low, documentation, enhancement, blob, catalog, clobs, ratings, timeseries, web-ui'
+labels: 'enhancement'
 assignees: ''
 
 ---
