@@ -56,6 +56,6 @@ jobs:
         with:
           base-image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer
           # TODO get current target image from build information
-          tag: latest-test
+          tag: latest
 
       # No uploads, we're just verifying that nothing broke the docker image.
