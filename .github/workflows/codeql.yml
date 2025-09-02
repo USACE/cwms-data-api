@@ -1,12 +1,9 @@
 name: "CodeQL"
 on:
   push:
-    branches: [ develop ]
+    branches: [ test ]
   pull_request:
-    branches: [ develop ]
-  schedule:
-    - cron: '0 0 * * 0'
-
+    branches: [ test ]
 
 jobs:
   analyze:

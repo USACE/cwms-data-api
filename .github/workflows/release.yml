@@ -32,7 +32,7 @@ on:
         required: true
         description: Which Branch to make the build from
         options:
-          - develop
+          - test
       nightly:
         type: boolean
         required: true
@@ -76,7 +76,7 @@ jobs:
       - name: Create GitHub Release
         id: create_release
         # Allow testing without creating a release
-        if: github.event_name != 'pull_request' && (github.event.ref == 'refs/heads/develop' || startsWith(github.event.ref, 'refs/tags'))
+        if: github.event_name != 'pull_request' && (github.event.ref == 'refs/heads/test' || startsWith(github.event.ref, 'refs/tags'))
         uses: softprops/action-gh-release@v2.3.2
         with:
           files: cwms-data-api/build/libs/cwms-data-api-${{env.VERSION}}.war

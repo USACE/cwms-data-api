@@ -3,10 +3,10 @@ name: Build And Test CWMS Data API
 on:
   push:
     branches:
-      - develop
+      - test
   pull_request:
     branches:
-      - develop
+      - test
 
 jobs:
   build:
@@ -56,6 +56,6 @@ jobs:
         with:
           base-image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer
           # TODO get current target image from build information
-          tag: latest-dev
+          tag: latest-test
 
       # No uploads, we're just verifying that nothing broke the docker image.
