@@ -4,7 +4,7 @@ on:
   push:
     tags:
       # Allow an additional marker if multiple releases needed within a day.
-      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-dev[a-z]+'      
+      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-dev[a-z]*'      
 jobs:
   release:
     uses: ./.github/workflows/release.yml
