@@ -31,6 +31,8 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
+
+import cwms.cda.api.CdaVersionHandler;
 import cwms.cda.api.rating.RatingEffectiveDatesController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.delete;
@@ -264,7 +266,8 @@ import org.owasp.html.PolicyFactory;
     "/embankments/*",
     "/user/*",
     "/users/*",
-    "/roles/*"
+    "/roles/*",
+    "/version/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -706,6 +709,8 @@ public class ApiServlet extends HttpServlet {
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
 
         addUserManagementHandlers();
+
+        get("/version/", new CdaVersionHandler(metrics), requiredRoles);
     }
 
     private void addUserManagementHandlers() {
