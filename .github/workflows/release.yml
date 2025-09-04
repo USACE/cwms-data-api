@@ -33,6 +33,7 @@ on:
         description: Which Branch to make the build from
         options:
           - develop
+          - test
       nightly:
         type: boolean
         required: true
