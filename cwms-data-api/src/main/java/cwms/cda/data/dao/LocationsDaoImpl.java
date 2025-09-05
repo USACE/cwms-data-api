@@ -59,6 +59,7 @@ import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -499,8 +500,11 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                     .filter(r -> r.getALIASED_ITEM() == null)
                     .findFirst()
                     .orElseThrow(() -> new DataAccessException("Could not find location for list of aliases: " + l));
-                Set<LocationAlias> aliases = l.stream().filter(r -> r.getALIASED_ITEM() != null)
-                    .map(this::buildLocationAlias).collect(toSet());
+                Set<LocationAlias> aliases = new HashSet<>();
+                if (params.includeAliases()) {
+                    aliases = l.stream().filter(r -> r.getALIASED_ITEM() != null)
+                        .map(this::buildLocationAlias).collect(toSet());
+                }
                 return buildCatalogEntry(row, aliases);
             })
             .collect(toList());

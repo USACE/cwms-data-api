@@ -82,7 +82,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // Complicated
         loadSqlDataFromResource("cwms/cda/data/sql/ts_catalog_setup.sql");
 
-
+        loadSqlDataFromResource("cwms/cda/data/sql/location_catalog_setup.sql");
     }
 
     private static void createProject(String id, String office) throws SQLException {
@@ -444,6 +444,52 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("$", hasKey("entries"))
             .body("entries.size()", is(1))
             .body("entries[0].name", equalTo("Flat Project"))
+        ;
+    }
+
+    @Test
+    void test_loc_aliases() {
+
+        String pattern = "*Streamflow";
+
+        // First with just the regex.  This should match Flat Lake and Flat Project
+        given()
+            .accept("application/json;version=2")
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LIKE, pattern)
+            .queryParam(INCLUDE_ALIASES, false)
+        .when()
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .body("$", hasKey("total"))
+            .body("total", is(2))
+            .body("$", hasKey("entries"))
+            .body("entries.size()", is(2))
+            .body("entries[0].aliases.size()", is(0))
+        ;
+
+        // Now add the LOCATION_KIND filter
+        given()
+            .accept("application/json;version=2")
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LIKE, pattern)
+            .queryParam(INCLUDE_ALIASES, true)
+        .when()
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .body("$", hasKey("total"))
+            .body("total", is(2))
+            .body("$", hasKey("entries"))
+            .body("entries.size()", is(2))
+            .body("entries[0].name", equalTo("Alder Springs Streamflow"))
+            .body("entries[0].aliases.size()", is(2))
+            .body("entries[0].aliases[0].value", containsString("Alder Stream Alias Loc"))
         ;
     }
 
