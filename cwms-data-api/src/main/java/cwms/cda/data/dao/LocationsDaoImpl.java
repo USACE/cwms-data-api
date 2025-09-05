@@ -77,14 +77,16 @@ import org.jooq.Condition;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Field;
+import org.jooq.OrderField;
 import org.jooq.Record;
 import org.jooq.Record1;
 import org.jooq.SelectConditionStep;
-import org.jooq.SelectSeekStep3;
+import org.jooq.SelectSeekStepN;
 import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
+import org.jooq.impl.TableImpl;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
@@ -426,8 +428,14 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     private Catalog getLocationCatalog(Catalog.CatalogPage catPage, int pageSize, CatalogRequestParameters params) {
+        FieldMapping fieldMapping = null;
+        if (params.includeAliases()) {
+            fieldMapping = new AvLoc2FieldMapping();
+        } else {
 
-        final AV_LOC2 avLoc2 = AV_LOC2.AV_LOC2;  // ref the view just shorten the jooq
+            fieldMapping = new AvLocFieldMapping();
+        }
+        Table<Record> table = fieldMapping.getTable();
         //Now querying against AV_LOC2 as it gives us back the same information as querying against
         //location group views. This makes the code clearer and improves performance.
         //If there is a performance improvement by switching back to location groups and querying against
@@ -448,7 +456,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             cursorOffice = null;
 
             SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
-                .from(avLoc2)
+                .from(table)
                 .where(condition);
             logger.log(Level.FINER, () -> count.getSQL(ParamType.INLINED));
             total = count.fetchOne().value1();
@@ -460,15 +468,20 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             pageSize = catPage.getPageSize();
         }
 
-        condition = addCursorConditions(condition, cursorOffice, cursorLocation);
+        condition = addCursorConditions(condition, cursorOffice, cursorLocation, fieldMapping);
 
-        Field<String> dataId = avLoc2.LOCATION_ID.as("real_id");
-        Field<Long> dataCode = avLoc2.LOCATION_CODE.as("real_code");
+        Field<String> dataId = fieldMapping.getLocationId().as("real_id");
+        Field<Long> dataCode = fieldMapping.getLocationCode().as("real_code");
+
+        if (fieldMapping.includesAliases()) {
+            condition = condition.and(fieldMapping.getAliasedItem().isNull());
+        }
+
         // data/limiter/query
         Table<?> data = dsl.select(dataId,dataCode)
-                           .from(avLoc2)
-                           .where(condition.and(avLoc2.ALIASED_ITEM.isNull()))
-                           .orderBy(avLoc2.DB_OFFICE_ID.asc(),avLoc2.LOCATION_ID.asc())
+                           .from(table)
+                           .where(condition)
+                           .orderBy(fieldMapping.getDbOfficeId().asc(), fieldMapping.getLocationId().asc())
                            .asTable("data");
         CommonTableExpression<?> limiter = name("limiter")
                                             .fields("real_id","location_code")
@@ -478,88 +491,126 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                                                 .where(field("rownum").lessOrEqual(pageSize))
                                                 );
         Field<String> limitId = limiter.field("real_id",String.class);
-        Field<Long> limitCode = limiter.field("location_code",Long.class);
 
-        SelectSeekStep3<Record, String, ?, String> query = dsl.with(limiter).select(
+        OrderField[] orderFields = new OrderField[2 + (fieldMapping.includesAliases() ? 1 : 0)];
+        orderFields[0] = fieldMapping.getDbOfficeId().asc();
+        orderFields[1] = limitId.asc();
+        if (fieldMapping.includesAliases()) {
+            orderFields[2] = fieldMapping.getAliasedItem().asc();
+        }
+
+        Field<Long> limitCode = limiter.field("location_code",Long.class);
+        SelectSeekStepN<?> query = dsl.with(limiter).select(
                 limitId,
-                avLoc2.LOCATION_ID.as("alias_id"),
-                avLoc2.asterisk())
+                fieldMapping.getLocationId().as("alias_id"),
+                table.asterisk())
             .from(limiter)
-            .leftOuterJoin(avLoc2).on(avLoc2.LOCATION_CODE.eq(limitCode))
-            .orderBy(avLoc2.DB_OFFICE_ID.asc(),limitId.asc(),avLoc2.ALIASED_ITEM.asc());
+            .leftOuterJoin(table).on(fieldMapping.getLocationCode().eq(limitCode))
+            .orderBy(orderFields);
         logger.log(Level.FINER, () -> query.getSQL(ParamType.INLINED));
-        List<? extends CatalogEntry> entries = query
+        List<? extends CatalogEntry> entries;
+        if (fieldMapping.includesAliases()) {
+            entries = query
                 .fetchSize(DEFAULT_FETCH_SIZE)
                 .fetchStream()
-            .map(r -> r.into(AV_LOC2.AV_LOC2))
-            .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2::getLOCATION_CODE))
-            .values()
-            .stream()
-            .map(l -> {
-                usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 row = l.stream()
-                    .filter(r -> r.getALIASED_ITEM() == null)
-                    .findFirst()
-                    .orElseThrow(() -> new DataAccessException("Could not find location for list of aliases: " + l));
-                Set<LocationAlias> aliases = new HashSet<>();
-                if (params.includeAliases()) {
-                    aliases = l.stream().filter(r -> r.getALIASED_ITEM() != null)
-                        .map(this::buildLocationAlias).collect(toSet());
-                }
-                return buildCatalogEntry(row, aliases);
-            })
-            .collect(toList());
+                .map(r -> r.into(AV_LOC2.AV_LOC2))
+                .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2::getLOCATION_CODE))
+                .values()
+                .stream()
+                .map(l -> {
+                    usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 row = l.stream()
+                        .filter(r -> r.getALIASED_ITEM() == null)
+                        .findFirst()
+                        .orElseThrow(
+                            () -> new DataAccessException("Could not find location for list of aliases: " + l));
+                    Set<LocationAlias> aliases = new HashSet<>();
+                    if (params.includeAliases()) {
+                        aliases = l.stream().filter(r -> r.getALIASED_ITEM() != null)
+                            .map(this::buildLocationAlias).collect(toSet());
+                    }
+                    return buildCatalogEntry(row, aliases);
+                })
+                .collect(toList());
+        } else {
+            entries = query
+                .fetchSize(DEFAULT_FETCH_SIZE)
+                .fetchStream()
+                .map(r -> r.into(AV_LOC))
+                .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC::getLOCATION_CODE))
+                .values()
+                .stream()
+                .map(l -> {
+                    usace.cwms.db.jooq.codegen.tables.records.AV_LOC row = l.stream()
+                        .findFirst()
+                        .orElseThrow(() -> new DataAccessException("Could not find location: " + l));
+                    Set<LocationAlias> aliases = new HashSet<>();
+                    return buildCatalogEntry(row, aliases);
+                })
+                .collect(toList());
+        }
 
         return new Catalog(cursorLocation, total, pageSize, entries, params);
     }
 
     private static Condition buildWhereCondition(CatalogRequestParameters params) {
         String idLike = params.getIdLike();
+        FieldMapping fieldMapping = null;
+        if (params.includeAliases()) {
+            fieldMapping = new AvLoc2FieldMapping();
+        } else {
+            fieldMapping = new AvLocFieldMapping();
+        }
 
-        Condition condition = caseInsensitiveLikeRegex(AV_LOC2.AV_LOC2.LOCATION_ID, idLike)
-                .and(AV_LOC2.AV_LOC2.LOCATION_CODE.notEqual(DELETED_TS_MARKER))
-                .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(params.getUnitSystem()));
+        Condition condition = caseInsensitiveLikeRegex(fieldMapping.getLocationId(), idLike)
+                .and(fieldMapping.getLocationCode().notEqual(DELETED_TS_MARKER))
+                .and(fieldMapping.getUnitSystem().equalIgnoreCase(params.getUnitSystem()));
 
         String groupLike = params.getLocGroupLike();
         String categoryLike = params.getLocCatLike();
-        if (categoryLike == null && groupLike == null) {
-            condition = condition.and(AV_LOC2.AV_LOC2.ALIASED_ITEM.isNull());
+        if (categoryLike == null && groupLike == null && params.includeAliases()) {
+            condition = condition.and(fieldMapping.getAliasedItem().isNull());
         }
-        condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOC_ALIAS_CATEGORY, categoryLike));
-        condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOC_ALIAS_GROUP, groupLike));
+
+        if (params.includeAliases()) {
+            condition =
+                condition.and(caseInsensitiveLikeRegexNullTrue(fieldMapping.getGetAliasCategory(), categoryLike));
+            condition = condition.and(caseInsensitiveLikeRegexNullTrue(fieldMapping.getGetAliasGroup(), groupLike));
+        }
 
         String office = params.getOffice();
         if (office != null) {
-            condition = condition.and(DSL.upper(AV_LOC2.AV_LOC2.DB_OFFICE_ID).eq(office.toUpperCase()));
+            condition = condition.and(DSL.upper(fieldMapping.getDbOfficeId()).eq(office.toUpperCase()));
         }
 
-        condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID,
+        condition = condition.and(caseInsensitiveLikeRegexNullTrue(fieldMapping.getBoundingOfficeId(),
                 params.getBoundingOfficeLike()));
 
         String regexLocationKind = params.getLocationKind();
         if (params.isNegateLocationKindLike() && !regexLocationKind.toUpperCase().startsWith("NOT:")) {
             regexLocationKind = String.format("NOT:%s", regexLocationKind);
         }
-        condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_KIND_ID,
+        condition = condition.and(caseInsensitiveLikeRegexNullTrue(fieldMapping.getLocationKind(),
             regexLocationKind));
 
-        condition = condition.and(caseInsensitiveLikeRegexNullTrue(AV_LOC2.AV_LOC2.LOCATION_TYPE,
+        condition = condition.and(caseInsensitiveLikeRegexNullTrue(fieldMapping.getLocationType(),
                 params.getLocationType()));
 
-        if (params.filterBaseLocations()) {
-            condition = condition.and(AV_LOC2.AV_LOC2.SUB_LOCATION_ID.isNotNull());
+        if (params.filterBaseLocations() && params.includeAliases()) {
+            condition = condition.and(fieldMapping.getSubLocationId().isNotNull());
         }
 
         return condition;
     }
 
-    private static Condition addCursorConditions(Condition condition, String cursorOffice, String cursorLocation) {
+    private static Condition addCursorConditions(Condition condition, String cursorOffice, String cursorLocation,
+                                                 FieldMapping mapping) {
         if (cursorOffice != null) {
-            Condition officeEqualCur = DSL.upper(AV_LOC2.AV_LOC2.DB_OFFICE_ID).eq(cursorOffice.toUpperCase());
-            Condition curOfficeLocationIdGreater = DSL.upper(AV_LOC2.AV_LOC2.LOCATION_ID).gt(cursorLocation);
-            Condition officeGreaterThanCur = DSL.upper(AV_LOC2.AV_LOC2.DB_OFFICE_ID).gt(cursorOffice.toUpperCase());
+            Condition officeEqualCur = DSL.upper(mapping.getDbOfficeId()).eq(cursorOffice.toUpperCase());
+            Condition curOfficeLocationIdGreater = DSL.upper(mapping.getLocationId()).gt(cursorLocation);
+            Condition officeGreaterThanCur = DSL.upper(mapping.getDbOfficeId()).gt(cursorOffice.toUpperCase());
             condition = condition.and(officeEqualCur).and(curOfficeLocationIdGreater).or(officeGreaterThanCur);
         } else {
-            condition = condition.and(DSL.upper(AV_LOC2.AV_LOC2.LOCATION_ID).gt(cursorLocation));
+            condition = condition.and(DSL.upper(mapping.getLocationId()).gt(cursorLocation));
         }
         return condition;
     }
@@ -612,6 +663,40 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 .build();
     }
 
+    @NotNull
+    private static LocationCatalogEntry buildCatalogEntry(usace.cwms.db.jooq.codegen.tables.records.AV_LOC loc,
+        Set<LocationAlias> aliases) {
+
+        return new LocationCatalogEntry.Builder()
+            .officeId(loc.getDB_OFFICE_ID())
+            .name(loc.getLOCATION_ID())
+            .nearestCity(loc.getNEAREST_CITY())
+            .publicName(loc.getPUBLIC_NAME())
+            .longName(loc.getLONG_NAME())
+            .description(loc.getDESCRIPTION())
+            .kind(loc.getLOCATION_KIND_ID())
+            .type(loc.getLOCATION_TYPE())
+            .timeZone(loc.getTIME_ZONE_NAME())
+            .latitude(loc.getLATITUDE() != null ? loc.getLATITUDE().doubleValue() : null)
+            .longitude(loc.getLONGITUDE() != null ? loc.getLONGITUDE().doubleValue() : null)
+            .publishedLatitude(loc.getPUBLISHED_LATITUDE() != null
+                ? loc.getPUBLISHED_LATITUDE().doubleValue() : null)
+            .publishedLongitude(loc.getPUBLISHED_LONGITUDE() != null
+                ? loc.getPUBLISHED_LONGITUDE().doubleValue() : null)
+            .horizontalDatum(loc.getHORIZONTAL_DATUM())
+            .elevation(loc.getELEVATION())
+            .unit(loc.getUNIT_ID())
+            .verticalDatum(loc.getVERTICAL_DATUM())
+            .nation(loc.getNATION_ID())
+            .state(loc.getSTATE_INITIAL())
+            .county(loc.getCOUNTY_NAME())
+            .boundingOffice(loc.getBOUNDING_OFFICE_ID())
+            .mapLabel(loc.getMAP_LABEL())
+            .active(loc.getACTIVE_FLAG().equalsIgnoreCase("T"))
+            .aliases(aliases)
+            .build();
+    }
+
     private static LOCATION_OBJ_T getLocationObj(Location location) {
         LOCATION_OBJ_T retval = null;
         if (location != null) {
@@ -642,5 +727,167 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             retval.setNEAREST_CITY(location.getNearestCity());
         }
         return retval;
+    }
+
+    private interface FieldMapping {
+        Field<Long> getLocationCode();
+
+        Field<String> getLocationId();
+
+        Field<String> getAliasedItem();
+
+        Field<String> getDbOfficeId();
+
+        Field<String> getUnitSystem();
+
+        Field<String> getLocationType();
+
+        Field<String> getLocationKind();
+
+        Field<String> getBoundingOfficeId();
+
+        Field<String> getGetAliasGroup();
+
+        Field<String> getGetAliasCategory();
+
+        Field<String> getSubLocationId();
+
+        boolean includesAliases();
+
+        Table<Record> getTable();
+    }
+
+    private static class AvLoc2FieldMapping implements FieldMapping {
+        @Override
+        public Field<Long> getLocationCode() {
+            return AV_LOC2.AV_LOC2.LOCATION_CODE;
+        }
+
+        @Override
+        public Field<String> getLocationId() {
+            return AV_LOC2.AV_LOC2.LOCATION_ID;
+        }
+
+        @Override
+        public Field<String> getAliasedItem() {
+            return AV_LOC2.AV_LOC2.ALIASED_ITEM;
+        }
+
+        @Override
+        public Field<String> getDbOfficeId() {
+            return AV_LOC2.AV_LOC2.DB_OFFICE_ID;
+        }
+
+        @Override
+        public Field<String> getUnitSystem() {
+            return AV_LOC2.AV_LOC2.UNIT_SYSTEM;
+        }
+
+        @Override
+        public Field<String> getLocationType() {
+            return AV_LOC2.AV_LOC2.LOCATION_TYPE;
+        }
+
+        @Override
+        public Field<String> getLocationKind() {
+            return AV_LOC2.AV_LOC2.LOCATION_KIND_ID;
+        }
+
+        @Override
+        public Field<String> getBoundingOfficeId() {
+            return AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID;
+        }
+
+        @Override
+        public Field<String> getGetAliasGroup() {
+            return AV_LOC2.AV_LOC2.LOC_ALIAS_GROUP;
+        }
+
+        @Override
+        public Field<String> getGetAliasCategory() {
+            return AV_LOC2.AV_LOC2.LOC_ALIAS_CATEGORY;
+        }
+
+        @Override
+        public Field<String> getSubLocationId() {
+            return AV_LOC2.AV_LOC2.SUB_LOCATION_ID;
+        }
+
+        @Override
+        public boolean includesAliases() {
+            return true;
+        }
+
+        @Override
+        public TableImpl getTable() {
+            return AV_LOC2.AV_LOC2;
+        }
+    }
+
+    private static class AvLocFieldMapping implements FieldMapping {
+        @Override
+        public Field<Long> getLocationCode() {
+            return AV_LOC.LOCATION_CODE;
+        }
+
+        @Override
+        public Field<String> getLocationId() {
+            return AV_LOC.LOCATION_ID;
+        }
+
+        @Override
+        public Field<String> getAliasedItem() {
+            return null;
+        }
+
+        @Override
+        public Field<String> getDbOfficeId() {
+            return AV_LOC.DB_OFFICE_ID;
+        }
+
+        @Override
+        public Field<String> getUnitSystem() {
+            return AV_LOC.UNIT_SYSTEM;
+        }
+
+        @Override
+        public Field<String> getLocationType() {
+            return AV_LOC.LOCATION_TYPE;
+        }
+
+        @Override
+        public Field<String> getLocationKind() {
+            return AV_LOC.LOCATION_KIND_ID;
+        }
+
+        @Override
+        public Field<String> getBoundingOfficeId() {
+            return AV_LOC.BOUNDING_OFFICE_ID;
+        }
+
+        @Override
+        public Field<String> getGetAliasGroup() {
+            return null;
+        }
+
+        @Override
+        public Field<String> getGetAliasCategory() {
+            return null;
+        }
+
+        @Override
+        public Field<String> getSubLocationId() {
+            return null;
+        }
+
+        @Override
+        public boolean includesAliases() {
+            return false;
+        }
+
+        @Override
+        public TableImpl getTable() {
+            return AV_LOC;
+        }
     }
 }
