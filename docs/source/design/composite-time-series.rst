@@ -7,7 +7,7 @@ Purpose
 
 It is a challenge for users to identity what the correct authoritative time series is for a given measurement at a location. Additionally these time series often change over time, either being completely new or changing their interval as newer technologies become available.
 
-Gather an entire Period of Record for the value at a location is also rather difficult. And the POR record and "authoritative timeseries" may be one-in-the same.
+Gather an entire Period of Record for the value at a location is also rather difficult. And the Period of Record (POR) and "authoritative timeseries" may be one-in-the same.
 
 
 Need
@@ -15,7 +15,7 @@ Need
 
 #. CWMS and Access-2-Water require a simple mechanism to allow users of data to retrieve the Authoritative Period of Record data for a given measurement without having to  understand all of the possible component time series that may be involved. 
 #. Period-of-Record time series *should* not be created by duplicating data from the component time series and merging them into a new one.
-#. The naming of the time series should fit within the excepting CWMS Time Series Identifier design and not unreasonably interfere with existing usages.
+#. The naming of the time series should fit within the existing CWMS Time Series Identifier design and not unreasonably interfere with existing usages.
 
 
 Caveats
@@ -31,9 +31,9 @@ Proposal
 Description
 -----------
 
-CDA should handle a concept of a "Composite Time Series". Whether a Time Series is considered composite will be determined by a specific element of the Time Series Identifier.
+CWMS-Data-API (CDA) should handle a concept of a "Composite Time Series". Whether a Time Series is considered composite will be determined by some means (see naming options below).
 Data Administrators will configure which Time Series, and the range there-in, are part of the composite time series.
-CDA will use this stored information to build the Time Series per the question.
+CDA will use this composite time series definition to build an expand Time Series per query for the range of time requested.
 
 Additional names not used
 -------------------------
@@ -53,8 +53,10 @@ Axioms
 #. The definition of the composite time series is stored within the CWMS database
 #. The members of a composite time series define a continuous range
    #. The date ranges of a member *MUST* not overlap
-   #. The date ranges of a member *MUST* not have any gaps
-   #. Data may have gaps, an explanation range should be provided.
+   #. Each member *MUST* have a start date
+   #. The last member *MAY* have an end date indicating no more data will be available for this location and measure.
+   #. Data may have gaps, an explanation range *SHOULD* be provided. For data with regular gaps, e.g. season gauges
+      a description should be provided in the notes. A Link to a Location Level can be provided if the timing is well known.
 #. The members of a composite time measure the same thing. (e.g. all members are Elevation, not some are elevation and some are stage.)
 #. The interval and duration of each member *MAY* be different.
 
@@ -163,8 +165,8 @@ Option 4
 This form with something in [] has been discussed for embedded TimeZone and Offset information into the interval. Arguably this code go in any field.
 
 
-Option 4
-~~~~~~~~
+Option 5 (Currently preferred)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 `<Location Id>.<Parameter>.<Parameter Type>.<Interval>.<Duration>.<Version>` and/or arbitrary TS "alias"
 
@@ -197,12 +199,14 @@ Composite Time Series Definition
     {
     "office": "<string>",   
     "name": "<ts id name>",
-    "is-authoritative": true, // or is authoritative. to distinguish between other possible use-cases?
+    "is-authoritative": true|false,
+    "seasonal-information": "<office>/<location level>", // Optional, reference to location level that returns 0 for out-of-service 
+                                                         // or 1 for in-service
     "members": [
         {
             "time-series-id": "TS ID for this range",
             "start": "start date of this", // Inclusive
-            "end": "end date of this range", // Exclusive
+            "end": "end date of this range", // Exclusive, can be null
             "notes": "text",            
         }
     ]
@@ -217,7 +221,13 @@ Operations required:
 * Add member
 * List members
 * Replace all members?
+* Update member
 * Delete
+
+Immutable fields:
+
+Fields marked immutable above cannot be updated. At this time no field are thought to be immutable.
+
 
 
 Composite Time Series Response
@@ -241,7 +251,7 @@ Supported Operations:
 Storage of member information
 ================================
 
-#. Store in Clob as we refine the design - cache appropriately in member to avoid any major performance issues.
+#. Store in Clob as we refine the design - cache appropriately to avoid any major performance issues.
 #. Create appropriate tables once the design is stable - still cache things.
 
 System responsibility for "knowing" to process composite.
@@ -263,7 +273,7 @@ TimeSeriesDao
 If the system sees the "Composite" marker/determines is composite retrieve the members for the range and build the time series.
 
 .. NOTE:: 
-    Considering the user may request the *entire* Period-of-record, this is a good opportunity to see that,
+    Considering the user may request the *entire* Period-of-record,
     start the retrieval in a job queue, and return a status URL to the user for future download. I have see such mechanism 
     for bulk data in other systems. Maybe return an "I'm working on it variant" that the controller can know how to format.
 
@@ -287,7 +297,7 @@ Retrievers of the Period-of-Record *SHOULD* be able to retrieve the data as a si
 On the saving of a composite definition
 ---------------------------------------
 
-The even if only a single member is added, the full definition needs to be check to ensure the ranges are still overlapping and continuous.
+The even if only a single member is added, the full definition needs to be check to ensure the ranges are still non overlapping.
 
 References
 ==========
