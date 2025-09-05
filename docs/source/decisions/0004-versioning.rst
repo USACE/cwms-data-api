@@ -6,7 +6,7 @@ CWMS Data Api Versioning
 Summary
 =======
 
-Maintaining backwards compatibilty while improving future difficulty has proven sufficiently difficulty that change
+Maintaining backwards compatibility while improving future difficulty has proven sufficiently difficulty that change
 is required.
 
 The API as a whole will retain the calendar based versioning for formal releases.
