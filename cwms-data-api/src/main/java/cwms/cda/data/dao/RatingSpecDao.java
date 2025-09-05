@@ -426,8 +426,13 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         );
     }
 
+    /**
+     * Retrieve effective dates for specs matching the specIdMask and officeIdMask within the given date range.
+     * NOTE: This makes a separate query to get the list of non-aliased spec ids for the officeIdMask, so that aliased specs can be skipped.
+     */
     public RatingEffectiveDatesMap retrieveSpecEffectiveDates(String officeIdMask, String specIdMask, Instant begin, Instant end) {
         return connectionResult(dsl, conn -> {
+            //set of non-alias spec ids used to filter out aliased specs
             Set<String> ratingIdsNoAliases = getRatingIds(officeIdMask, "*", false);
             //office->spec->dates
             NavigableMap<String, NavigableMap<String, NavigableSet<Instant>>> specDateMap = new TreeMap<>();
@@ -436,7 +441,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
             while(rs.next()) {
                 String officeId = rs.getString(OFFICE_ID);
                 String specId = rs.getString(SPECIFICATION_ID);
-                if(!ratingIdsNoAliases.contains(specId)) { // skip aliased specs
+                if(!ratingIdsNoAliases.contains(specId)) { // skip aliased specs based on queried list of rating ids not including aliases
                     continue;
                 }
                 Timestamp timestamp = rs.getTimestamp(EFFECTIVE_DATE, GMT_CALENDAR);
