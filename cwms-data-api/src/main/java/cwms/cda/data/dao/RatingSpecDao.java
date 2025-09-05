@@ -431,9 +431,9 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
      * NOTE: This makes a separate query to get the list of non-aliased spec ids for the officeIdMask, so that aliased specs can be skipped.
      */
     public RatingEffectiveDatesMap retrieveSpecEffectiveDates(String officeIdMask, String specIdMask, Instant begin, Instant end) {
+        //set of non-alias spec ids used to filter out aliased specs
+        Set<String> ratingIdsNoAliases = getRatingIds(officeIdMask, "*", false);
         return connectionResult(dsl, conn -> {
-            //set of non-alias spec ids used to filter out aliased specs
-            Set<String> ratingIdsNoAliases = getRatingIds(officeIdMask, "*", false);
             //office->spec->dates
             NavigableMap<String, NavigableMap<String, NavigableSet<Instant>>> specDateMap = new TreeMap<>();
             ResultSet rs = catRatings(conn, officeIdMask, specIdMask, begin, end);
