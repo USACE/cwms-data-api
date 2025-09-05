@@ -40,7 +40,6 @@ import java.sql.Types;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -66,9 +65,16 @@ import javax.sql.rowset.RowSetProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
+import org.jooq.Record1;
+import org.jooq.Record2;
 import org.jooq.ResultQuery;
+import org.jooq.SelectConditionStep;
+import org.jooq.SelectForUpdateStep;
 import org.jooq.conf.ParamType;
+import org.jooq.impl.DSL;
+import static org.jooq.impl.DSL.field;
 import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING;
@@ -420,7 +426,13 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         );
     }
 
+    /**
+     * Retrieve effective dates for specs matching the specIdMask and officeIdMask within the given date range.
+     * NOTE: This makes a separate query to get the list of non-aliased spec ids for the officeIdMask, so that aliased specs can be skipped.
+     */
     public RatingEffectiveDatesMap retrieveSpecEffectiveDates(String officeIdMask, String specIdMask, Instant begin, Instant end) {
+        //set of non-alias spec ids used to filter out aliased specs
+        Set<String> ratingIdsNoAliases = getRatingIds(officeIdMask, "*", false);
         return connectionResult(dsl, conn -> {
             //office->spec->dates
             NavigableMap<String, NavigableMap<String, NavigableSet<Instant>>> specDateMap = new TreeMap<>();
@@ -429,6 +441,9 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
             while(rs.next()) {
                 String officeId = rs.getString(OFFICE_ID);
                 String specId = rs.getString(SPECIFICATION_ID);
+                if(!ratingIdsNoAliases.contains(specId)) { // skip aliased specs based on queried list of rating ids not including aliases
+                    continue;
+                }
                 Timestamp timestamp = rs.getTimestamp(EFFECTIVE_DATE, GMT_CALENDAR);
                 Instant date = timestamp.toInstant();
                 NavigableSet<Instant> dateList = specDateMap.computeIfAbsent(officeId, k -> new TreeMap<>())
@@ -489,5 +504,41 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         }
 
         return output;
+    }
+
+    private Set<String> getRatingIds(String office, String templateIdMask, boolean includeAliases) {
+        return connectionResult(dsl, conn ->
+        {
+            AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
+            Condition condition = DSL.noCondition();
+
+            if (office != null) {
+                condition = condition.and(specView.OFFICE_ID.eq(office));
+            }
+
+            if (templateIdMask != null) {
+                Condition ratingIdLike = JooqDao.caseInsensitiveLikeRegex(specView.RATING_ID,
+                        templateIdMask);
+                condition = condition.and(ratingIdLike);
+            }
+
+            if(!includeAliases) {
+                condition = condition.and(specView.ALIASED_ITEM.isNull());
+            }
+
+            Field<String> idField = field("RATING_ID", String.class);
+
+            SelectConditionStep<Record2<String, String>> ratingStep = DSL.using(conn).select(
+                            specView.OFFICE_ID,
+                            specView.RATING_ID.as(idField))
+                    .from(specView)
+                    .where(condition);
+
+            SelectForUpdateStep<Record1<String>> query = DSL.using(conn).selectDistinct(idField)
+                    .from(ratingStep)
+                    .orderBy(idField.asc());
+            return new LinkedHashSet<>(query.fetch(idField));
+        });
+
     }
 }
