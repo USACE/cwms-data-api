@@ -428,7 +428,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
 
     public RatingEffectiveDatesMap retrieveSpecEffectiveDates(String officeIdMask, String specIdMask, Instant begin, Instant end) {
         return connectionResult(dsl, conn -> {
-            Set<String> ratingIdsNoAliases = getRatingIds(conn, officeIdMask, "*", false);
+            Set<String> ratingIdsNoAliases = getRatingIds(officeIdMask, "*", false);
             //office->spec->dates
             NavigableMap<String, NavigableMap<String, NavigableSet<Instant>>> specDateMap = new TreeMap<>();
             ResultSet rs = catRatings(conn, officeIdMask, specIdMask, begin, end);
@@ -501,35 +501,39 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         return output;
     }
 
-    private Set<String> getRatingIds(Connection conn, String office, String templateIdMask, boolean includeAliases) {
-        AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
-        Condition condition = DSL.noCondition();
+    private Set<String> getRatingIds(String office, String templateIdMask, boolean includeAliases) {
+        return connectionResult(dsl, conn ->
+        {
+            AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
+            Condition condition = DSL.noCondition();
 
-        if (office != null) {
-            condition = condition.and(specView.OFFICE_ID.eq(office));
-        }
+            if (office != null) {
+                condition = condition.and(specView.OFFICE_ID.eq(office));
+            }
 
-        if (templateIdMask != null) {
-            Condition ratingIdLike = JooqDao.caseInsensitiveLikeRegex(specView.RATING_ID,
-                    templateIdMask);
-            condition = condition.and(ratingIdLike);
-        }
+            if (templateIdMask != null) {
+                Condition ratingIdLike = JooqDao.caseInsensitiveLikeRegex(specView.RATING_ID,
+                        templateIdMask);
+                condition = condition.and(ratingIdLike);
+            }
 
-        if(!includeAliases) {
-            condition = condition.and(specView.ALIASED_ITEM.isNull());
-        }
+            if(!includeAliases) {
+                condition = condition.and(specView.ALIASED_ITEM.isNull());
+            }
 
-        Field<String> idField = field("RATING_ID", String.class);
+            Field<String> idField = field("RATING_ID", String.class);
 
-        SelectConditionStep<Record2<String, String>> ratingStep = DSL.using(conn).select(
-                        specView.OFFICE_ID,
-                        specView.RATING_ID.as(idField))
-                .from(specView)
-                .where(condition);
+            SelectConditionStep<Record2<String, String>> ratingStep = DSL.using(conn).select(
+                            specView.OFFICE_ID,
+                            specView.RATING_ID.as(idField))
+                    .from(specView)
+                    .where(condition);
 
-        SelectForUpdateStep<Record1<String>> query = DSL.using(conn).selectDistinct(idField)
-                .from(ratingStep)
-                .orderBy(idField.asc());
-        return new LinkedHashSet<>(query.fetch(idField));
+            SelectForUpdateStep<Record1<String>> query = DSL.using(conn).selectDistinct(idField)
+                    .from(ratingStep)
+                    .orderBy(idField.asc());
+            return new LinkedHashSet<>(query.fetch(idField));
+        });
+
     }
 }
