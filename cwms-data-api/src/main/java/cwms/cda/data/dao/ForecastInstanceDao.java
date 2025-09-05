@@ -211,21 +211,28 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
             if (attributes != null) {
                 fileName = (String) attributes[0];
                 mediaType = (String) attributes[1];
+
                 Blob blob = (Blob) attributes[5];
-                if (blob.length() > byteLimit) {
-                    String param = "&%s=%s";
-                    String utf8 = "UTF-8";
-                    url = urlBuilder.build().apply(specId) + "?"
-                            + format(param, Controllers.NAME, URLEncoder.encode(specId, utf8))
-                            + format(param, Controllers.FORECAST_DATE, URLEncoder.encode(forecastDate.toString(), utf8))
-                            + format(param, Controllers.ISSUE_DATE, URLEncoder.encode(issueDate.toString(), utf8))
-                            + format(param, Controllers.OFFICE, URLEncoder.encode(officeId, utf8));
+                try {
+                    if (blob.length() > byteLimit) {
+                        String param = "&%s=%s";
+                        String utf8 = "UTF-8";
+                        url = urlBuilder.build().apply(specId) + "?"
+                                + format(param, Controllers.NAME, URLEncoder.encode(specId, utf8))
+                                + format(param, Controllers.FORECAST_DATE, URLEncoder.encode(forecastDate.toString(), utf8))
+                                + format(param, Controllers.ISSUE_DATE, URLEncoder.encode(issueDate.toString(), utf8))
+                                + format(param, Controllers.OFFICE, URLEncoder.encode(officeId, utf8));
                     if(designator != null) {
                         url += format(param, Controllers.DESIGNATOR, URLEncoder.encode(designator, utf8));
                     }
-                } else {
-                    try (InputStream is = blob.getBinaryStream()) {
-                        fileData = BlobDao.readFully(is);
+                    } else {
+                        try (InputStream is = blob.getBinaryStream()) {
+                            fileData = BlobDao.readFully(is);
+                        }
+                    }
+                } finally {
+                    if (blob != null) {
+                        blob.free();
                     }
                 }
             }
@@ -326,9 +333,16 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                                 if (mediaType == null) {
                                     mediaType = "application/octet-stream";
                                 }
+
                                 Blob blob = (Blob) attributes[5];
-                                consumer.accept(blob, mediaType);
-                                return;
+                                try {
+                                    consumer.accept(blob, mediaType);
+                                    return;
+                                } finally {
+                                    if (blob != null) {
+                                        blob.free();
+                                    }
+                                }
                             }
                         }
                     }

@@ -99,8 +99,9 @@ public class TextTimeSeriesValueController implements Handler {
                 } else {
                     long size = clob.length();
                     requestResultSize.update(size);
-                    InputStream is = clob.getAsciiStream();
-                    ctx.seekableStream(is, TEXT_PLAIN, size);
+                    try(InputStream is = clob.getAsciiStream()){
+                        RangeRequestUtil.seekableStream(ctx, is, TEXT_PLAIN, size);
+                    }
                 }
             });
         }

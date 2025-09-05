@@ -26,6 +26,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.InputStream;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -175,7 +177,9 @@ public class ClobController implements CrudHandler {
                         ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                                 + "clob based on given parameters"));
                     } else {
-                        ctx.seekableStream(c.getAsciiStream(), TEXT_PLAIN, c.length());
+                        try (InputStream is = c.getAsciiStream()) {
+                            RangeRequestUtil.seekableStream(ctx, is, TEXT_PLAIN, c.length());
+                        }
                     }
                 });
             } else {
