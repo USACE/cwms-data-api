@@ -1,6 +1,8 @@
 package cwms.cda.data.dao;
 
 
+import com.codahale.metrics.Timer;
+import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.rsql.FieldResolver;
 import cwms.cda.data.dao.rsql.MapFieldResolver;
 import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
@@ -18,6 +20,8 @@ import static org.jooq.impl.DSL.noCondition;
 import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
+
+import org.jooq.Configuration;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
@@ -161,6 +165,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private static final FieldMapping AV_CWMS_TS_ID2_FIELD_MAP = new CwmsTsId2FieldMapping();
     private static final FieldMapping AV_CWMS_TS_ID_FIELD_MAP = new CwmsTsIdFieldMapping();
 
+    private final MetricRegistry metrics;
+
+    private Timer.Context markAndTime(String subject) {
+        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+    }
+
     public TimeSeriesDaoImpl(DSLContext dsl) {
         this(dsl, null);
     }
@@ -168,6 +178,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public TimeSeriesDaoImpl(DSLContext dsl, @Nullable MetricRegistry metrics) {
         super(dsl);
 
+        this.metrics = metrics;
         if (metrics != null) {
             CacheStats stats = isVersionedCache.stats();
             String hrName = MetricRegistry.name(this.getClass().getName(), VERSIONED_NAME, "hit-rate");
@@ -1429,23 +1440,24 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     @SuppressWarnings("unused")
     public void create(TimeSeries input,
                        boolean createAsLrts, StoreRule storeRule, boolean overrideProtection) {
-        connection(dsl, connection -> {
-            int intervalForward = 0;
-            int intervalBackward = 0;
-            boolean activeFlag = true;
-            // the code does not need to be created before hand.
-            // do not add a call to create_ts_code
-            if (!input.getValues().isEmpty()) {
-                Timestamp versionDate = null;
-                if (input.getVersionDate() != null) {
-                    versionDate = Timestamp.from(input.getVersionDate().toInstant());
-                }
 
-                store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
-                        versionDate, input.getValues(), createAsLrts, storeRule,
-                        overrideProtection);
+        final ZTSV_ARRAY tsvArray = buildZtsv(input.getValues()); // Do this before we get the connection
+
+        int intervalForward = 0;
+        int intervalBackward = 0;
+        boolean activeFlag = true;
+        // the code does not need to be created before hand.
+        // do not add a call to create_ts_code
+        if (!input.getValues().isEmpty()) {
+            final Timestamp versionDate;
+            if (input.getVersionDate() != null) {
+                versionDate = Timestamp.from(input.getVersionDate().toInstant());
+            } else {
+                versionDate = null;
             }
-        });
+            connection(dsl, connection -> store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
+                    versionDate, tsvArray, createAsLrts, storeRule, overrideProtection));
+        }
     }
 
     @Override
@@ -1454,38 +1466,29 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     public void store(TimeSeries input, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection) {
-        connection(dsl, connection -> {
-            Timestamp versionDate = null;
-            if (input.getVersionDate() != null) {
-                versionDate = Timestamp.from(input.getVersionDate().toInstant());
-            }
+        final ZTSV_ARRAY tsvArray = buildZtsv(input.getValues());
+        try(Timer.Context ignored = markAndTime("store")) {
+            connection(dsl, connection -> {
+                Timestamp versionDate = null;
+                if (input.getVersionDate() != null) {
+                    versionDate = Timestamp.from(input.getVersionDate().toInstant());
+                }
 
-            store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
-                    versionDate, input.getValues(), createAsLrts, replaceAll, overrideProtection);
-        });
+                store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
+                        versionDate, tsvArray, createAsLrts, replaceAll, overrideProtection);
+            });
+        }
     }
 
     private void store(Connection connection, String officeId, String tsId, String units,
-                       Timestamp versionDate, List<TimeSeries.Record> values, boolean createAsLrts,
-                       StoreRule storeRule, boolean overrideProtection) throws SQLException {
-        setOffice(connection,officeId);
+                       Timestamp versionDate, ZTSV_ARRAY tsvArray, boolean createAsLrts,
+                       StoreRule storeRule, boolean overrideProtection) {
 
-        final ZTSV_ARRAY tsvArray = new ZTSV_ARRAY();
 
-        if (values != null && !values.isEmpty()) {
-			for (TimeSeries.Record value : values) {
-				Double dataValue = value.getValue();
-				if (dataValue != null && dataValue == -Float.MAX_VALUE) {
-					dataValue = null;
-				}
-				tsvArray.add(new ZTSV_TYPE(value.getDateTime(), dataValue, BigDecimal.valueOf(value.getQualityCode())));
-			}
-        }
-
+        Configuration jooqConfig = getDslContext(connection, officeId).configuration();  // this does set_session_office_id
         if (versionDate != null) {
             try {
-                CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(getDslContext(connection, officeId).configuration(),
-                        tsId, "T", officeId);
+                CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(jooqConfig,  tsId, "T", officeId);
             } catch (DataAccessException e) {
                 if (e.getCause() instanceof SQLException) {
                     SQLException cause = (SQLException)e.getCause();
@@ -1500,7 +1503,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 }
             }
         }
-        CWMS_TS_PACKAGE.call_ZSTORE_TS(getDslContext(connection, officeId).configuration(),
+        CWMS_TS_PACKAGE.call_ZSTORE_TS(jooqConfig,
                                       tsId,
                                       units,
                                       tsvArray,
@@ -1509,6 +1512,26 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                       versionDate,
                                       officeId,
                                       formatBool(createAsLrts));
+
+    }
+
+    @NotNull
+    private ZTSV_ARRAY buildZtsv(List<TimeSeries.Record> values) {
+        try (Timer.Context ignored = markAndTime("buildZtsv")) {
+            final ZTSV_ARRAY tsvArray = new ZTSV_ARRAY();
+
+            if (values != null && !values.isEmpty()) {
+                for (TimeSeries.Record value : values) {
+                    Double dataValue = value.getValue();
+                    if (dataValue != null && dataValue == -Float.MAX_VALUE) {
+                        dataValue = null;
+                    }
+                    tsvArray.add(new ZTSV_TYPE(value.getDateTime(), dataValue, BigDecimal.valueOf(value.getQualityCode())));
+                }
+            }
+
+            return tsvArray;
+        }
     }
 
     public void update(TimeSeries input, boolean createAsLrts, StoreRule storeRule,
@@ -1518,10 +1541,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             throw new SQLException("Cannot update a non-existant Timeseries. Create " + name + " "
                     + "first.");
         }
+
+        final ZTSV_ARRAY tsvArray = buildZtsv(input.getValues());
+
         connection(dsl, connection -> {
             setOffice(connection,input.getOfficeId());
             store(connection, input.getOfficeId(), name, input.getUnits(), versionDate,
-                    input.getValues(), createAsLrts, storeRule, overrideProtection);
+                    tsvArray, createAsLrts, storeRule, overrideProtection);
         });
     }
 

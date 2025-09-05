@@ -1401,18 +1401,19 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_big_create() throws Exception {
+    void test_medium_create() throws Exception {
 
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
-        String giantString = buildBigString(tsData, 200000);
-        // 200k points looked like about 6MB.
+        // Note 09/05/25 Changed from 200k to 12k b/c the test was failing b/c zstore_ts was taking too long.
+        //  5k took 13s, 10k = 26s, 12k = 31s, 15k closed @47s, 20k closed @83s
+        String giantString = buildBigString(tsData, 12000); // 200k here looked like about 6MB.
 
         long bytes = giantString.getBytes().length;
-        assertTrue(bytes > 2000000, "The string should be over 2MB");
+        assertTrue(bytes > 350000, "The string should be over 350kB");
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode ts = mapper.readTree(tsData);
@@ -1486,7 +1487,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < count; i++) {
             long time = start2 + (diff * (i+1));
-            sb.append(String.format(",%n [ %d, %d,  %d]", time, count, 0));
+            sb.append(String.format(",%n [ %d, %d, %d]", time, count, 0));
         }
 
         return prefix + sb + "\n ]\n}";

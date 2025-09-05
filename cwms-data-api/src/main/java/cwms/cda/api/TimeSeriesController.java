@@ -163,10 +163,10 @@ public class TimeSeriesController implements CrudHandler {
                 .getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
         try (final Timer.Context ignored = markAndTime(CREATE)) {
-            DSLContext dsl = getDslContext(ctx);
+            TimeSeries timeSeries = deserializeTimeSeries(ctx);  // 448ms for 10,000pts
 
+            DSLContext dsl = getDslContext(ctx);
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
-            TimeSeries timeSeries = deserializeTimeSeries(ctx);
             dao.create(timeSeries, createAsLrts, storeRule, overrideProtection);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
@@ -582,7 +582,7 @@ public class TimeSeriesController implements CrudHandler {
         IOUtils.copy(ctx.bodyAsInputStream(), writer, StandardCharsets.UTF_8);
         if (writer.toString().contains("data-entry-date")) {
             throw new IllegalArgumentException("Data entry date is not allowed in the request");
-        }
+                    }
         ContentType contentType = Formats.parseHeader(contentTypeHeader, TimeSeries.class);
         return Formats.parseContent(contentType, writer.toString(), TimeSeries.class);
     }
