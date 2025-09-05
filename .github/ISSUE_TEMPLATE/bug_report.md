@@ -1,8 +1,8 @@
 ---
-name: Bug report
+name: CDA Bug report
 about: Create a report to help us improve
 title: ''
-labels: 'bug, priority:medium, Security, documentation, enhancement, blob, catalog, clobs, ratings, timeseries, web-ui'
+labels: 'bug'
 assignees: '@CWMS Developers'
 
 ---

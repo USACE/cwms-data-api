@@ -23,13 +23,25 @@ jobs:
       thewar: ${{steps.thebuild.outputs.WARFILE}}
     steps:
       - name: checkout code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
       - name: setup java
         uses: actions/setup-java@v4.7.1
         with:
           distribution: 'temurin'
           java-version: ${{matrix.jdk}}
           cache: 'gradle'
+      - name: install node for cda-gui audit
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: cda-gui/package-lock.json
+
+      - name: run cda-gui audit for high CVE
+        working-directory: ./cda-gui
+        run: |
+          npm install --package-lock-only
+          npm audit --audit-level=high
       - name: build and test
         id: thebuild
         run: ./gradlew build --info --init-script init.gradle
@@ -46,14 +58,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
       - name: Build docker image
         run: docker build -t cda:build-latest .
   build-schema-migration-image:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
       - name: Build Migration image
         uses: ./.github/actions/database-migration-image
         with:
