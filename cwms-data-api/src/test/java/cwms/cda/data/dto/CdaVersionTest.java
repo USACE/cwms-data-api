@@ -32,6 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
@@ -41,8 +43,12 @@ final class CdaVersionTest {
 
     @Test
     void testSerializeRoundTripVersion() {
+        Map<String, String> attrs = new HashMap<>();
+        attrs.put("build", "12345");
+        attrs.put("ts_data_entry_date_support", "true");
         CdaVersion version = new CdaVersion.Builder()
             .withVersion("1.0.0")
+            .withFeatures(attrs)
             .build();
 
         ContentType contentType = new ContentType(Formats.JSON);
@@ -51,12 +57,18 @@ final class CdaVersionTest {
         CdaVersion fromJson = Formats.parseContent(contentType, versionString, CdaVersion.class);
         assertEquals(version.getVersion(), fromJson.getVersion(),
             "The version after serialization and deserialization should match the original");
+        assertEquals(version.getFeatures(), fromJson.getFeatures(),
+            "The attributes after serialization and deserialization should match the original");
     }
 
     @Test
     void testDeserializeVersion() throws Exception {
+        Map<String, String> attrs = new HashMap<>();
+        attrs.put("build", "12345");
+        attrs.put("ts_data_entry_date_support", "false");
         CdaVersion version = new CdaVersion.Builder()
             .withVersion("1.0.0-new_feature_branch")
+            .withFeatures(attrs)
             .build();
 
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/cda_version.json");

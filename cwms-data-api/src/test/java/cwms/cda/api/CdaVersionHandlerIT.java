@@ -29,6 +29,7 @@ package cwms.cda.api;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isOneOf;
 import static org.hamcrest.Matchers.notNullValue;
 
 import cwms.cda.formatters.Formats;
@@ -58,7 +59,11 @@ final class CdaVersionHandlerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("version", notNullValue())
-            .body("version.length()", not(is("Not Yet Known")));
+            .body("version", not(is("Not Yet Known")))
+            .body("features", notNullValue())
+            .body("features.ts_data_entry_date_support", isOneOf("true", "false"))
+            .body("features.schema", notNullValue())
+        ;
     }
 
     @Test

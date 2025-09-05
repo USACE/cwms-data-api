@@ -28,10 +28,11 @@ package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.ApiServlet;
+import cwms.cda.data.dao.CdaVersionDao;
 import cwms.cda.data.dto.CdaVersion;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -43,6 +44,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
 
 public final class CdaVersionHandler implements Handler {
     static final String TAG = "Version";
@@ -69,9 +71,9 @@ public final class CdaVersionHandler implements Handler {
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
-            CdaVersion cdaVersion = new CdaVersion.Builder()
-                .withVersion(ApiServlet.getApiVersion())
-                .build();
+            DSLContext dsl = getDslContext(ctx);
+            CdaVersionDao dao = new CdaVersionDao(dsl);
+            CdaVersion cdaVersion = dao.getCdaVersion();
             String serialized = Formats.format(new ContentType(Formats.JSON), cdaVersion);
             ctx.result(serialized);
             ctx.contentType(Formats.JSON);

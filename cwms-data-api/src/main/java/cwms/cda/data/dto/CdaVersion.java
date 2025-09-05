@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonDeserialize(builder = CdaVersion.Builder.class)
@@ -43,19 +44,32 @@ public final class CdaVersion extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final String version;
 
+    private final Map<String, String> features;
+
     public CdaVersion(Builder builder) {
         this.version = builder.version;
+        this.features = builder.features;
     }
 
     public String getVersion() {
         return version;
     }
 
+    public Map<String, String> getFeatures() {
+        return features;
+    }
+
     public static class Builder {
         private String version;
+        private Map<String, String> features;
 
         public Builder withVersion(String version) {
             this.version = version;
+            return this;
+        }
+
+        public Builder withFeatures(Map<String, String> features) {
+            this.features = features;
             return this;
         }
 

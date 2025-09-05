@@ -1,3 +1,7 @@
 {
-  "version": "1.0.0-new_feature_branch"
+  "version": "1.0.0-new_feature_branch",
+  "features": {
+    "build": "12345",
+    "ts_data_entry_date_support": "false"
+  }
 }
