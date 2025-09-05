@@ -61,7 +61,7 @@ final class CdaVersionHandlerIT extends DataApiTestIT {
             .body("version", notNullValue())
             .body("version", not(is("Not Yet Known")))
             .body("features", notNullValue())
-            .body("features.ts_data_entry_date_support", isOneOf("true", "false"))
+            .body("features.ts.data_entry_date_support", isOneOf("true", "false"))
             .body("features.schema", notNullValue())
         ;
     }

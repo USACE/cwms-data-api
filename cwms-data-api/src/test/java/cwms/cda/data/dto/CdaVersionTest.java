@@ -43,9 +43,11 @@ final class CdaVersionTest {
 
     @Test
     void testSerializeRoundTripVersion() {
-        Map<String, String> attrs = new HashMap<>();
+        Map<String, Object> attrs = new HashMap<>();
         attrs.put("build", "12345");
-        attrs.put("ts_data_entry_date_support", "true");
+        Map<String, String> nestedTS = new HashMap<>();
+        nestedTS.put("data_entry_date_support", "true");
+        attrs.put("ts", nestedTS);
         CdaVersion version = new CdaVersion.Builder()
             .withVersion("1.0.0")
             .withFeatures(attrs)
@@ -63,9 +65,11 @@ final class CdaVersionTest {
 
     @Test
     void testDeserializeVersion() throws Exception {
-        Map<String, String> attrs = new HashMap<>();
+        Map<String, Object> attrs = new HashMap<>();
         attrs.put("build", "12345");
-        attrs.put("ts_data_entry_date_support", "false");
+        Map<String, String> nestedTS = new HashMap<>();
+        nestedTS.put("data_entry_date_support", "false");
+        attrs.put("ts", nestedTS);
         CdaVersion version = new CdaVersion.Builder()
             .withVersion("1.0.0-new_feature_branch")
             .withFeatures(attrs)

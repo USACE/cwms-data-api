@@ -44,7 +44,8 @@ public final class CdaVersion extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final String version;
 
-    private final Map<String, String> features;
+    // Feature objects can be either a String or a Map<String, String>
+    private final Map<String, Object> features;
 
     public CdaVersion(Builder builder) {
         this.version = builder.version;
@@ -55,20 +56,20 @@ public final class CdaVersion extends CwmsDTOBase {
         return version;
     }
 
-    public Map<String, String> getFeatures() {
+    public Map<String, Object> getFeatures() {
         return features;
     }
 
     public static class Builder {
         private String version;
-        private Map<String, String> features;
+        private Map<String, Object> features;
 
         public Builder withVersion(String version) {
             this.version = version;
             return this;
         }
 
-        public Builder withFeatures(Map<String, String> features) {
+        public Builder withFeatures(Map<String, Object> features) {
             this.features = features;
             return this;
         }

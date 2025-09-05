@@ -50,14 +50,14 @@ public final class CdaVersionDao extends JooqDao<CdaVersion> {
     public CdaVersion getCdaVersion() {
         return new CdaVersion.Builder()
                 .withVersion(ApiServlet.getApiVersion())
-                .withFeatures(buildAttributes())
+                .withFeatures(buildFeatures())
                 .build();
     }
 
-    private Map<String, String> buildAttributes() {
-        Map<String, String> attrs = new HashMap<>();
+    private Map<String, Object> buildFeatures() {
+        Map<String, Object> attrs = new HashMap<>();
         attrs.put("schema", Dao.getVersion(super.dsl));
-        attrs.put("ts_data_entry_date_support", hasTsDataEntryDateSupport());
+        attrs.put("ts", buildTsFeatures());
         // Add other feature attributes as needed
         return attrs;
     }
@@ -69,8 +69,15 @@ public final class CdaVersionDao extends JooqDao<CdaVersion> {
             tsDao.validateEntryDateSupport(true);
             supported = true;
         } catch (DataAccessException e) {
-            logger.log(Level.FINE, e.getMessage(), e);
+            logger.log(Level.FINEST, e.getMessage(), e);
         }
         return String.valueOf(supported);
+    }
+
+    private Map<String, String> buildTsFeatures() {
+        Map<String, String> tsAttrs = new HashMap<>();
+        tsAttrs.put("data_entry_date_support", hasTsDataEntryDateSupport());
+        // Add other time series specific feature attributes as needed
+        return tsAttrs;
     }
 }
