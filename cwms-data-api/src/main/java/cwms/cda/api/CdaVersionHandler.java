@@ -57,7 +57,7 @@ public final class CdaVersionHandler implements Handler {
     }
 
     @OpenApi(
-        description = "Determine the current active version of CWMS Data Access.",
+        description = "Determine the current active version of CWMS Data API.",
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
                 @OpenApiContent(type = Formats.JSON, from = CdaVersion.class)})
