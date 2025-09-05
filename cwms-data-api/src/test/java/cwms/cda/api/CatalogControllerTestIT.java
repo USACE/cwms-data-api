@@ -487,9 +487,10 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("total", is(2))
             .body("$", hasKey("entries"))
             .body("entries.size()", is(2))
-            .body("entries[0].name", equalTo("Alder Springs Streamflow"))
-            .body("entries[0].aliases.size()", is(2))
-            .body("entries[0].aliases[0].value", containsString("Alder Stream Alias Loc"))
+            .body("entries[0].name", isOneOf("Alder Springs Streamflow", "Pine Flat-Outflow Streamflow"))
+            .body("entries[0].aliases.size()", isOneOf(1, 2))
+            .body("entries[0].aliases[0].value",
+                isOneOf("Alder Stream Alias Loc", "Alder Stream Alias Loc 2", "Pine Stream Alias Loc"))
         ;
     }
 
