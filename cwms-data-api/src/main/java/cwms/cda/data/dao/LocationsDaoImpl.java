@@ -68,6 +68,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 import org.geojson.Point;
@@ -508,48 +509,48 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             .leftOuterJoin(table).on(fieldMapping.getLocationCode().eq(limitCode))
             .orderBy(orderFields);
         logger.log(Level.FINER, () -> query.getSQL(ParamType.INLINED));
-        List<? extends CatalogEntry> entries;
-        if (fieldMapping.includesAliases()) {
-            entries = query
-                .fetchSize(DEFAULT_FETCH_SIZE)
-                .fetchStream()
-                .map(r -> r.into(AV_LOC2.AV_LOC2))
-                .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2::getLOCATION_CODE))
-                .values()
-                .stream()
-                .map(l -> {
-                    usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 row = l.stream()
-                        .filter(r -> r.getALIASED_ITEM() == null)
-                        .findFirst()
-                        .orElseThrow(
-                            () -> new DataAccessException("Could not find location for list of aliases: " + l));
-                    Set<LocationAlias> aliases = new HashSet<>();
-                    if (params.includeAliases()) {
-                        aliases = l.stream().filter(r -> r.getALIASED_ITEM() != null)
-                            .map(this::buildLocationAlias).collect(toSet());
-                    }
-                    return buildCatalogEntry(row, aliases);
-                })
-                .collect(toList());
-        } else {
-            entries = query
-                .fetchSize(DEFAULT_FETCH_SIZE)
-                .fetchStream()
-                .map(r -> r.into(AV_LOC))
-                .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC::getLOCATION_CODE))
-                .values()
-                .stream()
-                .map(l -> {
-                    usace.cwms.db.jooq.codegen.tables.records.AV_LOC row = l.stream()
-                        .findFirst()
-                        .orElseThrow(() -> new DataAccessException("Could not find location: " + l));
-                    Set<LocationAlias> aliases = new HashSet<>();
-                    return buildCatalogEntry(row, aliases);
-                })
-                .collect(toList());
-        }
 
-        return new Catalog(cursorLocation, total, pageSize, entries, params);
+        try (Stream<Record> recordStream = query
+                .fetchSize(DEFAULT_FETCH_SIZE)
+                .fetchStream()) {
+            List<? extends CatalogEntry> entries = null;
+            if (fieldMapping.includesAliases()) {
+                recordStream
+                    .map(r -> r.into(AV_LOC2.AV_LOC2))
+                    .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2::getLOCATION_CODE))
+                    .values()
+                    .stream()
+                    .map(l -> {
+                        usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 row = l.stream()
+                            .filter(r -> r.getALIASED_ITEM() == null)
+                            .findFirst()
+                            .orElseThrow(
+                                () -> new DataAccessException("Could not find location for list of aliases: " + l));
+                        Set<LocationAlias> aliases = new HashSet<>();
+                        if (params.includeAliases()) {
+                            aliases = l.stream().filter(r -> r.getALIASED_ITEM() != null)
+                                .map(this::buildLocationAlias).collect(toSet());
+                        }
+                        return buildCatalogEntry(row, aliases);
+                    })
+                    .collect(toList());
+            } else {
+                recordStream
+                    .map(r -> r.into(AV_LOC))
+                    .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC::getLOCATION_CODE))
+                    .values()
+                    .stream()
+                    .map(l -> {
+                        usace.cwms.db.jooq.codegen.tables.records.AV_LOC row = l.stream()
+                            .findFirst()
+                            .orElseThrow(() -> new DataAccessException("Could not find location: " + l));
+                        Set<LocationAlias> aliases = new HashSet<>();
+                        return buildCatalogEntry(row, aliases);
+                    })
+                    .collect(toList());
+            }
+            return new Catalog(cursorLocation, total, pageSize, entries, params);
+        }
     }
 
     private static Condition buildWhereCondition(CatalogRequestParameters params) {
