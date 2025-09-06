@@ -41,7 +41,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 @Tag("integration")
-class TimeseriesControllerTestIT extends DataApiTestIT {
+final class TimeseriesControllerTestIT extends DataApiTestIT {
     public static final int MINIMUM_SCHEMA = 999999;
 
     @Test
@@ -118,7 +118,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/timeseries/local_regular_ts.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get(NAME).asText().split("\\.")[0];
@@ -265,6 +265,71 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("values.size()", equalTo(1))  // one point
+            .body("values[0].size()", equalTo(3))  // time, value, quality
+            .body("values[0][0]", equalTo(1675335600000L)) // time
+            .body("values[0][1]", closeTo(35, 0.0001))
+        ;
+
+    }
+
+    @Test
+    void test_lrl_1day_default() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+            "/cwms/cda/api/lrl/1day_offset.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        tsData = tsData.replace("Buckhorn.Temp-Water.Inst.1Day.0.cda-test", "Buckhorn.Temp-Water.Inst.1Day.0.cda-accept-test");
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get(NAME).asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.DEFAULT)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam(OFFICE,officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // get it back
+        String firstPoint = "2023-02-02T06:00:00-05:00"; //aka 2023-02-02T11:00:00.000Z or
+        // 1675335600000
+        given()
+            .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.DEFAULT)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT, "F")
+            .queryParam(NAME, ts.get(NAME).asText())
+            .queryParam(BEGIN, firstPoint)
+            .queryParam(END, firstPoint)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("values.size()", equalTo(1))  // one point
             .body("values[0].size()", equalTo(3))  // time, value, quality
@@ -539,7 +604,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/pseudo_reg_1week.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
@@ -601,7 +666,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/pseudo_reg_1week.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
@@ -1674,7 +1739,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get(NAME).asText().split("\\.")[0];
