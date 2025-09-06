@@ -87,7 +87,6 @@ import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
-import org.jooq.impl.TableImpl;
 import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
 import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
@@ -510,12 +509,12 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             .orderBy(orderFields);
         logger.log(Level.FINER, () -> query.getSQL(ParamType.INLINED));
 
-        try (Stream<Record> recordStream = query
+        try (Stream<Record> recordStream = (Stream<Record>) query
                 .fetchSize(DEFAULT_FETCH_SIZE)
                 .fetchStream()) {
-            List<? extends CatalogEntry> entries = null;
+            List<? extends CatalogEntry> entries = new ArrayList<>();
             if (fieldMapping.includesAliases()) {
-                recordStream
+                entries = recordStream
                     .map(r -> r.into(AV_LOC2.AV_LOC2))
                     .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2::getLOCATION_CODE))
                     .values()
@@ -535,7 +534,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                     })
                     .collect(toList());
             } else {
-                recordStream
+                entries = recordStream
                     .map(r -> r.into(AV_LOC))
                     .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC::getLOCATION_CODE))
                     .values()
@@ -820,7 +819,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         }
 
         @Override
-        public TableImpl getTable() {
+        public Table getTable() {
             return AV_LOC2.AV_LOC2;
         }
     }
@@ -887,7 +886,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         }
 
         @Override
-        public TableImpl getTable() {
+        public Table getTable() {
             return AV_LOC;
         }
     }
