@@ -103,7 +103,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         }
         else
         {
-            ret = Dao.versionAsInteger(tmp);
+            ret = Dao.versionAsInteger(tmp.replaceAll("-RC.*", "").replace("-","."));
         }
         return ret;
     }
