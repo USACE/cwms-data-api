@@ -512,42 +512,32 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         try (Stream<Record> recordStream = (Stream<Record>) query
                 .fetchSize(DEFAULT_FETCH_SIZE)
                 .fetchStream()) {
-            List<? extends CatalogEntry> entries = new ArrayList<>();
-            if (fieldMapping.includesAliases()) {
-                entries = recordStream
-                    .map(r -> r.into(AV_LOC2.AV_LOC2))
-                    .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2::getLOCATION_CODE))
-                    .values()
-                    .stream()
-                    .map(l -> {
-                        usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 row = l.stream()
-                            .filter(r -> r.getALIASED_ITEM() == null)
-                            .findFirst()
-                            .orElseThrow(
-                                () -> new DataAccessException("Could not find location for list of aliases: " + l));
-                        Set<LocationAlias> aliases = new HashSet<>();
-                        if (params.includeAliases()) {
-                            aliases = l.stream().filter(r -> r.getALIASED_ITEM() != null)
-                                .map(this::buildLocationAlias).collect(toSet());
-                        }
-                        return buildCatalogEntry(row, aliases);
-                    })
-                    .collect(toList());
-            } else {
-                entries = recordStream
-                    .map(r -> r.into(AV_LOC))
-                    .collect(groupingBy(usace.cwms.db.jooq.codegen.tables.records.AV_LOC::getLOCATION_CODE))
-                    .values()
-                    .stream()
-                    .map(l -> {
-                        usace.cwms.db.jooq.codegen.tables.records.AV_LOC row = l.stream()
-                            .findFirst()
-                            .orElseThrow(() -> new DataAccessException("Could not find location: " + l));
-                        Set<LocationAlias> aliases = new HashSet<>();
-                        return buildCatalogEntry(row, aliases);
-                    })
-                    .collect(toList());
-            }
+            final FieldMapping mapping = fieldMapping;
+            List<? extends CatalogEntry> entries =  recordStream
+                .map(r -> r.into(table))
+                .collect(groupingBy(row -> row.get(mapping.getLocationCode())))
+                .values()
+                .stream()
+                .map(l -> {
+                    Record row = l.stream()
+                        .filter(r -> {
+                            if (mapping.includesAliases()) {
+                                return r.get(mapping.getAliasedItem()) == null;
+                            } else {
+                                return true;
+                            }
+                        })
+                        .findFirst()
+                        .orElseThrow(
+                            () -> new DataAccessException("Could not find location for list of aliases: " + l));
+                    Set<LocationAlias> aliases = new HashSet<>();
+                    if (params.includeAliases()) {
+                        aliases = l.stream().filter(r -> r.get(mapping.getAliasedItem()) != null)
+                            .map(r -> buildLocationAlias(r, mapping)).collect(toSet());
+                    }
+                    return buildCatalogEntry(row, aliases, mapping);
+                })
+                .collect(toList());
             return new Catalog(cursorLocation, total, pageSize, entries, params);
         }
     }
@@ -573,8 +563,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         if (params.includeAliases()) {
             condition =
-                condition.and(caseInsensitiveLikeRegexNullTrue(fieldMapping.getGetAliasCategory(), categoryLike));
-            condition = condition.and(caseInsensitiveLikeRegexNullTrue(fieldMapping.getGetAliasGroup(), groupLike));
+                condition.and(caseInsensitiveLikeRegexNullTrue(fieldMapping.getAliasCategory(), categoryLike));
+            condition = condition.and(caseInsensitiveLikeRegexNullTrue(fieldMapping.getAliasGroup(), groupLike));
         }
 
         String office = params.getOffice();
@@ -624,77 +614,43 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         return pageParam;
     }
 
-    private LocationAlias buildLocationAlias(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 row) {
-        return new LocationAlias(row.getLOC_ALIAS_CATEGORY() + "-" + row.getLOC_ALIAS_GROUP(),
-            row.getLOCATION_ID());
+    private LocationAlias buildLocationAlias(Record row, FieldMapping mapping) {
+        return new LocationAlias(row.get(mapping.getAliasCategory()) + "-" + row.get(mapping.getAliasGroup()),
+            row.get(mapping.getLocationId()));
     }
 
     @NotNull
-    private static LocationCatalogEntry buildCatalogEntry(usace.cwms.db.jooq.codegen.tables.records.AV_LOC2 loc,
-                                                          Set<LocationAlias> aliases) {
+    private static LocationCatalogEntry buildCatalogEntry(Record loc,
+                                                          Set<LocationAlias> aliases, FieldMapping mapping) {
 
         return new LocationCatalogEntry.Builder()
-                .officeId(loc.getDB_OFFICE_ID())
-                .name(loc.getLOCATION_ID())
-                .nearestCity(loc.getNEAREST_CITY())
-                .publicName(loc.getPUBLIC_NAME())
-                .longName(loc.getLONG_NAME())
-                .description(loc.getDESCRIPTION())
-                .kind(loc.getLOCATION_KIND_ID())
-                .type(loc.getLOCATION_TYPE())
-                .timeZone(loc.getTIME_ZONE_NAME())
-                .latitude(loc.getLATITUDE() != null ? loc.getLATITUDE().doubleValue() : null)
-                .longitude(loc.getLONGITUDE() != null ? loc.getLONGITUDE().doubleValue() : null)
-                .publishedLatitude(loc.getPUBLISHED_LATITUDE() != null
-                    ? loc.getPUBLISHED_LATITUDE().doubleValue() : null)
-                .publishedLongitude(loc.getPUBLISHED_LONGITUDE() != null
-                    ? loc.getPUBLISHED_LONGITUDE().doubleValue() : null)
-                .horizontalDatum(loc.getHORIZONTAL_DATUM())
-                .elevation(loc.getELEVATION())
-                .unit(loc.getUNIT_ID())
-                .verticalDatum(loc.getVERTICAL_DATUM())
-                .nation(loc.getNATION_ID())
-                .state(loc.getSTATE_INITIAL())
-                .county(loc.getCOUNTY_NAME())
-                .boundingOffice(loc.getBOUNDING_OFFICE_ID())
-                .mapLabel(loc.getMAP_LABEL())
-                .active(loc.getACTIVE_FLAG().equalsIgnoreCase("T"))
+                .officeId(loc.get(mapping.getDbOfficeId()))
+                .name(loc.get(mapping.getLocationId()))
+                .nearestCity(loc.get(mapping.getNearestCity()))
+                .publicName(loc.get(mapping.getPublicName()))
+                .longName(loc.get(mapping.getLongName()))
+                .description(loc.get(mapping.getDescription()))
+                .kind(loc.get(mapping.getLocationKind()))
+                .type(loc.get(mapping.getLocationType()))
+                .timeZone(loc.get(mapping.getTimeZoneName()))
+                .latitude(loc.get(mapping.getLatitude()) != null ? loc.get(mapping.getLatitude()).doubleValue() : null)
+                .longitude(loc.get(mapping.getLongitude()) != null ? loc.get(mapping.getLongitude()).doubleValue() : null)
+                .publishedLatitude(loc.get(mapping.getPublishedLatitude()) != null
+                    ? loc.get(mapping.getPublishedLatitude()).doubleValue() : null)
+                .publishedLongitude(loc.get(mapping.getPublishedLongitude()) != null
+                    ? loc.get(mapping.getPublishedLongitude()).doubleValue() : null)
+                .horizontalDatum(loc.get(mapping.getHorizontalDatum()))
+                .elevation(loc.get(mapping.getElevation()))
+                .unit(loc.get(mapping.getUnit()))
+                .verticalDatum(loc.get(mapping.getVerticalDatum()))
+                .nation(loc.get(mapping.getNation()))
+                .state(loc.get(mapping.getStateInitial()))
+                .county(loc.get(mapping.getCountyName()))
+                .boundingOffice(loc.get(mapping.getBoundingOfficeId()))
+                .mapLabel(loc.get(mapping.getMapLabel()))
+                .active(loc.get(mapping.getActiveFlag()).equalsIgnoreCase("T"))
                 .aliases(aliases)
                 .build();
-    }
-
-    @NotNull
-    private static LocationCatalogEntry buildCatalogEntry(usace.cwms.db.jooq.codegen.tables.records.AV_LOC loc,
-        Set<LocationAlias> aliases) {
-
-        return new LocationCatalogEntry.Builder()
-            .officeId(loc.getDB_OFFICE_ID())
-            .name(loc.getLOCATION_ID())
-            .nearestCity(loc.getNEAREST_CITY())
-            .publicName(loc.getPUBLIC_NAME())
-            .longName(loc.getLONG_NAME())
-            .description(loc.getDESCRIPTION())
-            .kind(loc.getLOCATION_KIND_ID())
-            .type(loc.getLOCATION_TYPE())
-            .timeZone(loc.getTIME_ZONE_NAME())
-            .latitude(loc.getLATITUDE() != null ? loc.getLATITUDE().doubleValue() : null)
-            .longitude(loc.getLONGITUDE() != null ? loc.getLONGITUDE().doubleValue() : null)
-            .publishedLatitude(loc.getPUBLISHED_LATITUDE() != null
-                ? loc.getPUBLISHED_LATITUDE().doubleValue() : null)
-            .publishedLongitude(loc.getPUBLISHED_LONGITUDE() != null
-                ? loc.getPUBLISHED_LONGITUDE().doubleValue() : null)
-            .horizontalDatum(loc.getHORIZONTAL_DATUM())
-            .elevation(loc.getELEVATION())
-            .unit(loc.getUNIT_ID())
-            .verticalDatum(loc.getVERTICAL_DATUM())
-            .nation(loc.getNATION_ID())
-            .state(loc.getSTATE_INITIAL())
-            .county(loc.getCOUNTY_NAME())
-            .boundingOffice(loc.getBOUNDING_OFFICE_ID())
-            .mapLabel(loc.getMAP_LABEL())
-            .active(loc.getACTIVE_FLAG().equalsIgnoreCase("T"))
-            .aliases(aliases)
-            .build();
     }
 
     private static LOCATION_OBJ_T getLocationObj(Location location) {
@@ -746,11 +702,47 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         Field<String> getBoundingOfficeId();
 
-        Field<String> getGetAliasGroup();
+        Field<String> getAliasGroup();
 
-        Field<String> getGetAliasCategory();
+        Field<String> getAliasCategory();
 
         Field<String> getSubLocationId();
+
+        Field<String> getNearestCity();
+
+        Field<String> getPublicName();
+
+        Field<String> getLongName();
+
+        Field<String> getDescription();
+
+        Field<String> getTimeZoneName();
+
+        Field<BigDecimal> getLatitude();
+
+        Field<BigDecimal> getLongitude();
+
+        Field<BigDecimal> getPublishedLatitude();
+
+        Field<BigDecimal> getPublishedLongitude();
+
+        Field<String> getHorizontalDatum();
+
+        Field<Double> getElevation();
+
+        Field<String> getUnit();
+
+        Field<String> getVerticalDatum();
+
+        Field<String> getStateInitial();
+
+        Field<String> getCountyName();
+
+        Field<String> getActiveFlag();
+
+        Field<String> getMapLabel();
+
+        Field<String> getNation();
 
         boolean includesAliases();
 
@@ -799,18 +791,108 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         }
 
         @Override
-        public Field<String> getGetAliasGroup() {
+        public Field<String> getAliasGroup() {
             return AV_LOC2.AV_LOC2.LOC_ALIAS_GROUP;
         }
 
         @Override
-        public Field<String> getGetAliasCategory() {
+        public Field<String> getAliasCategory() {
             return AV_LOC2.AV_LOC2.LOC_ALIAS_CATEGORY;
         }
 
         @Override
         public Field<String> getSubLocationId() {
             return AV_LOC2.AV_LOC2.SUB_LOCATION_ID;
+        }
+
+        @Override
+        public Field<String> getNearestCity() {
+            return AV_LOC2.AV_LOC2.NEAREST_CITY;
+        }
+
+        @Override
+        public Field<String> getPublicName() {
+            return AV_LOC2.AV_LOC2.PUBLIC_NAME;
+        }
+
+        @Override
+        public Field<String> getLongName() {
+            return AV_LOC2.AV_LOC2.LONG_NAME;
+        }
+
+        @Override
+        public Field<String> getDescription() {
+            return AV_LOC2.AV_LOC2.DESCRIPTION;
+        }
+
+        @Override
+        public Field<String> getTimeZoneName() {
+            return AV_LOC2.AV_LOC2.TIME_ZONE_NAME;
+        }
+
+        @Override
+        public Field<BigDecimal> getLatitude() {
+            return AV_LOC2.AV_LOC2.LATITUDE;
+        }
+
+        @Override
+        public Field<BigDecimal> getLongitude() {
+            return AV_LOC2.AV_LOC2.LONGITUDE;
+        }
+
+        @Override
+        public Field<BigDecimal> getPublishedLatitude() {
+            return AV_LOC2.AV_LOC2.PUBLISHED_LATITUDE;
+        }
+
+        @Override
+        public Field<BigDecimal> getPublishedLongitude() {
+            return AV_LOC2.AV_LOC2.PUBLISHED_LONGITUDE;
+        }
+
+        @Override
+        public Field<String> getHorizontalDatum() {
+            return AV_LOC2.AV_LOC2.HORIZONTAL_DATUM;
+        }
+
+        @Override
+        public Field<Double> getElevation() {
+            return AV_LOC2.AV_LOC2.ELEVATION;
+        }
+
+        @Override
+        public Field<String> getUnit() {
+            return AV_LOC2.AV_LOC2.UNIT_ID;
+        }
+
+        @Override
+        public Field<String> getVerticalDatum() {
+            return AV_LOC2.AV_LOC2.VERTICAL_DATUM;
+        }
+
+        @Override
+        public Field<String> getStateInitial() {
+            return AV_LOC2.AV_LOC2.STATE_INITIAL;
+        }
+
+        @Override
+        public Field<String> getCountyName() {
+            return AV_LOC2.AV_LOC2.COUNTY_NAME;
+        }
+
+        @Override
+        public Field<String> getActiveFlag() {
+            return AV_LOC2.AV_LOC2.ACTIVE_FLAG;
+        }
+
+        @Override
+        public Field<String> getMapLabel() {
+            return AV_LOC2.AV_LOC2.MAP_LABEL;
+        }
+
+        @Override
+        public Field<String> getNation() {
+            return AV_LOC2.AV_LOC2.NATION_ID;
         }
 
         @Override
@@ -866,18 +948,108 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         }
 
         @Override
-        public Field<String> getGetAliasGroup() {
+        public Field<String> getAliasGroup() {
             return null;
         }
 
         @Override
-        public Field<String> getGetAliasCategory() {
+        public Field<String> getAliasCategory() {
             return null;
         }
 
         @Override
         public Field<String> getSubLocationId() {
             return null;
+        }
+
+        @Override
+        public Field<String> getNearestCity() {
+            return AV_LOC.NEAREST_CITY;
+        }
+
+        @Override
+        public Field<String> getPublicName() {
+            return AV_LOC.PUBLIC_NAME;
+        }
+
+        @Override
+        public Field<String> getLongName() {
+            return AV_LOC.LONG_NAME;
+        }
+
+        @Override
+        public Field<String> getDescription() {
+            return AV_LOC.DESCRIPTION;
+        }
+
+        @Override
+        public Field<String> getTimeZoneName() {
+            return AV_LOC.TIME_ZONE_NAME;
+        }
+
+        @Override
+        public Field<BigDecimal> getLatitude() {
+            return AV_LOC.LATITUDE;
+        }
+
+        @Override
+        public Field<BigDecimal> getLongitude() {
+            return AV_LOC.LONGITUDE;
+        }
+
+        @Override
+        public Field<BigDecimal> getPublishedLatitude() {
+            return AV_LOC.PUBLISHED_LATITUDE;
+        }
+
+        @Override
+        public Field<BigDecimal> getPublishedLongitude() {
+            return AV_LOC.PUBLISHED_LONGITUDE;
+        }
+
+        @Override
+        public Field<String> getHorizontalDatum() {
+            return AV_LOC.HORIZONTAL_DATUM;
+        }
+
+        @Override
+        public Field<Double> getElevation() {
+            return AV_LOC.ELEVATION;
+        }
+
+        @Override
+        public Field<String> getUnit() {
+            return AV_LOC.UNIT_ID;
+        }
+
+        @Override
+        public Field<String> getVerticalDatum() {
+            return AV_LOC.VERTICAL_DATUM;
+        }
+
+        @Override
+        public Field<String> getStateInitial() {
+            return AV_LOC.STATE_INITIAL;
+        }
+
+        @Override
+        public Field<String> getCountyName() {
+            return AV_LOC.COUNTY_NAME;
+        }
+
+        @Override
+        public Field<String> getActiveFlag() {
+            return AV_LOC.ACTIVE_FLAG;
+        }
+
+        @Override
+        public Field<String> getMapLabel() {
+            return AV_LOC.MAP_LABEL;
+        }
+
+        @Override
+        public Field<String> getNation() {
+            return AV_LOC.NATION_ID;
         }
 
         @Override
