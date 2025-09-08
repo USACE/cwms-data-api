@@ -27,13 +27,16 @@ package cwms.cda.data.dao;
 import static java.util.stream.Collectors.toList;
 import static mil.army.usace.hec.metadata.IntervalFactory.equalsName;
 import static mil.army.usace.hec.metadata.IntervalFactory.isRegular;
+import static org.jooq.impl.DSL.asterisk;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL.AV_LOCATION_LEVEL;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
 import static usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL.AV_VIRTUAL_LOCATION_LEVEL;
 
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
+import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevels;
@@ -65,10 +68,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-
 import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
 import cwms.cda.data.dto.locationlevel.VirtualLocationLevel;
 import cwms.cda.formatters.UnsupportedFormatException;
@@ -80,13 +83,13 @@ import org.jooq.Condition;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Record;
+import org.jooq.Result;
 import org.jooq.SelectLimitPercentAfterOffsetStep;
 import org.jooq.TableField;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.jooq.types.DayToSecond;
-
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
@@ -110,10 +113,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             Pattern.compile(LOCATION_LEVEL_ID_PARSING_REGEXP);
 
     private static final Collection<TableField<?,?>> LOCATION_LEVEL_FIELDS = new LinkedHashSet<>();
+    private static final Collection<TableField<?,?>> LOCATION_ALIAS_FIELDS = new LinkedHashSet<>();
 
     static {
         usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL virtView = AV_VIRTUAL_LOCATION_LEVEL;
         usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
+        usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS aliasView = AV_LOC_ALIAS;
         LOCATION_LEVEL_FIELDS.add(virtView.OFFICE_ID);
         LOCATION_LEVEL_FIELDS.add(virtView.LOCATION_LEVEL_ID);
         LOCATION_LEVEL_FIELDS.add(virtView.ATTRIBUTE_ID);
@@ -144,6 +149,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         LOCATION_LEVEL_FIELDS.add(view.TIME_INTERVAL);
         LOCATION_LEVEL_FIELDS.add(view.CALENDAR_OFFSET);
         LOCATION_LEVEL_FIELDS.add(view.TIME_OFFSET);
+
+        LOCATION_ALIAS_FIELDS.addAll(LOCATION_LEVEL_FIELDS);
+        LOCATION_ALIAS_FIELDS.add(aliasView.LOCATION_ID);
+        LOCATION_ALIAS_FIELDS.add(aliasView.ALIAS_ID);
+        LOCATION_ALIAS_FIELDS.add(aliasView.LOCATION_CODE);
+        LOCATION_ALIAS_FIELDS.add(aliasView.DB_OFFICE_ID);
     }
 
     public LocationLevelsDaoImpl(DSLContext dsl) {
@@ -162,7 +173,8 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     @Override
     public LocationLevels getLocationLevels(String cursor, int pageSize,
                                             String levelIdMask, String office, @NotNull String unit,
-                                            String datum, ZonedDateTime beginZdt, ZonedDateTime endZdt) {
+                                            String datum, ZonedDateTime beginZdt,
+                                            ZonedDateTime endZdt, boolean includeAliases) {
         Integer total = null;
         int offset = 0;
         boolean totalSet = false;
@@ -186,6 +198,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
         usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL virtView = AV_VIRTUAL_LOCATION_LEVEL;
+        usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS aliasView = AV_LOC_ALIAS;
 
         Condition whereCondition = (DSL.upper(view.UNIT_SYSTEM).eq(unit.toUpperCase()))
                 .or(virtView.LOCATION_LEVEL_ID.isNotNull());
@@ -211,18 +224,41 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         Map<LevelLookup, LocationLevel.Builder> builderMap = new LinkedHashMap<>();
 
-        SelectLimitPercentAfterOffsetStep<Record> query = dsl.selectDistinct(LOCATION_LEVEL_FIELDS)
+        SelectLimitPercentAfterOffsetStep<Record> query;
+
+        if (includeAliases) {
+            query = dsl.selectDistinct(LOCATION_ALIAS_FIELDS)
+                .from(dsl
+                    .select(asterisk())
+                    .from(view)
+                    .join(aliasView)
+                    .on(view.OFFICE_ID.eq(aliasView.DB_OFFICE_ID))
+                    .and(view.LOCATION_ID.eq(aliasView.LOCATION_ID))
+                    .and(view.LOCATION_CODE.eq(aliasView.LOCATION_CODE.cast(Long.class))))
+                .fullOuterJoin(virtView)
+                .on(view.LOCATION_LEVEL_CODE.eq(virtView.LOCATION_LEVEL_CODE))
+                .where(whereCondition)
+                .orderBy(DSL.upper(view.OFFICE_ID), DSL.upper(view.LOCATION_LEVEL_ID),
+                    view.LEVEL_DATE, view.CALENDAR_OFFSET, DSL.upper(virtView.OFFICE_ID),
+                    DSL.upper(virtView.LOCATION_LEVEL_ID),
+                    virtView.EFFECTIVE_DATE_UTC
+                )
+                .offset(offset)
+                .limit(pageSize);
+        } else {
+            query = dsl.selectDistinct(LOCATION_LEVEL_FIELDS)
                 .from(view)
                 .fullOuterJoin(virtView)
                 .on(view.LOCATION_LEVEL_CODE.eq(virtView.LOCATION_LEVEL_CODE))
                 .where(whereCondition)
                 .orderBy(DSL.upper(view.OFFICE_ID), DSL.upper(view.LOCATION_LEVEL_ID),
-                        view.LEVEL_DATE, view.CALENDAR_OFFSET, DSL.upper(virtView.OFFICE_ID),
-                        DSL.upper(virtView.LOCATION_LEVEL_ID),
-                        virtView.EFFECTIVE_DATE_UTC
+                    view.LEVEL_DATE, view.CALENDAR_OFFSET, DSL.upper(virtView.OFFICE_ID),
+                    DSL.upper(virtView.LOCATION_LEVEL_ID),
+                    virtView.EFFECTIVE_DATE_UTC
                 )
                 .offset(offset)
                 .limit(pageSize);
+        }
 
         if (!totalSet) {
             total = dsl.selectDistinct(LOCATION_LEVEL_FIELDS)
@@ -241,7 +277,17 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         logger.fine(() -> "getLocationLevels query: " + queryFinal.getSQL(ParamType.INLINED));
 
-        query.stream().forEach(r -> parseLevels(r, builderMap, unit));
+        if (includeAliases) {
+            Result<?> result = query.fetch();
+            Map<String, LocationLevel.Builder> aliasBuilderMap = new LinkedHashMap<>();
+            Map<String, Set<LocationAlias>> aliasMap = new LinkedHashMap<>();
+            Map<String, String> levelIdToCodeMap = new LinkedHashMap<>();
+            result.stream().forEach(row -> {
+
+            });
+        } else {
+            query.stream().forEach(r -> parseLevels(r, builderMap, unit));
+        }
 
         List<LocationLevel> levels = new java.util.ArrayList<>();
         for (LocationLevel.Builder builder : builderMap.values()) {

@@ -66,7 +66,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -74,7 +73,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -120,7 +118,8 @@ public class LevelsController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.storeLocationLevel(level);
-            StatusResponse re = new StatusResponse(level.getOfficeId(),"Created Location Level", level.getLocationLevelId());
+            StatusResponse re = new StatusResponse(level.getOfficeId(),
+                "Created Location Level", level.getLocationLevelId());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to parse the request body", e);
@@ -238,6 +237,9 @@ public class LevelsController implements CrudHandler {
                         + "\n* `xml`"
                         + "\n* `wml2` (only if name field is specified)"
                         + "\n* `json` (default)"),
+                @OpenApiParam(name = INCLUDE_ALIASES, description = "Whether to include the "
+                        + "aliases for the location levels in the response. The default is false.",
+                        type = Boolean.class),
                 @OpenApiParam(name = PAGE, description = "This identifies where in the "
                         + "request you are. This is an opaque value, and can be obtained from "
                         + "the 'next-page' value in the response."),
@@ -265,6 +267,8 @@ public class LevelsController implements CrudHandler {
 
             String office = ctx.queryParam(OFFICE);
             String unit = ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.SI.getValue());
+            boolean includeAliases = ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class)
+                    .getOrDefault(false);
             if (!unit.equalsIgnoreCase(UnitSystem.SI.getValue()) && !unit.equalsIgnoreCase(UnitSystem.EN.getValue())) {
                 throw new IllegalArgumentException(String.format("Provided unit system is not supported: %s", unit));
             }
@@ -294,7 +298,7 @@ public class LevelsController implements CrudHandler {
 
                 LocationLevels levels;
                 levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
-                        office, unit, datum, beginZdt, endZdt);
+                        office, unit, datum, beginZdt, endZdt, includeAliases);
                 String result = Formats.format(contentType, levels);
 
                 ctx.result(result);
@@ -332,7 +336,7 @@ public class LevelsController implements CrudHandler {
                 @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
                         + "the effective date of Location Level to be returned."
                         + "Expected formats are `YYYY-MM-DDTHH:MM` or `YYYY-MM-DDTHH:MM:SS`"),
-                @OpenApiParam(name= EFFECTIVE_DATE_EXACT, required = false, description = "If true"
+                @OpenApiParam(name = EFFECTIVE_DATE_EXACT, required = false, description = "If true"
                         + " only a level with the exact provided date will be returned. If false"
                         + " The most recent level on or before this time will be returned."
                         + " The default is false.",
