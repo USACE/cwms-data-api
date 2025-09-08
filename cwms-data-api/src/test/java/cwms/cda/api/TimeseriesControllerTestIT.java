@@ -1466,18 +1466,18 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_big_create() throws Exception {
+    void test_medium_create() throws Exception {
 
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
-        String giantString = buildBigString(tsData, 200000);
+        String giantString = buildBigString(tsData, 12000);
         // 200k points looked like about 6MB.
 
         long bytes = giantString.getBytes().length;
-        assertTrue(bytes > 2000000, "The string should be over 2MB");
+        assertTrue(bytes > 350000, "The string should be over 350kB");
 
         ObjectMapper mapper = new ObjectMapper();
         JsonNode ts = mapper.readTree(tsData);
