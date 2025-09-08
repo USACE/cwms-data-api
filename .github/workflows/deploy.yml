@@ -27,7 +27,7 @@ jobs:
       contents: read # This is required for actions/checkout
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-region: ${{ inputs.region }}
           role-to-assume: ${{ inputs.iam_role }}
