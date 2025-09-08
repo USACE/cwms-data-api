@@ -1473,6 +1473,8 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
+        // Note 09/08/25 Changed from 200k to 12k b/c the test was failing b/c zstore_ts was taking too long.
+        //  5k took 13s, 10k = 26s, 12k = 31s, 15k closed @47s, 20k closed @83s
         String giantString = buildBigString(tsData, 12000);
         // 200k points looked like about 6MB.
 
