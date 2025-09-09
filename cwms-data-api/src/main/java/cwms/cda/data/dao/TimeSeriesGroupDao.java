@@ -37,7 +37,14 @@ import java.util.Map;
 import java.util.logging.Logger;
 import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
-import org.jooq.*;
+import org.jooq.Condition;
+import org.jooq.Configuration;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.Record8;
+import org.jooq.RecordMapper;
+import org.jooq.SelectConditionStep;
+import org.jooq.SelectSeekStep1;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
@@ -183,7 +190,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         return query.fetch((RecordMapper<Record, TimeSeriesGroup>) this::buildTimeSeriesGroup);
     }
 
-    private AssignedTimeSeries buildAssignedTimeSeries(Record queryRecord) {
+    private AssignedTimeSeries buildAssignedTimeSeries(org.jooq.Record queryRecord) {
         AssignedTimeSeries retval = null;
 
         String officeId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID);
@@ -205,7 +212,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         return retval;
     }
 
-    private TimeSeriesGroup buildTimeSeriesGroup(Record queryRecord) {
+    private TimeSeriesGroup buildTimeSeriesGroup(org.jooq.Record queryRecord) {
         TimeSeriesCategory cat = buildTimeSeriesCategory(queryRecord);
 
         String grpOfficeId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID);
@@ -218,7 +225,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     @NotNull
-    private TimeSeriesCategory buildTimeSeriesCategory(Record queryRecord) {
+    private TimeSeriesCategory buildTimeSeriesCategory(org.jooq.Record queryRecord) {
         String catOfficeId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.CAT_DB_OFFICE_ID);
         String catId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID);
         String catDesc = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_DESC);

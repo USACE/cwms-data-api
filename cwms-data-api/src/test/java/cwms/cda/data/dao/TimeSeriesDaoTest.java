@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.codahale.metrics.MetricRegistry;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import org.jooq.impl.DSL;
@@ -119,7 +120,7 @@ public class TimeSeriesDaoTest
 		try(Connection connection = getConnection())
 		{
 			DSLContext lrl = getDslContext(connection, officeId);
-			TimeSeriesDao dao = new TimeSeriesDaoImpl(lrl);
+			TimeSeriesDao dao = new TimeSeriesDaoImpl(lrl, new MetricRegistry());
 
 			//			String tsId858 = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST858";
 			//			BigDecimal tsCode = retrieveTsCode(connection, tsId858);
@@ -149,7 +150,7 @@ public class TimeSeriesDaoTest
 		try(Connection connection = getConnection())
 		{
 			DSLContext lrl = getDslContext(connection, officeId);
-			TimeSeriesDao dao = new TimeSeriesDaoImpl(lrl);
+			TimeSeriesDao dao = new TimeSeriesDaoImpl(lrl, new MetricRegistry());
 
 			String tsId = TIME_SERIES_ID;
 			// Do I need to somehow check whether the location exists?  Its not going to exist if I add the millis to it...

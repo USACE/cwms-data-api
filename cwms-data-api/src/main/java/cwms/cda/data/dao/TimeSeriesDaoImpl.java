@@ -171,26 +171,23 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    public TimeSeriesDaoImpl(DSLContext dsl) {
-        this(dsl, null);
-    }
 
-    public TimeSeriesDaoImpl(DSLContext dsl, @Nullable MetricRegistry metrics) {
+
+    public TimeSeriesDaoImpl(DSLContext dsl, @NotNull MetricRegistry metrics) {
         super(dsl);
 
         this.metrics = metrics;
-        if (metrics != null) {
-            CacheStats stats = isVersionedCache.stats();
-            String hrName = MetricRegistry.name(this.getClass().getName(), VERSIONED_NAME, "hit-rate");
-            if (metrics.getGauges().get(hrName) == null) {
-                MetricRegistry.MetricSupplier<? extends Gauge> hr = () -> (Gauge<Double>) stats::hitRate;
-                metrics.gauge(hrName, hr);
-            }
-            String mrName = MetricRegistry.name(this.getClass().getName(),VERSIONED_NAME, "miss-rate");
-            if (metrics.getGauges().get(mrName) == null) {
-                MetricRegistry.MetricSupplier<? extends Gauge> mr = () -> (Gauge<Double>) stats::missRate;
-                metrics.gauge(mrName, mr);
-            }
+
+        CacheStats stats = isVersionedCache.stats();
+        String hrName = MetricRegistry.name(this.getClass().getName(), VERSIONED_NAME, "hit-rate");
+        if (metrics.getGauges().get(hrName) == null) {
+            MetricRegistry.MetricSupplier<? extends Gauge> hr = () -> (Gauge<Double>) stats::hitRate;
+            metrics.gauge(hrName, hr);
+        }
+        String mrName = MetricRegistry.name(this.getClass().getName(),VERSIONED_NAME, "miss-rate");
+        if (metrics.getGauges().get(mrName) == null) {
+            MetricRegistry.MetricSupplier<? extends Gauge> mr = () -> (Gauge<Double>) stats::missRate;
+            metrics.gauge(mrName, mr);
         }
     }
 

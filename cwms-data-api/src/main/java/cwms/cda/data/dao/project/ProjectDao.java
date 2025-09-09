@@ -448,12 +448,12 @@ public class ProjectDao extends JooqDao<Project> {
                 basinRs.close();
             }
 
-            Result<Record> projectCatalog = catProject.getP_PROJECT_CAT();
+            Result<org.jooq.Record> projectCatalog = catProject.getP_PROJECT_CAT();
             return projectCatalog.map(this::buildLocation);
         });
     }
 
-    private Location buildLocation(Record r) {
+    private Location buildLocation(org.jooq.Record r) {
 
         String office = r.get(DB_OFFICE_ID, String.class);
 

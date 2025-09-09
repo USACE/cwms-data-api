@@ -34,6 +34,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.codahale.metrics.MetricRegistry;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.TimeSeriesCategoryDao;
@@ -91,7 +92,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
-            TimeSeriesDaoImpl tsDao = new TimeSeriesDaoImpl(ctx);
+            TimeSeriesDaoImpl tsDao = new TimeSeriesDaoImpl(ctx, new MetricRegistry());
             TimeSeriesCategoryDao tsCategoryDao = new TimeSeriesCategoryDao(ctx);
             TimeSeriesGroupDao tsGroupDao = new TimeSeriesGroupDao(ctx);
             try {

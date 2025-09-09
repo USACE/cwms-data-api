@@ -37,6 +37,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.RatingSetDao;
@@ -98,7 +99,7 @@ final class RateControllerIT extends DataApiTestIT {
                     DSLContext context = getDslContext(c, SPK);
                     RatingSetDao ratingSetDao = new RatingSetDao(context);
                     ratingSetDao.store(setXml, true);
-                    TimeSeriesDaoImpl timeSeriesDao = new TimeSeriesDaoImpl(context);
+                    TimeSeriesDaoImpl timeSeriesDao = new TimeSeriesDaoImpl(context, new MetricRegistry());
                     TimeSeries timeSeries = new TimeSeries(null, 0, 0, TSID_STAGE, SPK, null, null, "ft", null);
                     timeSeries.addValue(Timestamp.from(TS_START.toInstant()), 2.49935994, 0);
                     timeSeries.addValue(Timestamp.from(TS_START.plusMonths(2).toInstant()), 2.92608012, 0);

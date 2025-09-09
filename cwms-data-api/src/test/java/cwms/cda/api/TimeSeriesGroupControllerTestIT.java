@@ -24,6 +24,7 @@
 
 package cwms.cda.api;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.ApiServlet;
@@ -111,7 +112,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             Configuration configuration = DSL.using(c).configuration();
             TimeSeriesGroupDao groupDao = new TimeSeriesGroupDao(configuration.dsl());
             TimeSeriesCategoryDao categoryDao = new TimeSeriesCategoryDao(configuration.dsl());
-            TimeSeriesDaoImpl timeSeriesDao = new TimeSeriesDaoImpl(configuration.dsl());
+            TimeSeriesDaoImpl timeSeriesDao = new TimeSeriesDaoImpl(configuration.dsl(), new MetricRegistry());
 
             for (TimeSeriesGroup group : groupsToCleanup) {
                 try {
