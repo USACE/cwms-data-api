@@ -452,7 +452,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
         String pattern = "*Streamflow";
 
-        // First with just the regex.  This should match Flat Lake and Flat Project
+        // Retrieve without aliases
         given()
             .accept("application/json;version=2")
             .queryParam(Controllers.OFFICE, OFFICE)
@@ -471,7 +471,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("entries[0].aliases.size()", is(0))
         ;
 
-        // Now add the LOCATION_KIND filter
+        // retrieve with aliases
         given()
             .accept("application/json;version=2")
             .queryParam(Controllers.OFFICE, OFFICE)
