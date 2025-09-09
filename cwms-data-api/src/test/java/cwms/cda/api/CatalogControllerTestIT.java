@@ -82,7 +82,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // Complicated
         loadSqlDataFromResource("cwms/cda/data/sql/ts_catalog_setup.sql");
 
-
+        loadSqlDataFromResource("cwms/cda/data/sql/location_catalog_setup.sql");
     }
 
     private static void createProject(String id, String office) throws SQLException {
@@ -444,6 +444,53 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("$", hasKey("entries"))
             .body("entries.size()", is(1))
             .body("entries[0].name", equalTo("Flat Project"))
+        ;
+    }
+
+    @Test
+    void test_loc_aliases() {
+
+        String pattern = "*Streamflow";
+
+        // Retrieve without aliases
+        given()
+            .accept("application/json;version=2")
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LIKE, pattern)
+            .queryParam(INCLUDE_ALIASES, false)
+        .when()
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .body("$", hasKey("total"))
+            .body("total", is(2))
+            .body("$", hasKey("entries"))
+            .body("entries.size()", is(2))
+            .body("entries[0].aliases.size()", is(0))
+        ;
+
+        // retrieve with aliases
+        given()
+            .accept("application/json;version=2")
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LIKE, pattern)
+            .queryParam(INCLUDE_ALIASES, true)
+        .when()
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .body("$", hasKey("total"))
+            .body("total", is(2))
+            .body("$", hasKey("entries"))
+            .body("entries.size()", is(2))
+            .body("entries[0].name", isOneOf("Alder Springs Streamflow", "Pine Flat-Outflow Streamflow"))
+            .body("entries[0].aliases.size()", isOneOf(1, 2))
+            .body("entries[0].aliases[0].value",
+                isOneOf("Alder Stream Alias Loc", "Alder Stream Alias Loc 2", "Pine Stream Alias Loc"))
         ;
     }
 
