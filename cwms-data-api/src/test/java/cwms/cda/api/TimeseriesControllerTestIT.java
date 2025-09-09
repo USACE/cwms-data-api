@@ -118,7 +118,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/timeseries/local_regular_ts.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get(NAME).asText().split("\\.")[0];
@@ -539,7 +539,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/pseudo_reg_1week.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
@@ -601,7 +601,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/pseudo_reg_1week.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get("name").asText().split("\\.")[0];
@@ -1407,10 +1407,11 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
-
-        // Note 09/05/25 Changed from 200k to 12k b/c the test was failing b/c zstore_ts was taking too long.
+        
+        // Note 09/08/25 Changed from 200k to 12k b/c the test was failing b/c zstore_ts was taking too long.
         //  5k took 13s, 10k = 26s, 12k = 31s, 15k closed @47s, 20k closed @83s
-        String giantString = buildBigString(tsData, 12000); // 200k here looked like about 6MB.
+        String giantString = buildBigString(tsData, 12000);
+        // 200k points looked like about 6MB.
 
         long bytes = giantString.getBytes().length;
         assertTrue(bytes > 350000, "The string should be over 350kB");
@@ -1675,7 +1676,7 @@ class TimeseriesControllerTestIT extends DataApiTestIT {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, "UTF-8");
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         JsonNode ts = mapper.readTree(tsData);
         String location = ts.get(NAME).asText().split("\\.")[0];

@@ -271,6 +271,7 @@ public class CatalogController implements CrudHandler {
                         .withLocationType(locationType)
                         .withFilterBaseLocations(filterBaseLocations)
                         .withNegateLocationKindLike(negateLocationKind)
+                        .withIncludeAliases(includeAliases)
                         .build();
 
                 LocationsDao dao = new LocationsDaoImpl(dsl);
