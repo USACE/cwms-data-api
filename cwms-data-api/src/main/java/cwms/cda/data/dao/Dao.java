@@ -61,7 +61,7 @@ public abstract class Dao<T> {
         this.dsl = dsl;
     }
 
-    private static String getVersion(DSLContext dsl) {
+    public static String getVersion(DSLContext dsl) {
         return dsl.connectionResult(c -> DSL.using(c,SQLDialect.ORACLE18C)
                 .select(AV_DB_CHANGE_LOG.VERSION)
                 .from(AV_DB_CHANGE_LOG)
