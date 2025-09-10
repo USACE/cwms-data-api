@@ -549,7 +549,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return retVal;
     }
 
-    private void validateEntryDateSupport(boolean includeEntryDate) {
+    public void validateEntryDateSupport(boolean includeEntryDate) {
         if (includeEntryDate) {
             Record entryDateSupport = dsl.select(asterisk()).from(table("ALL_TYPES"))
                     .where(field("TYPE_NAME").eq("ZTSV_ENTRY_TYPE"))
