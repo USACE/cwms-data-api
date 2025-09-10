@@ -118,6 +118,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     private static final Collection<Field<?>> LOCATION_LEVEL_FIELDS = new LinkedHashSet<>();
     private static final Collection<Field<?>> LOCATION_ALIAS_FIELDS = new LinkedHashSet<>();
 
+    private static final String TABLE_ALIAS1 = "T1";
+    private static final String TABLE_ALIAS2 = "T2";
+    private static final String ALIASED_ATTRIBUTE_ID = TABLE_ALIAS1 + ".ATTRIBUTE_ID";
+    private static final String ALIASED_LOCATION_LEVEL_ID = TABLE_ALIAS1 + ".LOCATION_LEVEL_ID";
+    private static final String ALIASED_OFFICE_ID = TABLE_ALIAS1 + ".OFFICE_ID";
+
     static {
         usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL virtView = AV_VIRTUAL_LOCATION_LEVEL;
         usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
@@ -153,9 +159,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         LOCATION_LEVEL_FIELDS.add(view.CALENDAR_OFFSET);
         LOCATION_LEVEL_FIELDS.add(view.TIME_OFFSET);
 
-        LOCATION_ALIAS_FIELDS.add(field("T1.OFFICE_ID"));
-        LOCATION_ALIAS_FIELDS.add(field("T1.LOCATION_LEVEL_ID"));
-        LOCATION_ALIAS_FIELDS.add(field("T1.ATTRIBUTE_ID"));
+        LOCATION_ALIAS_FIELDS.add(field(ALIASED_OFFICE_ID));
+        LOCATION_ALIAS_FIELDS.add(field(ALIASED_LOCATION_LEVEL_ID));
+        LOCATION_ALIAS_FIELDS.add(field(ALIASED_ATTRIBUTE_ID));
         LOCATION_ALIAS_FIELDS.add(field(virtView.DURATION_CODE.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(virtView.EFFECTIVE_DATE_UTC.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(virtView.CONNECTIONS.getUnqualifiedName()));
@@ -239,11 +245,11 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             mapping = new JooqLocationFieldMapping();
         }
 
-        whereCondition = (mapping.getUnitSystem("T1", view).eq(unit.toUpperCase()))
-            .or(mapping.getLocationLevelId("T1", virtView).isNotNull());
+        whereCondition = (mapping.getUnitSystem(TABLE_ALIAS1, view).eq(unit.toUpperCase()))
+            .or(mapping.getLocationLevelId(TABLE_ALIAS1, virtView).isNotNull());
 
         if (office != null && !office.isEmpty()) {
-            whereCondition = whereCondition.and((mapping.getOfficeId("T1", view).eq(office.toUpperCase()))
+            whereCondition = whereCondition.and((mapping.getOfficeId(TABLE_ALIAS1, view).eq(office.toUpperCase()))
                 .or(DSL.upper(virtView.OFFICE_ID).eq(office.toUpperCase())));
             standardWhereCondition = standardWhereCondition.and((DSL.upper(view.OFFICE_ID).eq(office.toUpperCase()))
                 .or(DSL.upper(virtView.OFFICE_ID).eq(office.toUpperCase())));
@@ -251,7 +257,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         if (levelIdMask != null && !levelIdMask.isEmpty()) {
             whereCondition = whereCondition.and(
-                (JooqDao.caseInsensitiveLikeRegex(mapping.getLocationLevelId("T1", view), levelIdMask))
+                (JooqDao.caseInsensitiveLikeRegex(mapping.getLocationLevelId(TABLE_ALIAS1, view), levelIdMask))
                 .or(JooqDao.caseInsensitiveLikeRegex(virtView.LOCATION_LEVEL_ID, levelIdMask)));
             standardWhereCondition = standardWhereCondition.and(
                 (JooqDao.caseInsensitiveLikeRegex(view.LOCATION_LEVEL_ID, levelIdMask))
@@ -285,14 +291,14 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     .leftJoin(aliasView)
                     .on(view.OFFICE_ID.eq(aliasView.DB_OFFICE_ID))
                     .and(view.LOCATION_ID.eq(aliasView.LOCATION_ID))
-                    .and(view.LOCATION_CODE.eq(aliasView.LOCATION_CODE.cast(Long.class))).asTable("T1"))
+                    .and(view.LOCATION_CODE.eq(aliasView.LOCATION_CODE.cast(Long.class))).asTable(TABLE_ALIAS1))
                 .fullOuterJoin(virtView)
-                .on(mapping.getLocationLevelCode("T1", null).eq(virtView.LOCATION_LEVEL_CODE)
-                    .and(mapping.getLocationLevelId("T1", null).eq(virtView.LOCATION_LEVEL_ID)))
-                .where(whereCondition).asTable("T2"))
+                .on(mapping.getLocationLevelCode(TABLE_ALIAS1, null).eq(virtView.LOCATION_LEVEL_CODE)
+                    .and(mapping.getLocationLevelId(TABLE_ALIAS1, null).eq(virtView.LOCATION_LEVEL_ID)))
+                .where(whereCondition).asTable(TABLE_ALIAS2))
                 .orderBy(mapping.getOfficeId(null, null), mapping.getLocationLevelId(null, null),
                     field("LEVEL_DATE"), field("CALENDAR_OFFSET"),
-                    mapping.getLocationLevelId("T2", null), field("EFFECTIVE_DATE_UTC")
+                    mapping.getLocationLevelId(TABLE_ALIAS2, null), field("EFFECTIVE_DATE_UTC")
                 )
                 .offset(offset)
                 .limit(pageSize);
@@ -364,7 +370,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         Double attributeValue = row.get(map.getAttributeValue(), Double.class);
         String attributeUnits = row.get(map.getAttributeUnit(), String.class);
         Date effectiveDate = row.get(map.getLevelDate(), Date.class);
-        String aliasId = row.get(DSL.name("T2", "ALIAS_ID"), String.class);
+        String aliasId = row.get(DSL.name(TABLE_ALIAS2, "ALIAS_ID"), String.class);
 
         LevelLookup key = new LevelLookup(officeId, locationLevelId, attributeId, String.valueOf(attributeValue),
                                              attributeUnits, effectiveDate);
@@ -1032,58 +1038,58 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     private interface LocationFieldMapping {
-        Field<String> getOfficeId(String prefix, Table table);
+        Field<String> getOfficeId(String prefix, Table<?> table);
 
-        Field<String> getLocationLevelId(String prefix, Table table);
+        Field<String> getLocationLevelId(String prefix, Table<?> table);
 
-        Field<Long> getLocationLevelCode(String prefix, Table table);
+        Field<Long> getLocationLevelCode(String prefix, Table<?> table);
 
-        Field<String> getUnitSystem(String prefix, Table table);
+        Field<String> getUnitSystem(String prefix, Table<?> table);
     }
 
-    private static class JooqLocationFieldMapping implements LocationFieldMapping {
+    private static final class JooqLocationFieldMapping implements LocationFieldMapping {
         @Override
-        public Field<String> getOfficeId(String prefix, Table table) {
+        public Field<String> getOfficeId(String prefix, Table<?> table) {
             return table.field(DSL.name(prefix, "OFFICE_ID"), String.class);
         }
 
         @Override
-        public Field<String> getLocationLevelId(String prefix, Table table) {
+        public Field<String> getLocationLevelId(String prefix, Table<?> table) {
             return table.field(DSL.name(prefix, "LOCATION_LEVEL_ID"), String.class);
         }
 
         @Override
-        public Field<Long> getLocationLevelCode(String prefix, Table table) {
+        public Field<Long> getLocationLevelCode(String prefix, Table<?> table) {
             return table.field(DSL.name(prefix, "LOCATION_LEVEL_CODE"), Long.class);
         }
 
         @Override
-        public Field<String> getUnitSystem(String prefix, Table table) {
+        public Field<String> getUnitSystem(String prefix, Table<?> table) {
             return table.field(DSL.name(prefix, "UNIT_SYSTEM"), String.class);
         }
     }
 
-    private static class AliasedLocationFieldMapping implements LocationFieldMapping {
+    private static final class AliasedLocationFieldMapping implements LocationFieldMapping {
         @Override
-        public Field<String> getOfficeId(String prefix, Table table) {
+        public Field<String> getOfficeId(String prefix, Table<?> table) {
             String field = prefix != null ? prefix + ".OFFICE_ID" : "OFFICE_ID";
             return field(field, String.class);
         }
 
         @Override
-        public Field<String> getLocationLevelId(String prefix, Table table) {
+        public Field<String> getLocationLevelId(String prefix, Table<?> table) {
             String field = prefix != null ? prefix + ".LOCATION_LEVEL_ID" : "LOCATION_LEVEL_ID";
             return field(field, String.class);
         }
 
         @Override
-        public Field<Long> getLocationLevelCode(String prefix, Table table) {
+        public Field<Long> getLocationLevelCode(String prefix, Table<?> table) {
             String field = prefix != null ? prefix + ".LOCATION_LEVEL_CODE" : "LOCATION_LEVEL_CODE";
             return field(field, Long.class);
         }
 
         @Override
-        public Field<String> getUnitSystem(String prefix, Table table) {
+        public Field<String> getUnitSystem(String prefix, Table<?> table) {
             String field = prefix != null ? prefix + ".UNIT_SYSTEM" : "UNIT_SYSTEM";
             return field(field, String.class);
         }
@@ -1147,7 +1153,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         Field<Timestamp> getIntervalOrigin();
     }
 
-    private static class JooqLocationParserFieldMapping implements LocationParserFieldMapping {
+    private static final class JooqLocationParserFieldMapping implements LocationParserFieldMapping {
         @Override
         public Field<Timestamp> getLevelDate() {
             return AV_LOCATION_LEVEL.LEVEL_DATE;
@@ -1289,147 +1295,145 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
     }
 
-    private static class AliasedLocationParserFieldMapping implements LocationParserFieldMapping {
-        private static final String TABLE_ALIAS = "T2";
-
+    private static final class AliasedLocationParserFieldMapping implements LocationParserFieldMapping {
         @Override
         public Field<Timestamp> getLevelDate() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "LEVEL_DATE"), Timestamp.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "LEVEL_DATE"), Timestamp.class);
         }
 
         @Override
         public Field<String> getAttributeId() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "T1.ATTRIBUTE_ID"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, ALIASED_ATTRIBUTE_ID), String.class);
         }
 
         @Override
         public Field<Double> getAttributeValue() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "ATTRIBUTE_VALUE"), Double.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTRIBUTE_VALUE"), Double.class);
         }
 
         @Override
         public Field<String> getLocationLevelId() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "T1.LOCATION_LEVEL_ID"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, ALIASED_LOCATION_LEVEL_ID), String.class);
         }
 
         @Override
         public Field<String> getOfficeId() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "T1.OFFICE_ID"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, ALIASED_OFFICE_ID), String.class);
         }
 
         @Override
         public Field<String> getLevelUnit() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "LEVEL_UNIT"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "LEVEL_UNIT"), String.class);
         }
 
         @Override
         public Field<String> getAttributeUnit() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "ATTRIBUTE_UNIT"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTRIBUTE_UNIT"), String.class);
         }
 
         @Override
         public Field<Timestamp> getEffectiveDate() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "EFFECTIVE_DATE_UTC"), Timestamp.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "EFFECTIVE_DATE_UTC"), Timestamp.class);
         }
 
         @Override
         public Field<String> getVirtAttrId() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "T1.ATTRIBUTE_ID"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, ALIASED_ATTRIBUTE_ID), String.class);
         }
 
         @Override
         public Field<String> getVirtLocLevelId() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "T1.LOCATION_LEVEL_ID"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, ALIASED_LOCATION_LEVEL_ID), String.class);
         }
 
         @Override
         public Field<String> getVirtOfficeId() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "T1.OFFICE_ID"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, ALIASED_OFFICE_ID), String.class);
         }
 
         @Override
         public Field<String> getConnections() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "CONNECTIONS"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "CONNECTIONS"), String.class);
         }
 
         @Override
         public Field<Timestamp> getExpirationDate() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "EXPIRATION_DATE_UTC"), Timestamp.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "EXPIRATION_DATE_UTC"), Timestamp.class);
         }
 
         @Override
         public Field<String> getAttrUnitEn() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "ATTR_UNIT_EN"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTR_UNIT_EN"), String.class);
         }
 
         @Override
         public Field<BigDecimal> getAttrValueEn() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "ATTR_VALUE_EN"), BigDecimal.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTR_VALUE_EN"), BigDecimal.class);
         }
 
         @Override
         public Field<String> getAttrUnitSi() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "ATTR_UNIT_SI"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTR_UNIT_SI"), String.class);
         }
 
         @Override
         public Field<BigDecimal> getAttrValueSi() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "ATTR_VALUE_SI"), BigDecimal.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTR_VALUE_SI"), BigDecimal.class);
         }
 
         @Override
         public Field<Double> getSeasonalLevel() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "SEASONAL_LEVEL"), Double.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "SEASONAL_LEVEL"), Double.class);
         }
 
         @Override
         public Field<Double> getConstantLevel() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "CONSTANT_LEVEL"), Double.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "CONSTANT_LEVEL"), Double.class);
         }
 
         @Override
         public Field<String> getTsId() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "TSID"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "TSID"), String.class);
         }
 
         @Override
         public Field<String> getInterpolate() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "INTERPOLATE"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "INTERPOLATE"), String.class);
         }
 
         @Override
         public Field<String> getCalendarOffset() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "CALENDAR_OFFSET"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "CALENDAR_OFFSET"), String.class);
         }
 
         @Override
         public Field<String> getTimeOffset() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "TIME_OFFSET"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "TIME_OFFSET"), String.class);
         }
 
         @Override
         public Field<String> getLevelComment() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "LEVEL_COMMENT"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "LEVEL_COMMENT"), String.class);
         }
 
         @Override
         public Field<String> getAttributeComment() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "ATTRIBUTE_COMMENT"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTRIBUTE_COMMENT"), String.class);
         }
 
         @Override
         public Field<DayToSecond> getTimeInterval() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "TIME_INTERVAL"), DayToSecond.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "TIME_INTERVAL"), DayToSecond.class);
         }
 
         @Override
         public Field<String> getCalendarInterval() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "CALENDAR_INTERVAL"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "CALENDAR_INTERVAL"), String.class);
         }
 
         @Override
         public Field<Timestamp> getIntervalOrigin() {
-            return DSL.field(DSL.name(TABLE_ALIAS, "INTERVAL_ORIGIN"), Timestamp.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "INTERVAL_ORIGIN"), Timestamp.class);
         }
     }
 }

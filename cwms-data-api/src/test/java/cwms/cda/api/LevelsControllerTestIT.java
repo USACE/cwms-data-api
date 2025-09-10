@@ -601,7 +601,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 assertThat(response.path("levels[0].level-units-id"),equalTo("m3"));
                 assertThat(response.path("levels[0].level-date"),equalTo("2023-06-01T07:00:00Z"));
                 assertThat(response.path("levels[0].duration-id"),equalTo("1Day"));
-                double actual0 = Float.valueOf(response.path("levels[0].constant-value")).doubleValue();
+                double actual0 = Float.valueOf((float) response.path("levels[0].constant-value")).doubleValue();
                 assertThat(actual0, closeTo(1233.0, 10.0));
 
                 assertThat(response.path("levels[1].office-id"),equalTo(OFFICE));
@@ -612,7 +612,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 assertThat(response.path("levels[1].level-units-id"),equalTo("m3"));
                 assertThat(response.path("levels[1].level-date"),equalTo("2023-06-01T07:00:00Z"));
                 assertThat(response.path("levels[1].duration-id"),equalTo("1Day"));
-                double actual1 = Float.valueOf(response.path("levels[1].constant-value")).doubleValue();
+                double actual1 = Float.valueOf((float) response.path("levels[1].constant-value")).doubleValue();
                 assertThat(actual1, closeTo(2466.9636f, 1.0));
 
         response = given()
@@ -643,7 +643,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 assertThat(response.path("levels[0].level-units-id"),equalTo("m3"));
                 assertThat(response.path("levels[0].level-date"),equalTo("2023-06-01T07:00:00Z"));
                 assertThat(response.path("levels[0].duration-id"),equalTo("1Day"));
-                actual0 = Float.valueOf(response.path("levels[0].constant-value")).doubleValue();
+                actual0 = Float.valueOf((float) response.path("levels[0].constant-value")).doubleValue();
                 assertThat(actual0, closeTo(1233.4818, 1.0));
 
                 assertThat(response.path("levels[1].office-id"),equalTo(OFFICE));
@@ -654,7 +654,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 assertThat(response.path("levels[1].level-units-id"),equalTo("m3"));
                 assertThat(response.path("levels[1].level-date"),equalTo("2023-06-01T07:00:00Z"));
                 assertThat(response.path("levels[1].duration-id"),equalTo("1Day"));
-                actual1 = Float.valueOf(response.path("levels[1].constant-value")).doubleValue();
+                actual1 = Float.valueOf((float) response.path("levels[1].constant-value")).doubleValue();
                 assertThat(actual1, closeTo(2466.9636, 1.0));
 
         response = given()
@@ -854,7 +854,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertThat(response.path("levels[0].level-units-id"),equalTo("m3"));
         assertThat(response.path("levels[0].level-date"),equalTo("2023-06-01T07:00:00Z"));
         assertThat(response.path("levels[0].duration-id"),equalTo("1Day"));
-        double actual0 = Float.valueOf(response.path("levels[0].constant-value")).doubleValue();
+        double actual0 = Float.valueOf((float) response.path("levels[0].constant-value")).doubleValue();
         assertThat(actual0, closeTo(1233.0, 10.0));
 
         assertThat(response.path("levels[1].office-id"),equalTo(OFFICE));
@@ -865,7 +865,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertThat(response.path("levels[1].level-units-id"),equalTo("m3"));
         assertThat(response.path("levels[1].level-date"),equalTo("2023-06-01T07:00:00Z"));
         assertThat(response.path("levels[1].duration-id"),equalTo("1Day"));
-        double actual1 = Float.valueOf(response.path("levels[1].constant-value")).doubleValue();
+        double actual1 = Float.valueOf((float) response.path("levels[1].constant-value")).doubleValue();
         assertThat(actual1, closeTo(2466.9636f, 1.0));
 
         //Read level without time window
@@ -895,7 +895,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertThat(response.path("levels[0].level-units-id"),equalTo("m3"));
         assertThat(response.path("levels[0].level-date"),equalTo("2023-06-01T07:00:00Z"));
         assertThat(response.path("levels[0].duration-id"),equalTo("1Day"));
-        actual0 = Float.valueOf(response.path("levels[0].constant-value")).doubleValue();
+        actual0 = Float.valueOf((float) response.path("levels[0].constant-value")).doubleValue();
         assertThat(actual0, closeTo(1233.0, 10.0));
 
         assertThat(response.path("levels[1].office-id"),equalTo(OFFICE));
@@ -906,7 +906,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertThat(response.path("levels[1].level-units-id"),equalTo("m3"));
         assertThat(response.path("levels[1].level-date"),equalTo("2023-06-01T07:00:00Z"));
         assertThat(response.path("levels[1].duration-id"),equalTo("1Day"));
-        actual1 = Float.valueOf(response.path("levels[1].constant-value")).doubleValue();
+        actual1 = Float.valueOf((float) response.path("levels[1].constant-value")).doubleValue();
         assertThat(actual1, closeTo(2466.9636f, 1.0));
     }
 
