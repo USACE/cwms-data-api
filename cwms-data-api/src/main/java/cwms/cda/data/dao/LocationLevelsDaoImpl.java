@@ -125,71 +125,8 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     private static final String ALIASED_OFFICE_ID = TABLE_ALIAS1 + ".OFFICE_ID";
 
     static {
-        usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL virtView = AV_VIRTUAL_LOCATION_LEVEL;
-        usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
-        usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS aliasView = AV_LOC_ALIAS;
-        LOCATION_LEVEL_FIELDS.add(virtView.OFFICE_ID);
-        LOCATION_LEVEL_FIELDS.add(virtView.LOCATION_LEVEL_ID);
-        LOCATION_LEVEL_FIELDS.add(virtView.ATTRIBUTE_ID);
-        LOCATION_LEVEL_FIELDS.add(virtView.DURATION_CODE);
-        LOCATION_LEVEL_FIELDS.add(virtView.EFFECTIVE_DATE_UTC);
-        LOCATION_LEVEL_FIELDS.add(virtView.CONNECTIONS);
-        LOCATION_LEVEL_FIELDS.add(virtView.DURATION_ID);
-        LOCATION_LEVEL_FIELDS.add(virtView.EXPIRATION_DATE_UTC);
-        LOCATION_LEVEL_FIELDS.add(virtView.ATTR_UNIT_EN);
-        LOCATION_LEVEL_FIELDS.add(virtView.ATTR_VALUE_EN);
-        LOCATION_LEVEL_FIELDS.add(virtView.ATTR_UNIT_SI);
-        LOCATION_LEVEL_FIELDS.add(virtView.ATTR_VALUE_SI);
-        LOCATION_LEVEL_FIELDS.add(view.OFFICE_ID);
-        LOCATION_LEVEL_FIELDS.add(view.LOCATION_LEVEL_ID);
-        LOCATION_LEVEL_FIELDS.add(view.LEVEL_DATE);
-        LOCATION_LEVEL_FIELDS.add(view.TSID);
-        LOCATION_LEVEL_FIELDS.add(view.CONSTANT_LEVEL);
-        LOCATION_LEVEL_FIELDS.add(view.INTERVAL_ORIGIN);
-        LOCATION_LEVEL_FIELDS.add(view.INTERPOLATE);
-        LOCATION_LEVEL_FIELDS.add(view.ATTRIBUTE_ID);
-        LOCATION_LEVEL_FIELDS.add(view.ATTRIBUTE_VALUE);
-        LOCATION_LEVEL_FIELDS.add(view.ATTRIBUTE_UNIT);
-        LOCATION_LEVEL_FIELDS.add(view.ATTRIBUTE_COMMENT);
-        LOCATION_LEVEL_FIELDS.add(view.LEVEL_UNIT);
-        LOCATION_LEVEL_FIELDS.add(view.LEVEL_COMMENT);
-        LOCATION_LEVEL_FIELDS.add(view.SEASONAL_LEVEL);
-        LOCATION_LEVEL_FIELDS.add(view.CALENDAR_INTERVAL);
-        LOCATION_LEVEL_FIELDS.add(view.TIME_INTERVAL);
-        LOCATION_LEVEL_FIELDS.add(view.CALENDAR_OFFSET);
-        LOCATION_LEVEL_FIELDS.add(view.TIME_OFFSET);
-
-        LOCATION_ALIAS_FIELDS.add(field(ALIASED_OFFICE_ID));
-        LOCATION_ALIAS_FIELDS.add(field(ALIASED_LOCATION_LEVEL_ID));
-        LOCATION_ALIAS_FIELDS.add(field(ALIASED_ATTRIBUTE_ID));
-        LOCATION_ALIAS_FIELDS.add(field(virtView.DURATION_CODE.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(virtView.EFFECTIVE_DATE_UTC.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(virtView.CONNECTIONS.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field("T1.DURATION_ID"));
-        LOCATION_ALIAS_FIELDS.add(field(virtView.EXPIRATION_DATE_UTC.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_UNIT_EN.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_VALUE_EN.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_UNIT_SI.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_VALUE_SI.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.LEVEL_DATE.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.TSID.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.CONSTANT_LEVEL.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.INTERVAL_ORIGIN.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.INTERPOLATE.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.ATTRIBUTE_VALUE.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.ATTRIBUTE_COMMENT.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.ATTRIBUTE_UNIT.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.LEVEL_UNIT.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.LEVEL_COMMENT.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.SEASONAL_LEVEL.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.CALENDAR_INTERVAL.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.TIME_INTERVAL.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.CALENDAR_OFFSET.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(view.TIME_OFFSET.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(aliasView.LOCATION_ID.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(aliasView.ALIAS_ID.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(aliasView.LOCATION_CODE.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(aliasView.DB_OFFICE_ID.getUnqualifiedName()));
+        buildLocationLevelSelectFields();
+        buildAliasedLocationLevelSelectFields();
     }
 
     public LocationLevelsDaoImpl(DSLContext dsl) {
@@ -245,7 +182,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             mapping = new JooqLocationFieldMapping();
         }
 
-        whereCondition = (mapping.getUnitSystem(TABLE_ALIAS1, view).eq(unit.toUpperCase()))
+        whereCondition = (mapping.getUnitSystem().eq(unit.toUpperCase()))
             .or(mapping.getLocationLevelId(TABLE_ALIAS1, virtView).isNotNull());
 
         if (office != null && !office.isEmpty()) {
@@ -293,7 +230,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     .and(view.LOCATION_ID.eq(aliasView.LOCATION_ID))
                     .and(view.LOCATION_CODE.eq(aliasView.LOCATION_CODE.cast(Long.class))).asTable(TABLE_ALIAS1))
                 .fullOuterJoin(virtView)
-                .on(mapping.getLocationLevelCode(TABLE_ALIAS1, null).eq(virtView.LOCATION_LEVEL_CODE)
+                .on(mapping.getLocationLevelCode().eq(virtView.LOCATION_LEVEL_CODE)
                     .and(mapping.getLocationLevelId(TABLE_ALIAS1, null).eq(virtView.LOCATION_LEVEL_ID)))
                 .where(whereCondition).asTable(TABLE_ALIAS2))
                 .orderBy(mapping.getOfficeId(null, null), mapping.getLocationLevelId(null, null),
@@ -1042,9 +979,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         Field<String> getLocationLevelId(String prefix, Table<?> table);
 
-        Field<Long> getLocationLevelCode(String prefix, Table<?> table);
+        Field<Long> getLocationLevelCode();
 
-        Field<String> getUnitSystem(String prefix, Table<?> table);
+        Field<String> getUnitSystem();
     }
 
     private static final class JooqLocationFieldMapping implements LocationFieldMapping {
@@ -1059,13 +996,13 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
 
         @Override
-        public Field<Long> getLocationLevelCode(String prefix, Table<?> table) {
-            return table.field(DSL.name(prefix, "LOCATION_LEVEL_CODE"), Long.class);
+        public Field<Long> getLocationLevelCode() {
+            return null;
         }
 
         @Override
-        public Field<String> getUnitSystem(String prefix, Table<?> table) {
-            return table.field(DSL.name(prefix, "UNIT_SYSTEM"), String.class);
+        public Field<String> getUnitSystem() {
+            return AV_LOCATION_LEVEL.field(DSL.name(TABLE_ALIAS1, "UNIT_SYSTEM"), String.class);
         }
     }
 
@@ -1083,15 +1020,13 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
 
         @Override
-        public Field<Long> getLocationLevelCode(String prefix, Table<?> table) {
-            String field = prefix != null ? prefix + ".LOCATION_LEVEL_CODE" : "LOCATION_LEVEL_CODE";
-            return field(field, Long.class);
+        public Field<Long> getLocationLevelCode() {
+            return field(String.format("%s.%s", TABLE_ALIAS1, "LOCATION_LEVEL_CODE"), Long.class);
         }
 
         @Override
-        public Field<String> getUnitSystem(String prefix, Table<?> table) {
-            String field = prefix != null ? prefix + ".UNIT_SYSTEM" : "UNIT_SYSTEM";
-            return field(field, String.class);
+        public Field<String> getUnitSystem() {
+            return field(String.format("%s.%s", TABLE_ALIAS1, "UNIT_SYSTEM"), String.class);
         }
     }
 
@@ -1435,5 +1370,78 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         public Field<Timestamp> getIntervalOrigin() {
             return DSL.field(DSL.name(TABLE_ALIAS2, "INTERVAL_ORIGIN"), Timestamp.class);
         }
+    }
+
+    private static void buildLocationLevelSelectFields() {
+        usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL virtView = AV_VIRTUAL_LOCATION_LEVEL;
+        usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
+        LOCATION_LEVEL_FIELDS.add(virtView.OFFICE_ID);
+        LOCATION_LEVEL_FIELDS.add(virtView.LOCATION_LEVEL_ID);
+        LOCATION_LEVEL_FIELDS.add(virtView.ATTRIBUTE_ID);
+        LOCATION_LEVEL_FIELDS.add(virtView.DURATION_CODE);
+        LOCATION_LEVEL_FIELDS.add(virtView.EFFECTIVE_DATE_UTC);
+        LOCATION_LEVEL_FIELDS.add(virtView.CONNECTIONS);
+        LOCATION_LEVEL_FIELDS.add(virtView.DURATION_ID);
+        LOCATION_LEVEL_FIELDS.add(virtView.EXPIRATION_DATE_UTC);
+        LOCATION_LEVEL_FIELDS.add(virtView.ATTR_UNIT_EN);
+        LOCATION_LEVEL_FIELDS.add(virtView.ATTR_VALUE_EN);
+        LOCATION_LEVEL_FIELDS.add(virtView.ATTR_UNIT_SI);
+        LOCATION_LEVEL_FIELDS.add(virtView.ATTR_VALUE_SI);
+        LOCATION_LEVEL_FIELDS.add(view.OFFICE_ID);
+        LOCATION_LEVEL_FIELDS.add(view.LOCATION_LEVEL_ID);
+        LOCATION_LEVEL_FIELDS.add(view.LEVEL_DATE);
+        LOCATION_LEVEL_FIELDS.add(view.TSID);
+        LOCATION_LEVEL_FIELDS.add(view.CONSTANT_LEVEL);
+        LOCATION_LEVEL_FIELDS.add(view.INTERVAL_ORIGIN);
+        LOCATION_LEVEL_FIELDS.add(view.INTERPOLATE);
+        LOCATION_LEVEL_FIELDS.add(view.ATTRIBUTE_ID);
+        LOCATION_LEVEL_FIELDS.add(view.ATTRIBUTE_VALUE);
+        LOCATION_LEVEL_FIELDS.add(view.ATTRIBUTE_UNIT);
+        LOCATION_LEVEL_FIELDS.add(view.ATTRIBUTE_COMMENT);
+        LOCATION_LEVEL_FIELDS.add(view.LEVEL_UNIT);
+        LOCATION_LEVEL_FIELDS.add(view.LEVEL_COMMENT);
+        LOCATION_LEVEL_FIELDS.add(view.SEASONAL_LEVEL);
+        LOCATION_LEVEL_FIELDS.add(view.CALENDAR_INTERVAL);
+        LOCATION_LEVEL_FIELDS.add(view.TIME_INTERVAL);
+        LOCATION_LEVEL_FIELDS.add(view.CALENDAR_OFFSET);
+        LOCATION_LEVEL_FIELDS.add(view.TIME_OFFSET);
+    }
+
+    private static void buildAliasedLocationLevelSelectFields() {
+        usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL virtView = AV_VIRTUAL_LOCATION_LEVEL;
+        usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
+        usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS aliasView = AV_LOC_ALIAS;
+
+        LOCATION_ALIAS_FIELDS.add(field(ALIASED_OFFICE_ID));
+        LOCATION_ALIAS_FIELDS.add(field(ALIASED_LOCATION_LEVEL_ID));
+        LOCATION_ALIAS_FIELDS.add(field(ALIASED_ATTRIBUTE_ID));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.DURATION_CODE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.EFFECTIVE_DATE_UTC.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.CONNECTIONS.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(DSL.name(TABLE_ALIAS1, "DURATION_ID")));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.EXPIRATION_DATE_UTC.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_UNIT_EN.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_VALUE_EN.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_UNIT_SI.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_VALUE_SI.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.LEVEL_DATE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.TSID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.CONSTANT_LEVEL.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.INTERVAL_ORIGIN.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.INTERPOLATE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.ATTRIBUTE_VALUE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.ATTRIBUTE_COMMENT.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.ATTRIBUTE_UNIT.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.LEVEL_UNIT.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.LEVEL_COMMENT.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.SEASONAL_LEVEL.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.CALENDAR_INTERVAL.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.TIME_INTERVAL.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.CALENDAR_OFFSET.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.TIME_OFFSET.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(aliasView.LOCATION_ID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(aliasView.ALIAS_ID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(aliasView.LOCATION_CODE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(aliasView.DB_OFFICE_ID.getUnqualifiedName()));
     }
 }
