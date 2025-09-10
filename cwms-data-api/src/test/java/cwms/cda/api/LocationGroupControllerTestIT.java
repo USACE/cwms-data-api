@@ -38,6 +38,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -62,8 +63,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag("integration")
 class LocationGroupControllerTestIT extends DataApiTestIT {
     private static final Logger LOGGER = Logger.getLogger(LocationGroupControllerTestIT.class.getName());
-    private List<LocationGroup> groupsToCleanup = new ArrayList<>();
-    private List<LocationCategory> categoriesToCleanup = new ArrayList<>();
+    private final List<LocationGroup> groupsToCleanup = new ArrayList<>();
+    private final List<LocationCategory> categoriesToCleanup = new ArrayList<>();
     TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     TestAccounts.KeyUser user2 = TestAccounts.KeyUser.SWT_NORMAL;
 
@@ -1453,5 +1454,113 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
             .body("message", containsString("One or more provided values exceeds the maximum length for the parameter."));
+    }
+
+    @Test
+    void testPostStillWritesOnFail() throws Exception {
+        // Test for issue #1188: https://github.com/USACE/cwms-data-api/issues/1188
+        String officeId = user.getOperatingOffice();
+        String locationId = "LocGroupPostFail";
+        createLocation(locationId, true, officeId);
+        String groupId = "LocGroupPostFailGrp";
+        String categoryId = "LocGroupPostFailCat";
+        LocationCategory cat = new LocationCategory(officeId, categoryId, "IntegrationTesting");
+        InputStream grpStream = this.getClass().getResourceAsStream("/cwms/cda/api/location_group_post_fail.json");
+        LocationGroup group = Formats.parseContent(new ContentType(Formats.JSON), grpStream, LocationGroup.class);
+        groupsToCleanup.add(group);
+        categoriesToCleanup.add(cat);
+        ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
+        String categoryXml = Formats.format(contentType, cat);
+        String groupXml = Formats.format(contentType, group);
+
+        //Create Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(categoryXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/category/")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        //Create Group
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(groupXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/group")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        //Retrieve Group
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/group/" + groupId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("id", is(groupId));
+
+        grpStream = this.getClass().getResourceAsStream("/cwms/cda/api/location_group_post_fail_simple.json");
+        group = Formats.parseContent(new ContentType(Formats.JSON), grpStream, LocationGroup.class);
+        groupsToCleanup.add(group);
+        groupXml = Formats.format(contentType, group);
+
+        //Create Group without assigned location field
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(groupXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        //Retrieve Group
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/group/" + group.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("id", is(group.getId()));
     }
 }

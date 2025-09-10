@@ -661,6 +661,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         List<AssignedLocation> assignedLocations = group.getAssignedLocations();
         if (assignedLocations != null) {
             List<LOC_ALIAS_TYPE3> collect = assignedLocations.stream()
+                    .filter(item -> item.getLocationId() != null)
                     .map(LocationGroupDao::convertToLocAliasType)
                     .collect(toList());
             LOC_ALIAS_ARRAY3 assignedLocs = new LOC_ALIAS_ARRAY3(collect);
