@@ -1505,7 +1505,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         .then()
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
 
         //Retrieve Group
         given()
