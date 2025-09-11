@@ -26,9 +26,10 @@
 
 package cwms.cda.data.dao;
 
+import com.codahale.metrics.MetricRegistry;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dto.CdaVersion;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,7 +56,7 @@ public final class CdaVersionDao extends JooqDao<CdaVersion> {
     }
 
     private Map<String, Object> buildFeatures() {
-        Map<String, Object> attrs = new HashMap<>();
+        Map<String, Object> attrs = new LinkedHashMap<>();
         attrs.put("schema", Dao.getVersion(super.dsl));
         attrs.put("ts", buildTsFeatures());
         // Add other feature attributes as needed
@@ -63,7 +64,7 @@ public final class CdaVersionDao extends JooqDao<CdaVersion> {
     }
 
     private String hasTsDataEntryDateSupport() {
-        TimeSeriesDaoImpl tsDao = new TimeSeriesDaoImpl(super.dsl);
+        TimeSeriesDaoImpl tsDao = new TimeSeriesDaoImpl(super.dsl, new MetricRegistry());
         boolean supported = false;
         try {
             tsDao.validateEntryDateSupport(true);
@@ -75,7 +76,7 @@ public final class CdaVersionDao extends JooqDao<CdaVersion> {
     }
 
     private Map<String, String> buildTsFeatures() {
-        Map<String, String> tsAttrs = new HashMap<>();
+        Map<String, String> tsAttrs = new LinkedHashMap<>();
         tsAttrs.put("data_entry_date_support", hasTsDataEntryDateSupport());
         // Add other time series specific feature attributes as needed
         return tsAttrs;
