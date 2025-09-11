@@ -606,10 +606,13 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
-            CWMS_LOC_PACKAGE.call_CREATE_LOC_GROUP2(dslContext.configuration(), categoryId,
+            dslContext.transaction((Configuration trx) -> {
+                Configuration config = trx.dsl().configuration();
+                CWMS_LOC_PACKAGE.call_CREATE_LOC_GROUP2(config, categoryId,
                     group.getId(), group.getDescription(), group.getOfficeId(), group.getSharedLocAliasId(),
                     group.getSharedRefLocationId());
-            assignLocs(dslContext, group, office);
+                assignLocs(config, group, office);
+            });
         });
     }
 
@@ -647,23 +650,23 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     public void assignLocs(LocationGroup group, String office) {
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
-            assignLocs(dslContext,group, office);
+            assignLocs(dslContext.configuration(), group, office);
         });
     }
 
     /**
      * Used when an appropriate context already exists to avoid opening a second connection.
-     * @param dslContext a dslContext that is assumed to be fully prepared for use in this operation
+     * @param config a DSL configuration to use for the operation
      * @param group the location group to assign locations to
      * @param office the office to use for the operation
      */
-    public void assignLocs(DSLContext dslContext, LocationGroup group, String office) {
+    public void assignLocs(Configuration config, LocationGroup group, String office) {
         List<AssignedLocation> assignedLocations = group.getAssignedLocations();
         if (assignedLocations != null) {
             List<LOC_ALIAS_TYPE3> collect = assignedLocations.stream()
                 .map(
                     item -> {
-                        if (item.getLocationId() == null || item.getOfficeId() == null || item.getAliasId() == null) {
+                        if (item.getLocationId() == null || item.getOfficeId() == null) {
                             throw new IllegalArgumentException("Invalid assigned location. Required fields are null.");
                         } else {
                             return item;
@@ -673,8 +676,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                     .collect(toList());
             LOC_ALIAS_ARRAY3 assignedLocs = new LOC_ALIAS_ARRAY3(collect);
             LocationCategory cat = group.getLocationCategory();
-            CWMS_LOC_PACKAGE.call_ASSIGN_LOC_GROUPS3(dslContext.configuration(),
-                    cat.getId(), group.getId(), assignedLocs, office);
+            CWMS_LOC_PACKAGE.call_ASSIGN_LOC_GROUPS3(config, cat.getId(), group.getId(), assignedLocs, office);
         }
     }
 }

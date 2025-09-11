@@ -1457,7 +1457,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void testPostStillWritesOnFail() throws Exception {
+    void test_post_does_not_write_on_assigned_location_fail() throws Exception {
         // Test for issue #1188: https://github.com/USACE/cwms-data-api/issues/1188
         String officeId = user.getOperatingOffice();
         String locationId = "LocGroupPostFail";
@@ -1507,7 +1507,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
 
-        //Retrieve Group
+        //Retrieve Group, assert not found
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
@@ -1521,8 +1521,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .body("id", is(groupId));
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
 
         grpStream = this.getClass().getResourceAsStream("/cwms/cda/api/location_group_post_fail_simple.json");
         group = Formats.parseContent(new ContentType(Formats.JSON), grpStream, LocationGroup.class);
