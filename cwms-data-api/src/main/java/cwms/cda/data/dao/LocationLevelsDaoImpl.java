@@ -269,7 +269,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         final SelectLimitPercentAfterOffsetStep<Record> queryFinal = query;
 
-        logger.severe(() -> "getLocationLevels query: " + queryFinal.getSQL(ParamType.INLINED));
+        logger.fine(() -> "getLocationLevels query: " + queryFinal.getSQL(ParamType.INLINED));
 
         if (includeAliases) {
             Result<?> result = query.fetch();
@@ -277,7 +277,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             result.forEach(row -> addToAliasMaps(aliasMap, row));
             result.forEach(row -> parseLevels(row, builderMap, unit, aliasMap, includeAliases));
         } else {
-            query.stream().forEach(r -> parseLevels(r, builderMap, unit, new HashMap<>(), includeAliases));
+            query.stream().forEach(r -> parseLevels(r, builderMap, unit, new LinkedHashMap<>(), includeAliases));
         }
 
         List<LocationLevel> levels = new java.util.ArrayList<>();
