@@ -3,7 +3,7 @@
 | Status         | Proposed                                                                                                                   |
 | :------------- | :------------------------------------------------------------------------------------------------------------------------- |
 | **RFC #**      | 0001                                                                                                                       |
-| **Author(s)**  | Solid Logix Team<br/>• @jolitinh<br/>• @cunningryan<br/>• @vairav<br/>• @milver<br/>• @toddeboss<br/>• @ChristinaWhitehead |
+| **Author(s)**  | Solid Logix Team<br/>•  [J. Hassan](https://github.com/jolitinh)<br/>• [R. Cunningham](https://github.com/cunningryan)<br/>• [V. Laxman](https://github.com/vairav)<br/>• [M. Valenzuela](https://github.com/milver)<br/>• [T. Boss](https://github.com/toddeboss)<br/>• [C. Whitehead](https://github.com/ChristinaWhitehead) |
 | **Sponsor**    | HEC/USACE                                                                                                                  |
 | **Date**       | 7/6/2025                                                                                                                   |
 | **Supersedes** | Initial RFC draft                                                                                                          |
