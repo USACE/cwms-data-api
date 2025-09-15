@@ -34,6 +34,40 @@ public class Blobs extends CwmsDTOPaginated {
         return Collections.unmodifiableList(blobs);
     }
 
+    /**
+     * Extract the office from the cursor.
+     *
+     * @param cursor the cursor
+     * @return office
+     */
+    public static String getOffice(String cursor) {
+        String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
+        if (parts.length > 1) {
+            String[] officeAndId = CwmsDTOPaginated.decodeCursor(parts[0]);
+            if (officeAndId.length > 0) {
+                return officeAndId[0];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Extract the id from the cursor.
+     *
+     * @param cursor the cursor
+     * @return id
+     */
+    public static String getId(String cursor) {
+        String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
+        if (parts.length > 1) {
+            String[] officeAndId = CwmsDTOPaginated.decodeCursor(parts[0]);
+            if (officeAndId.length > 1) {
+                return officeAndId[1];
+            }
+        }
+        return null;
+    }
+
     public static class Builder {
         private Blobs workingBlobs;
 
@@ -43,16 +77,17 @@ public class Blobs extends CwmsDTOPaginated {
 
         public Blobs build() {
             if (this.workingBlobs.blobs.size() == this.workingBlobs.pageSize) {
+                Blob lastBlob = this.workingBlobs.blobs.get(this.workingBlobs.blobs.size() - 1);
+                String cursor = encodeCursor(CwmsDTOPaginated.delimiter, lastBlob.getOfficeId(),
+                        lastBlob.getId());
                 this.workingBlobs.nextPage = encodeCursor(
-                        this.workingBlobs.blobs.get(this.workingBlobs.blobs.size() - 1).toString().toUpperCase(),
+                        cursor,
                         this.workingBlobs.pageSize,
                         this.workingBlobs.total);
             } else {
                 this.workingBlobs.nextPage = null;
             }
             return workingBlobs;
-
-
         }
 
         public Builder addBlob(Blob blob) {
