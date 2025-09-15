@@ -430,35 +430,36 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
      */
     public RatingEffectiveDatesMap retrieveSpecEffectiveDates(String officeIdMask, String specIdMask, Instant begin, Instant end) {
         //set of non-alias spec ids used to filter out aliased specs
-        Map<String, Set<String>> officeToRatingIdsNoAliasesMap = getRatingIds(officeIdMask, "*", false);
+        Map<String, List<String>> officeToRatingIdsNoAliasesMap = getRatingIds(officeIdMask, "*", false);
         return connectionResult(dsl, conn -> {
             //office->spec->dates
             NavigableMap<String, NavigableMap<String, NavigableSet<Instant>>> specDateMap = new TreeMap<>();
             //instantiate empty Instant list for each office/spec combination so that specs with no effective dates are included in the final result
-            for(Map.Entry<String, Set<String>> entry : officeToRatingIdsNoAliasesMap.entrySet()) {
+            for(Map.Entry<String, List<String>> entry : officeToRatingIdsNoAliasesMap.entrySet()) {
                 String officeId = entry.getKey();
-                Set<String> specIds = entry.getValue();
+                List<String> specIds = entry.getValue();
                 NavigableMap<String, NavigableSet<Instant>> specMap = specDateMap.computeIfAbsent(officeId, k -> new TreeMap<>());
                 for(String specId : specIds) {
                     specMap.put(specId, new TreeSet<>());
                 }
             }
-            ResultSet rs = catRatings(conn, officeIdMask, specIdMask, begin, end);
-            OracleTypeMap.checkMetaData(rs.getMetaData(), RATINGS_COLUMN_LIST, "Ratings");
-            while(rs.next()) {
-                String officeId = rs.getString(OFFICE_ID);
-                String specId = rs.getString(SPECIFICATION_ID);
-                Set<String> ratingIdsNoAliases = officeToRatingIdsNoAliasesMap.get(officeId);
-                if(ratingIdsNoAliases != null && !ratingIdsNoAliases.contains(specId)) { // skip aliased specs based on queried list of rating ids not including aliases
-                    continue;
+            try(ResultSet rs = catRatings(conn, officeIdMask, specIdMask, begin, end)) {
+                OracleTypeMap.checkMetaData(rs.getMetaData(), RATINGS_COLUMN_LIST, "Ratings");
+                while(rs.next()) {
+                    String officeId = rs.getString(OFFICE_ID);
+                    String specId = rs.getString(SPECIFICATION_ID);
+                    List<String> ratingIdsNoAliases = officeToRatingIdsNoAliasesMap.get(officeId);
+                    if(ratingIdsNoAliases != null && !ratingIdsNoAliases.contains(specId)) { // skip aliased specs based on queried list of rating ids not including aliases
+                        continue;
+                    }
+                    Timestamp timestamp = rs.getTimestamp(EFFECTIVE_DATE, GMT_CALENDAR);
+                    Instant date = timestamp.toInstant();
+                    NavigableSet<Instant> dateList = specDateMap.computeIfAbsent(officeId, k -> new TreeMap<>())
+                            .computeIfAbsent(specId, k -> new TreeSet<>());
+                    dateList.add(date);
                 }
-                Timestamp timestamp = rs.getTimestamp(EFFECTIVE_DATE, GMT_CALENDAR);
-                Instant date = timestamp.toInstant();
-                NavigableSet<Instant> dateList = specDateMap.computeIfAbsent(officeId, k -> new TreeMap<>())
-                        .computeIfAbsent(specId, k -> new TreeSet<>());
-                dateList.add(date);
+                return buildRatingEffectiveDatesMap(specDateMap);
             }
-            return buildRatingEffectiveDatesMap(specDateMap);
         });
     }
 
@@ -514,7 +515,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         return output;
     }
 
-    private Map<String, Set<String>> getRatingIds(String office, String templateIdMask, boolean includeAliases) {
+    private Map<String, List<String>> getRatingIds(String office, String templateIdMask, boolean includeAliases) {
         return connectionResult(dsl, conn -> {
             AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
             Condition condition = DSL.noCondition();
@@ -536,20 +537,12 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
             Field<String> officeField = specView.OFFICE_ID;
             Field<String> idField = specView.RATING_ID;
 
-            Result<Record2<String, String>> result = DSL.using(conn)
+            return DSL.using(conn)
                     .selectDistinct(officeField, idField)
                     .from(specView)
                     .where(condition)
-                    .orderBy(officeField.asc(), idField.asc())
-                    .fetch();
-
-            // Group results into a Map of office to specs
-            return result.stream()
-                    .collect(Collectors.groupingBy(
-                            r -> r.get(officeField),
-                            LinkedHashMap::new, // preserves insertion order
-                            Collectors.mapping(r -> r.get(idField), Collectors.toCollection(LinkedHashSet::new))
-                    ));
+                    .orderBy(officeField, idField)
+                    .fetchGroups(officeField, idField);
         });
 
     }
