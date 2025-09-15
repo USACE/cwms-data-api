@@ -2,11 +2,21 @@ package cwms.cda.data.dao;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.Blob;
+import cwms.cda.data.dto.Blobs;
+import cwms.cda.data.dto.CwmsDTOPaginated;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
+import org.jooq.Record4;
 import org.jooq.ResultQuery;
+import org.jooq.SelectLimitPercentStep;
+import org.jooq.Table;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.AV_CWMS_MEDIA_TYPE;
+import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,8 +26,23 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
+
+import static org.jooq.impl.DSL.field;
+import static org.jooq.impl.DSL.name;
+import static org.jooq.impl.DSL.noCondition;
+import static org.jooq.impl.DSL.table;
+import static org.jooq.impl.DSL.upper;
 
 public class BlobDao extends JooqDao<Blob> {
+
+    public static final String ID = "ID";
+    public static final String DESCRIPTION = "DESCRIPTION";
+    public static final String OFFICE_CODE = "OFFICE_CODE";
+    public static final String MEDIA_TYPE_CODE = "MEDIA_TYPE_CODE";
+    public static final String MEDIA_TYPE_ID = "MEDIA_TYPE_ID";
+    public static final String VALUE = "VALUE";
+    public static final String OFFICE_ID = "OFFICE_ID";
 
     public static final String BLOB_WITH_OFFICE = "SELECT CWMS_MEDIA_TYPE.MEDIA_TYPE_ID, AT_BLOB.VALUE \n"
             + "FROM CWMS_20.AT_BLOB \n"
@@ -49,11 +74,11 @@ public class BlobDao extends JooqDao<Blob> {
         }
 
         Blob retVal = query.fetchOne(r -> {
-            String rId = r.get("ID", String.class);
-            String rOffice = r.get("OFFICE_ID", String.class);
-            String rDesc = r.get("DESCRIPTION", String.class);
-            String rMedia = r.get("MEDIA_TYPE_ID", String.class);
-            byte[] value = r.get("VALUE", byte[].class);
+            String rId = r.get(ID, String.class);
+            String rOffice = r.get(OFFICE_ID, String.class);
+            String rDesc = r.get(DESCRIPTION, String.class);
+            String rMedia = r.get(MEDIA_TYPE_ID, String.class);
+            byte[] value = r.get(VALUE, byte[].class);
             return new Blob(rOffice, rId, rDesc, rMedia, value);
         });
 
@@ -136,13 +161,92 @@ public class BlobDao extends JooqDao<Blob> {
         }
 
         return query.fetch(r -> {
-            String rId = r.get("ID", String.class);
-            String rOffice = r.get("OFFICE_ID", String.class);
-            String rDesc = r.get("DESCRIPTION", String.class);
-            String rMedia = r.get("MEDIA_TYPE_ID", String.class);
+            String rId = r.get(ID, String.class);
+            String rOffice = r.get(OFFICE_ID, String.class);
+            String rDesc = r.get(DESCRIPTION, String.class);
+            String rMedia = r.get(MEDIA_TYPE_ID, String.class);
 
             return new Blob(rOffice, rId, rDesc, rMedia, null);
         });
+    }
+
+    /**
+     * Retrieves all blobs with pagination support.
+     *
+     * @param cursor   the pagination cursor, can be null or empty for the first page
+     * @param pageSize the number of blobs to retrieve per page
+     * @param officeId filter by office ID, can be null or empty to include all offices
+     * @param like     filter blobs by a case-insensitive regex pattern on their IDs, can be null or empty
+     * @return a Blobs object containing the retrieved blobs and pagination information
+     */
+    public @NotNull Blobs getBlobs(@Nullable String cursor, int pageSize, @Nullable String officeId, @Nullable String like) {
+
+        String cursorOffice = null;
+        String cursorId = null;
+
+        AV_CWMS_MEDIA_TYPE cwmsMediaType = AV_CWMS_MEDIA_TYPE.AV_CWMS_MEDIA_TYPE.as("cmt");
+        AV_OFFICE vOffice = AV_OFFICE.AV_OFFICE.as("vo");
+
+        // 2025-07-28 AT_BLOB does not seem to be in the codegen but I'd still like to use the DSL style.
+        // Manually create the blob table and fields.
+        Table<?> atBlob = table(name("CWMS_20", "AT_BLOB")).as("bt");
+        Field<String> blobIdFld = field(name(atBlob.getName(), ID), String.class);
+        Field<String> descFld = field(name(atBlob.getName(), DESCRIPTION), String.class);
+        Field<Long> officeCodeFld = field(name(atBlob.getName(), OFFICE_CODE), Long.class);
+        Field<Long> mediaCodeFld = field(name(atBlob.getName(), MEDIA_TYPE_CODE), Long.class);
+
+        Condition pagingCondition = noCondition();
+        if (cursor != null && !cursor.isEmpty()) {
+            final String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "||");
+
+            if (parts.length > 1) {
+                cursorOffice = Blobs.getOffice(cursor);
+                cursorId = Blobs.getId(cursor);
+
+                pageSize = Integer.parseInt(parts[2]);
+            }
+
+            Condition moreInSameOffice = cursorId == null || cursorOffice == null ? noCondition() :
+                    vOffice.OFFICE_ID.eq(cursorOffice.toUpperCase())
+                            .and(upper(blobIdFld).greaterThan(cursorId.toUpperCase()));
+            Condition nextOffices = cursorOffice == null ? noCondition():
+                    upper(vOffice.OFFICE_ID).greaterThan(cursorOffice.toUpperCase());
+            pagingCondition = moreInSameOffice.or(nextOffices);
+        }
+
+        Condition whereCondition = noCondition();
+
+        if (like != null && !like.isEmpty()) {
+            whereCondition = whereCondition.and(caseInsensitiveLikeRegex(blobIdFld, like));
+        }
+        if(officeId != null && !officeId.isEmpty()) {
+            whereCondition = whereCondition.and(upper(vOffice.OFFICE_ID).eq(upper(officeId)));
+        }
+
+        SelectLimitPercentStep<Record4<String, String, String, String>> query = dsl.select(blobIdFld, descFld, cwmsMediaType.MEDIA_TYPE_ID, vOffice.OFFICE_ID)
+                .from(atBlob)
+                .join(cwmsMediaType).on(mediaCodeFld.eq(cwmsMediaType.MEDIA_TYPE_CODE.cast(Long.class)))
+                .join(vOffice).on(vOffice.OFFICE_CODE.eq(officeCodeFld))
+                .where(whereCondition)
+                .and(pagingCondition)
+                .orderBy(vOffice.OFFICE_ID, blobIdFld)
+                .limit(pageSize);
+
+        Blobs.Builder builder = new Blobs.Builder(cursor, pageSize, 0);
+
+        try (Stream<Record4<String, String, String, String>> stream = query.stream()){
+            stream.forEach(r -> {
+                String rId = r.value1();
+                String rDesc = r.value2();
+                String rMedia = r.value3();
+                String rOffice = r.value4();
+
+                Blob blob = new Blob(rOffice, rId, rDesc, rMedia, null);
+                builder.addBlob(blob);
+            });
+        }
+
+        return builder.build();
     }
 
     public void create(Blob blob, boolean failIfExists, boolean ignoreNulls) {
