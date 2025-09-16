@@ -26,15 +26,16 @@
 
 package cwms.cda.data.dto.locationlevel;
 
+import cwms.cda.data.dto.catalog.LocationAlias;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -55,7 +56,6 @@ import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import hec.data.level.ILocationLevelRef;
 import hec.data.level.JDomLocationLevelImpl;
 
@@ -120,6 +120,9 @@ public abstract class LocationLevel extends CwmsDTO {
 
     private final String attributeComment;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private final List<LocationAlias> aliases;
+
     LocationLevel(LocationLevel.Builder builder) {
         super(builder.officeId);
         specifiedLevelId = builder.specifiedLevelId;
@@ -138,6 +141,7 @@ public abstract class LocationLevel extends CwmsDTO {
         parameterId = builder.parameterId;
         interpolateString = builder.interpolateString;
         expirationDate = builder.expirationDate;
+        aliases = builder.aliases;
     }
 
     public String getSpecifiedLevelId() {
@@ -204,6 +208,10 @@ public abstract class LocationLevel extends CwmsDTO {
         return parameterId;
     }
 
+    public List<LocationAlias> getAliases() {
+        return aliases;
+    }
+
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public abstract static class Builder<T extends Builder<T>> {
@@ -224,6 +232,7 @@ public abstract class LocationLevel extends CwmsDTO {
         String officeId;
         String interpolateString;
         ZonedDateTime expirationDate;
+        List<LocationAlias> aliases = new ArrayList<>();
         final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
         @JsonCreator
@@ -371,6 +380,11 @@ public abstract class LocationLevel extends CwmsDTO {
 
         public T withOfficeId(String officeId) {
             this.officeId = officeId;
+            return self();
+        }
+
+        public T withAliases(List<LocationAlias> aliases) {
+            this.aliases = aliases;
             return self();
         }
 
