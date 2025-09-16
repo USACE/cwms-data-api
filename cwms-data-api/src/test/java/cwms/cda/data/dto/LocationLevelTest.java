@@ -1,5 +1,6 @@
 package cwms.cda.data.dto;
 
+import cwms.cda.data.dto.catalog.LocationAlias;
 import java.time.ZonedDateTime;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,9 +17,12 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -188,4 +192,67 @@ class LocationLevelTest {
 		assertEquals(zdt, virtualLevel.getLevelDate());
 	}
 
+	@Test
+	void test_alias_serialization_roundtrip() {
+		ZonedDateTime zdt = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
+		List<LocationAlias> aliases = new ArrayList<>();
+		LocationAlias alias1 = new LocationAlias("AL1", "Office1");
+		LocationAlias alias2 = new LocationAlias("AL2", "Office2");
+		aliases.add(alias1);
+		aliases.add(alias2);
+
+		final ConstantLocationLevel level = new ConstantLocationLevel.Builder("Test", zdt)
+																	 .withConstantValue(25.0)
+																	 .withOfficeId("SPK")
+																	 .withAliases(aliases)
+																	 .build();
+
+		ContentType contentType = Formats.parseHeader(Formats.JSONV2, LocationLevel.class);
+		String jsonStr = Formats.format(contentType, level);
+
+		// If JSONv2 isn't annotated correctly it will serialize the level like:
+		// {"location-level-id":"Test","level-date":1624287600.000000000}
+
+		assertTrue(jsonStr.contains("2021"));
+		assertTrue(jsonStr.contains("Office1"));
+		assertTrue(jsonStr.contains("Office2"));
+		assertTrue(jsonStr.contains("AL1"));
+		assertTrue(jsonStr.contains("AL2"));
+
+		ConstantLocationLevel levelFromJson = Formats.parseContent(new ContentType(Formats.JSONV2), jsonStr, ConstantLocationLevel.class);
+		assertNotNull(levelFromJson);
+		assertEquals(2, levelFromJson.getAliases().size());
+		LocationAlias aliasFromJson1 = levelFromJson.getAliases().get(0);
+		LocationAlias aliasFromJson2 = levelFromJson.getAliases().get(1);
+		assertEquals("AL1", aliasFromJson1.getName());
+		assertEquals("Office1", aliasFromJson1.getValue());
+		assertEquals("AL2", aliasFromJson2.getName());
+		assertEquals("Office2", aliasFromJson2.getValue());
+	}
+
+	@Test
+	void test_no_alias_serialization_roundtrip() {
+		ZonedDateTime zdt = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
+
+		final ConstantLocationLevel level = new ConstantLocationLevel.Builder("Test", zdt)
+																	 .withOfficeId("SPK")
+																	 .withConstantValue(25.0)
+																	 .build();
+
+		ContentType contentType = Formats.parseHeader(Formats.JSONV2, LocationLevel.class);
+		String jsonStr = Formats.format(contentType, level);
+
+		// If JSONv2 isn't annotated correctly it will serialize the level like:
+		// {"location-level-id":"Test","level-date":1624287600.000000000}
+
+		assertTrue(jsonStr.contains("2021"));
+		assertFalse(jsonStr.contains("Office1"));
+		assertFalse(jsonStr.contains("Office2"));
+		assertFalse(jsonStr.contains("AL1"));
+		assertFalse(jsonStr.contains("AL2"));
+
+		ConstantLocationLevel levelFromJson = Formats.parseContent(new ContentType(Formats.JSONV2), jsonStr, ConstantLocationLevel.class);
+		assertNotNull(levelFromJson);
+		assertTrue(levelFromJson.getAliases().isEmpty());
+	}
 }
