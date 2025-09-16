@@ -273,7 +273,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             for (Record r : locWithAliases) {
                 String alias = r.get(AV_LOC_ALIAS.ALIAS_ID);
                 if (alias != null && !alias.isEmpty()) {
-                    LocationAlias locationAlias = new LocationAlias(locationId, alias);
+                    LocationAlias locationAlias = new LocationAlias(r.get(AV_LOC_ALIAS.CATEGORY_ID)
+                        + "-" + r.get(AV_LOC_ALIAS.GROUP_ID), alias);
                     aliases.add(locationAlias);
                 }
             }

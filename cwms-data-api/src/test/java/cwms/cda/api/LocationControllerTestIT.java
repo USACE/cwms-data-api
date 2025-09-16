@@ -645,12 +645,9 @@ class LocationControllerTestIT extends DataApiTestIT {
             DSLContext dsl = dslContext(c, officeId);
             LocationCategory category = new LocationCategory(officeId, categoryName, "A test category");
             LocationCategoryDao catDao = new LocationCategoryDao(dsl);
-            try {
-                catDao.delete(category.getId(), true, officeId);
-            } catch (Exception e) {
-                // ignore
-            }
+
             catDao.create(category);
+            categoriesToCleanup.add(category);
 
             LocationGroupDao groupDao = new LocationGroupDao(dsl);
             LocationGroup baseGroup1 = new LocationGroup(category, officeId, groupName1, "A test group",
@@ -660,6 +657,9 @@ class LocationControllerTestIT extends DataApiTestIT {
 
             groupDao.create(baseGroup1);
             groupDao.create(baseGroup2);
+            groupsToCleanup.add(baseGroup1);
+            groupsToCleanup.add(baseGroup2);
+
             List<AssignedLocation> locations = new ArrayList<>();
             AssignedLocation assignedLocation = new AssignedLocation(locationName, officeId, sharedLocAlias1, null, null);
             locations.add(assignedLocation);
@@ -709,8 +709,8 @@ class LocationControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("aliases.size()", is(2))
             .body("aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
-            .body("aliases[0].name", is(locationName))
-            .body("aliases[1].name", is(locationName))
+            .body("aliases[0].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+            .body("aliases[1].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
             .body("aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
         ;
 
