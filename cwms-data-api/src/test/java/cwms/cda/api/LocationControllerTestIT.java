@@ -24,6 +24,9 @@
 
 package cwms.cda.api;
 
+import cwms.cda.data.dao.LocationCategoryDao;
+import cwms.cda.data.dao.LocationGroupDao;
+import fixtures.CwmsDataApiSetupCallback;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,6 +37,7 @@ import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.formatters.ContentType;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.filter.log.LogDetail;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -53,6 +57,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isOneOf;
 
 @Tag("integration")
 class LocationControllerTestIT extends DataApiTestIT {
@@ -620,6 +625,128 @@ class LocationControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
             .body(containsString("One or more provided values exceeds the maximum length for the parameter."));
+    }
+
+    @Test
+    void testIncludeAliases() throws Exception {
+        String officeId = "SPK";
+        String locationName = "TestBaseLocation";
+        String controlLocationName = "TestBaseLocControl";
+        createLocation(controlLocationName, true, officeId);
+        createLocation(locationName, true, officeId);
+
+        String categoryName = "TestAliasesCategory1";
+        String groupName1 = "TestAliasesGroup3";
+        String groupName2 = "TestAliasesGroup4";
+        String sharedLocAlias1 = "TESTBASELOCALIAS1";
+        String sharedLocAlias2 = "LOCALIAS1";
+
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, officeId);
+            LocationCategory category = new LocationCategory(officeId, categoryName, "A test category");
+            LocationCategoryDao catDao = new LocationCategoryDao(dsl);
+            try {
+                catDao.delete(category.getId(), true, officeId);
+            } catch (Exception e) {
+                // ignore
+            }
+            catDao.create(category);
+
+            LocationGroupDao groupDao = new LocationGroupDao(dsl);
+            LocationGroup baseGroup1 = new LocationGroup(category, officeId, groupName1, "A test group",
+                sharedLocAlias1, null, 0);
+            LocationGroup baseGroup2 = new LocationGroup(category, officeId, groupName2, "Another test group",
+                sharedLocAlias2, null, 0);
+
+            groupDao.create(baseGroup1);
+            groupDao.create(baseGroup2);
+            List<AssignedLocation> locations = new ArrayList<>();
+            AssignedLocation assignedLocation = new AssignedLocation(locationName, officeId, sharedLocAlias1, null, null);
+            locations.add(assignedLocation);
+            LocationGroup group = new LocationGroup(baseGroup1, locations);
+            groupDao.assignLocs(group, officeId);
+
+            locations = new ArrayList<>();
+            assignedLocation = new AssignedLocation(locationName, officeId, sharedLocAlias2, null, null);
+            locations.add(assignedLocation);
+            LocationGroup group2 = new LocationGroup(baseGroup2, locations);
+            groupDao.assignLocs(group2, officeId);
+        });
+
+        // verify that the control location can be retrieved
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT, "SI")
+            .queryParam(INCLUDE_ALIASES, "false")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + controlLocationName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+        ;
+
+        // verify that the aliased level can be retrieved
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT, "SI")
+            .queryParam(INCLUDE_ALIASES, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + locationName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("aliases.size()", is(2))
+            .body("aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("aliases[0].name", is(locationName))
+            .body("aliases[1].name", is(locationName))
+            .body("aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+        ;
+
+        // verify that alias as location ID does not return results
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT, "SI")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + sharedLocAlias1)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
+
+        // verify that alias as location ID will not return results
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT, "SI")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + sharedLocAlias2)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
     }
 
     enum GetAllTest

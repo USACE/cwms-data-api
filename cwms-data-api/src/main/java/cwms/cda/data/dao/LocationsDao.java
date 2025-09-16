@@ -38,6 +38,8 @@ public interface LocationsDao {
 
     List<CwmsIdLocationKind> getLocationKinds(String idRegexMask, String kindRegexMask, String officeId);
 
+    Location getLocation(String locationName, String unitSystem, String officeId, boolean includeAliases) throws IOException;
+
     Location getLocation(String locationName, String unitSystem, String officeId) throws IOException;
 
     void deleteLocation(String locationName, String officeId);
