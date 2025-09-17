@@ -18,11 +18,11 @@ import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv1;
 import cwms.cda.formatters.xml.XMLv2;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 @JsonRootName("Location")
@@ -57,7 +57,7 @@ public final class Location extends CwmsDTO {
     private final String mapLabel;
     private final String boundingOfficeId;
     private final String elevationUnits;
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
     private final List<LocationAlias> aliases;
 
     private Location() {
@@ -179,8 +179,8 @@ public final class Location extends CwmsDTO {
         return boundingOfficeId;
     }
 
-    public List<LocationAlias> getAliases() {
-        return aliases;
+    public Optional<List<LocationAlias>> getAliases() {
+        return Optional.ofNullable(aliases);
     }
 
     @Override
@@ -193,16 +193,23 @@ public final class Location extends CwmsDTO {
         }
         Location location = (Location) o;
 
-        for (LocationAlias alias : aliases) {
-            boolean found = false;
-            for (LocationAlias alias2 : location.getAliases()) {
-                if (alias.equals(alias2)) {
-                    found = true;
-                    break;
+        if (location.getAliases().isPresent() && !getAliases().isPresent()) {
+            return false;
+        }
+        if (aliases != null) {
+            for (LocationAlias alias : aliases) {
+                boolean found = false;
+                if (location.getAliases().isPresent()) {
+                    for (LocationAlias alias2 : location.getAliases().get()) {
+                        if (alias.equals(alias2)) {
+                            found = true;
+                            break;
+                        }
+                    }
                 }
-            }
-            if (!found) {
-                return false;
+                if (!found) {
+                    return false;
+                }
             }
         }
 
@@ -294,7 +301,7 @@ public final class Location extends CwmsDTO {
         private String mapLabel;
         private String boundingOfficeId;
         private String elevationUnits;
-        private List<LocationAlias> aliases = new ArrayList<>();
+        private List<LocationAlias> aliases;
         private static final String MISSING_NAME_ERROR_MSG = "Location name is a required field";
         private final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
@@ -353,7 +360,7 @@ public final class Location extends CwmsDTO {
             this.mapLabel = location.getMapLabel();
             this.boundingOfficeId = location.getBoundingOfficeId();
             this.elevationUnits = location.getElevationUnits();
-            this.aliases = location.getAliases();
+            this.aliases = location.getAliases().orElse(null);
             buildPropertyFunctions();
         }
 

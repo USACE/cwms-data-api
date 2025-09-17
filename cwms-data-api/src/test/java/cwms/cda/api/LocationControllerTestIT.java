@@ -24,6 +24,7 @@
 
 package cwms.cda.api;
 
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import cwms.cda.data.dao.LocationCategoryDao;
 import cwms.cda.data.dao.LocationGroupDao;
 import fixtures.CwmsDataApiSetupCallback;
@@ -131,7 +132,7 @@ class LocationControllerTestIT extends DataApiTestIT {
                 .withOfficeId(officeId)
                 //withName(getClass().getSimpleName())
                 .build();
-        String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
+        String serializedLocation = JsonV1.buildObjectMapper().registerModule(new Jdk8Module()).writeValueAsString(location);
 
         KeyUser user = KeyUser.SPK_NORMAL;
         // create location
@@ -236,7 +237,7 @@ class LocationControllerTestIT extends DataApiTestIT {
                 json, Location.class))
                 .withOfficeId(officeId)
                 .build();
-        String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
+        String serializedLocation = JsonV1.buildObjectMapper().registerModule(new Jdk8Module()).writeValueAsString(location);
 
         // create location
         String locationId = "Test_Location_1080";
@@ -347,7 +348,7 @@ class LocationControllerTestIT extends DataApiTestIT {
                 .withOfficeId(officeId)
                 //withName(getClass().getSimpleName())
                 .build();
-        String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
+        String serializedLocation = JsonV1.buildObjectMapper().registerModule(new Jdk8Module()).writeValueAsString(location);
 
         KeyUser user = KeyUser.SPK_NORMAL;
         // create location
@@ -606,7 +607,7 @@ class LocationControllerTestIT extends DataApiTestIT {
                 .withOfficeId(officeId)
                 .withName(invalidLongName)
                 .build();
-        String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
+        String serializedLocation = JsonV1.buildObjectMapper().registerModule(new Jdk8Module()).writeValueAsString(location);
 
         KeyUser user = KeyUser.SPK_NORMAL;
         // create location

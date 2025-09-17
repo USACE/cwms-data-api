@@ -3,6 +3,7 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.RequiredFieldException;
@@ -10,6 +11,7 @@ import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
 
+import cwms.cda.helpers.DTOMatch;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +32,7 @@ class LocationTest
 		assertNotNull(location);
 
 		ObjectMapper om = new ObjectMapper();
+		om.registerModule(new Jdk8Module());	// Must be registered to handle Optionals correctly
 		String serializedLocation = om.writeValueAsString(location);
 		assertNotNull(serializedLocation);
 
@@ -44,6 +47,7 @@ class LocationTest
 		assertNotNull(location);
 
 		ObjectMapper om = JsonV1.buildObjectMapper();
+		om.registerModule(new Jdk8Module());
 		String serializedLocation = om.writeValueAsString(location);
 		assertNotNull(serializedLocation);
 
@@ -87,7 +91,7 @@ class LocationTest
 
 		Location deserialized = Formats.parseContent(Formats.parseHeader(format, Location.class),
 			serialized, Location.class);
-		assertEquals(location, deserialized);
+		DTOMatch.assertMatch(location, deserialized);
 	}
 
 	@Test
@@ -165,12 +169,39 @@ class LocationTest
 	{
 		Location location = buildTestLocation();
 		assertNotNull(location);
-		assertTrue(location.getAliases().isEmpty());
+		assertFalse(location.getAliases().isPresent());
 
 		String serialized = Formats.format(Formats.parseHeader(Formats.JSONV2, Location.class), location);
 		assertNotNull(serialized);
 
 		assertFalse(serialized.contains("aliases"));
+	}
+
+	@Test
+	void test_serialization_empty_alias()
+	{
+		Location location = new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
+		50.0, 50.0, "NVGD29", "LRL")
+			.withElevation(10.0)
+			.withCountyName("Sacramento")
+			.withNation(Nation.US)
+			.withActive(true)
+			.withStateInitial("CA")
+			.withBoundingOfficeId("LRL")
+			.withLongName("TEST_LOCATION")
+			.withPublishedLatitude(50.0)
+			.withPublishedLongitude(50.0)
+			.withDescription("for testing")
+			.withElevationUnits("m")
+			.withAliases(new ArrayList<>())
+			.build();
+		assertNotNull(location);
+		assertTrue(location.getAliases().isPresent());
+
+		String serialized = Formats.format(Formats.parseHeader(Formats.JSONV2, Location.class), location);
+		assertNotNull(serialized);
+
+		assertTrue(serialized.contains("aliases"));
 	}
 
 	private Location buildTestLocation() {
