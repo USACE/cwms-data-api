@@ -154,9 +154,8 @@ class BasinControllerIT extends DataApiTestIT
 		}, CwmsDataApiSetupCallback.getWebUser());
 	}
 
-	@ParameterizedTest
-	@ValueSource(strings = { Formats.JSONV1, Formats.DEFAULT })
-	void test_get_create_delete(String format) {
+	@Test
+	void test_get_create_delete() {
 
 		// Test structure:
 		// Create Basin
@@ -170,7 +169,7 @@ class BasinControllerIT extends DataApiTestIT
 		// Create basin
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(format)
+			.accept(Formats.JSONV1)
 			.contentType(Formats.JSONV1)
 			.body(json)
 			.header(AUTH_HEADER, user.toHeaderValue())
@@ -191,7 +190,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve basin and assert that it exists
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(format)
+				.accept(Formats.JSONV1)
 				.queryParam(Controllers.OFFICE, OFFICE)
 			.when()
 				.redirects().follow(true)
@@ -216,7 +215,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve basin and assert that it exists
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(format)
+				.accept(Formats.JSONV1)
 				.queryParam(Controllers.OFFICE, OFFICE)
 			.when()
 				.redirects().follow(true)
@@ -239,7 +238,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve basin and assert that it exists
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(format)
+				.accept(Formats.JSONV1)
 				.queryParam(Controllers.OFFICE, OFFICE)
 			.when()
 				.redirects().follow(true)
@@ -262,7 +261,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve basin and assert that it exists
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(format)
+				.accept(Formats.JSONV1)
 				.queryParam(Controllers.OFFICE, OFFICE)
 				.queryParam(UNIT, "mi2")
 			.when()
@@ -305,7 +304,7 @@ class BasinControllerIT extends DataApiTestIT
 		// Retrieve basin and assert that it does not exist
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(format)
+			.accept(Formats.JSONV1)
 			.queryParam(Controllers.OFFICE, OFFICE)
 		.when()
 			.redirects().follow(true)
@@ -318,14 +317,13 @@ class BasinControllerIT extends DataApiTestIT
 		;
 	}
 
-	@ParameterizedTest
-	@ValueSource(strings = { Formats.JSONV1, Formats.DEFAULT })
-	void test_get_one_bad_units(String format) {
+	@Test
+	void test_get_one_bad_units() {
 		TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
 		// Retrieve basin with bad units
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(format)
+			.accept(Formats.JSONV1)
 			.queryParam(Controllers.OFFICE, OFFICE)
 			.queryParam(UNIT, "F")
 			.header(AUTH_HEADER, user.toHeaderValue())
@@ -386,9 +384,8 @@ class BasinControllerIT extends DataApiTestIT
 		;
 	}
 
-	@ParameterizedTest
-	@ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
-	void test_get_all(String format) {
+	@Test
+	void test_get_all() {
 
 		// Test structure:
 		// Create Basin
@@ -401,7 +398,7 @@ class BasinControllerIT extends DataApiTestIT
 		// Create basin
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(format)
+			.accept(Formats.JSONV1)
 			.contentType(Formats.JSONV1)
 			.body(json)
 			.header(AUTH_HEADER, user.toHeaderValue())
@@ -423,7 +420,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve all basins and assert that the created basin is in the list
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(format)
+				.accept(Formats.JSONV1)
 				.queryParam(Controllers.OFFICE, OFFICE)
 			.when()
 				.redirects().follow(true)
@@ -448,7 +445,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve all basins and assert that the created basin is in the list
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(format)
+				.accept(Formats.JSONV1)
 				.queryParam(Controllers.OFFICE, OFFICE)
 			.when()
 				.redirects().follow(true)
@@ -471,7 +468,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve all basins and assert that the created basin is in the list
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(format)
+				.accept(Formats.JSONV1)
 				.queryParam(Controllers.OFFICE, OFFICE)
 			.when()
 				.redirects().follow(true)
@@ -494,7 +491,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve all basins and assert that the created basin is in the list
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(format)
+				.accept(Formats.JSONV1)
 				.queryParam(Controllers.OFFICE, OFFICE)
 				.queryParam(UNIT, "mi2")
 			.when()
@@ -535,12 +532,13 @@ class BasinControllerIT extends DataApiTestIT
 		;
 	}
 
-	@Test
-	void test_get_all_connectivity() {
+	@ParameterizedTest
+	@ValueSource(strings = { Formats.NAMED_PGJSON, Formats.DEFAULT })
+	void test_get_all_connectivity(String format) {
 		// Retrieve all basins using legacy getter and assert that the created basin is in the list
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(Formats.NAMED_PGJSON)
+			.accept(format)
 			.queryParam(Controllers.OFFICE, OFFICE)
 			.queryParam(UNIT, "mi2")
 		.when()
@@ -555,12 +553,13 @@ class BasinControllerIT extends DataApiTestIT
 		;
 	}
 
-	@Test
-	void test_get_one_connectivity() {
+	@ParameterizedTest
+	@ValueSource(strings = { Formats.NAMED_PGJSON, Formats.DEFAULT })
+	void test_get_one_connectivity(String format) {
 		// Retrieve basin using legacy getter and assert that the created basin exists
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(Formats.NAMED_PGJSON)
+			.accept(format)
 			.queryParam(Controllers.OFFICE, OFFICE)
 		.when()
 			.redirects().follow(true)
