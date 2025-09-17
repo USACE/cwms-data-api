@@ -25,7 +25,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
@@ -40,13 +41,14 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
 
 
     @BeforeAll
-    public static void create() throws Exception {
+    static void create() throws Exception {
         createLocation(locationId, true, OFFICE_STR);
         createTimeseries(OFFICE_STR, tsId, 0);
     }
 
-    @Test
-    void test_create_get_delete_get_versioned() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_get_delete_get_versioned(String format) throws Exception {
         // Post versioned time series
         InputStream resource = this.getClass().getResourceAsStream(resourcePath + "num_ts_create.json");
         assertNotNull(resource);
@@ -58,11 +60,9 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         ObjectMapper om = JsonV2.buildObjectMapper();
         ts = om.readValue(tsData, TimeSeries.class);
 
-
-
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization", user.toHeaderValue())
@@ -78,7 +78,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Get versioned time series
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -106,7 +106,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Delete all values from timeseries
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -127,7 +127,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Get versioned time series
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -153,8 +153,9 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("date-version-type", equalTo(VersionType.SINGLE_VERSION.toString()));
     }
 
-    @Test
-    void test_create_get_update_get_delete_get_versioned() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_get_update_get_delete_get_versioned(String format) throws Exception {
         // Post versioned time series
         InputStream resource = this.getClass().getResourceAsStream(resourcePath + "num_ts_create.json");
         assertNotNull(resource);
@@ -167,7 +168,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
 
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization", user.toHeaderValue())
@@ -184,7 +185,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Get versioned time series
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -216,7 +217,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
 
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(tsUpdatedData)
                 .header("Authorization", user.toHeaderValue())
@@ -233,7 +234,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Get updated versioned time series
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -260,7 +261,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Delete all values from timeseries
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -281,7 +282,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Get versioned time series
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -307,8 +308,9 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("date-version-type", equalTo(VersionType.SINGLE_VERSION.toString()));
     }
 
-    @Test
-    void test_create_get_update_get_delete_get_unversioned() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_get_update_get_delete_get_unversioned(String format) throws Exception {
         // Post versioned time series
         InputStream resource = this.getClass().getResourceAsStream(resourcePath + "num_ts_create_unversioned.json");
         assertNotNull(resource);
@@ -319,11 +321,9 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         ObjectMapper om = JsonV2.buildObjectMapper();
         ts = om.readValue(tsData, TimeSeries.class);
 
-
-
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization", user.toHeaderValue())
@@ -339,7 +339,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Get versioned time series
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -370,7 +370,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
 
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(tsUpdatedData)
                 .header("Authorization", user.toHeaderValue())
@@ -386,7 +386,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Get updated versioned time series
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -412,7 +412,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Delete all values from timeseries
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -432,7 +432,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Get versioned time series
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -457,8 +457,9 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .body("date-version-type", equalTo(VersionType.UNVERSIONED.toString()));
     }
 
-    @Test
-    void test_create_get_update_get_delete_get_max_agg() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_get_update_get_delete_get_max_agg(String format) throws Exception {
         // Post 2 versioned time series
         InputStream resource = this.getClass().getResourceAsStream(resourcePath + "num_ts_create.json");
         assertNotNull(resource);
@@ -479,7 +480,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
 
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization", user.toHeaderValue())
@@ -494,7 +495,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
 
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(tsData2)
                 .header("Authorization", user.toHeaderValue())
@@ -510,7 +511,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Get Max Aggregate
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -543,7 +544,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
 
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(tsUpdatedData)
                 .header("Authorization", user.toHeaderValue())
@@ -560,7 +561,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Get updated max aggregate
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -587,7 +588,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Delete all values from one version date
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())
@@ -608,7 +609,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
         // Get max aggregate
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, ts.getOfficeId())

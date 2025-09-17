@@ -30,13 +30,14 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 
 import javax.servlet.http.HttpServletResponse;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.api.Controllers.CASCADE_DELETE;
 import static cwms.cda.api.Controllers.OFFICE;
@@ -50,8 +51,9 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
     TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     TestAccounts.KeyUser user2 = TestAccounts.KeyUser.SWT_NORMAL;
 
-    @Test
-    void test_create_read_delete() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_read_delete(String format) {
         String officeId = user.getOperatingOffice();
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_create_read_delete", "IntegrationTesting");
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
@@ -59,7 +61,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(xml)
             .header("Authorization", user.toHeaderValue())
@@ -74,7 +76,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
         .when()
@@ -91,7 +93,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Delete
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -108,7 +110,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam("office", officeId)
         .when()
@@ -121,8 +123,9 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
-    void test_create_read_delete_new_LRTS_identifier() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_read_delete_new_LRTS_identifier(String format) {
         String officeId = user.getOperatingOffice();
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_lrts_id", "IntegrationTesting");
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
@@ -130,7 +133,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(xml)
             .header("Authorization", user.toHeaderValue())
@@ -146,7 +149,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
         .when()
@@ -163,7 +166,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Delete
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -180,7 +183,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam("office", officeId)
         .when()
@@ -193,8 +196,9 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
-    void test_create_already_existing_CWMS_category() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_already_existing_CWMS_category(String format) {
         String officeId = user.getOperatingOffice();
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "Default", "Default");
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
@@ -202,7 +206,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Attempt to Create Category, should fail
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(xml)
             .header("Authorization", user.toHeaderValue())
@@ -217,7 +221,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam("office", officeId)
         .when()
@@ -230,9 +234,10 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void test_create_read_delete_same_category_different_office() throws Exception {
+    void test_create_read_delete_same_category_different_office(String format) throws Exception {
         String officeId = user.getOperatingOffice();
         String officeId2 = user2.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
@@ -245,7 +250,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(xml)
             .header("Authorization", user.toHeaderValue())
@@ -261,7 +266,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Create Category 2
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(xml)
             .header("Authorization", user.toHeaderValue())
@@ -276,7 +281,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
         .when()
@@ -293,7 +298,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         // Read second category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId2)
         .when()
@@ -310,7 +315,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Delete
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -326,7 +331,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Delete second category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user2.toHeaderValue())
             .queryParam(OFFICE, officeId2)
@@ -342,7 +347,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam("office", officeId)
         .when()
@@ -356,7 +361,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
         //Read second Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam("office", officeId2)
         .when()
