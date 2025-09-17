@@ -20,6 +20,9 @@ public class VerticalDatumInfo extends CwmsDTOBase {
     String nativeDatum;
     Double elevation;
 
+    public String localDatumName;
+
+
     // Serialize empty arrays in the xml
     @JsonInclude(JsonInclude.Include.ALWAYS)
     VerticalDatumInfo.Offset[] offsets = new Offset[0];
@@ -49,6 +52,10 @@ public class VerticalDatumInfo extends CwmsDTOBase {
 
     public Offset[] getOffsets() {
         return offsets;
+    }
+
+    public String getLocalDatumName() {
+        return localDatumName;
     }
 
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -118,6 +125,7 @@ public class VerticalDatumInfo extends CwmsDTOBase {
         this.nativeDatum = builder.nativeDatum;
         this.elevation = builder.elevation;
         this.offsets = builder.offsets;
+        this.localDatumName = builder.localDatumName;
     }
 
     @JsonPOJOBuilder
@@ -129,6 +137,8 @@ public class VerticalDatumInfo extends CwmsDTOBase {
         String nativeDatum;
         Double elevation;
         Offset[] offsets = new Offset[0];
+
+        String localDatumName = null;
 
 
         public VerticalDatumInfo.Builder withOffice(String office) {
@@ -161,9 +171,13 @@ public class VerticalDatumInfo extends CwmsDTOBase {
             return this;
         }
 
-        public VerticalDatumInfo.Builder withOffset(boolean isEstimate, String toDatum,
-                                                    Double value) {
+        public VerticalDatumInfo.Builder withOffset(boolean isEstimate, String toDatum, Double value) {
             this.offsets = new Offset[]{new Offset(isEstimate, toDatum, value)};
+            return this;
+        }
+
+        public VerticalDatumInfo.Builder withLocalDatumName(String localDatumName) {
+            this.localDatumName = localDatumName;
             return this;
         }
 

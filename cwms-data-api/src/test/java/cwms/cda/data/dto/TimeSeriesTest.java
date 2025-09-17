@@ -7,7 +7,6 @@ import cwms.cda.formatters.json.JsonV2;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -76,6 +75,28 @@ public class TimeSeriesTest {
 
 		assertEquals("NGVD-29", ts.getVerticalDatumInfo().getNativeDatum());
 	}
+
+    @Test
+    void testRoundtripWithLocalDatumName() throws JsonProcessingException {
+        VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
+                .withOffice("LRL").withUnit("m").withLocation("Buckhorn")
+                .withNativeDatum("NGVD-29").withElevation(230.7).withOffset(
+                        true, "NAVD-88", -.1666)
+                .withLocalDatumName("Castle Rock");
+
+        VerticalDatumInfo expectedVDI = builder.build();
+        TimeSeries ts = buildTimeSeries(expectedVDI);
+        ObjectMapper om = buildObjectMapper();
+        String tsBody = om.writeValueAsString(ts);
+        assertNotNull(tsBody);
+        TimeSeries ts2 = om.readValue(tsBody, TimeSeries.class);
+        assertNotNull(ts2);
+        VerticalDatumInfo actualVDI = ts2.getVerticalDatumInfo();
+        assertNotNull(actualVDI);
+        assertNotNull(actualVDI.getLocalDatumName());
+        assertEquals(expectedVDI.getLocalDatumName(), actualVDI.getLocalDatumName());
+    }
+
 
 	@Test
 	void testSerializerWithNulls() {
