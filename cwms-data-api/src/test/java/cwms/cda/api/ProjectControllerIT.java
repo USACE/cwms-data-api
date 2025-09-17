@@ -50,14 +50,15 @@ import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 final class ProjectControllerIT extends DataApiTestIT {
 
-
-    @Test
-    void test_get_create_delete() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_get_create_delete(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/project.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -74,7 +75,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         //Create the project
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .body(json)
             .queryParam(Controllers.FAIL_IF_EXISTS, true)
@@ -94,7 +95,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         // Retrieve the project and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -140,8 +141,9 @@ final class ProjectControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_update_does_not_exist() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_update_does_not_exist(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/project_new.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -154,7 +156,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         //Try to update the project - should fail b/c it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, user.getOperatingOffice())
             .queryParam(NAME, "NewName")
@@ -171,13 +173,14 @@ final class ProjectControllerIT extends DataApiTestIT {
 
     }
 
-    @Test
-    void test_delete_does_not_exist() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_delete_does_not_exist(String format) {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         // Delete a Project
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(OFFICE, user.getOperatingOffice())
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -191,8 +194,9 @@ final class ProjectControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_get_all() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_get_all(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/project.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -208,7 +212,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         //Create the project
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -232,7 +236,7 @@ final class ProjectControllerIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(OFFICE, office)
             .queryParam(Controllers.ID_MASK, "^" + loc.getName() + "$")
         .when()
@@ -276,7 +280,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         // Delete a Project
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(OFFICE, office)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -290,8 +294,9 @@ final class ProjectControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_get_all_paged() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_get_all_paged(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/project.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -317,7 +322,7 @@ final class ProjectControllerIT extends DataApiTestIT {
             //Create the project
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .contentType(Formats.JSON)
                 .body(projJson)
                 .header(AUTH_HEADER, user.toHeaderValue())
@@ -335,7 +340,7 @@ final class ProjectControllerIT extends DataApiTestIT {
         try {
             ExtractableResponse<Response> extractableResponse = given()
                     .log().ifValidationFails(LogDetail.ALL, true)
-                    .accept(Formats.JSON)
+                    .accept(format)
                     .queryParam(OFFICE, office)
                     .queryParam(Controllers.PAGE_SIZE, 5)
                     .queryParam(Controllers.ID_MASK, "^PageTest.*$")
@@ -361,7 +366,7 @@ final class ProjectControllerIT extends DataApiTestIT {
 
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(OFFICE, office)
                 .queryParam(Controllers.PAGE, next)
                 .queryParam(Controllers.PAGE_SIZE, 5)
@@ -386,7 +391,7 @@ final class ProjectControllerIT extends DataApiTestIT {
                 // Delete the Projects
                 given()
                     .log().ifValidationFails(LogDetail.ALL, true)
-                    .accept(Formats.JSON)
+                    .accept(format)
                     .queryParam(OFFICE, office)
                     .header(AUTH_HEADER, user.toHeaderValue())
                 .when()
