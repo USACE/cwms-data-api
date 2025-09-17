@@ -191,7 +191,7 @@ public class BasinController implements CrudHandler {
                     ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
             String office = ctx.queryParam(OFFICE);
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(formatHeader, Basin.class);
+            ContentType contentType = Formats.parseHeader(formatHeader, cwms.cda.data.dto.basin.Basin.class);
             ctx.contentType(contentType.toString());
             String result;
             if (contentType.getType().equals(Formats.NAMED_PGJSON)) {

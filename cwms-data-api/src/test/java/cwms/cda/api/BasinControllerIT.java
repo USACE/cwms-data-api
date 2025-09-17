@@ -50,6 +50,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
@@ -152,8 +154,9 @@ class BasinControllerIT extends DataApiTestIT
 		}, CwmsDataApiSetupCallback.getWebUser());
 	}
 
-	@Test
-	void test_get_create_delete() {
+	@ParameterizedTest
+	@ValueSource(strings = { Formats.JSONV1, Formats.DEFAULT })
+	void test_get_create_delete(String format) {
 
 		// Test structure:
 		// Create Basin
@@ -167,7 +170,7 @@ class BasinControllerIT extends DataApiTestIT
 		// Create basin
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(Formats.JSONV1)
+			.accept(format)
 			.contentType(Formats.JSONV1)
 			.body(json)
 			.header(AUTH_HEADER, user.toHeaderValue())
@@ -188,7 +191,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve basin and assert that it exists
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(Formats.JSONV1)
+				.accept(format)
 				.queryParam(Controllers.OFFICE, OFFICE)
 			.when()
 				.redirects().follow(true)
@@ -213,7 +216,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve basin and assert that it exists
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(Formats.JSONV1)
+				.accept(format)
 				.queryParam(Controllers.OFFICE, OFFICE)
 			.when()
 				.redirects().follow(true)
@@ -236,7 +239,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve basin and assert that it exists
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(Formats.JSONV1)
+				.accept(format)
 				.queryParam(Controllers.OFFICE, OFFICE)
 			.when()
 				.redirects().follow(true)
@@ -259,7 +262,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve basin and assert that it exists
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(Formats.JSONV1)
+				.accept(format)
 				.queryParam(Controllers.OFFICE, OFFICE)
 				.queryParam(UNIT, "mi2")
 			.when()
@@ -302,7 +305,7 @@ class BasinControllerIT extends DataApiTestIT
 		// Retrieve basin and assert that it does not exist
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(Formats.JSONV1)
+			.accept(format)
 			.queryParam(Controllers.OFFICE, OFFICE)
 		.when()
 			.redirects().follow(true)
@@ -315,13 +318,14 @@ class BasinControllerIT extends DataApiTestIT
 		;
 	}
 
-	@Test
-	void test_get_one_bad_units() {
+	@ParameterizedTest
+	@ValueSource(strings = { Formats.JSONV1, Formats.DEFAULT })
+	void test_get_one_bad_units(String format) {
 		TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
 		// Retrieve basin with bad units
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(Formats.JSONV1)
+			.accept(format)
 			.queryParam(Controllers.OFFICE, OFFICE)
 			.queryParam(UNIT, "F")
 			.header(AUTH_HEADER, user.toHeaderValue())
@@ -382,8 +386,9 @@ class BasinControllerIT extends DataApiTestIT
 		;
 	}
 
-	@Test
-	void test_get_all() {
+	@ParameterizedTest
+	@ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+	void test_get_all(String format) {
 
 		// Test structure:
 		// Create Basin
@@ -396,7 +401,7 @@ class BasinControllerIT extends DataApiTestIT
 		// Create basin
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(Formats.JSONV1)
+			.accept(format)
 			.contentType(Formats.JSONV1)
 			.body(json)
 			.header(AUTH_HEADER, user.toHeaderValue())
@@ -418,7 +423,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve all basins and assert that the created basin is in the list
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(Formats.JSONV1)
+				.accept(format)
 				.queryParam(Controllers.OFFICE, OFFICE)
 			.when()
 				.redirects().follow(true)
@@ -443,7 +448,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve all basins and assert that the created basin is in the list
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(Formats.JSONV1)
+				.accept(format)
 				.queryParam(Controllers.OFFICE, OFFICE)
 			.when()
 				.redirects().follow(true)
@@ -466,7 +471,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve all basins and assert that the created basin is in the list
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(Formats.JSONV1)
+				.accept(format)
 				.queryParam(Controllers.OFFICE, OFFICE)
 			.when()
 				.redirects().follow(true)
@@ -489,7 +494,7 @@ class BasinControllerIT extends DataApiTestIT
 			// Retrieve all basins and assert that the created basin is in the list
 			given()
 				.log().ifValidationFails(LogDetail.ALL, true)
-				.accept(Formats.JSONV1)
+				.accept(format)
 				.queryParam(Controllers.OFFICE, OFFICE)
 				.queryParam(UNIT, "mi2")
 			.when()

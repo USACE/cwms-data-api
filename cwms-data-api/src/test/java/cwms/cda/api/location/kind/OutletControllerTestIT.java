@@ -40,6 +40,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
@@ -92,7 +95,7 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
     private static final String IDENTIFIER = "identifier";
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         setupProject();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -117,7 +120,7 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
@@ -188,7 +191,6 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             .body(OFFICE_ID_TEXT, equalTo(RENAMED_CONDUIT_GATE.getOfficeId()))
             .body(MESSAGE, equalTo("CWMS Outlet successfully renamed."))
             .body(IDENTIFIER, equalTo(RENAMED_CONDUIT_GATE.getName()));
-        ;
 
         //Fail to retrieve old outlet name
         given()
@@ -560,8 +562,9 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
 
     }
 
-    @Test
-    void test_outlet_crud() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_outlet_crud(String format) throws Exception {
         // Structure of test:
         // 1)Create the Outlet - TG3 does not exist in the db.
         // 2)Retrieve the Outlet and assert that it exists
@@ -591,7 +594,7 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         //Get the newly created outlet
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE_ID)
         .when()
             .redirects().follow(true)
@@ -635,7 +638,7 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         //Get the newly modified outlet
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE_ID)
         .when()
             .redirects().follow(true)
@@ -679,7 +682,7 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         //Re-retrieve, and ensure it doesn't exist anymore.
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE_ID)
         .when()
             .redirects().follow(true)
