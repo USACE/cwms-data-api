@@ -40,13 +40,15 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
 
 @Tag("integration")
 final class LocationKindControllerIT extends DataApiTestIT {
-    @Test
-    void test_get_location_kinds() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_get_location_kinds(String format) throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         String officeId = "SPK";
@@ -58,7 +60,7 @@ final class LocationKindControllerIT extends DataApiTestIT {
         // get all locations
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
         .when()
@@ -73,7 +75,7 @@ final class LocationKindControllerIT extends DataApiTestIT {
         // get specified location
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam(NAMES, randomName)
@@ -93,8 +95,9 @@ final class LocationKindControllerIT extends DataApiTestIT {
             .body("[0].location-kind-id", equalTo("SITE"));
     }
 
-    @Test
-    void testLocationKindLike() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void testLocationKindLike(String format) throws Exception {
         String locationName = RandomStringUtils.randomAlphabetic(20);
         String officeId = "SPK";
         createLocation(locationName, true, officeId);
@@ -111,7 +114,7 @@ final class LocationKindControllerIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam(LOCATION_KIND_LIKE, "BASIN")
