@@ -2123,9 +2123,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .body("levels[0].aliases", notNullValue())
             .body("levels[0].aliases.size()", is(2))
             .body("levels[0].aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
-            .body("levels[0].aliases[0].name", is(levelId1))
+            .body("levels[0].aliases[0].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
             .body("levels[0].aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
-            .body("levels[0].aliases[1].name", is(levelId1))
+            .body("levels[0].aliases[1].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
             ;
 
         // verify the results for a single level
@@ -2150,9 +2150,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .body("levels[0].aliases", notNullValue())
             .body("levels[0].aliases.size()", is(2))
             .body("levels[0].aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
-            .body("levels[0].aliases[0].name", is(levelId2))
+            .body("levels[0].aliases[0].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
             .body("levels[0].aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
-            .body("levels[0].aliases[1].name", is(levelId2))
+            .body("levels[0].aliases[1].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
         ;
 
         // verify the results for a single level
@@ -2177,9 +2177,9 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .body("levels[0].aliases", notNullValue())
             .body("levels[0].aliases.size()", is(2))
             .body("levels[0].aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
-            .body("levels[0].aliases[0].name", is(levelId2))
+            .body("levels[0].aliases[0].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
             .body("levels[0].aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
-            .body("levels[0].aliases[1].name", is(levelId2))
+            .body("levels[0].aliases[1].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
         ;
 
         // verify that alias as level-id mask does not return results

@@ -27,6 +27,7 @@ package cwms.cda.helpers;
 import cwms.cda.data.dto.CwmsIdTimeExtentsEntry;
 import cwms.cda.data.dto.TimeExtents;
 import cwms.cda.data.dto.TimeSeriesExtents;
+import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.location.kind.GateChange;
@@ -294,7 +295,25 @@ public final class DTOMatch {
                 () -> assertEquals(first.getCountyName(), second.getCountyName()),
                 () -> assertEquals(first.getTimezoneName(), second.getTimezoneName()),
                 () -> assertEquals(first.getOfficeId(), second.getOfficeId()),
-                () -> assertEquals(first.getLocationType(), second.getLocationType())
+                () -> assertEquals(first.getLocationType(), second.getLocationType()),
+                () -> {
+                        if (first.getAliases().isPresent() && second.getAliases().isPresent()) {
+                            assertEquals(first.getAliases().get().size(), second.getAliases().get().size(),
+                                "Alias list sizes do not match");
+                            for (LocationAlias alias : first.getAliases().get()) {
+                                boolean matched = false;
+                                for (LocationAlias alias2 : second.getAliases().get()) {
+                                    if (alias.equals(alias2)) {
+                                        matched = true;
+                                        break;
+                                    }
+                                }
+                                assertTrue(matched, "Aliases do not match");
+                            }
+                        } else if (first.getAliases().isPresent() || second.getAliases().isPresent()) {
+                            fail("One of the LocationAlias lists is null");
+                        }
+                }
         );
     }
 
