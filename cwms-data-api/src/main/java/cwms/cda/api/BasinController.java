@@ -123,7 +123,8 @@ public class BasinController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT);
             String result;
             ContentType contentType;
-            if (formatHeader != null && formatHeader.contains(Formats.NAMED_PGJSON)) {
+            if (formatHeader != null && (formatHeader.contains(Formats.NAMED_PGJSON)
+                                            || formatHeader.contains(Formats.DEFAULT))) {
                 contentType = Formats.parseHeader(formatHeader, Basin.class);
                 ctx.contentType(contentType.toString());
                 BasinDao basinDao = new BasinDao(dsl);
