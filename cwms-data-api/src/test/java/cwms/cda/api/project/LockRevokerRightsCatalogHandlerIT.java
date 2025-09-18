@@ -48,7 +48,8 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
@@ -90,14 +91,15 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
     }
 
 
-    @Test
-    void test_allow_cat_deny_cat() throws SQLException {
+    @ParameterizedTest
+    @ValueSource(strings = { Formats.JSON, Formats.DEFAULT })
+    void test_allow_cat_deny_cat(String format) throws SQLException {
 
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(OFFICE_MASK, OFFICE)
             .queryParam(PROJECT_MASK, projId)
             .queryParam(APPLICATION_MASK, appId)
@@ -121,7 +123,7 @@ public class LockRevokerRightsCatalogHandlerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(OFFICE_MASK, OFFICE)
             .queryParam(PROJECT_MASK, projId)
             .queryParam(APPLICATION_MASK, appId)

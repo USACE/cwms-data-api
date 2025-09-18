@@ -50,6 +50,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
@@ -530,12 +532,13 @@ class BasinControllerIT extends DataApiTestIT
 		;
 	}
 
-	@Test
-	void test_get_all_connectivity() {
+	@ParameterizedTest
+	@ValueSource(strings = { Formats.NAMED_PGJSON, Formats.DEFAULT })
+	void test_get_all_connectivity(String format) {
 		// Retrieve all basins using legacy getter and assert that the created basin is in the list
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(Formats.NAMED_PGJSON)
+			.accept(format)
 			.queryParam(Controllers.OFFICE, OFFICE)
 			.queryParam(UNIT, "mi2")
 		.when()
@@ -550,12 +553,13 @@ class BasinControllerIT extends DataApiTestIT
 		;
 	}
 
-	@Test
-	void test_get_one_connectivity() {
+	@ParameterizedTest
+	@ValueSource(strings = { Formats.NAMED_PGJSON, Formats.DEFAULT })
+	void test_get_one_connectivity(String format) {
 		// Retrieve basin using legacy getter and assert that the created basin exists
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(Formats.NAMED_PGJSON)
+			.accept(format)
 			.queryParam(Controllers.OFFICE, OFFICE)
 		.when()
 			.redirects().follow(true)

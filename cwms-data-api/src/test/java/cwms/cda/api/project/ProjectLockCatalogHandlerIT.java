@@ -58,7 +58,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
@@ -125,8 +126,9 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
         });
     }
 
-    @Test
-    void test_cat_locks() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_cat_locks(String format) {
 
         String webUser = CwmsDataApiSetupCallback.getWebUser();
 
@@ -146,7 +148,7 @@ public class ProjectLockCatalogHandlerIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
+            .accept(format)
             .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue()) // catalog call needs auth b/c it returns PII
             .queryParam(OFFICE_MASK, OFFICE)
             .queryParam(PROJECT_MASK, "catLocks*")

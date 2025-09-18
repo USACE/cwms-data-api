@@ -52,7 +52,8 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 public class ProjectLockGetOneHandlerIT extends DataApiTestIT {
@@ -100,14 +101,15 @@ public class ProjectLockGetOneHandlerIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    @Test
-    void test_lock_status() throws SQLException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_lock_status(String format) throws SQLException {
 
         // This is a little different.  Returns a 200 if locked, 404 if not.
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(APPLICATION_ID, appId)
             .when()
@@ -125,7 +127,7 @@ public class ProjectLockGetOneHandlerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(APPLICATION_ID, appId)
         .when()
