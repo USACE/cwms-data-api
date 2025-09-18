@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class VerticalDatumInfo extends CwmsDTOBase {
+
+
     String office;
 
     String unit;
@@ -20,8 +22,7 @@ public class VerticalDatumInfo extends CwmsDTOBase {
     String nativeDatum;
     Double elevation;
 
-    public String localDatumName;
-
+    String localDatumName;
 
     // Serialize empty arrays in the xml
     @JsonInclude(JsonInclude.Include.ALWAYS)
