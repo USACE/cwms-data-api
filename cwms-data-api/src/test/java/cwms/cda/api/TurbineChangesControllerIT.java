@@ -66,6 +66,8 @@ import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 
@@ -134,8 +136,9 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
         CwmsDataApiSetupCallback.getWebUser());
     }
 
-    @Test
-    void test_get_create_delete() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_get_create_delete(String format) {
 
         // Structure of test:
         // 1)Create the Turbine Changes
@@ -169,7 +172,7 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
         // Retrieve the Turbine Changes and assert that they exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.BEGIN, "2024-03-04T08:00:00Z")
             .queryParam(Controllers.END, "2024-03-04T10:00:00Z")
@@ -215,7 +218,7 @@ final class TurbineChangesControllerIT extends DataApiTestIT {
         // Retrieve the Turbine Changes and assert that they no longer exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.BEGIN, "2024-03-04T08:00:00Z")
             .queryParam(Controllers.END, "2024-03-04T10:00:00Z")
