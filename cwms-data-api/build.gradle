@@ -97,6 +97,8 @@ dependencies {
     // https://mvnrepository.com/artifact/de.grundid.opendatalab/geojson-jackson
     implementation(libs.geojson.jackson)
 
+    implementation(libs.jackson.datatype.jdk8)
+
     implementation(libs.javalin.core) {
         exclude group: "org.eclipse.jetty"
         exclude group: "org.eclipse.jetty.websocket"

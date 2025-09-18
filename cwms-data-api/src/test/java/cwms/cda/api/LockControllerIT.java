@@ -76,6 +76,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
@@ -242,9 +244,10 @@ final class LockControllerIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void test_get_create_delete_EN() {
+    void test_get_create_delete_EN(String format) {
 
         // Structure of test:
         // 1)Create the Lock
@@ -297,7 +300,7 @@ final class LockControllerIT extends DataApiTestIT {
         // Retrieve the Lock and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(UNIT, "EN")
         .when()
@@ -356,7 +359,7 @@ final class LockControllerIT extends DataApiTestIT {
         // Retrieve a Lock and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -369,9 +372,10 @@ final class LockControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void test_get_create_delete_SI() throws Exception {
+    void test_get_create_delete_SI(String format) throws Exception {
 
         // Structure of test:
         // 1)Create the Lock
@@ -457,7 +461,7 @@ final class LockControllerIT extends DataApiTestIT {
             // Retrieve the Lock and assert that it exists
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
+                .accept(format)
                 .queryParam(Controllers.OFFICE, office)
             .when()
                 .redirects().follow(true)
@@ -510,7 +514,7 @@ final class LockControllerIT extends DataApiTestIT {
         // Retrieve a Lock and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -542,9 +546,10 @@ final class LockControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void storeRetrieveSameLockNameDifferentProject() throws Exception {
+    void storeRetrieveSameLockNameDifferentProject(String format) throws Exception {
         // Structure of test:
         // 1)Create the two Locks
         // 2)Retrieve the Locks and assert that they exist
@@ -723,7 +728,7 @@ final class LockControllerIT extends DataApiTestIT {
             // Retrieve the Lock and assert that it exists
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
+                .accept(format)
                 .queryParam(Controllers.OFFICE, office)
                 .queryParam(UNIT, "SI")
             .when()
@@ -758,7 +763,7 @@ final class LockControllerIT extends DataApiTestIT {
             // Retrieve the Lock and assert that it exists
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
+                .accept(format)
                 .queryParam(Controllers.OFFICE, office)
                 .queryParam(UNIT, "SI")
             .when()
@@ -820,7 +825,7 @@ final class LockControllerIT extends DataApiTestIT {
         // Retrieve a Lock and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(PROJECT_ID, metricLockProj1.getProjectId().getName())
         .when()
@@ -854,7 +859,7 @@ final class LockControllerIT extends DataApiTestIT {
         // Retrieve a Lock and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -932,9 +937,10 @@ final class LockControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void test_get_all() {
+    void test_get_all(String format) {
 
         // Structure of test:
         // 1)Create the Lock
@@ -985,7 +991,7 @@ final class LockControllerIT extends DataApiTestIT {
         // Retrieve the Lock and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.PROJECT_ID, LOCK.getProjectId().getName())
         .when()

@@ -64,7 +64,8 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 
 @Tag("integration")
@@ -115,8 +116,9 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         });
     }
 
-    @Test
-    void test_retrieving_recent_ts_data() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_retrieving_recent_ts_data(String format) throws Exception {
         TimeSeries ts = buildTimeSeries(OFFICE_ID, TS_ID);
         ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeries.class);
         String json = Formats.format(contentType, ts);
@@ -145,7 +147,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
             .body(json)
@@ -169,7 +171,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
             .body(json)
@@ -187,7 +189,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(Controllers.CATEGORY_ID, CATEGORY_ID)
@@ -208,7 +210,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(TS_IDS, TS_ID)

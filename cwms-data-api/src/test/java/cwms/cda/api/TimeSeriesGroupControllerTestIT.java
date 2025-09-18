@@ -64,6 +64,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.formatBool;
@@ -217,8 +219,9 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         }
     }
 
-    @Test
-    void test_create_read_delete() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_read_delete(String format) throws Exception {
         String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
         createLocation(timeSeriesId.split("\\.")[0],true,officeId);
@@ -234,7 +237,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -251,7 +254,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -267,7 +270,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_OFFICE_ID, officeId)
@@ -293,7 +296,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         groupXml = Formats.format(contentType, group);
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -311,7 +314,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -328,7 +331,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(GROUP_OFFICE_ID, officeId)
@@ -344,7 +347,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Delete Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -358,8 +361,9 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
-    @Test
-    void test_create_read_delete_LRTS() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_read_delete_LRTS(String format) throws Exception {
         String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.1DayLocal.0.cda-lrts";
         createLocation(timeSeriesId.split("\\.")[0],true,officeId);
@@ -375,7 +379,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -397,7 +401,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         // try to create a group without setting the LRTS header
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -414,7 +418,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -432,7 +436,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
@@ -459,7 +463,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         groupXml = Formats.format(contentType, group);
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -477,7 +481,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Delete timeseries
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(BEGIN, "2025-05-08T11:00:00+00:00")
@@ -496,7 +500,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -513,7 +517,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(GROUP_OFFICE_ID, officeId)
@@ -529,7 +533,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Delete Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -543,9 +547,10 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void test_create_read_delete_agency_aliases_same_name() throws Exception {
+    void test_create_read_delete_agency_aliases_same_name(String format) throws Exception {
         // Create two location groups of the same name with an agency alias category
         String officeId = user.getOperatingOffice();
         String officeId2 = user2.getOperatingOffice();
@@ -570,7 +575,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -587,7 +592,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         // Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
@@ -607,7 +612,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId2)
             .queryParam(CATEGORY_ID, group2.getTimeSeriesCategory().getId())
@@ -628,7 +633,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         groupXml = Formats.format(contentType, group3);
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -646,7 +651,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         groupXml = Formats.format(contentType, group4);
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -663,7 +668,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -683,7 +688,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
@@ -700,7 +705,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId2)
             .queryParam(CATEGORY_ID, group2.getTimeSeriesCategory().getId())
@@ -716,9 +721,10 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void test_create_read_delete_same_names_different_offices() throws Exception {
+    void test_create_read_delete_same_names_different_offices(String format) throws Exception {
         // Create two location groups of the same name with an agency alias category
         String officeId = user.getOperatingOffice();
         String officeId2 = user2.getOperatingOffice();
@@ -743,7 +749,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -760,7 +766,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         // Create Category 2
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user2.toHeaderValue())
@@ -777,7 +783,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -794,7 +800,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_OFFICE_ID, officeId)
@@ -814,7 +820,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId2)
             .queryParam(CATEGORY_ID, group2.getTimeSeriesCategory().getId())
@@ -834,7 +840,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -854,7 +860,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
@@ -871,7 +877,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId2)
             .queryParam(CATEGORY_ID, group2.getTimeSeriesCategory().getId())
@@ -887,8 +893,9 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
-    void test_rename_group() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_rename_group(String format) throws Exception {
         String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
         createLocation(timeSeriesId.split("\\.")[0],true,officeId);
@@ -906,7 +913,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -924,7 +931,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -944,7 +951,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Rename Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(newGroupXml)
             .header("Authorization", user.toHeaderValue())
@@ -963,7 +970,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_OFFICE_ID, officeId)
@@ -988,7 +995,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         newGroupXml = Formats.format(contentType, newGroup);
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(newGroupXml)
             .header("Authorization", user.toHeaderValue())
@@ -1006,7 +1013,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -1022,7 +1029,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Delete Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -1036,8 +1043,9 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
-    @Test
-    void test_add_assigned_locs() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_add_assigned_locs(String format) {
         String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_add_assigned_locs", "IntegrationTesting");
@@ -1052,7 +1060,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -1069,7 +1077,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -1089,7 +1097,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Add Assigned Locs
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -1107,7 +1115,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_OFFICE_ID, officeId)
@@ -1132,7 +1140,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         groupXml = Formats.format(contentType, group);
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -1150,7 +1158,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -1166,7 +1174,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Delete Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -1180,8 +1188,9 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
-    @Test
-    void test_patch_permissions_CWMS() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_patch_permissions_CWMS(String format) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
@@ -1205,7 +1214,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         // inserting the time series
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header("Authorization", user.toHeaderValue())
@@ -1234,7 +1243,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         // Retrieve the group and assert it's empty
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .queryParam(OFFICE, CWMS_OFFICE) // office
             .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
@@ -1253,7 +1262,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         // Attempt a patch on TS owned by CWMS
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -1270,7 +1279,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         // Retrieve the group and assert the changes
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .queryParam(OFFICE, officeId)
             .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
@@ -1288,8 +1297,9 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body("assigned-time-series[0].timeseries-id", equalTo(tsId));
     }
 
-    @Test
-    void test_patch_permissions_CWMS_with_replacement() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_patch_permissions_CWMS_with_replacement(String format) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
@@ -1365,7 +1375,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         // Attempt a patch on TS owned by CWMS with replacement
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -1383,7 +1393,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         // Retrieve the group and assert the changes
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .queryParam(OFFICE, officeId)
             .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
@@ -1400,8 +1410,9 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body("assigned-time-series.size()", equalTo(2));
     }
 
-    @Test
-    void test_patch_district_permission() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_patch_district_permission(String format) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/timeseries_create_SPK.json");
@@ -1450,7 +1461,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         // Verify the group is empty
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, CWMS_OFFICE) //office
@@ -1470,7 +1481,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         // Attempt a patch on TS Group of assigned TS owned by SPK
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -1487,7 +1498,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         // Retrieve the group and assert the changes
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -1506,8 +1517,9 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body("assigned-time-series[0].timeseries-id", equalTo(tsId));
     }
 
-    @Test
-    void testRetrieveOfficeParams() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void testRetrieveOfficeParams(String format) throws Exception {
         String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
         createLocation(timeSeriesId.split("\\.")[0],true,officeId);
@@ -1522,7 +1534,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -1538,7 +1550,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read with specified office
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
@@ -1562,7 +1574,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read without specified office
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
             .queryParam(GROUP_OFFICE_ID, officeId)
@@ -1586,7 +1598,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         groupXml = Formats.format(contentType, group);
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -1604,7 +1616,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -1621,7 +1633,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(GROUP_OFFICE_ID, officeId)

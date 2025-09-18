@@ -52,7 +52,8 @@ import org.jooq.impl.DSL;
 import org.jooq.util.oracle.OracleDSL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 
 import static cwms.cda.api.Controllers.*;
@@ -97,8 +98,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    @Test
-    void test_getall() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_getall(String format) throws Exception {
         String locationId = "LocationGroupTest";
         String officeId = user.getOperatingOffice();
         createLocation(locationId, true, officeId);
@@ -114,7 +116,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -131,7 +133,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -146,7 +148,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_OFFICE_ID, officeId)
@@ -164,7 +166,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Delete Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -179,8 +181,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
-    @Test
-    void test_create_read_delete() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_read_delete(String format) throws Exception {
         String officeId = user.getOperatingOffice();
         String locationId = "LocationGroupTest";
         createLocation(locationId, true, officeId);
@@ -196,7 +199,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -212,7 +215,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -227,7 +230,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
@@ -250,7 +253,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -268,7 +271,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
@@ -285,7 +288,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Delete Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -300,8 +303,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
-    @Test
-    void test_create_read_delete_agency_aliases_same_name() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_read_delete_agency_aliases_same_name(String format) throws Exception {
         // Create two location groups of the same name with an agency alias category
         String officeId = user.getOperatingOffice();
         String officeId2 = user2.getOperatingOffice();
@@ -322,7 +326,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -338,7 +342,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         groupXml = Formats.format(contentType, group2);
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user2.toHeaderValue())
@@ -353,7 +357,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
@@ -376,7 +380,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId2)
             .queryParam(CATEGORY_ID, group2.getLocationCategory().getId())
@@ -399,7 +403,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -416,7 +420,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user2.toHeaderValue())
             .queryParam(OFFICE, officeId2)
@@ -434,7 +438,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
@@ -451,7 +455,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId2)
             .queryParam(CATEGORY_ID, group2.getLocationCategory().getId())
@@ -467,9 +471,10 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void test_create_read_delete_same_names_different_offices() throws Exception {
+    void test_create_read_delete_same_names_different_offices(String format) throws Exception {
         // Create two location groups of the same name with an agency alias category
         String officeId = user.getOperatingOffice();
         String officeId2 = user2.getOperatingOffice();
@@ -495,7 +500,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -511,7 +516,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // Create Category 2
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -527,7 +532,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -543,7 +548,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         groupXml = Formats.format(contentType, group2);
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user2.toHeaderValue())
@@ -558,7 +563,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
@@ -581,7 +586,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId2)
             .queryParam(CATEGORY_ID, group2.getLocationCategory().getId())
@@ -604,7 +609,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -621,7 +626,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId2)
@@ -639,7 +644,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
@@ -656,7 +661,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId2)
             .queryParam(CATEGORY_ID, group2.getLocationCategory().getId())
@@ -672,8 +677,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
-    void test_create_read_delete_office_combinations() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_read_delete_office_combinations(String format) throws Exception {
         // Test creating, storing and deleting location groups with different offices for category and group (CWMS cat),
         // and different offices for category and group (non-CWMS cat)
         String districtOffice = user.getOperatingOffice();
@@ -695,7 +701,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // Create Category 2
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -712,7 +718,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -728,7 +734,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         groupXml = Formats.format(contentType, group2);
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -743,7 +749,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, districtOffice)
             .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
@@ -766,7 +772,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, districtOffice)
             .queryParam(CATEGORY_ID, group2.getLocationCategory().getId())
@@ -789,7 +795,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, districtOffice)
@@ -806,7 +812,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, districtOffice)
@@ -824,7 +830,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, districtOffice)
             .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
@@ -841,7 +847,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, districtOffice)
             .queryParam(CATEGORY_ID, group2.getLocationCategory().getId())
@@ -857,8 +863,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
-    void test_rename_group() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_rename_group(String format) throws Exception {
         String officeId = user.getOperatingOffice();
         String locationId = "LocationGroupTest";
         createLocation(locationId, true, officeId);
@@ -874,7 +881,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -889,7 +896,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -908,7 +915,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Rename Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(newGroupXml)
             .header("Authorization", user.toHeaderValue())
@@ -925,7 +932,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
@@ -948,7 +955,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Delete Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -963,8 +970,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
-    @Test
-    void test_add_assigned_locs() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_add_assigned_locs(String format) throws Exception {
         String officeId = user.getOperatingOffice();
         String locationId = "LocationGroupTest";
         createLocation(locationId, true, officeId);
@@ -983,7 +991,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -998,7 +1006,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -1018,7 +1026,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Add Assigned Locs
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(newGroupJson)
             .header("Authorization", user.toHeaderValue())
@@ -1036,7 +1044,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
@@ -1059,7 +1067,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Delete Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -1074,8 +1082,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
-    @Test
-    void test_district_permissions() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_district_permissions(String format) throws Exception {
         String officeId = user.getOperatingOffice();
         String locationId = "LocationGroupTest";
         createLocation(locationId, true, officeId);
@@ -1098,7 +1107,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // create a location category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(catJson)
             .header("Authorization", user.toHeaderValue())
@@ -1115,7 +1124,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // create a location group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupJson)
             .header("Authorization", user.toHeaderValue())
@@ -1131,7 +1140,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // patch the location group owned by district office
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(newGroupJson)
             .header("Authorization", user.toHeaderValue())
@@ -1149,7 +1158,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // get the location group and assert that changes were made
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, newLocGroup.getLocationCategory().getId())
@@ -1171,8 +1180,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .body("assigned-locations[0].ref-location-id", nullValue());
     }
 
-    @Test
-    void test_CWMS_permissions() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_CWMS_permissions(String format) throws Exception {
         String officeId = user.getOperatingOffice();
         String locationId = "LocationGroupTest";
         createLocation(locationId, true, officeId);
@@ -1192,7 +1202,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // get the location group and assert that changes were made
         ExtractableResponse<Response> response = given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, CWMS_OFFICE)
             .queryParam(CATEGORY_ID, cat.getId())
@@ -1213,7 +1223,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // patch the location group owned by CWMS office
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(newGroupJson)
             .header("Authorization", user.toHeaderValue())
@@ -1231,7 +1241,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // get the location group and assert that changes were made
         ExtractableResponse<Response> otherResponse = given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, CWMS_OFFICE)
             .queryParam(CATEGORY_ID, cat.getId())
@@ -1265,7 +1275,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // patch the location group owned by CWMS office
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupJson)
             .header("Authorization", user.toHeaderValue())
@@ -1283,7 +1293,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // get the location group and assert that there are no assigned locations
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, CWMS_OFFICE)
             .queryParam(CATEGORY_ID, cat.getId())
@@ -1300,8 +1310,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .body("assigned-locations.size()", equalTo(expectedSize));
     }
 
-    @Test
-    void test_CWMS_permissions_with_replacement() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_CWMS_permissions_with_replacement(String format) throws Exception {
         String officeId = user.getOperatingOffice();
         String locationId = "LocationGroupTest";
         createLocation(locationId, true, officeId);
@@ -1321,7 +1332,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // get the starting size of the assigned locations
         ExtractableResponse<Response> response = given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, CWMS_OFFICE)
             .queryParam(CATEGORY_ID, cat.getId())
@@ -1342,7 +1353,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // patch the location group owned by CWMS office
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(newGroupJson)
             .header("Authorization", user.toHeaderValue())
@@ -1360,7 +1371,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // get the location group and assert that changes were made
         ExtractableResponse<Response> otherResponse = given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, CWMS_OFFICE)
             .queryParam(CATEGORY_ID, cat.getId())
@@ -1394,7 +1405,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // patch the location group owned by CWMS office
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupJson)
             .header("Authorization", user.toHeaderValue())
@@ -1412,7 +1423,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         // get the location group and assert that changes were made
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, CWMS_OFFICE)
             .queryParam(CATEGORY_ID, cat.getId())
@@ -1429,8 +1440,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .body("assigned-locations.size()", equalTo(expectedSize));
     }
 
-    @Test
-    void test_ID_too_long()
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_ID_too_long(String format)
     {
         String officeId = user.getOperatingOffice();
         String invalidId = RandomStringUtils.randomAlphabetic(65);
@@ -1440,7 +1452,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -1456,8 +1468,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .body("message", containsString("One or more provided values exceeds the maximum length for the parameter."));
     }
 
-    @Test
-    void test_post_does_not_write_on_assigned_location_fail() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_post_does_not_write_on_assigned_location_fail(String format) throws Exception {
         // Test for issue #1188: https://github.com/USACE/cwms-data-api/issues/1188
         String officeId = user.getOperatingOffice();
         String locationId = "LocGroupPostFail";
@@ -1476,7 +1489,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Category
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
@@ -1493,7 +1506,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -1510,7 +1523,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Retrieve Group, assert not found
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, cat.getId())
@@ -1531,7 +1544,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Create Group without assigned location field
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
@@ -1548,7 +1561,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         //Retrieve Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, cat.getId())

@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
@@ -67,6 +68,7 @@ public class JsonV2 implements OutputFormatter {
         retVal.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         retVal.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         retVal.registerModule(new JavaTimeModule());
+        retVal.registerModule(new Jdk8Module());
 
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());

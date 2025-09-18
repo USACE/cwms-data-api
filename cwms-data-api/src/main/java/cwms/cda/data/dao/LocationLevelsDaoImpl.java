@@ -63,7 +63,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -308,10 +307,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         String attributeUnits = row.get(map.getAttributeUnit(), String.class);
         Date effectiveDate = row.get(map.getLevelDate(), Date.class);
         String aliasId = row.get(DSL.name(TABLE_ALIAS2, "ALIAS_ID"), String.class);
+        String categoryId = row.get(DSL.name(TABLE_ALIAS2, "CATEGORY_ID"), String.class);
+        String groupId = row.get(DSL.name(TABLE_ALIAS2, "GROUP_ID"), String.class);
 
         LevelLookup key = new LevelLookup(officeId, locationLevelId, attributeId, String.valueOf(attributeValue),
                                              attributeUnits, effectiveDate);
-        LocationAlias alias = new LocationAlias(locationLevelId, aliasId);
+        LocationAlias alias = new LocationAlias(categoryId + "-" + groupId, aliasId);
 
         if (aliasMap.containsKey(key)) {
             aliasMap.get(key).add(alias);
@@ -1443,5 +1444,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         LOCATION_ALIAS_FIELDS.add(field(aliasView.ALIAS_ID.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(aliasView.LOCATION_CODE.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(aliasView.DB_OFFICE_ID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(aliasView.CATEGORY_ID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(aliasView.GROUP_ID.getUnqualifiedName()));
     }
 }

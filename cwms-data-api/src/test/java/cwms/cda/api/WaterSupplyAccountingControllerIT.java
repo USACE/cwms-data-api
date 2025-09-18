@@ -52,6 +52,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -268,8 +270,9 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         }
     }
 
-    @Test
-    void testCreateRetrieveWaterAccounting() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void testCreateRetrieveWaterAccounting(String format) throws Exception {
         // Test Structure
         // 1) Create pump accounting
         // 2) Store pump accounting
@@ -305,7 +308,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(START_TIME, "2005-04-05T00:00:00Z")
             .queryParam(END_TIME, "2335-04-06T00:00:00Z")
             .queryParam(START_INCLUSIVE, "true")
@@ -333,8 +336,9 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void testRetrieveNotFoundOutsideTimeWindow() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void testRetrieveNotFoundOutsideTimeWindow(String format) throws Exception {
 
         // Test Structure
         // 1) Store accounting
@@ -370,7 +374,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(START_TIME, "2055-04-05T00:00:00Z")
             .queryParam(END_TIME, "2085-04-06T00:00:00Z")
         .when()
@@ -387,8 +391,9 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void testStoreRetrieveWithUnits() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void testStoreRetrieveWithUnits(String format) throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String json = JsonV1.buildObjectMapper().writeValueAsString(waterSupplyAccounting);
 
@@ -415,7 +420,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(START_TIME, "2005-04-05T00:00:00Z")
             .queryParam(END_TIME, "2335-04-06T00:00:00Z")
             .queryParam(START_INCLUSIVE, "true")
