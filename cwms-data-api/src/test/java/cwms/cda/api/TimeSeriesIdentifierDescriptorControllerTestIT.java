@@ -25,7 +25,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 
 @Tag("integration")
@@ -33,8 +34,9 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
 
     public static final String OFFICE = "SPK";
 
-    @Test
-    void test_create_delete() throws JsonProcessingException, SQLException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_delete(String format) throws JsonProcessingException, SQLException {
 
         createLocation("Alder Springs",true,"SPK");
         String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.15Minutes\\.0\\.DescriptorTEST_ID.*";
@@ -55,7 +57,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
 
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(serializedTs)
                 .header("Authorization", user.toHeaderValue())
@@ -89,7 +91,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
 
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .queryParam("office", OFFICE)
                 .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
@@ -110,8 +112,9 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         Assertions.assertTrue(names.isEmpty());
     }
 
-    @Test
-    void test_create_delete_new_LRTS_identifier() throws JsonProcessingException, SQLException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_delete_new_LRTS_identifier(String format) throws JsonProcessingException, SQLException {
 
         createLocation("Alder Springs",true,"SPK");
         String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.12HoursLocal\\.0\\.DescriptorTEST_LRTS*";
@@ -129,7 +132,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(serializedTs)
             .header("Authorization", user.toHeaderValue())
@@ -154,7 +157,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .queryParam("office", OFFICE)
             .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
@@ -175,7 +178,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         // Try to store it again, but this time with the new LRTS flag set to false.
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(serializedTs)
             .header("Authorization", user.toHeaderValue())
