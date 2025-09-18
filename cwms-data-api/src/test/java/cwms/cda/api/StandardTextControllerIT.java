@@ -31,13 +31,15 @@ import fixtures.TestAccounts.KeyUser;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
+import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
@@ -48,12 +50,13 @@ public class StandardTextControllerIT extends DataApiTestIT {
 
     public static final String controllerPath = "/standard-text-id/";
 
-    @Test
-    void test_standard_text_crud() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_standard_text_crud(String format) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
         String tsData = IOUtils.toString(getClass()
-                .getResourceAsStream("/cwms/cda/api/standard-text.json"),"UTF-8"
+                .getResourceAsStream("/cwms/cda/api/standard-text.json"), StandardCharsets.UTF_8
             );
 
         JsonNode ts = mapper.readTree(tsData);
@@ -62,7 +65,7 @@ public class StandardTextControllerIT extends DataApiTestIT {
         // inserting the standard text
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header("Authorization",user.toHeaderValue())
@@ -79,7 +82,7 @@ public class StandardTextControllerIT extends DataApiTestIT {
         given()
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam("office",officeId)
         .when()
             .redirects().follow(true)
@@ -97,7 +100,7 @@ public class StandardTextControllerIT extends DataApiTestIT {
         given()
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .header("Authorization",user.toHeaderValue())
             .queryParam("office",officeId)
             .queryParam("method","DELETE_ALL")
@@ -114,7 +117,7 @@ public class StandardTextControllerIT extends DataApiTestIT {
         given()
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam("office",officeId)
         .when()
             .redirects().follow(true)
@@ -127,8 +130,9 @@ public class StandardTextControllerIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
-    void test_standard_text_catalog() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_standard_text_catalog(String format) {
         //Pulling out one CWMS owned standard text that should always exist
         Map<String, Object> expectedValue = new HashMap<>();
         expectedValue.put("standard-text", "NO RECORD");
@@ -140,7 +144,7 @@ public class StandardTextControllerIT extends DataApiTestIT {
         given()
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
