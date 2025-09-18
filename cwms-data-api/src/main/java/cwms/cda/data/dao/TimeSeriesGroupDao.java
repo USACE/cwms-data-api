@@ -106,7 +106,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         AV_TS_CAT_GRP catGrp = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
         AV_TS_GRP_ASSGN grpAssgn = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
 
-        final RecordMapper<Record, Pair<TimeSeriesGroup, AssignedTimeSeries>> mapper =
+        final RecordMapper<org.jooq.Record, Pair<TimeSeriesGroup, AssignedTimeSeries>> mapper =
                 queryRecord -> {
                     TimeSeriesGroup group = buildTimeSeriesGroup(queryRecord);
                     AssignedTimeSeries loc = buildAssignedTimeSeries(queryRecord);
@@ -180,10 +180,10 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
         logger.fine(() -> query.getSQL(ParamType.INLINED));
 
-        return query.fetch((RecordMapper<Record, TimeSeriesGroup>) this::buildTimeSeriesGroup);
+        return query.fetch((RecordMapper<org.jooq.Record, TimeSeriesGroup>) this::buildTimeSeriesGroup);
     }
 
-    private AssignedTimeSeries buildAssignedTimeSeries(Record queryRecord) {
+    private AssignedTimeSeries buildAssignedTimeSeries(org.jooq.Record queryRecord) {
         AssignedTimeSeries retval = null;
 
         String officeId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID);
@@ -205,7 +205,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         return retval;
     }
 
-    private TimeSeriesGroup buildTimeSeriesGroup(Record queryRecord) {
+    private TimeSeriesGroup buildTimeSeriesGroup(org.jooq.Record queryRecord) {
         TimeSeriesCategory cat = buildTimeSeriesCategory(queryRecord);
 
         String grpOfficeId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID);
@@ -218,7 +218,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     @NotNull
-    private TimeSeriesCategory buildTimeSeriesCategory(Record queryRecord) {
+    private TimeSeriesCategory buildTimeSeriesCategory(org.jooq.Record queryRecord) {
         String catOfficeId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.CAT_DB_OFFICE_ID);
         String catId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID);
         String catDesc = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_DESC);
