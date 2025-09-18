@@ -117,7 +117,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
     private static final GateChange CHANGE_3 = buildTestGateChange(PROJECT_1_ID, JAN_THIRD);
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         setupProject();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -137,7 +137,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
@@ -176,6 +176,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
         String allJson = given().log()
                                     .ifValidationFails(LogDetail.ALL, true)
                                     .contentType(Formats.JSONV1)
+                                    .accept(Formats.DEFAULT)
                                 .when()
                                     .redirects()
                                     .follow(true)
@@ -224,6 +225,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
         allJson = given().log()
                              .ifValidationFails(LogDetail.ALL, true)
                              .contentType(Formats.JSONV1)
+                             .accept(Formats.DEFAULT)
                          .when()
                              .redirects()
                              .follow(true)
