@@ -242,18 +242,23 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
                                    ZonedDateTime end) {
         RatingSet retVal;
         try (final Timer.Context ignored = markAndTime("getRatingSet")) {
-            Configuration configuration = dsl.configuration();
+
             String effectiveTw = "F";
             String specIdMask = templateIdMask;
-            Timestamp startDate = null;
+            Timestamp startDate;
             if (start != null) {
                 startDate = Timestamp.from(start.toInstant());
+            } else {
+                startDate = null;
             }
 
-            Timestamp endDate = null;
+            Timestamp endDate;
             if (end != null) {
                 endDate = Timestamp.from(end.toInstant());
+            } else {
+                endDate = null;
             }
+
             String timeZone = "UTC";
             // We dont want the templates or the specs but if we don't retrieve them with the
             // ratings then RatingSet.fromXml won't parse the output.
@@ -264,13 +269,17 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
             // Each rating could potentially be megabytes in size - Don't include the points.
             String includePoints = "F";
 
-            String xmlText = CWMS_RATING_PACKAGE.call_RETRIEVE_RATINGS_XML_DATA(configuration,
-                    effectiveTw, specIdMask, startDate, endDate, timeZone,
-                    retrieveTemplates, retrieveSpecs, retrieveRatings,
-                    recurse, includePoints, office);
+            retVal = connectionResult(dsl, c -> {
+                Configuration configuration = getDslContext(c, office).configuration();
 
-            // Sometimes the xmlText comes back as an empty xml doc like EMPTY
-            retVal = getRatingSetFromXml(xmlText);
+                String xmlText = CWMS_RATING_PACKAGE.call_RETRIEVE_RATINGS_XML_DATA(configuration,
+                        effectiveTw, specIdMask, startDate, endDate, timeZone,
+                        retrieveTemplates, retrieveSpecs, retrieveRatings,
+                        recurse, includePoints, office);
+
+                // Sometimes the xmlText comes back as an empty xml doc like EMPTY
+                return getRatingSetFromXml(xmlText);
+            });
         }
         return retVal;
     }
