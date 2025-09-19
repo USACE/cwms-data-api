@@ -233,7 +233,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     .and(mapping.getLocationLevelId(TABLE_ALIAS1, null).eq(virtView.LOCATION_LEVEL_ID)))
                 .where(whereCondition).asTable(TABLE_ALIAS2))
                 .orderBy(mapping.getOfficeId(null, null), mapping.getLocationLevelId(null, null),
-                    field("LEVEL_DATE"), field("CALENDAR_OFFSET"),
+                    field("LEVEL_DATE"), field("CALENDAR_OFFSET"), field("TIME_OFFSET"),
                     mapping.getLocationLevelId(TABLE_ALIAS2, null), field("EFFECTIVE_DATE_UTC")
                 )
                 .offset(offset)
@@ -246,7 +246,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .where(whereCondition)
                 .orderBy(DSL.upper(view.OFFICE_ID), DSL.upper(view.LOCATION_LEVEL_ID),
                     view.LEVEL_DATE, view.CALENDAR_OFFSET, DSL.upper(virtView.OFFICE_ID),
-                    DSL.upper(virtView.LOCATION_LEVEL_ID),
+                    DSL.upper(virtView.LOCATION_LEVEL_ID), DSL.upper(view.TIME_OFFSET),
                     virtView.EFFECTIVE_DATE_UTC
                 )
                 .offset(offset)
