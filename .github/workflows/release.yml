@@ -32,7 +32,7 @@ on:
         required: true
         description: Which Branch to make the build from
         options:
-          - test
+          - prod
       nightly:
         type: boolean
         required: true
@@ -76,7 +76,7 @@ jobs:
       - name: Create GitHub Release
         id: create_release
         # Allow testing without creating a release
-        if: github.event_name != 'pull_request' && (github.event.ref == 'refs/heads/test' || startsWith(github.event.ref, 'refs/tags'))
+        if: github.event_name != 'pull_request' && (github.event.ref == 'refs/heads/prod' || startsWith(github.event.ref, 'refs/tags'))
         uses: softprops/action-gh-release@v2.3.2
         with:
           files: cwms-data-api/build/libs/cwms-data-api-${{env.VERSION}}.war
@@ -133,7 +133,7 @@ jobs:
         uses: ./.github/actions/database-migration-image
         with:
           base-image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer
-          tag: latest-dev
+          tag: latest
       - name: Publish migration container
         id: migration-publish
         run: |

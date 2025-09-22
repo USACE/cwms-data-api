@@ -3,10 +3,10 @@ name: Build And Test CWMS Data API
 on:
   push:
     branches:
-      - test
+      - prod
   pull_request:
     branches:
-      - test
+      - prod
 
 jobs:
   build:
