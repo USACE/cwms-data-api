@@ -616,7 +616,7 @@ public class ApiServlet extends HttpServlet {
 
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/timeseries/identifier-descriptor/{name}",
+        cdaCrudCache(String.format("/timeseries/identifier-descriptor/{%s}", Controllers.TIMESERIES_ID),
                 new TimeSeriesIdentifierDescriptorController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/group/{group-id}",
                 new TimeSeriesGroupController(metrics), requiredRoles,5, TimeUnit.MINUTES);
