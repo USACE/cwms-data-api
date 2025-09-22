@@ -128,7 +128,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             joinCond = joinCond.and(grpAssgn.DB_OFFICE_ID.eq(tsOfficeId));
         }
 
-        SelectSeekStep1<?, BigDecimal> query = dsl.select(catGrp.CAT_DB_OFFICE_ID,
+        SelectConditionStep<?> query = dsl.select(catGrp.CAT_DB_OFFICE_ID,
                         catGrp.TS_CATEGORY_ID, catGrp.TS_CATEGORY_DESC, catGrp.GRP_DB_OFFICE_ID,
                         catGrp.TS_GROUP_ID, catGrp.TS_GROUP_DESC, catGrp.SHARED_TS_ALIAS_ID,
                         catGrp.SHARED_REF_TS_ID, grpAssgn.CATEGORY_ID, grpAssgn.DB_OFFICE_ID,
@@ -137,8 +137,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 .from(catGrp).leftJoin(grpAssgn)
                 .on(joinCond)
             .where(whereCond)
-            .and(whereCondGrpCat)
-            .orderBy(grpAssgn.ATTRIBUTE);
+            .and(whereCondGrpCat);
 
         logger.fine(() -> query.getSQL(ParamType.INLINED));
 

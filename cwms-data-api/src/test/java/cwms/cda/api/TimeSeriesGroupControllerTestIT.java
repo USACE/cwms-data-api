@@ -1647,4 +1647,25 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
+
+    @Test
+    void testRetrievalTiming() {
+        String officeId = user.getOperatingOffice();
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/group/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("assigned-time-series.size()", greaterThan(0))
+            .time(lessThan(250L)); // should be pretty quick, under 0.5 seconds. Old query was ~3 seconds
+    }
 }
