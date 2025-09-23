@@ -151,7 +151,8 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                         )
                         .from(grpAssgn)
                         .where(joinCond)
-                        .orderBy(grpAssgn.ATTRIBUTE) // Localized ordering inside the group
+                        .orderBy(grpAssgn.CATEGORY_OFFICE_ID, grpAssgn.CATEGORY_ID, grpAssgn.GROUP_OFFICE_ID,
+                            grpAssgn.GROUP_ID, grpAssgn.ATTRIBUTE) // Localized ordering inside the group
                 ).convertFrom(rs -> rs.map(this::buildAssignedTimeSeries))
             )
             .from(catGrp)
@@ -201,17 +202,15 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         return query.fetch((RecordMapper<org.jooq.Record, TimeSeriesGroup>) this::buildTimeSeriesGroup);
     }
 
-    private AssignedTimeSeries buildAssignedTimeSeries(org.jooq.Record multisetRecord) {
+    private AssignedTimeSeries buildAssignedTimeSeries(Record5<String, String, BigDecimal, String, String> multisetRecord) {
         AssignedTimeSeries retval = null;
 
-        Record5<String, String, BigDecimal, String, String> assignRecord =
-            (Record5<String, String, BigDecimal, String, String>) multisetRecord;
-        if (assignRecord != null) {
-            String timeseriesId = String.valueOf(assignRecord.get(0));
-            String officeId = String.valueOf(assignRecord.get(1));
-            BigDecimal attrBD = (BigDecimal) assignRecord.get(2);
-            String aliasId = String.valueOf(assignRecord.get(3));
-            String refTsId = String.valueOf(assignRecord.get(4));
+        if (multisetRecord != null) {
+            String timeseriesId = String.valueOf(multisetRecord.get(0));
+            String officeId = String.valueOf(multisetRecord.get(1));
+            BigDecimal attrBD = (BigDecimal) multisetRecord.get(2);
+            String aliasId = String.valueOf(multisetRecord.get(3));
+            String refTsId = String.valueOf(multisetRecord.get(4));
 
             Integer attr = null;
             if (attrBD != null) {
