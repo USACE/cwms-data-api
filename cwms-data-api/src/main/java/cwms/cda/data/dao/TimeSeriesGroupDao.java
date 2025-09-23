@@ -30,12 +30,8 @@ import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.TimeSeriesGroup;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
-import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.*;
 import org.jooq.conf.ParamType;
@@ -106,14 +102,6 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         AV_TS_CAT_GRP catGrp = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
         AV_TS_GRP_ASSGN grpAssgn = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
 
-        final RecordMapper<org.jooq.Record, Pair<TimeSeriesGroup, List<AssignedTimeSeries>>> mapper =
-                queryRecord -> {
-                    TimeSeriesGroup group = buildTimeSeriesGroup(queryRecord);
-                    List<AssignedTimeSeries> loc = (List<AssignedTimeSeries>) queryRecord.get("multiset");
-
-                    return new Pair<>(group, loc);
-                };
-
         Condition whereCondGrpCat = DSL.noCondition();
         if (categoryOfficeId != null) {
             whereCondGrpCat = whereCondGrpCat.and(catGrp.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
@@ -128,8 +116,8 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             joinCond = joinCond.and(grpAssgn.DB_OFFICE_ID.eq(tsOfficeId));
         }
 
-        SelectConditionStep<Record9<String, String, String, String, String, String, String, String,
-                List<AssignedTimeSeries>>> query = dsl
+        SelectSeekStep4<Record9<String, String, String, String, String, String, String, String,
+                List<AssignedTimeSeries>>, String, String, String, String> query = dsl
             .select(
                 catGrp.CAT_DB_OFFICE_ID,
                 catGrp.TS_CATEGORY_ID,
@@ -139,7 +127,6 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 catGrp.TS_GROUP_DESC,
                 catGrp.SHARED_TS_ALIAS_ID,
                 catGrp.SHARED_REF_TS_ID,
-
                 DSL.multiset(
                     dsl
                         .select(
@@ -151,35 +138,29 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                         )
                         .from(grpAssgn)
                         .where(joinCond)
-                        .orderBy(grpAssgn.CATEGORY_OFFICE_ID, grpAssgn.CATEGORY_ID, grpAssgn.GROUP_OFFICE_ID,
-                            grpAssgn.GROUP_ID, grpAssgn.ATTRIBUTE) // Localized ordering inside the group
+                        .orderBy(grpAssgn.ATTRIBUTE) // Localized ordering inside the group
                 ).convertFrom(rs -> rs.map(this::buildAssignedTimeSeries))
             )
             .from(catGrp)
             .where(whereCond)
-            .and(whereCondGrpCat);
+            .and(whereCondGrpCat)
+            .orderBy(catGrp.CAT_DB_OFFICE_ID,
+                catGrp.TS_CATEGORY_ID,
+                catGrp.GRP_DB_OFFICE_ID,
+                catGrp.TS_GROUP_ID);
 
         logger.fine(() -> query.getSQL(ParamType.INLINED));
 
-        List<Pair<TimeSeriesGroup, List<AssignedTimeSeries>>> assignments =
-                query.fetch(mapper);
+        RecordMapper<? super Record9<String, String, String, String, String, String, String, String,
+            List<AssignedTimeSeries>>, TimeSeriesGroup> mapperToTimeSeriesGroup =
+                queryRecord -> {
+                    TimeSeriesGroup group = buildTimeSeriesGroup(queryRecord);
+                    List<AssignedTimeSeries> assignedTS = (List<AssignedTimeSeries>) queryRecord.get("multiset");
 
-        Map<TimeSeriesGroup, List<AssignedTimeSeries>> map = new LinkedHashMap<>();
-        for (Pair<TimeSeriesGroup, List<AssignedTimeSeries>> pair : assignments) {
-            List<AssignedTimeSeries> list = map.computeIfAbsent(pair.component1(),
-                    k -> new ArrayList<>());
-            List<AssignedTimeSeries> assignedTimeSeries = pair.component2();
-            if (assignedTimeSeries != null) {
-                list.addAll(assignedTimeSeries);
-            }
-        }
+                    return new TimeSeriesGroup(group, assignedTS);
+                };
 
-        List<TimeSeriesGroup> retval = new ArrayList<>();
-        for (final Map.Entry<TimeSeriesGroup, List<AssignedTimeSeries>> entry : map.entrySet()) {
-            List<AssignedTimeSeries> assigned = entry.getValue();
-            retval.add(new TimeSeriesGroup(entry.getKey(), assigned));
-        }
-        return retval;
+        return query.fetch(mapperToTimeSeriesGroup);
     }
 
     @NotNull
