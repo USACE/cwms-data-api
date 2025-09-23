@@ -51,6 +51,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -178,6 +179,17 @@ public class DataApiTestIT {
                 if(user.getApikey() == null) {
                     continue;
                 }
+                if(user == TestAccounts.KeyUser.SPK_NEW_USER)
+                {
+                    try {
+                        addNewUser(user.getName());
+                        addUserToGroup(user.getName(), "CWMS Users", db.getOfficeId());
+                        addUserToGroup(user.getName(), "All Users", db.getOfficeId());
+                        addUserToGroup(db.getUsername(), "TS ID Creator", db.getOfficeId());
+                    } catch (Exception ex) {
+                        FluentLogger.forEnclosingClass().atFine().log("New user %s already exists, continuing", user.getName());
+                    }
+                }
                 db.connection((c)-> {
                     try(PreparedStatement stmt = c.prepareStatement(registerApiKey)) {
                         stmt.setString(1,user.getName());
@@ -239,6 +251,21 @@ public class DataApiTestIT {
         } catch(Exception ex) {
             throw ex;
         }
+    }
+
+    protected static void addNewUser(String username) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        String insertUserSql = "INSERT INTO AT_SEC_CWMS_USERS (USERID, CREATEDBY) VALUES (?, ?)";
+
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement(insertUserSql)) {
+                stmt.setString(1, username);  // USERID
+                stmt.setString(2, "CWMS_20");       // CREATEDBY
+                stmt.executeUpdate();
+            } catch (SQLException ex) {
+                    throw new RuntimeException("Unable to insert user: " + username, ex);
+                }
+            }, "cwms_20");
     }
 
     /**
