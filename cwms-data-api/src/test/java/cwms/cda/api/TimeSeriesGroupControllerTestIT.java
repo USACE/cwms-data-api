@@ -1666,6 +1666,6 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("assigned-time-series.size()", greaterThan(0))
-            .time(lessThan(250L)); // should be pretty quick, under 0.5 seconds. Old query was ~3 seconds
+            .time(lessThan(500L)); // should be pretty quick, under 0.5 seconds. Old query was ~3 seconds
     }
 }

@@ -40,6 +40,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.*;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
+import org.jooq.tools.json.JSONArray;
+import org.jooq.tools.json.JSONParser;
+import org.jooq.tools.json.ParseException;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
@@ -106,10 +109,10 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         AV_TS_CAT_GRP catGrp = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
         AV_TS_GRP_ASSGN grpAssgn = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
 
-        final RecordMapper<org.jooq.Record, Pair<TimeSeriesGroup, AssignedTimeSeries>> mapper =
+        final RecordMapper<org.jooq.Record, Pair<TimeSeriesGroup, List<AssignedTimeSeries>>> mapper =
                 queryRecord -> {
                     TimeSeriesGroup group = buildTimeSeriesGroup(queryRecord);
-                    AssignedTimeSeries loc = buildAssignedTimeSeries(queryRecord);
+                    List<AssignedTimeSeries> loc = buildAssignedTimeSeries(queryRecord);
 
                     return new Pair<>(group, loc);
                 };
@@ -128,30 +131,49 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             joinCond = joinCond.and(grpAssgn.DB_OFFICE_ID.eq(tsOfficeId));
         }
 
-        SelectSeekStep2<?, String, BigDecimal> query = dsl.select(catGrp.CAT_DB_OFFICE_ID,
-                        catGrp.TS_CATEGORY_ID, catGrp.TS_CATEGORY_DESC, catGrp.GRP_DB_OFFICE_ID,
-                        catGrp.TS_GROUP_ID, catGrp.TS_GROUP_DESC, catGrp.SHARED_TS_ALIAS_ID,
-                        catGrp.SHARED_REF_TS_ID, grpAssgn.CATEGORY_ID, grpAssgn.DB_OFFICE_ID,
-                        grpAssgn.GROUP_ID, grpAssgn.TS_ID, grpAssgn.TS_CODE, grpAssgn.ATTRIBUTE,
-                        grpAssgn.ALIAS_ID, grpAssgn.REF_TS_ID, grpAssgn.CATEGORY_OFFICE_ID, grpAssgn.GROUP_OFFICE_ID)
-                .from(catGrp).leftJoin(grpAssgn)
-                .on(joinCond)
+        SelectConditionStep<?> query = dsl
+            .select(
+                catGrp.CAT_DB_OFFICE_ID,
+                catGrp.TS_CATEGORY_ID,
+                catGrp.TS_CATEGORY_DESC,
+                catGrp.GRP_DB_OFFICE_ID,
+                catGrp.TS_GROUP_ID,
+                catGrp.TS_GROUP_DESC,
+                catGrp.SHARED_TS_ALIAS_ID,
+                catGrp.SHARED_REF_TS_ID,
+
+                // Use multiset to efficiently fetch localized grpAssgn records
+                DSL.multiset(
+                    dsl
+                        .select(
+                            grpAssgn.TS_ID,
+                            grpAssgn.DB_OFFICE_ID,
+                            grpAssgn.ATTRIBUTE,
+                            grpAssgn.ALIAS_ID,
+                            grpAssgn.REF_TS_ID
+                        )
+                        .from(grpAssgn)
+                        .where(joinCond)
+                        .orderBy(grpAssgn.ATTRIBUTE) // Localized ordering inside the group
+                ).as("assignments") // Alias for the resulting nested collection
+            )
+            .from(catGrp)
             .where(whereCond)
-            .and(whereCondGrpCat)
-            .orderBy(catGrp.TS_GROUP_ID, grpAssgn.ATTRIBUTE);
+            .and(whereCondGrpCat);
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
 
-        List<Pair<TimeSeriesGroup, AssignedTimeSeries>> assignments =
+        logger.severe(() -> query.getSQL(ParamType.INLINED));
+
+        List<Pair<TimeSeriesGroup, List<AssignedTimeSeries>>> assignments =
                 query.fetch(mapper);
 
         Map<TimeSeriesGroup, List<AssignedTimeSeries>> map = new LinkedHashMap<>();
-        for (Pair<TimeSeriesGroup, AssignedTimeSeries> pair : assignments) {
+        for (Pair<TimeSeriesGroup, List<AssignedTimeSeries>> pair : assignments) {
             List<AssignedTimeSeries> list = map.computeIfAbsent(pair.component1(),
                     k -> new ArrayList<>());
-            AssignedTimeSeries assignedTimeSeries = pair.component2();
+            List<AssignedTimeSeries> assignedTimeSeries = pair.component2();
             if (assignedTimeSeries != null) {
-                list.add(assignedTimeSeries);
+                list.addAll(assignedTimeSeries);
             }
         }
 
@@ -183,23 +205,33 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         return query.fetch((RecordMapper<org.jooq.Record, TimeSeriesGroup>) this::buildTimeSeriesGroup);
     }
 
-    private AssignedTimeSeries buildAssignedTimeSeries(org.jooq.Record queryRecord) {
-        AssignedTimeSeries retval = null;
+    private List<AssignedTimeSeries> buildAssignedTimeSeries(org.jooq.Record queryRecord) {
+        List<AssignedTimeSeries> retval = new ArrayList<>();
 
-        String officeId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID);
-        String timeseriesId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID);
-        BigDecimal tsCode = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_CODE);
+        String assignRecord = queryRecord.get("assignments", String.class);
+        if (assignRecord != null) {
+            try {
+                JSONArray jsonArr = (JSONArray) new JSONParser().parse(assignRecord);
+                for (Object obj : jsonArr) {
 
-        if (timeseriesId != null && tsCode != null) {
-            String aliasId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ALIAS_ID);
-            String refTsId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.REF_TS_ID);
-            BigDecimal attrBD = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE);
+                    JSONArray json = (JSONArray) obj;
+                    String timeseriesId = String.valueOf(json.get(0));
+                    String officeId = String.valueOf(json.get(1));
+                    Long attrBD = (Long) json.get(2);
+                    String aliasId = String.valueOf(json.get(3));
+                    String refTsId = String.valueOf(json.get(4));
 
-            Integer attr = null;
-            if (attrBD != null) {
-                attr = attrBD.intValue();
+                    Integer attr = null;
+                    if (attrBD != null) {
+                        attr = attrBD.intValue();
+                    }
+
+                    retval.add(new AssignedTimeSeries(officeId, timeseriesId, aliasId, refTsId, attr));
+                }
+            } catch (ParseException e) {
+                logger.severe(() -> "Error parsing assigned time series JSON: " + e.getMessage());
+                throw new RuntimeException(e);
             }
-            retval = new AssignedTimeSeries(officeId, timeseriesId, aliasId, refTsId, attr);
         }
 
         return retval;
@@ -301,6 +333,4 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 null, "T", officeId)
         );
     }
-
-
 }
