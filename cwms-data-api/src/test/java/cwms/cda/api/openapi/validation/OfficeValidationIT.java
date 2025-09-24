@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-package cwms.cda.api.openapi;
+package cwms.cda.api.openapi.validation;
 
 import static cwms.cda.api.Controllers.OFFICE;
 import static io.restassured.RestAssured.given;
@@ -33,6 +33,7 @@ import static org.hamcrest.Matchers.is;
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.formatters.Formats;
+import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Disabled;
@@ -40,32 +41,32 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("integration")
-final class OpenAPISpecValidationIT extends DataApiTestIT {
+final class OfficeValidationIT extends DataApiTestIT {
     private static final OpenApiValidationFilter validationFilter = getOpenApiValidationFilter();
+    TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
+    @Disabled("Disabled until OpenAPI spec is fixed for this endpoint. Accept type null is not supported by the validator")
     @Test
-    void testRunValidation() {
-        String office = "SPK";
-
+    void testGetOffice() {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(OFFICE, office)
+            .queryParam(OFFICE, user.getOperatingOffice())
             .filter(validationFilter)
             .contentType(Formats.JSON)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/locations/")
+            .get("/offices/SPK")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
     }
 
+    @Disabled("Disabled until OpenAPI spec is fixed for this endpoint. Type value not in supported spec enum")
     @Test
-    @Disabled("Disabled until OpenAPI spec is fixed for this endpoint")
-    void testRunValidationOffices() {
+    void testGetAllOffices() {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
