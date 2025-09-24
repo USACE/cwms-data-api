@@ -379,7 +379,7 @@ public class TimeSeriesController implements CrudHandler {
                         + "implemented")
             },
             method = HttpMethod.GET,
-//            path = "/timeseries",
+            path = "/timeseries",
             tags = TAG
     )
     @Override

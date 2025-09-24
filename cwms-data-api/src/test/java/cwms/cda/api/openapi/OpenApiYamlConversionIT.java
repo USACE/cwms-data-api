@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("integration")
+@Tag("openapi")
 final class OpenApiYamlConversionIT extends DataApiTestIT {
 
     @Test
@@ -63,19 +64,22 @@ final class OpenApiYamlConversionIT extends DataApiTestIT {
 
         String jsonFilePath = "build/openapi.json";
 
-        FileWriter jsonFw = new FileWriter(jsonFilePath);
-        jsonFw.write(json);
-        jsonFw.close();
+        try (FileWriter jsonFw = new FileWriter(jsonFilePath)) {
+            jsonFw.write(json);
+        }
 
         String yaml = converter.asYaml(json);
 
         String filePath = "build/openapi.yaml";
 
-        FileWriter fw = new FileWriter(filePath);
-        fw.write(yaml);
-        fw.close();
+        try (FileWriter fw = new FileWriter(filePath)) {
+            fw.write(yaml);
+        }
 
         File file = new File(filePath);
         assertTrue(file.exists());
+
+        File jsonFile = new File(jsonFilePath);
+        assertTrue(jsonFile.exists());
     }
 }

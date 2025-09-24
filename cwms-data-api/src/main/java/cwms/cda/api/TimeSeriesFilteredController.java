@@ -164,7 +164,7 @@ public class TimeSeriesFilteredController implements Handler {
                             + "implemented")
             },
             method = HttpMethod.GET,
-            path = "/timeseries",
+            path = "/timeseries/filtered",
             tags = TAG
     )
     @Override
