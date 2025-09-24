@@ -46,6 +46,77 @@ For Period-of-Record, while that is the primary use-case, the concept is useful 
 
 Hence generically we have a "composite time series"
 
+Definitions
+-----------
+
+Composite Time Series
+~~~~~~~~~~~~~~~~~~~~~
+
+A Time Series that is comprised of multiple same measure time series. For example, a river gage that has two sensors
+only one of which is valid for certain conditions.
+
+Period of Record
+~~~~~~~~~~~~~~~~
+
+The Period of Record (POR, period-of-record) for a measurement (such as the Stage at a river or the pool elevation of a 
+dam) is *ALL* available (time,value) pairs since recording began until either recording as ended or the most recent available
+regardless of changes in intervals and, if unavoidable changes in averaging.
+
+The POR is the "best" available combined dataset that would be desired for studies requiring all values for a given
+location.
+
+However, "best" is subjective. The POR of data used to make a given decision may not be the same as data that has formal
+validation. Additionally having a POR of the raw, unedited data may be what 
+
+
+Naming Option 3, below, is selected for the path forward. A future design document will develop appropriate naming
+to communicate the intent of any given composite time series, include period-of-record.
+
+Authoritative
+~~~~~~~~~~~~~
+
+An authoritative time series is a period-of-record time series with the additional constraint that is contains the best
+official data. In other words the data that is determined to be "correct" by appropriate methods of validation.
+
+The data provide will have validated or corrected after events when additional information become available.
+The data may not match what was used at the moment a decision was made.
+
+.. NOTE::
+
+    At time of design we are considering a boolean flag to indicate whether a time series is "the authoritative correct"
+    time series or an arbitrary period-of-record. This may change in the future after the above mentioned group
+    determines an appropriate naming scheme.
+
+.. COMMENT::
+    Responses to discussion that the above is derived from.
+
+
+    Yeah I agree that period of record is everything you have (or best available) for that site for as long as you have it.
+    To me, it makes sense if it's all Inst data (e.g. 8 am readings, 1 hour DCP, 15 minute DCP).
+    I think there could be an argument about mixing in averaged data....that's a harder sell for me.
+    For mixing and matching sensors, though that doesn't bother me. We are already taking huge leaps
+    of faith by using a single gage to represent the entire storage of reservoirs
+    
+    As far as providing daily average timeseries as an official period of record, you run into the issue 
+    of a lot of years where you are averaging one instantaneous point which is not a great average. 
+    So my dream was to just composite all the inst data. However, the load times in cwms for people wanting to quick view period of record probably won't allow that
+
+    In LRL if we use "period of record" it's almost always referring to a flood control project and encompasses all recorded data from time of impoundment to present.
+
+    If I am a user grabbing data from us,  which I have done many time both for published research papers and in consulting.  
+    I would want the POR to be the best available data for each time point from beginning  of measurements to now.  
+    We should provide the full record with mixed intervals. 
+    And like the USGS we should provide the Daily Avg values, but that is a second step to what we are doing. 
+    This is what your district is saying the water level was since you started recording data to today.  
+    I don't care how you got the data unless I am going to do a detailed study of different sensors.  
+    All of your sensors should be calibrated. If I need that information the user should be able to also see 
+    the meta data for the composite timeseries and what individual timeseries it came from.
+    You are the the expert and should be able to provide the best available stage values and combine them into a single time series. 
+    If someone came to you and said what was the level on XX Date/time what value would you give them?
+    That is the period of record. but for all dates and times.  
+
+
+
 Axioms
 ------
 
