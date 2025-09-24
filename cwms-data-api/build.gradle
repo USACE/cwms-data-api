@@ -134,6 +134,7 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.jaxb.impl)
+    testImplementation(libs.openapi.spec.validation)
 
     baseLibs(libs.oracle.jdbc.driver)
 
@@ -322,4 +323,9 @@ task generateTimeSeriesSamples(type: JavaExec) {
     args url
     args user
     args password
+}
+
+task executeOpenAPIConversion(type: Exec) {
+    workingDir rootDir
+    commandLine 'gradlew.bat', 'integrationTests', '--tests', 'cwms.cda.api.openapi.OpenApiYamlConversionIT'
 }

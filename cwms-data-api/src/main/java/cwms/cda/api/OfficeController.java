@@ -1,7 +1,6 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
@@ -21,7 +20,6 @@ import cwms.cda.data.dto.Office;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.OfficeFormatV1;
-import cwms.cda.formatters.xml.XMLv1Office;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -84,7 +82,6 @@ public class OfficeController implements CrudHandler {
             @OpenApiResponse(status = STATUS_200,
                 description = "A list of offices.",
                 content = {
-                    @OpenApiContent(from = OfficeFormatV1.class, type = ""),
                     @OpenApiContent(from = Office.class, isArray = true, type = Formats.JSON),
                     @OpenApiContent(from = OfficeFormatV1.class, isArray = true, type = Formats.JSONV1),
                     @OpenApiContent(from = Office.class, isArray = true, type = Formats.JSONV2),

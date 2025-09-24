@@ -27,6 +27,7 @@ package cwms.cda.api;
 import static cwms.cda.data.dao.JooqDao.REQUIRE_NEW_LRTS_ID_FORMAT;
 import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
 
+import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
@@ -106,6 +107,16 @@ public class DataApiTestIT {
 
     static {
         freemarkerConfig.setClassForTemplateLoading(DataApiTestIT.class, "/");
+    }
+
+    public static final String OPEN_API_SPEC_URL = String.format("%s:%s%s/swagger-docs", CwmsDataApiSetupCallback.httpUrl(), CwmsDataApiSetupCallback.httpPort(), System.getProperty("warContext"));
+    private static OpenApiValidationFilter validationFilter;
+
+    public static OpenApiValidationFilter getOpenApiValidationFilter() {
+        if (validationFilter == null) {
+            validationFilter = new OpenApiValidationFilter(OPEN_API_SPEC_URL);
+        }
+        return validationFilter;
     }
 
     /**
