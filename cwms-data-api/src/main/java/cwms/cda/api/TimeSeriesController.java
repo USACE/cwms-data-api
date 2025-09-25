@@ -147,7 +147,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "'True' or 'False', default is 'False'"),
                 @OpenApiParam(name = STORE_RULE, type = StoreRule.class,  description = STORE_RULE_DESC),
                 @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description = "A flag "
-                        + "to ignore the protected data quality when storing data. 'True' or 'False'")
+                        + "to ignore the protected data quality when storing data. 'True' or 'False'" +
+                        ", default is " + TimeSeriesDaoImpl.OVERRIDE_PROTECTION)
             },
             method = HttpMethod.POST,
             path = "/timeseries",
