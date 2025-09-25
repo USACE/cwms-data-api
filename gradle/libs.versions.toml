@@ -2,7 +2,7 @@
 jaxb-api = "2.3.1"
 jaxb-impl = "3.0.2"
 jooq-codegen = "24.12.04-2025.01.21"
-jooq = "3.18.7-jdk8"
+jooq = "3.18.7-jdk11"
 hec-data-access = "9.8.0"
 slf4j = "1.7.36"
 hec-monolith = "3.3.20"
@@ -52,7 +52,7 @@ jaxb-core = { module = "com.sun.xml.bind:jaxb-core", version.ref = "jaxb-impl" }
 cwms-db-jooq-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version.ref = "jooq-codegen" }
 cwms-db-dao = { module = "mil.army.usace.hec:cwms-db-dao", version.ref = "hec-data-access" }
 cwms-db-jooq-base = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "hec-data-access" }
-jooq = { module = "org.jooq.pro-java-8:jooq", version.ref ="jooq" }
+jooq = { module = "org.jooq.pro-java-11:jooq", version.ref ="jooq" }
 slf4j = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 monolith = { module = "mil.army.usace.hec:hec-monolith", version.ref = "hec-monolith" }
 google-flogger-api = { module = "com.google.flogger:flogger", version.ref = "flogger" }
