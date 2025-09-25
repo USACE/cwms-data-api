@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk: [8, 11]
+        jdk: [11]
         schema:
           - "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev"
           - "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25-07-01-RC06"
