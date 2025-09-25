@@ -31,6 +31,7 @@
   "scripts": {
     "build": "npm run buildApi && npm run buildDocs",
     "buildApi": "npm run openapi && cd cwmsjs && npm run build",
+    "compile": "cd build && cd generated && cd openApi && npm run build",
     "buildDocs": "npm run docs",
     "clean": "shx mkdir -p ./cwmsjs && shx rm -r ./cwmsjs",
     "docs": "cd cwmsjs && npx typedoc src/index.ts",

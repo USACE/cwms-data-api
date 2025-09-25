@@ -326,6 +326,7 @@ task generateTimeSeriesSamples(type: JavaExec) {
 }
 
 task executeOpenAPIConversion(type: Test) {
+    group 'documentation'
     dependsOn generateConfig
     dependsOn war
 
