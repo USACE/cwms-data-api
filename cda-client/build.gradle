@@ -1,3 +1,6 @@
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+import org.openapitools.generator.gradle.plugin.tasks.ValidateTask
+
 plugins {
     id 'java'
     id 'cda.deps-conventions'
@@ -8,12 +11,12 @@ plugins {
 }
 if (JavaVersion.current() >= JavaVersion.VERSION_11) {
 
-    task validateOpenApiSpec(type: org.openapitools.generator.gradle.plugin.tasks.ValidateTask) {
+    tasks.register('validateOpenApiSpec', ValidateTask) {
         dependsOn(":cwms-data-api:executeOpenAPIConversion")
         inputSpec.set("$rootDir/cwms-data-api/build/openapi.json")
     }
 
-    task generateOpenApiDoc(type: org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+    tasks.register('generateOpenApiDoc', GenerateTask) {
         dependsOn(":cwms-data-api:executeOpenAPIConversion")
         validateSpec = true
         inputSpec = "$rootDir/cwms-data-api/build/openapi.json"
@@ -21,47 +24,25 @@ if (JavaVersion.current() >= JavaVersion.VERSION_11) {
         configFile = "$rootDir/cda-client/openapi.config.json"
         generatorName = "typescript-fetch"
         globalProperties.set([
-                modelDocs: "true",
-                modelTests: "false",
-                apiDocs: "true",
-                apiTests: "false",
+                modelDocs             : "true",
+                modelTests            : "false",
+                apiDocs               : "true",
+                apiTests              : "false",
                 enabledPostProcessFile: "false"
         ])
         ignoreFileOverride = "$rootDir/cda-client/.openapi-generator-ignore"
     }
 
-    task verifySpec(type: NpxTask) {
+    tasks.register('verifySpec', NpxTask) {
         group 'documentation'
         dependsOn npmInstall
         dependsOn(generateOpenApiDoc)
         dependsOn(validateOpenApiSpec)
         command = "npm"
-        args = ["run", "compile"]
-        inputs.files('package.json', 'package-lock.json')
-        inputs.dir(fileTree("node_modules").exclude(".cache"))
-        outputs.dir('dist')
-    }
-
-    task buildCWMSjsClient(type: NpxTask) {
-        group 'documentation'
-        dependsOn npmInstall
-        dependsOn(":cwms-data-api:executeOpenAPIConversion")
-        command = "npm"
         args = ["run", "build"]
         inputs.files('package.json', 'package-lock.json')
         inputs.dir(fileTree("node_modules").exclude(".cache"))
         outputs.dir('dist')
-    }
-
-    sourceSets {
-        java {
-            main {
-                resources {
-                    // This makes the processResources task automatically depend on the buildWebapp one
-                    srcDir(buildCWMSjsClient)
-                }
-            }
-        }
     }
 }
 
@@ -69,10 +50,9 @@ dependencies {
     implementation(project(":cwms-data-api"))
 }
 
-task cleanGeneration(type: Delete) {
+tasks.register('cleanGeneration', Delete) {
     delete project.layout.projectDirectory.dir('build')
     delete project.layout.projectDirectory.dir('dist')
-    delete project.layout.projectDirectory.dir('cwmsjs')
     delete project.layout.projectDirectory.dir('node_modules')
 }
 
