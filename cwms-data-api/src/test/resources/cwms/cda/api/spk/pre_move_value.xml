@@ -1,0 +1,92 @@
+<ratings>
+    <rating-template office-id="SPK">
+        <parameters-id>Opening-L1,Opening-BP1,Elev;Flow-BP1</parameters-id>
+        <version>Standard</version>
+        <ind-parameter-specs>
+            <ind-parameter-spec position="1">
+                <parameter>Opening-L1</parameter>
+                <in-range-method>CLOSEST</in-range-method>
+                <out-range-low-method>NULL</out-range-low-method>
+                <out-range-high-method>NULL</out-range-high-method>
+            </ind-parameter-spec>
+            <ind-parameter-spec position="2">
+                <parameter>Opening-BP1</parameter>
+                <in-range-method>LINEAR</in-range-method>
+                <out-range-low-method>NULL</out-range-low-method>
+                <out-range-high-method>NULL</out-range-high-method>
+            </ind-parameter-spec>
+            <ind-parameter-spec position="3">
+                <parameter>Elev</parameter>
+                <in-range-method>LINEAR</in-range-method>
+                <out-range-low-method>NULL</out-range-low-method>
+                <out-range-high-method>LINEAR</out-range-high-method>
+            </ind-parameter-spec>
+        </ind-parameter-specs>
+        <dep-parameter>Flow-BP1</dep-parameter>
+        <description/>
+    </rating-template>
+    <rating-spec office-id="SPK">
+        <rating-spec-id>Barren.Opening-L1,Opening-BP1,Elev;Flow-BP1.Standard.Production</rating-spec-id>
+        <template-id>Opening-L1,Opening-BP1,Elev;Flow-BP1.Standard</template-id>
+        <location-id>Barren</location-id>
+        <version>Production</version>
+        <source-agency/>
+        <in-range-method>LINEAR</in-range-method>
+        <out-range-low-method>NULL</out-range-low-method>
+        <out-range-high-method>LINEAR</out-range-high-method>
+        <active>true</active>
+        <auto-update>true</auto-update>
+        <auto-activate>true</auto-activate>
+        <auto-migrate-extension>true</auto-migrate-extension>
+        <ind-rounding-specs>
+            <ind-rounding-spec position="1">
+                <element-value>2222233332</element-value>
+            </ind-rounding-spec>
+            <ind-rounding-spec position="2">
+                <element-value>2222233332</element-value>
+            </ind-rounding-spec>
+            <ind-rounding-spec position="3">
+                <element-value>2222233332</element-value>
+            </ind-rounding-spec>
+        </ind-rounding-specs>
+        <dep-rounding-spec>2222233332</dep-rounding-spec>
+        <description/>
+    </rating-spec>
+    <simple-rating office-id="SPK">
+        <rating-spec-id>Barren.Opening-L1,Opening-BP1,Elev;Flow-BP1.Standard.Production</rating-spec-id>
+        <vertical-datum-info unit="ft">
+            <native-datum>NGVD-29</native-datum>
+            <elevation/>
+            <offset estimate="false">
+                <to-datum>NGVD-29</to-datum>
+                <value>0.0</value>
+            </offset>
+            <offset estimate="true">
+                <to-datum>NAVD-88</to-datum>
+                <value>-0.4403</value>
+            </offset>
+        </vertical-datum-info>
+        <units-id>ft,ft,ft;cfs</units-id>
+        <effective-date>2001-01-01T06:00:00Z</effective-date>
+        <transition-start-date/>
+        <create-date>2018-05-04T19:21:00Z</create-date>
+        <active>true</active>
+        <description/>
+        <rating-points>
+            <other-ind position="1">
+                <value>0.0</value>
+            </other-ind>
+            <other-ind position="2">
+                <value>0.0</value>
+            </other-ind>
+            <point>
+                <ind>510.0</ind>
+                <dep>0.0</dep>
+            </point>
+            <point>
+                <ind>590.0</ind>
+                <dep>0.0</dep>
+            </point>
+        </rating-points>
+    </simple-rating>
+</ratings>
