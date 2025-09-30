@@ -1,0 +1,36 @@
+{
+  "begin" : "2021-06-21T14:00:00-07:00",
+  "end" : "2021-06-22T14:00:00-07:00",
+  "interval" : "PT0S",
+  "name" : "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST",
+  "office-id" : "LRL",
+  "total" : 0,
+  "value-columns" : [ {
+    "name" : "date-time",
+    "ordinal" : 1,
+    "datatype" : "java.sql.Timestamp"
+  }, {
+    "name" : "value",
+    "ordinal" : 2,
+    "datatype" : "java.lang.Double"
+  }, {
+    "name" : "quality-code",
+    "ordinal" : 3,
+    "datatype" : "int"
+  } ],
+  "values" : [ [ 1759253040000, 12.34567, 0 ], [ 1759253100000, 12.34567, 0 ] ],
+  "version-date" : "2025-07-22T14:00:00Z",
+  "vertical-datum-info" : {
+    "office" : "LRL",
+    "unit" : "m",
+    "location" : "Buckhorn",
+    "native-datum" : "NGVD-29",
+    "elevation" : 230.7,
+    "local-datum-name" : "Castle Rock",
+    "offsets" : [ {
+      "estimate" : true,
+      "to-datum" : "NAVD-88",
+      "value" : -0.1666
+    } ]
+  }
+}

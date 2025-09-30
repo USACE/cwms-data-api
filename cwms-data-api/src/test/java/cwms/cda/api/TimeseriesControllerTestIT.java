@@ -3,11 +3,8 @@ package cwms.cda.api;
 import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
+import static io.restassured.internal.common.assertion.AssertParameter.notNull;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,7 +12,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.ApiServlet;
+import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.ZoneIdHelper;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
@@ -31,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import io.restassured.response.ValidatableResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matchers;
@@ -796,7 +796,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
-        // inserting the time series
+        // insert the time series
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -1432,7 +1432,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[1][0]", equalTo(1675335600000L)) // time
                 .body("values[0][1]", nullValue())
                 .body("values[1][1]", closeTo(35, 0.0001))
-                .body("values[1][3]", Matchers.notNullValue()); // data entry date
+                .body("values[1][3]", notNullValue()); // data entry date
 
             // with trim the null should get trimmed.
             given()
@@ -1734,6 +1734,8 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         ;
     }
 
+
+
     @Test
     void test_wrong_units() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
@@ -1811,4 +1813,109 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             this.expectedContentType = expectedContentType;
         }
     }
+
+    @Test
+    void test_get_for_elev_has_datum() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/spk/elev_ts_create.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get(NAME).asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+
+        // createLocation(location, true, officeId);  // For now, I don't want it delete so I can debug.
+        manuallyCreateLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header("Authorization",user.toHeaderValue())
+                .queryParam(OFFICE, officeId)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+
+        System.out.println("Data has been inserted for " + location);
+
+        // 1209654000000 as ms == Thursday, May 1, 2008 3:00:00 PM
+
+        // get it back
+        String firstPoint = "2008-05-01T03:00:00.000Z";
+
+
+        ValidatableResponse validatableResponse = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, officeId)
+                .queryParam(UNIT, "m")
+                .queryParam(NAME, ts.get(NAME).asText())
+                .queryParam(BEGIN, firstPoint)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        System.out.println(validatableResponse.extract().asString());
+ // verify that there is vertical-datum-info in the response.
+        validatableResponse.body("vertical-datum-info", notNullValue())
+                .body("vertical-datum-info.location", equalTo(location))
+                .body("vertical-datum-info.unit", equalTo("m"))
+                .body("vertical-datum-info.offsets.size()", equalTo(1))
+//                .body("vertical-datum-info.offsets[0].to-datum", equalTo("NAVD-88"))
+//                .body("vertical-datum-info.offsets[0].value", closeTo(-0.1666, 0.0001))
+//                .body("vertical-datum-info.offsets[0].estimate", equalTo(true))
+                ;
+
+
+    }
+
+    private void manuallyCreateLocation(String location, boolean active, String officeId) throws SQLException {
+        double latitude = 0;
+        double longitude = 0;
+        String kind = "SITE";
+        String timeZone = "UTC";
+        String horizontalDatum = "WGS84";
+
+
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement(createLocationQuery)) {
+                stmt.setString(1, location);
+                stmt.setString(2, active ? "T" : "F");
+                stmt.setString(3, officeId);
+                stmt.setString(4, timeZone);
+                stmt.setDouble(5, latitude);
+                stmt.setDouble(6, longitude);
+                stmt.setString(7, horizontalDatum);
+                stmt.setString(8, kind);
+                stmt.execute();
+
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to create location", ex);
+            }
+        }, "cwms_20");
+
+    }
+
 }
