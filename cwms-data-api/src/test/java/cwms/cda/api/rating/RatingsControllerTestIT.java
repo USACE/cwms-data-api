@@ -370,8 +370,9 @@ class RatingsControllerTestIT extends DataApiTestIT
 	}
 
     @Test
-    void test_1206_rating_create() throws IOException {
-        String body = readResourceFile("cwms/cda/api/spk/ratings_ind.json");  // example from 1206 but office changed to SPK
+    void test_1206_rating_create_json() throws IOException {
+        // example from 1206 but office changed to SPK
+        String body = readResourceFile("cwms/cda/api/spk/ratings_ind.json");
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
@@ -391,4 +392,30 @@ class RatingsControllerTestIT extends DataApiTestIT
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpServletResponse.SC_CREATED));
     }
+
+    @Test
+    void test_1206_rating_create_xml() throws IOException {
+        // example from 1206 but office changed to SPK and converted to xml
+        String body = readResourceFile("cwms/cda/api/spk/ratings_ind.xml");
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Create the set
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .contentType(Formats.XMLV2)
+                .body(body)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, SPK)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/ratings")
+            .then()
+            .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+    }
+
 }
+

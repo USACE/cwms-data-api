@@ -8,11 +8,12 @@ import hec.data.cwmsRating.RatingSet;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import javax.xml.transform.Source;
@@ -47,8 +48,8 @@ public class JsonRatingUtilsTest
 		{
 			result.write(buffer, 0, length);
 		}
-		// StandardCharsets.UTF_8.name() > JDK 7
-		return result.toString("UTF-8");
+
+		return result.toString(StandardCharsets.UTF_8);
 	}
 
 	@Test
@@ -58,7 +59,7 @@ public class JsonRatingUtilsTest
 		roundTripFilesThruJson(files);
 	}
 
-	@Disabled("Very slow")  // 6
+	@Tag("slow")  // 6s
 	@Test
 	void test_xml_to_json_to_rating_set_assorted()
 	{
@@ -71,7 +72,7 @@ public class JsonRatingUtilsTest
 		roundTripFilesThruJson(files);
 	}
 
-	@Disabled("Very slow")  // 22 sec
+	@Tag("slow")  // 22 sec
 	@Test
 	void test_xml_to_json_to_rating_set_SPK()
 	{
@@ -84,7 +85,7 @@ public class JsonRatingUtilsTest
 		roundTripFilesThruJson(files);
 	}
 
-	@Disabled("Very slow")  //20 sec
+	@Tag("slow")  //20 sec
 	@Test
 	void test_xml_to_json_to_rating_set_NWO()
 	{
