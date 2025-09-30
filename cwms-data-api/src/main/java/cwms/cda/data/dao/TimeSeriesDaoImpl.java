@@ -1255,7 +1255,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<RecentValue> retval;
 
         // Create whereCondition for filtering by category, group, and office
-        Condition whereCondition = DSL.trueCondition();
+        Condition whereCondition = DSL.noCondition();
         if (categoryId != null) {
             whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.CATEGORY_ID.eq(categoryId));
         }
