@@ -132,6 +132,13 @@ public class BlobController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
             },
+            responses = {
+                    @OpenApiResponse(status = STATUS_200,
+                            description = "Returns requested blob.",
+                            content = {
+                                    @OpenApiContent(type = "application/octet-stream")
+                            })
+            },
             tags = {TAG}
     )
     @Override
