@@ -95,7 +95,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
         Condition assignmentOffice;
         if (CWMS.equalsIgnoreCase(officeId)) {
-            assignmentOffice = DSL.trueCondition();
+            assignmentOffice = DSL.noCondition();
         } else {
             assignmentOffice = alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(officeId));
         }

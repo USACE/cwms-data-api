@@ -36,14 +36,13 @@ import io.restassured.response.Response;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
 
 import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
@@ -369,4 +368,54 @@ class RatingsControllerTestIT extends DataApiTestIT
 			this.expectedContentType = expectedContentType;
 		}
 	}
+
+    @Test
+    void test_1206_rating_create_json() throws IOException {
+        // example from 1206 but office changed to SPK
+        String body = readResourceFile("cwms/cda/api/spk/ratings_ind.json");
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Create the set
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .contentType(Formats.JSONV2)
+                .body(body)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, SPK)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/ratings")
+            .then()
+            .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+    }
+
+    @Test
+    void test_1206_rating_create_xml() throws IOException {
+        // example from 1206 but office changed to SPK and converted to xml
+        String body = readResourceFile("cwms/cda/api/spk/ratings_ind.xml");
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Create the set
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .contentType(Formats.XMLV2)
+                .body(body)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, SPK)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/ratings")
+            .then()
+            .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+    }
+
 }
+
