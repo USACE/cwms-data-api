@@ -1812,27 +1812,27 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         String officeId = ts.get("office-id").asText();
 
 
-        // createLocation(location, true, officeId);  // For now, I don't want it delete so I can debug.
+        // createLocation(location, true, officeId);  // For now, I don't want it deleted so I can debug.
         manuallyCreateLocation(location, true, officeId);
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         // inserting the time series
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .body(tsData)
-                .header("Authorization",user.toHeaderValue())
-                .queryParam(OFFICE, officeId)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
 
 
         System.out.println("Data has been inserted for " + location);
@@ -1846,18 +1846,17 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         ValidatableResponse validatableResponse = given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, officeId)
                 .queryParam(UNIT, "m")
                 .queryParam(NAME, ts.get(NAME).asText())
                 .queryParam(BEGIN, firstPoint)
-                .when()
+            .when()
                 .redirects().follow(true)
                 .redirects().max(3)
                 .get("/timeseries/")
-                .then()
+            .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
+            .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
 
         System.out.println(validatableResponse.extract().asString());
