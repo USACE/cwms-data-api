@@ -1463,7 +1463,6 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .contentType(Formats.JSONV1)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, CWMS_OFFICE) //office
             .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
             .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
@@ -1500,7 +1499,6 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .contentType(Formats.JSONV1)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
             .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
