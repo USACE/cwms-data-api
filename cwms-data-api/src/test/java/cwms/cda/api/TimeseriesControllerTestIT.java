@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 
 @Tag("integration")
 final class TimeseriesControllerTestIT extends DataApiTestIT {
@@ -1874,30 +1875,32 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     private void manuallyCreateLocation(String location, boolean active, String officeId) throws SQLException {
-        double latitude = 0;
-        double longitude = 0;
-        String kind = "SITE";
-        String timeZone = "UTC";
-        String horizontalDatum = "WGS84";
 
+        String P_LOCATION_ID = location;
+        String P_LOCATION_TYPE = "SITE";
+        Number P_ELEVATION = 0;
+        String P_ELEV_UNIT_ID = "m";
+        String P_VERTICAL_DATUM = "NAVD-88";
+        Number P_LATITUDE = 0;
+        Number P_LONGITUDE = 0;
+        String P_HORIZONTAL_DATUM = "WGS84";
+        String P_PUBLIC_NAME = null;
+        String P_LONG_NAME= null;
+        String P_DESCRIPTION = null;
+        String P_TIME_ZONE_ID = "UTC";
+        String P_COUNTY_NAME = null;
+        String P_STATE_INITIAL = null;
+        String P_ACTIVE = active ? "T" : "F";
+        String P_DB_OFFICE_ID = officeId;
 
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection((c) -> {
-            try (PreparedStatement stmt = c.prepareStatement(createLocationQuery)) {
-                stmt.setString(1, location);
-                stmt.setString(2, active ? "T" : "F");
-                stmt.setString(3, officeId);
-                stmt.setString(4, timeZone);
-                stmt.setDouble(5, latitude);
-                stmt.setDouble(6, longitude);
-                stmt.setString(7, horizontalDatum);
-                stmt.setString(8, kind);
-                stmt.execute();
-
-            } catch (SQLException ex) {
-                throw new RuntimeException("Unable to create location", ex);
-            }
-        }, "cwms_20");
+        db.connection(c -> {
+            DSLContext dslContext = getDslContext(c, officeId);
+            CWMS_LOC_PACKAGE.call_CREATE_LOCATION(dslContext.configuration(),
+                    P_LOCATION_ID, P_LOCATION_TYPE, P_ELEVATION, P_ELEV_UNIT_ID, P_VERTICAL_DATUM, P_LATITUDE, P_LONGITUDE,
+                    P_HORIZONTAL_DATUM, P_PUBLIC_NAME, P_LONG_NAME, P_DESCRIPTION, P_TIME_ZONE_ID, P_COUNTY_NAME, P_STATE_INITIAL,
+                    P_ACTIVE, P_DB_OFFICE_ID);
+        });
 
     }
 
