@@ -1,7 +1,12 @@
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+import org.openapitools.generator.gradle.plugin.tasks.ValidateTask
+
 plugins {
     id 'cda.deps-conventions'
     id 'cda.java-conventions'
     id 'war'
+    id 'com.github.node-gradle.node' version '7.1.0'
+    id "org.openapi.generator" version "7.15.0"
 }
 
 configurations {
@@ -134,6 +139,7 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.jaxb.impl)
+    testImplementation(libs.openapi.spec.validation)
 
     baseLibs(libs.oracle.jdbc.driver)
 
@@ -322,4 +328,71 @@ task generateTimeSeriesSamples(type: JavaExec) {
     args url
     args user
     args password
+}
+
+tasks.register("executeOpenAPIConversion", Test) {
+    group 'documentation'
+    dependsOn generateConfig
+    dependsOn war
+
+    useJUnitPlatform() {
+        includeTags "openapi"
+    }
+
+    classpath += configurations.baseLibs
+    // The before all extension will take care of these properties
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
+    jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
+    jvmArgs += "-DwarContext=/cwms-data"
+    jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
+    jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
+    jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
+    jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
+    jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
+}
+
+if (JavaVersion.current() >= JavaVersion.VERSION_11) {
+
+    tasks.register('validateOpenApiSpec', ValidateTask) {
+        group 'documentation'
+        dependsOn executeOpenAPIConversion
+        inputSpec.set("$rootDir/cwms-data-api/build/openapi.json")
+    }
+
+    tasks.register('generateOpenApiDoc', GenerateTask) {
+        group 'documentation'
+        dependsOn executeOpenAPIConversion
+        validateSpec = true
+        inputSpec = "$rootDir/cwms-data-api/build/openapi.json"
+        outputDir = "$rootDir/cda-client/build/generated/openApi"
+        configFile = "$rootDir/cda-client/openapi.config.json"
+        generatorName = "typescript-fetch"
+        globalProperties.set([
+                modelDocs             : "true",
+                modelTests            : "false",
+                apiDocs               : "true",
+                apiTests              : "false",
+                enabledPostProcessFile: "false"
+        ])
+        ignoreFileOverride = "$rootDir/cda-client/.openapi-generator-ignore"
+    }
+
+    tasks.register('compileTypeScriptOpenApiSpec', NpxTask) {
+        group 'documentation'
+        dependsOn npmInstall
+        dependsOn generateOpenApiDoc
+        dependsOn validateOpenApiSpec
+        command = "npm"
+        args = ["run", "build"]
+        inputs.files('package.json', 'package-lock.json')
+        inputs.dir(fileTree("$rootDir/cda-client/node_modules").exclude(".cache"))
+        outputs.dir('dist')
+    }
+
+    node {
+        nodeProjectDir = file("$rootDir/cda-client/")
+    }
 }
