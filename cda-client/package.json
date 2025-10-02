@@ -1,0 +1,41 @@
+{
+  "name": "cwmsjs-generator",
+  "version": "2.3.2",
+  "description": "OpenAPI generator for building the cwmsjs JavaScript/TypeScript library for CWMS Data API",
+  "author": "USACE,HEC,CWMS,OpenApi Contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HydrologicEngineeringCenter/cwms-data-api-client-javascript"
+  },
+  "keywords": [
+    "fetch",
+    "typescript",
+    "javascript",
+    "react",
+    "openapi-client",
+    "cwms",
+    "cwmsjs",
+    "cwms-data-api",
+    "cda",
+    "hec",
+    "usace",
+    "us army corps of engineers"
+  ],
+  "license": "MIT License",
+  "main": "./build/generated/openApi/dist/index.js",
+  "type": "commonjs",
+  "exports": {
+    ".": "./build/generated/openApi/dist/index.js"
+  },
+  "typings": "./build/generated/openApi/dist/index.d.ts",
+  "scripts": {
+    "build": "cd build && cd generated && cd openApi && npm run build"
+  },
+  "dependencies": {
+    "es6-promise": "^4.2.4"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.15.3",
+    "typescript": "^4.9.5"
+  }
+}
