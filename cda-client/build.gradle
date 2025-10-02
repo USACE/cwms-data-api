@@ -1,0 +1,7 @@
+tasks.register('cleanGeneration', Delete) {
+    delete project.layout.projectDirectory.dir('build')
+    delete project.layout.projectDirectory.dir('dist')
+    delete project.layout.projectDirectory.dir('node_modules')
+}
+
+clean.dependsOn cleanGeneration
