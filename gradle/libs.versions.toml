@@ -36,6 +36,7 @@ google-auto-service = "1.0-rc6"
 freemarker = "2.3.32"
 auto-service = "1.1.1"
 openapi-validation = "2.44.9"
+javaparser = "3.26.2"
 
 #Overrides
 classgraph = { strictly = '4.8.176' }
@@ -114,6 +115,7 @@ rest-assured = { module = "io.rest-assured:rest-assured", version.ref = "rest-as
 hamcrest-all = { module = "org.hamcrest:hamcrest-all", version.ref = "hamcrest" }
 apache-freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
 apache-commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "apache-commons.csv" }
+javaparser-core = { module = "com.github.javaparser:javaparser-core", version.ref = "javaparser" }
 # test runtime
 
 # tomcat
