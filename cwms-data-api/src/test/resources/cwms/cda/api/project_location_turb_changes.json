@@ -13,7 +13,7 @@
   "nation": "US",
   "state-initial": "CA",
   "county-name": "Sacramento",
-  "horizontal-datum": "NVGD29",
+  "horizontal-datum": "NGVD29",
   "published-longitude": -95.992775,
   "published-latitude": 36.153980,
   "elevation": 10.0,

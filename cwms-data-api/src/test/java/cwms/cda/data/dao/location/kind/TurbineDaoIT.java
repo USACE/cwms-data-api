@@ -246,7 +246,7 @@ final class TurbineDaoIT extends DataApiTestIT {
 
     private static Location buildProjectLocation(String projectId) {
         return new Location.Builder(projectId, "PROJECT", ZoneId.of("UTC"),
-            38.5613824, -121.7298432, "NVGD29", OFFICE)
+            38.5613824, -121.7298432, "NGVD29", OFFICE)
             .withElevation(10.0)
             .withElevationUnits("m")
             .withLocationType("SITE")
@@ -276,7 +276,7 @@ final class TurbineDaoIT extends DataApiTestIT {
 
     private static Location buildTurbineLocation(String locationId) {
         return new Location.Builder(locationId, "TURBINE", ZoneId.of("UTC"),
-            38.5613824, -121.7298432, "NVGD29", OFFICE)
+            38.5613824, -121.7298432, "NGVD29", OFFICE)
             .withElevation(10.0)
             .withElevationUnits("m")
             .withLocationType("SITE")
