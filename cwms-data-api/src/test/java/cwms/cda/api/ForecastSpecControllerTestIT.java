@@ -383,7 +383,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
 
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NEW_USER;
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_OTHER_NORMAL_SAME_ROLES;
 
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)

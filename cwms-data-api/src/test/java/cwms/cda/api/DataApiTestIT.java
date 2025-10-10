@@ -51,7 +51,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -179,7 +178,7 @@ public class DataApiTestIT {
                 if(user.getApikey() == null) {
                     continue;
                 }
-                if(user == TestAccounts.KeyUser.SPK_NEW_USER)
+                if(user == TestAccounts.KeyUser.SPK_OTHER_NORMAL_SAME_ROLES)
                 {
                     try {
                         addNewUser(user.getName());
