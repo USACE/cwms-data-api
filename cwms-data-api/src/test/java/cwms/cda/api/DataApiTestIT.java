@@ -185,7 +185,7 @@ public class DataApiTestIT {
                         addNewUser(user.getName());
                         addUserToGroup(user.getName(), "CWMS Users", db.getOfficeId());
                         addUserToGroup(user.getName(), "All Users", db.getOfficeId());
-                        addUserToGroup(db.getUsername(), "TS ID Creator", db.getOfficeId());
+                        addUserToGroup(user.getName(), "TS ID Creator", db.getOfficeId());
                     } catch (Exception ex) {
                         FluentLogger.forEnclosingClass().atFine().log("New user %s already exists, continuing", user.getName());
                     }
