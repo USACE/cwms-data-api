@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ratings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.hec.usace.army.mil/xmlSchema/cwms/Ratings.xsd">
+    <rating-template office-id="{office-id}">
+        <parameters-id>Elev;Area</parameters-id>
+        <version>Standard</version>
+        <ind-parameter-specs>
+            <ind-parameter-spec position="1">
+                <parameter>Elev</parameter>
+                <in-range-method>LINEAR</in-range-method>
+                <out-range-low-method>NEAREST</out-range-low-method>
+                <out-range-high-method>NEAREST</out-range-high-method>
+            </ind-parameter-spec>
+        </ind-parameter-specs>
+        <dep-parameter>Area</dep-parameter>
+        <description/>
+    </rating-template>
+    <rating-spec office-id="{office-id}">
+        <rating-spec-id>{location}.Elev;Area.Standard.Production</rating-spec-id>
+        <template-id>Elev;Area.Standard</template-id>
+        <location-id>{location}</location-id>
+        <version>Production</version>
+        <source-agency/>
+        <in-range-method>LINEAR</in-range-method>
+        <out-range-low-method>NEAREST</out-range-low-method>
+        <out-range-high-method>NEAREST</out-range-high-method>
+        <active>true</active>
+        <auto-update>true</auto-update>
+        <auto-activate>true</auto-activate>
+        <auto-migrate-extension>true</auto-migrate-extension>
+        <ind-rounding-specs>
+            <ind-rounding-spec position="1">2222233332</ind-rounding-spec>
+        </ind-rounding-specs>
+        <dep-rounding-spec>2222233332</dep-rounding-spec>
+        <description/>
+    </rating-spec>
+    <simple-rating office-id="{office-id}">
+        <rating-spec-id>{location}.Elev;Area.Standard.Production</rating-spec-id>
+        <vertical-datum-info unit="ft">
+            <native-datum>NGVD-29</native-datum>
+            <elevation>612.99</elevation>
+            <offset estimate="false">
+                <to-datum>NGVD-29</to-datum>
+                <value>0.0</value>
+            </offset>
+            <offset estimate="true">
+                <to-datum>NAVD-88</to-datum>
+                <value>2.393</value>
+            </offset>
+        </vertical-datum-info>
+        <units-id>ft;acre</units-id>
+        <effective-date>2016-09-06T20:08:00Z</effective-date>
+        <transition-start-date/>
+        <create-date>2016-09-06T20:08:00Z</create-date>
+        <active>true</active>
+        <description/>
+        <rating-points>
+            <point>
+                <ind>620.0</ind>
+                <dep>0.0</dep>
+            </point>
+            <point>
+                <ind>621.0</ind>
+                <dep>1.0</dep>
+            </point>
+            <point>
+                <ind>622.0</ind>
+                <dep>2.0</dep>
+            </point>
+            <point>
+                <ind>623.0</ind>
+                <dep>3.0</dep>
+            </point>
+            <point>
+                <ind>624.0</ind>
+                <dep>4.0</dep>
+            </point>
+            <point>
+                <ind>625.0</ind>
+                <dep>5.0</dep>
+            </point>
+        </rating-points>
+    </simple-rating>
+</ratings>
