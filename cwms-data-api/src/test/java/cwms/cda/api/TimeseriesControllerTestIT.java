@@ -2,9 +2,9 @@ package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
+import static helpers.FloatCloseTo.floatCloseTo;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
-import static io.restassured.internal.common.assertion.AssertParameter.notNull;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,7 +13,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.ApiServlet;
-import cwms.cda.data.dto.Location;
+import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import cwms.cda.helpers.ZoneIdHelper;
@@ -35,7 +35,6 @@ import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
-import org.hamcrest.Matchers;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
@@ -1812,9 +1811,8 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
 
-
-        // createLocation(location, true, officeId);  // For now, I don't want it deleted so I can debug.
-        manuallyCreateLocation(location, true, officeId);
+        createLocation(location, true, officeId);  // This marks for delete at end of test.
+        updateLocation(location, true, officeId);
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
@@ -1843,9 +1841,10 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         // get it back
         String firstPoint = "2008-05-01T03:00:00.000Z";
 
-
+        // try once with auth
         ValidatableResponse validatableResponse = given()
                 .log().ifValidationFails(LogDetail.ALL, true)
+                .header("Authorization",user.toHeaderValue())
                 .accept(Formats.JSONV2)
                 .queryParam(OFFICE, officeId)
                 .queryParam(UNIT, "m")
@@ -1866,42 +1865,262 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .body("vertical-datum-info.location", equalTo(location))
                 .body("vertical-datum-info.unit", equalTo("m"))
                 .body("vertical-datum-info.offsets.size()", equalTo(1))
-//                .body("vertical-datum-info.offsets[0].to-datum", equalTo("NAVD-88"))
-//                .body("vertical-datum-info.offsets[0].value", closeTo(-0.1666, 0.0001))
-//                .body("vertical-datum-info.offsets[0].estimate", equalTo(true))
                 ;
+
+        // Try again without auth
+        validatableResponse = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .queryParam(OFFICE, officeId)
+                .queryParam(UNIT, "m")
+                .queryParam(NAME, ts.get(NAME).asText())
+                .queryParam(BEGIN, firstPoint)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        System.out.println(validatableResponse.extract().asString());
+        // verify that there is vertical-datum-info in the response.
+        validatableResponse.body("vertical-datum-info", notNullValue())
+                .body("vertical-datum-info.location", equalTo(location))
+                .body("vertical-datum-info.unit", equalTo("m"))
+                .body("vertical-datum-info.offsets.size()", equalTo(1))
+        ;
 
 
     }
 
-    private void manuallyCreateLocation(String location, boolean active, String officeId) throws SQLException {
+    private void updateLocation(String location, boolean active, String officeId) throws SQLException {
 
         String P_LOCATION_ID = location;
         String P_LOCATION_TYPE = "SITE";
-        Number P_ELEVATION = 0;
+        Number P_ELEVATION = 11;
         String P_ELEV_UNIT_ID = "m";
-        String P_VERTICAL_DATUM = "NAVD-88";
-        Number P_LATITUDE = 0;
-        Number P_LONGITUDE = 0;
+
+        // Pretty sure this isn't supposed to have a dash.  The create doesn't check.  The default create just passes null.
+        // If it has a dash then the offsets don't work.
+        // select VERTICAL_DATUM, count(*) as COUNT
+        //  from AT_PHYSICAL_LOCATION
+        //  group by VERTICAL_DATUM
+        //  order by COUNT desc
+        // has no entries with a dash in the name (unless we've run this test with a dash).
+        String P_VERTICAL_DATUM = VerticalDatum.NAVD88.toString();
+        Number P_LATITUDE = 38.5757;   // pretty sure that if these are 0,0 then its not inside the navd88 bounds and the offsets come back []
+        Number P_LONGITUDE = -121.4789;
         String P_HORIZONTAL_DATUM = "WGS84";
-        String P_PUBLIC_NAME = null;
+        String P_PUBLIC_NAME = "Integration Test Sac Dam";
         String P_LONG_NAME= null;
-        String P_DESCRIPTION = null;
+        String P_DESCRIPTION = "for testing";
         String P_TIME_ZONE_ID = "UTC";
-        String P_COUNTY_NAME = null;
-        String P_STATE_INITIAL = null;
+        String P_COUNTY_NAME = "Sacramento";
+        String P_STATE_INITIAL = "CA";
         String P_ACTIVE = active ? "T" : "F";
         String P_DB_OFFICE_ID = officeId;
 
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext dslContext = getDslContext(c, officeId);
-            CWMS_LOC_PACKAGE.call_CREATE_LOCATION(dslContext.configuration(),
-                    P_LOCATION_ID, P_LOCATION_TYPE, P_ELEVATION, P_ELEV_UNIT_ID, P_VERTICAL_DATUM, P_LATITUDE, P_LONGITUDE,
-                    P_HORIZONTAL_DATUM, P_PUBLIC_NAME, P_LONG_NAME, P_DESCRIPTION, P_TIME_ZONE_ID, P_COUNTY_NAME, P_STATE_INITIAL,
-                    P_ACTIVE, P_DB_OFFICE_ID);
+
+//            CWMS_LOC_PACKAGE.call_DELETE_LOCATION(dslContext.configuration(), P_LOCATION_ID, String.valueOf(DeleteRule.DELETE_LOC_CASCADE), P_DB_OFFICE_ID);
+//            CWMS_LOC_PACKAGE.call_CREATE_LOCATION(dslContext.configuration(),
+//                    P_LOCATION_ID, P_LOCATION_TYPE, P_ELEVATION, P_ELEV_UNIT_ID, P_VERTICAL_DATUM, P_LATITUDE, P_LONGITUDE,
+//                    P_HORIZONTAL_DATUM, P_PUBLIC_NAME, P_LONG_NAME, P_DESCRIPTION, P_TIME_ZONE_ID, P_COUNTY_NAME, P_STATE_INITIAL,
+//                    P_ACTIVE, P_DB_OFFICE_ID);
+
+            String P_IGNORENULLS = "F";
+            CWMS_LOC_PACKAGE.call_UPDATE_LOCATION(dslContext.configuration(),
+                     P_LOCATION_ID,  P_LOCATION_TYPE,  P_ELEVATION,  P_ELEV_UNIT_ID,  P_VERTICAL_DATUM,  P_LATITUDE,  P_LONGITUDE,
+                    P_HORIZONTAL_DATUM,  P_PUBLIC_NAME,  P_LONG_NAME,  P_DESCRIPTION,  P_TIME_ZONE_ID,  P_COUNTY_NAME,  P_STATE_INITIAL,
+                    P_ACTIVE,  P_IGNORENULLS,  P_DB_OFFICE_ID );
+
         });
 
     }
+
+
+    //  vertical-datum parameter was recently added to the timeseries create call.
+    // The timeseries sent as the body to the create can optionally also include a vertical-datum-info element. This
+    // test is meant to verify 3 scenarios when the timeseries does not include vertical-datum-info:
+    // 1) no vertical-datum parameter is sent to the create call.
+    // 2) a NAVD88 vertical-datum parameter is sent to the create call.
+    // 3) a NGVD29 vertical-datum parameter is sent to the create call.
+    //
+    @Test
+    void test_create_with_vertical_datum_parameter_but_no_vertical_datum_info() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/spk/elev_ts_create.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String tsName = ts.get(NAME).asText();
+        String location = tsName.split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        // Collect input times and values from the payload
+        java.util.List<Long> inputTimes = new java.util.ArrayList<>();
+        java.util.List<Double> inputValues = new java.util.ArrayList<>();
+        for (JsonNode row : ts.get("values")) {
+            inputTimes.add(row.get(0).asLong());
+            inputValues.add(row.get(1).asDouble());
+        }
+        long firstMillis = inputTimes.get(0);
+        long lastMillis = inputTimes.get(inputTimes.size() - 1);
+        String beginIso = java.time.Instant.ofEpochMilli(firstMillis).toString();
+        // pad end by 1 hour to ensure inclusion
+        String endIso = java.time.Instant.ofEpochMilli(lastMillis + 3600_000L).toString();
+
+        createLocation(location, true, officeId);  // This marks for delete at end of test.
+        updateLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Helper lambda to GET the series and return a ValidatableResponse
+        java.util.function.Supplier<ValidatableResponse> doGet = () ->
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .queryParam(OFFICE, officeId)
+                .queryParam(NAME, tsName)
+                .queryParam(UNIT, "m")
+                .queryParam(BEGIN, beginIso)
+                .queryParam(END, endIso)
+                .queryParam(TRIM, true)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        // 1) No vertical-datum parameter provided
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // GET after scenario 1 and verify values equal input (NAVD88 native)
+        ValidatableResponse vr1 = doGet.get();
+        System.out.println("1:" + vr1.extract().asString());
+
+        /* Response includes
+        "vertical-datum-info": {
+        "office": "SPK",
+        "unit": "m",
+        "location": "Sacramento Dam",
+        "native-datum": "NAVD-88",
+        "elevation": 11.0,
+        "offsets": [
+            {
+                "estimate": true,
+                "to-datum": "NGVD-29",
+                "value": -0.7717
+            }
+        ]
+    }*/
+
+        vr1.body("values.size()", equalTo(inputValues.size()));
+        for (int i = 0; i < inputValues.size(); i++) {
+            long expectedTime = inputTimes.get(i);
+            double expectedVal = inputValues.get(i);
+            vr1.body("values[" + i + "][0]", equalTo(expectedTime))
+               .body("values[" + i + "][1]", floatCloseTo(expectedVal, 1e-6));
+        }
+
+        // 2) Provide NAVD88 vertical-datum parameter (matches location's datum)
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(VERTICAL_DATUM, "NAVD88")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // GET after scenario 2 and verify values equal input; also capture NGVD29 offset
+        ValidatableResponse vr2 = doGet.get();
+        System.out.println("2:" + vr2.extract().asString());
+        vr2.body("values.size()", equalTo(inputValues.size()));
+        for (int i = 0; i < inputValues.size(); i++) {
+            vr2.body("values[" + i + "][1]", floatCloseTo(inputValues.get(i), 1e-6));
+        }
+        ExtractableResponse<Response> ex2 = vr2.extract();
+        String body2 = ex2.asString();
+        JsonNode resp2 = new ObjectMapper().readTree(body2);
+        JsonNode vdi = resp2.get("vertical-datum-info");
+        Double offsetToNgvd29 = null;
+        if (vdi != null && vdi.has("offsets")) {
+            for (JsonNode off : vdi.get("offsets")) {
+                if ("NGVD-29".equalsIgnoreCase(off.get("to-datum").asText())) {
+                    if (off.hasNonNull("value")) {
+                        offsetToNgvd29 = off.get("value").asDouble();
+                    }
+                    break;
+                }
+            }
+        }
+        assertNotNull(offsetToNgvd29, "Expected NGVD-29 offset to be present in vertical-datum-info");
+
+        // 3) Provide NGVD29 vertical-datum parameter (conversion should occur to as-stored datum)
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(VERTICAL_DATUM, "NGVD29")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // Compute expected NAVD88 = NGVD29 - offset(NAVD88->NGVD29)
+        java.util.List<Double> expectedNavd88 = new java.util.ArrayList<>();
+        for (Double v : inputValues) {
+            expectedNavd88.add(v - offsetToNgvd29);
+        }
+
+        // GET after scenario 3 and verify conversion was applied
+        ValidatableResponse vr3 = doGet.get();
+        System.out.println("3:" + vr3.extract().asString());
+        vr3.body("values.size()", equalTo(expectedNavd88.size()));
+        for (int i = 0; i < expectedNavd88.size(); i++) {
+            vr3.body("values[" + i + "][1]", floatCloseTo(expectedNavd88.get(i), 1e-6));
+        }
+    }
+
+
 
 }
