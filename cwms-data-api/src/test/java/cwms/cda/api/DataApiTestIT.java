@@ -193,14 +193,12 @@ public class DataApiTestIT {
                             throw ex;
                         }
                     }
-                    try {
-                        addUserToGroup(name, "CWMS Users", officeId);
-                        addUserToGroup(name, "All Users", officeId);
-                        addUserToGroup(name, "TS ID Creator", officeId);
-                    } catch (Exception ex) {
-                        logger.atSevere().log("Could not add %s to groups", name);
-                    }
+
+                    addUserToGroup(name, "CWMS Users", officeId);
+                    addUserToGroup(name, "All Users", officeId);
+                    addUserToGroup(name, "TS ID Creator", officeId);
                 }
+
                 db.connection((c) -> {
                     try (PreparedStatement stmt = c.prepareStatement(registerApiKey)) {
                         stmt.setString(1, user.getName());
