@@ -180,13 +180,23 @@ public class DataApiTestIT {
                 }
                 if(user == TestAccounts.KeyUser.SPK_OTHER_NORMAL_SAME_ROLES)
                 {
+                    String name = user.getName();
+                    String officeId = db.getOfficeId();
+                    logger.atInfo().log("Adding user %s in %s to groups", name, officeId);
                     try {
-                        addNewUser(user.getName());
-                        addUserToGroup(user.getName(), "CWMS Users", db.getOfficeId());
-                        addUserToGroup(user.getName(), "All Users", db.getOfficeId());
-                        addUserToGroup(user.getName(), "TS ID Creator", db.getOfficeId());
+                        addNewUser(name);
+                    } catch (RuntimeException ex) {
+                        Throwable cause = ex.getCause();
+                        if (cause == null || !cause.getMessage().contains("already exists")) {
+                            throw ex;
+                        }
+                    }
+                    try {
+                        addUserToGroup(name, "CWMS Users", officeId);
+                        addUserToGroup(name, "All Users", officeId);
+                        addUserToGroup(name, "TS ID Creator", officeId);
                     } catch (Exception ex) {
-                        FluentLogger.forEnclosingClass().atFine().log("New user %s already exists, continuing", user.getName());
+                        logger.atSevere().log("Could not add %s to groups", name);
                     }
                 }
                 db.connection((c)-> {
