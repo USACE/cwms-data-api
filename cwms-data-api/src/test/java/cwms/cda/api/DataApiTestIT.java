@@ -183,7 +183,8 @@ public class DataApiTestIT {
                 }
                 if (user == TestAccounts.KeyUser.SPK_OTHER_NORMAL_SAME_ROLES) {
                     String name = user.getName();
-                    String officeId = db.getOfficeId();
+//                    String officeId = db.getOfficeId();  // This comes back as HQ
+                    String officeId = "SPK";  // We want SPK for this user
                     logger.atInfo().log("Adding user %s in %s to groups", name, officeId);
                     try {
                         addNewUser(name);
@@ -191,6 +192,8 @@ public class DataApiTestIT {
                         Throwable cause = ex.getCause();
                         if (cause == null || !cause.getMessage().contains("already exists")) {
                             throw ex;
+                        } else {
+                            logger.atInfo().log("User %s already exists", name);
                         }
                     }
 
