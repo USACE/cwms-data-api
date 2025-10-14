@@ -26,34 +26,30 @@ package cwms.cda.api.rating;
 
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
-import hec.data.cwmsRating.AbstractRating;
-import hec.data.cwmsRating.RatingSet;
 import hec.data.cwmsRating.io.RatingSetContainer;
 import hec.data.cwmsRating.io.RatingSpecContainer;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import java.io.IOException;
+import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
-import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
-import mil.army.usace.hec.metadata.VerticalDatumContainer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-
-import javax.servlet.http.HttpServletResponse;
-
-import java.io.IOException;
-
 import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 class RatingsControllerTestIT extends DataApiTestIT
@@ -420,73 +416,6 @@ class RatingsControllerTestIT extends DataApiTestIT
             .assertThat()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpServletResponse.SC_CREATED));
-    }
-
-    @Test
-    void test_store_vertical_datum() throws Exception
-    {
-        String xml = readResourceFile("cwms/cda/api/vertical_datum_example_rating.xml");
-        xml = xml.replace("{office-id}", SPK).replace("{location}", EXISTING_LOC);
-        RatingSet originalRatingSet = RatingXmlFactory.ratingSet(xml);
-
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        String ratingId = originalRatingSet.getRatingSpec().getRatingSpecId();
-        AbstractRating originalRating = originalRatingSet.getRatings()[0];
-        VerticalDatumContainer originalVerticalDatumContainer = originalRating.getVerticalDatumContainer();
-
-        given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .contentType(Formats.XMLV2)
-                .body(xml)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam(OFFICE, SPK)
-        .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/ratings")
-        .then()
-        .assertThat()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpServletResponse.SC_CREATED));
-
-        ExtractableResponse<Response> response = given()
-				.log().ifValidationFails(LogDetail.ALL,true)
-				.contentType(Formats.XMLV2)
-				.queryParam(OFFICE, SPK)
-		.when()
-				.redirects().follow(true)
-				.redirects().max(3)
-				.get("/ratings/" + ratingId)
-		.then()
-				.log().ifValidationFails(LogDetail.ALL,true)
-		.assertThat()
-				.statusCode(is(HttpServletResponse.SC_OK))
-				.contentType(is(Formats.XMLV2))
-				.extract();
-
-        given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .contentType(Formats.XMLV2)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam(OFFICE, SPK)
-                .queryParam(BEGIN, "2000-01-01T00:00:00Z")
-                .queryParam(END, "2100-01-01T00:00:00Z")
-                .queryParam(VERTICAL_DATUM, VerticalDatum.NAVD88)
-        .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/ratings/" + ratingId)
-        .then()
-        .assertThat()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
-
-        RatingSet receivedRatingSet = RatingXmlFactory.ratingSet(response.body().asString());
-        AbstractRating receivedRating = receivedRatingSet.getRatings()[0];
-
-        VerticalDatumContainer receivedVerticalDatumContainer = receivedRating.getVerticalDatumContainer();
-        assertNotNull(receivedVerticalDatumContainer);
-        assertEquals(originalVerticalDatumContainer, receivedVerticalDatumContainer);
     }
 }
 

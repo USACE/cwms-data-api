@@ -62,6 +62,7 @@ import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
+import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
@@ -71,7 +72,9 @@ import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
 import cwms.cda.helpers.DateUtils;
 import hec.data.RatingException;
+import hec.data.cwmsRating.AbstractRating;
 import hec.data.cwmsRating.RatingSet;
+import hec.data.cwmsRating.TableRating;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
@@ -265,7 +268,9 @@ public class RatingController implements CrudHandler {
                 + "\n* `NAVD88`  The elevation values will in the "
                 + "specified or default units above the NAVD-88 datum."
                 + "\n* `NGVD29`  The elevation values will be in the "
-                + "specified or default units above the NGVD-29 datum."),
+                + "specified or default units above the NGVD-29 datum."
+                + "\n* `NATIVE`  The elevation values will be in the "
+                + "Location's native datum."),
         @OpenApiParam(name = AT,  description = "Specifies the "
                 + "start of the time window for data to be included in the response. "
                 + "If this field is not specified, any required time window begins 24"
@@ -362,6 +367,16 @@ public class RatingController implements CrudHandler {
                 @OpenApiParam(name = METHOD, description = "Specifies "
                         + "the retrieval method used.  If no method is provided EAGER will be used.",
                         type = RatingSet.DatabaseLoadMethod.class),
+                @OpenApiParam(name = DATUM,  description = "Specifies the "
+                        + "elevation datum of the response. This field affects only elevation"
+                        + " Ratings. Valid values for this field are:"
+                        + "\n* `NAVD88`  The elevation values will in the "
+                        + "specified or default units above the NAVD-88 datum."
+                        + "\n* `NGVD29`  The elevation values will be in the "
+                        + "specified or default units above the NGVD-29 datum."
+                        + "\n* `NATIVE`  The elevation values will be in the "
+                        + "Location's native datum.",
+                        type = VerticalDatum.class),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
@@ -377,6 +392,7 @@ public class RatingController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             String officeId = ctx.queryParam(OFFICE);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+            VerticalDatum verticalDatum = ctx.queryParamAsClass(DATUM, VerticalDatum.class).get();
 
             Instant beginInstant = null;
             String begin = ctx.queryParam(BEGIN);
@@ -394,7 +410,7 @@ public class RatingController implements CrudHandler {
                     RatingSet.DatabaseLoadMethod.class)
                     .getOrDefault(RatingSet.DatabaseLoadMethod.EAGER);
 
-            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant);
+            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant, verticalDatum);
             if (body != null) {
                 ctx.result(body);
                 ctx.status(HttpCode.OK);
@@ -406,7 +422,7 @@ public class RatingController implements CrudHandler {
     @Nullable
     private String getRatingSetString(Context ctx, RatingSet.DatabaseLoadMethod method,
                                       String officeId, String rating, Instant begin,
-                                      Instant end) {
+                                      Instant end, VerticalDatum verticalDatum) {
         String retval = null;
 
         try (final Timer.Context ignored = markAndTime("getRatingSetString")) {
@@ -421,6 +437,16 @@ public class RatingController implements CrudHandler {
                 try {
                     RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end);
                     if (ratingSet != null) {
+                        //Apply vertical datum conversion if needed
+                        if (verticalDatum != null) {
+                            for (AbstractRating temp : ratingSet.getRatings())
+                            {
+                                if (temp instanceof TableRating)
+                                {
+
+                                }
+                            }
+                        }
                         if (isJson) {
                             retval = JsonRatingUtils.toJson(ratingSet);
                         } else {
