@@ -183,8 +183,8 @@ public class DataApiTestIT {
                 }
                 if (user == TestAccounts.KeyUser.SPK_OTHER_NORMAL_SAME_ROLES) {
                     String name = user.getName();
-//                    String officeId = db.getOfficeId();  // This comes back as HQ
-                    String officeId = "SPK";  // We want SPK for this user
+                    String officeId = user.getOperatingOffice(); //"SPK";  // We want user office not db office.
+
                     logger.atInfo().log("Adding user %s in %s to groups", name, officeId);
                     try {
                         addNewUser(name);
