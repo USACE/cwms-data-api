@@ -38,6 +38,7 @@ export default function SwaggerUI() {
         // The client id may, in the future, need to be changed. When that happens deal with it then.
         ui.initOAuth({
             clientId:"cwms",
+            additionalQueryStringParams: {kc_idp_hint: "federation-eams"},
             usePkceWithAuthorizationCodeGrant: true
         })
     }, []);
