@@ -33,6 +33,7 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import java.io.IOException;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
@@ -43,7 +44,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
@@ -51,86 +53,98 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
-class RatingsControllerTestVerticalDatumIT extends DataApiTestIT
-{
-    static final String EXISTING_LOC = "RatingsControllerTestIT";
-    static final String TEMPLATE = EXISTING_LOC + ".Elev;Area.Standard";
+class RatingsControllerTestVerticalDatumIT extends DataApiTestIT {
+    static final String BASE_LOCATION = "RatingDatumTest";
+    static final String LOC_WITH_NAVD88 = BASE_LOCATION + "-NAVD88";
+    static final String LOC_WITH_NGVD29 = BASE_LOCATION + "-NGVD29";
+    static final String TEMPLATE = "Elev;Area.Standard";
     static final String SPK = "SPK";
-    static final VerticalDatum LOCATION_VERTICAL_DATUM = VerticalDatum.NAVD88;
 
     @BeforeAll
-    static void beforeAll() throws Exception
-    {
+    static void beforeAll() throws Exception {
         //Make sure we always have something.
-        createLocationWithVerticalDatum(EXISTING_LOC, true, SPK, LOCATION_VERTICAL_DATUM);
+        createLocation(BASE_LOCATION, true, SPK);
+        createLocationWithVerticalDatum(LOC_WITH_NAVD88, true, SPK, VerticalDatum.NAVD88);
+        createLocationWithVerticalDatum(LOC_WITH_NGVD29, true, SPK, VerticalDatum.NGVD29);
 
-        String xml = readVerticalDatumRatingXml();
+        String xml = readVerticalDatumRatingXml(BASE_LOCATION);
         RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(xml);
         RatingSpecContainer specContainer = container.ratingSpecContainer;
         String templateXml = RatingSpecXmlFactory.toXml(specContainer, "", 0);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
 
-        //Create Template
+        createTemplate(templateXml, user);
+
+        createSpec(specXml, user);
+    }
+
+    private static void createSpec(String specXml, TestAccounts.KeyUser user) {
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.XMLV2)
+                .body(specXml)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, SPK)
+            .when()
+                .redirects()
+                .follow(true)
+                .redirects()
+                .max(3)
+                .post("/ratings/spec")
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+    }
+
+    private static void createTemplate(String templateXml, TestAccounts.KeyUser user) {
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
                 .contentType(Formats.XMLV2)
                 .body(templateXml)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, SPK)
             .when()
-                .redirects().follow(true)
-                .redirects().max(3)
+                .redirects()
+                .follow(true)
+                .redirects()
+                .max(3)
                 .post("/ratings/template")
             .then()
-            .assertThat()
-                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL, true)
                 .statusCode(is(HttpServletResponse.SC_CREATED));
-
-        //Create Spec
-		given()
-				.log().ifValidationFails(LogDetail.ALL,true)
-				.contentType(Formats.XMLV2)
-				.body(specXml)
-				.header("Authorization", user.toHeaderValue())
-				.queryParam(OFFICE, SPK)
-			.when()
-				.redirects().follow(true)
-				.redirects().max(3)
-				.post("/ratings/spec")
-			.then()
-				.assertThat()
-				.log().ifValidationFails(LogDetail.ALL,true)
-				.statusCode(is(HttpServletResponse.SC_CREATED));
     }
 
     @AfterAll
-    static void cleanUp()
-    {
+    static void cleanUp() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         // Delete Template
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
+                .log().ifValidationFails(LogDetail.ALL, true)
                 .contentType(Formats.XMLV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, SPK)
                 .queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
             .when()
-                .redirects().follow(true)
-                .redirects().max(3)
+                .redirects()
+                .follow(true)
+                .redirects()
+                .max(3)
                 .delete("/ratings/template/" + TEMPLATE)
             .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
+                .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
-    @EnumSource(value = TestLocationVerticalDatumData.class)
+    @MethodSource(value = "provideDatumCombinations")
     @ParameterizedTest
-    void test_store_vertical_datum_null_vd_null_create(TestLocationVerticalDatumData testData) throws Exception
-    {
-        String xml = readVerticalDatumRatingXml();
+    void test_store_vertical_datum_null_vd_null_create(TestLocationIds locId,
+                                                       TestLocationVerticalDatumData testData) throws Exception {
+        String xml = readVerticalDatumRatingXml(locId._locationId);
         RatingSet originalRatingSet = RatingXmlFactory.ratingSet(xml);
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
@@ -141,19 +155,21 @@ class RatingsControllerTestVerticalDatumIT extends DataApiTestIT
 
         storeRatingFromXml(xml, user, storedVerticalDatum);
 
-        String requestedVerticalDatum = testData._requestedVerticalDatum == null ? "NULL" : testData._requestedVerticalDatum.toString();
+        String requestedVerticalDatum = testData._requestedVerticalDatum == null ? "" : testData._requestedVerticalDatum.toString();
         ExtractableResponse<Response> response = given()
-                .log().ifValidationFails(LogDetail.ALL,true)
+                .log().ifValidationFails(LogDetail.ALL, true)
                 .contentType(Formats.XMLV2)
                 .queryParam(OFFICE, SPK)
-                .queryParam(VERTICAL_DATUM, requestedVerticalDatum)
+                .queryParam(DATUM, requestedVerticalDatum)
             .when()
-                .redirects().follow(true)
-                .redirects().max(3)
+                .redirects()
+                .follow(true)
+                .redirects()
+                .max(3)
                 .get("/ratings/" + ratingId)
             .then()
-            .assertThat()
-                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL, true)
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .contentType(is(Formats.XMLV2))
                 .extract();
@@ -165,7 +181,17 @@ class RatingsControllerTestVerticalDatumIT extends DataApiTestIT
 
         VerticalDatumContainer receivedVerticalDatumContainer = receivedRating.getVerticalDatumContainer();
         assertNotNull(receivedVerticalDatumContainer);
-        assertEquals(testData._expectedVerticalDatum, receivedVerticalDatumContainer.getCurrentVerticalDatum());
+
+        VerticalDatum expectedDatum = testData._requestedVerticalDatum;
+
+        if (testData._requestedVerticalDatum == VerticalDatum.NATIVE) {
+            expectedDatum = locId._nativeDatum;
+        }
+
+        VerticalDatum receivedDatum = VerticalDatum.getVerticalDatum(
+                receivedVerticalDatumContainer.getCurrentVerticalDatum());
+
+        assertEquals(expectedDatum, receivedDatum);
     }
 
     private static void storeRatingFromXml(String xml, TestAccounts.KeyUser user, VerticalDatum storedVerticalDatum) {
@@ -177,52 +203,74 @@ class RatingsControllerTestVerticalDatumIT extends DataApiTestIT
                 .queryParam(OFFICE, SPK)
                 .queryParam(DATUM, storedVerticalDatum)
             .when()
-                .redirects().follow(true)
-                .redirects().max(3)
+                .redirects()
+                .follow(true)
+                .redirects()
+                .max(3)
                 .post("/ratings")
             .then()
-            .assertThat()
-                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL, true)
                 .statusCode(is(HttpServletResponse.SC_CREATED));
     }
 
     private static void deleteRatingEffectiveDates(TestAccounts.KeyUser user, String ratingId) {
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
+                .log().ifValidationFails(LogDetail.ALL, true)
                 .contentType(Formats.XMLV2)
                 .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, SPK)
                 .queryParam(BEGIN, "2000-01-01T00:00:00Z")
                 .queryParam(END, "2100-01-01T00:00:00Z")
             .when()
-                .redirects().follow(true)
-                .redirects().max(3)
+                .redirects()
+                .follow(true)
+                .redirects()
+                .max(3)
                 .delete("/ratings/" + ratingId)
             .then()
-            .assertThat()
-                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL, true)
                 .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
-    private static @NotNull String readVerticalDatumRatingXml() throws IOException {
-        return readResourceFile("cwms/cda/api/vertical_datum_example_rating.xml")
-                .replace("{office-id}", SPK).replace("{location}", EXISTING_LOC);
+    private static Stream<Arguments> provideDatumCombinations() {
+        return Stream.of(TestLocationIds.values())
+                     .flatMap(locId -> Stream.of(TestLocationVerticalDatumData.values())
+                                             .map(datum -> Arguments.of(locId, datum)));
     }
 
-    private enum TestLocationVerticalDatumData
-    {
-        NULL("NAVD-88", null),
-        NATIVE("NAVD-88", VerticalDatum.NATIVE),
-        NAVD88("NAVD-88", VerticalDatum.NAVD88),
-        NGVD29("NGVD-29", VerticalDatum.NGVD29),
+
+    private static @NotNull String readVerticalDatumRatingXml(String location) throws IOException {
+        return readResourceFile("cwms/cda/api/vertical_datum_example_rating.xml").replace("{office-id}", SPK)
+                                                                                 .replace("{location}", location);
+    }
+
+    private enum TestLocationIds {
+        BASE(BASE_LOCATION, null),
+        NAVD88(LOC_WITH_NAVD88, VerticalDatum.NAVD88),
+        NGVD29(LOC_WITH_NGVD29, VerticalDatum.NGVD29),
+        ;
+
+        final String _locationId;
+        final VerticalDatum _nativeDatum;
+
+        TestLocationIds(String locationId, VerticalDatum nativeDatum) {
+            _locationId = locationId;
+            _nativeDatum = nativeDatum;
+        }
+    }
+
+    private enum TestLocationVerticalDatumData {
+        NULL(null),
+        NATIVE(VerticalDatum.NATIVE),
+        NAVD88(VerticalDatum.NAVD88),
+        NGVD29(VerticalDatum.NGVD29),
         ;
 
         final VerticalDatum _requestedVerticalDatum;
-        final String _expectedVerticalDatum;
 
-        TestLocationVerticalDatumData(String expectedVerticalDatum, VerticalDatum requestedVerticalDatum)
-        {
-            _expectedVerticalDatum = expectedVerticalDatum;
+        TestLocationVerticalDatumData(VerticalDatum requestedVerticalDatum) {
             _requestedVerticalDatum = requestedVerticalDatum;
         }
     }

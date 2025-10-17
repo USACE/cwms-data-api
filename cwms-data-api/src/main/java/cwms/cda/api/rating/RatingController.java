@@ -92,6 +92,7 @@ import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerException;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
+import mil.army.usace.hec.metadata.VerticalDatumException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
@@ -392,7 +393,7 @@ public class RatingController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             String officeId = ctx.queryParam(OFFICE);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-            VerticalDatum verticalDatum = ctx.queryParamAsClass(DATUM, VerticalDatum.class).get();
+            VerticalDatum verticalDatum = VerticalDatum.getVerticalDatum(ctx.queryParam(DATUM));
 
             Instant beginInstant = null;
             String begin = ctx.queryParam(BEGIN);
@@ -439,12 +440,24 @@ public class RatingController implements CrudHandler {
                     if (ratingSet != null) {
                         //Apply vertical datum conversion if needed
                         if (verticalDatum != null) {
-                            for (AbstractRating temp : ratingSet.getRatings())
-                            {
-                                if (temp instanceof TableRating)
+                            try {
+                                switch (verticalDatum)
                                 {
-
+                                    case NAVD88:
+                                        ratingSet.toNAVD88();
+                                        break;
+                                    case NGVD29:
+                                        ratingSet.toNGVD29();
+                                        break;
+                                    case NATIVE:
+                                        ratingSet.toNativeVerticalDatum();
+                                        break;
+                                    default:
+                                        logger.log(Level.SEVERE, "Unknown vertical datum: " + verticalDatum);
+                                        break;
                                 }
+                            } catch (VerticalDatumException vde) {
+                                logger.log(Level.WARNING, vde, () -> "Failed to convert rating " + rating + " to requested vertical datum: " + verticalDatum);
                             }
                         }
                         if (isJson) {
