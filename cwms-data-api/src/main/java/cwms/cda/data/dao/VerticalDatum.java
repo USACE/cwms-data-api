@@ -16,7 +16,7 @@ public enum VerticalDatum {
         VerticalDatum retval = null;
 
         if (input != null && !input.isBlank()) {
-            input = input.replace("-", "");
+            input = input.trim().replace("-", "");
             retval = VerticalDatum.valueOf(input.toUpperCase());
         }
         return retval;

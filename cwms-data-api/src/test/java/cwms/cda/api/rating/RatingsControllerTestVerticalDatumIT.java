@@ -50,7 +50,6 @@ import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 class RatingsControllerTestVerticalDatumIT extends DataApiTestIT {
@@ -142,8 +141,9 @@ class RatingsControllerTestVerticalDatumIT extends DataApiTestIT {
 
     @MethodSource(value = "provideDatumCombinations")
     @ParameterizedTest
-    void test_store_vertical_datum_null_vd_null_create(TestLocationIds locId,
-                                                       TestLocationVerticalDatumData testData) throws Exception {
+    void test_vertical_datum_get_all(TestLocationIds locId, TestLocationVerticalDatumData testData) throws Exception {
+        //This tests getting a rating with various combinations of native location datum and requested datum
+        //Storing a rating without any vertical datum info, then requesting it back with various datum requests
         String xml = readVerticalDatumRatingXml(locId._locationId);
         RatingSet originalRatingSet = RatingXmlFactory.ratingSet(xml);
 
@@ -155,6 +155,65 @@ class RatingsControllerTestVerticalDatumIT extends DataApiTestIT {
 
         storeRatingFromXml(xml, user, storedVerticalDatum);
 
+        //Request the one rating id we stored, using the getAll endpoint with a query param filter
+        String requestedVerticalDatum = testData._requestedVerticalDatum == null ? "" : testData._requestedVerticalDatum.toString();
+        ExtractableResponse<Response> response = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.XMLV2)
+                .queryParam(OFFICE, SPK)
+                .queryParam(DATUM, requestedVerticalDatum)
+                .queryParam(NAME, ratingId)
+            .when()
+                .redirects()
+                .follow(true)
+                .redirects()
+                .max(3)
+                .get("/ratings")
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .contentType(is(Formats.XMLV2))
+                .extract();
+
+        deleteRatingEffectiveDates(user, ratingId);
+
+        RatingSet receivedRatingSet = RatingXmlFactory.ratingSet(response.body().asString());
+        VerticalDatumContainer receivedDatumContainer = receivedRatingSet.getVerticalDatumContainer();
+        assertEquals(locId._nativeDatum == null, receivedDatumContainer == null, "Received VerticalDatumContainer presence mismatch.  Expected " + (locId._nativeDatum == null ? "null" : "not null"));
+
+
+        VerticalDatum expectedDatum = testData._requestedVerticalDatum;
+
+        if (testData._requestedVerticalDatum == VerticalDatum.NATIVE || testData._requestedVerticalDatum == null || locId._nativeDatum == null) {
+            expectedDatum = locId._nativeDatum;
+        }
+
+        VerticalDatum receivedDatum = null;
+        if (receivedDatumContainer != null) {
+            receivedDatum = VerticalDatum.getVerticalDatum(receivedDatumContainer.getCurrentVerticalDatum());
+        }
+
+        assertEquals(expectedDatum, receivedDatum, "Unexpected Current Vertical Datum received");
+    }
+
+    @MethodSource(value = "provideDatumCombinations")
+    @ParameterizedTest
+    void test_vertical_datum_get_one(TestLocationIds locId, TestLocationVerticalDatumData testData) throws Exception {
+        //This tests getting a rating with various combinations of native location datum and requested datum
+        //Storing a rating without any vertical datum info, then requesting it back with various datum requests
+        String xml = readVerticalDatumRatingXml(locId._locationId);
+        RatingSet originalRatingSet = RatingXmlFactory.ratingSet(xml);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String ratingId = originalRatingSet.getRatingSpec().getRatingSpecId();
+        AbstractRating originalRating = originalRatingSet.getRatings()[0];
+        originalRating.setVerticalDatumContainer(null);
+        VerticalDatum storedVerticalDatum = null;
+
+        storeRatingFromXml(xml, user, storedVerticalDatum);
+
+        //Use getOne endpoint to get the rating we just stored
         String requestedVerticalDatum = testData._requestedVerticalDatum == null ? "" : testData._requestedVerticalDatum.toString();
         ExtractableResponse<Response> response = given()
                 .log().ifValidationFails(LogDetail.ALL, true)
@@ -177,21 +236,22 @@ class RatingsControllerTestVerticalDatumIT extends DataApiTestIT {
         deleteRatingEffectiveDates(user, ratingId);
 
         RatingSet receivedRatingSet = RatingXmlFactory.ratingSet(response.body().asString());
-        AbstractRating receivedRating = receivedRatingSet.getRatings()[0];
+        VerticalDatumContainer receivedDatumContainer = receivedRatingSet.getVerticalDatumContainer();
+        assertEquals(locId._nativeDatum == null, receivedDatumContainer == null, "Received VerticalDatumContainer presence mismatch.  Expected " + (locId._nativeDatum == null ? "null" : "not null"));
 
-        VerticalDatumContainer receivedVerticalDatumContainer = receivedRating.getVerticalDatumContainer();
-        assertNotNull(receivedVerticalDatumContainer);
 
         VerticalDatum expectedDatum = testData._requestedVerticalDatum;
 
-        if (testData._requestedVerticalDatum == VerticalDatum.NATIVE) {
+        if (testData._requestedVerticalDatum == VerticalDatum.NATIVE || testData._requestedVerticalDatum == null || locId._nativeDatum == null) {
             expectedDatum = locId._nativeDatum;
         }
 
-        VerticalDatum receivedDatum = VerticalDatum.getVerticalDatum(
-                receivedVerticalDatumContainer.getCurrentVerticalDatum());
+        VerticalDatum receivedDatum = null;
+        if (receivedDatumContainer != null) {
+            receivedDatum = VerticalDatum.getVerticalDatum(receivedDatumContainer.getCurrentVerticalDatum());
+        }
 
-        assertEquals(expectedDatum, receivedDatum);
+        assertEquals(expectedDatum, receivedDatum, "Unexpected Current Vertical Datum received");
     }
 
     private static void storeRatingFromXml(String xml, TestAccounts.KeyUser user, VerticalDatum storedVerticalDatum) {
@@ -235,6 +295,17 @@ class RatingsControllerTestVerticalDatumIT extends DataApiTestIT {
     }
 
     private static Stream<Arguments> provideDatumCombinations() {
+        //This provides information for 3 locations:
+        // - BASE_LOCATION: no vertical datum
+        // - LOC_WITH_NAVD88: native datum NAVD88
+        // - LOC_WITH_NGVD29: native datum NGVD29
+        //And for each location, we test requesting:
+        // - null
+        // - NATIVE
+        // - NAVD88
+        // - NGVD29
+        //
+        //This creates a 3 x 4 matrix of test cases to cover all combinations of these parameters
         return Stream.of(TestLocationIds.values())
                      .flatMap(locId -> Stream.of(TestLocationVerticalDatumData.values())
                                              .map(datum -> Arguments.of(locId, datum)));
