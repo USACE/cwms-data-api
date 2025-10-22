@@ -3,6 +3,7 @@ package cwms.cda.security;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,13 +65,16 @@ public class OpenIDConfig {
         if (idp_hint != null)
         {
             Map<String, Object> hint = new HashMap<>();
-            hint.put("type", "object");
-            Map<String, Object> properties = new HashMap<>();
-            properties.put("kc_idp_hint", idp_hint);
-            hint.put("properties", properties);
-
+            hint.put("query-parameter", "kc_idp_hint");
+            ArrayList<String> values = new ArrayList<>();
+            for (String value: idp_hint.split(",")) {
+                values.add(value.trim());
+            }
+            hint.put("values", values);
             scheme.addExtension("x-kc_idp_hint", hint);
         }
+
+        scheme.addExtension("x-oidc-client-id", client_id);
         return scheme;
     }
 }
