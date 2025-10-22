@@ -1,11 +1,12 @@
 package cwms.cda.api.errors;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import kotlin.random.Random;
+import java.util.UUID;
 
 /**
  * Class for reporting error to users, primary used for default error handlers for exceptions,
@@ -14,18 +15,20 @@ import kotlin.random.Random;
  */
 public class CdaError {
     private String message;
-    @Schema(description = "A randomly generated number to help identify your request in the logs "
+    @Schema(description = "A randomly generated UUID to help identify your request in the logs "
             + "for analysis..")
     private String incidentIdentifier;
-    private Map<String, ? extends Object> details;
+    private String source;
+    private int responseCode;
+    private Map<String, Serializable> details;
 
     public String getMessage() {
         return this.message;
     }
 
     /**
-     * randomly generated number used for lookups in logs.
-     * @return
+     * randomly generated UUID used for lookups in logs.
+     * @return incident identifier
      */
     public String getIncidentIdentifier() {
         return incidentIdentifier;
@@ -33,62 +36,95 @@ public class CdaError {
 
     /**
      * Key value pairs of additional detail. Such as Object properties that are incorrectly specified.
-     * @return
+     * @return Map of details
      */
-    public Map<String, ? extends Object> getDetails() {
+    public Map<String, Serializable> getDetails() {
         return Collections.unmodifiableMap(details);
     }
 
+    public String getSource() {
+        return source;
+    }
+
+    public int getResponseCode() {
+        return responseCode;
+    }
 
     /**
      * Simple Constructor with just a message.
-     * @param message
+     * @param message the error message
      */
     public CdaError(String message) {
-        this.incidentIdentifier = Long.toString(Random.Default.nextLong());
+        this.incidentIdentifier = UUID.randomUUID().toString();
         this.message = message;
         this.details = new HashMap<>();
     }
 
     /**
      * Constructor with message and detail map.
-     * @param message
-     * @param map
+     * @param message the error message
+     * @param map additional details about the error
      */
-    public CdaError(String message, Map<String, ? extends Object> map) {
+    public CdaError(String message, Map<String, Serializable> map) {
         Objects.requireNonNull(map);
-        this.incidentIdentifier = Long.toString(Random.Default.nextLong());
+        this.incidentIdentifier = UUID.randomUUID().toString();
         this.message = message;
         this.details = map;
     }
 
-    public CdaError(String message, Map<String, ? extends Object> details,
+    /**
+     * Constructor with message and detail map, with option to suppress incident ID generation.
+     * @param message the error message
+     * @param details additional details about the error
+     * @param suppressIncidentId if true, suppresses the incident ID generation
+     */
+    public CdaError(String message, Map<String, Serializable> details,
                       boolean suppressIncidentId) {
-        this.incidentIdentifier = "user input error";
+        if (suppressIncidentId) {
+            this.incidentIdentifier = "user input error";
+        } else {
+            this.incidentIdentifier = UUID.randomUUID().toString();
+        }
         this.message = message;
         this.details = details;
     }
 
     /**
      * Simple Error that doesn't require an incident ID.
-     * @param message
-     * @param suppressIncidentId
+     * @param message the error message
+     * @param suppressIncidentId if true, suppresses the incident ID generation
      */
     public CdaError(String message, boolean suppressIncidentId) {
         this(message,new HashMap<>(),suppressIncidentId);
     }
 
+    /**
+     * Full constructor.
+     * @param message the error message
+     * @param responseCode the HTTP response code to return
+     * @param source the source of the error
+     * @param details additional details about the error
+     */
+    public CdaError(String message, int responseCode, String source, Map<String, Serializable> details) {
+        this.incidentIdentifier = UUID.randomUUID().toString();
+        this.message = message;
+        this.responseCode = responseCode;
+        this.source = source;
+        this.details = details;
+    }
+
     @Override
     public String toString() {
-        return String.format("%s: %s", incidentIdentifier, message);
+        String result;
+        if (source != null) {
+            result = String.format("%s: %s. Originates from %s", incidentIdentifier, message, source);
+        } else {
+            result = String.format("%s: %s", incidentIdentifier, message);
+        }
+        return result;
     }
 
     public static CdaError notImplemented() {
         return new CdaError("Not Implemented");
     }
-
-    public static CdaError notAuthorized() {
-        return new CdaError("Not Authorized");
-    }
-
 }

@@ -25,10 +25,13 @@
 package cwms.cda.api.errors;
 
 import java.sql.SQLException;
+import java.util.HashMap;
+import javax.servlet.http.HttpServletResponse;
 
-public final class RateException extends RuntimeException {
+public final class RateException extends ApplicationException {
 
     public RateException(String message, SQLException cause) {
-        super(message, cause);
+        super(message, "Database", "Error performing rate function: " + message,
+            HttpServletResponse.SC_BAD_REQUEST, new HashMap<>(), cause);
     }
 }

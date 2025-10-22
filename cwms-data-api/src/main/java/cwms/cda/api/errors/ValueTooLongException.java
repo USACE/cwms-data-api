@@ -26,45 +26,58 @@
 
 package cwms.cda.api.errors;
 
-public final class ValueTooLongException extends RuntimeException {
-	private String parameter;
-	private int length;
-	private int maxLength;
-	private boolean suppressIncidentId = true;
+import java.util.HashMap;
+import javax.servlet.http.HttpServletResponse;
 
-	private static final String DEFAULT_ERROR = "One or more provided values exceeds the maximum length for the parameter.";
+public final class ValueTooLongException extends ApplicationException {
+    private String parameter;
+    private int length;
+    private int maxLength;
+    private boolean suppressIncidentId = true;
 
-	public ValueTooLongException(Throwable cause) {
-		super(DEFAULT_ERROR, cause);
-	}
+    private static final String DEFAULT_ERROR = "One or more provided values exceeds the maximum length for the parameter.";
 
-	public ValueTooLongException(String parameter, int length, int maxLength, Throwable cause, boolean suppressIncidentId) {
-		super(String.format("%s The field %s with provided length of %d "
-				+ "has a maximum length of %d characters.", DEFAULT_ERROR, parameter, length, maxLength), cause);
-		this.parameter = parameter;
-		this.length = length;
-		this.maxLength = maxLength;
-		this.suppressIncidentId = suppressIncidentId;
-	}
+    public ValueTooLongException(Throwable cause) {
+        super(DEFAULT_ERROR, "User Input", DEFAULT_ERROR, HttpServletResponse.SC_BAD_REQUEST, new HashMap<>(), cause);
+    }
 
-	public boolean hasParameter()
-	{
-		return parameter != null && !parameter.isEmpty() && length > 0 && maxLength > 0;
-	}
+    /**
+     * Constructor for ValueTooLongException
+     * @param parameter the name of the parameter that is too long
+     * @param length the length of the provided value
+     * @param maxLength the maximum allowed length for the parameter
+     * @param cause the underlying cause of the exception
+     * @param suppressIncidentId flag to indicate whether to suppress the incident ID in the error response
+     */
+    public ValueTooLongException(String parameter, int length, int maxLength, Throwable cause, boolean suppressIncidentId) {
+        super(String.format("%s The field %s with provided length of %d "
+                + "has a maximum length of %d characters.", DEFAULT_ERROR, parameter, length, maxLength), "User Input",
+            String.format("%s The field %s with provided length of %d "
+                + "has a maximum length of %d characters.", DEFAULT_ERROR, parameter, length, maxLength),
+            HttpServletResponse.SC_BAD_REQUEST, new HashMap<>(), cause);
+        this.parameter = parameter;
+        this.length = length;
+        this.maxLength = maxLength;
+        this.suppressIncidentId = suppressIncidentId;
+    }
 
-	public String getParameter() {
-		return parameter;
-	}
+    public boolean hasParameter() {
+        return parameter != null && !parameter.isEmpty() && length > 0 && maxLength > 0;
+    }
 
-	public int getLength() {
-		return length;
-	}
+    public String getParameter() {
+        return parameter;
+    }
 
-	public int getMaxLength() {
-		return maxLength;
-	}
+    public int getLength() {
+        return length;
+    }
 
-	public boolean isSuppressIncidentId() {
-		return suppressIncidentId;
-	}
+    public int getMaxLength() {
+        return maxLength;
+    }
+
+    public boolean isSuppressIncidentId() {
+        return suppressIncidentId;
+    }
 }

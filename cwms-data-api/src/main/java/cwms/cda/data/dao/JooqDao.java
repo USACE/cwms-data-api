@@ -24,9 +24,6 @@
 
 package cwms.cda.data.dao;
 
-import java.sql.Timestamp;
-import java.time.Instant;
-
 import static org.jooq.SQLDialect.ORACLE;
 
 import com.google.common.flogger.FluentLogger;
@@ -40,12 +37,13 @@ import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
@@ -464,7 +462,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
 
         return new CwmsAuthException("User not authorized for this office.", cause,
-                                            HttpServletResponse.SC_UNAUTHORIZED, false);
+                                            HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     public static boolean isAlreadyExists(RuntimeException input) {

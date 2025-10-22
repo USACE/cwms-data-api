@@ -24,25 +24,28 @@
 
 package cwms.cda.api.errors;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.http.HttpServletResponse;
 
-public final class DeleteConflictException extends RuntimeException {
+public final class DeleteConflictException extends ApplicationException {
 
     public DeleteConflictException(String message, SQLException cause) {
-        super(message, cause);
+        super(message, "Database", "Cannot perform requested delete. "
+            + "Data is referenced elsewhere in CWMS.", HttpServletResponse.SC_CONFLICT, new HashMap<>(), cause);
     }
 
-    public Map<String, Object> getDetails() {
+    @Override
+    public Map<String, Serializable> getDetails() {
         String sqlExceptionMessage = getCause().getLocalizedMessage();
         String[] parts = sqlExceptionMessage.split("\n");
         if (parts.length > 1) {
             sqlExceptionMessage = parts[0];
         }
-        Map<String, Object> retval = new HashMap<>();
+        Map<String, Serializable> retval = new HashMap<>();
         retval.put(getMessage(), sqlExceptionMessage);
         return retval;
     }
-
 }

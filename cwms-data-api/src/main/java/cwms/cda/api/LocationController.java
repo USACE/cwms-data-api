@@ -140,7 +140,8 @@ public class LocationController implements CrudHandler {
                             @OpenApiContent(type = Formats.WML2),
                             @OpenApiContent(type = Formats.GEOJSON),
                             @OpenApiContent(type = "")
-                        })
+                        }),
+                @OpenApiResponse(status = STATUS_404)
             },
             description = "Returns CWMS Location Data.  The Catalog end-point is also capable of "
                     + "retrieving lists of locations and can filter on additional fields.",

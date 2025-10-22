@@ -12,6 +12,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
 
 import cwms.cda.helpers.DTOMatch;
+import java.io.Serializable;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -120,10 +121,10 @@ class LocationTest
 			location.validate();
 			fail();
 		} catch (FieldException e) {
-			Map<String, ? extends List<String>> details = e.getDetails();
+			Map<String, Serializable> details = e.getDetails();
 			assertNotNull(details);
 			assertTrue(details.containsKey(RequiredFieldException.MISSING_FIELDS));
-			List<String> missingFields = details.get(RequiredFieldException.MISSING_FIELDS);
+			String missingFields = String.valueOf(details.get(RequiredFieldException.MISSING_FIELDS));
 			assertTrue(missingFields.contains("latitude"));
 			assertTrue(missingFields.contains("longitude"));
 		}
