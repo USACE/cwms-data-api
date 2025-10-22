@@ -32,6 +32,11 @@ public class CwmsAuthException extends ApplicationException {
         authFailCode = code;
     }
 
+    public CwmsAuthException(String msg, int code, String rolesMessage) {
+        super(msg, AUTHORIZATION, rolesMessage, code, new HashMap<>(), null);
+        authFailCode = code;
+    }
+
     public int getAuthFailCode() {
         return this.authFailCode;
     }

@@ -1,5 +1,6 @@
 package cwms.cda.api.errors;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.Collections;
@@ -14,13 +15,14 @@ import java.util.UUID;
  * endpoint.
  */
 public class CdaError {
-    private String message;
+    private final String message;
     @Schema(description = "A randomly generated UUID to help identify your request in the logs "
             + "for analysis..")
-    private String incidentIdentifier;
+    private final String incidentIdentifier;
     private String source;
+    @JsonIgnore
     private int responseCode;
-    private Map<String, Serializable> details;
+    private final Map<String, Serializable> details;
 
     public String getMessage() {
         return this.message;
