@@ -88,8 +88,6 @@ import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
-import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
@@ -357,22 +355,9 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             throws IOException {
         renamedLocation.validate();
         try {
-            connection(dsl, c -> {
-                setOffice(c,renamedLocation);
-                CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
-                String elevationUnits = renamedLocation.getElevationUnits() == null
-                        ? Unit.METER.getValue() : renamedLocation.getElevationUnits();
-                locJooq.rename(c, renamedLocation.getOfficeId(), oldLocationName,
-                        renamedLocation.getName(), renamedLocation.getStateInitial(),
-                        renamedLocation.getCountyName(), renamedLocation.getTimezoneName(),
-                        renamedLocation.getLocationType(),
-                        renamedLocation.getLatitude(), renamedLocation.getLongitude(),
-                        renamedLocation.getElevation(), elevationUnits,
-                        renamedLocation.getVerticalDatum(), renamedLocation.getHorizontalDatum(),
-                        renamedLocation.getPublicName(),
-                        renamedLocation.getLongName(), renamedLocation.getDescription(),
-                        renamedLocation.getActive(), true);
-            });
+            connection(dsl, c ->
+                CWMS_LOC_PACKAGE.call_RENAME_LOC(getDslContext(c, renamedLocation.getOfficeId()).configuration(),
+                    renamedLocation.getOfficeId(), oldLocationName, renamedLocation.getName()));
         } catch (DataAccessException ex) {
             throw new IOException("Failed to rename Location", ex);
         }

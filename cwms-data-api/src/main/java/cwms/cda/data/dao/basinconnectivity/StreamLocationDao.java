@@ -9,7 +9,9 @@ import java.sql.SQLException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import org.jooq.DSLContext;
-import usace.cwms.db.jooq.dao.CwmsDbStreamJooq;
+import org.jooq.Record;
+import org.jooq.Result;
+import usace.cwms.db.jooq.codegen.packages.CWMS_STREAM_PACKAGE;
 
 public class StreamLocationDao extends JooqDao<StreamLocation> {
     public StreamLocationDao(DSLContext dsl) {
@@ -30,13 +32,11 @@ public class StreamLocationDao extends JooqDao<StreamLocation> {
                 ? Unit.FEET.getValue() : Unit.METER.getValue();
         String pAreaUnitIn = UnitSystem.EN.value().equalsIgnoreCase(unitSystem)
                 ? Unit.SQUARE_MILES.getValue() : Unit.SQUARE_KILOMETERS.getValue();
-        CwmsDbStreamJooq streamJooq = new CwmsDbStreamJooq();
 
         return connectionResult(dsl, c -> {
-            try (ResultSet resultSet = streamJooq.catStreamLocations(c, pStreamIdMaskIn,
-                    pLocationIdMaskIn, pStationUnitIn, pStageUnitIn, pAreaUnitIn, officeId)) {
-                return buildStreamLocations(resultSet);
-            }
+            Result<Record> rs = CWMS_STREAM_PACKAGE.call_CAT_STREAM_LOCATIONS(dsl.configuration(), pStreamIdMaskIn,
+                    pLocationIdMaskIn, pStationUnitIn, pStageUnitIn, pAreaUnitIn, officeId);
+            return buildStreamLocations(rs.intoResultSet());
         });
     }
 
