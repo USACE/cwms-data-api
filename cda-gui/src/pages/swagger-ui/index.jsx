@@ -12,8 +12,10 @@ export default function SwaggerUI() {
         document.title = "CWMS Data API for Data Retrieval - Swagger UI";
         // Begin Swagger UI call region
         // TODO: add endpoint that dynamic returns swagger generated doc
+
         const ui = SwaggerUIBundle({
             url: getBasePath() + "/swagger-docs",
+            
             dom_id: "#swagger-ui",
             deepLinking: false,
             presets: [SwaggerUIBundle.presets.apis],
@@ -34,13 +36,17 @@ export default function SwaggerUI() {
                 }
                 return req;
             },
+            onComplete: () => {
+                const spec = JSON.parse(ui.spec().get("spec"));
+                console.log(JSON.stringify(spec.components.securitySchemes));
+                
+                ui.initOAuth({
+                    clientId:"cwms",
+                    additionalQueryStringParams: {kc_idp_hint: "federation-eams"},
+                    usePkceWithAuthorizationCodeGrant: true
+                });
+            },
         });
-        // The client id may, in the future, need to be changed. When that happens deal with it then.
-        ui.initOAuth({
-            clientId:"cwms",
-            additionalQueryStringParams: {kc_idp_hint: "federation-eams"},
-            usePkceWithAuthorizationCodeGrant: true
-        })
     }, []);
 
   return <div id="swagger-ui"></div>;
