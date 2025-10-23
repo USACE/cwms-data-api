@@ -38,13 +38,27 @@ export default function SwaggerUI() {
             },
             onComplete: () => {
                 const spec = JSON.parse(ui.spec().get("spec"));
-                console.log(JSON.stringify(spec.components.securitySchemes));
-                
-                ui.initOAuth({
-                    clientId:"cwms",
-                    additionalQueryStringParams: {kc_idp_hint: "federation-eams"},
-                    usePkceWithAuthorizationCodeGrant: true
-                });
+                for (const schemeName in spec.components.securitySchemes) {
+                    const scheme = spec.components.securitySchemes[schemeName];
+                    if (scheme.type === "openIdConnect") {
+                        let additionalParams = null;
+                        let hints = scheme["x-kc_idp_hint"];
+                        if (hints) {
+                            additionalParams = {
+                                // Since getting the interface to allow users to choose
+                                // is likely impossible, we will assume the first in the list
+                                // is the "primary" auth system
+                                "kc_idp_hint": hints.values[0]
+                            };
+                        }
+                        ui.initOAuth({
+                            clientId: scheme["x-oidc-client-id"],
+                            usePkceWithAuthorizationCodeGrant: true,
+                            additionalQueryStringParams: additionalParams,
+                        });
+                        break;
+                    }
+                }
             },
         });
     }, []);

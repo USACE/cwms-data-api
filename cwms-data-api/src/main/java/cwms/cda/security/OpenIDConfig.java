@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
 
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 
 public class OpenIDConfig {
@@ -42,6 +41,7 @@ public class OpenIDConfig {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode node = mapper.readTree(http.getInputStream());
                 jwksUrl = new URL(node.get("jwks_uri").asText());
+                issuer = node.get("issuer").asText();
             } else {
                 log.atSevere().log("Unable to retrieve data from realm. Response code %d",status);
             }

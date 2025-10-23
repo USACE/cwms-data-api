@@ -23,6 +23,11 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
         },
+        "^/cwms-data/auth/.*": {
+          target: env.CDA_API_ROOT,
+          changeOrigin: true,
+          secure: false,
+        },
         "^/cwms-data/swagger-docs$": {
           target: env.CDA_API_ROOT,
           changeOrigin: true,

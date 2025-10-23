@@ -87,6 +87,9 @@ services:
       - cwms.dataapi.access.openid.altAuthUrl=http://localhost:${APP_PORT:-8081}
       - cwms.dataapi.access.openid.useAltWellKnown=true
       - cwms.dataapi.access.openid.issuer=http://localhost:${APP_PORT:-8081}/auth/realms/cwms
+      - cwms.dataapi.access.openid.clientId=cwms
+      # values are not actually used in the local keycloak, however it does fail and leaves them in place for various testing.
+      - cwms.dataapi.access.openid.idpHint=federation-eams,login.gov
       - blob.store.endpoint=http://minio:9000
       - blob.store.region=docker
       - blob.store.bucket=cwms-test
