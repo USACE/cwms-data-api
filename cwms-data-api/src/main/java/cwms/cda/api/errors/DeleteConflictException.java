@@ -45,7 +45,7 @@ public final class DeleteConflictException extends ApplicationException {
             sqlExceptionMessage = parts[0];
         }
         Map<String, Serializable> retval = new HashMap<>();
-        retval.put(getMessage(), sqlExceptionMessage);
+        retval.put("message", String.format("%s. %s", getMessage(), sqlExceptionMessage));
         return retval;
     }
 }

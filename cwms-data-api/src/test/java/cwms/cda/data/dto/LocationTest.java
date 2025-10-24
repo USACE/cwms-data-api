@@ -123,6 +123,10 @@ class LocationTest
 		} catch (FieldException e) {
 			Map<String, Serializable> details = e.getDetails();
 			assertNotNull(details);
+			assertEquals(400, e.getCdaHttpErrorCode());
+			assertEquals("required fields not present", e.getCdaErrorMessage());
+			assertEquals("required fields not present", e.getMessage());
+			assertEquals("Parser", e.getSource());
 			assertTrue(details.containsKey(RequiredFieldException.MISSING_FIELDS));
 			String missingFields = String.valueOf(details.get(RequiredFieldException.MISSING_FIELDS));
 			assertTrue(missingFields.contains("latitude"));

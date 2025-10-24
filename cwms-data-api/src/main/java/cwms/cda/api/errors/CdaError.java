@@ -1,6 +1,5 @@
 package cwms.cda.api.errors;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.Collections;
@@ -20,8 +19,6 @@ public class CdaError {
             + "for analysis..")
     private final String incidentIdentifier;
     private String source;
-    @JsonIgnore
-    private int responseCode;
     private final Map<String, Serializable> details;
 
     public String getMessage() {
@@ -46,10 +43,6 @@ public class CdaError {
 
     public String getSource() {
         return source;
-    }
-
-    public int getResponseCode() {
-        return responseCode;
     }
 
     /**
@@ -103,14 +96,12 @@ public class CdaError {
     /**
      * Full constructor.
      * @param message the error message
-     * @param responseCode the HTTP response code to return
      * @param source the source of the error
      * @param details additional details about the error
      */
-    public CdaError(String message, int responseCode, String source, Map<String, Serializable> details) {
+    public CdaError(String message, String source, Map<String, Serializable> details) {
         this.incidentIdentifier = UUID.randomUUID().toString();
         this.message = message;
-        this.responseCode = responseCode;
         this.source = source;
         this.details = details;
     }

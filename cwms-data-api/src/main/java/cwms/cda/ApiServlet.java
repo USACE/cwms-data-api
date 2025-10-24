@@ -348,8 +348,7 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-XSS-Protection", "1; mode=block");
                 })
                 .exception(ApplicationException.class, (e, ctx) -> {
-                    CdaError re = new CdaError(e.getCdaErrorMessage(), e.getCdaHttpErrorCode(),
-                        e.getSource(), e.getDetails());
+                    CdaError re = new CdaError(e.getCdaErrorMessage(), e.getSource(), e.getDetails());
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(e.getCdaHttpErrorCode()).json(re);
                 })
@@ -360,7 +359,7 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(re);
                 })
                 .exception(BadRequestResponse.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Bad Request", e.getStatus(),
+                    CdaError re = new CdaError("Bad Request",
                         "User Input", new HashMap<>(e.getDetails()));
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(e.getStatus()).json(re);

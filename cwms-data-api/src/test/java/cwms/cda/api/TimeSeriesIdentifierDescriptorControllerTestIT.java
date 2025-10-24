@@ -1,6 +1,7 @@
 package cwms.cda.api;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -25,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -195,6 +197,38 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .body("details.message",
                 is("Invalid Time Series Description: "
                     + "12HoursLocal is not a valid interval is not a valid interval"));
+    }
+
+    @Test
+    void testInvalidItem() throws Exception {
+        createLocation("BadLocationTSTest",true,"SPK");
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String tsId = "BadLocationTSTest" +
+            ".Precip-Cumulative.Avg.12HoursLocal.12HoursLocal.DescriptorTEST_LRTS25";
+        TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
+
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        String serializedTs = om.writeValueAsString(ts);
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.DEFAULT)
+            .contentType(Formats.JSONV2)
+            .body(serializedTs)
+            .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, false)
+            .queryParam("office",OFFICE)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/identifier-descriptor/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("message", equalTo("Bad Request."))
+            .body("source", equalTo("User Input"))
+            .body("details.message",
+                is("Invalid Time Series Description: 12HoursLocal is not a valid duration is not a valid interval"));
     }
 
 

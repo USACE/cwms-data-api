@@ -2,9 +2,7 @@ package cwms.cda.formatters;
 
 import cwms.cda.api.errors.ApplicationException;
 import io.jsonwebtoken.io.IOException;
-import java.io.Serializable;
 import java.util.HashMap;
-import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 
 public class FormattingException extends ApplicationException {
