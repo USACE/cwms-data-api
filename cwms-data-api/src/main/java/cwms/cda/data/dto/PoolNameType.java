@@ -26,29 +26,41 @@
 
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 import java.util.Objects;
 
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@JsonPropertyOrder({"pool-name", "office-id"})
 public class PoolNameType extends CwmsDTOBase {
-    private final String poolName;
-    private final String officeId;
+    @JsonIgnore
+    private final CwmsId pool;
 
-    public PoolNameType(String poolName, String officeId) {
-        this.poolName = poolName;
-        this.officeId = officeId;
+    @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+    public PoolNameType(@JsonProperty("pool-name") String poolName, @JsonProperty("office-id") String officeId) {
+        this.pool = CwmsId.buildCwmsId(officeId, poolName);
     }
 
     public String getPoolName() {
-        return poolName;
+        return pool.getName();
     }
 
     public String getOfficeId() {
-        return officeId;
+        return pool.getOfficeId();
     }
 
     @Override
     public int hashCode() {
-        String poolNameString = getCaseInsensitiveValue(this.poolName);
-        String officeIdString = getCaseInsensitiveValue(this.officeId);
+        String poolNameString = getCaseInsensitiveValue(this.pool.getName());
+        String officeIdString = getCaseInsensitiveValue(this.pool.getOfficeId());
 
         int hash = 7;
         hash = 47 * hash + Objects.hashCode(poolNameString);
@@ -68,13 +80,13 @@ public class PoolNameType extends CwmsDTOBase {
             return false;
         }
         PoolNameType other = (PoolNameType) obj;
-        String poolName = getCaseInsensitiveValue(this.poolName);
-        String otherPoolName = getCaseInsensitiveValue(other.poolName);
+        String poolName = getCaseInsensitiveValue(this.pool.getName());
+        String otherPoolName = getCaseInsensitiveValue(other.pool.getOfficeId());
         if (!Objects.equals(poolName, otherPoolName)) {
             return false;
         }
-        String officeId = getCaseInsensitiveValue(this.officeId);
-        String otherOfficeId = getCaseInsensitiveValue(other.officeId);
+        String officeId = getCaseInsensitiveValue(this.pool.getOfficeId());
+        String otherOfficeId = getCaseInsensitiveValue(other.pool.getOfficeId());
         return Objects.equals(officeId, otherOfficeId);
     }
 
