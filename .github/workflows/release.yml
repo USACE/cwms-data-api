@@ -78,7 +78,7 @@ jobs:
         id: create_release
         # Allow testing without creating a release
         if: github.event_name != 'pull_request' && (github.event.ref == 'refs/heads/develop' || startsWith(github.event.ref, 'refs/tags'))
-        uses: softprops/action-gh-release@v2.3.2
+        uses: softprops/action-gh-release@v2.4.1
         with:
           files: cwms-data-api/build/libs/cwms-data-api-${{env.VERSION}}.war
           tag_name: ${{env.VERSION}}
@@ -104,13 +104,13 @@ jobs:
             type=schedule,pattern=${{inputs.branch}}-{{date 'YYYY.MM.DD-hhmmss'}}
       - name: Log in to the Container registry
         id: login-ghcr
-        uses: docker/login-action@v3.5.0
+        uses: docker/login-action@v3.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}
       - name: Login to HEC Public Registry
-        uses: docker/login-action@v3.5.0
+        uses: docker/login-action@v3.6.0
         id: login-hec
         with:
           registry: ${{ secrets.registry != null && secrets.registry ||secrets.HEC_PUB_REGISTRY }}
