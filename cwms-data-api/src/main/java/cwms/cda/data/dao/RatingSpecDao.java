@@ -35,7 +35,6 @@ import cwms.cda.data.dto.rating.RatingSpecs;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
@@ -46,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -542,46 +540,5 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                     .orderBy(officeField, idField)
                     .fetchGroups(officeField, idField);
         });
-
-    }
-
-    private static void checkMetaData(ResultSetMetaData metaData, List<String> columnList,
-        String type) throws SQLException
-    {
-        int columnCount = metaData.getColumnCount();
-        List<String> metadataColumns = new ArrayList<>();
-        logger.log(Level.FINE, "{0} column dump.", type);
-        for(int ii = 1; ii <= columnCount; ii++)
-        {
-            String columnName = metaData.getColumnName(ii).toUpperCase();
-            metadataColumns.add(columnName);
-            logger.log(Level.FINE, "{0}: {1}", new Object[]{ii, columnName});
-        }
-        Collections.sort(metadataColumns);
-        if(!metadataColumns.containsAll(columnList))
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append(type).append(" columns do not match expected names.\nExpected: ");
-            for(String s : columnList)
-            {
-                sb.append(s).append(", ");
-            }
-            sb.setLength(sb.length() - 2);
-            sb.append(".\nReceived: ");
-            for(String s : metadataColumns)
-            {
-                sb.append(s).append(", ");
-            }
-            sb.setLength(sb.length() - 2);
-            List<String> missing = new ArrayList<>(columnList);
-            missing.removeAll(metadataColumns);
-            sb.append(".\nMissing: ");
-            for(String s : missing)
-            {
-                sb.append(s).append(", ");
-            }
-            sb.setLength(sb.length() - 2);
-            throw new SQLException(sb.toString());
-        }
     }
 }

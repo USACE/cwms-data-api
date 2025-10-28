@@ -355,9 +355,19 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             throws IOException {
         renamedLocation.validate();
         try {
-            connection(dsl, c ->
-                CWMS_LOC_PACKAGE.call_RENAME_LOC(getDslContext(c, renamedLocation.getOfficeId()).configuration(),
-                    renamedLocation.getOfficeId(), oldLocationName, renamedLocation.getName()));
+            connection(dsl, c -> {
+                Configuration config = getDslContext(c, renamedLocation.getOfficeId()).configuration();
+                CWMS_LOC_PACKAGE.call_RENAME_LOC(config,
+                    renamedLocation.getOfficeId(), oldLocationName, renamedLocation.getName());
+                CWMS_LOC_PACKAGE.call_UPDATE_LOCATION(config,
+                    renamedLocation.getName(), renamedLocation.getLocationType(), renamedLocation.getElevation(),
+                    renamedLocation.getElevationUnits(), renamedLocation.getVerticalDatum(),
+                    renamedLocation.getLatitude(), renamedLocation.getLongitude(), renamedLocation.getHorizontalDatum(),
+                    renamedLocation.getPublicName(), renamedLocation.getLongName(), renamedLocation.getDescription(),
+                    renamedLocation.getTimezoneName(), renamedLocation.getCountyName(),
+                    renamedLocation.getStateInitial(), formatBool(renamedLocation.getActive()), formatBool(true),
+                    renamedLocation.getOfficeId());
+            });
         } catch (DataAccessException ex) {
             throw new IOException("Failed to rename Location", ex);
         }
