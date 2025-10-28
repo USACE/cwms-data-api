@@ -12,8 +12,10 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
-import usace.cwms.db.dao.ifc.stream.StreamT;
-import usace.cwms.db.jooq.dao.CwmsDbStreamJooq;
+import org.jooq.Record;
+import org.jooq.Result;
+import usace.cwms.db.jooq.codegen.packages.CWMS_STREAM_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.cwms_stream.RETRIEVE_STREAM;
 
 
 public class StreamDao extends JooqDao<Stream> {
@@ -24,51 +26,46 @@ public class StreamDao extends JooqDao<Stream> {
     public Stream getStream(String streamId, String unitSystem, String officeId) {
         String pStationUnit = UnitSystem.EN.value().equals(unitSystem) ? Unit.MILE.getValue() :
                 Unit.KILOMETER.getValue();
-        CwmsDbStreamJooq streamJooq = new CwmsDbStreamJooq();
 
         return connectionResult(dsl, c -> {
-            StreamT streamResult = streamJooq.retrieveStreamF(c, streamId, pStationUnit, officeId);
-            return new Stream.Builder(streamId, streamResult.getStartsDownstream(),
-                    streamResult.getLength(), streamResult.getOfficeId())
-                    .withDivertingStreamId(streamResult.getDivertsFromStream())
-                    .withDiversionStation(streamResult.getDivertsFromStation())
-                    .withDiversionBank(streamResult.getDivertsFromBank())
-                    .withReceivingStreamId(streamResult.getFlowsIntoStream())
-                    .withConfluenceStation(streamResult.getFlowsIntoStation())
-                    .withConfluenceBank(streamResult.getFlowsIntoBank())
-                    .withComment(streamResult.getComments())
-                    .withAverageSlope(streamResult.getAverageSlope())
+            RETRIEVE_STREAM stream = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAM(dsl.configuration(), streamId, pStationUnit, officeId);
+            return new Stream.Builder(streamId, parseBool(stream.getP_STATIONING_STARTS_DS()),
+                    stream.getP_LENGTH(), officeId)
+                    .withDivertingStreamId(stream.getP_DIVERTS_FROM_STREAM())
+                    .withDiversionStation(stream.getP_DIVERTS_FROM_STATION())
+                    .withDiversionBank(stream.getP_DIVERTS_FROM_BANK())
+                    .withReceivingStreamId(stream.getP_FLOWS_INTO_STREAM())
+                    .withConfluenceStation(stream.getP_FLOWS_INTO_STATION())
+                    .withConfluenceBank(stream.getP_FLOWS_INTO_BANK())
+                    .withComment(stream.getP_COMMENTS())
+                    .withAverageSlope(stream.getP_AVERAGE_SLOPE())
                     .withStreamLocations(getStreamLocationsOnStream(streamId, unitSystem, officeId))
                     .withTributaries(getTributaries(streamId, unitSystem, officeId))
                     .withStreamReaches(getReaches(streamId, officeId))
                     .build();
+
         });
     }
 
     private Set<StreamLocation> getStreamLocationsOnStream(String streamId, String unitSystem,
-                                                           String officeId) throws SQLException {
+                                                           String officeId) {
         StreamLocationDao streamLocationDao = new StreamLocationDao(dsl);
         return streamLocationDao.getStreamLocations(streamId, unitSystem, officeId);
     }
 
-    private Set<StreamReach> getReaches(String streamId, String officeId) throws SQLException {
+    private Set<StreamReach> getReaches(String streamId, String officeId) {
         StreamReachDao streamReachDao = new StreamReachDao(dsl);
         return streamReachDao.getReachesOnStream(streamId, officeId);
     }
 
     private Set<Stream> getTributaries(String streamId, String unitSystem, String officeId)  {
-        CwmsDbStreamJooq streamJooq = new CwmsDbStreamJooq();
-
         return connectionResult(dsl, c -> {
             String pStationUnit = UnitSystem.EN.value().equals(unitSystem)
                     ? Unit.MILE.getValue() : Unit.KILOMETER.getValue();
-            try (ResultSet rs = streamJooq.catStreams(c, null, pStationUnit, null,
-                    streamId, null, null, null,
-                    null, null, null, null,
-                    null, null, null, null, null, officeId)) {
-
-                return buildStreamsFromResultSet(rs, streamId, unitSystem);
-            }
+            Result<Record> rs = CWMS_STREAM_PACKAGE.call_CAT_STREAMS(dsl.configuration(), null, pStationUnit, null, null,
+                null, null, null, null, null, null, null,
+                null, null, null, null, null, officeId);
+            return buildStreamsFromResultSet(rs.intoResultSet(), streamId, unitSystem);
         });
     }
 

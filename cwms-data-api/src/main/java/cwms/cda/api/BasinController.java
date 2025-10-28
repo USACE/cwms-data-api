@@ -210,11 +210,6 @@ public class BasinController implements CrudHandler {
             }
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (SQLException ex) {
-            CdaError error = new CdaError("Error retrieving " + name);
-            String errorMsg = "Error retrieving " + name;
-            LOGGER.log(Level.SEVERE, errorMsg, ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
