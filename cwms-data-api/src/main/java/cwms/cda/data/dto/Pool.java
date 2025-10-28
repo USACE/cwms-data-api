@@ -5,7 +5,6 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import usace.cwms.db.dao.ifc.pool.PoolNameType;
 
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class Pool extends CwmsDTOBase {
@@ -145,11 +144,11 @@ public class Pool extends CwmsDTOBase {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        PoolNameType poolName = getPoolName();
+        PoolNameType poolNameType = getPoolName();
 
-        builder.append(poolName.getOfficeId())
+        builder.append(poolNameType.getOfficeId())
             .append("/").append(getProjectId())
-            .append(":").append(poolName.getPoolName());
+            .append(":").append(poolNameType.getPoolName());
         return builder.toString();
     }
 
