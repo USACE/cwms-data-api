@@ -10,7 +10,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import org.jooq.DSLContext;
-import usace.cwms.db.jooq.dao.CwmsDbBasinJooq;
+import org.jooq.Record;
+import org.jooq.Result;
+import usace.cwms.db.jooq.codegen.packages.CWMS_BASIN_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.cwms_basin.RETRIEVE_BASIN;
 
 public class BasinDao extends JooqDao<Basin> {
     public BasinDao(DSLContext dsl) {
@@ -19,14 +22,13 @@ public class BasinDao extends JooqDao<Basin> {
 
     public List<Basin> getAllBasins(String unitSystem, String officeId) throws SQLException {
         List<Basin> retVal = new ArrayList<>();
-        CwmsDbBasinJooq basinJooq = new CwmsDbBasinJooq();
         String areaUnitIn = UnitSystem.EN.value().equals(unitSystem)
                 ? Unit.SQUARE_MILES.getValue() : Unit.SQUARE_KILOMETERS.getValue();
         try {
             connection(dsl, c -> {
-                try (ResultSet rs = basinJooq.catBasins(c, null, null, null, areaUnitIn, officeId)) {
-                    retVal.addAll(buildBasinsFromResultSet(rs, unitSystem));
-                }
+                Result<Record>
+                    rs = CWMS_BASIN_PACKAGE.call_CAT_BASINS(getDslContext(c, officeId).configuration(), null, null, null, areaUnitIn, officeId);
+                retVal.addAll(buildBasinsFromRecords(rs.intoResultSet(), unitSystem));
             });
         } catch (Exception ex) {
             throw new SQLException(ex);
@@ -34,36 +36,29 @@ public class BasinDao extends JooqDao<Basin> {
         return retVal;
     }
 
-    public Basin getBasin(String basinId, String unitSystem, String officeId) throws SQLException {
-        CwmsDbBasinJooq basinJooq = new CwmsDbBasinJooq();
-
-        String[] pParentBasinId = new String[1];
-        Double[] pSortOrder = new Double[1];
-        String[] pPrimaryStreamId = new String[1];
-        Double[] pTotalDrainageArea = new Double[1];
-        Double[] pContributingDrainageArea = new Double[1];
+    public Basin getBasin(String basinId, String unitSystem, String officeId) {
         String areaUnitIn = UnitSystem.EN.value().equals(unitSystem)
                 ? Unit.SQUARE_MILES.getValue() : Unit.SQUARE_KILOMETERS.getValue();
 
-        connection(dsl, c -> basinJooq.retrieveBasin(c, pParentBasinId, pSortOrder,
-                pPrimaryStreamId, pTotalDrainageArea, pContributingDrainageArea, basinId,
-                areaUnitIn, officeId));
+        RETRIEVE_BASIN basin = connectionResult(dsl, c ->
+            CWMS_BASIN_PACKAGE.call_RETRIEVE_BASIN(getDslContext(c, officeId).configuration(), basinId, areaUnitIn, officeId));
 
         Basin retVal = new Basin.Builder(basinId, officeId)
-                .withBasinArea(pTotalDrainageArea[0])
-                .withContributingArea(pContributingDrainageArea[0])
-                .withParentBasinId(pParentBasinId[0])
-                .withSortOrder(pSortOrder[0])
+                .withBasinArea(basin.getP_TOTAL_DRAINAGE_AREA())
+                .withContributingArea(basin.getP_CONTRIBUTING_DRAINAGE_AREA())
+                .withParentBasinId(basin.getP_PARENT_BASIN_ID())
+                .withSortOrder(basin.getP_SORT_ORDER())
                 .build();
-        if (pPrimaryStreamId[0] != null) {
+        String primaryStreamId = basin.getP_PRIMARY_STREAM_ID();
+        if (primaryStreamId != null) {
             StreamDao streamDao = new StreamDao(dsl);
-            Stream primaryStream = streamDao.getStream(pPrimaryStreamId[0], unitSystem, officeId);
+            Stream primaryStream = streamDao.getStream(primaryStreamId, unitSystem, officeId);
             retVal = new Basin.Builder(retVal).withPrimaryStream(primaryStream).build();
         }
         return retVal;
     }
 
-    private List<Basin> buildBasinsFromResultSet(ResultSet rs, String unitSystem) throws SQLException {
+    private List<Basin> buildBasinsFromRecords(ResultSet rs, String unitSystem) throws SQLException {
         List<Basin> retVal = new ArrayList<>();
         while (rs.next()) {
             Basin basin = buildBasinFromRow(rs, unitSystem);

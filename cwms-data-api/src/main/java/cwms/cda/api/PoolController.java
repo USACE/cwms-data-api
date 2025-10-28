@@ -1,7 +1,6 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-
 import static cwms.cda.api.Controllers.ANY_MASK;
 import static cwms.cda.api.Controllers.BOTTOM_MASK;
 import static cwms.cda.api.Controllers.CURSOR;
