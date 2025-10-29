@@ -273,11 +273,11 @@ class LocationLevelTest {
 			sb.build();
 		} catch (ExclusiveFieldsException e) {
 			assertEquals("Parser", e.getSource());
-			assertEquals("Mutually exclusive fields used.", e.getCdaErrorMessage());
+			assertEquals("Mutually exclusive fields were provided in the request.", e.getCdaErrorMessage());
 			assertEquals("Only one of the following can be defined at "
 				+ "once for a seasonal location level: interval-minutes, interval-months",
                 e.getDetails().get("Use only one of"));
-			assertEquals("Mutually exclusive fields used.", e.getMessage());
+			assertEquals("Mutually exclusive fields were provided in the request.", e.getMessage());
 			assertEquals(400, e.getCdaHttpErrorCode());
 		}
 	}
