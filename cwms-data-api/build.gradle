@@ -35,15 +35,6 @@ dependencies {
     implementation(libs.jaxb.api)
     implementation(libs.jaxb.core)
     implementation(libs.jaxb.impl)
-    implementation(libs.cwms.db.dao) {
-        exclude group: "com.oracle", module: "*"
-        exclude group: "com.oracle.database.jdbc", module: "*"
-        exclude group: "org.jooq.pro", module: "*"
-        exclude group: "org.jooq", module: "jooq"
-        exclude group: "log4j", module: "log4j"
-        exclude group: "org.slf4j", module: "slf4j-log4j12"
-        exclude group: "mil.army.usace.hec", module: "cwms-db-codegen"
-    }
     implementation(libs.cwms.db.jooq.base){
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"

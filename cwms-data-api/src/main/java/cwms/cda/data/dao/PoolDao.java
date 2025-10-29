@@ -1,14 +1,16 @@
 package cwms.cda.data.dao;
 
+import static java.util.stream.Collectors.toList;
+
+import cwms.cda.data.dto.Pool;
+import cwms.cda.data.dto.PoolNameType;
+import cwms.cda.data.dto.Pools;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import cwms.cda.data.dto.Pool;
-import cwms.cda.data.dto.Pools;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -16,13 +18,9 @@ import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.exception.TooManyRowsException;
 import org.jooq.impl.DSL;
-
-import usace.cwms.db.dao.ifc.pool.PoolNameType;
 import usace.cwms.db.jooq.codegen.packages.CWMS_POOL_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.cwms_pool.RETRIEVE_POOL;
 import usace.cwms.db.jooq.codegen.tables.AV_POOL;
-
-import static java.util.stream.Collectors.toList;
 
 public class PoolDao extends JooqDao<Pool> {
 	private static Logger logger = Logger.getLogger(PoolDao.class.getName());

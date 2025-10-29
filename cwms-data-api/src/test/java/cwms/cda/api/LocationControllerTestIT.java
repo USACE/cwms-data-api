@@ -522,6 +522,110 @@ class LocationControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    void test_create_update_null_elev_units() throws Exception {
+        String locationName = "TestUpdateLoc1";
+        KeyUser user = KeyUser.SPK_NORMAL;
+
+        String serializedLocation = loadResourceAsString("cwms/cda/api/location_create_spk.json")
+            .replace("LOC_TEST", locationName);
+
+        String serializedUpdateLocation = loadResourceAsString("cwms/cda/api/location_create_spk_no_elev_units.json")
+            .replace("LOC_TEST", locationName);
+
+        // create location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(serializedLocation)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/locations")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // get it back
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, user.getOperatingOffice())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + locationName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("name", equalTo(locationName));
+
+        // update location
+        String updatedLocationName = locationName + "_UPDATED";
+        String updatedSerializedLocation = serializedUpdateLocation
+            .replace(locationName, updatedLocationName);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(updatedSerializedLocation)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch("/locations/" + locationName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(user.getOperatingOffice()))
+            .body(MESSAGE, equalTo("Updated and renamed Location"))
+            .body(IDENTIFIER, equalTo(updatedLocationName));
+
+        // get it back
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, user.getOperatingOffice())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + updatedLocationName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("name", equalTo(updatedLocationName));
+
+        // delete location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, user.getOperatingOffice())
+            .queryParam(CASCADE_DELETE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + updatedLocationName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(user.getOperatingOffice()))
+            .body(MESSAGE, equalTo("Deleted CWMS Location"))
+            .body(IDENTIFIER, equalTo(updatedLocationName));
+    }
+
+    @Test
     void test_delete_location_that_does_not_exist() {
         final String officeId = "SPK";
         final String locationName = "I do not exit";

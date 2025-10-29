@@ -50,7 +50,6 @@ jaxb-api = { module = "javax.xml.bind:jaxb-api", version.ref = "jaxb-api" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-impl" }
 jaxb-core = { module = "com.sun.xml.bind:jaxb-core", version.ref = "jaxb-impl" }
 cwms-db-jooq-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version.ref = "jooq-codegen" }
-cwms-db-dao = { module = "mil.army.usace.hec:cwms-db-dao", version.ref = "hec-data-access" }
 cwms-db-jooq-base = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "hec-data-access" }
 jooq = { module = "org.jooq.pro-java-11:jooq", version.ref ="jooq" }
 slf4j = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }

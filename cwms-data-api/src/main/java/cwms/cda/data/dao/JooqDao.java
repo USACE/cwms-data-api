@@ -39,12 +39,14 @@ import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -795,4 +797,37 @@ public abstract class JooqDao<T> extends Dao<T> {
         return (bigDecimal == null) ? 0.0 : bigDecimal.doubleValue();
     }
 
+    protected static void checkMetaData(ResultSetMetaData metaData, List<String> columnList,
+        String type) throws SQLException {
+        int columnCount = metaData.getColumnCount();
+        List<String> metadataColumns = new ArrayList<>();
+        logger.atFine().log("{0} column dump.", type);
+        for (int ii = 1; ii <= columnCount; ii++) {
+            String columnName = metaData.getColumnName(ii).toUpperCase();
+            metadataColumns.add(columnName);
+            logger.atFine().log("{0}: {1}", new Object[]{ii, columnName});
+        }
+        Collections.sort(metadataColumns);
+        if (!metadataColumns.containsAll(columnList)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(type).append(" columns do not match expected names.\nExpected: ");
+            for (String s : columnList) {
+                sb.append(s).append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+            sb.append(".\nReceived: ");
+            for (String s : metadataColumns) {
+                sb.append(s).append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+            List<String> missing = new ArrayList<>(columnList);
+            missing.removeAll(metadataColumns);
+            sb.append(".\nMissing: ");
+            for (String s : missing) {
+                sb.append(s).append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+            throw new SQLException(sb.toString());
+        }
+    }
 }
