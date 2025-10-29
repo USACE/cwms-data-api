@@ -151,7 +151,6 @@ dependencies {
     testImplementation(libs.apache.commons.csv)
     testImplementation(libs.cwms.tomcat.auth)
     testImplementation(libs.apache.freemarker)
-    testImplementation(libs.java.parser)
 
     testRuntimeOnly("org.slf4j:slf4j-jdk14:2.0.16")    
 
