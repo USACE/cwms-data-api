@@ -393,7 +393,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             if (parts.length > 2) {
-                return new InvalidItemException(String.format("Invalid Time Series Description: %s is not a valid interval",
+                return new InvalidItemException(String.format("Invalid Time Series Description: %s",
                     parts[1]), cause);
             }
         }
