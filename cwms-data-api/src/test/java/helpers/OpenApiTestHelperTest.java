@@ -1,6 +1,12 @@
 package helpers;
 
 import cwms.cda.api.OfficeController;
+import cwms.cda.api.TextTimeSeriesValueController;
+import cwms.cda.api.TimeSeriesController;
+import cwms.cda.api.auth.users.roles.AddRoleController;
+import cwms.cda.api.rating.RatingController;
+import cwms.cda.api.watersupply.WaterUserDeleteController;
+import io.javalin.apibuilder.CrudHandler;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
@@ -40,18 +46,17 @@ class OpenApiTestHelperTest {
 
     @Test
     void test_find_handlers() {
-        List<String> classes = OpenApiTestHelper.findCrudHandlerClasses();
+        List<Class<CrudHandler>> classes = OpenApiTestHelper.findClassesOfType(CrudHandler.class, "cwms.cda.api");
         assertNotNull(classes);
-        assertTrue(classes.size() > 100);
-        assertTrue(classes.contains("cwms.cda.api.OfficeController"));
-        assertTrue(classes.contains("cwms.cda.api.TimeSeriesController"));
-        assertTrue(classes.contains("cwms.cda.api.rating.RatingController"));  // CrudHandler in sub package
-        assertTrue(classes.contains("cwms.cda.api.TextTimeSeriesValueController"));  // Handler
-        assertTrue(classes.contains("cwms.cda.api.watersupply.WaterUserDeleteController")); // Handler in sub-package
-        assertTrue(classes.contains("cwms.cda.api.auth.users.roles.AddRoleController")); // Handler in sub-sub-package
+        assertTrue(classes.contains(OfficeController.class));
+        assertTrue(classes.contains(TimeSeriesController.class));
+        assertTrue(classes.contains(RatingController.class));  // CrudHandler in sub package
+        assertTrue(classes.contains(TextTimeSeriesValueController.class));  // Handler
+        assertTrue(classes.contains(WaterUserDeleteController.class)); // Handler in sub-package
+        assertTrue(classes.contains(AddRoleController.class)); // Handler in sub-sub-package
 
         // fail if any class starts with io.javalin
-        classes.forEach(c -> assertFalse(c.startsWith("io.javalin")));
+        classes.forEach(c -> assertFalse(c.getPackage().getName().startsWith("io.javalin")));
     }
 
 
