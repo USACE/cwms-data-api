@@ -349,7 +349,9 @@ public class ApiServlet extends HttpServlet {
                 })
                 .exception(ApplicationException.class, (e, ctx) -> {
                     CdaError re = new CdaError(e.getCdaErrorMessage(), e.getSource(), e.getDetails());
-                    logger.atInfo().withCause(e).log(re.toString());
+                    if (e.getLoggerLevel().isPresent()) {
+                        logger.at(e.getLoggerLevel().get()).withCause(e).log(re.toString());
+                    }
                     ctx.status(e.getCdaHttpErrorCode()).json(re);
                 })
                 .exception(UnsupportedOperationException.class, (e, ctx) -> {

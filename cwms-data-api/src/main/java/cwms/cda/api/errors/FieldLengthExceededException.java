@@ -27,34 +27,39 @@
 package cwms.cda.api.errors;
 
 import java.util.HashMap;
+import java.util.logging.Level;
 import javax.servlet.http.HttpServletResponse;
 
-public final class ValueTooLongException extends ApplicationException {
+public final class FieldLengthExceededException extends ApplicationException {
+    private static final Level LOG_LEVEL = Level.INFO;
     private String parameter;
     private int length;
     private int maxLength;
     private boolean suppressIncidentId = true;
 
-    private static final String DEFAULT_ERROR = "One or more provided values exceeds the maximum length for the parameter.";
+    private static final String DEFAULT_ERROR
+        = "One or more provided values exceeds the maximum length for the parameter.";
 
-    public ValueTooLongException(Throwable cause) {
-        super(DEFAULT_ERROR, "User Input", DEFAULT_ERROR, HttpServletResponse.SC_BAD_REQUEST, new HashMap<>(), cause);
+    public FieldLengthExceededException(Throwable cause) {
+        super(DEFAULT_ERROR, USER_INPUT_SOURCE, DEFAULT_ERROR, HttpServletResponse.SC_BAD_REQUEST,
+            LOG_LEVEL, new HashMap<>(), cause);
     }
 
     /**
-     * Constructor for ValueTooLongException
+     * Constructor for FieldLengthExceededException
      * @param parameter the name of the parameter that is too long
      * @param length the length of the provided value
      * @param maxLength the maximum allowed length for the parameter
      * @param cause the underlying cause of the exception
      * @param suppressIncidentId flag to indicate whether to suppress the incident ID in the error response
      */
-    public ValueTooLongException(String parameter, int length, int maxLength, Throwable cause, boolean suppressIncidentId) {
+    public FieldLengthExceededException(String parameter, int length, int maxLength,
+            Throwable cause, boolean suppressIncidentId) {
         super(String.format("%s The field %s with provided length of %d "
-                + "has a maximum length of %d characters.", DEFAULT_ERROR, parameter, length, maxLength), "User Input",
-            String.format("%s The field %s with provided length of %d "
                 + "has a maximum length of %d characters.", DEFAULT_ERROR, parameter, length, maxLength),
-            HttpServletResponse.SC_BAD_REQUEST, new HashMap<>(), cause);
+            USER_INPUT_SOURCE, String.format("%s The field %s with provided length of %d "
+                + "has a maximum length of %d characters.", DEFAULT_ERROR, parameter, length, maxLength),
+            HttpServletResponse.SC_BAD_REQUEST, LOG_LEVEL, new HashMap<>(), cause);
         this.parameter = parameter;
         this.length = length;
         this.maxLength = maxLength;

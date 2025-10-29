@@ -28,13 +28,15 @@ import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import javax.servlet.http.HttpServletResponse;
 
 public final class DeleteConflictException extends ApplicationException {
+    private static final Level LOG_LEVEL = Level.INFO;
 
     public DeleteConflictException(String message, SQLException cause) {
-        super(message, "Database", "Cannot perform requested delete. "
-            + "Data is referenced elsewhere in CWMS.", HttpServletResponse.SC_CONFLICT, new HashMap<>(), cause);
+        super(message, DATABASE_SOURCE, "Cannot delete this record because it is linked to other data in CWMS",
+            HttpServletResponse.SC_CONFLICT, LOG_LEVEL, new HashMap<>(), cause);
     }
 
     @Override
@@ -45,7 +47,10 @@ public final class DeleteConflictException extends ApplicationException {
             sqlExceptionMessage = parts[0];
         }
         Map<String, Serializable> retval = new HashMap<>();
-        retval.put("message", String.format("%s. %s", getMessage(), sqlExceptionMessage));
+        if (sqlExceptionMessage.endsWith(".")) {
+            sqlExceptionMessage = sqlExceptionMessage.substring(0, sqlExceptionMessage.length() - 1);
+        }
+        retval.put("message", String.format("%s: %s.", getMessage(), sqlExceptionMessage));
         return retval;
     }
 }

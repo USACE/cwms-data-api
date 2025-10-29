@@ -13,12 +13,13 @@ import java.util.UUID;
  * however you can initialize and return more detail to the user if it makes sense for the given
  * endpoint.
  */
-public class CdaError {
+public final class CdaError {
+    private static final String UNKNOWN_SOURCE = "Unknown";
     private final String message;
     @Schema(description = "A randomly generated UUID to help identify your request in the logs "
             + "for analysis..")
     private final String incidentIdentifier;
-    private String source;
+    private final String source;
     private final Map<String, Serializable> details;
 
     public String getMessage() {
@@ -38,7 +39,7 @@ public class CdaError {
      * @return Map of details
      */
     public Map<String, Serializable> getDetails() {
-        return Collections.unmodifiableMap(details);
+        return details;
     }
 
     public String getSource() {
@@ -52,7 +53,8 @@ public class CdaError {
     public CdaError(String message) {
         this.incidentIdentifier = UUID.randomUUID().toString();
         this.message = message;
-        this.details = new HashMap<>();
+        this.details = Collections.unmodifiableMap(new HashMap<>());
+        this.source = UNKNOWN_SOURCE;
     }
 
     /**
@@ -64,7 +66,8 @@ public class CdaError {
         Objects.requireNonNull(map);
         this.incidentIdentifier = UUID.randomUUID().toString();
         this.message = message;
-        this.details = map;
+        this.details = Collections.unmodifiableMap(map);
+        this.source = UNKNOWN_SOURCE;
     }
 
     /**
@@ -81,7 +84,8 @@ public class CdaError {
             this.incidentIdentifier = UUID.randomUUID().toString();
         }
         this.message = message;
-        this.details = details;
+        this.details = Collections.unmodifiableMap(details);
+        this.source = UNKNOWN_SOURCE;
     }
 
     /**
@@ -103,7 +107,7 @@ public class CdaError {
         this.incidentIdentifier = UUID.randomUUID().toString();
         this.message = message;
         this.source = source;
-        this.details = details;
+        this.details = Collections.unmodifiableMap(details);
     }
 
     @Override
@@ -112,7 +116,7 @@ public class CdaError {
         if (source != null) {
             result = String.format("%s: %s. Originates from %s", incidentIdentifier, message, source);
         } else {
-            result = String.format("%s: %s", incidentIdentifier, message);
+            result = String.format("%s: %s.", incidentIdentifier, message);
         }
         return result;
     }

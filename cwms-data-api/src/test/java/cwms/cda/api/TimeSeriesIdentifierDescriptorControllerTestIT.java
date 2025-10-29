@@ -195,7 +195,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
             .body("details.message",
-                is("Invalid Time Series Description: "
+                is("Invalid time series description: "
                     + "12HoursLocal is not a valid interval"));
     }
 
@@ -228,7 +228,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .body("message", equalTo("Bad Request."))
             .body("source", equalTo("User Input"))
             .body("details.message",
-                is("Invalid Time Series Description: 12HoursLocal is not a valid duration"));
+                is("Invalid time series description: 12HoursLocal is not a valid duration"));
     }
 
 

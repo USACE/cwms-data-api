@@ -932,9 +932,9 @@ class LocationControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CONFLICT))
             .body("source", equalTo("Database"))
             .body("message",
-                equalTo("Cannot perform requested delete. Data is referenced elsewhere in CWMS."))
+                equalTo("Cannot delete this record because it is linked to other data in CWMS"))
             .body("details.message", equalTo("Unable to delete requested location: "
-                + "Putah_Creek for office: SPK. ORA-20031: CAN_NOT_DELETE_LOC_1: "
+                + "Putah_Creek for office: SPK: ORA-20031: CAN_NOT_DELETE_LOC_1: "
                 + "Can not delete location: \"Putah_Creek\" because Timeseries Identifiers exist."));
     }
 

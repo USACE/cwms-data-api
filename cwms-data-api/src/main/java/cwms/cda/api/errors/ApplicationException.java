@@ -30,12 +30,19 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.logging.Level;
 
 public class ApplicationException extends RuntimeException {
+    protected static final String DATABASE_SOURCE = "Database";
+    protected static final String PARSER_SOURCE = "Parser";
+    protected static final String USER_INPUT_SOURCE = "User Input";
+    protected static final String AUTHORIZATION_SOURCE = "Authorization";
     private final String source;
     private final Map<String, Serializable> details;
     private final String cdaErrorMessage;
     private final int cdaHttpErrorCode;
+    private final Level loggerLevel;
 
     /**
      * Constructs a new ApplicationException with the specified details.
@@ -44,16 +51,19 @@ public class ApplicationException extends RuntimeException {
      * @param message The error message.
      * @param source The source of the error.
      * @param cdaErrorMessage The CDA error message.
+     * @param cdaHttpErrorCode The HTTP status code that should be returned to the client for this error.
+     * @param logLevel The level at which to log this error.
      * @param details Additional details about the error.
      * @param cause The cause of the error.
      */
     public ApplicationException(String message, String source, String cdaErrorMessage, int cdaHttpErrorCode,
-            Map<String, Serializable> details, Throwable cause) {
+            Level logLevel, Map<String, Serializable> details, Throwable cause) {
         super(message, cause);
         this.source = source;
         this.details = details;
         this.cdaHttpErrorCode = cdaHttpErrorCode;
         this.cdaErrorMessage = cdaErrorMessage;
+        this.loggerLevel = logLevel;
     }
 
     public String getSource() {
@@ -72,7 +82,11 @@ public class ApplicationException extends RuntimeException {
         return cdaHttpErrorCode;
     }
 
-    static Map<String, Serializable> buildDetailsMap(String message) {
+    public Optional<Level> getLoggerLevel() {
+        return Optional.ofNullable(loggerLevel);
+    }
+
+    protected static Map<String, Serializable> buildDetailsMap(String message) {
         Map<String, Serializable> details = new HashMap<>();
         details.put("message", message);
         return details;
