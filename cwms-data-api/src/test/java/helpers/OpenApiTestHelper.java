@@ -56,10 +56,10 @@ public class OpenApiTestHelper {
     }
 
     private static String getFileNameWithoutExtension(Path path) {
-        String fileName = path.toString()
-                              .replace("cwms-data-api\\src\\main\\java\\", "")
-                              .replace("src\\main\\java\\", "")
-                              .replace("\\", ".");
+        String temp = path.toString().replace("\\", "/");
+        String fileName = temp.replace("cwms-data-api/src/main/java/", "")
+                              .replace("src/main/java/", "")
+                              .replace("/", ".");
         int dotIndex = fileName.lastIndexOf('.');
         return (dotIndex > 0) ? fileName.substring(0, dotIndex) : fileName;
     }
