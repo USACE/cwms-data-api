@@ -20,26 +20,43 @@
 
 package cwms.cda.api;
 
+import com.github.javaparser.ast.CompilationUnit;
+import helpers.OpenApiDocInfo;
 import helpers.OpenApiDocTestInfo;
 import helpers.OpenApiTestHelper;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Handler;
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class OpenApiDocTest {
 
     @MethodSource(value = "getHandlerDocInfo")
     @ParameterizedTest
-    void test_handler_documentation(OpenApiDocTestInfo testInfo) {
-
+    void test_handler_documentation(OpenApiDocTestInfo testInfo) throws IOException {
+        CompilationUnit compilationUnit = OpenApiTestHelper.readCompilationUnit(testInfo.getClazz());
+        assertAll(buildTestAssertions(compilationUnit, testInfo));
     }
 
     @MethodSource(value = "getCrudHandlerDocInfo")
     @ParameterizedTest
-    void test_crud_handler_documentation(OpenApiDocTestInfo testInfo) {
+    void test_crud_handler_documentation(OpenApiDocTestInfo testInfo) throws IOException {
+        CompilationUnit compilationUnit = OpenApiTestHelper.readCompilationUnit(testInfo.getClazz());
+        assertAll(buildTestAssertions(compilationUnit, testInfo));
+    }
+
+    private Stream<Executable> buildTestAssertions(CompilationUnit compilationUnit, OpenApiDocTestInfo testInfo) {
+        return testInfo.getMethodDocs()
+                       .stream()
+                       .map(docInfo -> () -> validateOpenApiDoc(compilationUnit, docInfo));
+    }
+
+    private void validateOpenApiDoc(CompilationUnit unit, OpenApiDocInfo testInfo) throws Exception {
 
     }
 

@@ -1,7 +1,7 @@
 package helpers;
 
-import cwms.cda.api.OfficeController;
-import io.javalin.apibuilder.CrudHandler;
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.ast.CompilationUnit;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import java.io.IOException;
@@ -83,13 +83,7 @@ public class OpenApiTestHelper {
         // Convert package name to path
         String packagePath = packageName.replace('.', '/');
 
-        // Assuming the test is run from project root, adjust path as needed
-        Path srcPath = Paths.get("cwms-data-api/src/main/java", packagePath);
-
-        if (!Files.exists(srcPath)) {
-            // Try alternative path
-            srcPath = Paths.get("src/main/java", packagePath);
-        }
+        Path srcPath = getPackagePath(packagePath);
 
         List<String> classesNotFound = new ArrayList<>();
         List<Class> temp;
@@ -114,6 +108,17 @@ public class OpenApiTestHelper {
         return output;
     }
 
+    private static Path getPackagePath(String packagePath) {
+        // Assuming the test is run from project root, adjust path as needed
+        Path srcPath = Paths.get("cwms-data-api/src/main/java", packagePath);
+
+        if (!Files.exists(srcPath)) {
+            // Try alternative path
+            srcPath = Paths.get("src/main/java", packagePath);
+        }
+        return srcPath;
+    }
+
     public static <T> OpenApiDocTestInfo readOpenApiDocs(Class<? super T> baseClass, Class<T> primaryClass) {
 
         List<OpenApiDocInfo> infoObjs = Arrays.stream(baseClass.getDeclaredMethods())
@@ -121,6 +126,15 @@ public class OpenApiTestHelper {
                                                      .map(OpenApiTestHelper::readDocParams)
                                                      .collect(toList());
         return new OpenApiDocTestInfo(primaryClass, infoObjs);
+    }
 
+    public static CompilationUnit readCompilationUnit(Class<?> clazz) throws IOException {
+        String fullyQualifiedName = clazz.getName().replace(".", "/") + ".java";
+        Path path = getPackagePath(fullyQualifiedName);
+        assertTrue(Files.exists(path));
+        JavaParser parser = new JavaParser();
+        return parser.parse(path)
+                     .getResult()
+                     .orElseThrow(() -> new RuntimeException("Failed to parse file"));
     }
 }
