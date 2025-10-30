@@ -21,32 +21,31 @@
 package helpers;
 
 import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
+import java.util.stream.Collectors;
 
-public class OpenApiDocInfo {
-    private final Method method;
-    private final Set<String> queryParameters = new HashSet<>();
-    private final Set<String> pathParameters = new HashSet<>();
+public class OpenApiDocTestInfo {
+    private final Class<?> clazz;
+    private final List<OpenApiDocInfo> methodDocs;
 
-    public OpenApiDocInfo(Method method) {
-        this.method = method;
+    public OpenApiDocTestInfo(Class<?> clazz, List<OpenApiDocInfo> methodDocs) {
+        this.clazz = clazz;
+        this.methodDocs = methodDocs;
     }
 
-    public Method getMethod() {
-        return method;
+    public List<OpenApiDocInfo> getMethodDocs() {
+        return methodDocs;
     }
 
-    public Set<String> getPathParameters() {
-        return pathParameters;
-    }
-
-    public Set<String> getQueryParameters() {
-        return queryParameters;
+    public Class<?> getClazz() {
+        return clazz;
     }
 
     @Override
     public String toString() {
-        return method.getName();
+        return clazz.getSimpleName() + ": " + methodDocs.stream()
+                                                        .map(OpenApiDocInfo::getMethod)
+                                                        .map(Method::getName)
+                                                        .collect(Collectors.joining(", "));
     }
 }

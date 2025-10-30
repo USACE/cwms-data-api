@@ -36,8 +36,8 @@ public class OpenApiTestHelper {
         return methods.get(0);
     }
 
-    public static <T> OpenApiDocInfo<T> readDocParams(Class<T> clazz, Method m) {
-        OpenApiDocInfo<T> info = new OpenApiDocInfo<>(clazz, m);
+    public static OpenApiDocInfo readDocParams(Method m) {
+        OpenApiDocInfo info = new OpenApiDocInfo(m);
         OpenApi oa = m.getAnnotation(OpenApi.class);
         if (oa == null || oa.ignore()) {
             return info;
@@ -114,10 +114,13 @@ public class OpenApiTestHelper {
         return output;
     }
 
-    public static <T> List<OpenApiDocInfo<T>> readOpenApiDocs(Class<? super T> baseClass, Class<T> primaryClass) {
-        return Arrays.stream(baseClass.getDeclaredMethods())
-                     .map(method -> findOneByName(primaryClass, method.getName()))
-                     .map(method -> readDocParams(primaryClass, method))
-                     .collect(toList());
+    public static <T> OpenApiDocTestInfo readOpenApiDocs(Class<? super T> baseClass, Class<T> primaryClass) {
+
+        List<OpenApiDocInfo> infoObjs = Arrays.stream(baseClass.getDeclaredMethods())
+                                                     .map(method -> findOneByName(primaryClass, method.getName()))
+                                                     .map(OpenApiTestHelper::readDocParams)
+                                                     .collect(toList());
+        return new OpenApiDocTestInfo(primaryClass, infoObjs);
+
     }
 }

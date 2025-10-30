@@ -25,7 +25,7 @@ class OpenApiTestHelperTest {
         Method m = OpenApiTestHelper.findOneByName(OfficeController.class, "getAll");
 
         assertNotNull(m);
-        OpenApiDocInfo<OfficeController> info = OpenApiTestHelper.readDocParams(OfficeController.class, m);
+        OpenApiDocInfo info = OpenApiTestHelper.readDocParams(m);
         assertNotNull(info);
         assertEquals(2, info.getQueryParameters().size());
         assertTrue(info.getQueryParameters().contains("format"));
@@ -47,11 +47,11 @@ class OpenApiTestHelperTest {
 
     @Test
     void test_helper_for_interface() {
-        List<OpenApiDocInfo<OfficeController>> crudDocInfo = OpenApiTestHelper.readOpenApiDocs(CrudHandler.class, OfficeController.class);
-        assertEquals(5, crudDocInfo.size());
+        OpenApiDocTestInfo crudDocInfo = OpenApiTestHelper.readOpenApiDocs(CrudHandler.class, OfficeController.class);
+        assertEquals(5, crudDocInfo.getMethodDocs().size());
 
-        List<OpenApiDocInfo<TextTimeSeriesValueController>> handlerDocInfo = OpenApiTestHelper.readOpenApiDocs(Handler.class, TextTimeSeriesValueController.class);
-        assertEquals(1, handlerDocInfo.size());
+        OpenApiDocTestInfo handlerDocInfo = OpenApiTestHelper.readOpenApiDocs(Handler.class, TextTimeSeriesValueController.class);
+        assertEquals(1, handlerDocInfo.getMethodDocs().size());
     }
 
     @Test
