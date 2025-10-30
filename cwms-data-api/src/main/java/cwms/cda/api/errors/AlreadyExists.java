@@ -6,7 +6,7 @@ import javax.servlet.http.HttpServletResponse;
 
 public class AlreadyExists extends ApplicationException {
     private static final String ALREADY_EXISTS = "Already exists";
-    private static final Level LOG_LEVEL = Level.INFO;
+    private static final Level LOG_LEVEL = Level.FINE;
 
     public AlreadyExists(String message, Throwable cause) {
         super(message, DATABASE_SOURCE, ALREADY_EXISTS, HttpServletResponse.SC_CONFLICT,

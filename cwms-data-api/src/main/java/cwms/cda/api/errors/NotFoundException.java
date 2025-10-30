@@ -5,7 +5,7 @@ import java.util.logging.Level;
 import javax.servlet.http.HttpServletResponse;
 
 public class NotFoundException extends ApplicationException {
-    private static final Level LOG_LEVEL = Level.INFO;
+    private static final Level LOG_LEVEL = Level.FINE;
     private static final String NOT_FOUND = "Not Found.";
 
     public NotFoundException(String message) {

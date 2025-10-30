@@ -8,7 +8,7 @@ import java.util.logging.Level;
 import javax.servlet.http.HttpServletResponse;
 
 public class FieldException extends ApplicationException {
-    private static final Level LOG_LEVEL = null;
+    private static final Level LOG_LEVEL = Level.FINEST;
 
     public FieldException(String message) {
         super(message, PARSER_SOURCE, message, HttpServletResponse.SC_BAD_REQUEST, LOG_LEVEL, new HashMap<>(), null);
