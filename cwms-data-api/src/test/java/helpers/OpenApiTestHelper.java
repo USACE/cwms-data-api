@@ -44,12 +44,14 @@ public class OpenApiTestHelper {
         }
         for (OpenApiParam p : oa.queryParams()) {
             if (p != null && !p.name().trim().isEmpty()) {
-                info.getQueryParameters().add(p.name());
+                OpenApiParamInfo paramObj = new OpenApiParamInfo(p.name(), p.required(), p.type());
+                info.getQueryParameters().add(paramObj);
             }
         }
         for (OpenApiParam p : oa.pathParams()) {
             if (p != null && !p.name().trim().isEmpty()) {
-                info.getPathParameters().add(p.name());
+                OpenApiParamInfo paramObj = new OpenApiParamInfo(p.name(), p.required(), p.type());
+                info.getPathParameters().add(paramObj);
             }
         }
         return info;

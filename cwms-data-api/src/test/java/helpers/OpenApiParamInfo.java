@@ -20,33 +20,48 @@
 
 package helpers;
 
-import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Objects;
 
-public class OpenApiDocInfo {
-    private final Method method;
-    private final Set<OpenApiParamInfo> queryParameters = new HashSet<>();
-    private final Set<OpenApiParamInfo> pathParameters = new HashSet<>();
+public class OpenApiParamInfo {
+    private final String name;
+    private final boolean required;
+    private final Class<?> type;
 
-    public OpenApiDocInfo(Method method) {
-        this.method = method;
+    public OpenApiParamInfo(String name, boolean required, Class<?> type) {
+        this.name = name;
+        this.required = required;
+        this.type = type;
     }
 
-    public Method getMethod() {
-        return method;
+    public String getName() {
+        return name;
     }
 
-    public Set<OpenApiParamInfo> getPathParameters() {
-        return pathParameters;
+    public boolean isRequired() {
+        return required;
     }
 
-    public Set<OpenApiParamInfo> getQueryParameters() {
-        return queryParameters;
+    public Class<?> getType() {
+        return type;
     }
 
     @Override
     public String toString() {
-        return method.getName();
+        String req = required ? " (required)" : "";
+        return type.getSimpleName() + " " + name + req;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof OpenApiParamInfo)) {
+            return false;
+        }
+        OpenApiParamInfo that = (OpenApiParamInfo) o;
+        return Objects.equals(getName(), that.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getName());
     }
 }

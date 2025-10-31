@@ -21,14 +21,21 @@
 package cwms.cda.api;
 
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import helpers.OpenApiDocInfo;
 import helpers.OpenApiDocTestInfo;
+import helpers.OpenApiParamInfo;
 import helpers.OpenApiTestHelper;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Handler;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -50,6 +57,13 @@ class OpenApiDocTest {
         assertAll(buildTestAssertions(compilationUnit, testInfo));
     }
 
+    @Test
+    void test_time_series_controller() throws IOException {
+        OpenApiDocTestInfo testInfo = OpenApiTestHelper.readOpenApiDocs(CrudHandler.class, TimeSeriesController.class);
+        CompilationUnit compilationUnit = OpenApiTestHelper.readCompilationUnit(testInfo.getClazz());
+        assertAll(buildTestAssertions(compilationUnit, testInfo));
+    }
+
     private Stream<Executable> buildTestAssertions(CompilationUnit compilationUnit, OpenApiDocTestInfo testInfo) {
         return testInfo.getMethodDocs()
                        .stream()
@@ -57,7 +71,34 @@ class OpenApiDocTest {
     }
 
     private void validateOpenApiDoc(CompilationUnit unit, OpenApiDocInfo testInfo) throws Exception {
+        List<OpenApiParamInfo> parsedParamInfo = parseParamInfo(unit, testInfo.getMethod());
+    }
 
+    private List<OpenApiParamInfo> parseParamInfo(CompilationUnit compilationUnit, Method method) throws IOException {
+        MethodDeclaration methodDeclaration = compilationUnit.findAll(MethodDeclaration.class)
+                                                             .stream()
+                                                             .filter(m -> m.getNameAsString().equals(method.getName()))
+                                                             .filter(m -> m.getParameters().size() == method.getParameterCount()) //Not detailed enough, need to check types
+                                                             .findFirst()
+                                                             .orElseThrow(() -> new AssertionError("Method " + method.getName() + " not found"));
+
+        List<MethodCallExpr> methodCalls = methodDeclaration.findAll(MethodCallExpr.class);
+        List<MethodCallExpr> optionalQueryParams = methodCalls.stream()
+                                                              .filter(call -> call.getNameAsString().equals("queryParam") ||
+                                                                      call.getNameAsString().equals("queryParamAsClass"))
+                                                              .collect(Collectors.toList());
+
+        List<MethodCallExpr> requiredQueryParams = methodCalls.stream()
+                                                              .filter(call -> call.getNameAsString().equals("requiredParam"))
+                                                              .collect(Collectors.toList());
+
+        List<MethodCallExpr> pathParams = methodCalls.stream()
+                                                     .filter(call -> call.getNameAsString().equals("pathParam"))
+                                                     .collect(Collectors.toList());
+
+        List<OpenApiParamInfo> output = new ArrayList<>();
+
+        return output;
     }
 
     static Stream<OpenApiDocTestInfo> getHandlerDocInfo() {
