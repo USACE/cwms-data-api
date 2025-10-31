@@ -52,7 +52,6 @@ import cwms.cda.formatters.xml.XMLv1;
 import cwms.cda.helpers.DateUtils;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -1512,7 +1511,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     @Override
     public void store(TimeSeries timeSeries, Timestamp versionDate) {
-        store(timeSeries, false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
+        store(timeSeries, false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION, null);
     }
 
     public void store(TimeSeries input, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection, VerticalDatum vd) {

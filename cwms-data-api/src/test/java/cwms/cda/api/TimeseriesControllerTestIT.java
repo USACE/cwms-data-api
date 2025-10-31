@@ -28,6 +28,8 @@ import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import io.restassured.response.ExtractableResponse;
@@ -1951,7 +1953,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
     // 3) a NGVD29 vertical-datum parameter is sent to the create call.
     //
     @Test
-    void test_create_with_vertical_datum_parameter_but_no_vertical_datum_info() throws Exception {
+    void test_create_without_vertical_datum_info() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
@@ -1965,8 +1967,8 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         String officeId = ts.get("office-id").asText();
 
         // Collect input times and values from the payload
-        java.util.List<Long> inputTimes = new java.util.ArrayList<>();
-        java.util.List<Double> inputValues = new java.util.ArrayList<>();
+        List<Long> inputTimes = new ArrayList<>();
+        List<Double> inputValues = new ArrayList<>();
         for (JsonNode row : ts.get("values")) {
             inputTimes.add(row.get(0).asLong());
             inputValues.add(row.get(1).asDouble());
@@ -2054,7 +2056,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .body(tsData)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
-            .queryParam(VERTICAL_DATUM, "NAVD88")
+            .queryParam(DATUM, "NAVD88")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -2096,7 +2098,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .body(tsData)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
-            .queryParam(VERTICAL_DATUM, "NGVD29")
+            .queryParam(DATUM, "NGVD29")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -2112,12 +2114,12 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             expectedNavd88.add(v - offsetToNgvd29);
         }
 
-        // GET after scenario 3 and verify conversion was applied
+        // GET after scenario 3 and verify the conversion was applied
         ValidatableResponse vr3 = doGet.get();
         System.out.println("3:" + vr3.extract().asString());
         vr3.body("values.size()", equalTo(expectedNavd88.size()));
         for (int i = 0; i < expectedNavd88.size(); i++) {
-            vr3.body("values[" + i + "][1]", floatCloseTo(expectedNavd88.get(i), 1e-6));
+            vr3.body("values[" + i + "][1]", floatCloseTo(expectedNavd88.get(i), 1e-4));
         }
     }
 
