@@ -52,6 +52,7 @@ import org.jooq.impl.DSL;
 import org.jooq.util.oracle.OracleDSL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
@@ -1574,5 +1575,28 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("id", is(group.getId()));
+    }
+
+    @Test
+    void testRetrievalTiming() {
+        String officeId = user.getOperatingOffice();
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(INCLUDE_ASSIGNED, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/group/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("assigned-time-series.size()", greaterThan(0))
+            .time(lessThan(500L)); // should be pretty quick, under 0.5 seconds. Old query was ~3 seconds
     }
 }

@@ -31,7 +31,6 @@ import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -50,11 +49,11 @@ import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
+import org.jooq.Record10;
 import org.jooq.RecordMapper;
-import org.jooq.SelectConnectByStep;
 import org.jooq.SelectJoinStep;
-import org.jooq.SelectOnConditionStep;
 import org.jooq.SelectSeekStep1;
+import org.jooq.SelectSeekStep2;
 import org.jooq.TableField;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
@@ -68,6 +67,13 @@ import usace.cwms.db.jooq.codegen.udt.records.LOC_ALIAS_TYPE3;
 public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
     public static final String CWMS = "CWMS";
+
+    private final RecordMapper<Record10<String, String, String, String, String, String, BigDecimal,
+        String, String, List<AssignedLocation>>, LocationGroup> mapToLocationGroup = queryRecord -> {
+            LocationGroup group = buildLocationGroup(queryRecord);
+            List<AssignedLocation> assignedLocations = (List<AssignedLocation>) queryRecord.get("multiset");
+            return new LocationGroup(group, assignedLocations);
+        };
 
     public LocationGroupDao(DSLContext dsl) {
         super(dsl);
@@ -86,8 +92,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
         final RecordMapper<Record, Pair<LocationGroup, AssignedLocation>> mapper = grpRecord -> {
-            LocationCategory locationCategory = buildLocationCategory(grpRecord);
-            LocationGroup group = buildLocationGroup(grpRecord, locationCategory);
+            LocationGroup group = buildLocationGroup(grpRecord);
             AssignedLocation loc = buildAssignedLocation(grpRecord);
 
             return new Pair<>(group, loc);
@@ -157,9 +162,10 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         return new AssignedLocation(locationId, officeId, aliasId, attribute, refLocationId);
     }
 
-    private LocationGroup buildLocationGroup(Record resultRecord,
-                                             LocationCategory locationCategory) {
+    private LocationGroup buildLocationGroup(Record resultRecord) {
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
+
+        LocationCategory locationCategory = buildLocationCategory(resultRecord);
 
         String groupId = resultRecord.get(alcg.LOC_GROUP_ID);
         String sharedAliasId = resultRecord.get(alcg.SHARED_LOC_ALIAS_ID);
@@ -170,7 +176,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         Number grpAttribute = resultRecord.get(alcg.LOC_GROUP_ATTRIBUTE);
 
         return new LocationGroup(locationCategory, grpOfficeId, groupId, grpDesc, sharedAliasId,
-                sharedRefLocationId, grpAttribute);
+            sharedRefLocationId, grpAttribute);
     }
 
     private LocationCategory buildLocationCategory(Record resultRecord) {
@@ -213,82 +219,69 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @param sharedRefLocLike A regex to use to filter the shared_ref_location_id.  May be null.
      * @return A list of all location groups for the given office and category.
      */
-    public List<LocationGroup> getLocationGroups(Configuration config, String locationOfficeId, String groupOfficeId, String categoryOfficeId,
-            String locCategoryLike, String sharedRefLocLike) {
-        DSLContext localDSL = DSL.using(config);
-        final RecordMapper<Record, Pair<LocationGroup, AssignedLocation>> mapper = grpRecord -> {
-            LocationCategory category = buildLocationCategory(grpRecord);
-
-            LocationGroup group = buildLocationGroup(grpRecord, category);
-            AssignedLocation loc = buildAssignedLocation(grpRecord);
-
-            return new Pair<>(group, loc);
-        };
-
-        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
+    public List<LocationGroup> getLocationGroups(Configuration config, String locationOfficeId, String groupOfficeId,
+            String categoryOfficeId, String locCategoryLike, String sharedRefLocLike) {
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-        Condition condition = noCondition();
+        Condition whereCondition = noCondition();
+
         if (locCategoryLike != null && !locCategoryLike.isEmpty()) {
-            condition = caseInsensitiveLikeRegex(alcg.LOC_CATEGORY_ID, locCategoryLike);
+            whereCondition = caseInsensitiveLikeRegex(alcg.LOC_CATEGORY_ID, locCategoryLike);
         }
 
         if (categoryOfficeId != null) {
-            condition = condition.and(alcg.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
+            whereCondition = whereCondition.and(alcg.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
         }
 
         if (sharedRefLocLike != null && !sharedRefLocLike.isEmpty()) {
-            condition = condition.and(caseInsensitiveLikeRegex(alcg.SHARED_REF_LOCATION_ID, sharedRefLocLike));
+            whereCondition = whereCondition.and(caseInsensitiveLikeRegex(alcg.SHARED_REF_LOCATION_ID, sharedRefLocLike));
         }
 
-        condition = condition.and(alcg.LOC_GROUP_ID.isNotNull());
+        whereCondition = whereCondition.and(alcg.LOC_GROUP_ID.isNotNull());
 
-        SelectConnectByStep<? extends Record> connectBy;
-        SelectOnConditionStep<? extends Record> onStep = localDSL.select(
-                        alcg.CAT_DB_OFFICE_ID,
-                        alcg.LOC_CATEGORY_ID,
-                        alcg.LOC_CATEGORY_DESC,
-                        alcg.GRP_DB_OFFICE_ID,
-                        alcg.LOC_GROUP_ID,
-                        alcg.LOC_GROUP_DESC,
-                        alcg.LOC_GROUP_ATTRIBUTE,
-                        alcg.SHARED_LOC_ALIAS_ID,
-                        alcg.SHARED_REF_LOCATION_ID,
-                        alga.DB_OFFICE_ID,
-                        alga.LOCATION_ID,
-                        alga.ALIAS_ID,
-                        alga.ATTRIBUTE,
-                        alga.REF_LOCATION_ID)
-                .from(alcg).leftJoin(alga)
-                .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
-                        .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
+        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
+
+        Condition joinCondition = alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
+            .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID));
 
         if (groupOfficeId != null) {
-            condition = condition.and(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(groupOfficeId.toUpperCase()));
+            whereCondition = whereCondition.and(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(groupOfficeId.toUpperCase()));
         } else if (locationOfficeId != null) {
-            condition = condition.and(DSL.upper(alga.DB_OFFICE_ID).eq(locationOfficeId.toUpperCase()));
+            joinCondition = joinCondition.and(DSL.upper(alga.DB_OFFICE_ID).eq(locationOfficeId.toUpperCase()));
         }
 
-        connectBy = onStep.where(condition);
+        DSLContext localDsl = DSL.using(config);
 
-        Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
-        connectBy.orderBy(alcg.LOC_CATEGORY_ID, alcg.LOC_GROUP_ID, alga.ATTRIBUTE)
-                .fetchSize(1000)  // This made the query go from 2 minutes to 10 seconds?
-                .stream().map(mapper::map).forEach(pair -> {
-                    LocationGroup locationGroup = pair.component1();
-                    List<AssignedLocation> list = map.computeIfAbsent(locationGroup, k -> new ArrayList<>());
-                    AssignedLocation assignedLocation = pair.component2();
-                    if (assignedLocation != null) {
-                        list.add(assignedLocation);
-                    }
-                });
+        SelectSeekStep2<Record10<String, String, String, String, String, String, BigDecimal,
+            String, String, List<AssignedLocation>>, String, String> query = localDsl
+            .select(
+                alcg.CAT_DB_OFFICE_ID,
+                alcg.LOC_CATEGORY_ID,
+                alcg.LOC_CATEGORY_DESC,
+                alcg.GRP_DB_OFFICE_ID,
+                alcg.LOC_GROUP_ID,
+                alcg.LOC_GROUP_DESC,
+                alcg.LOC_GROUP_ATTRIBUTE,
+                alcg.SHARED_LOC_ALIAS_ID,
+                alcg.SHARED_REF_LOCATION_ID,
+                DSL.multiset(
+                    localDsl.select(
+                            alga.DB_OFFICE_ID,
+                            alga.LOCATION_ID,
+                            alga.ALIAS_ID,
+                            alga.ATTRIBUTE,
+                            alga.REF_LOCATION_ID
+                        )
+                        .from(alga)
+                        .where(joinCondition)
+                ).convertFrom(rs -> rs.map(this::buildAssignedLocation))
+            )
+            .from(alcg)
+            .where(whereCondition)
+            .orderBy(alcg.LOC_CATEGORY_ID,
+                alcg.LOC_GROUP_ID);
 
-        List<LocationGroup> retVal = new ArrayList<>();
-        for (final Map.Entry<LocationGroup, List<AssignedLocation>> entry : map.entrySet()) {
-            retVal.add(new LocationGroup(entry.getKey(), entry.getValue()));
-        }
-        return retVal;
-
+        return query.fetch(mapToLocationGroup);
     }
 
     /**
@@ -321,79 +314,64 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     public List<LocationGroup> getLocationGroups(String locationOfficeId, String groupOfficeId, String categoryOfficeId,
             String locCategoryLike, String sharedRefLocLike) {
 
-        final RecordMapper<Record, Pair<LocationGroup, AssignedLocation>> mapper = grpRecord -> {
-            LocationCategory category = buildLocationCategory(grpRecord);
-
-            LocationGroup group = buildLocationGroup(grpRecord, category);
-            AssignedLocation loc = buildAssignedLocation(grpRecord);
-
-            return new Pair<>(group, loc);
-        };
-
         AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-        Condition condition = noCondition();
+        Condition whereCondition = noCondition();
+
         if (locCategoryLike != null && !locCategoryLike.isEmpty()) {
-            condition = caseInsensitiveLikeRegex(alcg.LOC_CATEGORY_ID, locCategoryLike);
+            whereCondition = caseInsensitiveLikeRegex(alcg.LOC_CATEGORY_ID, locCategoryLike);
         }
 
         if (categoryOfficeId != null) {
-            condition = condition.and(alcg.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
+            whereCondition = whereCondition.and(alcg.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
         }
 
         if (sharedRefLocLike != null && !sharedRefLocLike.isEmpty()) {
-            condition = condition.and(caseInsensitiveLikeRegex(alcg.SHARED_REF_LOCATION_ID, sharedRefLocLike));
+            whereCondition = whereCondition.and(caseInsensitiveLikeRegex(alcg.SHARED_REF_LOCATION_ID, sharedRefLocLike));
         }
 
-        condition = condition.and(alcg.LOC_GROUP_ID.isNotNull());
+        whereCondition = whereCondition.and(alcg.LOC_GROUP_ID.isNotNull());
 
-        SelectConnectByStep<? extends Record> connectBy;
-        SelectOnConditionStep<? extends Record> onStep = dsl.select(
-                    alcg.CAT_DB_OFFICE_ID,
-                    alcg.LOC_CATEGORY_ID,
-                    alcg.LOC_CATEGORY_DESC,
-                    alcg.GRP_DB_OFFICE_ID,
-                    alcg.LOC_GROUP_ID,
-                    alcg.LOC_GROUP_DESC,
-                    alcg.LOC_GROUP_ATTRIBUTE,
-                    alcg.SHARED_LOC_ALIAS_ID,
-                    alcg.SHARED_REF_LOCATION_ID,
-                    alga.DB_OFFICE_ID,
-                    alga.LOCATION_ID,
-                    alga.ALIAS_ID,
-                    alga.ATTRIBUTE,
-                    alga.REF_LOCATION_ID)
-            .from(alcg).leftJoin(alga)
-            .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
-                    .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
+        Condition joinCondition = alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
+            .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID));
 
         if (groupOfficeId != null) {
-            condition = condition.and(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(groupOfficeId.toUpperCase()));
+            whereCondition = whereCondition.and(DSL.upper(alcg.GRP_DB_OFFICE_ID).eq(groupOfficeId.toUpperCase()));
         } else if (locationOfficeId != null) {
-            condition = condition.and(DSL.upper(alga.DB_OFFICE_ID).eq(locationOfficeId.toUpperCase()));
+            joinCondition = joinCondition.and(DSL.upper(alga.DB_OFFICE_ID).eq(locationOfficeId.toUpperCase()));
         }
 
-        connectBy = onStep.where(condition);
+        SelectSeekStep2<Record10<String, String, String, String, String, String, BigDecimal,
+            String, String, List<AssignedLocation>>, String, String> query = dsl
+            .select(
+                alcg.CAT_DB_OFFICE_ID,
+                alcg.LOC_CATEGORY_ID,
+                alcg.LOC_CATEGORY_DESC,
+                alcg.GRP_DB_OFFICE_ID,
+                alcg.LOC_GROUP_ID,
+                alcg.LOC_GROUP_DESC,
+                alcg.LOC_GROUP_ATTRIBUTE,
+                alcg.SHARED_LOC_ALIAS_ID,
+                alcg.SHARED_REF_LOCATION_ID,
+                DSL.multiset(
+                    dsl.select(
+                            alga.DB_OFFICE_ID,
+                            alga.LOCATION_ID,
+                            alga.ALIAS_ID,
+                            alga.ATTRIBUTE,
+                            alga.REF_LOCATION_ID
+                        )
+                        .from(alga)
+                        .where(joinCondition)
+                ).convertFrom(rs -> rs.map(this::buildAssignedLocation))
+            )
+            .from(alcg)
+            .where(whereCondition)
+            .orderBy(alcg.LOC_CATEGORY_ID,
+                alcg.LOC_GROUP_ID);
 
-
-        Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
-        connectBy.orderBy(alcg.LOC_CATEGORY_ID, alcg.LOC_GROUP_ID, alga.ATTRIBUTE)
-                .fetchSize(DEFAULT_FETCH_SIZE)  // This made the query go from 2 minutes to 10 seconds?
-                .stream().map(mapper::map).forEach(pair -> {
-                    LocationGroup locationGroup = pair.component1();
-                    List<AssignedLocation> list = map.computeIfAbsent(locationGroup, k -> new ArrayList<>());
-                    AssignedLocation assignedLocation = pair.component2();
-                    if (assignedLocation != null) {
-                        list.add(assignedLocation);
-                    }
-                });
-
-        List<LocationGroup> retVal = new ArrayList<>();
-        for (final Map.Entry<LocationGroup, List<AssignedLocation>> entry : map.entrySet()) {
-            retVal.add(new LocationGroup(entry.getKey(), entry.getValue()));
-        }
-        return retVal;
+        return query.fetch(mapToLocationGroup);
     }
 
     /**
@@ -409,100 +387,84 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-        final RecordMapper<Record, Pair<LocationGroup, AssignedLocation>> mapper = grpRecord -> {
-            LocationCategory category = buildLocationCategory(grpRecord);
-
-            LocationGroup group = buildLocationGroup(grpRecord, category);
-            AssignedLocation loc = buildAssignedLocation(grpRecord);
-
-            return new Pair<>(group, loc);
-        };
-
-        Map<LocationGroup, List<AssignedLocation>> map = new LinkedHashMap<>();
-
-        SelectConnectByStep<? extends Record> connectBy;
-        SelectOnConditionStep<? extends Record> onStep = dsl.select(
-                        alcg.CAT_DB_OFFICE_ID,
-                        alcg.LOC_CATEGORY_ID,
-                        alcg.LOC_CATEGORY_DESC,
-                        alcg.GRP_DB_OFFICE_ID,
-                        alcg.LOC_GROUP_ID,
-                        alcg.LOC_GROUP_DESC,
-                        alcg.LOC_GROUP_ATTRIBUTE,
-                        alcg.SHARED_LOC_ALIAS_ID,
-                        alcg.SHARED_REF_LOCATION_ID,
-                        alga.DB_OFFICE_ID,
-                        alga.LOCATION_ID,
-                        alga.ALIAS_ID,
-                        alga.ATTRIBUTE,
-                        alga.REF_LOCATION_ID)
-                .from(alcg).leftJoin(alga)
-                .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
-                        .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)));
-
-
-        Condition condition = noCondition();
+        Condition whereCondition = noCondition();
         if (locCategoryLike != null && !locCategoryLike.isEmpty()) {
-            condition = caseInsensitiveLikeRegex(alcg.LOC_CATEGORY_ID, locCategoryLike);
+            whereCondition = caseInsensitiveLikeRegex(alcg.LOC_CATEGORY_ID, locCategoryLike);
         }
 
         if (categoryOfficeId != null) {
-            condition = condition.and(alcg.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
+            whereCondition = whereCondition.and(alcg.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
         }
+
+        Condition joinCondition = alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
+            .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID));
 
         if (locationOfficeId != null) {
             if (CWMS.equalsIgnoreCase(locationOfficeId)) {
-                connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.eq(CWMS)
+                whereCondition = whereCondition.and(alcg.CAT_DB_OFFICE_ID.eq(CWMS)
                         .and(alcg.GRP_DB_OFFICE_ID.eq(CWMS))
-                        .and(condition)
                 );
             } else {
                 if (groupOfficeId != null) {
-                    connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, locationOfficeId)
+                    whereCondition = whereCondition.and(alcg.CAT_DB_OFFICE_ID.in(CWMS, locationOfficeId)
                             .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, groupOfficeId))
-                            .and(alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(locationOfficeId)))
-                            .and(condition)
+
+                    );
+                    joinCondition = joinCondition.and(alga.DB_OFFICE_ID.isNull()
+                            .or(alga.DB_OFFICE_ID.eq(locationOfficeId))
                     );
                 } else {
-                    connectBy = onStep.where(alcg.CAT_DB_OFFICE_ID.in(CWMS, locationOfficeId)
-                            .and(alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(locationOfficeId)))
-                            .and(condition));
+                    whereCondition = whereCondition.and(alcg.CAT_DB_OFFICE_ID.in(CWMS, locationOfficeId));
+                    joinCondition = joinCondition.and(alga.DB_OFFICE_ID.isNull()
+                        .or(alga.DB_OFFICE_ID.eq(locationOfficeId))
+                    );
                 }
             }
         } else {
-            connectBy = onStep.where(alcg.LOC_GROUP_ID.isNotNull());
+            whereCondition = whereCondition.and(alcg.LOC_GROUP_ID.isNotNull());
         }
 
-        connectBy.orderBy(alcg.LOC_CATEGORY_ID, alcg.LOC_GROUP_ID, alga.ATTRIBUTE)
-                .fetchSize(1000)  // This made the query go from 2 minutes to 10 seconds?
-                .stream().map(mapper::map).forEach(pair -> {
-                    LocationGroup locationGroup = pair.component1();
-                    List<AssignedLocation> list = map.computeIfAbsent(locationGroup, k -> new ArrayList<>());
-                    AssignedLocation assignedLocation = pair.component2();
-                    if (assignedLocation != null) {
-                        list.add(assignedLocation);
-                    }
-                });
+        SelectSeekStep2<Record10<String, String, String, String, String, String, BigDecimal,
+            String, String, List<AssignedLocation>>, String, String> query = dsl
+            .select(
+                alcg.CAT_DB_OFFICE_ID,
+                alcg.LOC_CATEGORY_ID,
+                alcg.LOC_CATEGORY_DESC,
+                alcg.GRP_DB_OFFICE_ID,
+                alcg.LOC_GROUP_ID,
+                alcg.LOC_GROUP_DESC,
+                alcg.LOC_GROUP_ATTRIBUTE,
+                alcg.SHARED_LOC_ALIAS_ID,
+                alcg.SHARED_REF_LOCATION_ID,
+                DSL.multiset(
+                    dsl.select(
+                            alga.DB_OFFICE_ID,
+                            alga.LOCATION_ID,
+                            alga.ALIAS_ID,
+                            alga.ATTRIBUTE,
+                            alga.REF_LOCATION_ID
+                        )
+                        .from(alga)
+                        .where(joinCondition)
+                ).convertFrom(rs -> rs.map(this::buildAssignedLocation))
+            )
+            .from(alcg)
+            .where(whereCondition)
+            .orderBy(alcg.LOC_CATEGORY_ID,
+                alcg.LOC_GROUP_ID);
 
-        List<LocationGroup> retVal = new ArrayList<>();
-        for (final Map.Entry<LocationGroup, List<AssignedLocation>> entry : map.entrySet()) {
-            retVal.add(new LocationGroup(entry.getKey(), entry.getValue()));
-        }
-        return retVal;
+        return query.fetch(mapToLocationGroup);
     }
 
     private List<LocationGroup> getGroupsWithoutAssignedLocations(
             @Nullable String groupOfficeId, @Nullable String categoryOfficeId,
             @Nullable String locCategoryLike) {
-        List<LocationGroup> retVal;
         AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
         TableField[] columns = new TableField[]{table.CAT_DB_OFFICE_ID, table.LOC_CATEGORY_ID,
             table.LOC_CATEGORY_DESC, table.GRP_DB_OFFICE_ID, table.LOC_GROUP_ID,
             table.LOC_GROUP_DESC, table.SHARED_LOC_ALIAS_ID, table.SHARED_REF_LOCATION_ID,
             table.LOC_GROUP_ATTRIBUTE};
-
-        SelectJoinStep<Record> step = dsl.selectDistinct(columns).from(table);
 
         Condition condition = table.LOC_GROUP_ID.isNotNull();
         if (groupOfficeId != null && !groupOfficeId.isEmpty()) {
@@ -517,13 +479,13 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             condition = condition.and(caseInsensitiveLikeRegex(table.LOC_CATEGORY_ID, locCategoryLike));
         }
 
-        retVal = step.where(condition)
+        SelectJoinStep<Record> step = dsl.selectDistinct(columns).from(table);
+
+        return step.where(condition)
                 .orderBy(table.LOC_CATEGORY_ID, table.LOC_GROUP_ATTRIBUTE, table.LOC_GROUP_ID)
                 .fetchSize(1000)
                 .fetch()
-                .map(m -> buildLocationGroup(m, buildLocationCategory(m)));
-
-        return retVal;
+                .map(this::buildLocationGroup);
     }
 
     public Feature buildFeatureFromAvLocRecordWithLocGroup(Record avLocRecord) {
