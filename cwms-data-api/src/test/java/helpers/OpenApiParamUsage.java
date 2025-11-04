@@ -20,49 +20,30 @@
 
 package helpers;
 
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 
-public class OpenApiParamInfo {
-    private final String name;
-    private final boolean required;
-    private final Class<?> type;
+public class OpenApiParamUsage {
+    private final List<OpenApiParamUsageInfo> queryParams;
+    private final List<OpenApiParamUsageInfo> pathParams;
+    private final OpenApiParamUsageInfo resourceId;
 
-    public OpenApiParamInfo(String name, boolean required, Class<?> type) {
-        this.name = name;
-        this.required = required;
-        this.type = type;
+    public OpenApiParamUsage(List<OpenApiParamUsageInfo> pathParams, List<OpenApiParamUsageInfo> queryParams,
+                             OpenApiParamUsageInfo resourceId) {
+        this.pathParams = pathParams;
+        this.queryParams = queryParams;
+        this.resourceId = resourceId;
     }
 
-    public String getName() {
-        return name;
+    public List<OpenApiParamUsageInfo> getPathParams() {
+        return pathParams;
     }
 
-    public boolean isRequired() {
-        return required;
+    public List<OpenApiParamUsageInfo> getQueryParams() {
+        return queryParams;
     }
 
-    public Class<?> getType() {
-        return type;
-    }
-
-    @Override
-    public String toString() {
-        String req = required ? " (required)" : "";
-        String clazz = type != null ? type.getSimpleName() : "null";
-        return clazz + " " + name + req;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof OpenApiParamInfo)) {
-            return false;
-        }
-        OpenApiParamInfo that = (OpenApiParamInfo) o;
-        return Objects.equals(getName(), that.getName());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(getName());
+    public OpenApiParamUsageInfo getResourceId() {
+        return resourceId;
     }
 }

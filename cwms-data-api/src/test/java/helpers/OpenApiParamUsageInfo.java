@@ -22,10 +22,24 @@ package helpers;
 
 public class OpenApiParamUsageInfo {
     private final OpenApiParamInfo paramInfo;
-    private final boolean isUsed;
+    private final boolean used;
 
-    public OpenApiParamUsageInfo(OpenApiParamInfo paramInfo, boolean isUsed) {
+    public OpenApiParamUsageInfo(OpenApiParamInfo paramInfo, boolean used) {
         this.paramInfo = paramInfo;
-        this.isUsed = isUsed;
+        this.used = used;
+    }
+
+    public OpenApiParamInfo getParamInfo() {
+        return paramInfo;
+    }
+
+    public boolean isUsed() {
+        return used;
+    }
+
+    @Override
+    public String toString() {
+        String realUse = used ? "In use" : "Not Used";
+        return paramInfo + " - " + realUse;
     }
 }
