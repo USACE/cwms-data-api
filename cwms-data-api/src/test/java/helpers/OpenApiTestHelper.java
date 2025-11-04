@@ -37,11 +37,11 @@ public class OpenApiTestHelper {
     }
 
     public static OpenApiDocInfo readDocParams(Method m) {
-        OpenApiDocInfo info = new OpenApiDocInfo(m);
         OpenApi oa = m.getAnnotation(OpenApi.class);
         if (oa == null || oa.ignore()) {
-            return info;
+            return new OpenApiDocInfo(m, true);
         }
+        OpenApiDocInfo info = new OpenApiDocInfo(m, false);
         for (OpenApiParam p : oa.queryParams()) {
             if (p != null && !p.name().trim().isEmpty()) {
                 OpenApiParamInfo paramObj = new OpenApiParamInfo(p.name(), p.required(), p.type());

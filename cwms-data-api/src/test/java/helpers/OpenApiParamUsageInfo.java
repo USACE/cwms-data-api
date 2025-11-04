@@ -20,40 +20,12 @@
 
 package helpers;
 
-import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.Set;
+public class OpenApiParamUsageInfo {
+    private final OpenApiParamInfo paramInfo;
+    private final boolean isUsed;
 
-public class OpenApiDocInfo {
-    private final Method method;
-    private final Set<OpenApiParamInfo> queryParameters = new HashSet<>();
-    private final Set<OpenApiParamInfo> pathParameters = new HashSet<>();
-    private final boolean ignored;
-
-    public OpenApiDocInfo(Method method, boolean ignored) {
-        this.method = method;
-        this.ignored = ignored;
-    }
-
-    public Method getMethod() {
-        return method;
-    }
-
-    public Set<OpenApiParamInfo> getPathParameters() {
-        return pathParameters;
-    }
-
-    public Set<OpenApiParamInfo> getQueryParameters() {
-        return queryParameters;
-    }
-
-    public boolean isIgnored() {
-        return ignored;
-    }
-
-    @Override
-    public String toString() {
-        String temp = ignored ? " - Ignored" : "";
-        return method.getName() + temp;
+    public OpenApiParamUsageInfo(OpenApiParamInfo paramInfo, boolean isUsed) {
+        this.paramInfo = paramInfo;
+        this.isUsed = isUsed;
     }
 }
