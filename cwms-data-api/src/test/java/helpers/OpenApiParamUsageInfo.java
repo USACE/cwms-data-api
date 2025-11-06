@@ -23,10 +23,12 @@ package helpers;
 public class OpenApiParamUsageInfo {
     private final OpenApiParamInfo paramInfo;
     private final boolean used;
+    private final boolean nullHandled;
 
-    public OpenApiParamUsageInfo(OpenApiParamInfo paramInfo, boolean used) {
+    public OpenApiParamUsageInfo(OpenApiParamInfo paramInfo, boolean used, boolean nullHandled) {
         this.paramInfo = paramInfo;
         this.used = used;
+        this.nullHandled = nullHandled;
     }
 
     public OpenApiParamInfo getParamInfo() {
@@ -35,6 +37,10 @@ public class OpenApiParamUsageInfo {
 
     public boolean isUsed() {
         return used;
+    }
+
+    public boolean isNullHandled() {
+        return nullHandled;
     }
 
     @Override

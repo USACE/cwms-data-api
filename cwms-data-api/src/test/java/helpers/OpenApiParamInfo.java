@@ -23,7 +23,7 @@ package helpers;
 import java.util.Objects;
 
 public class OpenApiParamInfo {
-    private final String name;
+    private String name;
     private final boolean required;
     private final Class<?> type;
 
@@ -31,6 +31,11 @@ public class OpenApiParamInfo {
         this.name = name;
         this.required = required;
         this.type = type;
+    }
+
+    public OpenApiParamInfo setName(String name) {
+        this.name = name;
+        return this;
     }
 
     public String getName() {

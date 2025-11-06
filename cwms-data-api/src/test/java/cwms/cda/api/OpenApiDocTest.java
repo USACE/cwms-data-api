@@ -22,7 +22,6 @@ package cwms.cda.api;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.ClassExpr;
@@ -46,17 +45,17 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class OpenApiDocTest {
 
@@ -95,7 +94,7 @@ class OpenApiDocTest {
             output = testIgnoredMethod(unit, testInfo, clazz);
         } else {
             OpenApiParamUsage parsedParamInfo = parseParamInfo(unit, clazz, testInfo.getMethod());
-            output = testMethod(unit, testInfo, parsedParamInfo);
+            output = testMethod(testInfo, parsedParamInfo);
         }
         return output;
     }
@@ -118,30 +117,139 @@ class OpenApiDocTest {
         return () -> assertTrue(throwsException, clazz.getSimpleName() + "::" + testInfo.getMethod().getName() + " is marked as ignored, but does not throw an UnsupportedOperationException.");
     }
 
-    private Executable testMethod(CompilationUnit unit, OpenApiDocInfo testInfo,
+    private Executable testMethod(OpenApiDocInfo testInfo,
                                   OpenApiParamUsage parsedParamInfo) {
+        List<OpenApiParamInfo> expectedQueryParameters = testInfo.getQueryParameters();
+        List<OpenApiParamInfo> expectedPathParameters = testInfo.getPathParameters();
 
-        return () -> assertTrue(true);
+        List<OpenApiParamUsageInfo> receivedQueryParameters = parsedParamInfo.getQueryParams();
+        List<OpenApiParamUsageInfo> receivedPathParameters = parsedParamInfo.getPathParams();
+        OpenApiParamUsageInfo receivedResourceId = parsedParamInfo.getResourceId();
+        return () -> assertAll("Testing " + testInfo.getMethod().getName(), () -> testQueryParameters(expectedQueryParameters, receivedQueryParameters),
+                               () -> testPathParameters(expectedPathParameters, receivedPathParameters, receivedResourceId));
+    }
+
+    private void testPathParameters(List<OpenApiParamInfo> expectedPathParameters, List<OpenApiParamUsageInfo> receivedPathParameters,
+                                    OpenApiParamUsageInfo receivedResourceId) {
+        List<OpenApiParamUsageInfo> verifiedUsages = new ArrayList<>();
+        List<OpenApiParamInfo> expectedParams = new ArrayList<>();
+        List<OpenApiParamInfo> missingItems = new ArrayList<>();
+        List<OpenApiParamUsageInfo> receivedItems = new ArrayList<>(receivedPathParameters);
+
+        if (receivedResourceId != null) {
+            //Special case, equivalent to the last expectedPathParameters, but it can have an ambiguous name.
+            if (!expectedPathParameters.isEmpty()) {
+                String name = expectedPathParameters.get(expectedPathParameters.size() - 1).getName();
+                receivedResourceId.getParamInfo().setName(name);
+            }
+
+            receivedItems.add(receivedResourceId);
+        }
+
+        for (OpenApiParamInfo paramInfo : expectedPathParameters) {
+            OpenApiParamUsageInfo equivalent = null;
+            for (OpenApiParamUsageInfo paramUsage : receivedItems) {
+                if (paramUsage.getParamInfo().getName().equals(paramInfo.getName())) {
+                    equivalent = paramUsage;
+                    break;
+                }
+            }
+            if (equivalent == null) {
+                missingItems.add(paramInfo);
+            } else {
+                receivedItems.remove(equivalent);
+                verifiedUsages.add(equivalent);
+                expectedParams.add(paramInfo);
+            }
+        }
+
+        String extraInfo = receivedItems.stream()
+                                        .map(p -> p.getParamInfo().getName())
+                                        .collect(Collectors.joining(", "));
+        String missingInfo = missingItems.stream()
+                                         .map(OpenApiParamInfo::getName)
+                                         .collect(Collectors.joining(", "));
+        assertAll(() -> assertTrue(receivedItems.isEmpty(), "Found extra path parameters: " + extraInfo),
+                  () -> assertTrue(missingItems.isEmpty(), "Found missing path parameters: " + missingInfo),
+                  () -> assertAll(expectedParams.stream().map(expectedParam -> testParamInfo(expectedParam, verifiedUsages))));
+    }
+
+    private void testQueryParameters(List<OpenApiParamInfo> expectedQueryParameters,
+                                     List<OpenApiParamUsageInfo> receivedQueryParameters) {
+        List<OpenApiParamUsageInfo> verifiedUsages = new ArrayList<>();
+        List<OpenApiParamInfo> expectedParams = new ArrayList<>();
+        List<OpenApiParamInfo> missingItems = new ArrayList<>();
+        List<OpenApiParamUsageInfo> receivedItems = new ArrayList<>(receivedQueryParameters);
+
+        for (OpenApiParamInfo paramInfo : expectedQueryParameters) {
+            OpenApiParamUsageInfo equivalent = null;
+            for (OpenApiParamUsageInfo paramUsage : receivedItems) {
+                if (paramUsage.getParamInfo().getName().equals(paramInfo.getName())) {
+                    equivalent = paramUsage;
+                    break;
+                }
+            }
+            if (equivalent == null) {
+                missingItems.add(paramInfo);
+            } else {
+                receivedItems.remove(equivalent);
+                verifiedUsages.add(equivalent);
+                expectedParams.add(paramInfo);
+            }
+        }
+
+        String extraInfo = receivedItems.stream()
+                                          .map(p -> p.getParamInfo().getName())
+                                          .collect(Collectors.joining(", "));
+        String missingInfo = missingItems.stream()
+                                         .map(OpenApiParamInfo::getName)
+                                         .collect(Collectors.joining(", "));
+        assertAll(() -> assertTrue(receivedItems.isEmpty(), "Found extra query parameters: " + extraInfo),
+                  () -> assertTrue(missingItems.isEmpty(), "Found missing query parameters: " + missingInfo),
+                  () -> assertAll(expectedParams.stream().map(expectedParam -> testParamInfo(expectedParam, verifiedUsages))));
+    }
+
+    private Executable testParamInfo(OpenApiParamInfo expectedParam,
+                                     List<OpenApiParamUsageInfo> receivedQueryParameters) {
+        OpenApiParamUsageInfo receivedInfo = receivedQueryParameters.stream()
+                                                                    .filter(receivedUsageInfo -> receivedUsageInfo.getParamInfo()
+                                                                                                                                       .getName()
+                                                                                                                                       .equals(expectedParam.getName()))
+                                                                    .findFirst()
+                                                                    .orElse(null);
+        assertNotNull(receivedInfo, "Unable to find " + expectedParam.getName() + " in the code.");
+        return () -> assertAll(() -> assertTrue(receivedInfo.isUsed(), "Unable to find a usage of " + expectedParam.getName()),
+                               () -> assertTrue(receivedInfo.isNullHandled(), "Unable to find a null handled usage of " + expectedParam.getName()));
     }
 
     private OpenApiParamUsage parseParamInfo(CompilationUnit unit, Class<?> clazz, Method method) {
         MethodDeclaration methodDeclaration = getMethodDeclaration(unit, method);
 
         List<MethodCallExpr> methodCalls = methodDeclaration.findAll(MethodCallExpr.class);
-        List<OpenApiParamUsageInfo> optionalTypedQueryParams = methodCalls.stream()
-                                                                          .filter(call -> call.getNameAsString().equals("queryParamAsClass"))
-                                                                          .map(call -> readUsageFromCall(unit, clazz, call, false))
-                                                                          .collect(Collectors.toList());
+        List<OpenApiParamUsageInfo> optionalTypedQueryParams = readParamUsagesFromCall(methodCalls, call -> readUsageFromCall(unit, clazz, call, false), "queryParamAsClass");
 
         List<OpenApiParamUsageInfo> optionalStringQueryParams = methodCalls.stream()
-                                                                    .filter(call -> call.getNameAsString().equals("queryParam"))
-                                                                    .map(call -> readUsageFromCall(unit, clazz, call, false))
-                                                                    .collect(Collectors.toList());
+                                                                           .filter(call -> call.getNameAsString().equals("queryParam"))
+                                                                           .map(call -> readUsageFromCall(unit, clazz, call, false))
+                                                                           .collect(Collectors.toList());
 
         List<OpenApiParamUsageInfo> requiredQueryParams = methodCalls.stream()
-                                                              .filter(call -> call.getNameAsString().equals("requiredParam"))
-                                                              .map(call -> readUsageFromCall(unit, clazz, call, true))
-                                                              .collect(Collectors.toList());
+                                                                     .filter(call -> call.getNameAsString().equals("requiredParam"))
+                                                                     .map(call -> readUsageFromCall(unit, clazz, call, true))
+                                                                     .collect(Collectors.toList());
+
+        List<OpenApiParamUsageInfo> optionalTimeQueryParams = methodCalls.stream()
+                                                                         .filter(call -> call.getNameAsString().equals("queryParamAsInstant"))
+                                                                         .map(call -> readJavaTimeFromCall(unit, clazz, call, true))
+                                                                         .flatMap(List::stream)
+                                                                         .collect(Collectors.toList());
+
+        List<OpenApiParamUsageInfo> requiredTimeQueryParams = methodCalls.stream()
+                                                                         .filter(call -> call.getNameAsString().equals("requiredZdt"))
+                                                                         .map(call -> readJavaTimeFromCall(unit, clazz, call, true))
+                                                                         .flatMap(List::stream)
+                                                                         .collect(Collectors.toList());
+
         List<OpenApiParamUsageInfo> queryParams = new ArrayList<>(optionalStringQueryParams);
         queryParams.addAll(optionalTypedQueryParams);
         queryParams.addAll(requiredQueryParams);
@@ -162,10 +270,24 @@ class OpenApiDocTest {
             boolean isUsed = methodDeclaration.findAll(MethodCallExpr.class)
                                               .stream()
                                               .anyMatch(call -> call.toString().contains(paramId));
-            resourceId = new OpenApiParamUsageInfo(paramInfo, isUsed);
+            resourceId = new OpenApiParamUsageInfo(paramInfo, isUsed, true);
         }
 
-        return new OpenApiParamUsage(queryParams, pathParams, resourceId);
+        return new OpenApiParamUsage(pathParams, queryParams, resourceId);
+    }
+
+    private List<OpenApiParamUsageInfo> readParamUsagesFromCall(List<MethodCallExpr> methodCalls,
+                                                                Function<MethodCallExpr, OpenApiParamUsageInfo> paramReader,
+                                                                String... functions) {
+        List<String> realFunctions = Arrays.asList(functions);
+        return methodCalls.stream()
+                          .filter(call -> realFunctions.contains(call.getNameAsString()))
+                          .map(paramReader)
+                          .collect(Collectors.toList());
+    }
+
+    private List<OpenApiParamUsageInfo> readJavaTimeFromCall(CompilationUnit unit, Class<?> clazz, MethodCallExpr call, boolean required) {
+        return new ArrayList<>();
     }
 
     private OpenApiParamUsageInfo readUsageFromCall(CompilationUnit unit, Class<?> clazz, MethodCallExpr call, boolean required) {
@@ -181,11 +303,25 @@ class OpenApiDocTest {
                 paramClass = identifyClassFromExpression(unit, clazz, argument);
             }
             boolean used = true;
-            return new OpenApiParamUsageInfo(new OpenApiParamInfo(paramName, required, paramClass), used);
+            boolean nullHandled = true;
+            if (!required) {
+                //Check if null is handled via orDefault
+            }
+            return new OpenApiParamUsageInfo(new OpenApiParamInfo(paramName, required, paramClass), used, nullHandled);
         }).orElseGet(() -> {
-            //It's calling a function, so most likely argument 1 is the identifier, argument 0 is probably context.
+            //It's calling a function, so most likely argument 0 is context, argument 1 is the identifier, and argument 2 is class.
             String paramName = parseParameterName(call.getArgument(1));
-            return new OpenApiParamUsageInfo(new OpenApiParamInfo(paramName, required, String.class), true);
+            Class<?> paramClass = String.class;
+            if (call.getArguments().size() > 2) {
+                ClassExpr argument = call.getArgument(2).asClassExpr();
+                paramClass = identifyClassFromExpression(unit, clazz, argument);
+            } else if (call.getNameAsString().endsWith("AsDouble")) {
+                paramClass = Double.class;
+            } else if (call.getNameAsString().endsWith("AsString")) {
+                paramClass = String.class;
+            }
+            boolean nullHandled = true;
+            return new OpenApiParamUsageInfo(new OpenApiParamInfo(paramName, required, paramClass), true, nullHandled);
         });
     }
 

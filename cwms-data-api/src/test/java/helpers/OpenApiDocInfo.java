@@ -21,13 +21,13 @@
 package helpers;
 
 import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 public class OpenApiDocInfo {
     private final Method method;
-    private final Set<OpenApiParamInfo> queryParameters = new HashSet<>();
-    private final Set<OpenApiParamInfo> pathParameters = new HashSet<>();
+    private final List<OpenApiParamInfo> queryParameters = new ArrayList<>();
+    private final List<OpenApiParamInfo> pathParameters = new ArrayList<>();
     private final boolean ignored;
 
     public OpenApiDocInfo(Method method, boolean ignored) {
@@ -39,11 +39,11 @@ public class OpenApiDocInfo {
         return method;
     }
 
-    public Set<OpenApiParamInfo> getPathParameters() {
+    public List<OpenApiParamInfo> getPathParameters() {
         return pathParameters;
     }
 
-    public Set<OpenApiParamInfo> getQueryParameters() {
+    public List<OpenApiParamInfo> getQueryParameters() {
         return queryParameters;
     }
 
