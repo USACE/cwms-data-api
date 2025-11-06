@@ -36,10 +36,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import kotlin.Pair;
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
@@ -91,13 +89,6 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
-        final RecordMapper<Record, Pair<LocationGroup, AssignedLocation>> mapper = grpRecord -> {
-            LocationGroup group = buildLocationGroup(grpRecord);
-            AssignedLocation loc = buildAssignedLocation(grpRecord);
-
-            return new Pair<>(group, loc);
-        };
-
         Condition assignmentOffice;
         if (CWMS.equalsIgnoreCase(officeId)) {
             assignmentOffice = DSL.noCondition();
@@ -105,43 +96,46 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             assignmentOffice = alga.DB_OFFICE_ID.isNull().or(alga.DB_OFFICE_ID.eq(officeId));
         }
 
-        List<Pair<LocationGroup, AssignedLocation>> assignments = dsl.select(
-                    alcg.CAT_DB_OFFICE_ID,
-                    alcg.LOC_CATEGORY_ID,
-                    alcg.LOC_CATEGORY_DESC,
-                    alcg.GRP_DB_OFFICE_ID,
-                    alcg.LOC_GROUP_ID,
-                    alcg.LOC_GROUP_DESC,
-                    alcg.LOC_GROUP_ATTRIBUTE,
-                    alcg.SHARED_LOC_ALIAS_ID,
-                    alcg.SHARED_REF_LOCATION_ID,
-                    alga.DB_OFFICE_ID,
-                    alga.LOCATION_ID,
-                    alga.ALIAS_ID,
-                    alga.ATTRIBUTE,
-                    alga.REF_LOCATION_ID)
-            .from(alcg).leftJoin(alga)
-            .on(alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
-                    .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)))
-            .where(alcg.LOC_CATEGORY_ID.eq(categoryId)
-                    .and(alcg.LOC_GROUP_ID.eq(groupId))
-                    .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
-                    .and(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId))
-                    .and(assignmentOffice)
+        Condition whereCondition = alcg.LOC_CATEGORY_ID.eq(categoryId)
+            .and(alcg.LOC_GROUP_ID.eq(groupId))
+            .and(alcg.GRP_DB_OFFICE_ID.in(CWMS, officeId))
+            .and(alcg.CAT_DB_OFFICE_ID.in(CWMS, officeId));
+
+        Condition joinCondition = alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
+            .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID)).and(assignmentOffice);
+
+        SelectSeekStep2<Record10<String, String, String, String, String, String, BigDecimal,
+            String, String, List<AssignedLocation>>, String, String> query = dsl
+            .select(
+                alcg.CAT_DB_OFFICE_ID,
+                alcg.LOC_CATEGORY_ID,
+                alcg.LOC_CATEGORY_DESC,
+                alcg.GRP_DB_OFFICE_ID,
+                alcg.LOC_GROUP_ID,
+                alcg.LOC_GROUP_DESC,
+                alcg.LOC_GROUP_ATTRIBUTE,
+                alcg.SHARED_LOC_ALIAS_ID,
+                alcg.SHARED_REF_LOCATION_ID,
+                DSL.multiset(
+                    dsl.select(
+                            alga.DB_OFFICE_ID,
+                            alga.LOCATION_ID,
+                            alga.ALIAS_ID,
+                            alga.ATTRIBUTE,
+                            alga.REF_LOCATION_ID
+                        )
+                        .from(alga)
+                        .where(joinCondition)
+                        .orderBy(alga.ATTRIBUTE)
+                ).convertFrom(rs -> rs.map(this::buildAssignedLocation))
             )
-            .orderBy(alga.ATTRIBUTE).fetchSize(DEFAULT_FETCH_SIZE).fetch(mapper);
+            .from(alcg)
+            .where(whereCondition)
+            .orderBy(alcg.LOC_CATEGORY_ID,
+                alcg.LOC_GROUP_ID);
 
-        // Might want to verify that all the groups in the list are the same?
-        LocationGroup locGroup =
-                assignments.stream().map(Pair::component1).findFirst().orElse(null);
+        LocationGroup locGroup = query.fetchSize(DEFAULT_FETCH_SIZE).fetchOne(mapToLocationGroup);
 
-        if (locGroup != null) {
-            List<AssignedLocation> assignedLocations = assignments.stream()
-                .map(Pair::component2)
-                .filter(Objects::nonNull)
-                .collect(toList());
-            locGroup = new LocationGroup(locGroup, assignedLocations);
-        }
         return Optional.ofNullable(locGroup);
     }
 
@@ -274,6 +268,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                         )
                         .from(alga)
                         .where(joinCondition)
+                        .orderBy(alga.ATTRIBUTE)
                 ).convertFrom(rs -> rs.map(this::buildAssignedLocation))
             )
             .from(alcg)
@@ -314,7 +309,6 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     public List<LocationGroup> getLocationGroups(String locationOfficeId, String groupOfficeId, String categoryOfficeId,
             String locCategoryLike, String sharedRefLocLike) {
 
-        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
         AV_LOC_CAT_GRP alcg = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
         Condition whereCondition = noCondition();
@@ -332,6 +326,8 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         }
 
         whereCondition = whereCondition.and(alcg.LOC_GROUP_ID.isNotNull());
+
+        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
 
         Condition joinCondition = alcg.LOC_CATEGORY_ID.eq(alga.CATEGORY_ID)
             .and(alcg.LOC_GROUP_ID.eq(alga.GROUP_ID));
@@ -364,6 +360,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                         )
                         .from(alga)
                         .where(joinCondition)
+                        .orderBy(alga.ATTRIBUTE)
                 ).convertFrom(rs -> rs.map(this::buildAssignedLocation))
             )
             .from(alcg)
@@ -446,6 +443,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                         )
                         .from(alga)
                         .where(joinCondition)
+                        .orderBy(alga.ATTRIBUTE)
                 ).convertFrom(rs -> rs.map(this::buildAssignedLocation))
             )
             .from(alcg)
