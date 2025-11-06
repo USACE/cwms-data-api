@@ -681,6 +681,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // 2)Create the binary time series with a large binary value
         // 3)Retrieve the binary time series and assert that it gives me back a new url to retrieve with
         // 4)Retrieve the single value from the new url
+        // 5)Delete the binary time series
 
         // Step 1)
         // Retrieve a binary time series and assert that it does not exist
@@ -793,6 +794,26 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             }
             assertArrayEquals(LARGE_BYTES, buffer.toByteArray());
         }
+
+        // Step 5)
+        // Delete the binary time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, OFFICE)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.BEGIN, BEGIN_STR)
+            .queryParam(Controllers.END, END_STR)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .delete("/timeseries/binary/" + tsId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
 }
