@@ -28,6 +28,16 @@ The header, Accept, informs the API what format, or formats, we are willing to a
 
 
 
+Opinion 2
+
+Summary: Remove data versioning in all endpoints.
+
+@adamkorynta 
+
+The accept/content-type headers have provided sufficient confusion to downstream clients and deviate from industry standards. I have yet to see an endpoint where this versioning solves the proposed problem of needing to different shapes of data (other than json vs xml). The concept was introduced to solve the straight-to-db queries, which did not have any OpenAPI documentation moving to in-app DTO's which now have documentation. When moving away from the straight-to-db queries, we needed to thoroughly expand queries parameters and make other backwards-incompatible changes unrelated to the data shape. Given that context in hindsight a path version would have worked better.
+
+The closest we've gotten to needing new shapes on the same endpoint is the data-entry date on TimeSeries, but this was more appropriately solved via query parameter and data arrays. I think if we had really wanted to be a stickler on the "what format" we could have easily added another endpoint path instead. Even if/when we add text annotations, using a content type is obtuse given the lack of discoverability as we would then need `application/json`, `application/json+data-entry+text-annotations`, `application/json+text-annotations`, `application/json+data-entry` which seems like just another type of bloat that is more hidden from clients.
+
 Decision Status
 ---------------
 

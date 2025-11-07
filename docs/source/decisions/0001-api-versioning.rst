@@ -26,6 +26,13 @@ While we can automate SemVer it is an additional step.
 With Calendar Versioning automation tools can just pick the current date when appropriately triggered,
 perhaps by merged into a particular branch.
 
+@adamkorynta 
+
+ Summary: Calendar versioning more directly aligns with consumers needs
+ 
+Deprecation, desupport, and removal notices usually involve timelines rather than predicting x number of major/minor releases into the future.
+ 
+Given the endpoints themselves are already versioned, following semver becomes obtuse with only a real use-case of structural changes such as supported JDK changes, etc. 
 
 Opinion 2 Users
 ---------------

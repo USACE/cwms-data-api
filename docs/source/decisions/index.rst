@@ -7,7 +7,7 @@ Overview
 ========
 
 
-Below are agree upon decision choices regarding the usage of the API.
+Below are agreed upon decision choices regarding the usage of the API.
 Please note that certain decisions may be agreed upon before implementation. 
 Whether or not a particular choice is implemented will be marked for each decision record.
 

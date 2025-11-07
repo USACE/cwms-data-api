@@ -11,7 +11,7 @@ is required.
 
 The API as a whole will retain the calendar based versioning for formal releases.
 Data *SHOULD* be versioned, if appropriate/needed, with otherwise backwards compatible changes to query parameters.
-Endpoints will be places under a new "api version" for backwards incompatible or confusing parameter changes.
+Endpoints will be placed under a new "api version" for backwards incompatible or confusing parameter changes.
 
 e.g.
 
@@ -50,7 +50,7 @@ Author MikeNeilson, on behalf of others
 
 We have failed to properly handle existing usages while attempting to improve the overall design of the api
 and have been breaking various downstream usages due to the confusion. Allowing the endpoints to be versioned allows
-an easier time keeping existing behavior while at allowing more drastic improvements in usages to happen.
+an easier time keeping existing behavior while also allowing more drastic improvements in usages to happen.
 
 Decision Status
 ===============

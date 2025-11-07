@@ -14,7 +14,7 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Each data time should support it's own /catalog end point.
+Summary: Each data type should support it's own /catalog end point.
 
 @MikeNeilson
 
@@ -37,7 +37,7 @@ Summary: Each datatype under "catalog" should be a full path"
 If it makes sense to group all catalogs under catalog, perhaps for grouping in the SWAGGER-UI, making each catalog it's own
 path under `/catalog` instead of the current path parameter is a better approach.
 
-We would maintain the grouping, but each catalog can have it's appropriate search criteria.
+We would maintain the grouping, but each catalog can have its appropriate search criteria.
 
 Decision Status
 ===============
