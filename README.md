@@ -52,7 +52,7 @@ This will compile the jar and run the basic unit tests.
 
 ## Development stack
 
-See the README.docker-compose.md for instructions using the docker-compose environment
+See the docker-compose.README.md for instructions using the docker-compose environment
 
 ## Testing
 
