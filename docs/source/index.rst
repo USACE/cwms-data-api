@@ -13,9 +13,26 @@ Welcome to CWMS Data API documentation!
    :maxdepth: 2
    :caption: Introduction
    
-   Overview <./introduction/overview.rst>
-   Design <./introduction/design.rst>
+   Introduction <./introduction/index.rst>
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API Reference
+
    Endpoints <./endpoints/index.rst>
+   Endpoint Parameters <./parameters/index.rst>
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Data
+
+   Data <./data/index.rst>
+
+.. toctree::
+   :maxdepth: 2
+   :caption: References
+
    Glossary <./glossary.rst>
    FAQ <./faq.rst>
-   Client Libraries <./libraries.rst>
+   Client Libraries <libraries/index.rst>
+   RFCs <./rfc/index.rst>

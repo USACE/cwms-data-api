@@ -1,9 +1,9 @@
-###############
-Endpoints Index
-###############
+Endpoints
+============
 
 .. toctree::
    :maxdepth: 2
-   :caption: Introduction
-   
-   Authorization <./authorization.rst>
+   :caption: Endpoints
+
+    Time Series Endpoints <timeSeries_endpoints/index.rst>
+    Authorization <./authorization.rst>
