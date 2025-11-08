@@ -1,2 +1,18 @@
 sphinx
 sphinx_rtd_theme
+
+# Optional extra theme kept out to reduce deps on RTD
+# pydata-sphinx-theme
+
+# Useful Sphinx extensions actually used by this project
+sphinx-design
+sphinx-copybutton
+sphinx-tabs
+myst-parser
+sphinxcontrib-mermaid>=0.9
+
+# Remove deprecated/unnecessary packages for RTD build
+# sphinxcontrib-napoleon  # use built-in sphinx.ext.napoleon instead
+# sphinxcontrib-bibtex    # not used currently
+# sphinx-mathjax          # not used currently
+# sphinx-autobuild        # dev-only; not needed on RTD

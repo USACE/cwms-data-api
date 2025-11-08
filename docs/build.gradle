@@ -1,0 +1,67 @@
+plugins {
+    id 'base'
+}
+
+// Determine OS
+def isWindows = {
+    System.getProperty('os.name').toLowerCase().contains('win')
+}
+
+// Flags and commands
+final def noDocs = project.findProperty('no.docs')?.toString()?.toBoolean() ?: false
+final def pythonCmd = isWindows() ? 'python.exe' : 'python3'
+
+// Config for publishing docs
+configurations {
+    docs {
+        canBeConsumed = true
+        canBeResolved = false
+    }
+}
+
+// Install Sphinx requirements using system Python (no venv)
+tasks.register('installReqs', Exec) { t ->
+    t.executable = pythonCmd
+    t.args '-m', 'pip', 'install', '-r', new File(projectDir, 'requirements.txt').absolutePath
+    t.workingDir = projectDir
+    t.inputs.file(new java.io.File(projectDir, 'requirements.txt'))
+    // Up-to-date marker
+    def marker = new java.io.File(buildDir, 'pip-install.marker')
+    t.outputs.file(marker)
+    doLast {
+        marker.parentFile.mkdirs()
+        marker.text = "installed at ${new java.util.Date()}\n"
+    }
+    t.onlyIf { !noDocs }
+}
+
+// Build HTML via `python -m sphinx`
+tasks.register('buildDocsHtml', Exec) { t ->
+    t.dependsOn 'installReqs'
+    t.executable = pythonCmd
+    t.args '-m', 'sphinx', '-W', '-b', 'html', 'source', new java.io.File(buildDir, 'html').absolutePath
+    t.workingDir = projectDir
+    environment 'SPHINXOPTS', (System.getenv('SPHINXOPTS') ?: '') + ' -n'
+
+    t.inputs.files(fileTree('source'))
+            .withPropertyName('sourceFiles')
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+    t.outputs.dir(new File(buildDir, 'html'))
+
+    t.onlyIf {
+        if (noDocs) {
+            logger.lifecycle('Docs generation disabled via -Pno.docs=true')
+            return false
+        }
+        true
+    }
+}
+
+// Aggregate
+tasks.register('buildDocs') {
+    dependsOn 'buildDocsHtml'
+}
+
+artifacts {
+    docs(file("${buildDir}/html")) { builtBy(tasks.named('buildDocs')) }
+}
