@@ -89,20 +89,17 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     public Optional<LocationGroup> getLocationGroup(@NotNull String officeId, @NotNull String categoryId,
                                                     @NotNull String groupId) {
 
-        Condition assignmentOffice;
+        Condition joinCondition;
         if (CWMS.equalsIgnoreCase(officeId)) {
-            assignmentOffice = DSL.noCondition();
+            joinCondition = DSL.noCondition();
         } else {
-            assignmentOffice = groupAssignView.DB_OFFICE_ID.isNull().or(groupAssignView.DB_OFFICE_ID.eq(officeId));
+            joinCondition = groupAssignView.DB_OFFICE_ID.isNull().or(groupAssignView.DB_OFFICE_ID.eq(officeId));
         }
 
         Condition whereCondition = catGroupView.LOC_CATEGORY_ID.eq(categoryId)
             .and(catGroupView.LOC_GROUP_ID.eq(groupId))
             .and(catGroupView.GRP_DB_OFFICE_ID.in(CWMS, officeId))
             .and(catGroupView.CAT_DB_OFFICE_ID.in(CWMS, officeId));
-
-        Condition joinCondition = catGroupView.LOC_CATEGORY_ID.eq(groupAssignView.CATEGORY_ID)
-            .and(catGroupView.LOC_GROUP_ID.eq(groupAssignView.GROUP_ID)).and(assignmentOffice);
 
         LocationGroup locGroup = buildQuery(whereCondition, joinCondition)
                 .fetchSize(DEFAULT_FETCH_SIZE)
@@ -112,15 +109,13 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     }
 
     private AssignedLocation buildAssignedLocation(Record resultRecord) {
-        AV_LOC_GRP_ASSGN alga = AV_LOC_GRP_ASSGN.AV_LOC_GRP_ASSGN;
+        String locationId = resultRecord.get(groupAssignView.LOCATION_ID);
+        String officeId = resultRecord.get(groupAssignView.DB_OFFICE_ID);
 
-        String locationId = resultRecord.get(alga.LOCATION_ID);
-        String officeId = resultRecord.get(alga.DB_OFFICE_ID);
+        String aliasId = resultRecord.get(groupAssignView.ALIAS_ID);
+        Number attribute = resultRecord.get(groupAssignView.ATTRIBUTE);
 
-        String aliasId = resultRecord.get(alga.ALIAS_ID);
-        Number attribute = resultRecord.get(alga.ATTRIBUTE);
-
-        String refLocationId = resultRecord.get(alga.REF_LOCATION_ID);
+        String refLocationId = resultRecord.get(groupAssignView.REF_LOCATION_ID);
 
         if (locationId == null) {
             return null;
@@ -159,6 +154,12 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     private SelectSeekStep2<Record10<String, String, String, String, String, String, BigDecimal,
         String, String, List<AssignedLocation>>, String, String> buildQuery(Condition whereCondition,
             Condition joinCondition, DSLContext localDslContext) {
+
+        // default join condition
+        joinCondition = joinCondition.and(catGroupView.LOC_CATEGORY_ID.eq(groupAssignView.CATEGORY_ID)
+            .and(catGroupView.LOC_GROUP_ID.eq(groupAssignView.GROUP_ID))
+            .and(catGroupView.CAT_DB_OFFICE_ID.eq(groupAssignView.CATEGORY_OFFICE_ID))
+            .and(catGroupView.GRP_DB_OFFICE_ID.eq(groupAssignView.GROUP_OFFICE_ID)));
 
         return localDslContext
             .select(
@@ -241,8 +242,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
         whereCondition = whereCondition.and(catGroupView.LOC_GROUP_ID.isNotNull());
 
-        Condition joinCondition = catGroupView.LOC_CATEGORY_ID.eq(groupAssignView.CATEGORY_ID)
-            .and(catGroupView.LOC_GROUP_ID.eq(groupAssignView.GROUP_ID));
+        Condition joinCondition = noCondition();
 
         if (groupOfficeId != null) {
             whereCondition = whereCondition
@@ -305,8 +305,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
         whereCondition = whereCondition.and(catGroupView.LOC_GROUP_ID.isNotNull());
 
-        Condition joinCondition = catGroupView.LOC_CATEGORY_ID.eq(groupAssignView.CATEGORY_ID)
-            .and(catGroupView.LOC_GROUP_ID.eq(groupAssignView.GROUP_ID));
+        Condition joinCondition = noCondition();
 
         if (groupOfficeId != null) {
             whereCondition = whereCondition
@@ -340,8 +339,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             whereCondition = whereCondition.and(catGroupView.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
         }
 
-        Condition joinCondition = catGroupView.LOC_CATEGORY_ID.eq(groupAssignView.CATEGORY_ID)
-            .and(catGroupView.LOC_GROUP_ID.eq(groupAssignView.GROUP_ID));
+        Condition joinCondition = noCondition();
 
         if (locationOfficeId != null) {
             if (CWMS.equalsIgnoreCase(locationOfficeId)) {
