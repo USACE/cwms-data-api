@@ -1,13 +1,11 @@
 package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.*;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
+import static io.restassured.internal.common.assertion.AssertParameter.notNull;
+import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -15,7 +13,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.ApiServlet;
+import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.ZoneIdHelper;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
@@ -31,9 +31,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import io.restassured.response.ValidatableResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matchers;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -84,7 +86,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .header("Authorization",user.toHeaderValue())
                 .queryParam(OFFICE,officeId)
                 .queryParam(UNIT,"cfs")
                 .queryParam(NAME,ts.get(NAME).asText())
@@ -152,7 +153,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT,"F")
             .queryParam(NAME, ts.get(NAME).asText())
@@ -252,7 +252,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT, "F")
             .queryParam(NAME, ts.get(NAME).asText())
@@ -317,7 +316,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.DEFAULT)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT, "F")
             .queryParam(NAME, ts.get(NAME).asText())
@@ -400,7 +398,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT, "F")
             .queryParam(NAME, ts.get(NAME).asText())
@@ -427,7 +424,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT, "F")
             .queryParam(NAME, ts.get(NAME).asText())
@@ -510,7 +506,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT, "F")
             .queryParam(NAME, ts.get(NAME).asText())
@@ -538,7 +533,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT, "F")
             .queryParam(NAME, ts.get(NAME).asText())
@@ -638,7 +632,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
                 .queryParam("office", officeId)
                 .queryParam("units",units)
                 .queryParam("name", ts.get("name").asText())
@@ -720,7 +713,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
                 .queryParam("office", officeId)
                 .queryParam("units",units)
                 .queryParam("name", ts.get("name").asText())
@@ -796,7 +788,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
-        // inserting the time series
+        // insert the time series
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -821,7 +813,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         ExtractableResponse<Response> response = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT, "CFS")
             .queryParam(NAME, ts.get(NAME).asText())
@@ -848,7 +839,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT, "CFS")
             .queryParam(NAME, ts.get(NAME).asText())
@@ -907,7 +897,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
                 .queryParam(Controllers.OFFICE, officeId)
                 .queryParam(Controllers.UNITS, "CFS")
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
@@ -930,7 +919,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
        given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
                 .queryParam(Controllers.OFFICE, officeId)
                 .queryParam(Controllers.UNIT, "CFS")
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
@@ -953,7 +941,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
        given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
                 .queryParam(Controllers.OFFICE, officeId)
                 .queryParam(Controllers.UNITS, "EN")
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
@@ -1071,7 +1058,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT, "F")
             .queryParam(NAME, ts.get(NAME).asText())
@@ -1309,7 +1295,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, officeId)
                 .queryParam(UNIT, "F")
                 .queryParam(NAME, ts.get(NAME).asText())
@@ -1335,7 +1320,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, officeId)
                 .queryParam(UNIT, "F")
                 .queryParam(NAME, ts.get(NAME).asText())
@@ -1411,7 +1395,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, officeId)
                 .queryParam(UNIT, "m2")
                 .queryParam(NAME, ts.get(NAME).asText())
@@ -1432,14 +1415,13 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .body("values[1][0]", equalTo(1675335600000L)) // time
                 .body("values[0][1]", nullValue())
                 .body("values[1][1]", closeTo(35, 0.0001))
-                .body("values[1][3]", Matchers.notNullValue()); // data entry date
+                .body("values[1][3]", notNullValue()); // data entry date
 
             // with trim the null should get trimmed.
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
                 .queryParam(OFFICE, officeId)
                 .queryParam(UNIT, "m2")
                 .queryParam(NAME, ts.get(NAME).asText())
@@ -1613,7 +1595,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT,"mm")
             .queryParam(NAME, name)
@@ -1636,7 +1617,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT,"mm")
             .queryParam(NAME, name)
@@ -1719,7 +1699,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT, "F")
             .queryParam(NAME, ts.get(NAME).asText())
@@ -1733,6 +1712,8 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
         ;
     }
+
+
 
     @Test
     void test_wrong_units() throws Exception {
@@ -1775,7 +1756,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, officeId)
             .queryParam(Controllers.UNIT, "m")
             .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
