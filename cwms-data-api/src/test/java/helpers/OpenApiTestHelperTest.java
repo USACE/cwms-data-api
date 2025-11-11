@@ -1,5 +1,6 @@
 package helpers;
 
+import cwms.cda.api.Controllers;
 import cwms.cda.api.OfficeController;
 import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.auth.users.UsersController;
@@ -28,8 +29,8 @@ class OpenApiTestHelperTest {
         OpenApiDocInfo info = OpenApiTestHelper.readDocParams(m);
         assertNotNull(info);
         assertEquals(2, info.getQueryParameters().size());
-        assertTrue(info.getQueryParameters().contains("format"));
-        assertTrue(info.getQueryParameters().contains("has-data"));
+        assertTrue(info.getQueryParameters().contains(new OpenApiParamInfo(Controllers.FORMAT, false, String.class)));
+        assertTrue(info.getQueryParameters().contains(new OpenApiParamInfo(Controllers.HAS_DATA, false, String.class)));
 
         assertEquals(0, info.getPathParameters().size());
 
