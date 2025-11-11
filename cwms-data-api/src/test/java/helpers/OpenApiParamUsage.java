@@ -20,30 +20,46 @@
 
 package helpers;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 public class OpenApiParamUsage {
-    private final List<OpenApiParamUsageInfo> queryParams;
-    private final List<OpenApiParamUsageInfo> pathParams;
+    private final Set<OpenApiParamUsageInfo> queryParams;
+    private final Set<OpenApiParamUsageInfo> pathParams;
     private final OpenApiParamUsageInfo resourceId;
 
-    public OpenApiParamUsage(List<OpenApiParamUsageInfo> pathParams, List<OpenApiParamUsageInfo> queryParams,
+    public OpenApiParamUsage(Set<OpenApiParamUsageInfo> pathParams, Set<OpenApiParamUsageInfo> queryParams,
                              OpenApiParamUsageInfo resourceId) {
         this.pathParams = pathParams;
         this.queryParams = queryParams;
         this.resourceId = resourceId;
     }
 
-    public List<OpenApiParamUsageInfo> getPathParams() {
+    public Set<OpenApiParamUsageInfo> getPathParams() {
         return pathParams;
     }
 
-    public List<OpenApiParamUsageInfo> getQueryParams() {
+    public Set<OpenApiParamUsageInfo> getQueryParams() {
         return queryParams;
     }
 
     public OpenApiParamUsageInfo getResourceId() {
         return resourceId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof OpenApiParamUsage)) {
+            return false;
+        }
+        OpenApiParamUsage that = (OpenApiParamUsage) o;
+        return Objects.equals(getQueryParams(), that.getQueryParams()) && Objects.equals(getPathParams(),
+                                                                                         that.getPathParams()) && Objects.equals(
+                getResourceId(), that.getResourceId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getQueryParams(), getPathParams(), getResourceId());
     }
 }

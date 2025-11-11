@@ -20,6 +20,8 @@
 
 package helpers;
 
+import java.util.Objects;
+
 public class OpenApiParamUsageInfo {
     private final OpenApiParamInfo paramInfo;
     private final boolean used;
@@ -47,5 +49,19 @@ public class OpenApiParamUsageInfo {
     public String toString() {
         String realUse = used ? "In use" : "Not Used";
         return paramInfo + " - " + realUse;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof OpenApiParamUsageInfo)) {
+            return false;
+        }
+        OpenApiParamUsageInfo that = (OpenApiParamUsageInfo) o;
+        return Objects.equals(getParamInfo(), that.getParamInfo());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getParamInfo());
     }
 }

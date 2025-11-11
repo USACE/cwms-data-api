@@ -46,7 +46,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -122,14 +124,15 @@ class OpenApiDocTest {
         List<OpenApiParamInfo> expectedQueryParameters = testInfo.getQueryParameters();
         List<OpenApiParamInfo> expectedPathParameters = testInfo.getPathParameters();
 
-        List<OpenApiParamUsageInfo> receivedQueryParameters = parsedParamInfo.getQueryParams();
-        List<OpenApiParamUsageInfo> receivedPathParameters = parsedParamInfo.getPathParams();
+        Set<OpenApiParamUsageInfo> receivedQueryParameters = parsedParamInfo.getQueryParams();
+        Set<OpenApiParamUsageInfo> receivedPathParameters = parsedParamInfo.getPathParams();
         OpenApiParamUsageInfo receivedResourceId = parsedParamInfo.getResourceId();
-        return () -> assertAll("Testing " + testInfo.getMethod().getName(), () -> testQueryParameters(expectedQueryParameters, receivedQueryParameters),
+        return () -> assertAll("Testing " + testInfo.getMethod().getName(),
+                               () -> testQueryParameters(expectedQueryParameters, receivedQueryParameters),
                                () -> testPathParameters(expectedPathParameters, receivedPathParameters, receivedResourceId));
     }
 
-    private void testPathParameters(List<OpenApiParamInfo> expectedPathParameters, List<OpenApiParamUsageInfo> receivedPathParameters,
+    private void testPathParameters(List<OpenApiParamInfo> expectedPathParameters, Set<OpenApiParamUsageInfo> receivedPathParameters,
                                     OpenApiParamUsageInfo receivedResourceId) {
         List<OpenApiParamUsageInfo> verifiedUsages = new ArrayList<>();
         List<OpenApiParamInfo> expectedParams = new ArrayList<>();
@@ -175,7 +178,7 @@ class OpenApiDocTest {
     }
 
     private void testQueryParameters(List<OpenApiParamInfo> expectedQueryParameters,
-                                     List<OpenApiParamUsageInfo> receivedQueryParameters) {
+                                     Set<OpenApiParamUsageInfo> receivedQueryParameters) {
         List<OpenApiParamUsageInfo> verifiedUsages = new ArrayList<>();
         List<OpenApiParamInfo> expectedParams = new ArrayList<>();
         List<OpenApiParamInfo> missingItems = new ArrayList<>();
@@ -224,9 +227,10 @@ class OpenApiDocTest {
 
     private OpenApiParamUsage parseParamInfo(CompilationUnit unit, Class<?> clazz, Method method) {
         MethodDeclaration methodDeclaration = getMethodDeclaration(unit, method);
+        String context = methodDeclaration.getParameter(0).getNameAsString();
 
         List<MethodCallExpr> methodCalls = methodDeclaration.findAll(MethodCallExpr.class);
-        List<OpenApiParamUsageInfo> optionalTypedQueryParams = readParamUsagesFromCall(methodCalls, call -> readUsageFromCall(unit, clazz, call, false), "queryParamAsClass");
+        List<OpenApiParamUsageInfo> optionalTypedQueryParams = readParamUsagesFromCall(methodCalls, call -> readQueryParamAsClassFromCall(unit, context, clazz, call), "queryParamAsClass");
 
         List<OpenApiParamUsageInfo> optionalStringQueryParams = methodCalls.stream()
                                                                            .filter(call -> call.getNameAsString().equals("queryParam"))
@@ -239,31 +243,34 @@ class OpenApiDocTest {
                                                                      .collect(Collectors.toList());
 
         List<OpenApiParamUsageInfo> optionalTimeQueryParams = methodCalls.stream()
-                                                                         .filter(call -> call.getNameAsString().equals("queryParamAsInstant"))
-                                                                         .map(call -> readJavaTimeFromCall(unit, clazz, call, true))
+                                                                         .filter(call -> call.getNameAsString().equals("queryParamAsInstant") ||
+                                                                                 call.getNameAsString().equals("queryParamAsZdt"))
+                                                                         .map(call -> readJavaTimeFromCall(call, false))
                                                                          .flatMap(List::stream)
                                                                          .collect(Collectors.toList());
 
         List<OpenApiParamUsageInfo> requiredTimeQueryParams = methodCalls.stream()
-                                                                         .filter(call -> call.getNameAsString().equals("requiredZdt"))
-                                                                         .map(call -> readJavaTimeFromCall(unit, clazz, call, true))
+                                                                         .filter(call -> call.getNameAsString().equals("requiredZdt") ||
+                                                                                 call.getNameAsString().equals("requiredInstant"))
+                                                                         .map(call -> readJavaTimeFromCall(call, true))
                                                                          .flatMap(List::stream)
                                                                          .collect(Collectors.toList());
 
-        List<OpenApiParamUsageInfo> queryParams = new ArrayList<>(optionalStringQueryParams);
+        Set<OpenApiParamUsageInfo> queryParams = new HashSet<>(optionalStringQueryParams);
         queryParams.addAll(optionalTypedQueryParams);
         queryParams.addAll(requiredQueryParams);
+        queryParams.addAll(optionalTimeQueryParams);
+        queryParams.addAll(requiredTimeQueryParams);
 
 
-        List<OpenApiParamUsageInfo> pathParams = methodCalls.stream()
+        Set<OpenApiParamUsageInfo> pathParams = methodCalls.stream()
                                                      .filter(call -> call.getNameAsString().equals("pathParam"))
                                                      .map(call -> readUsageFromCall(unit, clazz, call, true))
-                                                     .collect(Collectors.toList());
+                                                     .collect(Collectors.toSet());
 
         OpenApiParamUsageInfo resourceId = null;
 
-        if (methodDeclaration.getParameters().size() > 1)
-        {
+        if (methodDeclaration.getParameters().size() > 1) {
             Parameter param = methodDeclaration.getParameter(1);
             String paramId = param.getNameAsString();
             OpenApiParamInfo paramInfo = new OpenApiParamInfo(paramId, true, String.class);
@@ -276,6 +283,52 @@ class OpenApiDocTest {
         return new OpenApiParamUsage(pathParams, queryParams, resourceId);
     }
 
+    private OpenApiParamUsageInfo readQueryParamAsClassFromCall(CompilationUnit unit, String context, Class<?> clazz, MethodCallExpr call) {
+        return call.getScope()
+                   .map(scope -> {
+                       if (scope.isNameExpr()) {
+                           return readQueryParamAsClassFromContextCall(unit, clazz, call);
+                       } else {
+                           return readQueryParamAsClassFromControllersCall(unit, clazz, call);
+                       }
+                   }).orElseGet(() -> readQueryParamAsClassFromControllersCall(unit, clazz, call));
+    }
+
+    private OpenApiParamUsageInfo readQueryParamAsClassFromContextCall(CompilationUnit unit, Class<?> clazz, MethodCallExpr call) {
+        // First argument is the parameter name (usually a string literal or constant)
+        String paramName = parseParameterName(call.getArgument(0));
+
+        Class<?> paramClass = String.class;
+        if (call.getArguments().size() > 1) {
+            // Second argument is the class (e.g., Boolean.class, String.class)
+            ClassExpr argument = call.getArgument(1).asClassExpr();
+            paramClass = identifyClassFromExpression(unit, clazz, argument);
+        }
+        boolean used = true;
+        boolean nullHandled = true;
+        return new OpenApiParamUsageInfo(new OpenApiParamInfo(paramName, false, paramClass), used, nullHandled);
+    }
+
+    private OpenApiParamUsageInfo readQueryParamAsClassFromControllersCall(CompilationUnit unit, Class<?> clazz, MethodCallExpr call) {
+        Expression arg1 = call.getArgument(1);
+        Class<?> type;
+        String name;
+        if (arg1.isArrayCreationExpr()) {
+            //Context, String[], Class, T, {metrics}, {className}
+            type = identifyClassFromExpression(unit, clazz, call.getArgument(2).asClassExpr());
+            name = parseParameterName(arg1.asArrayCreationExpr().getInitializer().orElse(null).getValues().get(0));
+        } else if (arg1.isClassExpr()) {
+           //Context, Class, T, Name, [Aliases]
+            type = identifyClassFromExpression(unit, clazz, arg1.asClassExpr());
+            name = parseParameterName(call.getArgument(3));
+        } else {
+            //Unknown case for queryParamAsClass (new method to handle?
+            throw new UnsupportedOperationException("Unsupported argument[1] type for queryParamAsClass: " + arg1.getClass());
+        }
+
+        return new OpenApiParamUsageInfo(new OpenApiParamInfo(name, false, type), true, true);
+    }
+
     private List<OpenApiParamUsageInfo> readParamUsagesFromCall(List<MethodCallExpr> methodCalls,
                                                                 Function<MethodCallExpr, OpenApiParamUsageInfo> paramReader,
                                                                 String... functions) {
@@ -286,8 +339,17 @@ class OpenApiDocTest {
                           .collect(Collectors.toList());
     }
 
-    private List<OpenApiParamUsageInfo> readJavaTimeFromCall(CompilationUnit unit, Class<?> clazz, MethodCallExpr call, boolean required) {
-        return new ArrayList<>();
+    private List<OpenApiParamUsageInfo> readJavaTimeFromCall(MethodCallExpr call, boolean required) {
+        //Should only be 2 parameters, and parameter 2 is the parameter name
+        String paramName = parseParameterName(call.getArgument(1));
+        Class<?> type = String.class;
+        boolean used = true;
+        boolean nullHandled = true;
+        if (!required) {
+            //Check if null is handled via getOrDefault
+        }
+        return Arrays.asList(new OpenApiParamUsageInfo(new OpenApiParamInfo(paramName, required, type), used, nullHandled),
+                             new OpenApiParamUsageInfo(new OpenApiParamInfo(Controllers.TIMEZONE, required, type), used, nullHandled));
     }
 
     private OpenApiParamUsageInfo readUsageFromCall(CompilationUnit unit, Class<?> clazz, MethodCallExpr call, boolean required) {
@@ -305,7 +367,7 @@ class OpenApiDocTest {
             boolean used = true;
             boolean nullHandled = true;
             if (!required) {
-                //Check if null is handled via orDefault
+                //Check if null is handled via getOrDefault
             }
             return new OpenApiParamUsageInfo(new OpenApiParamInfo(paramName, required, paramClass), used, nullHandled);
         }).orElseGet(() -> {
@@ -333,8 +395,8 @@ class OpenApiDocTest {
         } else if (arg instanceof FieldAccessExpr) {
             // It's using a field accessor - this means it's calling Controllers.NAME for instance.
             // This doesn't apply to when the field is statically imported though.
-            arg.asFieldAccessExpr();
-            value = "?";
+            FieldAccessExpr fieldExp = arg.asFieldAccessExpr();
+            value = parseParameterName(fieldExp.getNameAsExpression());
         } else if (arg instanceof NameExpr) {
             // Assume it's coming from the Controllers class, as that's a normal location for constants
             // This is effectively like...we have a name, but we're not sure where it's coming from and we're
@@ -343,8 +405,7 @@ class OpenApiDocTest {
                 Field field = Controllers.class.getField(arg.asNameExpr().getNameAsString());
                 value = field.get(null).toString();
             }  catch (Exception e) {
-                //Shouldn't happen, but ok.
-                value = "";
+                throw new UnsupportedOperationException("Unable to find Controllers field for " + arg.asNameExpr().getNameAsString(), e);
             }
         } else {
             value = arg.toString();
