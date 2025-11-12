@@ -10,8 +10,6 @@ on:
 
 jobs:
   build:
-    env:
-        HUSKY: 0 # disable husky git hooks during CI runs
     strategy:
       fail-fast: false
       matrix:
@@ -43,8 +41,9 @@ jobs:
 
       - name: run cda-gui audit for high CVE
         working-directory: ./cda-gui
+        # disable husky git hooks during CI runs
         run: |
-          npm install --package-lock-only
+          HUSKY=0 npm install --package-lock-only
           npm audit --audit-level=high
       - name: build and test
         id: thebuild
