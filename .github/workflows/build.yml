@@ -10,6 +10,8 @@ on:
 
 jobs:
   build:
+    env:
+        HUSKY: 0 # disable husky git hooks during CI runs
     strategy:
       fail-fast: false
       matrix:
