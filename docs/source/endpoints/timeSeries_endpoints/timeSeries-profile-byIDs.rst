@@ -5,7 +5,7 @@
 
 .. csv-table:: /timeSeries/profile{location-id}/{parameter-id} Endpoint Parameters
     :header: "Parameter", "Description", "Required"
-    :widths: 15, 60, 10
+    :widths: 20, 60, 15
 
     location-id,"",""
     parameter-id,"",""

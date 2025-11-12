@@ -24,13 +24,13 @@ tasks.register('installReqs', Exec) { t ->
     t.executable = pythonCmd
     t.args '-m', 'pip', 'install', '-r', new File(projectDir, 'requirements.txt').absolutePath
     t.workingDir = projectDir
-    t.inputs.file(new java.io.File(projectDir, 'requirements.txt'))
+    t.inputs.file(new File(projectDir, 'requirements.txt'))
     // Up-to-date marker
-    def marker = new java.io.File(buildDir, 'pip-install.marker')
+    def marker = new File(buildDir, 'pip-install.marker')
     t.outputs.file(marker)
     doLast {
         marker.parentFile.mkdirs()
-        marker.text = "installed at ${new java.util.Date()}\n"
+        marker.text = "installed at ${new Date()}\n"
     }
     t.onlyIf { !noDocs }
 }
@@ -39,7 +39,7 @@ tasks.register('installReqs', Exec) { t ->
 tasks.register('buildDocsHtml', Exec) { t ->
     t.dependsOn 'installReqs'
     t.executable = pythonCmd
-    t.args '-m', 'sphinx', '-W', '-b', 'html', 'source', new java.io.File(buildDir, 'html').absolutePath
+    t.args '-m', 'sphinx', '-W', '-b', 'html', 'source', new File(buildDir, 'html').absolutePath
     t.workingDir = projectDir
     environment 'SPHINXOPTS', (System.getenv('SPHINXOPTS') ?: '') + ' -n'
 
