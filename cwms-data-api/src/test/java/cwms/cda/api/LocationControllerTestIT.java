@@ -24,6 +24,10 @@
 
 package cwms.cda.api;
 
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import cwms.cda.data.dao.LocationCategoryDao;
+import cwms.cda.data.dao.LocationGroupDao;
+import fixtures.CwmsDataApiSetupCallback;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,6 +38,7 @@ import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.formatters.ContentType;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.filter.log.LogDetail;
+import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -50,9 +55,12 @@ import javax.servlet.http.HttpServletResponse;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isOneOf;
 
 @Tag("integration")
 class LocationControllerTestIT extends DataApiTestIT {
@@ -126,7 +134,7 @@ class LocationControllerTestIT extends DataApiTestIT {
                 .withOfficeId(officeId)
                 //withName(getClass().getSimpleName())
                 .build();
-        String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
+        String serializedLocation = JsonV1.buildObjectMapper().registerModule(new Jdk8Module()).writeValueAsString(location);
 
         KeyUser user = KeyUser.SPK_NORMAL;
         // create location
@@ -159,7 +167,6 @@ class LocationControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
         .when()
             .redirects().follow(true)
@@ -209,7 +216,6 @@ class LocationControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
         .when()
             .redirects().follow(true)
@@ -231,7 +237,7 @@ class LocationControllerTestIT extends DataApiTestIT {
                 json, Location.class))
                 .withOfficeId(officeId)
                 .build();
-        String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
+        String serializedLocation = JsonV1.buildObjectMapper().registerModule(new Jdk8Module()).writeValueAsString(location);
 
         // create location
         String locationId = "Test_Location_1080";
@@ -306,7 +312,6 @@ class LocationControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam("office", officeId)
         .when()
             .redirects().follow(true)
@@ -321,7 +326,6 @@ class LocationControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam("office", officeId)
         .when()
             .redirects().follow(true)
@@ -342,7 +346,7 @@ class LocationControllerTestIT extends DataApiTestIT {
                 .withOfficeId(officeId)
                 //withName(getClass().getSimpleName())
                 .build();
-        String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
+        String serializedLocation = JsonV1.buildObjectMapper().registerModule(new Jdk8Module()).writeValueAsString(location);
 
         KeyUser user = KeyUser.SPK_NORMAL;
         // create location
@@ -366,7 +370,6 @@ class LocationControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT, "m")
         .when()
@@ -400,7 +403,6 @@ class LocationControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
         .when()
             .redirects().follow(true)
@@ -441,7 +443,6 @@ class LocationControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, user.getOperatingOffice())
         .when()
             .redirects().follow(true)
@@ -456,6 +457,109 @@ class LocationControllerTestIT extends DataApiTestIT {
         // update location
         String updatedLocationName = locationName + "_UPDATED";
         String updatedSerializedLocation = serializedLocation
+            .replace(locationName, updatedLocationName);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(updatedSerializedLocation)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch("/locations/" + locationName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(user.getOperatingOffice()))
+            .body(MESSAGE, equalTo("Updated and renamed Location"))
+            .body(IDENTIFIER, equalTo(updatedLocationName));
+
+        // get it back
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, user.getOperatingOffice())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + updatedLocationName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("name", equalTo(updatedLocationName));
+
+        // delete location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, user.getOperatingOffice())
+            .queryParam(CASCADE_DELETE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + updatedLocationName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(user.getOperatingOffice()))
+            .body(MESSAGE, equalTo("Deleted CWMS Location"))
+            .body(IDENTIFIER, equalTo(updatedLocationName));
+    }
+
+    @Test
+    void test_create_update_null_elev_units() throws Exception {
+        String locationName = "TestUpdateLoc1";
+        KeyUser user = KeyUser.SPK_NORMAL;
+
+        String serializedLocation = loadResourceAsString("cwms/cda/api/location_create_spk.json")
+            .replace("LOC_TEST", locationName);
+
+        String serializedUpdateLocation = loadResourceAsString("cwms/cda/api/location_create_spk_no_elev_units.json")
+            .replace("LOC_TEST", locationName);
+
+        // create location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(serializedLocation)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/locations")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // get it back
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, user.getOperatingOffice())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + locationName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("name", equalTo(locationName));
+
+        // update location
+        String updatedLocationName = locationName + "_UPDATED";
+        String updatedSerializedLocation = serializedUpdateLocation
             .replace(locationName, updatedLocationName);
 
         given()
@@ -601,7 +705,7 @@ class LocationControllerTestIT extends DataApiTestIT {
                 .withOfficeId(officeId)
                 .withName(invalidLongName)
                 .build();
-        String serializedLocation = JsonV1.buildObjectMapper().writeValueAsString(location);
+        String serializedLocation = JsonV1.buildObjectMapper().registerModule(new Jdk8Module()).writeValueAsString(location);
 
         KeyUser user = KeyUser.SPK_NORMAL;
         // create location
@@ -620,6 +724,129 @@ class LocationControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
             .body(containsString("One or more provided values exceeds the maximum length for the parameter."));
+    }
+
+    @Test
+    void testIncludeAliases() throws Exception {
+        String officeId = "SPK";
+        String locationName = "TestBaseLocation";
+        String controlLocationName = "TestBaseLocControl";
+        createLocation(controlLocationName, true, officeId);
+        createLocation(locationName, true, officeId);
+
+        String categoryName = "TestAliasesCategory1";
+        String groupName1 = "TestAliasesGroup3";
+        String groupName2 = "TestAliasesGroup4";
+        String sharedLocAlias1 = "TESTBASELOCALIAS1";
+        String sharedLocAlias2 = "LOCALIAS1";
+
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, officeId);
+            LocationCategory category = new LocationCategory(officeId, categoryName, "A test category");
+            LocationCategoryDao catDao = new LocationCategoryDao(dsl);
+
+            catDao.create(category);
+            categoriesToCleanup.add(category);
+
+            LocationGroupDao groupDao = new LocationGroupDao(dsl);
+            LocationGroup baseGroup1 = new LocationGroup(category, officeId, groupName1, "A test group",
+                sharedLocAlias1, null, 0);
+            LocationGroup baseGroup2 = new LocationGroup(category, officeId, groupName2, "Another test group",
+                sharedLocAlias2, null, 0);
+
+            groupDao.create(baseGroup1);
+            groupDao.create(baseGroup2);
+            groupsToCleanup.add(baseGroup1);
+            groupsToCleanup.add(baseGroup2);
+
+            List<AssignedLocation> locations = new ArrayList<>();
+            AssignedLocation assignedLocation = new AssignedLocation(locationName, officeId, sharedLocAlias1, null, null);
+            locations.add(assignedLocation);
+            LocationGroup group = new LocationGroup(baseGroup1, locations);
+            groupDao.assignLocs(group, officeId);
+
+            locations = new ArrayList<>();
+            assignedLocation = new AssignedLocation(locationName, officeId, sharedLocAlias2, null, null);
+            locations.add(assignedLocation);
+            LocationGroup group2 = new LocationGroup(baseGroup2, locations);
+            groupDao.assignLocs(group2, officeId);
+        });
+
+        // verify that the control location can be retrieved
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT, "SI")
+            .queryParam(INCLUDE_ALIASES, "false")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + controlLocationName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("$", not(hasKey("aliases")))
+        ;
+
+        // verify that the aliased level can be retrieved
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT, "SI")
+            .queryParam(INCLUDE_ALIASES, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + locationName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("aliases.size()", is(2))
+            .body("aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("aliases[0].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+            .body("aliases[1].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+            .body("aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+        ;
+
+        // verify that alias as location ID does not return results
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT, "SI")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + sharedLocAlias1)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
+
+        // verify that alias as location ID will not return results
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT, "SI")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + sharedLocAlias2)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
     }
 
     enum GetAllTest

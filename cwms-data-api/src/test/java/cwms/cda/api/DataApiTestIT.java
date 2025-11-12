@@ -27,6 +27,7 @@ package cwms.cda.api;
 import static cwms.cda.data.dao.JooqDao.REQUIRE_NEW_LRTS_ID_FORMAT;
 import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
 
+import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
@@ -42,6 +43,7 @@ import fixtures.IntegrationTestNameGenerator;
 import fixtures.KeyCloakExtension;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -108,23 +110,34 @@ public class DataApiTestIT {
         freemarkerConfig.setClassForTemplateLoading(DataApiTestIT.class, "/");
     }
 
+    public static final String OPEN_API_SPEC_URL = String.format("%s:%s%s/swagger-docs", CwmsDataApiSetupCallback.httpUrl(), CwmsDataApiSetupCallback.httpPort(), System.getProperty("warContext"));
+    private static OpenApiValidationFilter validationFilter;
+
+    public static OpenApiValidationFilter getOpenApiValidationFilter() {
+        if (validationFilter == null) {
+            validationFilter = new OpenApiValidationFilter(OPEN_API_SPEC_URL);
+        }
+        return validationFilter;
+    }
+
     /**
      * Reads in SQL data and runs it as CWMS_20. Assumes single statement. That single statement
      * can be an anonymous function if more detail is required.
+     *
      * @param resource Resource path to SQL file.  Example: "cwms/cda/data/sql/create_location.sql"
      * @throws Exception
      */
     protected static void loadSqlDataFromResource(String resource) throws Exception {
         String sql = IOUtils.toString(
-                    DataApiTestIT.class
-                    .getClassLoader()
-                    .getResourceAsStream(resource),"UTF-8");
+                DataApiTestIT.class
+                        .getClassLoader()
+                        .getResourceAsStream(resource), "UTF-8");
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(sql)) {
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement(sql)) {
                 stmt.execute();
             } catch (SQLException ex) {
-                throw new RuntimeException("Unable to process SQL",ex);
+                throw new RuntimeException("Unable to process SQL", ex);
             }
         }, "cwms_20");
     }
@@ -136,26 +149,27 @@ public class DataApiTestIT {
     @BeforeAll
     public static void load_queries() throws Exception {
         createLocationQuery = IOUtils.toString(
-                                TimeseriesControllerTestIT.class
-                                    .getClassLoader()
-                                    .getResourceAsStream("cwms/cda/data/sql_templates/create_location.sql"),"UTF-8"
-                            );
+                TimeseriesControllerTestIT.class
+                        .getClassLoader()
+                        .getResourceAsStream("cwms/cda/data/sql_templates/create_location.sql"), "UTF-8"
+        );
         createTimeseriesQuery = IOUtils.toString(
-                                TimeseriesControllerTestIT.class
-                                    .getClassLoader()
-                                    .getResourceAsStream("cwms/cda/data/sql_templates/create_timeseries.sql"),"UTF-8"
-                            );
+                TimeseriesControllerTestIT.class
+                        .getClassLoader()
+                        .getResourceAsStream("cwms/cda/data/sql_templates/create_timeseries.sql"), "UTF-8"
+        );
 
         createTimeseriesOffsetQuery = IOUtils.toString(
                 TimeseriesControllerTestIT.class
                         .getClassLoader()
-                        .getResourceAsStream("cwms/cda/data/sql_templates/create_timeseries_offset.sql"),"UTF-8"
+                        .getResourceAsStream("cwms/cda/data/sql_templates/create_timeseries_offset.sql"), "UTF-8"
         );
 
     }
 
     /**
      * Register all known users credentials in the database as appropriate.
+     *
      * @throws Exception
      */
     @BeforeAll
@@ -163,23 +177,44 @@ public class DataApiTestIT {
         try {
             final Manager tsm = CwmsDataApiSetupCallback.getTestSessionManager();
             CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-            for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
-                if(user.getApikey() == null) {
+            for (TestAccounts.KeyUser user : TestAccounts.KeyUser.values()) {
+                if (user.getApikey() == null) {
                     continue;
                 }
-                db.connection((c)-> {
-                    try(PreparedStatement stmt = c.prepareStatement(registerApiKey)) {
-                        stmt.setString(1,user.getName());
-                        stmt.setString(2,user.getName()+"TestKey");
-                        stmt.setString(3,user.getApikey());
+                if (user == TestAccounts.KeyUser.SPK_OTHER_NORMAL_SAME_ROLES) {
+                    String name = user.getName();
+                    String officeId = user.getOperatingOffice(); //"SPK";  // We want user office not db office.
+
+                    logger.atInfo().log("Adding user %s in %s to groups", name, officeId);
+                    try {
+                        addNewUser(name);
+                    } catch (RuntimeException ex) {
+                        Throwable cause = ex.getCause();
+                        if (cause == null || !cause.getMessage().contains("already exists")) {
+                            throw ex;
+                        } else {
+                            logger.atInfo().log("User %s already exists", name);
+                        }
+                    }
+
+                    addUserToGroup(name, "CWMS Users", officeId);
+                    addUserToGroup(name, "All Users", officeId);
+                    addUserToGroup(name, "TS ID Creator", officeId);
+                }
+
+                db.connection((c) -> {
+                    try (PreparedStatement stmt = c.prepareStatement(registerApiKey)) {
+                        stmt.setString(1, user.getName());
+                        stmt.setString(2, user.getName() + "TestKey");
+                        stmt.setString(3, user.getApikey());
                         stmt.execute();
                     } catch (SQLException ex) {
-                        throw new RuntimeException("Unable to register user:" + user.getName() ,ex);
+                        throw new RuntimeException("Unable to register user:" + user.getName(), ex);
                     }
-                },"cwms_20");
+                }, "cwms_20");
 
-                StandardSession session = (StandardSession)tsm.createSession(user.getJSessionId());
-                if(session == null) {
+                StandardSession session = (StandardSession) tsm.createSession(user.getJSessionId());
+                if (session == null) {
                     throw new RuntimeException("Test Session Manager is unusable.");
                 }
                 MockCwmsUserPrincipalImpl mcup = new MockCwmsUserPrincipalImpl(user.getName(), user.getEdipi(), user.getRoles());
@@ -190,87 +225,103 @@ public class DataApiTestIT {
 
                     @Override
                     public void sessionEvent(SessionEvent event) {
-                        logger.atInfo().log("Got event of type: %s",event.getType());
-                        logger.atInfo().log("Session is:",event.getSession().toString());
+                        logger.atInfo().log("Got event of type: %s", event.getType());
+                        logger.atInfo().log("Session is:", event.getSession().toString());
                     }
 
                 });
                 CwmsDataApiSetupCallback.getSsoValve()
-                                     .wrappedRegister(user.getJSessionId(), mcup, "CLIENT-CERT", null,null);
+                        .wrappedRegister(user.getJSessionId(), mcup, "CLIENT-CERT", null, null);
             }
-        } catch(RuntimeException ex) {
-            throw new Exception("User registration failed",ex);
+        } catch (RuntimeException ex) {
+            throw new Exception("User registration failed", ex);
         }
     }
 
 
     /**
      * Removes all registered users' API keys from the database.
-     *
+     * <p>
      * Future work will have this deleting all users/user credentials.
+     *
      * @throws Exception
      */
     @AfterAll
     public static void deregister_users() throws Exception {
         try {
             CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-            for(TestAccounts.KeyUser user: TestAccounts.KeyUser.values()) {
-                db.connection((c)-> {
-                    try(PreparedStatement stmt = c.prepareStatement(removeApiKeys)) {
-                        stmt.setString(1,user.getName());
-                        stmt.setString(2,user.getApikey());
+            for (TestAccounts.KeyUser user : TestAccounts.KeyUser.values()) {
+                db.connection((c) -> {
+                    try (PreparedStatement stmt = c.prepareStatement(removeApiKeys)) {
+                        stmt.setString(1, user.getName());
+                        stmt.setString(2, user.getApikey());
                         stmt.execute();
                     } catch (SQLException ex) {
-                        throw new RuntimeException("Unable to delete api key",ex);
+                        throw new RuntimeException("Unable to delete api key", ex);
                     }
-                },"cwms_20");
+                }, "cwms_20");
             }
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             throw ex;
         }
+    }
+
+    protected static void addNewUser(String username) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        String insertUserSql = "INSERT INTO AT_SEC_CWMS_USERS (USERID, CREATEDBY) VALUES (?, ?)";
+
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement(insertUserSql)) {
+                stmt.setString(1, username);  // USERID
+                stmt.setString(2, "CWMS_20");       // CREATEDBY
+                stmt.executeUpdate();
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to insert user: " + username, ex);
+            }
+        }, "cwms_20");
     }
 
     /**
      * Creates location with all minimum required data.
      * Additional calls to this function with the same location name are noop.
      *
-     * @param location Location name
-     * @param active Is this location active (allows writing timeseries)
-     * @param office Office ID
+     * @param location        Location name
+     * @param active          Is this location active (allows writing timeseries)
+     * @param office          Office ID
      * @param latitude
      * @param longitude
      * @param horizontalDatum horizontal reference for this location, such as WGS84
-     * @param kind Arbitrary string define purpose of location
+     * @param kind            Arbitrary string define purpose of location
      */
     protected static void createLocation(String location, boolean active, String office, Double latitude, Double longitude, String horizontalDatum, String timeZone, String kind) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         Location loc = new Location.Builder(location,
-                                            kind,
-                                            ZoneIdHelper.parseZoneIdWithAliases(timeZone),
-                                            latitude,
-                                            longitude,
-                                            horizontalDatum,
-                                            office)
-                                    .withActive(active)
-                                    .build();
+                kind,
+                ZoneIdHelper.parseZoneIdWithAliases(timeZone),
+                latitude,
+                longitude,
+                horizontalDatum,
+                office)
+                .withActive(active)
+                .build();
         if (LocationCleanup.locationsCreated.contains(loc)) {
             return; // we already have this location registered
         }
 
-        db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(createLocationQuery)) {
-                stmt.setString(1,location);
-                stmt.setString(2,active ? "T" : "F");
-                stmt.setString(3,office);
-                stmt.setString(4,timeZone);
-                stmt.setDouble(5,latitude);
-                stmt.setDouble(6,longitude);
-                stmt.setString(7,horizontalDatum);
-                stmt.setString(8,kind);
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement(createLocationQuery)) {
+                stmt.setString(1, location);
+                stmt.setString(2, active ? "T" : "F");
+                stmt.setString(3, office);
+                stmt.setString(4, timeZone);
+                stmt.setDouble(5, latitude);
+                stmt.setDouble(6, longitude);
+                stmt.setString(7, horizontalDatum);
+                stmt.setString(8, kind);
                 stmt.execute();
                 LocationCleanup.locationsCreated.add(loc);
             } catch (SQLException ex) {
-                throw new RuntimeException("Unable to create location",ex);
+                throw new RuntimeException("Unable to create location", ex);
             }
         }, "cwms_20");
     }
@@ -288,40 +339,40 @@ public class DataApiTestIT {
      * </table>
      *
      * @param location CWMS Location Name.
-     * @param active should this location be flagged active or not.
-     * @param office owning office
+     * @param active   should this location be flagged active or not.
+     * @param office   owning office
      * @throws SQLException Any error saving the data
      */
     protected static void createLocation(String location, boolean active, String office) throws SQLException {
-        createLocation(location,active,office, "STREAM");
+        createLocation(location, active, office, "STREAM");
     }
 
     protected static void createLocation(String location, boolean active, String office, String kind) throws SQLException {
-        createLocation(location,active,office,
-                       0.0,0.0,"WGS84",
-                       "UTC", kind);
+        createLocation(location, active, office,
+                0.0, 0.0, "WGS84",
+                "UTC", kind);
     }
 
     /**
      * Create a timeseries (location must already exist), no data or other meta data will be set.
      * This only creates the timeseries name. Not data or other parameters are set.
      *
-     * @param office owning office
+     * @param office     owning office
      * @param timeseries timeseries name
      * @throws SQLException
      */
     protected static void createTimeseries(String office, String timeseries) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesQuery)) {
-                stmt.setString(1,office);
-                stmt.setString(2,timeseries);
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement(createTimeseriesQuery)) {
+                stmt.setString(1, office);
+                stmt.setString(2, timeseries);
                 stmt.execute();
             } catch (SQLException ex) {
                 if (ex.getErrorCode() == 20003) {
                     return; // TS already exists. that's fine for these tests.
                 }
-                throw new RuntimeException("Unable to create timeseries",ex);
+                throw new RuntimeException("Unable to create timeseries", ex);
             }
         }, "cwms_20");
     }
@@ -329,8 +380,8 @@ public class DataApiTestIT {
 
     protected static void createTimeseries(String office, String timeseries, int offset) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection((c)-> {
-            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery)) {
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery)) {
                 stmt.setString(1, office);
                 stmt.setString(2, timeseries);
                 stmt.setInt(3, offset);
@@ -339,18 +390,18 @@ public class DataApiTestIT {
                 if (ex.getErrorCode() == 20003) {
                     return; // TS already exists. that's fine for these tests.
                 }
-                throw new RuntimeException("Unable to create timeseries",ex);
+                throw new RuntimeException("Unable to create timeseries", ex);
             }
         }, "cwms_20");
     }
 
     protected static void createTimeseriesWithNewLRTSInterval(String office, String timeseries, int offset) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection((c)-> {
+        db.connection((c) -> {
             org.jooq.Configuration configuration = DSL.using(c).configuration();
             CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(configuration,
-                SESSION_USE_LRTS_ID_FORMAT, "T", REQUIRE_NEW_LRTS_ID_FORMAT);
-            try(PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery)) {
+                    SESSION_USE_LRTS_ID_FORMAT, "T", REQUIRE_NEW_LRTS_ID_FORMAT);
+            try (PreparedStatement stmt = c.prepareStatement(createTimeseriesOffsetQuery)) {
                 stmt.setString(1, office);
                 stmt.setString(2, timeseries);
                 stmt.setInt(3, offset);
@@ -359,13 +410,14 @@ public class DataApiTestIT {
                 if (ex.getErrorCode() == 20003) {
                     return; // TS already exists. that's fine for these tests.
                 }
-                throw new RuntimeException("Unable to create timeseries",ex);
+                throw new RuntimeException("Unable to create timeseries", ex);
             }
         }, "cwms_20");
     }
 
     /**
      * Create a stream, saving the data for later deletion.
+     *
      * @param stream Stream to create
      * @throws SQLException Any error saving the data
      */
@@ -380,6 +432,7 @@ public class DataApiTestIT {
 
     /**
      * Create a basin, saving the data for later deletion.
+     *
      * @param basin Basin to create
      * @throws SQLException Any error saving the data
      */
@@ -395,45 +448,45 @@ public class DataApiTestIT {
     /**
      * If necessary for a specific test add the TEST user to the appropriate office CWMS Group.
      *
-     * @param user CWMS User Name
-     * @param group CWMS Group Name
+     * @param user   CWMS User Name
+     * @param group  CWMS Group Name
      * @param office CWMS Office ID
      * @throws Exception Any errors running the sql command
      */
     protected static void addUserToGroup(String user, String group, String office) throws Exception {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection( (c) -> {
-            try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.add_user_to_group(?,?,?); end;")) {
-                stmt.setString(1,user);
-                stmt.setString(2,group);
-                stmt.setString(3,office);
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement("begin cwms_sec.add_user_to_group(?,?,?); end;")) {
+                stmt.setString(1, user);
+                stmt.setString(2, group);
+                stmt.setString(3, office);
                 stmt.execute();
-            } catch( SQLException ex) {
+            } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }
-        },"cwms_20");
+        }, "cwms_20");
     }
 
     /**
      * If necessary for a specific test remove a user from a CWMS Group.
      *
-     * @param user CWMS User Name
-     * @param group CWMS Group Name
+     * @param user   CWMS User Name
+     * @param group  CWMS Group Name
      * @param office CWMS Office ID
      * @throws Exception Any errors running the sql command
      */
     protected static void removeUserFromGroup(String user, String group, String office) throws Exception {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection( (c) -> {
-            try(PreparedStatement stmt = c.prepareStatement("begin cwms_sec.remove_user_from_group(?,?,?); end;")) {
-                stmt.setString(1,user);
-                stmt.setString(2,group);
-                stmt.setString(3,office);
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement("begin cwms_sec.remove_user_from_group(?,?,?); end;")) {
+                stmt.setString(1, user);
+                stmt.setString(2, group);
+                stmt.setString(3, office);
                 stmt.execute();
-            } catch( SQLException ex) {
+            } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }
-        },"cwms_20");
+        }, "cwms_20");
     }
 
     /**
@@ -465,6 +518,7 @@ public class DataApiTestIT {
     /**
      * Let the infrastructure know a group is getting created so it can
      * be deleted in cases of test failure.
+     *
      * @param group
      */
     protected void registerGroup(LocationGroup group) {
@@ -476,6 +530,7 @@ public class DataApiTestIT {
     /**
      * Let the infrastructure know a category is getting created so it can
      * be deleted in cases of test failure.
+     *
      * @param category
      */
     protected void registerCategory(LocationCategory category) {
@@ -492,12 +547,12 @@ public class DataApiTestIT {
         }
         logger.atInfo().log("Cleaning up groups test did not remove.");
         CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
-        cwmsDb.connection( c-> {
+        cwmsDb.connection(c -> {
             try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_group(?,'T',?); end;")) {
-                for (LocationGroup g: groupsCreated) {
+                for (LocationGroup g : groupsCreated) {
                     delGroup.clearParameters();
-                    delGroup.setString(1,g.getId());
-                    delGroup.setString(2,g.getOfficeId());
+                    delGroup.setString(1, g.getId());
+                    delGroup.setString(2, g.getOfficeId());
                     delGroup.executeUpdate();
                 }
             } catch (SQLException ex) {
@@ -516,12 +571,12 @@ public class DataApiTestIT {
         }
         logger.atInfo().log("Cleaning up location categories that tests did not remove.");
         CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
-        cwmsDb.connection( c-> {
+        cwmsDb.connection(c -> {
             try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_cat(?,'T',?); end;")) {
-                for (LocationCategory cat: categoriesCreated) {
+                for (LocationCategory cat : categoriesCreated) {
                     delGroup.clearParameters();
-                    delGroup.setString(1,cat.getId());
-                    delGroup.setString(2,cat.getOfficeId());
+                    delGroup.setString(1, cat.getId());
+                    delGroup.setString(2, cat.getOfficeId());
                     delGroup.executeUpdate();
                 }
             } catch (SQLException ex) {
@@ -536,6 +591,7 @@ public class DataApiTestIT {
      * Cleanup all basins created by tests that did not remove them.
      * This is a static method so it can be called from the static cleanup methods.
      * This is not assigned an @AfterEach or @AfterAll because the order can be important for test teardown
+     *
      * @throws Exception
      */
     public static void cleanupBasins() throws Exception {
@@ -557,6 +613,7 @@ public class DataApiTestIT {
      * Cleanup all streams created by tests that did not remove them.
      * This is a static method so it can be called from the static cleanup methods.
      * This is not assigned an @AfterEach or @AfterAll because the order can be important for test teardown
+     *
      * @throws Exception
      */
     public static void cleanupStreams() throws Exception {
@@ -575,6 +632,7 @@ public class DataApiTestIT {
     }
 
     // Resource Template operations
+
     /**
      * Get a FluentTemplate to handle our operations of setting up the data model before rendering.
      * The non static version provides a default data model based on the active CDA and Database Instance
@@ -587,11 +645,11 @@ public class DataApiTestIT {
         final Template template = loadTemplateFromResource(resource);
         final CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
         return new FluentTemplate(template)
-                    .with("office", cwmsDb.getOfficeId())
-                    .with("boundingOffice", cwmsDb.getOfficeId())
-                    .with("dbOffice", cwmsDb.getOfficeId())
-                    .with("dbTestUser",cwmsDb.getUsername())
-                    .with("cdaUrl", CwmsDataApiSetupCallback.httpUrl());
+                .with("office", cwmsDb.getOfficeId())
+                .with("boundingOffice", cwmsDb.getOfficeId())
+                .with("dbOffice", cwmsDb.getOfficeId())
+                .with("dbTestUser", cwmsDb.getUsername())
+                .with("cdaUrl", CwmsDataApiSetupCallback.httpUrl());
 
     }
 
@@ -606,13 +664,12 @@ public class DataApiTestIT {
     public static FluentTemplate getResourceTemplateStatic(String resource) throws Exception {
         final Template template = loadTemplateFromResource(resource);
         return new FluentTemplate(template)
-                    .with("office", "HQ")
-                    .with("boundingOffice", "HQ")
-                    .with("dbOffice", "HQ")
-                    .with("dbTestUser", "not-active")
-                    .with("cdaUrl", "no-url");
+                .with("office", "HQ")
+                .with("boundingOffice", "HQ")
+                .with("dbOffice", "HQ")
+                .with("dbTestUser", "not-active")
+                .with("cdaUrl", "no-url");
     }
-
 
 
     public String getResourceFromTemplate(String resource, Map<String, Object> dataModel) throws Exception {
@@ -632,6 +689,7 @@ public class DataApiTestIT {
 
         /**
          * Add a value to the data model
+         *
          * @param fieldName
          * @param field
          * @return
@@ -643,6 +701,7 @@ public class DataApiTestIT {
 
         /**
          * Add additional values, they may overwrite defaults to the data model.
+         *
          * @param model
          * @return
          */
@@ -658,6 +717,7 @@ public class DataApiTestIT {
 
         /**
          * Render the template to string using the internal data model
+         *
          * @return
          * @throws TemplateException
          * @throws IOException
@@ -670,6 +730,7 @@ public class DataApiTestIT {
 
         /**
          * Get a copy of the Data Model. The returned Map is read only.
+         *
          * @return
          */
         public Map<String, Object> getModel() {
@@ -679,6 +740,7 @@ public class DataApiTestIT {
 
     /**
      * Many Integration Tests want to use a web user connection in order to setup or verify
+     *
      * @param function
      * @throws SQLException
      */

@@ -38,6 +38,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
@@ -50,10 +52,9 @@ final class PropertyControllerIT extends DataApiTestIT {
     private static final String MESSAGE = "message";
     private static final String IDENTIFIER = "identifier";
 
-
-
-    @Test
-    void test_get_create_delete() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_get_create_delete(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/property.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -70,7 +71,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         //Create the property
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -90,7 +91,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         // Retrieve the property and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.CATEGORY_ID, property.getCategory())
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -112,7 +113,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         // Delete a Property
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.CATEGORY_ID, property.getCategory())
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -132,7 +133,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         // Retrieve a Property and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.CATEGORY_ID, property.getCategory())
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -148,8 +149,9 @@ final class PropertyControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_update_does_not_exist() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_update_does_not_exist(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/property_bogus.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -160,7 +162,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         //Create the property
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -176,7 +178,7 @@ final class PropertyControllerIT extends DataApiTestIT {
     }
 
     @Test
-    void test_delete_does_not_exist() throws IOException {
+    void test_delete_does_not_exist() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         // Delete a Property
         given()
@@ -196,8 +198,9 @@ final class PropertyControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_get_all() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_get_all(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/property.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -213,7 +216,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         //Create the property
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -233,7 +236,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         // Retrieve the property and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(Controllers.OFFICE_MASK, office)
             .queryParam(Controllers.CATEGORY_ID_MASK, property.getCategory())
             .queryParam(Controllers.NAME_MASK, property.getName())
@@ -256,7 +259,7 @@ final class PropertyControllerIT extends DataApiTestIT {
         // Delete a Property
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.CATEGORY_ID, property.getCategory())
             .header(AUTH_HEADER, user.toHeaderValue())

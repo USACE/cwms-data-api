@@ -27,7 +27,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletResponse;
@@ -117,9 +116,8 @@ public class BlobController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Blobs.class);
 
             BlobDao dao = new BlobDao(dsl);
-            List<Blob> blobList = dao.getAll(office, like);
+            Blobs blobs = dao.getBlobs(cursor, pageSize, office, like);
 
-            Blobs blobs = new Blobs.Builder(cursor, pageSize, 0).addAll(blobList).build();
             String result = Formats.format(contentType, blobs);
 
             ctx.result(result);
@@ -133,6 +131,13 @@ public class BlobController implements CrudHandler {
                     + "appropriate media type.",
             queryParams = {
                     @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
+            },
+            responses = {
+                    @OpenApiResponse(status = STATUS_200,
+                            description = "Returns requested blob.",
+                            content = {
+                                    @OpenApiContent(type = "application/octet-stream")
+                            })
             },
             tags = {TAG}
     )

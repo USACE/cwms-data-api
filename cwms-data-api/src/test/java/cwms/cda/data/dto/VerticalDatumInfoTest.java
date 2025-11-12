@@ -37,20 +37,6 @@ class VerticalDatumInfoTest
 
 	}
 
-	private void assertMatchesExpected(VerticalDatumInfo vdi)
-	{
-		assertEquals("LRL", vdi.getOffice());
-		assertEquals("m", vdi.getUnit());
-		assertEquals("Buckhorn", vdi.getLocation());
-		assertEquals("NGVD-29", vdi.getNativeDatum());
-		assertEquals(230.7, vdi.getElevation());
-		VerticalDatumInfo.Offset[] offsets = vdi.getOffsets();
-		assertNotNull(offsets);
-		VerticalDatumInfo.Offset offset = offsets[0];
-		assertEquals("NAVD-88", offset.getToDatum());
-		assertTrue(offset.isEstimate());
-		assertEquals(-.1666, offset.getValue());
-	}
 
 	private void assertVDIEquals(VerticalDatumInfo expected, VerticalDatumInfo vdi)
 	{
@@ -61,6 +47,7 @@ class VerticalDatumInfoTest
 		assertEquals(expected.getElevation(), vdi.getElevation());
 
 		assertOffsetsEquals(expected.getOffsets(), vdi.getOffsets());
+        assertEquals(expected.getLocalDatumName(), vdi.getLocalDatumName());
 	}
 
 	private void assertOffsetsEquals(VerticalDatumInfo.Offset[] offsets, VerticalDatumInfo.Offset[] offsets1)
@@ -165,7 +152,41 @@ class VerticalDatumInfoTest
 		assertEquals(2, offsets.length);
 	}
 
-	@Test
+    @Test
+    void test_vert_datum_1101() throws IOException
+    {
+        // This example taken from gh bug 1101
+        //<vertical-datum-info office="SWT" unit="ft">
+        //    <location>PENS</location>
+        //    <native-datum>OTHER</native-datum>
+        //    <local-datum-name>Pensacola</local-datum-name>
+        //    <elevation>757.001</elevation>
+        //</vertical-datum-info>
+        InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/cda/data/dto/vert1101.xml");
+        assertNotNull(stream);
+        String v = readFully(stream);
+
+        VerticalDatumInfo vdi = TimeSeriesDaoImpl.parseVerticalDatumInfo(v);
+        assertNotNull(vdi);
+
+        VerticalDatumInfo.Offset[] offsets = vdi.getOffsets();
+        assertNotNull(offsets);
+        assertEquals(0, offsets.length);
+
+        assertEquals("SWT", vdi.getOffice());
+        assertEquals("ft", vdi.getUnit());
+        assertEquals("PENS", vdi.getLocation());
+        assertEquals(757.001, vdi.getElevation());
+        assertEquals("OTHER", vdi.getNativeDatum());
+        assertEquals("Pensacola", vdi.getLocalDatumName());
+
+
+
+    }
+
+
+
+    @Test
 	void testVertDatum3() throws IOException
 	{
 		InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/cda/data/dto/vert3.xml");
@@ -285,6 +306,7 @@ class VerticalDatumInfoTest
 		VerticalDatumInfo actual = parseJson(body);
 		assertVDIEquals(vdi, actual);
 	}
+
 
 
 

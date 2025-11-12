@@ -1,7 +1,13 @@
 package cwms.cda.data.dao;
 
+import static cwms.cda.data.dao.DaoTest.getConnection;
+import static cwms.cda.data.dao.DaoTest.getDslContext;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
+import cwms.cda.data.dto.TimeSeries;
+import java.math.BigDecimal;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -9,29 +15,21 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import org.jooq.DSLContext;
 import org.jooq.Record1;
+import org.jooq.Result;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import cwms.cda.data.dto.TimeSeries;
-import usace.cwms.db.dao.util.CwmsDatabaseVersionInfo;
-import usace.cwms.db.dao.util.TimeValueQuality;
-import usace.cwms.db.jooq.JooqCwmsDatabaseVersionInfoFactory;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.cwms_ts.RETRIEVE_TS_2;
+import usace.cwms.db.jooq.codegen.packages.cwms_ts.udt.records.DOUBLE_ARRAY;
+import usace.cwms.db.jooq.codegen.packages.cwms_ts.udt.records.NUMBER_ARRAY;
+import usace.cwms.db.jooq.codegen.tables.AV_DB_CHANGE_LOG;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC;
-import usace.cwms.db.jooq.dao.CwmsDbLocJooq;
-import usace.cwms.db.jooq.dao.CwmsDbTsJooq;
-
-import static cwms.cda.data.dao.DaoTest.getConnection;
-import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Disabled
 public class TimeSeriesDaoTest
@@ -200,12 +198,12 @@ public class TimeSeriesDaoTest
 		return count > 0;
 	}
 
-	private void storeLocation(Connection connection, String officeId, String locationId) throws SQLException
+	private void storeLocation(Connection connection, String officeId, String locationId)
 	{
-		CwmsDbLocJooq locJooq = new CwmsDbLocJooq();
-
-		locJooq.store(connection, officeId, locationId, null, null, "PST", null, null, null, null, null, null, null,
-				locationId, null, null, true, true);
+		CWMS_LOC_PACKAGE.call_STORE_LOCATION(getDslContext(connection, officeId).configuration(), locationId,
+			null, null, null, null, null,
+			null, null, locationId, null, null,
+			"PST", null, null, null, null, officeId);
 	}
 
 	@Test
@@ -213,36 +211,40 @@ public class TimeSeriesDaoTest
 	{
 		Connection connection = getConnection();
 
-		CwmsDbTsJooq cwmsTsJdbc = new CwmsDbTsJooq();
-		createTs(cwmsTsJdbc, connection);
+		createTs(connection);
 		String officeId = "LRL";
 		String timeSeriesDesc = TIME_SERIES_ID;
 		String units = UNITS;
-		long[] timeArray = TIME_ARRAY;
-		double[] valueArray = VALUE_ARRAY;
-		int[] qualityArray = QUALITY_ARRAY;
 		int count = COUNT;
 		String storeRule = STORE_RULE;
 		boolean overrideProtection = OVERRIDE_PROTECTION;
 		Timestamp versionDate = null;
 
-		timeArray = new long[]{START_TIME.getTime()};
-		valueArray = new double[]{9999999.0};
-		qualityArray = new int[]{0};
+		long[] timeArray = new long[]{START_TIME.getTime()};
+		double[] valueArray = new double[]{9999999.0};
+		int[] qualityArray = new int[]{0};
 		LOGGER.info("Office Id: " + officeId);
 		LOGGER.info("Time Series ID: " + TIME_SERIES_ID);
 		LOGGER.info("Storing: " + valueArray[0] + " at " + new Date(timeArray[0]));
-		cwmsTsJdbc.store(connection, officeId, timeSeriesDesc, units, timeArray, valueArray, qualityArray, count,
-				storeRule, overrideProtection, versionDate, false);
-		LOGGER.log(Level.INFO, "Test time series stored.");
-		ResultSet retrieve = cwmsTsJdbc.retrieve(connection, "LRL", new String[]{TIME_SERIES_ID}, new String[]{UNITS},
-				VERSION_DATE, true, START_TIME, START_TIME, 1, false, new Timestamp[1], new String[1]);
-		List<TimeValueQuality> timeValueQualities = cwmsTsJdbc.parseTimeSeriesResultSet(retrieve);
-		assertFalse(timeValueQualities.isEmpty());
+		NUMBER_ARRAY times = new NUMBER_ARRAY();
+		DOUBLE_ARRAY values = new DOUBLE_ARRAY();
+		NUMBER_ARRAY qualities = new NUMBER_ARRAY();
+		for (int i = 0; i < count; i++) {
+			times.put(i, BigDecimal.valueOf(timeArray[i]));
+			values.put(i, valueArray[i]);
+			qualities.put(i, BigDecimal.valueOf(qualityArray[i]));
+		}
 
+		CWMS_TS_PACKAGE.call_STORE_TS__3(getDslContext(connection, officeId).configuration(), timeSeriesDesc, units,
+			times, values, qualities, storeRule, overrideProtection ? "T" : "F", versionDate, officeId, "F");
+		LOGGER.log(Level.INFO, "Test time series stored.");
+		RETRIEVE_TS_2
+			result = CWMS_TS_PACKAGE.call_RETRIEVE_TS_2(getDslContext(connection, officeId).configuration(), UNITS,
+				officeId, TIME_SERIES_ID, START_TIME, END_TIME, null, 0, 1, VERSION_DATE, 1);
+		assertFalse(result.getP_AT_TSV_RC().isEmpty());
 	}
 
-	private void createTs(CwmsDbTsJooq cwmsTsJdbc, Connection connection) throws SQLException
+	private void createTs(Connection connection) throws SQLException
 	{
 		String timeSeriesDesc = TIME_SERIES_ID;
 		String officeId = "LRL";
@@ -250,7 +252,8 @@ public class TimeSeriesDaoTest
 		{
 			storeLocation(connection, officeId, LOC_ID);
 
-			cwmsTsJdbc.createTsCodeBigInteger(connection, officeId, timeSeriesDesc, 0, 0, 0, false, true);
+			CWMS_TS_PACKAGE.call_CREATE_TS_CODE(getDslContext(connection, officeId).configuration(), timeSeriesDesc,
+				0, 0, 0, "F", "T", "F", officeId);
 			connection.commit();
 		}
 		catch(Exception e)
@@ -262,16 +265,20 @@ public class TimeSeriesDaoTest
 	@Test
 	void testVersion() throws SQLException
 	{
-		JooqCwmsDatabaseVersionInfoFactory fac = new JooqCwmsDatabaseVersionInfoFactory();
-
 		try(Connection connection = getConnection())
 		{
-			CwmsDatabaseVersionInfo info = fac.retrieveVersionInfo(connection);
-			assertNotNull(info);
-			assertFalse(info.getTitle().isEmpty());
-			assertFalse(info.getApplication().isEmpty());
-			assertFalse(info.getDescription().isEmpty());
-			assertFalse(info.getVersion().isEmpty());
+			Result<usace.cwms.db.jooq.codegen.tables.records.AV_DB_CHANGE_LOG> results = DSL.using(connection).selectFrom(AV_DB_CHANGE_LOG.AV_DB_CHANGE_LOG).fetch();
+
+			for (usace.cwms.db.jooq.codegen.tables.records.AV_DB_CHANGE_LOG rec : results) {
+				String title = rec.getTITLE();
+				String application = rec.getAPPLICATION();
+				String description = rec.getDESCRIPTION();
+				String version = rec.getVERSION();
+				assertFalse(title.isEmpty());
+				assertFalse(application.isEmpty());
+				assertFalse(description.isEmpty());
+				assertFalse(version.isEmpty());
+			}
 		}
 	}
 }

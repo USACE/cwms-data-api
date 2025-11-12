@@ -30,12 +30,8 @@ import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.TimeSeriesGroup;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
-import kotlin.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.*;
 import org.jooq.conf.ParamType;
@@ -106,14 +102,6 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         AV_TS_CAT_GRP catGrp = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
         AV_TS_GRP_ASSGN grpAssgn = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
 
-        final RecordMapper<Record, Pair<TimeSeriesGroup, AssignedTimeSeries>> mapper =
-                queryRecord -> {
-                    TimeSeriesGroup group = buildTimeSeriesGroup(queryRecord);
-                    AssignedTimeSeries loc = buildAssignedTimeSeries(queryRecord);
-
-                    return new Pair<>(group, loc);
-                };
-
         Condition whereCondGrpCat = DSL.noCondition();
         if (categoryOfficeId != null) {
             whereCondGrpCat = whereCondGrpCat.and(catGrp.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
@@ -128,39 +116,51 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             joinCond = joinCond.and(grpAssgn.DB_OFFICE_ID.eq(tsOfficeId));
         }
 
-        SelectSeekStep1<?, BigDecimal> query = dsl.select(catGrp.CAT_DB_OFFICE_ID,
-                        catGrp.TS_CATEGORY_ID, catGrp.TS_CATEGORY_DESC, catGrp.GRP_DB_OFFICE_ID,
-                        catGrp.TS_GROUP_ID, catGrp.TS_GROUP_DESC, catGrp.SHARED_TS_ALIAS_ID,
-                        catGrp.SHARED_REF_TS_ID, grpAssgn.CATEGORY_ID, grpAssgn.DB_OFFICE_ID,
-                        grpAssgn.GROUP_ID, grpAssgn.TS_ID, grpAssgn.TS_CODE, grpAssgn.ATTRIBUTE,
-                        grpAssgn.ALIAS_ID, grpAssgn.REF_TS_ID, grpAssgn.CATEGORY_OFFICE_ID, grpAssgn.GROUP_OFFICE_ID)
-                .from(catGrp).leftJoin(grpAssgn)
-                .on(joinCond)
+        SelectSeekStep4<Record9<String, String, String, String, String, String, String, String,
+                List<AssignedTimeSeries>>, String, String, String, String> query = dsl
+            .select(
+                catGrp.CAT_DB_OFFICE_ID,
+                catGrp.TS_CATEGORY_ID,
+                catGrp.TS_CATEGORY_DESC,
+                catGrp.GRP_DB_OFFICE_ID,
+                catGrp.TS_GROUP_ID,
+                catGrp.TS_GROUP_DESC,
+                catGrp.SHARED_TS_ALIAS_ID,
+                catGrp.SHARED_REF_TS_ID,
+                DSL.multiset(
+                    dsl
+                        .select(
+                            grpAssgn.TS_ID,
+                            grpAssgn.DB_OFFICE_ID,
+                            grpAssgn.ATTRIBUTE,
+                            grpAssgn.ALIAS_ID,
+                            grpAssgn.REF_TS_ID
+                        )
+                        .from(grpAssgn)
+                        .where(joinCond)
+                        .orderBy(grpAssgn.ATTRIBUTE) // Localized ordering inside the group
+                ).convertFrom(rs -> rs.map(this::buildAssignedTimeSeries))
+            )
+            .from(catGrp)
             .where(whereCond)
             .and(whereCondGrpCat)
-            .orderBy(grpAssgn.ATTRIBUTE);
+            .orderBy(catGrp.CAT_DB_OFFICE_ID,
+                catGrp.TS_CATEGORY_ID,
+                catGrp.GRP_DB_OFFICE_ID,
+                catGrp.TS_GROUP_ID);
 
         logger.fine(() -> query.getSQL(ParamType.INLINED));
 
-        List<Pair<TimeSeriesGroup, AssignedTimeSeries>> assignments =
-                query.fetch(mapper);
+        RecordMapper<? super Record9<String, String, String, String, String, String, String, String,
+            List<AssignedTimeSeries>>, TimeSeriesGroup> mapperToTimeSeriesGroup =
+                queryRecord -> {
+                    TimeSeriesGroup group = buildTimeSeriesGroup(queryRecord);
+                    List<AssignedTimeSeries> assignedTS = (List<AssignedTimeSeries>) queryRecord.get("multiset");
 
-        Map<TimeSeriesGroup, List<AssignedTimeSeries>> map = new LinkedHashMap<>();
-        for (Pair<TimeSeriesGroup, AssignedTimeSeries> pair : assignments) {
-            List<AssignedTimeSeries> list = map.computeIfAbsent(pair.component1(),
-                    k -> new ArrayList<>());
-            AssignedTimeSeries assignedTimeSeries = pair.component2();
-            if (assignedTimeSeries != null) {
-                list.add(assignedTimeSeries);
-            }
-        }
+                    return new TimeSeriesGroup(group, assignedTS);
+                };
 
-        List<TimeSeriesGroup> retval = new ArrayList<>();
-        for (final Map.Entry<TimeSeriesGroup, List<AssignedTimeSeries>> entry : map.entrySet()) {
-            List<AssignedTimeSeries> assigned = entry.getValue();
-            retval.add(new TimeSeriesGroup(entry.getKey(), assigned));
-        }
-        return retval;
+        return query.fetch(mapperToTimeSeriesGroup);
     }
 
     @NotNull
@@ -180,32 +180,31 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
         logger.fine(() -> query.getSQL(ParamType.INLINED));
 
-        return query.fetch((RecordMapper<Record, TimeSeriesGroup>) this::buildTimeSeriesGroup);
+        return query.fetch((RecordMapper<org.jooq.Record, TimeSeriesGroup>) this::buildTimeSeriesGroup);
     }
 
-    private AssignedTimeSeries buildAssignedTimeSeries(Record queryRecord) {
+    private AssignedTimeSeries buildAssignedTimeSeries(Record5<String, String, BigDecimal, String, String> multisetRecord) {
         AssignedTimeSeries retval = null;
 
-        String officeId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID);
-        String timeseriesId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_ID);
-        BigDecimal tsCode = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.TS_CODE);
-
-        if (timeseriesId != null && tsCode != null) {
-            String aliasId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ALIAS_ID);
-            String refTsId = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.REF_TS_ID);
-            BigDecimal attrBD = queryRecord.get(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.ATTRIBUTE);
+        if (multisetRecord != null) {
+            String timeseriesId = String.valueOf(multisetRecord.get(0));
+            String officeId = String.valueOf(multisetRecord.get(1));
+            BigDecimal attrBD = (BigDecimal) multisetRecord.get(2);
+            String aliasId = String.valueOf(multisetRecord.get(3));
+            String refTsId = String.valueOf(multisetRecord.get(4));
 
             Integer attr = null;
             if (attrBD != null) {
                 attr = attrBD.intValue();
             }
+
             retval = new AssignedTimeSeries(officeId, timeseriesId, aliasId, refTsId, attr);
         }
 
         return retval;
     }
 
-    private TimeSeriesGroup buildTimeSeriesGroup(Record queryRecord) {
+    private TimeSeriesGroup buildTimeSeriesGroup(org.jooq.Record queryRecord) {
         TimeSeriesCategory cat = buildTimeSeriesCategory(queryRecord);
 
         String grpOfficeId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID);
@@ -218,7 +217,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     @NotNull
-    private TimeSeriesCategory buildTimeSeriesCategory(Record queryRecord) {
+    private TimeSeriesCategory buildTimeSeriesCategory(org.jooq.Record queryRecord) {
         String catOfficeId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.CAT_DB_OFFICE_ID);
         String catId = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID);
         String catDesc = queryRecord.get(AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_DESC);
@@ -301,6 +300,4 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 null, "T", officeId)
         );
     }
-
-
 }

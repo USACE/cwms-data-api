@@ -13,11 +13,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk: [8, 11]
+        jdk: [11]
         schema:
-          - "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev"
-          - "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25-07-01-RC06"
-    name: build and test
+          - env: latest
+            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev"
+          - env: release
+            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25-07-01-RC06"
+    name: build and test (jdk ${{matrix.jdk}}, schema ${{matrix.schema.env}})
     runs-on: ubuntu-latest
     outputs:
       thewar: ${{steps.thebuild.outputs.WARFILE}}
@@ -25,7 +27,7 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v5.0.0
       - name: setup java
-        uses: actions/setup-java@v4.7.1
+        uses: actions/setup-java@v5.0.0
         with:
           distribution: 'temurin'
           java-version: ${{matrix.jdk}}
@@ -46,7 +48,7 @@ jobs:
         id: thebuild
         run: ./gradlew build --info --init-script init.gradle
       - name: integration tests
-        run: ./gradlew integrationtest --info --init-script init.gradle -PCDA.oracle.database.image=${{matrix.schema}}
+        run: ./gradlew integrationtest --info --init-script init.gradle -PCDA.oracle.database.image=${{matrix.schema.image}}
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v5
         if: success() || failure() # always run even if the previous step fails

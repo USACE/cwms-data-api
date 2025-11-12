@@ -57,15 +57,17 @@ import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 public class ProjectChildLocationHandlerIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
 
-    @Test
-    void test_get_embankment() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_get_embankment(String format) throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
@@ -115,7 +117,7 @@ public class ProjectChildLocationHandlerIT extends DataApiTestIT {
 
                 given()
                     .log().ifValidationFails(LogDetail.ALL, true)
-                    .accept(Formats.JSON)
+                    .accept(format)
                     .queryParam(Controllers.OFFICE, OFFICE)
                     .queryParam(PROJECT_LIKE, projectName)
                     .queryParam(LOCATION_KIND_LIKE, "(EMBANKMENT|TURBINE)")

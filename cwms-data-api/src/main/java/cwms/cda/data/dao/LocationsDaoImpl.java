@@ -40,6 +40,7 @@ import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.name;
 import static org.jooq.impl.DSL.select;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
 
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.enums.Unit;
@@ -87,8 +88,6 @@ import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
-import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
@@ -156,17 +155,39 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
     @Override
     public Location getLocation(String locationName, String unitSystem, String officeId) {
-        Record loc = dsl.select(AV_LOC.asterisk())
+        return getLocation(locationName, unitSystem, officeId, false);
+    }
+
+    @Override
+    public Location getLocation(String locationName, String unitSystem, String officeId, boolean includeAliases) {
+        if (includeAliases) {
+            List<Record> locs = dsl.select(asterisk())
+                .from(AV_LOC2.AV_LOC2)
+                .leftJoin(AV_LOC_ALIAS)
+                .on(AV_LOC2.AV_LOC2.BASE_LOCATION_ID.eq(AV_LOC_ALIAS.BASE_LOCATION_ID).and(
+                    AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_LOC_ALIAS.LOCATION_CODE.cast(Long.class))))
+                .where(AV_LOC2.AV_LOC2.DB_OFFICE_ID.equalIgnoreCase(officeId)
+                    .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
+                        .and(AV_LOC2.AV_LOC2.LOCATION_ID.equalIgnoreCase(locationName))))
+                .fetch();
+            if (locs.isEmpty()) {
+                throw new NotFoundException("Location not found for office:" + officeId + " and unit "
+                    + "system:" + unitSystem + " and id:" + locationName);
+            }
+            return buildLocation(null, locs, true);
+        } else {
+            Record loc = dsl.select(AV_LOC.asterisk())
                 .from(AV_LOC)
                 .where(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId)
-                        .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
-                                .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))))
+                    .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
+                        .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))))
                 .fetchOne();
-        if (loc == null) {
-            throw new NotFoundException("Location not found for office:" + officeId + " and unit "
+            if (loc == null) {
+                throw new NotFoundException("Location not found for office:" + officeId + " and unit "
                     + "system:" + unitSystem + " and id:" + locationName);
+            }
+            return buildLocation(loc);
         }
-        return buildLocation(loc);
     }
 
     private CwmsIdLocationKind buildLocationKind(Record loc) {
@@ -177,56 +198,85 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     private Location buildLocation(Record loc) {
-        String timeZoneName = loc.get(AV_LOC.TIME_ZONE_NAME); // may be null...
+        return buildLocation(loc, null, false);
+    }
+
+    private Location buildLocation(Record singleLoc, List<Record> locWithAliases, boolean includeAliases) {
+        FieldMapping map;
+        Record loc;
+        if (includeAliases) {
+            map = new AvLoc2FieldMapping();
+            loc = locWithAliases.get(0);
+        } else {
+            map = new AvLocFieldMapping();
+            loc = singleLoc;
+        }
+
+        String timeZoneName = loc.get(map.getTimeZoneName()); // may be null...
         ZoneId zone = null;
         if (timeZoneName != null) {
             zone = ZoneIdHelper.parseZoneIdWithAliases(timeZoneName);
         }
 
         Double latDouble = null;
-        BigDecimal latBigDec = loc.get(AV_LOC.LATITUDE);
+        BigDecimal latBigDec = loc.get(map.getLatitude());
         if (latBigDec != null) {
             latDouble = latBigDec.doubleValue();
         }
 
         Double longDouble = null;
-        BigDecimal longBigDec = loc.get(AV_LOC.LONGITUDE);
+        BigDecimal longBigDec = loc.get(map.getLongitude());
         if (longBigDec != null) {
             longDouble = longBigDec.doubleValue();
         }
 
-        Location.Builder locationBuilder = new Location.Builder(
-                loc.get(AV_LOC.LOCATION_ID),
-                loc.get(AV_LOC.LOCATION_KIND_ID),
-                zone,
-                latDouble,
-                longDouble,
-                loc.get(AV_LOC.HORIZONTAL_DATUM),
-                loc.get(AV_LOC.DB_OFFICE_ID)
-        )
-                .withLocationType(loc.get(AV_LOC.LOCATION_TYPE))
-                .withElevation(loc.get(AV_LOC.ELEVATION))
-                .withElevationUnits(loc.get(AV_LOC.UNIT_ID))
-                .withVerticalDatum(loc.get(AV_LOC.VERTICAL_DATUM))
-                .withPublicName(loc.get(AV_LOC.PUBLIC_NAME))
-                .withLongName(loc.get(AV_LOC.LONG_NAME))
-                .withDescription(loc.get(AV_LOC.DESCRIPTION))
-                .withCountyName(loc.get(AV_LOC.COUNTY_NAME))
-                .withStateInitial(loc.get(AV_LOC.STATE_INITIAL))
-                .withActive(loc.get(AV_LOC.ACTIVE_FLAG).equalsIgnoreCase("T"))
-                .withMapLabel(loc.get(AV_LOC.MAP_LABEL))
-                .withBoundingOfficeId(loc.get(AV_LOC.BOUNDING_OFFICE_ID))
-                .withNearestCity(loc.get(AV_LOC.NEAREST_CITY))
-                .withNation(Nation.nationForName(loc.get(AV_LOC.NATION_ID)))
-                ;
+        String locationId = loc.get(map.getLocationId());
 
-        BigDecimal pubLatitude = loc.get(AV_LOC.PUBLISHED_LATITUDE);
-        BigDecimal pubLongitude = loc.get(AV_LOC.PUBLISHED_LONGITUDE);
+        Location.Builder locationBuilder = new Location.Builder(
+            locationId,
+            loc.get(map.getLocationKind()),
+            zone,
+            latDouble,
+            longDouble,
+            loc.get(map.getHorizontalDatum()),
+            loc.get(map.getDbOfficeId())
+        )
+            .withLocationType(loc.get(map.getLocationType()))
+            .withElevation(loc.get(map.getElevation()))
+            .withElevationUnits(loc.get(map.getUnit()))
+            .withVerticalDatum(loc.get(map.getVerticalDatum()))
+            .withPublicName(loc.get(map.getPublicName()))
+            .withLongName(loc.get(map.getLongName()))
+            .withDescription(loc.get(map.getDescription()))
+            .withCountyName(loc.get(map.getCountyName()))
+            .withStateInitial(loc.get(map.getStateInitial()))
+            .withActive(loc.get(map.getActiveFlag()).equalsIgnoreCase("T"))
+            .withMapLabel(loc.get(map.getMapLabel()))
+            .withBoundingOfficeId(loc.get(map.getBoundingOfficeId()))
+            .withNearestCity(loc.get(map.getNearestCity()))
+            .withNation(Nation.nationForName(loc.get(map.getNation())))
+            ;
+
+        BigDecimal pubLatitude = loc.get(map.getPublishedLatitude());
+        BigDecimal pubLongitude = loc.get(map.getPublishedLongitude());
         if (pubLatitude != null) {
             locationBuilder.withPublishedLatitude(pubLatitude.doubleValue());
         }
         if (pubLongitude != null) {
             locationBuilder.withPublishedLongitude(pubLongitude.doubleValue());
+        }
+
+        if (includeAliases) {
+            List<LocationAlias> aliases = new ArrayList<>();
+            for (Record r : locWithAliases) {
+                String alias = r.get(AV_LOC_ALIAS.ALIAS_ID);
+                if (alias != null && !alias.isEmpty()) {
+                    LocationAlias locationAlias = new LocationAlias(r.get(AV_LOC_ALIAS.CATEGORY_ID)
+                        + "-" + r.get(AV_LOC_ALIAS.GROUP_ID), alias);
+                    aliases.add(locationAlias);
+                }
+            }
+            locationBuilder.withAliases(aliases);
         }
         return locationBuilder.build();
     }
@@ -306,20 +356,17 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         renamedLocation.validate();
         try {
             connection(dsl, c -> {
-                setOffice(c,renamedLocation);
-                CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
-                String elevationUnits = renamedLocation.getElevationUnits() == null
-                        ? Unit.METER.getValue() : renamedLocation.getElevationUnits();
-                locJooq.rename(c, renamedLocation.getOfficeId(), oldLocationName,
-                        renamedLocation.getName(), renamedLocation.getStateInitial(),
-                        renamedLocation.getCountyName(), renamedLocation.getTimezoneName(),
-                        renamedLocation.getLocationType(),
-                        renamedLocation.getLatitude(), renamedLocation.getLongitude(),
-                        renamedLocation.getElevation(), elevationUnits,
-                        renamedLocation.getVerticalDatum(), renamedLocation.getHorizontalDatum(),
-                        renamedLocation.getPublicName(),
-                        renamedLocation.getLongName(), renamedLocation.getDescription(),
-                        renamedLocation.getActive(), true);
+                Configuration config = getDslContext(c, renamedLocation.getOfficeId()).configuration();
+                CWMS_LOC_PACKAGE.call_RENAME_LOC(config,
+                    renamedLocation.getOfficeId(), oldLocationName, renamedLocation.getName());
+                CWMS_LOC_PACKAGE.call_UPDATE_LOCATION(config,
+                    renamedLocation.getName(), renamedLocation.getLocationType(), renamedLocation.getElevation(),
+                    renamedLocation.getElevationUnits(), renamedLocation.getVerticalDatum(),
+                    renamedLocation.getLatitude(), renamedLocation.getLongitude(), renamedLocation.getHorizontalDatum(),
+                    renamedLocation.getPublicName(), renamedLocation.getLongName(), renamedLocation.getDescription(),
+                    renamedLocation.getTimezoneName(), renamedLocation.getCountyName(),
+                    renamedLocation.getStateInitial(), formatBool(renamedLocation.getActive()), formatBool(true),
+                    renamedLocation.getOfficeId());
             });
         } catch (DataAccessException ex) {
             throw new IOException("Failed to rename Location", ex);
@@ -428,7 +475,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     private Catalog getLocationCatalog(Catalog.CatalogPage catPage, int pageSize, CatalogRequestParameters params) {
-        FieldMapping fieldMapping = null;
+        FieldMapping fieldMapping;
         if (params.includeAliases()) {
             fieldMapping = new AvLoc2FieldMapping();
         } else {

@@ -38,6 +38,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
@@ -52,8 +54,9 @@ final class LookupTypeControllerIT extends DataApiTestIT {
     private static final String OFFICE_ID = "office-id";
     private static final String MESSAGE = "message";
     private static final String IDENTIFIER = "identifier";
-    @Test
-    void test_get_create_delete() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_get_create_delete(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/lookup_type.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -70,7 +73,7 @@ final class LookupTypeControllerIT extends DataApiTestIT {
         //Create the lookup type
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(Controllers.CATEGORY, CATEGORY_IT)
             .queryParam(Controllers.PREFIX, PREFIX_IT)
             .contentType(Formats.JSON)
@@ -92,7 +95,7 @@ final class LookupTypeControllerIT extends DataApiTestIT {
         // Retrieve the lookup type and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.CATEGORY, CATEGORY_IT)
             .queryParam(Controllers.PREFIX, PREFIX_IT)
@@ -113,7 +116,7 @@ final class LookupTypeControllerIT extends DataApiTestIT {
         // Delete the lookup type
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.CATEGORY, CATEGORY_IT)
             .queryParam(Controllers.PREFIX, PREFIX_IT)
@@ -134,7 +137,7 @@ final class LookupTypeControllerIT extends DataApiTestIT {
         // Retrieve the lookup type and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.CATEGORY, CATEGORY_IT)
             .queryParam(Controllers.PREFIX, PREFIX_IT)
@@ -150,8 +153,9 @@ final class LookupTypeControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_update_does_not_exist() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_update_does_not_exist(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/lookup_type_does_not_exist.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -162,7 +166,7 @@ final class LookupTypeControllerIT extends DataApiTestIT {
         // Try to update a lookup type that does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
+            .accept(format)
             .queryParam(Controllers.CATEGORY, CATEGORY_IT)
             .queryParam(Controllers.PREFIX, PREFIX_IT)
             .contentType(Formats.JSON)
@@ -180,7 +184,7 @@ final class LookupTypeControllerIT extends DataApiTestIT {
     }
 
     @Test
-    void test_delete_does_not_exist() throws IOException {
+    void test_delete_does_not_exist() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         // Try to delete a lookup type that does not exist
         given()

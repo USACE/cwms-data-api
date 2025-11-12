@@ -123,7 +123,8 @@ public class BasinController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT);
             String result;
             ContentType contentType;
-            if (formatHeader != null && formatHeader.contains(Formats.NAMED_PGJSON)) {
+            if (formatHeader != null && (formatHeader.contains(Formats.NAMED_PGJSON)
+                                            || formatHeader.contains(Formats.DEFAULT))) {
                 contentType = Formats.parseHeader(formatHeader, Basin.class);
                 ctx.contentType(contentType.toString());
                 BasinDao basinDao = new BasinDao(dsl);
@@ -209,11 +210,6 @@ public class BasinController implements CrudHandler {
             }
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (SQLException ex) {
-            CdaError error = new CdaError("Error retrieving " + name);
-            String errorMsg = "Error retrieving " + name;
-            LOGGER.log(Level.SEVERE, errorMsg, ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

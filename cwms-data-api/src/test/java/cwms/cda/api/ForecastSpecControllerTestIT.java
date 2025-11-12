@@ -8,6 +8,9 @@ import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
 
 import org.apache.commons.io.IOUtils;
@@ -17,7 +20,6 @@ import org.jooq.util.oracle.OracleDSL;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -25,7 +27,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
-import static cwms.cda.api.Controllers.DESIGNATOR;
 import static cwms.cda.api.Controllers.ID_MASK;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
@@ -40,6 +41,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
     private static final String OFFICE = "SPK";
     private static final String SPEC_ID = "TEST-SPEC";
     private static final String locationId = "TsBinTestLoc";
+    private static final String locationId2 = "TsBinTestLoc2";
     private static final String designator = "designator";
 
     public static final String PATH = "/forecast-spec/";
@@ -47,7 +49,12 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
     @BeforeAll
     static void create() throws Exception {
         createLocation(locationId, true, OFFICE);
+        createLocation(locationId2, true, OFFICE);
         createTimeSeries(locationId);
+        createTimeseries(OFFICE, "TsBinTestLoc.Elev.Inst.~1Day.0.SPK-cavi-fct");
+        createTimeseries(OFFICE, "TsBinTestLoc.Flow-Outflow.Inst.~1Day.0.SPK-cavi-fct");
+        createTimeseries(OFFICE, "TsBinTestLoc2.Elev.Inst.~1Day.0.SPK-cavi-fct");
+        createTimeseries(OFFICE, "TsBinTestLoc2.Flow-Outflow.Inst.~1Day.0.SPK-cavi-fct");
     }
 
     static void createTimeSeries(String locationId) throws SQLException {
@@ -94,9 +101,9 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
     }
 
 
-    @Test
-    void test_get_create_get() throws IOException {
-
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_get_create_get(String format) throws IOException {
 
         // Structure of test:
         // 1)Retrieve a ForecastSpec and assert that it does not exist
@@ -108,7 +115,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
         .when()
@@ -133,7 +140,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -151,7 +158,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
         .when()
@@ -170,21 +177,22 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
     }
 
 
-    @Test
-    void test_get_create_get_null_designator() throws IOException {
-
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_get_create_get_null_designator(String format) throws IOException {
 
         // Structure of test:
         // 1)Retrieve a ForecastSpec and assert that it does not exist
         // 2)Create the ForecastSpec
         // 3)Retrieve the ForecastSpec and assert that it exists
+        // 4)Delete the ForecastSpec if it exists
 
         // Step 1)
         // Retrieve a ForecastSpec and assert that it does not exist
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
         .when()
             .redirects().follow(true)
@@ -208,7 +216,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -226,7 +234,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
         .when()
             .redirects().follow(true)
@@ -242,7 +250,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(ID_MASK, SPEC_ID + "-NULL-DESIGNATOR")
         .when()
@@ -257,10 +265,26 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .body("[0].time-series-ids.size()", equalTo(3))
         ;
 
+        // Step 4)
+        // Delete the spec
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete(PATH + SPEC_ID + "-NULL-DESIGNATOR")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+        ;
     }
 
-    @Test
-    void test_create_get_delete_get() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_get_delete_get(String format) throws Exception {
 
         // Structure of test:
         //
@@ -281,7 +305,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -298,7 +322,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         // Retrieve the spec and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
         .when()
@@ -317,7 +341,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         // Delete the spec
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, SPEC_ID)
@@ -336,7 +360,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         // Retrieve the spec and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
         .when()
@@ -351,7 +375,70 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_create_get_delete_get_lrts() throws Exception {
+    void test_create_get_delete_get_permissions_issue() throws Exception {
+
+        // Create the spec
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/forecast_spec_save.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_OTHER_NORMAL_SAME_ROLES;
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post(PATH)
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        truncateFcstTimeSeries();
+        // Delete the spec
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, "SPK-Daily-UKY-Test")
+                .queryParam(Controllers.DESIGNATOR, designator)
+                .queryParam(Controllers.METHOD, JooqDao.DeleteMethod.DELETE_ALL)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete(PATH + "SPK-Daily-UKY-Test")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        // Retrieve the spec and assert that it does not exist
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.DESIGNATOR, designator)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get(PATH + "SPK-Daily-UKY-Test")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_get_delete_get_lrts(String format) throws Exception {
         // Structure of test:
         // 1) Create the spec
         // 2) Retrieve the spec and assert that it exists
@@ -374,7 +461,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(specData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -392,7 +479,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         // Retrieve the spec and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
             .header(ApiServlet.IS_NEW_LRTS, true)
@@ -417,7 +504,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         // Delete the spec
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, specId)
@@ -436,7 +523,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         // Retrieve the spec and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
         .when()
@@ -450,8 +537,9 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_create_get_update_get() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_get_update_get(String format) throws IOException {
 
         // Structure of test:
         // 1)Retrieve spec
@@ -466,7 +554,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
         .when()
@@ -491,7 +579,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -508,7 +596,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         // Retrieve the spec and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
         .when()
@@ -531,7 +619,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -549,7 +637,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         // Retrieve thespec and assert it changed
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
         .when()

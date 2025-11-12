@@ -25,9 +25,14 @@
 package cwms.cda.api;
 
 import cwms.cda.ApiServlet;
+import cwms.cda.data.dao.LocationCategoryDao;
+import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
+import cwms.cda.data.dto.AssignedLocation;
+import cwms.cda.data.dto.LocationCategory;
+import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.TimeSeries;
@@ -368,7 +373,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(BEGIN, time.toInstant().toString())
                 .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
@@ -408,7 +412,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                         .log().ifValidationFails(LogDetail.ALL,true)
                         .accept(Formats.JSONV2)
                         .contentType(Formats.JSONV2)
-                        .header("Authorization", user.toHeaderValue())
                         .queryParam(Controllers.OFFICE, OFFICE)
                         .queryParam(BEGIN, time.toInstant().toString())
                         .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
@@ -488,7 +491,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .header(ApiServlet.IS_NEW_LRTS, false)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
@@ -510,7 +512,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
@@ -1969,6 +1970,250 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("levels.size()", is(1))
             .body("levels[0].constant-value", equalTo(1.0f))
+        ;
+    }
+
+    @Test
+    void test_get_aliases() throws Exception {
+        String locationName = "TestBaseLocationLevel";
+        String controlLocationName = "TestBaseLocLevelControl";
+        createLocation(controlLocationName, true, OFFICE);
+        createLocation(locationName, true, OFFICE);
+
+        String categoryName = "TestAliasesCategory";
+        String groupName1 = "TestAliasesGroup";
+        String groupName2 = "TestAliasesGroup2";
+        String sharedLocAlias1 = "TESTBASELOCALIAS";
+        String sharedLocAlias2 = "LEVELALIAS";
+
+        String levelId1 = locationName + ".Stor.Ave.1Day.Regulating";
+        String levelId2 = locationName + ".Elev.Ave.1Day.USGS";
+        String controlLevelId = controlLocationName + ".Elev.Ave.1Day.USGS";
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            LocationLevel level1 = new ConstantLocationLevel.Builder(levelId1, time)
+                .withOfficeId(OFFICE)
+                .withLevelUnitsId("ac-ft")
+                .withConstantValue(12.0)
+                .build();
+            LocationLevel level2 = new ConstantLocationLevel.Builder(levelId2, time)
+                .withOfficeId(OFFICE)
+                .withLevelUnitsId("m")
+                .withConstantValue(123.0)
+                .build();
+            LocationLevel level3 = new ConstantLocationLevel.Builder(controlLevelId, time)
+                .withOfficeId(OFFICE)
+                .withLevelUnitsId("m")
+                .withConstantValue(25.0)
+                .build();
+            levelList.add(level1);
+            levelList.add(level2);
+            levelList.add(level3);
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level1);
+            dao.storeLocationLevel(level2);
+            dao.storeLocationLevel(level3);
+
+            LocationCategory category = new LocationCategory(OFFICE, categoryName, "A test category");
+            LocationCategoryDao catDao = new LocationCategoryDao(dsl);
+            try {
+                catDao.delete(category.getId(), true, OFFICE);
+            } catch (Exception e) {
+                // ignore
+            }
+            catDao.create(category);
+
+            LocationGroupDao groupDao = new LocationGroupDao(dsl);
+            LocationGroup baseGroup1 = new LocationGroup(category, OFFICE, groupName1, "A test group",
+                sharedLocAlias1, null, 0);
+            LocationGroup baseGroup2 = new LocationGroup(category, OFFICE, groupName2, "Another test group",
+                sharedLocAlias2, null, 0);
+
+            groupDao.create(baseGroup1);
+            groupDao.create(baseGroup2);
+            List<AssignedLocation> locations = new ArrayList<>();
+            AssignedLocation assignedLocation = new AssignedLocation(locationName, OFFICE, sharedLocAlias1, null, null);
+            locations.add(assignedLocation);
+            LocationGroup group = new LocationGroup(baseGroup1, locations);
+            groupDao.assignLocs(group, OFFICE);
+
+            locations = new ArrayList<>();
+            assignedLocation = new AssignedLocation(locationName, OFFICE, sharedLocAlias2, null, null);
+            locations.add(assignedLocation);
+            LocationGroup group2 = new LocationGroup(baseGroup2, locations);
+            groupDao.assignLocs(group2, OFFICE);
+        });
+
+        // verify that the control level can be retrieved
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, controlLevelId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(1))
+            .body("levels[0].constant-value", equalTo(25.0f))
+            .body("levels[0].location-level-id", equalTo(controlLevelId))
+            .body("levels[0].aliases", nullValue())
+        ;
+
+        // verify that the aliased levels can be retrieved
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, locationName + ".*")
+            .queryParam(INCLUDE_ALIASES, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(2))
+            .body("levels[0].location-level-id", isOneOf(levelId1, levelId2))
+            .body("levels[1].location-level-id", isOneOf(levelId1, levelId2))
+            .body("levels[0].aliases", notNullValue())
+            .body("levels[0].aliases.size()", is(2))
+            .body("levels[0].aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[1].aliases", notNullValue())
+            .body("levels[1].aliases.size()", is(2))
+            .body("levels[1].aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[1].aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+        ;
+
+        // verify the results for a single level
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, levelId1)
+            .queryParam(INCLUDE_ALIASES, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(1))
+            .body("levels[0].location-level-id", is(levelId1))
+            .body("levels[0].aliases", notNullValue())
+            .body("levels[0].aliases.size()", is(2))
+            .body("levels[0].aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[0].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+            .body("levels[0].aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[1].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+            ;
+
+        // verify the results for a single level
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, levelId2)
+            .queryParam(INCLUDE_ALIASES, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+            .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(1))
+            .body("levels[0].location-level-id", is(levelId2))
+            .body("levels[0].aliases", notNullValue())
+            .body("levels[0].aliases.size()", is(2))
+            .body("levels[0].aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[0].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+            .body("levels[0].aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[1].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+        ;
+
+        // verify the results for a single level
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, levelId2)
+            .queryParam(INCLUDE_ALIASES, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(1))
+            .body("levels[0].location-level-id", is(levelId2))
+            .body("levels[0].aliases", notNullValue())
+            .body("levels[0].aliases.size()", is(2))
+            .body("levels[0].aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[0].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+            .body("levels[0].aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[1].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+        ;
+
+        // verify that alias as level-id mask does not return results
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, sharedLocAlias1)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(0))
+        ;
+
+        // verify that alias as level-id mask will not return results
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, sharedLocAlias2)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(0))
         ;
     }
 

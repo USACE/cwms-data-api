@@ -23,13 +23,15 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
 
-    @Test
-    void test_filter_nulls() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_filter_nulls(String format) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
@@ -49,7 +51,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
             // inserting the time series
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
@@ -67,14 +69,12 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .header("Authorization",user.toHeaderValue())
+                .accept(format)
                 .queryParam(Controllers.OFFICE, officeId)
                 .queryParam(Controllers.UNIT,"cfs")
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
                 .queryParam(Controllers.BEGIN,"2023-01-11T12:00:00-00:00")
                 .queryParam(Controllers.END,"2023-01-11T13:00:00-00:00")
-
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -93,8 +93,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .header("Authorization",user.toHeaderValue())
+                .accept(format)
                 .queryParam(Controllers.OFFICE, officeId)
                 .queryParam(Controllers.UNIT,"cfs")
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
@@ -120,8 +119,9 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
         }
     }
 
-    @Test
-    void test_min_value() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_min_value(String format) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
@@ -141,7 +141,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
             // inserting the time series
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
@@ -159,8 +159,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .header("Authorization",user.toHeaderValue())
+                .accept(format)
                 .queryParam(Controllers.OFFICE, officeId)
                 .queryParam(Controllers.UNIT,"cfs")
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
@@ -184,8 +183,9 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
         }
     }
 
-    @Test
-    void test_max_value() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_max_value(String format) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
@@ -205,7 +205,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
             // inserting the time series
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
@@ -223,8 +223,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .header("Authorization",user.toHeaderValue())
+                .accept(format)
                 .queryParam(Controllers.OFFICE, officeId)
                 .queryParam(Controllers.UNIT,"cfs")
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
@@ -248,8 +247,9 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
         }
     }
 
-    @Test
-    void test_min_max_value_combined() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_min_max_value_combined(String format) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
@@ -269,7 +269,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
             // inserting the time series
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
@@ -287,8 +287,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .header("Authorization",user.toHeaderValue())
+                .accept(format)
                 .queryParam(Controllers.OFFICE, officeId)
                 .queryParam(Controllers.UNIT,"cfs")
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
@@ -312,8 +311,9 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
         }
     }
 
-    @Test
-    void test_all_filters_combined() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_all_filters_combined(String format) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
@@ -333,7 +333,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
             // inserting the time series
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization",user.toHeaderValue())
@@ -351,8 +351,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .header("Authorization",user.toHeaderValue())
+                .accept(format)
                 .queryParam(Controllers.OFFICE, officeId)
                 .queryParam(Controllers.UNIT,"cfs")
                 .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())

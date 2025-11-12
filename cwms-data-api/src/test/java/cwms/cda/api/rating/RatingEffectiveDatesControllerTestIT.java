@@ -19,7 +19,6 @@ import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -173,7 +172,6 @@ final class RatingEffectiveDatesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .contentType(Formats.JSONV1)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE_MASK, SPK)
             .queryParam(Controllers.RATING_ID_MASK, EXISTING_SPEC)
         .when()
@@ -196,7 +194,6 @@ final class RatingEffectiveDatesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .contentType(Formats.JSONV1)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE_MASK, SPK)
         .when()
             .redirects().follow(true)

@@ -1,14 +1,6 @@
 package cwms.cda.data.dao;
 
 
-import cwms.cda.data.dao.rsql.FieldResolver;
-import cwms.cda.data.dao.rsql.MapFieldResolver;
-import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
-import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
-import cwms.cda.data.dto.catalog.TimeSeriesAlias;
-import cwms.cda.helpers.DateUtils;
-import java.util.HashSet;
-import java.util.Set;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.countDistinct;
 import static org.jooq.impl.DSL.field;
@@ -18,7 +10,6 @@ import static org.jooq.impl.DSL.noCondition;
 import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
-import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
@@ -30,6 +21,9 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheStats;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
+import cwms.cda.data.dao.rsql.FieldResolver;
+import cwms.cda.data.dao.rsql.MapFieldResolver;
+import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.RecentValue;
@@ -40,9 +34,12 @@ import cwms.cda.data.dto.TsvDqu;
 import cwms.cda.data.dto.TsvId;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
+import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
+import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.xml.XMLv1;
+import cwms.cda.helpers.DateUtils;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -50,18 +47,20 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -75,12 +74,13 @@ import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Record1;
+import org.jooq.Record10;
 import org.jooq.Record3;
 import org.jooq.Record4;
 import org.jooq.Record7;
-import org.jooq.Record10;
 import org.jooq.Result;
 import org.jooq.SQL;
+import org.jooq.Select;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectHavingStep;
 import org.jooq.SelectJoinStep;
@@ -89,20 +89,19 @@ import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableLike;
 import org.jooq.TableOnConditionStep;
-import org.jooq.Select;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
-import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
+import usace.cwms.db.jooq.codegen.udt.records.DATE_TABLE_TYPE;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
 
@@ -541,7 +540,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return retVal;
     }
 
-    private void validateEntryDateSupport(boolean includeEntryDate) {
+    public void validateEntryDateSupport(boolean includeEntryDate) {
         if (includeEntryDate) {
             Record entryDateSupport = dsl.select(asterisk()).from(table("ALL_TYPES"))
                     .where(field("TYPE_NAME").eq("ZTSV_ENTRY_TYPE"))
@@ -1255,7 +1254,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<RecentValue> retval;
 
         // Create whereCondition for filtering by category, group, and office
-        Condition whereCondition = DSL.trueCondition();
+        Condition whereCondition = DSL.noCondition();
         if (categoryId != null) {
             whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.CATEGORY_ID.eq(categoryId));
         }
@@ -1541,12 +1540,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     public void delete(String officeId, String tsId, TimeSeriesDeleteOptions options) {
         connection(dsl, connection -> {
-            setOffice(connection,officeId);
-            CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
-            tsDao.deleteTs(connection, officeId, tsId, options.getStartTime(), options.getEndTime(),
-                    options.isStartTimeInclusive(), options.isEndTimeInclusive(),
-                    options.getVersionDate(), null, options.getMaxVersion(),
-                    options.getTsItemMask(), options.getOverrideProtection());
+            Timestamp startTime = options.getStartTime() == null ? null : Timestamp.from(options.getStartTime().toInstant());
+            Timestamp endTime = options.getEndTime() == null ? null : Timestamp.from(options.getEndTime().toInstant());
+            Timestamp versionDate = options.getVersionDate() == null ? null : Timestamp.from(options.getVersionDate().toInstant());
+            DATE_TABLE_TYPE pDateTimes = null;
+            BigInteger pTsItemMask = null;
+            if (options.getTsItemMask() != null) {
+                pTsItemMask = BigInteger.valueOf(options.getTsItemMask());
+            }
+            CWMS_TS_PACKAGE.call_DELETE_TS__3(getDslContext(connection, officeId).configuration(), tsId, options.getOverrideProtection(),
+                startTime, endTime,
+                formatBool(options.isStartTimeInclusive()), formatBool(options.isEndTimeInclusive()),
+                versionDate, "UTC", pDateTimes, formatBool(options.getMaxVersion()),
+                pTsItemMask, officeId);
         });
     }
 

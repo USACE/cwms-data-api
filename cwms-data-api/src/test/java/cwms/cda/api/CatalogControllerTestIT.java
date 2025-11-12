@@ -42,6 +42,8 @@ import static io.restassured.RestAssured.*;
 
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.Response;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.Matchers.*;
 
@@ -120,9 +122,11 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         cleanupStreams();
     }
 
-    @Test
-    void test_no_aliased_results_returned() {
-        given().accept(Formats.JSONV2)
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_no_aliased_results_returned(String format) {
+        given()
+            .accept(format)
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(EXCLUDE_EMPTY,false)
@@ -138,9 +142,11 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("entries.size()",is(4));
     }
 
-    @Test
-    void test_no_aliases_returned() {
-        Integer numAliases = given().accept(Formats.JSONV2)
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_no_aliases_returned(String format) {
+        Integer numAliases = given()
+            .accept(format)
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(EXCLUDE_EMPTY, false)
@@ -156,9 +162,10 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         assertEquals(0, (int) numAliases, "Expected no aliases, but found some.");
     }
 
-    @Test
-    void test_aliases_returned() {
-        Integer numAliases = given().accept(Formats.JSONV2)
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_aliases_returned(String format) {
+        Integer numAliases = given().accept(format)
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(EXCLUDE_EMPTY,false)
@@ -175,9 +182,10 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         assertTrue(numAliases > 0, "Expected aliases, but found none.");
     }
 
-    @Test
-    void test_alias_is_correct() throws JsonProcessingException {
-        Response response = given().accept(Formats.JSONV2)
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_alias_is_correct(String format) throws JsonProcessingException {
+        Response response = given().accept(format)
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(EXCLUDE_EMPTY, false)
@@ -231,14 +239,15 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("entries.size()",is(2));
     }
 
-    @Test
-    void test_all_office_pagination_works() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_all_office_pagination_works(String format) {
         assertTimeout(Duration.ofMinutes(5), () -> {
             final int pageSize = 50;
             Response initialResponse =
                 given()
                     .log().ifValidationFails(LogDetail.ALL, true)
-                    .accept(Formats.JSONV2)
+                    .accept(format)
                     .queryParam("page-size",pageSize)
                     .queryParam(EXCLUDE_EMPTY,false)
                 .when()
@@ -264,7 +273,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                 Response pageN =
                     given()
                         .log().ifValidationFails(LogDetail.ALL, true)
-                        .accept(Formats.JSONV2)
+                        .accept(format)
                         .queryParam("page",nextPage)
                         .queryParam(EXCLUDE_EMPTY,false)
                     .when()
@@ -541,7 +550,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, String.format("%s*", baseLocationName))
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
@@ -563,7 +571,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
@@ -584,7 +591,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "^(BASIN)$")
@@ -606,7 +612,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "^(STREAM)*$")
@@ -627,7 +632,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "NOT:^(STREAM)*$")
@@ -647,7 +651,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "NOT:^(STREAM)*$")
@@ -668,7 +671,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())

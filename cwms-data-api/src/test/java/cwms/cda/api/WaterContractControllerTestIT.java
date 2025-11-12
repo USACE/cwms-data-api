@@ -60,6 +60,9 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
@@ -71,7 +74,6 @@ import static org.hamcrest.Matchers.*;
 class WaterContractControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SWT";
     private static final WaterUserContract CONTRACT;
-    private static final String OFFICE_ID_TEXT = "office-id";
     private static final String MESSAGE = "message";
     private static final String IDENTIFIER = "identifier";
 
@@ -154,9 +156,10 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void test_create_get_delete_WaterUserContract() {
+    void test_create_get_delete_WaterUserContract(String format) {
         // Test Structure:
         // 1) Create a Water Contract
         // 2) Get the WaterUserContract, assert that it is same as created contract
@@ -192,6 +195,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
+            .accept(format)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -343,12 +347,12 @@ class WaterContractControllerTestIT extends DataApiTestIT {
                     hasToString(String.valueOf(CONTRACT.getPumpInLocation().getPumpLocation().getLocationType())))
             .body("pump-in-location.pump-location.nation",
                     equalTo(CONTRACT.getPumpInLocation().getPumpLocation().getNation().toString()))
-                .body("pump-in-location.pump-location.published-latitude",
-                        hasToString(String.valueOf(CONTRACT
-                        .getPumpInLocation().getPumpLocation().getPublishedLatitude())))
-                .body("pump-in-location.pump-location.published-longitude",
-                        hasToString(String.valueOf(CONTRACT.getPumpInLocation()
-                                .getPumpLocation().getPublishedLongitude())))
+            .body("pump-in-location.pump-location.published-latitude",
+                    hasToString(String.valueOf(CONTRACT
+                    .getPumpInLocation().getPumpLocation().getPublishedLatitude())))
+            .body("pump-in-location.pump-location.published-longitude",
+                    hasToString(String.valueOf(CONTRACT.getPumpInLocation()
+                            .getPumpLocation().getPublishedLongitude())))
             .body("pump-in-location.pump-location.state-initial",
                     equalTo(CONTRACT.getPumpInLocation().getPumpLocation().getStateInitial()))
             .body("pump-in-location.pump-location.county-name",
@@ -398,6 +402,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
+            .accept(format)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -412,9 +417,10 @@ class WaterContractControllerTestIT extends DataApiTestIT {
     }
 
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void test_rename_WaterUserContract() {
+    void test_rename_WaterUserContract(String format) {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
         final String NEW_CONTRACT_NAME = "NEW CONTRACT NAME";
         String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
@@ -467,6 +473,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
+            .accept(format)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -503,9 +510,10 @@ class WaterContractControllerTestIT extends DataApiTestIT {
         ;
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void test_getAllWaterContracts() throws Exception {
+    void test_getAllWaterContracts(String format) throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
         String json = Formats.format(Formats.parseHeader(Formats.JSONV1, WaterUserContract.class), CONTRACT);
 
@@ -571,6 +579,7 @@ class WaterContractControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
+            .accept(format)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

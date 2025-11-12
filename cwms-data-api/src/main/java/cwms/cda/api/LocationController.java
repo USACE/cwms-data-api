@@ -215,7 +215,9 @@ public class LocationController implements CrudHandler {
                         + "\n* `EN`  Specifies English unit system.  Location values will be in the "
                         + "default English units for their parameters. This is the default behavior."
                         + "\n* `SI`  Specifies the SI unit system.  Location values will be in the "
-                        + "default SI units for their parameters.")
+                        + "default SI units for their parameters."),
+                @OpenApiParam(name = INCLUDE_ALIASES, type = Boolean.class, description = "Specifies whether to "
+                        + "include location aliases in the response. Default: false"),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -238,11 +240,13 @@ public class LocationController implements CrudHandler {
             String units =
                     ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
             String office = ctx.queryParam(OFFICE);
+            boolean includeAliases =
+                    ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class).getOrDefault(false);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             ctx.contentType(contentType.toString());
             LocationsDao locationDao = getLocationsDao(dsl);
-            Location location = locationDao.getLocation(name, units, office);
+            Location location = locationDao.getLocation(name, units, office, includeAliases);
             String serializedLocation = Formats.format(contentType, location);
             ctx.result(serializedLocation);
             addDeprecatedContentTypeWarning(ctx, contentType);
@@ -330,7 +334,7 @@ public class LocationController implements CrudHandler {
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             //getLocation will throw an error if location does not exist
             Location existingLocation = locationsDao.getLocation(locationId,
-                    UnitSystem.EN.getValue(), locationFromBody.getOfficeId());
+                    UnitSystem.EN.getValue(), locationFromBody.getOfficeId(), false);
             existingLocation = updatedClearedFields(ctx.body(), contentType.getType(),
                     existingLocation);
             //only store (update) if location does exist

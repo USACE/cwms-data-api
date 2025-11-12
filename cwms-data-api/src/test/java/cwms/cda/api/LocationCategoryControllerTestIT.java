@@ -38,11 +38,12 @@ import io.restassured.filter.log.LogDetail;
 import javax.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
 
 @Tag("integration")
@@ -50,8 +51,9 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 	TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 	TestAccounts.KeyUser user2 = TestAccounts.KeyUser.SWT_NORMAL;
 
-    @Test
-    void test_create_read_delete() {
+	@ParameterizedTest
+	@ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_read_delete(String format) {
         String officeId = user.getOperatingOffice();
         LocationCategory cat = new LocationCategory(officeId, LocationCategoryControllerTestIT.class.getSimpleName(),
             "IntegrationTesting");
@@ -61,7 +63,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
         //Create Category
         given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .body(xml)
             .header("Authorization", user.toHeaderValue())
@@ -76,7 +78,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
         //Read
         given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
         .when()
@@ -93,7 +95,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
         //Delete
         given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
@@ -110,7 +112,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
         //Read Empty
         given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
+            .accept(format)
             .contentType(Formats.JSON)
             .queryParam("office", officeId)
         .when()
@@ -123,8 +125,9 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-	@Test
-	void test_create_already_existing_CWMS_category() {
+	@ParameterizedTest
+	@ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+	void test_create_already_existing_CWMS_category(String format) {
 		String officeId = user.getOperatingOffice();
 		LocationCategory cat = new LocationCategory(officeId, "Default", "Default");
 		ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
@@ -132,7 +135,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 		//Attempt to Create Category, should fail
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(Formats.JSON)
+			.accept(format)
 			.contentType(Formats.JSON)
 			.body(xml)
 			.header("Authorization", user.toHeaderValue())
@@ -146,9 +149,10 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 			.statusCode(is(HttpServletResponse.SC_CONFLICT));
 	}
 
-	@Test
+	@ParameterizedTest
+	@ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
 	@FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-	void test_create_read_delete_same_category_different_office() {
+	void test_create_read_delete_same_category_different_office(String format) {
 		String officeId = user.getOperatingOffice();
 		String officeId2 = user2.getOperatingOffice();
 		LocationCategory cat = new LocationCategory(officeId, "test_create_read_delete", "IntegrationTesting");
@@ -160,7 +164,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 		String xml = Formats.format(contentType, cat);
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(Formats.JSON)
+			.accept(format)
 			.contentType(Formats.JSON)
 			.body(xml)
 			.header("Authorization", user.toHeaderValue())
@@ -176,7 +180,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 		xml = Formats.format(contentType, cat2);
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(Formats.JSON)
+			.accept(format)
 			.contentType(Formats.JSON)
 			.body(xml)
 			.header("Authorization", user.toHeaderValue())
@@ -191,7 +195,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 		//Read
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(Formats.JSON)
+			.accept(format)
 			.contentType(Formats.JSON)
 			.queryParam(OFFICE, officeId)
 		.when()
@@ -208,7 +212,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 		// Read second category
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(Formats.JSON)
+			.accept(format)
 			.contentType(Formats.JSON)
 			.queryParam(OFFICE, officeId2)
 		.when()
@@ -225,7 +229,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 		//Delete
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(Formats.JSON)
+			.accept(format)
 			.contentType(Formats.JSON)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, officeId)
@@ -241,7 +245,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 		//Delete seocond category
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(Formats.JSON)
+			.accept(format)
 			.contentType(Formats.JSON)
 			.header("Authorization", user.toHeaderValue())
 			.queryParam(OFFICE, officeId2)
@@ -257,7 +261,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 		//Read Empty
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(Formats.JSON)
+			.accept(format)
 			.contentType(Formats.JSON)
 			.queryParam("office", officeId)
 		.when()
@@ -271,7 +275,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 		//Read second Empty
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(Formats.JSON)
+			.accept(format)
 			.contentType(Formats.JSON)
 			.queryParam("office", officeId2)
 		.when()
@@ -284,8 +288,9 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 			.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
 	}
 
-	@Test
-	void test_id_too_long()
+	@ParameterizedTest
+	@ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+	void test_id_too_long(String format)
 	{
 		String officeId = user.getOperatingOffice();
 		String invalidCatId = RandomStringUtils.randomAlphabetic(64);
@@ -297,7 +302,7 @@ class LocationCategoryControllerTestIT extends DataApiTestIT {
 		//Create Category
 		given()
 			.log().ifValidationFails(LogDetail.ALL,true)
-			.accept(Formats.JSON)
+			.accept(format)
 			.contentType(Formats.JSON)
 			.body(xml)
 			.header("Authorization", user.toHeaderValue())
