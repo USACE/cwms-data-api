@@ -2,13 +2,28 @@ import { useQuery } from "@tanstack/react-query";
 import { Configuration, CatalogApi } from "cwmsjs";
 
 const config = new Configuration({
-    basePath: import.meta.env.CDA_URL,
+  basePath: import.meta.env.CDA_URL,
 });
 const cataApi = new CatalogApi(config);
 
-export default function useDescriptors({ office, location, parameter, type, interval, duration }) {
+export default function useDescriptors({
+  office,
+  location,
+  parameter,
+  type,
+  interval,
+  duration,
+}) {
   return useQuery({
-    queryKey: ["tsid-descriptors", office, location, parameter, type, interval, duration],
+    queryKey: [
+      "tsid-descriptors",
+      office,
+      location,
+      parameter,
+      type,
+      interval,
+      duration,
+    ],
     queryFn: async () => {
       if (!office) return [];
       const like = [
@@ -16,7 +31,7 @@ export default function useDescriptors({ office, location, parameter, type, inte
         parameter || "*",
         type || "*",
         interval || "*",
-        duration || "*"
+        duration || "*",
       ].join(".");
       const all = await cataApi.getCatalogWithDataset({
         dataset: "TIMESERIES",
@@ -54,5 +69,3 @@ export default function useDescriptors({ office, location, parameter, type, inte
     staleTime: 0,
   });
 }
-
-

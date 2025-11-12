@@ -12,7 +12,7 @@ export default function useConfigList({ cacheDuration, props, like }) {
     queryKey: ["offices"],
     queryFn: async () =>
       blobApi.getBlobs({
-        like
+        like,
       }),
     staleTime: cacheDuration,
     ...props,

@@ -68,14 +68,11 @@ function CWMSPlot({
   const plotElement = useRef(null);
   const [error, setError] = useState(null);
 
-  const timeSeriesArray = useMemo(
-    () => normalizeDataProp(timeSeries),
-    [timeSeries]
-  );
+  const timeSeriesArray = useMemo(() => normalizeDataProp(timeSeries), [timeSeries]);
 
   const locationLevelsArray = useMemo(
     () => normalizeDataProp(locationLevels),
-    [locationLevels]
+    [locationLevels],
   );
 
   const config_v2 = new Configuration({
@@ -109,12 +106,13 @@ function CWMSPlot({
   };
 
   timeSeriesArray.forEach((item, index) => {
-    const yaxis_id =
-      getYAxisId(item) ?? (index == 0 ? "yaxis" : "yaxis" + index);
+    const yaxis_id = getYAxisId(item) ?? (index == 0 ? "yaxis" : "yaxis" + index);
     if (!(yaxis_id in defaultLayout)) {
       defaultLayout[yaxis_id] = {
         title: {
-          text: item.id.split(".")[1] + (item?.traceOptions?.units ? " (" + item.traceOptions.units + ")" : ""),
+          text:
+            item.id.split(".")[1] +
+            (item?.traceOptions?.units ? " (" + item.traceOptions.units + ")" : ""),
           font: {
             family: "Arial, sans-serif",
             size: 14,
@@ -125,7 +123,7 @@ function CWMSPlot({
   });
 
   defaultLayout.grid.rows = Object.keys(defaultLayout).filter((key) =>
-    key.includes("yaxis")
+    key.includes("yaxis"),
   ).length;
 
   const layout = deepmerge(defaultLayout, layoutOptions);
@@ -282,9 +280,7 @@ function CWMSPlot({
             legend: { x: 1, xanchor: "right", y: 1 },
           };
           // Add all other parameters
-          const tsObj = timeSeriesArray?.filter(
-            (item) => item.id === ts.name
-          )[0];
+          const tsObj = timeSeriesArray?.filter((item) => item.id === ts.name)[0];
           const fullTrace = tsObj?.traceOptions
             ? deepmerge(trace, tsObj?.traceOptions)
             : trace;
@@ -304,9 +300,7 @@ function CWMSPlot({
             legend: { x: 1, xanchor: "right", y: 1 },
           };
           // Add all other parameters
-          const levelObj = locationLevelsArray?.filter(
-            (item) => item.id == key
-          )[0];
+          const levelObj = locationLevelsArray?.filter((item) => item.id == key)[0];
           const fullTrace = levelObj?.traceOptions
             ? deepmerge(trace, levelObj?.traceOptions)
             : trace;
@@ -320,14 +314,7 @@ function CWMSPlot({
     Plotly.newPlot(plotElement.current, traces, layout, {
       responsive: responsive,
     });
-  }, [
-    layout,
-    locationLevelsArray,
-    responsive,
-    staticTraces,
-    timeSeriesArray,
-    tsData,
-  ]);
+  }, [layout, locationLevelsArray, responsive, staticTraces, timeSeriesArray, tsData]);
 
   return (
     <div
