@@ -1,19 +1,22 @@
 package cwms.cda.security;
 
 import java.util.List;
-
 import javax.servlet.http.HttpServletResponse;
 
 public class MissingRolesException extends CwmsAuthException {
-    private List<String> missingRoles;
+    private final List<String> missingRoles;
 
     public MissingRolesException(List<String> missingRoles) {
-        super("Missing Roles", HttpServletResponse.SC_FORBIDDEN);
+        super(buildMessage(missingRoles), HttpServletResponse.SC_FORBIDDEN, buildMessage(missingRoles));
         this.missingRoles = missingRoles;
     }
 
     @Override
     public String getMessage() {
-        return "Missing roles {" + String.join(",",missingRoles) + "}";
+        return buildMessage(missingRoles);
+    }
+
+    private static String buildMessage(List<String> roles) {
+        return "Missing roles {" + String.join(",",roles) + "}";
     }
 }

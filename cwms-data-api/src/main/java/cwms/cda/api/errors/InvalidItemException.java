@@ -24,22 +24,14 @@
 
 package cwms.cda.api.errors;
 
-public class InvalidItemException extends RuntimeException {
-    public InvalidItemException(String message) {
-        super(message);
-    }
+import java.util.logging.Level;
+import javax.servlet.http.HttpServletResponse;
+
+public class InvalidItemException extends ApplicationException {
+    private static final Level LOG_LEVEL = Level.INFO;
 
     public InvalidItemException(String message, Throwable cause) {
-        super(message, cause);
+        super(message, USER_INPUT_SOURCE, "Bad Request.", HttpServletResponse.SC_BAD_REQUEST,
+            LOG_LEVEL, buildDetailsMap(message), cause);
     }
-
-    public InvalidItemException(Throwable cause) {
-        super(cause);
-    }
-
-    public InvalidItemException() {
-        super();
-    }
-
-
 }
