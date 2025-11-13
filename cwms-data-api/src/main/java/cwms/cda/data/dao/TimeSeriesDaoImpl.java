@@ -39,6 +39,7 @@ import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
 import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.xml.XMLv1;
+import cwms.cda.helpers.AuthorizationFilterHelper;
 import cwms.cda.helpers.DateUtils;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -243,6 +244,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     protected TimeSeries getRequestedTimeSeries(String page, int pageSize, @NotNull TimeSeriesRequestParameters requestParameters,
                                        @Nullable FilteredTimeSeriesParameters fp) {
+        return getRequestedTimeSeries(page, pageSize, requestParameters, fp, null);
+    }
+
+    protected TimeSeries getRequestedTimeSeries(String page, int pageSize, @NotNull TimeSeriesRequestParameters requestParameters,
+                                       @Nullable FilteredTimeSeriesParameters fp, @Nullable AuthorizationFilterHelper authFilter) {
 
         String names = requestParameters.getNames();
         String office = requestParameters.getOffice();
@@ -372,6 +378,23 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             nameToField.put("data_entry_date", dataEntryDate);
             FieldResolver resolver = new MapFieldResolver(nameToField);
             filterConditions = getFilterCondition(fp, resolver);
+        }
+
+        if (authFilter != null && authFilter.hasAuthorizationContext()) {
+            Field<String> officeField = valid.field("office_id", String.class);
+
+            Condition embargoFilter = authFilter.getEmbargoFilter(dataEntryDate, officeField);
+            if (embargoFilter != null) {
+                filterConditions = filterConditions.and(embargoFilter);
+                logger.log(Level.FINE, "Applied embargo filter to timeseries query");
+            }
+
+            Condition timeWindowFilter = authFilter.getTimeWindowFilter(dataEntryDate,
+                Timestamp.from(beginTime.toInstant()));
+            if (timeWindowFilter != null) {
+                filterConditions = filterConditions.and(timeWindowFilter);
+                logger.log(Level.FINE, "Applied time window filter to timeseries query");
+            }
         }
 
         Field<Integer> totalField;
