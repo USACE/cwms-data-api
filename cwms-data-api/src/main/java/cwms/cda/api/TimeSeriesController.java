@@ -59,6 +59,8 @@ import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.AuthorizationContextHelper;
+import cwms.cda.helpers.AuthorizationFilterHelper;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -447,6 +449,14 @@ public class TimeSeriesController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
+            AuthorizationContextHelper authHelper = new AuthorizationContextHelper(ctx);
+            AuthorizationFilterHelper authFilter = new AuthorizationFilterHelper(ctx);
+
+            if (authHelper.isAuthorizationHeaderPresent()) {
+                logger.log(Level.INFO, "Authorization context - User: {0}, Offices: {1}, Roles: {2}",
+                    new Object[]{authHelper.getUsername(), authHelper.getOffices(), authHelper.getRoles()});
+            }
+
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String names = requiredParam(ctx, NAME);
@@ -493,6 +503,14 @@ public class TimeSeriesController implements CrudHandler {
             if (version != null && version.equals("2")) {
 
                 String office = requiredParam(ctx, OFFICE);
+
+                if (authHelper.isAuthorizationHeaderPresent() && !authHelper.hasOfficeAccess(office)) {
+                    String errorMsg = String.format("User %s does not have access to office %s. Allowed offices: %s",
+                        authHelper.getUsername(), office, authHelper.getOffices());
+                    logger.log(Level.WARNING, errorMsg);
+                    throw new IllegalArgumentException(errorMsg);
+                }
+
                 TimeSeriesRequestParameters requestParameters = new TimeSeriesRequestParameters.Builder()
                         .withNames(names)
                         .withOffice(office)
@@ -503,7 +521,14 @@ public class TimeSeriesController implements CrudHandler {
                         .withShouldTrim(trim.getOrDefault(true))
                         .withIncludeEntryDate(includeEntryDate)
                         .build();
-                TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters);
+
+                TimeSeries ts;
+                if (dao instanceof TimeSeriesDaoImpl && authFilter.hasAuthorizationContext()) {
+                    ts = ((TimeSeriesDaoImpl) dao).getRequestedTimeSeries(cursor, pageSize, requestParameters, null, authFilter);
+                    logger.log(Level.FINE, "Applied authorization filtering at DAO level");
+                } else {
+                    ts = dao.getTimeseries(cursor, pageSize, requestParameters);
+                }
 
                 if(datum != null) { //this will be null for non-elevation ts
                     // user has requested a specific vertical datum
@@ -534,6 +559,19 @@ public class TimeSeriesController implements CrudHandler {
                 }
 
                 String office = ctx.queryParam(OFFICE);
+
+                if (authHelper.isAuthorizationHeaderPresent()) {
+                    if (office == null || office.isEmpty()) {
+                        office = authHelper.buildOfficeFilter();
+                        logger.log(Level.INFO, "No office specified, applying user office filter: {0}", office);
+                    } else if (!authHelper.hasOfficeAccess(office)) {
+                        String errorMsg = String.format("User %s does not have access to office %s. Allowed offices: %s",
+                            authHelper.getUsername(), office, authHelper.getOffices());
+                        logger.log(Level.WARNING, errorMsg);
+                        throw new IllegalArgumentException(errorMsg);
+                    }
+                }
+
                 results = dao.getTimeseries(format, names, office, units, datum, beginZdt, endZdt, tz);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
