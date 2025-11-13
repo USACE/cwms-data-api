@@ -1593,22 +1593,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                       formatBool(createAsLrts));
     }
 
-    public void update(TimeSeries input, boolean createAsLrts, StoreRule storeRule,
-                       Timestamp versionDate, boolean overrideProtection) throws SQLException {
-        String name = input.getName();
-        if (!timeseriesExists(name)) {
-            throw new SQLException("Cannot update a non-existant Timeseries. Create " + name + " "
-                    + "first.");
-        }
-        connection(dsl, connection -> {
-            //setOffice(connection,input.getOfficeId());
-            DSLContext dslContext = getDslContext(connection, input.getOfficeId());
-            store(dslContext, input.getOfficeId(), name, input.getUnits(), versionDate,
-                    input.getValues(), createAsLrts, storeRule, overrideProtection);
-        });
-    }
-
-
     protected BigDecimal retrieveTsCode(String tsId) {
 
         return dsl.select(AV_CWMS_TS_ID2.TS_CODE)

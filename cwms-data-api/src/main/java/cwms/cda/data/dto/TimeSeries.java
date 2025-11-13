@@ -134,6 +134,17 @@ public class TimeSeries extends CwmsDTOPaginated {
         values = new ArrayList<>();
     }
 
+    public TimeSeries(TimeSeries timeSeries)
+    {
+        this(timeSeries.getPage(), timeSeries.getPageSize(), timeSeries.getTotal(),
+            timeSeries.getName(), timeSeries.getOfficeId(), timeSeries.getBegin(),
+            timeSeries.getEnd(), timeSeries.getUnits(), timeSeries.getInterval(),
+            timeSeries.getVerticalDatumInfo(), timeSeries.getIntervalOffset(),
+            timeSeries.getTimeZone(), timeSeries.getVersionDate(),
+            timeSeries.getDateVersionType());
+        this.values = new ArrayList<>(timeSeries.getValues());
+    }
+
     public String getName() {
         return name;
     }

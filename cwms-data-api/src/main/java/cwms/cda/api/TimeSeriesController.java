@@ -489,26 +489,7 @@ public class TimeSeriesController implements CrudHandler {
                 if(datum != null){
                     // user has requested a specific vertical datum
                     VerticalDatum vd = VerticalDatum.valueOf(datum);  // the users request
-                    VerticalDatum tsVd = getVerticalDatum(ts, null);  // what came back from sql
-                    if( tsVd == null){
-                        // the ts came back without a vertical datum.
-                        // We won't know why it came back without a vertical datum,
-                        //  maybe the location has lat/long 0,0 and is outside datum?
-                        //  Maybe the location doesn't have vertical datum set?
-                        //  maybe the ts isn't for Elev (this we could check)
-                        // this doesn't seem like its our problem.  We should probably just return the ts without vertical data info in it.
-                    } else if( !Objects.equals(vd, tsVd)){
-                        // user requested a specific vertical datum but the ts came back with a different vertical datum.
-                        // Here we need to convert
-                        // verify that the vertical-datum-info contains the to-datum and from-datum
-                        // throw exception if not found.
-                        // find needed offset.
-                        // convert the vertical-datum-info so that we switch the to-datum and from-datum to the requested vertical datum and fix the offset - this will also need to adjust other offset entries
-                        // apply the offset to the elev in the vertical-datum-info
-                        // update the ts with the new vertical-datum-info
-                        // apply the offset to the ts values.
-                        throw new UnsupportedOperationException("We need to do this conversion - not implemented yet.");
-                    }
+                    ts = TimeSeriesVerticalDatumConverter.convertToVerticalDatum(ts, vd);
                 }
 
                 results = Formats.format(contentType, ts);

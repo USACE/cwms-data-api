@@ -14,6 +14,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.VerticalDatum;
+import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.data.dto.VerticalDatumInfo;
+import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import cwms.cda.helpers.ZoneIdHelper;
@@ -29,6 +32,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
@@ -1892,6 +1896,64 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .body("vertical-datum-info.location", equalTo(location))
                 .body("vertical-datum-info.unit", equalTo("m"))
                 .body("vertical-datum-info.offsets.size()", equalTo(1))
+        ;
+
+
+        validatableResponse = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .queryParam(OFFICE, officeId)
+                .queryParam(UNIT, "m")
+                .queryParam(NAME, ts.get(NAME).asText())
+                .queryParam(BEGIN, firstPoint)
+                .queryParam(DATUM, "NAVD88")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        System.out.println(validatableResponse.extract().asString());
+        // verify that there is vertical-datum-info in the response.
+        validatableResponse.body("vertical-datum-info", notNullValue())
+                .body("vertical-datum-info.location", equalTo(location))
+                .body("vertical-datum-info.unit", equalTo("m"))
+                .body("vertical-datum-info.offsets.size()", equalTo(1))
+        ;
+
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeries.class);
+        TimeSeries timeSeries = Formats.parseContent(contentType, validatableResponse.extract().asString(), TimeSeries.class);
+        Double conversionFactor = Arrays.stream(timeSeries.getVerticalDatumInfo().getOffsets()).sequential()
+                .filter(o -> o.getToDatum().equalsIgnoreCase("NGVD-29"))
+                .findFirst()
+                .map(VerticalDatumInfo.Offset::getValue)
+                .orElseThrow(() -> new Exception("No conversion factor from NAVD88 to NGVD29 found"));
+
+        ValidatableResponse validatableResponseConverted = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .queryParam(OFFICE, officeId)
+                .queryParam(UNIT, "m")
+                .queryParam(NAME, ts.get(NAME).asText())
+                .queryParam(BEGIN, firstPoint)
+                .queryParam(DATUM, "NGVD29")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+        // verify that there is vertical-datum-info in the response.
+        validatableResponseConverted.body("vertical-datum-info", notNullValue())
+                .body("vertical-datum-info.location", equalTo(location))
+                .body("vertical-datum-info.unit", equalTo("m"))
+                .body("vertical-datum-info.offsets.size()", equalTo(1))
+                .body("values[0][1].toDouble()", closeTo( timeSeries.getValues().get(0).getValue() + conversionFactor, 0.001))
         ;
 
 
