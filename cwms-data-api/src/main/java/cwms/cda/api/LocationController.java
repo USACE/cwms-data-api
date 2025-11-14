@@ -127,7 +127,8 @@ public class LocationController implements CrudHandler {
                         + "\n* `xml`"
                         + "\n* `wml2` (only if name field is specified)"
                         + "\n* `json` (default)\n"
-                        + "\n* `geojson`")
+                        + "\n* `geojson`"
+                        + "\n\nSee <a href=\"legacy-format/\">this page</a> for more information.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,

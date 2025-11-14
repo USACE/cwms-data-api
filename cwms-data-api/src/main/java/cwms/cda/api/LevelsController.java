@@ -236,7 +236,8 @@ public class LevelsController implements CrudHandler {
                         + "\n* `csv`"
                         + "\n* `xml`"
                         + "\n* `wml2` (only if name field is specified)"
-                        + "\n* `json` (default)"),
+                        + "\n* `json` (default)"
+                        + "\n\nSee <a href=\"legacy-format/\">this page</a> for more information."),
                 @OpenApiParam(name = INCLUDE_ALIASES, description = "Whether to include the "
                         + "aliases for the location levels in the response. The default is false.",
                         type = Boolean.class),
@@ -336,7 +337,7 @@ public class LevelsController implements CrudHandler {
                 @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
                         + "the effective date of Location Level to be returned."
                         + "Expected formats are `YYYY-MM-DDTHH:MM` or `YYYY-MM-DDTHH:MM:SS`"),
-                @OpenApiParam(name = EFFECTIVE_DATE_EXACT, required = false, description = "If true"
+                @OpenApiParam(name = EFFECTIVE_DATE_EXACT, description = "If true"
                         + " only a level with the exact provided date will be returned. If false"
                         + " The most recent level on or before this time will be returned."
                         + " The default is false.",

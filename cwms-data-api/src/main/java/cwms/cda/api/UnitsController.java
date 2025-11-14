@@ -26,7 +26,6 @@ import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -70,7 +69,8 @@ public class UnitsController implements CrudHandler {
                             + "\n* `tab`"
                             + "\n* `csv`"
                             + "\n* `xml`"
-                            + "\n* `json` (default)")
+                            + "\n* `json` (default)"
+                            + "\n\nSee <a href=\"legacy-format/\">this page</a> for more information.")
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200),
@@ -95,25 +95,18 @@ public class UnitsController implements CrudHandler {
             boolean isLegacyVersion = version.equals("1");
 
             String results;
-            if (format.isEmpty() && !isLegacyVersion)
-            {
+            if (format.isEmpty() && !isLegacyVersion) {
                 List<Unit> units = dao.getUnits();
                 results = Formats.format(contentType, units, Unit.class);
                 ctx.contentType(contentType.toString());
-            }
-            else
-            {
-                if (isLegacyVersion)
-                {
+            } else {
+                if (isLegacyVersion) {
                     format = Formats.getLegacyTypeFromContentType(contentType);
                 }
                 results = dao.getUnits(format);
-                if (isLegacyVersion)
-                {
+                if (isLegacyVersion) {
                     ctx.contentType(contentType.toString());
-                }
-                else
-                {
+                } else {
                     ctx.contentType(contentType.getType());
                 }
             }
