@@ -9,7 +9,14 @@ import com.codahale.metrics.Timer;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.NotFoundException;
-import cwms.cda.data.dao.*;
+import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.StoreRule;
+import cwms.cda.data.dao.TimeSeriesDao;
+import cwms.cda.data.dao.TimeSeriesDaoImpl;
+import cwms.cda.data.dao.TimeSeriesDeleteOptions;
+import cwms.cda.data.dao.TimeSeriesRequestParameters;
+import cwms.cda.data.dao.TimeSeriesVerticalDatumConverter;
+import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.formatters.ContentType;
@@ -33,7 +40,6 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
@@ -393,7 +399,6 @@ public class TimeSeriesController implements CrudHandler {
                     + "whether to include the data entry date of each value in the response. Including the data entry "
                     + "date will increase the size of the array containing each data value from three to four, "
                     + "changing the format of the response. Default is false."),
-
                 @OpenApiParam(name = PAGE, description = "This end point can return large amounts "
                         + "of data as a series of pages. This parameter is used to describes the "
                         + "current location in the response stream.  This is an opaque "
