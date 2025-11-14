@@ -351,7 +351,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "\n* `xml`"
                         + "\n* `wml2` (only if name field is specified)"
                         + "\n* `json` (default)"
-                        + "\n\nSee <a href=\"legacy-format/\">this page</a> for more information."),
+                        + "\n\nSee <a href=\"legacy-format/\">this page</a> for more "
+                        + "information about accept header usage."),
                 @OpenApiParam(name = INCLUDE_ENTRY_DATE, type = Boolean.class, description = "Specifies "
                     + "whether to include the data entry date of each value in the response. Including the data entry "
                     + "date will increase the size of the array containing each data value from three to four, "

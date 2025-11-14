@@ -237,7 +237,8 @@ public class LevelsController implements CrudHandler {
                         + "\n* `xml`"
                         + "\n* `wml2` (only if name field is specified)"
                         + "\n* `json` (default)"
-                        + "\n\nSee <a href=\"legacy-format/\">this page</a> for more information."),
+                        + "\n\nSee <a href=\"legacy-format/\">this page</a> for more "
+                        + "information about accept header usage."),
                 @OpenApiParam(name = INCLUDE_ALIASES, description = "Whether to include the "
                         + "aliases for the location levels in the response. The default is false.",
                         type = Boolean.class),

@@ -73,7 +73,8 @@ public class TimeZoneController implements CrudHandler {
                             + "\n* `csv`  "
                             + "\n* `xml`  "
                             + "\n* `json`  (default)"
-                            + "\n\nSee <a href=\"legacy-format/\">this page</a> for more information.")
+                            + "\n\nSee <a href=\"legacy-format/\">this page</a> for more "
+                            + "information about accept header usage.")
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {

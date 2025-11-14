@@ -27,16 +27,10 @@ export default function LegacyFormat() {
 
             <UsaceBox title="Combining Accept Header with Format Query Parameter">
                 <p>
-                    Multiple endpoints support using both the accept header and the Format query parameter.
+                    Multiple endpoints support using the accept header to specify the response format.
                     By default, providing a format parameter other than <code>JSON</code> will utilize
                     the legacy PL/SQL data access method. This generally provides more formats, but will result
                     in retrieving differing data content and structure depending on the specific endpoint.
-                </p>
-                <br />
-                <p>
-                    Providing <code>JSON</code> as the desired format can be used in conjunction with either accept header.
-                    However, the format parameter is not necessary to use the accept header, just as the accept
-                    header is not necessary to use the format query parameter.
                 </p>
             </UsaceBox>
 

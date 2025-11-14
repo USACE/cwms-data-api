@@ -72,7 +72,7 @@ public class ParametersController implements CrudHandler {
                             + "\n* `csv`"
                             + "\n* `xml`"
                             + "\n* `json` (default)"
-                            + "\n\nSee <a href=\"legacy-format/\">this page</a> for more information."),
+                            + "\n\nSee <a href=\"legacy-format/\">this page</a> for more information about accept header usage."),
                     @OpenApiParam(name = OFFICE, description = "Specifies the"
                             + " owning office of the parameters whose data is to be included in the "
                             + "response. If this field is not specified, the session user's default office will be"
