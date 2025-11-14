@@ -2,6 +2,7 @@ package cwms.cda.data.dao;
 
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.VerticalDatumInfo;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -15,29 +16,93 @@ public final class TimeSeriesVerticalDatumConverter {
         throw new AssertionError("Utility class, don't instantiate");
     }
 
-    public static TimeSeries convertToVerticalDatum(TimeSeries timeSeries, VerticalDatum convertTo) {
-        if(timeSeries.getVerticalDatumInfo() == null || Objects.equals(convertTo, getVerticalDatum(timeSeries))) {
-            return timeSeries; //no conversion needed
+    public static TimeSeries convertToVerticalDatum(TimeSeries originalTimeSeries, VerticalDatum convertTo) {
+        if(originalTimeSeries.getVerticalDatumInfo() == null || Objects.equals(convertTo, getVerticalDatum(originalTimeSeries))) {
+            return originalTimeSeries; //no conversion needed
         }
-        TimeSeries retVal = new TimeSeries(timeSeries);
-        VerticalDatumInfo vdi = timeSeries.getVerticalDatumInfo();
+        TimeSeries retVal = originalTimeSeries;
+        VerticalDatumInfo vdi = originalTimeSeries.getVerticalDatumInfo();
+        VerticalDatumInfo.Offset offset = getOffsetForDatum(vdi, convertTo);
+        if(offset != null)
+        {
+            List<TimeSeries.Record> newValues = convertElevationValues(offset, originalTimeSeries);
+            VerticalDatumInfo newVerticalDatumInfo = convertVerticalDatumInfo(vdi, convertTo, offset);
+            retVal = new TimeSeries(originalTimeSeries.getPage(),
+                    originalTimeSeries.getPageSize(),
+                    originalTimeSeries.getTotal(),
+                    originalTimeSeries.getName(),
+                    originalTimeSeries.getOfficeId(),
+                    originalTimeSeries.getBegin(),
+                    originalTimeSeries.getEnd(),
+                    originalTimeSeries.getUnits(),
+                    originalTimeSeries.getInterval(),
+                    newVerticalDatumInfo,
+                    originalTimeSeries.getIntervalOffset(),
+                    originalTimeSeries.getTimeZone(),
+                    originalTimeSeries.getVersionDate(),
+                    originalTimeSeries.getDateVersionType())
+                    .withValues(newValues);
+        }
+        return retVal;
+    }
+
+    @NotNull
+    private static List<TimeSeries.Record> convertElevationValues(VerticalDatumInfo.Offset offset, TimeSeries retVal) {
+        Double conversionFactor = offset.getValue();
+        List<TimeSeries.Record> originalValues = retVal.getValues();
+        List<TimeSeries.Record> newValues = new ArrayList<>();
+        for (TimeSeries.Record record : originalValues) {
+            Double newValue = record.getValue() + conversionFactor;
+            TimeSeries.Record newRecord = new TimeSeries.Record(record.getDateTime(), newValue, record.getQualityCode());
+            newValues.add(newRecord);
+        }
+        return newValues;
+    }
+
+    static VerticalDatumInfo.Offset getOffsetForDatum(VerticalDatumInfo vdi, VerticalDatum convertTo) {
+        VerticalDatumInfo.Offset retVal = null;
         VerticalDatumInfo.Offset[] offsets = vdi.getOffsets();
         for (VerticalDatumInfo.Offset offset : offsets) {
             String toDatum = offset.getToDatum();
             if (toDatum.replaceAll("-", "").equalsIgnoreCase(convertTo.name())) {
-                Double conversionFactor = offset.getValue();
-                List<TimeSeries.Record> values = retVal.getValues();
-                List<TimeSeries.Record> newValues = new ArrayList<>();
-                for (TimeSeries.Record record : values) {
-                    Double newValue = record.getValue() + conversionFactor;
-                    TimeSeries.Record newRecord = new TimeSeries.Record(record.getDateTime(), newValue, record.getQualityCode());
-                    newValues.add(newRecord);
-                }
-                values.clear();
-                values.addAll(newValues);
+                retVal = offset;
+                break;
             }
         }
         return retVal;
+    }
+
+    private static VerticalDatumInfo convertVerticalDatumInfo(VerticalDatumInfo vdi, VerticalDatum convertTo, VerticalDatumInfo.Offset convertToOffset) {
+        Double conversionFactor = convertToOffset.getValue();
+        return new VerticalDatumInfo.Builder()
+                .from(vdi)
+                .withElevation(vdi.getElevation() + conversionFactor)
+                .withNativeDatum(convertToOffset.getToDatum())
+                .withOffsets(buildConvertedOffsets(vdi, convertTo, convertToOffset))
+                .build();
+    }
+
+    private static VerticalDatumInfo.Offset[] buildConvertedOffsets(VerticalDatumInfo vdi, VerticalDatum convertTo, VerticalDatumInfo.Offset convertToOffset) {
+        List<VerticalDatumInfo.Offset> newOffsets = new ArrayList<>();
+
+        //add the reverse offset
+        Double conversionFactor = convertToOffset.getValue();
+        double convertToOffsetToOriginal = -conversionFactor;
+        VerticalDatumInfo.Offset reverseOffset = new VerticalDatumInfo.Offset(convertToOffset.isEstimate(), vdi.getNativeDatum(), convertToOffsetToOriginal);
+        newOffsets.add(reverseOffset);
+
+        //add the other offsets, adjusted
+        VerticalDatumInfo.Offset[] offsets = vdi.getOffsets();
+        for (VerticalDatumInfo.Offset offset : offsets) {
+            String toDatum = offset.getToDatum();
+            if (!toDatum.replaceAll("-", "").equalsIgnoreCase(convertTo.name())) {
+                Double newOffsetValue = convertToOffsetToOriginal + offset.getValue();
+                boolean isEstimate = offset.isEstimate() || convertToOffset.isEstimate();
+                VerticalDatumInfo.Offset newOffset = new VerticalDatumInfo.Offset(isEstimate, toDatum, newOffsetValue);
+                newOffsets.add(newOffset);
+            }
+        }
+        return newOffsets.toArray(new VerticalDatumInfo.Offset[]{});
     }
 
     private static VerticalDatum getVerticalDatum(@Nullable TimeSeries timeSeries) {

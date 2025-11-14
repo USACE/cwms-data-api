@@ -1,5 +1,6 @@
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -179,6 +180,18 @@ public class VerticalDatumInfo extends CwmsDTOBase {
 
         public VerticalDatumInfo.Builder withLocalDatumName(String localDatumName) {
             this.localDatumName = localDatumName;
+            return this;
+        }
+
+        @JsonIgnore
+        public Builder from(VerticalDatumInfo vdi) {
+            this.office = vdi.getOffice();
+            this.unit = vdi.getUnit();
+            this.location = vdi.getLocation();
+            this.nativeDatum = vdi.getNativeDatum();
+            this.elevation = vdi.getElevation();
+            this.offsets = vdi.getOffsets();
+            this.localDatumName = vdi.getLocalDatumName();
             return this;
         }
 

@@ -486,7 +486,7 @@ public class TimeSeriesController implements CrudHandler {
                         .build();
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters);
 
-                if(datum != null){
+                if(datum != null) { //this will be null for non-elevation ts
                     // user has requested a specific vertical datum
                     VerticalDatum vd = VerticalDatum.valueOf(datum);  // the users request
                     ts = TimeSeriesVerticalDatumConverter.convertToVerticalDatum(ts, vd);

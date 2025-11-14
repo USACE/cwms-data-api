@@ -134,17 +134,6 @@ public class TimeSeries extends CwmsDTOPaginated {
         values = new ArrayList<>();
     }
 
-    public TimeSeries(TimeSeries timeSeries)
-    {
-        this(timeSeries.getPage(), timeSeries.getPageSize(), timeSeries.getTotal(),
-            timeSeries.getName(), timeSeries.getOfficeId(), timeSeries.getBegin(),
-            timeSeries.getEnd(), timeSeries.getUnits(), timeSeries.getInterval(),
-            timeSeries.getVerticalDatumInfo(), timeSeries.getIntervalOffset(),
-            timeSeries.getTimeZone(), timeSeries.getVersionDate(),
-            timeSeries.getDateVersionType());
-        this.values = new ArrayList<>(timeSeries.getValues());
-    }
-
     public String getName() {
         return name;
     }
@@ -253,6 +242,12 @@ public class TimeSeries extends CwmsDTOPaginated {
         } else {
             values.add(new Record(dateTime, value, qualityCode, dataEntryDate));
         }
+    }
+
+    public TimeSeries withValues(List<Record> values) {
+        this.values.clear();
+        this.values.addAll(values);
+        return this;
     }
 
     public static List<Column> getColumnDescriptor() {
