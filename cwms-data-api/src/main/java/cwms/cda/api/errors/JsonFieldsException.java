@@ -1,9 +1,8 @@
 package cwms.cda.api.errors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.ArrayList;
+import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,7 +20,7 @@ public class JsonFieldsException extends FieldException {
     }
 
     @Override
-    public Map<String, ? extends List<String>> getDetails() {
+    public Map<String, Serializable> getDetails() {
         return new HashMap<>();
     }
 }

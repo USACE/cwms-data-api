@@ -9,7 +9,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.FilteredTimeSeriesParameters;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.TimeSeriesDao;
@@ -240,11 +239,6 @@ public class TimeSeriesFilteredController implements Handler {
 
             addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
-        } catch (NotFoundException e) {
-            CdaError re = new CdaError("Not found.");
-            logger.log(Level.WARNING, re.toString(), e);
-            ctx.status(HttpServletResponse.SC_NOT_FOUND);
-            ctx.json(re);
         } catch (IllegalArgumentException ex) {
             CdaError re = new CdaError("Invalid arguments supplied");
             logger.log(Level.SEVERE, re.toString(), ex);
