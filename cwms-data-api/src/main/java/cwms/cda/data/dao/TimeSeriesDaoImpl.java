@@ -19,6 +19,8 @@ import static org.jooq.impl.DSL.noCondition;
 import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
+
+import org.jooq.ConnectionRunnable;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
@@ -1524,11 +1526,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         connection(dsl, connection -> {
             DSLContext dslContext = getDslContext(connection, input.getOfficeId());
-                    withDefaultDatum(vd, dslContext, (conn)-> {
-
-                        store(dslContext, input.getOfficeId(), input.getName(), input.getUnits(),
-                                versionDate, input.getValues(), createAsLrts, replaceAll, overrideProtection);
-                    });
+                    withDefaultDatum(vd, dslContext, (conn)-> store(dslContext, input.getOfficeId(), input.getName(), input.getUnits(),
+                            versionDate, input.getValues(), createAsLrts, replaceAll, overrideProtection));
         });
     }
 
