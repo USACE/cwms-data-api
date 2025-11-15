@@ -1,8 +1,11 @@
 .. _timeSeries_all_params:
 
+
+timeseries catalog parameters
 ###################################
-Full List of timeSeries Parameters
-###################################
+
+This page serves as a reference for all parameters used across the TimeSeries endpoints. It may be useful only for
+building the documentation and then be removed later.
 
     - begin
     - category-id
@@ -12,12 +15,15 @@ Full List of timeSeries Parameters
     - format
     - group-id
     - include-entry-date
-    - location-id
+    - location-id:
+        - https://cwms-database.readthedocs.io/en/latest/naming.html#locations
+        - https://cwms-database.readthedocs.io/en/latest/locations.html#overview
     - location-mask
     - max-version
     - name
     - next
-    - office
+    - office:
+        - https://cwms-database.readthedocs.io/en/latest/naming.html#offices
     - office-mask
     - page
     - page-size
@@ -31,37 +37,41 @@ Full List of timeSeries Parameters
     - ts-ids
     - unit
     - unit-system
-    - units
-    - version
+    - units:
+        - https://cwms-database.readthedocs.io/en/latest/naming.html#units
+    - version:
+        - https://cwms-database.readthedocs.io/en/latest/naming.html#versions
     - version-date
     - version-mask
 
 
+Reference values for shared parameters across TimeSeries endpoints for ease of access:
+
+    :ref:`def-end`
+    :ref:`def-location-id`
+    :ref:`def-location-mask`
+    :ref:`def-office`
+    :ref:`def-office-mask`
+    :ref:`def-page`
+    :ref:`def-page-size`
+    :ref:`def-parameter-id`
+    :ref:`def-parameter-id-mask`
+    :ref:`def-timezone`
+    :ref:`def-unit`
+    :ref:`def-version-date`
+
 Notes on duplicates/variations across endpoints:
 
-- end vs end-time-inclusive:
+- end and end-time-inclusive:
+- begin and start and start-time-inclusive
 
-    - “end” appears on /timeSeries and on the instance endpoint;
-    - “end-time-inclusive” appears only on the instance endpoint.
+- unit and units and unit-system: Not sure why all three exist, but here is how they are used:
 
-- start vs start-time-inclusive:
+    - unit: deprecated, prefer units, SI or EN or other
+    - units: SI or EN or other
+    - unit-system: SI or EN or other
 
-    - “start” is on recent, profile-parser, and instance;
-    - “start-time-inclusive” is on profile, profile-parser, and instance.
-
-units vs unit vs unit-system:
-
-- unit: /timeSeries, instance
-- units: profile by IDs
-- unit-system: recent, profile, profile by IDs
-
-
-version vs version-date vs version-mask:
-
-- version: profile by IDs, instance (catalog), instance by IDs
-- version-date: /timeSeries, recent, instance by IDs
-- version-mask: profile-parser, instance (catalog), instance by IDs
-
+version and version-date and version-mask:
 
 
 
@@ -74,32 +84,29 @@ version vs version-date vs version-mask:
     "category-id","/timeSeries/recent"
     "datum","/timeSeries"
     "end","/timeSeries;
-    /timeSeries/profile-instance"
-    "end-time-inclusive","/timeSeries/profile-instance"
+    /timeSeries/profile-instance;
+    /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
+    "end-time-inclusive","/timeSeries/profile-instance;
+    /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
     "format","/timeSeries"
     "group-id","/timeSeries/recent"
     "include-entry-date","/timeSeries"
     "location-id","/timeSeries;
-    /timeSeries/profile;
     /timeSeries/profile{location-id}/{parameter-id};
-    /timeSeries/profile-parser;
     /timeSeries/profile-parser{location-id}/{parameter-id};
     /timeSeries/profile-instance;
     /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
-    "location-mask","/timeSeries/recent;
-    /timeSeries/profile;
+    "location-mask","/timeSeries/profile;
     /timeSeries/profile-parser;
     /timeSeries/profile-instance"
-    "max-version","/timeSeries/recent;
-    /timeSeries/profile-instance"
+    "max-version","/timeSeries/profile-instance;
+    /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
     "name","/timeSeries"
-    "next","/timeSeries/recent;
-    /timeSeries/profile-instance"
+    "next","/timeSeries/profile-instance;
+    /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
     "office", "/timeSeries;
     /timeSeries/recent;
-    /timeSeries/profile;
     /timeSeries/profile{location-id}/{parameter-id};
-    /timeSeries/profile-parser;
     /timeSeries/profile-parser{location-id}/{parameter-id};
     /timeSeries/profile-instance;
     /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
@@ -108,49 +115,41 @@ version vs version-date vs version-mask:
     /timeSeries/profile-instance"
     "page","/timeSeries;
     /timeSeries/profile;
-    /timeSeries/profile-instance"
+    /timeSeries/profile-instance;
+    /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
     "page-size","/timeSeries;
     /timeSeries/profile;
-    /timeSeries/profile-instance"
+    /timeSeries/profile-instance;
+    /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
     "parameter-id","/timeSeries;
-    /timeSeries/profile;
     /timeSeries/profile{location-id}/{parameter-id};
-    /timeSeries/profile-parser;
     /timeSeries/profile-parser{location-id}/{parameter-id};
     /timeSeries/profile-instance;
     /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
     "parameter-id-mask","/timeSeries/profile;
     /timeSeries/profile-parser;
     /timeSeries/profile-instance"
-    "previous","/timeSeries/recent;
-    /timeSeries/profile-parser;
-    /timeSeries/profile-instance"
-    "start","/timeSeries/recent;
-    /timeSeries/profile-parser;
-    /timeSeries/profile-instance"
-    "start-time-inclusive","/timeSeries/profile;
-    /timeSeries/profile-parser;
-    /timeSeries/profile-instance"
+    "previous","/timeSeries/profile-instance;
+    /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
+    "start","/timeSeries/profile-instance;
+    /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
+    "start-time-inclusive","/timeSeries/profile-instance;
+    /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
     "timezone","/timeSeries;
-    /timeSeries/profile-instance"
+    /timeSeries/profile-instance;
+    /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
     "trim","/timeSeries;
     /timeSeries/profile"
     "ts-ids","/timeSeries/recent;
-    /timeSeries/profile;
     /timeSeries/profile-parser"
     "unit","/timeSeries;
-    /timeSeries/profile-instance"
-    "unit-system","/timeSeries/recent;
-    /timeSeries/profile;
-    /timeSeries/profile{location-id}/{parameter-id}"
-    "units","/timeSeries;
-    /timeSeries/profile{location-id}/{parameter-id}"
-    "version","/timeSeries/profile{location-id}/{parameter-id};
     /timeSeries/profile-instance;
+    /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
+    "unit-system","/timeSeries/recent"
+    "units","/timeSeries"
+    "version","/timeSeries/profile-instance;
     /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
     "version-date","/timeSeries;
-    /timeSeries/recent;
-    /timeSeries/profile-instance"
-    "version-mask","/timeSeries/profile-parser;
     /timeSeries/profile-instance;
     /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
+    "version-mask","/timeSeries/profile-instance;"

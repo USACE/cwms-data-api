@@ -2,6 +2,6 @@ Endpoint Parameters
 =====================
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
-    Time Series Parameters <timeSeries_params/index.rst>
+    Time Series Parameters (working reference) <timeSeries_params/allTSParameters.rst>

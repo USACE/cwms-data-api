@@ -3,7 +3,7 @@ Client Libraries
 
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     Java <java>
     JavaScript <javascript>
