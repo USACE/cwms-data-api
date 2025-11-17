@@ -7,6 +7,10 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import cwms.cda.data.dao.VerticalDatum;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @JsonRootName("vertical-datum-info")
 @JsonDeserialize(builder = VerticalDatumInfo.Builder.class)
@@ -58,6 +62,54 @@ public class VerticalDatumInfo extends CwmsDTOBase {
 
     public String getLocalDatumName() {
         return localDatumName;
+    }
+
+    @JsonIgnore
+    public VerticalDatumInfo.Offset getOffsetForDatum(VerticalDatum convertTo) {
+        VerticalDatumInfo.Offset retVal = null;
+        VerticalDatumInfo.Offset[] offsets = getOffsets();
+        for (VerticalDatumInfo.Offset offset : offsets) {
+            if (offset.isForDatum(convertTo.toString())) {
+                retVal = offset;
+                break;
+            }
+        }
+        return retVal;
+    }
+
+    @JsonIgnore
+    public VerticalDatumInfo convertedTo(VerticalDatumInfo.Offset convertToOffset) {
+        VerticalDatum convertTo = VerticalDatum.getVerticalDatum(convertToOffset.getToDatum());
+        Double offsetValue = convertToOffset.getValue();
+        return new VerticalDatumInfo.Builder()
+                .from(this)
+                .withElevation(getElevation() + offsetValue)
+                .withNativeDatum(convertToOffset.getToDatum())
+                .withOffsets(buildConvertedOffsets(convertTo, convertToOffset))
+                .build();
+    }
+
+    private VerticalDatumInfo.Offset[] buildConvertedOffsets(VerticalDatum convertTo, VerticalDatumInfo.Offset convertToOffset) {
+        List<Offset> newOffsets = new ArrayList<>();
+
+        //add the reverse offset
+        Double conversionFactor = convertToOffset.getValue();
+        double convertToOffsetToOriginal = -conversionFactor;
+        VerticalDatumInfo.Offset reverseOffset = new VerticalDatumInfo.Offset(convertToOffset.isEstimate(), getNativeDatum(), convertToOffsetToOriginal);
+        newOffsets.add(reverseOffset);
+
+        //add the other offsets, adjusted
+        VerticalDatumInfo.Offset[] offsets = getOffsets();
+        for (VerticalDatumInfo.Offset offset : offsets) {
+            String toDatum = offset.getToDatum();
+            if (!offset.isForDatum(convertTo.toString())) {
+                Double newOffsetValue = convertToOffsetToOriginal + offset.getValue();
+                boolean isEstimate = offset.isEstimate() || convertToOffset.isEstimate();
+                VerticalDatumInfo.Offset newOffset = new VerticalDatumInfo.Offset(isEstimate, toDatum, newOffsetValue);
+                newOffsets.add(newOffset);
+            }
+        }
+        return newOffsets.toArray(new VerticalDatumInfo.Offset[]{});
     }
 
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)

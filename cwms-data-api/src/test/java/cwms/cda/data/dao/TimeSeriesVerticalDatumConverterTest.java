@@ -116,7 +116,7 @@ public class TimeSeriesVerticalDatumConverterTest {
         for(VerticalDatumInfo.Offset offset : convertBackToOriginal.getVerticalDatumInfo().getOffsets())
         {
             VerticalDatum convertedBackToDatum = VerticalDatum.getVerticalDatum(offset.getToDatum());
-            VerticalDatumInfo.Offset originalToDatum = TimeSeriesVerticalDatumConverter.getOffsetForDatum(ts.getVerticalDatumInfo(), convertedBackToDatum);
+            VerticalDatumInfo.Offset originalToDatum = ts.getVerticalDatumInfo().getOffsetForDatum(convertedBackToDatum);
             assertNotNull(originalToDatum, "Round-trip conversion resulted in missing to-datum: " + convertedBackToDatum);
             assertEquals(originalToDatum.getValue(), offset.getValue(), 0.0001);
         }

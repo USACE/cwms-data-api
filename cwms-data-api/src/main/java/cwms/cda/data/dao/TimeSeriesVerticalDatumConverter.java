@@ -22,11 +22,11 @@ public final class TimeSeriesVerticalDatumConverter {
         }
         TimeSeries retVal = originalTimeSeries;
         VerticalDatumInfo vdi = originalTimeSeries.getVerticalDatumInfo();
-        VerticalDatumInfo.Offset offset = getOffsetForDatum(vdi, convertTo);
+        VerticalDatumInfo.Offset offset = vdi.getOffsetForDatum(convertTo);
         if(offset != null)
         {
             List<TimeSeries.Record> newValues = applyOffsetToValues(offset.getValue(), originalTimeSeries.getValues());
-            VerticalDatumInfo newVerticalDatumInfo = convertVerticalDatumInfo(vdi, convertTo, offset);
+            VerticalDatumInfo newVerticalDatumInfo = vdi.convertedTo(offset);
             retVal = new TimeSeries(originalTimeSeries.getPage(),
                     originalTimeSeries.getPageSize(),
                     originalTimeSeries.getTotal(),
@@ -55,51 +55,6 @@ public final class TimeSeriesVerticalDatumConverter {
             newValues.add(newRecord);
         }
         return newValues;
-    }
-
-    static VerticalDatumInfo.Offset getOffsetForDatum(VerticalDatumInfo vdi, VerticalDatum convertTo) {
-        VerticalDatumInfo.Offset retVal = null;
-        VerticalDatumInfo.Offset[] offsets = vdi.getOffsets();
-        for (VerticalDatumInfo.Offset offset : offsets) {
-            if (offset.isForDatum(convertTo.toString())) {
-                retVal = offset;
-                break;
-            }
-        }
-        return retVal;
-    }
-
-    private static VerticalDatumInfo convertVerticalDatumInfo(VerticalDatumInfo vdi, VerticalDatum convertTo, VerticalDatumInfo.Offset convertToOffset) {
-        Double offsetValue = convertToOffset.getValue();
-        return new VerticalDatumInfo.Builder()
-                .from(vdi)
-                .withElevation(vdi.getElevation() + offsetValue)
-                .withNativeDatum(convertToOffset.getToDatum())
-                .withOffsets(buildConvertedOffsets(vdi, convertTo, convertToOffset))
-                .build();
-    }
-
-    private static VerticalDatumInfo.Offset[] buildConvertedOffsets(VerticalDatumInfo vdi, VerticalDatum convertTo, VerticalDatumInfo.Offset convertToOffset) {
-        List<VerticalDatumInfo.Offset> newOffsets = new ArrayList<>();
-
-        //add the reverse offset
-        Double conversionFactor = convertToOffset.getValue();
-        double convertToOffsetToOriginal = -conversionFactor;
-        VerticalDatumInfo.Offset reverseOffset = new VerticalDatumInfo.Offset(convertToOffset.isEstimate(), vdi.getNativeDatum(), convertToOffsetToOriginal);
-        newOffsets.add(reverseOffset);
-
-        //add the other offsets, adjusted
-        VerticalDatumInfo.Offset[] offsets = vdi.getOffsets();
-        for (VerticalDatumInfo.Offset offset : offsets) {
-            String toDatum = offset.getToDatum();
-            if (!offset.isForDatum(convertTo.toString())) {
-                Double newOffsetValue = convertToOffsetToOriginal + offset.getValue();
-                boolean isEstimate = offset.isEstimate() || convertToOffset.isEstimate();
-                VerticalDatumInfo.Offset newOffset = new VerticalDatumInfo.Offset(isEstimate, toDatum, newOffsetValue);
-                newOffsets.add(newOffset);
-            }
-        }
-        return newOffsets.toArray(new VerticalDatumInfo.Offset[]{});
     }
 
     private static VerticalDatum getVerticalDatum(@Nullable TimeSeries timeSeries) {

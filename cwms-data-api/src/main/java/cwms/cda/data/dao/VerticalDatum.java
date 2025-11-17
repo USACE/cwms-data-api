@@ -1,5 +1,7 @@
 package cwms.cda.data.dao;
 
+import cwms.cda.data.dto.VerticalDatumInfo;
+
 public enum VerticalDatum {
     NAVD88("NAVD88"),
     NGVD29("NGVD29"),
