@@ -286,6 +286,7 @@ Composite Time Series Definition
 
 
 Operations required:
+--------------------
 
 * Create
 * Remove member (ts id + range)
@@ -299,7 +300,13 @@ Immutable fields:
 
 Fields marked immutable above cannot be updated. At this time no field are thought to be immutable.
 
+Operations Prohibited:
+----------------------
 
+* Any direct manipulation of the underlying time series members.
+
+Example: one cannot `POST` values to a composite time series. Doing so will result in an HTTP 405 - Method Not Allowed
+error.
 
 Composite Time Series Response
 ==============================
