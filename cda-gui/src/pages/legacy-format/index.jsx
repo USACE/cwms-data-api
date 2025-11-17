@@ -59,7 +59,7 @@ export default function LegacyFormat() {
                         Within a terminal that supports wGET usage, run a command such as the following:
                     </p>
                     <pre className="text-sm bg-gray-100 px-2 py-1 rounded">
-                        {`wget --no-check-certificate --quiet \\ \n--method GET \\ \n--timeout=0 \\ \n--header 'Accept: application/json;version=1' \\ \n'https://cwms-data.usace.army.mil/cwms-data/locations?FORMAT=json'`}
+                        {`wget \\ \n--method GET \\ \n--header 'Accept: application/json;version=1' \\ \n'https://cwms-data.usace.army.mil/cwms-data/locations?FORMAT=json'`}
                     </pre>
                 </div>
 
@@ -71,7 +71,7 @@ export default function LegacyFormat() {
                         Within a Python shell or script file, use the following to query with an accept header:
                     </p>
                     <pre className="text-sm bg-gray-100 px-2 py-1 rounded">
-                        {`import requests \nx = requests.get("http://localhost:7000/cwms-data/locations?OFFICE=SPK&FORMAT=json", headers={"Accept": "application/json"}) \nprint(x.json())`}
+                        {`import requests \nx = requests.get("http://cwms-data.usace.army.mil/cwms-data/locations?OFFICE=SPK&FORMAT=json", headers={"Accept": "application/json"}) \nprint(x.json())`}
                     </pre>
                 </div>
             </UsaceBox>
