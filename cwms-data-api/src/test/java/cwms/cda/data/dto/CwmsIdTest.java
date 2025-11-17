@@ -69,6 +69,37 @@ final class CwmsIdTest {
     }
 
     @Test
+    void testFieldExceptionContent() {
+        try {
+            CwmsId item = new CwmsId.Builder()
+                .withOfficeId("Office123")
+                .build();
+            item.validate();
+        } catch (FieldException e) {
+            assertEquals("Parser", e.getSource());
+            assertEquals("name", e.getDetails().get("missing fields"));
+            assertEquals("required fields not present", e.getMessage());
+            assertEquals("required fields not present", e.getCdaErrorMessage());
+            assertEquals(400, e.getCdaHttpErrorCode());
+        }
+
+        try {
+            CwmsId item = new CwmsId.Builder()
+                .withName("Stream123")
+                .build();
+            item.validate();
+        } catch (FieldException e) {
+            assertEquals("Parser", e.getSource());
+
+            // Odd behavior due to CwmsId extending CwmsDTO with a getOfficeId method
+            assertEquals("getOfficeId, office-id", e.getDetails().get("missing fields"));
+            assertEquals("required fields not present", e.getMessage());
+            assertEquals("required fields not present", e.getCdaErrorMessage());
+            assertEquals(400, e.getCdaHttpErrorCode());
+        }
+    }
+
+    @Test
     void createLocationIdentifier_serialize_roundtrip() {
         CwmsId cwmsId = new CwmsId.Builder()
                 .withName("Stream123")

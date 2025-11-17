@@ -25,10 +25,15 @@
 package cwms.cda.api.errors;
 
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.logging.Level;
+import javax.servlet.http.HttpServletResponse;
 
-public final class RateException extends RuntimeException {
+public final class RateException extends ApplicationException {
+    private static final Level LOG_LEVEL = Level.INFO;
 
     public RateException(String message, SQLException cause) {
-        super(message, cause);
+        super(message, DATABASE_SOURCE, "Error performing rate function: " + message,
+            HttpServletResponse.SC_INTERNAL_SERVER_ERROR, LOG_LEVEL, new HashMap<>(), cause);
     }
 }

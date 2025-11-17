@@ -1,5 +1,6 @@
 package cwms.cda.data.dto;
 
+import cwms.cda.api.errors.ExclusiveFieldsException;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import java.time.ZonedDateTime;
 
@@ -61,7 +62,7 @@ class LocationLevelTest {
 	@Test
 	void test_serialization_formats_Seasonal() {
 		ZonedDateTime zdt = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
-		final SeasonalLocationLevel level = ((SeasonalLocationLevel.Builder) new SeasonalLocationLevel.Builder("Test", zdt)
+		final SeasonalLocationLevel level = (new SeasonalLocationLevel.Builder("Test", zdt)
 				.withSeasonalValue(new SeasonalValueBean.Builder().withValue(34.9).build())
 				.withIntervalMinutes(23)
 				.withOfficeId("SPK"))
@@ -108,7 +109,7 @@ class LocationLevelTest {
 	@Test
 	void test_serialization_om_Seasonal() throws JsonProcessingException {
 		ZonedDateTime zdt = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
-		final SeasonalLocationLevel level = ((SeasonalLocationLevel.Builder) new SeasonalLocationLevel.Builder("Test", zdt)
+		final SeasonalLocationLevel level = (new SeasonalLocationLevel.Builder("Test", zdt)
 				.withSeasonalValue(new SeasonalValueBean.Builder().withValue(21.0).build())
 				.withIntervalMonths(12)
 				.withOfficeId("SPK"))
@@ -254,5 +255,30 @@ class LocationLevelTest {
 		ConstantLocationLevel levelFromJson = Formats.parseContent(new ContentType(Formats.JSONV2), jsonStr, ConstantLocationLevel.class);
 		assertNotNull(levelFromJson);
 		assertTrue(levelFromJson.getAliases().isEmpty());
+	}
+
+	@Test
+	void testMutuallyExclusiveSeasonalLevel() {
+		SeasonalLocationLevel.Builder sb = new SeasonalLocationLevel
+			.Builder("LocationLevelId", ZonedDateTime.now())
+			.withIntervalMinutes(120)
+			.withIntervalMonths(2)
+			.withOfficeId("LRL")
+			.withIntervalOrigin(ZonedDateTime.now())
+			.withSeasonalValue(new SeasonalValueBean.Builder(12.0).withOffsetMonths(2).build());
+
+		assertThrows(ExclusiveFieldsException.class, sb::build);
+
+		try {
+			sb.build();
+		} catch (ExclusiveFieldsException e) {
+			assertEquals("Parser", e.getSource());
+			assertEquals("Mutually exclusive fields were provided in the request.", e.getCdaErrorMessage());
+			assertEquals("Only one of the following can be defined at "
+				+ "once for a seasonal location level: interval-minutes, interval-months",
+                e.getDetails().get("Use only one of"));
+			assertEquals("Mutually exclusive fields were provided in the request.", e.getMessage());
+			assertEquals(400, e.getCdaHttpErrorCode());
+		}
 	}
 }
