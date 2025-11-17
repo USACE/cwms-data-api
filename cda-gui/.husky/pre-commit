@@ -1,1 +1,2 @@
+cd cda-gui
 npx lint-staged
