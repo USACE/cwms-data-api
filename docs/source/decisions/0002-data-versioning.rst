@@ -6,6 +6,8 @@ Summary
 =======
 
 Instead of versioning the entire API, we version the data types if appropriate.
+This versioning only applies to simple non-breaking changes and it primarily presented as a hint in the returned
+data.
 
 Opinions
 ========
@@ -26,22 +28,30 @@ e.g /timeseries/Alder Springs.Temp-Air.Inst.15Minutes.0.GOES-raw?begin=PT0&end=P
 
 The header, Accept, informs the API what format, or formats, we are willing to accept the data in. 
 
-
-
 Opinion 2
+---------
 
 Summary: Remove data versioning in all endpoints.
 
 @adamkorynta 
 
-The accept/content-type headers have provided sufficient confusion to downstream clients and deviate from industry standards. I have yet to see an endpoint where this versioning solves the proposed problem of needing to different shapes of data (other than json vs xml). The concept was introduced to solve the straight-to-db queries, which did not have any OpenAPI documentation moving to in-app DTO's which now have documentation. When moving away from the straight-to-db queries, we needed to thoroughly expand queries parameters and make other backwards-incompatible changes unrelated to the data shape. Given that context in hindsight a path version would have worked better.
+The accept/content-type headers have provided sufficient confusion to downstream clients and deviate from industry standards.
+I have yet to see an endpoint where this versioning solves the proposed problem of needing to different shapes of data (other than json vs xml).
+The concept was introduced to solve the straight-to-db queries, which did not have any OpenAPI documentation moving to in-app DTO's which now have documentation. When moving away from the straight-to-db queries, we needed to thoroughly expand queries parameters and make other backwards-incompatible changes unrelated to the data shape. Given that context in hindsight a path version would have worked better.
 
-The closest we've gotten to needing new shapes on the same endpoint is the data-entry date on TimeSeries, but this was more appropriately solved via query parameter and data arrays. I think if we had really wanted to be a stickler on the "what format" we could have easily added another endpoint path instead. Even if/when we add text annotations, using a content type is obtuse given the lack of discoverability as we would then need `application/json`, `application/json+data-entry+text-annotations`, `application/json+text-annotations`, `application/json+data-entry` which seems like just another type of bloat that is more hidden from clients.
+The closest we've gotten to needing new shapes on the same endpoint is the data-entry date on TimeSeries, but this was
+more appropriately solved via query parameter and data arrays. I think if we had really wanted to be a stickler on the 
+"what format" we could have easily added another endpoint path instead. Even if/when we add text annotations,
+using a content type is obtuse given the lack of discoverability as we would then need `application/json`, 
+`application/json+data-entry+text-annotations`, `application/json+text-annotations`, `application/json+data-entry`
+which seems like just another type of bloat that is more hidden from clients.
 
 Decision Status
 ---------------
 
-partial acceptance
+`rejected` - the descriptions in this proposal are awkward and it is not clear how to fix them. Additionally as we have
+decided to adopt path based versioning and we've made `application/json` or `application/xml` default to the latest desired 
+the requirement is now moot.
 
 Data, by content-types, are versioned. In the past there was some severe confusion on this part and it was treated as anything 
 new was "version=2" in the content-type. To allow this design but reduce confusion going forward
@@ -58,6 +68,10 @@ new was "version=2" in the content-type. To allow this design but reduce confusi
 
 References
 ==========
+
+1. https://www.youtube.com/watch?v=jmoxGJ_sLgU
+2. https://newsletter.systemdesign.one/p/api-versioning
+3. https://www.speakeasy.com/api-design/versioning
 
 
 Notes

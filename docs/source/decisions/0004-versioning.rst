@@ -11,7 +11,7 @@ is required.
 
 The API as a whole will retain the calendar based versioning for formal releases.
 Data *SHOULD* be versioned, if appropriate/needed, with otherwise backwards compatible changes to query parameters.
-Endpoints will be placed under a new "api version" for backwards incompatible or confusing parameter changes.
+Endpoints will be placed under a new "api version" path parameter for backwards incompatible or confusing parameter changes.
 
 e.g.
 
@@ -21,7 +21,8 @@ can become
 
 `https://host/cwms-data/v2/locations`
 
-As additional endpoints require such a change they should be added to an existing increased version.
+As additional endpoints require such a change they should be added to an existing increased version. For each
+version all required verbs *SHALL* be implemented. e.g. the new version is a complete unit of operation.
 
 Example:
 
@@ -37,6 +38,22 @@ given above and a v1 `timeseries` and yet another `locations` improvements
 .. NOTE::
 
     Or is that confusing and we should just allows add a new endpoint to the highest endpoint version?
+
+At Current time the "root" URL will be considered V1, and redirect to v1 urls.
+After X years the root URLs will redirect to the latest version.
+
+e.g.
+
+  .. code-block:: bash
+        # now
+        curl "https://cwms-data.usace.army/cwms-data/timeseries/Black Butte.Stor.Inst.~1Day.0.Calc-val?units=ft"
+        # will redirect to
+        curl "https://cwms-data.usace.army/cwms-data/v1/timeseries/Black Butte.Stor.Inst.~1Day.0.Calc-val?units=ft"
+        # after transition period, *IF* there is a new version
+        # will redirect to
+        curl "https://cwms-data.usace.army/cwms-data/v<next>/timeseries/Black Butte.Stor.Inst.~1Day.0.Calc-val?units=ft"
+        # if possible, query parameters can be updated on behalf of the user
+
 
 Opinions
 ========
@@ -59,3 +76,7 @@ Decision Status
 
 References
 ==========
+
+1. https://www.youtube.com/watch?v=jmoxGJ_sLgU
+2. https://newsletter.systemdesign.one/p/api-versioning
+3. https://www.speakeasy.com/api-design/versioning
