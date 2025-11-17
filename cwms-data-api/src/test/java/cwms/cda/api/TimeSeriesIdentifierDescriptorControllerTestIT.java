@@ -195,16 +195,15 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
             .body("details.message",
-                is("Invalid time series description: "
-                    + "12HoursLocal is not a valid interval"));
+                is(String.format("Invalid time series description: ORA-20998: ERROR: INVALID Time Series Identifier \"%s\": No such interval", tsId)));
     }
 
     @Test
-    void testInvalidItem() throws Exception {
+    void test_invalid_ts_id() throws Exception {
         createLocation("BadLocationTSTest",true,"SPK");
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String tsId = "BadLocationTSTest" +
-            ".Precip-Cumulative.Avg.12HoursLocal.12HoursLocal.DescriptorTEST_LRTS25";
+            ".Precip-Cumulative.Ave.~12Hours.12HoursLocal.DescriptorTEST_LRTS25";
         TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
 
         ObjectMapper om = JsonV2.buildObjectMapper();
@@ -228,7 +227,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .body("message", equalTo("Bad Request."))
             .body("source", equalTo("User Input"))
             .body("details.message",
-                is("Invalid time series description: 12HoursLocal is not a valid duration"));
+                is(String.format("Invalid time series description: ORA-20998: ERROR: INVALID Time Series Identifier \"%s\": No such duration", tsId)));
     }
 
 

@@ -376,8 +376,10 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     public static boolean isTSIDInvalidIntervalException(RuntimeException input) {
         return getSqlException(input.getCause()).map(sqlException -> hasCodeAndMessage(sqlException,
-                Arrays.asList(20205),
-                Arrays.asList("Invalid Time Series Description", "is not a valid interval")))
+                Arrays.asList(20205, 20998),
+                Arrays.asList("Invalid Time Series Description",
+                              "is not a valid interval",
+                              "INVALID Time Series Identifier")))
             .orElse(false);
     }
 
@@ -386,16 +388,17 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (input instanceof DataAccessException) {
             DataAccessException dae = (DataAccessException) input;
             cause = dae.getCause();
+        } else if (input.getCause() instanceof SQLException) {
+            cause = input.getCause();
         }
 
         String localizedMessage = cause.getLocalizedMessage();
 
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
-            if (parts.length > 2) {
-                return new InvalidItemException(String.format("Invalid time series description: %s",
-                    parts[1]), cause);
-            }
+            
+            return new InvalidItemException(String.format("Invalid time series description: %s", 
+                                            parts[0]), cause);
         }
         return new InvalidItemException("Invalid time series description", cause);
     }

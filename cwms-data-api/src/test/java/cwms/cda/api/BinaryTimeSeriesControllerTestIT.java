@@ -6,9 +6,12 @@ import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ResponseBody;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -398,7 +401,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         // Step 1)
         // Try to create the binary time series without LRTS header set
-
+        
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
@@ -413,7 +416,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
 
         // Step 2)
         // Create the binary time series

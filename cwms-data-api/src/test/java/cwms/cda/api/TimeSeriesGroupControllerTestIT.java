@@ -414,7 +414,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
