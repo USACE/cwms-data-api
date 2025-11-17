@@ -8,6 +8,7 @@ import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.helpers.DateUtils;
 
+import java.sql.Connection;
 import java.util.*;
 
 import static org.jooq.impl.DSL.asterisk;
@@ -1524,11 +1525,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             versionDate = null;
         }
 
-        connection(dsl, connection -> {
-            DSLContext dslContext = getDslContext(connection, input.getOfficeId());
-                    withDefaultDatum(vd, dslContext, (conn)-> store(dslContext, input.getOfficeId(), input.getName(), input.getUnits(),
-                            versionDate, input.getValues(), createAsLrts, replaceAll, overrideProtection));
-        });
+        connection(dsl, connection -> storeWithDefaultDatum(input, createAsLrts, replaceAll, overrideProtection, vd, connection, versionDate));
+    }
+
+    private void storeWithDefaultDatum(TimeSeries input, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection,
+                                       VerticalDatum vd, Connection connection, Timestamp versionDate) throws Throwable {
+        DSLContext dslContext = getDslContext(connection, input.getOfficeId());
+        withDefaultDatum(vd, dslContext, (conn)-> store(dslContext, input.getOfficeId(), input.getName(), input.getUnits(),
+                versionDate, input.getValues(), createAsLrts, replaceAll, overrideProtection));
     }
 
 
@@ -1548,7 +1552,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private void store(DSLContext dslContext, String officeId, String tsId, String units,
                        Timestamp versionDate, List<TimeSeries.Record> values, boolean createAsLrts,
                        StoreRule storeRule, boolean overrideProtection) throws SQLException {
-        //setOffice(connection,officeId);
 
         final ZTSV_ARRAY tsvArray = new ZTSV_ARRAY();
 

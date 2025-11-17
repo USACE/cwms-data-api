@@ -89,6 +89,17 @@ public class VerticalDatumInfo extends CwmsDTOBase {
             this.value = value;
         }
 
+        @JsonIgnore
+        public boolean isForDatum(String verticalDatum) {
+            if(verticalDatum == null && toDatum == null) {
+                return true;
+            }
+            if(verticalDatum == null || toDatum == null) {
+                return false;
+            }
+            return toDatum.replaceAll("-", "").equalsIgnoreCase(verticalDatum.replaceAll("-", ""));
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) {
