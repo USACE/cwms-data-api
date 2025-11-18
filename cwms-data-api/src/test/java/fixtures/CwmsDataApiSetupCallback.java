@@ -25,6 +25,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.data.dao.Dao;
+import cwms.cda.data.dao.JooqDao;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import cwms.cda.security.OpenIdConnectIdentitityProvider;
 import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
@@ -95,17 +97,28 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     {
         int ret;
         String tmp = schemaVersion();
-        if (tmp.equalsIgnoreCase("latest-dev") || tmp.equalsIgnoreCase("Bypass")) {
+        if (tmp.equalsIgnoreCase("latest-dev")) {
             ret = 999999;
-        }
-        else if(tmp.toLowerCase().endsWith("staging")) {
+        } else if (tmp.equalsIgnoreCase("Bypass")) {
+            ret = getSchemaVersion();
+        } else if(tmp.toLowerCase().endsWith("staging")) {
             ret = 1009999;
-        }
-        else
-        {
+        } else {
             ret = Dao.versionAsInteger(tmp.replaceAll("-RC.*", "").replace("-","."));
         }
         return ret;
+    }
+
+    public static int getSchemaVersion() {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        try {
+            return db.connection((c) -> {
+                var ctx = JooqDao.getDslContext(c, null);
+                return Dao.versionAsInteger(Dao.getVersion(ctx));
+            }, "cwms_20");
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     @Override
@@ -116,7 +129,6 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void beforeAll(ExtensionContext context) throws Exception {
         if (cdaInstance == null ) {
             cwmsDb = CwmsDatabaseContainers.createDatabaseContainer(ORACLE_IMAGE)

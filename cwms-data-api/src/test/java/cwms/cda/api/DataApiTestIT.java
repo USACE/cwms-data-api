@@ -29,6 +29,8 @@ import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
 
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.data.dao.Dao;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
 import cwms.cda.data.dao.basin.BasinDao;
@@ -504,6 +506,10 @@ public class DataApiTestIT {
     protected static DSLContext dslContext(Connection connection) {
         DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
         return dsl;
+    }
+
+    protected static int getSchemaVersion() {
+        return CwmsDataApiSetupCallback.getSchemaVersion();
     }
 
     protected static String readResourceFile(String resourcePath) throws IOException {

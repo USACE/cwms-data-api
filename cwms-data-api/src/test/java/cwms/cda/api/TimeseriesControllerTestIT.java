@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import cwms.cda.helpers.ZoneIdHelper;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.MinimumSchema;
@@ -192,23 +193,28 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK));
 
         // inserting the time series with new LRTS ID turned off
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, false)
-            .queryParam(OFFICE, officeId)
-            .queryParam(CREATE_AS_LRTS, true)
-            .body(tsData)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+        var assertThat =
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, false)
+                .queryParam(OFFICE, officeId)
+                .queryParam(CREATE_AS_LRTS, true)
+                .body(tsData)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat();
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_02.numeric()) {
+            assertThat.statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+        } else {
+            assertThat.statusCode(is(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));
+        }
     }
 
     @Test
