@@ -49,8 +49,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
@@ -68,7 +67,7 @@ final class LockDaoIT extends ProjectStructureIT {
     private static final Location LOCK_LOC1 = buildProjectStructureLocation("LOCK_LOC1_IT", LOCK_KIND);
     private static final Location LOCK_LOC2 = buildProjectStructureLocation("LOCK_LOC2_IT", LOCK_KIND);
     private static final Location LOCK_LOC3 = buildProjectStructureLocation("LOCK_LOC3_IT", LOCK_KIND);
-    private static final Logger LOGGER = Logger.getLogger(LockDaoIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private List<CwmsId> locksToCleanup = new ArrayList<>();
     private List<LocationLevel> locationLevelsToCleanup = new ArrayList<>();
 
@@ -102,32 +101,32 @@ final class LockDaoIT extends ProjectStructureIT {
                     locationsDao.deleteLocation(LOCK_LOC1.getName(), OFFICE_ID, true);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
+                    LOGGER.atConfig().withCause(ex).log("Error deleting location - location does not exist");
                 }
                 try {
                     locationsDao.deleteLocation(LOCK_LOC2.getName(), OFFICE_ID, true);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
+                    LOGGER.atConfig().withCause(ex).log("Error deleting location - location does not exist");
                 }
                 try {
                     locationsDao.deleteLocation(LOCK_LOC3.getName(), OFFICE_ID, true);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
+                    LOGGER.atConfig().withCause(ex).log("Error deleting location - location does not exist");
                 }
                 try{
                     locationsDao.deleteLocation(LOCK_LOC1.getName() + "New", OFFICE_ID, true);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
+                    LOGGER.atConfig().withCause(ex).log("Error deleting location - location does not exist");
                 }
                 for (CwmsId lock : locksToCleanup) {
                     try {
                         lockDao.deleteLock(lock, DeleteRule.DELETE_ALL);
                     } catch (NotFoundException ex) {
                         /* only an error within the tests below. */
-                        LOGGER.log(Level.CONFIG, "Error deleting lock - does not exist", ex);
+                        LOGGER.atConfig().withCause(ex).log("Error deleting lock - does not exist");
                     }
                 }
                 locksToCleanup.clear();
@@ -135,7 +134,7 @@ final class LockDaoIT extends ProjectStructureIT {
                     try {
                         locationLevelsDao.deleteLocationLevel(locationLevel.getLocationLevelId(), locationLevel.getLevelDate(), locationLevel.getOfficeId(), true);
                     } catch (NotFoundException ex) {
-                        LOGGER.log(Level.CONFIG, "Error deleting location level - does not exist", ex);
+                        LOGGER.atConfig().withCause(ex).log("Error deleting location level - does not exist");
                     }
                 }
                 locationLevelsToCleanup.clear();
@@ -157,7 +156,7 @@ final class LockDaoIT extends ProjectStructureIT {
                     lockDao.deleteLock(lock, DeleteRule.DELETE_ALL);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, "Error deleting lock - does not exist", ex);
+                    LOGGER.atConfig().withCause(ex).log("Error deleting lock - does not exist");
                 }
             }
             locksToCleanup.clear();
@@ -165,7 +164,7 @@ final class LockDaoIT extends ProjectStructureIT {
                 try {
                     locationLevelsDao.deleteLocationLevel(locationLevel.getLocationLevelId(), locationLevel.getLevelDate(), locationLevel.getOfficeId(), true);
                 } catch (NotFoundException ex) {
-                    LOGGER.log(Level.CONFIG, "Error deleting location level - does not exist", ex);
+                    LOGGER.atConfig().withCause(ex).log("Error deleting location level - does not exist");
                 }
             }
             locationLevelsToCleanup.clear();

@@ -72,7 +72,7 @@ import org.jooq.exception.DataAccessException;
 
 
 public class LocationController implements CrudHandler {
-    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;

@@ -53,7 +53,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class LocationCategoryController implements CrudHandler {
-    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final String TAG = "Location Categories";
 
     private final MetricRegistry metrics;

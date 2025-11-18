@@ -49,8 +49,7 @@ import org.junit.jupiter.api.Tag;
 import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -63,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("integration")
 final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
-    private static final Logger LOGGER = Logger.getLogger(TimeSeriesProfileParserControllerIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     private final InputStream resourceIndexed = this.getClass()
             .getResourceAsStream("/cwms/cda/api/timeseriesprofile/ts_profile_parser_indexed.json");
@@ -414,7 +413,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
                 dao.deleteTimeSeriesProfileParser(locationId, parameterId, OFFICE_ID);
             }, CwmsDataApiSetupCallback.getWebUser());
         } catch (NotFoundException e) {
-            LOGGER.log(Level.CONFIG, "Parser Cleanup failed", e);
+            LOGGER.atConfig().withCause(e).log("Parser Cleanup failed");
         }
     }
 
@@ -427,7 +426,7 @@ final class TimeSeriesProfileParserControllerIT extends DataApiTestIT {
                 dao.deleteTimeSeriesProfile(locationId, keyParameter, OFFICE_ID);
             }, CwmsDataApiSetupCallback.getWebUser());
         } catch (NotFoundException e) {
-            LOGGER.log(Level.CONFIG, "TS Cleanup failed", e);
+            LOGGER.atConfig().withCause(e).log("TS Cleanup failed");
         }
     }
 

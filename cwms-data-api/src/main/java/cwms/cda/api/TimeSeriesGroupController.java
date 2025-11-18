@@ -75,7 +75,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class TimeSeriesGroupController implements CrudHandler {
-    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String TAG = "Timeseries Groups";
 
     private final MetricRegistry metrics;

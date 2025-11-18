@@ -47,7 +47,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class PoolController implements CrudHandler {
-    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final int defaultPageSize = 100;
 
     private final MetricRegistry metrics;
@@ -99,7 +99,7 @@ public class PoolController implements CrudHandler {
             tags = {"Pools"})
     @Override
     public void getAll(@NotNull Context ctx) {
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);){
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
             DSLContext dsl = getDslContext(ctx);
 
             PoolDao dao = new PoolDao(dsl);
@@ -179,7 +179,7 @@ public class PoolController implements CrudHandler {
             description = "Retrieves requested Pool", tags = {"Pools"})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String poolId) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);){
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
             DSLContext dsl = getDslContext(ctx);
 
             PoolDao dao = new PoolDao(dsl);

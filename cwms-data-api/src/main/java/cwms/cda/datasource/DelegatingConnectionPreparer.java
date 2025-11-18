@@ -9,7 +9,7 @@ import com.google.common.flogger.FluentLogger;
 
 public class DelegatingConnectionPreparer implements ConnectionPreparer {
 
-    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final List<ConnectionPreparer> delegates = new ArrayList<>();
 
     public DelegatingConnectionPreparer(List<ConnectionPreparer> preparers) {

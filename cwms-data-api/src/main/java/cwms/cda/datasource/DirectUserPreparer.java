@@ -9,7 +9,7 @@ import org.jooq.exception.DataAccessException;
 
 
 public class DirectUserPreparer implements ConnectionPreparer {
-    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final String user;
 
     public DirectUserPreparer(String user) {

@@ -49,7 +49,7 @@ import org.jooq.exception.DataAccessException;
 import static cwms.cda.data.dao.JooqDao.connection;
 
 public class AuthDao extends Dao<DataApiPrincipal> {
-    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String SCHEMA_TOO_OLD = "The CWMS-Data-API requires schema version "
                                              + "23.03.16 or later to handle authorization operations.";
     public static final String DATA_API_PRINCIPAL = "DataApiPrincipal";
