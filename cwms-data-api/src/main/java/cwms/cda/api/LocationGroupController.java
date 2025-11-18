@@ -50,15 +50,14 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class LocationGroupController implements CrudHandler {
-    public static final Logger logger = Logger.getLogger(LocationGroupController.class.getName());
+    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final String LOCATION_OFFICE_ID = "location-office-id";
 
     public static final String TAG = "Location Groups";
@@ -136,7 +135,7 @@ public class LocationGroupController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
                 CdaError re = new CdaError("No location groups for office provided");
-                logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
+                logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
 
@@ -200,7 +199,7 @@ public class LocationGroupController implements CrudHandler {
                     result = Formats.format(contentType, grp.get());
                 } else {
                     CdaError re = new CdaError("Unable to find location group based on parameters given");
-                    logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
+                    logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
                     return;
                 }
@@ -214,7 +213,7 @@ public class LocationGroupController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_OK);
         } catch (JsonProcessingException e) {
             CdaError re = new CdaError("Failed to process request");
-            logger.log(Level.SEVERE, re.toString(), e);
+            logger.atSevere().withCause(e).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 

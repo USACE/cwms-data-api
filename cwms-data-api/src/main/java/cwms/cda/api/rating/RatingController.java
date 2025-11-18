@@ -85,8 +85,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerException;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
@@ -97,7 +96,7 @@ import org.jooq.DSLContext;
 
 
 public class RatingController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(RatingController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     static final String TAG = "Ratings";
 
     private final MetricRegistry metrics;
@@ -155,11 +154,11 @@ public class RatingController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("Failed to process request to update RatingSet");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         } catch (RatingException ex) {
             CdaError re = new CdaError("Failed to process request to update RatingSet: " + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
@@ -433,21 +432,20 @@ public class RatingController implements CrudHandler {
                 } catch (RatingException e) {
                     CdaError re =
                             new CdaError("Failed to process request to retrieve RatingSet");
-                    logger.log(Level.SEVERE, re.toString(), e);
+                    logger.atSevere().withCause(e).log("%s", re);
                     ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     ctx.json(re);
                 } catch (IOException e) {
                     CdaError re =
                             new CdaError("Failed to process request to retrieve RatingSet");
-                    logger.log(Level.SEVERE, re.toString(), e);
+                    logger.atSevere().withCause(e).log("%s", re);
                     ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
                 }
 
             } else {
                 CdaError re = new CdaError("Currently supporting only: " + Formats.JSONV2
                         + " and " + Formats.XMLV2);
-                logger.log(Level.WARNING, "Provided accept header not recognized:"
-                                + acceptHeader, re);
+                logger.atWarning().log("Provided accept header not recognized: %s; %s", acceptHeader, re);
                 ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
                 ctx.json(CdaError.notImplemented());
             }
@@ -505,11 +503,11 @@ public class RatingController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_OK).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("Failed to process request to update RatingSet");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         } catch (RatingException ex) {
             CdaError re = new CdaError("Failed to process request to update RatingSet: " + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }

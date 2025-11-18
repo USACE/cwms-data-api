@@ -50,8 +50,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -59,7 +58,7 @@ import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
-    public static final Logger logger = Logger.getLogger(TimeSeriesIdentifierDescriptorController.class.getName());
+    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String TAG = "TimeSeries Identifier";
 
     private static final int DEFAULT_PAGE_SIZE = 500;
@@ -195,7 +194,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             } else {
                 CdaError re = new CdaError("Unable to find identifier based on parameters "
                         + "given");
-                logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
+                logger.atInfo().log("%s%s for request %s", re, System.lineSeparator(), ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
         }
@@ -320,7 +319,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(DELETE)){
             DSLContext dsl = getDslContext(ctx);
 
-            logger.log(Level.FINE, "Deleting timeseries:{0} from office:{1}", new Object[]{timeseriesId, office});
+            logger.atFine().log("Deleting timeseries:%s from office:%s", timeseriesId, office);
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
             dao.delete(office, timeseriesId, method);
 
@@ -328,7 +327,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
         } catch (DataAccessException ex) {
             CdaError re = new CdaError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 

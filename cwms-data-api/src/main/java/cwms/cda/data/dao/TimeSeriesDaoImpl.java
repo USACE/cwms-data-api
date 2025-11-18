@@ -1,6 +1,7 @@
 package cwms.cda.data.dao;
 
 
+import static com.google.common.flogger.LazyArgs.lazy;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.countDistinct;
 import static org.jooq.impl.DSL.field;
@@ -62,8 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -106,7 +106,7 @@ import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
 
 public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeriesDao {
-    private static final Logger logger = Logger.getLogger(TimeSeriesDaoImpl.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     /**
      * String constants for accessing alias tables and columns in TimeSeriesRecent querying
@@ -261,14 +261,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (page != null && !page.isEmpty()) {
             final String[] parts = CwmsDTOPaginated.decodeCursor(page);
 
-            logger.fine("Decoded cursor");
-            logger.finest(() -> {
+            logger.atFine().log("Decoded cursor");
+            logger.atFinest().log("%s", lazy(() -> {
                 StringBuilder sb = new StringBuilder();
                 for (String p : parts) {
                     sb.append(p).append("\n");
                 }
                 return sb.toString();
-            });
+            }));
 
             if (parts.length > 1) {
                 cursor = parts[0];
@@ -433,7 +433,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                         .and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull())
                         );
 
-        logger.fine(() -> metadataQuery.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> metadataQuery.getSQL(ParamType.INLINED)));
 
 
         TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> {
@@ -513,7 +513,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
 
             if (requestParameters.isIncludeEntryDate()) {
-                logger.fine(() -> query2.getSQL(ParamType.INLINED));
+                logger.atFine().log("%s", lazy(() -> query2.getSQL(ParamType.INLINED)));
                 try (Cursor<Record4<Timestamp, Double, BigDecimal, Timestamp>> recCursor = query2.fetchLazy()) {
                     for (Record tsRecord: recCursor) {
                         timeseries.addValue(
@@ -524,7 +524,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     }
                 }
             } else {
-                logger.fine(() -> query.getSQL(ParamType.INLINED));
+                logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
                 try (Cursor<Record3<Timestamp, Double, BigDecimal>> recCursor = query.fetchLazy()) {
                     for (Record tsRecord: recCursor) {
                         timeseries.addValue(
@@ -615,7 +615,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             try {
                 retVal = new XMLv1().parseContent(body, VerticalDatumInfo.class);
             } catch (FormattingException e) {
-                logger.log(Level.WARNING, e, () -> "Failed to parse:" + body);
+                logger.atWarning().withCause(e).log("Failed to parse:%s", body);
             }
         }
         return retVal;
@@ -635,10 +635,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             SelectJoinStep<Record1<Integer>> totalQuery = dsl.with(limiter)
                     .select(countDistinct(limiter.field(cwmsTsIdFields.getTsCode())))
                     .from(limiter);
-            logger.fine(() -> totalQuery.getSQL(ParamType.INLINED));
+            logger.atFine().log("%s", lazy(() -> totalQuery.getSQL(ParamType.INLINED)));
             total = totalQuery.fetchOne(0, int.class);
         } else {
-            logger.fine("getting non-default page");
+            logger.atFine().log("getting non-default page");
             // Information provided by the page value overrides anything provided
             catPage = new Catalog.CatalogPage(page);
             total = catPage.getTotal();
@@ -683,7 +683,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         final SelectSeekStep2<?, String, String> overallQuery = tmpQuery
                 .orderBy(cwmsTsIdFields.getDbOfficeId(),
                         cwmsTsIdFields.getCwmsTsId());
-        logger.fine(() -> overallQuery.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> overallQuery.getSQL(ParamType.INLINED)));
         Result<?> result = overallQuery.fetch();
 
         Map<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap = new LinkedHashMap<>();
@@ -1223,7 +1223,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .where(field(name(maxValues.getName(), DATE_TIME), java.sql.Date.class)
                             .eq(field(name(maxValues.getName(), MAX_DATE_TIME), java.sql.Date.class)));
 
-            logger.fine(() -> query.getSQL(ParamType.INLINED));
+            logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
             // fetch and build records
             retval = query.fetch(r -> {
@@ -1375,7 +1375,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .where(field(name(maxValues.getName(), DATE_TIME), java.sql.Date.class)
                         .eq(field(name(maxValues.getName(), MAX_DATE_TIME), java.sql.Date.class)));
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         // fetch and build records
         retval = query.fetch(r -> {
@@ -1493,7 +1493,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         throw e;
                     }
                     // Ignore tsId not found exceptions. tsDao.store() will create tsId if it is not found
-                    logger.log(Level.FINER, e, () -> "TS ID: " + tsId + " not found at office: " + officeId);
+                    logger.atFiner().withCause(e).log("TS ID: %s not found at office: %s", tsId, officeId);
                 } else {
                     throw e;
                 }

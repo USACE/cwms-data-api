@@ -1,5 +1,6 @@
 package cwms.cda.data.dao;
 
+import static com.google.common.flogger.LazyArgs.lazy;
 import static org.jooq.impl.DSL.*;
 
 import java.sql.CallableStatement;
@@ -233,10 +234,8 @@ public class UserDao extends JooqDao<User> {
                 // association and always fully included per use in the response.
                 .orderBy(limitUserId, vUserGroups.DB_OFFICE_ID)
                 ;
-                
-
-            logger.atInfo().log(query.getSQL(ParamType.INLINED));
-
+            
+            logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
             final Users.Builder builder = new Users.Builder(cursor, pageSizeTmp, total, limitOffice);
 

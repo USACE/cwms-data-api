@@ -36,8 +36,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.utils.URIBuilder;
@@ -47,7 +46,7 @@ import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String TAG = "TimeSeries";
     public static final String STORE_RULE_DESC = "The business rule to use "
             + "when merging the incoming with existing data\n"
@@ -171,7 +170,7 @@ public class TimeSeriesController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
             CdaError re = new CdaError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
@@ -482,7 +481,7 @@ public class TimeSeriesController implements CrudHandler {
             requestResultSize.update(results.length());
         } catch (IllegalArgumentException ex) {
             CdaError re = new CdaError("Invalid arguments supplied");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.json(re);
         }
@@ -506,7 +505,7 @@ public class TimeSeriesController implements CrudHandler {
 
             ctx.header("Link", linkValue.toString());
         } catch (URISyntaxException ex) {
-            logger.log(Level.WARNING, null, ex);
+            logger.atWarning().withCause(ex).log("Failed to build Link header");
         }
     }
 
@@ -566,7 +565,7 @@ public class TimeSeriesController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
             CdaError re = new CdaError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }

@@ -47,14 +47,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class TimeSeriesCategoryController implements CrudHandler {
-    public static final Logger logger =
-            Logger.getLogger(TimeSeriesCategoryController.class.getName());
+    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String TAG = "TimeSeries Categories";
 
     private final MetricRegistry metrics;
@@ -152,7 +151,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
                 CdaError re = new CdaError("Unable to find category based on parameters given");
-                logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
+                logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
 

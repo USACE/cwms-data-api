@@ -46,8 +46,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
@@ -64,7 +63,7 @@ import usace.cwms.db.jooq.codegen.udt.records.WAT_USR_CONTRACT_ACCT_TAB_T;
 
 
 final class WaterSupplyUtils {
-    private static final Logger LOGGER = Logger.getLogger(WaterSupplyUtils.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     private WaterSupplyUtils() {
         throw new IllegalStateException("Utility class");
@@ -201,7 +200,7 @@ final class WaterSupplyUtils {
                         watUsrContractAcctObjT.setPUMP_LOCATION_REF(pumpBelow);
                         break;
                     default:
-                        LOGGER.log(Level.WARNING, "Invalid pump type");
+                        LOGGER.atWarning().log("Invalid pump type");
                         throw new IllegalArgumentException(
                             String.format("Invalid pump type for mapping to DB object: %s", transfer.getPumpType()));
                 }
@@ -232,7 +231,7 @@ final class WaterSupplyUtils {
                         timeWindow.setLOCATION_REF(pumpBelow);
                         break;
                     default:
-                        LOGGER.log(Level.WARNING, "Invalid pump type");
+                        LOGGER.atWarning().log("Invalid pump type");
                         break;
                 }
                 timeWindow.setSTART_DATE(Timestamp.from(entry.getKey()));

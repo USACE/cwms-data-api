@@ -63,8 +63,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
@@ -73,7 +72,7 @@ import org.jooq.exception.DataAccessException;
 
 
 public class LocationController implements CrudHandler {
-    public static final Logger logger = Logger.getLogger(LocationController.class.getName());
+    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -199,7 +198,7 @@ public class LocationController implements CrudHandler {
 
         } catch (Exception ex) {
             CdaError re = new CdaError("failed to process request");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
@@ -254,7 +253,7 @@ public class LocationController implements CrudHandler {
             String errorMsg = "Error retrieving " + name;
             CdaError re = new CdaError(errorMsg);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
-            logger.log(Level.SEVERE, errorMsg, ex);
+            logger.atSevere().withCause(ex).log("%s", errorMsg);
         }
     }
 
@@ -295,7 +294,7 @@ public class LocationController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("failed to process request");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
@@ -347,7 +346,7 @@ public class LocationController implements CrudHandler {
         } catch (IOException ex) {
             CdaError re =
                     new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 

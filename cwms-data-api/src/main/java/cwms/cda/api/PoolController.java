@@ -41,13 +41,13 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class PoolController implements CrudHandler {
-    public static final Logger logger = Logger.getLogger(PoolController.class.getName());
+    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final int defaultPageSize = 100;
 
     private final MetricRegistry metrics;
@@ -206,10 +206,7 @@ public class PoolController implements CrudHandler {
 
             if (pool == null) {
                 CdaError re = new CdaError("Unable to find pool based on parameters given");
-                logger.info(() -> {
-                    String fullUrl = ctx.fullUrl();
-                    return re + System.lineSeparator() + "for request " + fullUrl;
-                });
+                logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             } else {
                 String formatHeader = ctx.header(Header.ACCEPT);
