@@ -39,6 +39,7 @@ import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.helpers.DateUtils;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
@@ -212,21 +213,27 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         String startStr = "2005-02-01T08:00:00Z";
         String endStr = "2005-02-01T14:00:00Z";
         String tsIdentifier = "TsTextTestLoc.Flow.Inst.1DayLocal.0.lrts-test";
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.NAME, tsIdentifier)
-            .queryParam(Controllers.BEGIN,startStr)
-            .queryParam(Controllers.END,endStr)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/timeseries/text")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+        var assertThat =
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, tsIdentifier)
+                .queryParam(Controllers.BEGIN,startStr)
+                .queryParam(Controllers.END,endStr)
+                .header(ApiServlet.IS_NEW_LRTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/text")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat();
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
+            assertThat.statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+        } else {
+            assertThat.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        }
 
         // create
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/local_regular_text_ts.json");
