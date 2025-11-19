@@ -41,6 +41,7 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -65,7 +66,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         + "cwms_env.set_session_user_direct(upper(?),upper(?)); end;";
 
     private static final String CHECK_API_KEY =
-        "select userid from cwms_20.at_api_keys where apikey = ?";
+        "select userid from cwms_20.at_api_keys where apikey = ? and expires <= systimestamp";
 
     private static final String USER_FOR_EDIPI =
         "select userid from cwms_20.at_sec_cwms_users where edipi = ?";
@@ -201,7 +202,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                         if (rs.next()) {
                             return rs.getString(1);
                         } else {
-                            throw new CwmsAuthException("No user for key");
+                            throw new CwmsAuthException("No user for key", HttpServletResponse.SC_FORBIDDEN);
                         }
                     }
                 } catch (SQLException ex) {

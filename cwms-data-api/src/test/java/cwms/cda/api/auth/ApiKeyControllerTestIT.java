@@ -219,6 +219,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
     @Test
     @Order(5)
     public void test_key_usage() throws Exception {
+        
         createLocation("ApiKey-Test Location",true,"SPK");
         String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
         Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
@@ -234,6 +235,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
             .contentType(Formats.JSON)
+            .queryParam("fail-if-exists", false)
             .body(serializedLocation)
             .header("Authorization", user.toHeaderValue())
         .when()
@@ -248,7 +250,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         final ApiKey expiredKey = realKeys.stream()
                                           .filter(k -> k.getKeyName().equals(EXPIRED_KEY_NAME))
                                           .findFirst()
-                                          .orElseThrow(() -> new Exception("expired key not in real keys list."));
+                                          .orElseGet(() -> fail("expired key not in real keys list."));
         final Location updateLocation = new Location.Builder(location)
                         .withCountyName("Sacramento")
                         .build();

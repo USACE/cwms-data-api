@@ -112,11 +112,12 @@ public class DataApiTestIT {
         freemarkerConfig.setClassForTemplateLoading(DataApiTestIT.class, "/");
     }
 
-    public static final String OPEN_API_SPEC_URL = String.format("%s:%s%s/swagger-docs", CwmsDataApiSetupCallback.httpUrl(), CwmsDataApiSetupCallback.httpPort(), System.getProperty("warContext"));
-    private static OpenApiValidationFilter validationFilter;
+    private static String OPEN_API_SPEC_URL = null;
+    private static OpenApiValidationFilter validationFilter = null;
 
     public static OpenApiValidationFilter getOpenApiValidationFilter() {
         if (validationFilter == null) {
+            OPEN_API_SPEC_URL = String.format("%s:%s%s/swagger-docs", CwmsDataApiSetupCallback.httpUrl(), CwmsDataApiSetupCallback.httpPort(), System.getProperty("warContext"));
             validationFilter = new OpenApiValidationFilter(OPEN_API_SPEC_URL);
         }
         return validationFilter;
