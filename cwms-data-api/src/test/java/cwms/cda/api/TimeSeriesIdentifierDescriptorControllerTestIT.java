@@ -195,7 +195,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat();
-        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_02.numeric()) {
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
             assertThat
                 .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
                 .body("details.message",
@@ -240,7 +240,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
                 .body("message", equalTo("Bad Request."))
                 .body("source", equalTo("User Input"))
             ;
-        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_02.numeric()) {
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
             assertThat.body("details.message",
                 is(String.format("Invalid time series description: ORA-20998: ERROR: INVALID Time Series Identifier \"%s\": No such duration", tsId)));
         } else {

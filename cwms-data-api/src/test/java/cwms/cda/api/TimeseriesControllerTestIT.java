@@ -210,7 +210,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat();
-        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_02.numeric()) {
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
             assertThat.statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
         } else {
             assertThat.statusCode(is(HttpServletResponse.SC_INTERNAL_SERVER_ERROR));

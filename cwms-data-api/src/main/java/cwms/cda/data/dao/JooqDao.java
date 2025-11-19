@@ -34,6 +34,7 @@ import cwms.cda.api.errors.FieldLengthExceededException;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
@@ -396,9 +397,13 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
-            
+            String errorMessage = parts[0];
+            if (CURRENT_SCHEMA_VERSION > SCHEMA_VERSION.V2025_07_01.numeric())
+            {
+                errorMessage = parts[1];
+            }
             return new InvalidItemException(String.format("Invalid time series description: %s", 
-                                            parts[0]), cause);
+                                            errorMessage), cause);
         }
         return new InvalidItemException("Invalid time series description", cause);
     }
