@@ -296,8 +296,6 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildFieldLengthExceededException(input);
         } else if (isTSIDInvalidIntervalException(input)) {
             retVal = buildInvalidTSIDIntervalException(input);
-        } else if (isInvalidTimeseriesId(input)) {
-            retVal = buildInvalidTimeseriesIdException(input);
         }
 
         return retVal;
@@ -378,7 +376,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     public static boolean isTSIDInvalidIntervalException(RuntimeException input) {
         return getSqlException(input.getCause()).map(sqlException -> hasCodeAndMessage(sqlException,
-                        List.of(20205),
+                Arrays.asList(20205),
                 Arrays.asList("Invalid Time Series Description", "is not a valid interval")))
             .orElse(false);
     }
@@ -698,34 +696,6 @@ public abstract class JooqDao<T> extends Dao<T> {
         return retVal;
     }
 
-
-    public static boolean isInvalidTimeseriesId(RuntimeException input) {
-        // This now comes in at least two flavors:
-        // ORA-20998: ERROR: INVALID Time Series Identifier "TsBinTestLoc.Binary.Inst.1DayLocal.0.lrts": No such interval
-        // ORA-20998: ERROR: INVALID Time Series Identifier "BadLocationTSTest.Precip-Cumulative.Avg.12HoursLocal.12HoursLocal.DescriptorTEST_LRTS25": No such parameter_type
-
-        return getSqlException(input.getCause()).map(sqlException -> hasCodeAndMessage(sqlException,
-                        List.of(20998),
-                        List.of("INVALID Time Series Identifier")))
-                .orElse(false);
-    }
-
-    static InvalidItemException buildInvalidTimeseriesIdException(RuntimeException input) {
-        Throwable cause = input.getCause();
-        if (input instanceof DataAccessException) {
-            DataAccessException dae = (DataAccessException) input;
-            cause = dae.getCause();
-        }
-
-        String localizedMessage = cause.getLocalizedMessage();
-
-        if (localizedMessage != null) {
-            String[] parts = localizedMessage.split(":");
-            String last = parts[parts.length - 1];
-            return new InvalidItemException(String.format("Invalid Time Series Identifier: %s", last), cause);
-        }
-        return new InvalidItemException("Invalid Time Series Identifier", cause);
-    }
 
     private static UnsupportedOperationException buildUnsupportedOperationException(RuntimeException input) {
         Throwable cause = input;
