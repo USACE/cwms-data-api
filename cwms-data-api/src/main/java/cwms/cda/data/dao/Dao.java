@@ -90,7 +90,7 @@ public abstract class Dao<T> {
     }
 
     public static int versionAsInteger(String version) {
-        String[] parts = version.split("\\.");
+        String[] parts = version.split("[\\.-]");
 
         return Integer.parseInt(parts[0]) * 10000
                 + Integer.parseInt(parts[1]) * 100

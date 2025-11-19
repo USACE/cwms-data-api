@@ -100,7 +100,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         if (tmp.equalsIgnoreCase("latest-dev")) {
             ret = 999999;
         } else if (tmp.equalsIgnoreCase("Bypass")) {
-            ret = -1;
+            ret = getSchemaVersion();
         } else if(tmp.toLowerCase().endsWith("staging")) {
             ret = 1009999;
         } else {

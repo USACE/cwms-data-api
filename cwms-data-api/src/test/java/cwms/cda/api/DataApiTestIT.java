@@ -279,7 +279,9 @@ public class DataApiTestIT {
                 stmt.setString(2, "CWMS_20");       // CREATEDBY
                 stmt.executeUpdate();
             } catch (SQLException ex) {
-                throw new RuntimeException("Unable to insert user: " + username, ex);
+                if (!ex.getMessage().contains("unique constraint")) {
+                    throw new RuntimeException("Unable to insert user: " + username, ex);
+                }
             }
         }, "cwms_20");
     }
