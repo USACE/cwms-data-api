@@ -389,8 +389,6 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (input instanceof DataAccessException) {
             DataAccessException dae = (DataAccessException) input;
             cause = dae.getCause();
-        } else if (input.getCause() instanceof SQLException) {
-            cause = input.getCause();
         }
 
         String localizedMessage = cause.getLocalizedMessage();
@@ -398,7 +396,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             String errorMessage = parts[0];
-            if (CURRENT_SCHEMA_VERSION <= SCHEMA_VERSION.V2025_07_01.numeric())
+            if (CURRENT_SCHEMA_VERSION <= SCHEMA_VERSION.V2025_07_01.numeric() && parts.length > 2)
             {
                 errorMessage = parts[1];
             }
