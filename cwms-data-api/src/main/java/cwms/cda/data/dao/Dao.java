@@ -42,7 +42,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 public abstract class Dao<T> {
     public static final int CWMS_18_1_8 = 180108;
     public static final int CWMS_21_1_1 = 210101;
-    public static final int CWMS_23_03_16 = 230316;    
+    public static final int CWMS_23_03_16 = 230316;
 
     public static final String PROP_BASE = "cwms.cda.data.dao.dao";
     public static final String VERSION_NAME = "version";

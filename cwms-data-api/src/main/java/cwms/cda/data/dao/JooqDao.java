@@ -398,7 +398,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
             String errorMessage = parts[0];
-            if (CURRENT_SCHEMA_VERSION > SCHEMA_VERSION.V2025_07_01.numeric())
+            if (CURRENT_SCHEMA_VERSION <= SCHEMA_VERSION.V2025_07_01.numeric())
             {
                 errorMessage = parts[1];
             }
