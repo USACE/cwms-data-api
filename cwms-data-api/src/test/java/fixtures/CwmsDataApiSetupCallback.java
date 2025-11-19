@@ -113,9 +113,9 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         try {
             return db.connection((c) -> {
-                var ctx = JooqDao.getDslContext(c, null);
+                var ctx = JooqDao.getDslContext(c, db.getOfficeId());
                 return Dao.versionAsInteger(Dao.getVersion(ctx));
-            }, "cwms_20");
+            }, webUser);
         } catch (SQLException ex) {
             throw new RuntimeException(ex);
         }
