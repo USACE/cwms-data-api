@@ -98,7 +98,7 @@ public class DataApiTestIT {
     protected static String createLocationQuery = null;
     protected static String createTimeseriesQuery = null;
     protected static String createTimeseriesOffsetQuery = null;
-    protected static final String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
+    protected static final String registerApiKey = "insert into at_api_keys(userid,key_name,apikey,expires) values(UPPER(?),?,?, null)";
     protected static final String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and apikey = ?";
 
     protected static final Configuration freemarkerConfig = new Configuration(Configuration.VERSION_2_3_32);

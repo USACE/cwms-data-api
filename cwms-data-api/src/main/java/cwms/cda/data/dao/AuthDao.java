@@ -66,7 +66,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         + "cwms_env.set_session_user_direct(upper(?),upper(?)); end;";
 
     private static final String CHECK_API_KEY =
-        "select userid from cwms_20.at_api_keys where apikey = ? and expires <= systimestamp";
+        "select userid from cwms_20.at_api_keys where apikey = ? and (expires is null or expires <= systimestamp)";
 
     private static final String USER_FOR_EDIPI =
         "select userid from cwms_20.at_sec_cwms_users where edipi = ?";
