@@ -231,6 +231,121 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
                 is("Invalid time series description: 12HoursLocal is not a valid duration"));
     }
 
+    @Test
+    void pagingTest() throws Exception {
+        createLocation("Alder Springs",true,"SPK");
+        String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.15Minutes\\.0\\.DescriptorTEST_PAGING.*";
+
+        // Check that we don't have any ts like this in the catalog.
+        List<String> names = getIdsLike(OFFICE, likePattern);
+        Assertions.assertTrue(names.isEmpty());
+
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Create a bunch of ts and store them.
+        int count = 8;
+        for (int i = 0; i < count; i++) {
+            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorTEST_PAGING%d", i);
+            TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
+            String serializedTs = om.writeValueAsString(ts);
+
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .body(serializedTs)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam("office",OFFICE)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/identifier-descriptor/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+        }
+
+        // Check that we have the right number of ts like this in the catalog.
+        names = getIdsLike(OFFICE, likePattern);
+        Assertions.assertFalse(names.isEmpty());
+        assertEquals(count, names.size());
+
+
+        // testing paging, make sure totals are present
+        int pageSize = 5;
+        Response response = given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.PAGE_SIZE, pageSize)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.LIKE, likePattern)
+            .queryParam(Controllers.EXCLUDE_EMPTY, false)
+        .when()
+            .get("/timeseries/identifier-descriptor/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("total", is(count))
+            .extract()
+            .response();
+
+       String nextPage =  response.path("next-page").toString();
+
+       // verify correct total count on next page
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .accept(Formats.JSONV2)
+            .queryParam(Controllers.PAGE, nextPage)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.LIKE, likePattern)
+            .queryParam(Controllers.EXCLUDE_EMPTY, false)
+        .when()
+            .get("/timeseries/identifier-descriptor/")
+            .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("total", is(count))
+        .body("descriptors.size()", is(count - pageSize));
+
+        // Now lets delete them
+        for (int i = 0; i < count; i++) {
+            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorTEST_PAGING%d", i);
+
+            // String urlencoded = java.net.URLEncoder.encode(tsId); // This isn't the right thing
+            // to call here b/c it encodes a space into +
+            // but the tsId is in the url part - not the url parameters part.
+            // In the url part a + is a valid character - we must do the %20 type encoding for
+            // the url part. For the params part you can do either + or %20
+
+            // RestAssured does the right thing with the url encoding - we don't need to escape
+
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .queryParam("office", OFFICE)
+                .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
+                .header("Authorization", user.toHeaderValue())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/timeseries/identifier-descriptor/" + tsId)
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+        }
+
+
+        // Check that we don't have any ts like this in the catalog.
+        names = getIdsLike(OFFICE, likePattern);
+        Assertions.assertTrue(names.isEmpty());
+    }
+
 
     @NotNull
     private TimeSeriesIdentifierDescriptor buildTimeSeriesIdentifierDescriptor(String officeId, String tsId) {
@@ -265,7 +380,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .then()
                 .assertThat()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(200))
+                .statusCode(is(HttpServletResponse.SC_OK))
                 .extract().response();
         JsonPath jsonPath = response.jsonPath();
 

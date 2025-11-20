@@ -24,6 +24,8 @@
 
 package cwms.cda.data.dao;
 
+import static org.jooq.impl.DSL.noCondition;
+
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
@@ -86,24 +88,16 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
             }
         }
 
-        Collection<TimeSeriesIdentifierDescriptor> retval = getTimeSeriesIdentifiers(office, idRegex, offset, pageSize);
-
-        TimeSeriesIdentifierDescriptors.Builder builder = new TimeSeriesIdentifierDescriptors.Builder(offset, pageSize, total);
-        builder.withDescriptors(retval);
-        return builder.build();
-    }
-
-
-    public Collection<TimeSeriesIdentifierDescriptor> getTimeSeriesIdentifiers(String office, String idRegex, int firstRow,
-                                                                               int pageSize) {
-
-        Condition whereCondition = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID.equalIgnoreCase(office);
+        Condition whereCondition = noCondition();
+        if (office != null && !office.isEmpty()) {
+            whereCondition = whereCondition.and(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID.equalIgnoreCase(office));
+        }
         if (idRegex != null && !idRegex.isEmpty()) {
             whereCondition = whereCondition.and(
                     JooqDao.caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID, idRegex));
         }
 
-        return dsl
+        Collection<TimeSeriesIdentifierDescriptor> retval = dsl
                 .selectDistinct(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
@@ -116,11 +110,34 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
                 .limit(pageSize)
-                .offset(firstRow)
+                .offset(offset)
                 .stream()
                 .map(this::toDescriptor)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+
+        if (!retval.isEmpty() && total == null) {
+            var totalCount = dsl.selectCount().from(dsl
+                .selectDistinct(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
+                .from(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2)
+                .where(whereCondition)
+                .orderBy(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID, AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
+                .offset(offset)).fetch();
+            total = totalCount.get(0).value1();
+        } else if (total == null) {
+            total = 0;
+        }
+
+        TimeSeriesIdentifierDescriptors.Builder builder = new TimeSeriesIdentifierDescriptors.Builder(offset, pageSize, total);
+        builder.withDescriptors(retval);
+        return builder.build();
     }
 
     private TimeSeriesIdentifierDescriptor toDescriptor(org.jooq.Record5<String, String, BigDecimal, String, String> r) {
@@ -131,7 +148,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
         String zoneId = r.get(r.field5());
 
         String locationId = null;
-        if( tsId != null && tsId.contains(".")){
+        if ( tsId != null && tsId.contains(".")) {
             locationId = tsId.substring(0, tsId.indexOf('.'));
         }
 
@@ -183,7 +200,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
     }
 
     public void rename(String officeId, String origId, String newId, Long utcOffset) {
-        dsl.connection(c ->{
+        dsl.connection(c -> {
             Configuration configuration = getDslContext(c, officeId).configuration();
             if (utcOffset == null) {
                 CWMS_TS_PACKAGE.call_RENAME_TS(configuration, officeId, origId, newId);
@@ -215,21 +232,24 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
     public void deleteAll(String officeId, String tsId) {
         connection(dsl, connection -> {
             setOffice(connection,officeId);
-            CWMS_TS_PACKAGE.call_DELETE_TS(getDslContext(connection, officeId).configuration(), tsId, DeleteRule.DELETE_ALL.toString(), officeId);
+            CWMS_TS_PACKAGE.call_DELETE_TS(getDslContext(connection, officeId).configuration(),
+                tsId, DeleteRule.DELETE_ALL.toString(), officeId);
         });
     }
 
     public void deleteData(String officeId, String tsId) {
         connection(dsl, connection -> {
             setOffice(connection,officeId);
-            CWMS_TS_PACKAGE.call_DELETE_TS(getDslContext(connection, officeId).configuration(), tsId, DeleteRule.DELETE_DATA.toString(), officeId);
+            CWMS_TS_PACKAGE.call_DELETE_TS(getDslContext(connection, officeId).configuration(),
+                tsId, DeleteRule.DELETE_DATA.toString(), officeId);
         });
     }
 
     public void deleteKey(String officeId, String tsId) {
         connection(dsl, connection -> {
             setOffice(connection,officeId);
-            CWMS_TS_PACKAGE.call_DELETE_TS(getDslContext(connection, officeId).configuration(), tsId, DeleteRule.DELETE_KEY.toString(), officeId);
+            CWMS_TS_PACKAGE.call_DELETE_TS(getDslContext(connection, officeId).configuration(),
+                tsId, DeleteRule.DELETE_KEY.toString(), officeId);
         });
     }
 }

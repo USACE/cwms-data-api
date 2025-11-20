@@ -110,8 +110,11 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the time series identifier descriptors were not found."),
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
-                            + "implemented")}, description = "Returns CWMS timeseries identifier descriptor"
-            + "Data", tags = {TAG})
+                            + "implemented")},
+            description = "Returns CWMS timeseries identifier descriptor"
+                    + "Data. Currently includes aliased items in results.",
+            tags = {TAG}
+    )
     @Override
     public void getAll(Context ctx) {
         String cursor = ctx.queryParamAsClass(PAGE, String.class).getOrDefault("");
@@ -166,7 +169,9 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             + "inputs provided the timeseries identifier descriptor was not found."),
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
-            description = "Retrieves requested timeseries identifier descriptor", tags = {TAG})
+            description = "Retrieves requested timeseries identifier descriptor",
+            tags = {TAG}
+    )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String timeseriesId) {
 
@@ -253,8 +258,10 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiParam(name = INTERVAL_OFFSET, type = Long.class, description = "The offset into the data interval in minutes.  "
                             + "If specified and a new timeseries-id is also specified both will be passed to a "
                             + "rename operation.  May also be passed to update operation."),
-                    @OpenApiParam(name = SNAP_FORWARD, type = Long.class, description = "The new snap forward tolerance in minutes. This specifies how many minutes before the expected data time that data will be considered to be on time."),
-                    @OpenApiParam(name = SNAP_BACKWARD, type = Long.class, description = "The new snap backward tolerance in minutes. This specifies how many minutes after the expected data time that data will be considered to be on time."),
+                    @OpenApiParam(name = SNAP_FORWARD, type = Long.class, description = "The new snap forward tolerance in minutes. "
+                        + "This specifies how many minutes before the expected data time that data will be considered to be on time."),
+                    @OpenApiParam(name = SNAP_BACKWARD, type = Long.class, description = "The new snap backward tolerance in minutes. "
+                        + "This specifies how many minutes after the expected data time that data will be considered to be on time."),
                     @OpenApiParam(name = ACTIVE, type = Boolean.class, description = "'True' or 'true' if the time series is active")
             }, tags = {TAG}
     )
@@ -308,8 +315,9 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             type = JooqDao.DeleteMethod.class)
             },
             description = "Deletes requested timeseries identifier",
-            method = HttpMethod.DELETE, tags = {TAG}
-           )
+            method = HttpMethod.DELETE,
+            tags = {TAG}
+    )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String timeseriesId) {
 
@@ -317,7 +325,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
         String office = requiredParam(ctx, OFFICE);
 
-        try (final Timer.Context ignored = markAndTime(DELETE)){
+        try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
 
             logger.log(Level.FINE, "Deleting timeseries:{0} from office:{1}", new Object[]{timeseriesId, office});
