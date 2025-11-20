@@ -315,22 +315,26 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .body("standard-text-values", nullValue())
             .body("regular-text-values.size()", equalTo(0))
             .statusCode(is(HttpServletResponse.SC_OK));
-
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .contentType(Formats.JSONV2)
-            .body(tsData)
-            .header(AUTHORIZATION, user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, false)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/text")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+        assertThat =
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header(AUTHORIZATION, user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/text")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat();
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
+            assertThat.statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+        } else {
+            assertThat.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        }
     }
 
     @Test

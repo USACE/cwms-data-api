@@ -26,7 +26,6 @@ import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.data.dao.Dao;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import cwms.cda.security.OpenIdConnectIdentitityProvider;
 import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
@@ -80,7 +79,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         String ret;
         if (!System.getProperty(CwmsDatabaseContainers.BYPASS_URL,"").isEmpty())
         {
-            ret = "Bypass";
+            ret = System.getProperty("testcontainer.cwms.bypass.version","Bypass");
         }
         else if (ORACLE_IMAGE.contains("database-ready"))
         {
@@ -100,7 +99,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         if (tmp.equalsIgnoreCase("latest-dev")) {
             ret = 999999;
         } else if (tmp.equalsIgnoreCase("Bypass")) {
-            ret = getSchemaVersion();
+            ret = -1;
         } else if(tmp.toLowerCase().endsWith("staging")) {
             ret = 1009999;
         } else {
