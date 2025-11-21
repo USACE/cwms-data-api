@@ -49,7 +49,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.servlet.http.HttpServletResponse;
 
