@@ -114,7 +114,7 @@ public abstract class Dao<T> {
      * @param tf
      * @return
      */
-    protected static String formatBool(Boolean tf)
+    public static String formatBool(Boolean tf)
     {
         String parsed = null;
         if(tf != null)

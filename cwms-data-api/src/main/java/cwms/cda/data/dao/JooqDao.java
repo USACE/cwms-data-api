@@ -752,14 +752,6 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
     }
 
-    public static String formatBool(Boolean tf) {
-        String parsed = null;
-        if (tf != null) {
-            parsed = tf ? "T" : "F";
-        }
-        return parsed;
-    }
-
     public static boolean parseBool(String str) {
         if ("T".equalsIgnoreCase(str)) {
             return true;
