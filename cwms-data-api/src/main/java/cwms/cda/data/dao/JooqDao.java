@@ -34,6 +34,7 @@ import cwms.cda.api.errors.FieldLengthExceededException;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
@@ -376,8 +377,10 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     public static boolean isTSIDInvalidIntervalException(RuntimeException input) {
         return getSqlException(input.getCause()).map(sqlException -> hasCodeAndMessage(sqlException,
-                Arrays.asList(20205),
-                Arrays.asList("Invalid Time Series Description", "is not a valid interval")))
+                Arrays.asList(20205, 20998),
+                Arrays.asList("Invalid Time Series Description",
+                              "is not a valid interval",
+                              "INVALID Time Series Identifier")))
             .orElse(false);
     }
 
@@ -392,10 +395,13 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
-            if (parts.length > 2) {
-                return new InvalidItemException(String.format("Invalid time series description: %s",
-                    parts[1]), cause);
+            String errorMessage = parts[0];
+            if (CURRENT_SCHEMA_VERSION <= SCHEMA_VERSION.V2025_07_01.numeric() && parts.length > 2)
+            {
+                errorMessage = parts[1];
             }
+            return new InvalidItemException(String.format("Invalid time series description: %s", 
+                                            errorMessage), cause);
         }
         return new InvalidItemException("Invalid time series description", cause);
     }

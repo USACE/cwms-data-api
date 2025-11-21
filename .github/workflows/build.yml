@@ -18,7 +18,7 @@ jobs:
           - env: latest
             image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev"
           - env: release
-            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25-07-01-RC06"
+            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25.07.01"
     name: build and test (jdk ${{matrix.jdk}}, schema ${{matrix.schema.env}})
     runs-on: ubuntu-latest
     outputs:

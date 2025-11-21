@@ -38,6 +38,7 @@ import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.TimeSeriesGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.FunctionalSchemas;
 import fixtures.TestAccounts;
@@ -399,22 +400,27 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         createTimeseriesWithNewLRTSInterval(officeId, timeSeriesId, 0);
 
         // try to create a group without setting the LRTS header
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .contentType(Formats.JSON)
-            .body(groupXml)
-            .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, false)
-            .queryParam(FAIL_IF_EXISTS, false)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/group")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        var assertThat =
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .body(groupXml)
+                .header("Authorization", user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, false)
+                .queryParam(FAIL_IF_EXISTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/group")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat();
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
+            assertThat.statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+        } else {
+            assertThat.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        }
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
