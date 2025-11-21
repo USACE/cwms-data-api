@@ -41,7 +41,7 @@ See the [📃 Wiki](https://github.com/USACE/cwms-data-api/wiki) for how to get 
 
 ## Development notes
 
-Development and runtime currently requires java 8.
+Development and runtime currently requires java 11. JDKs and JREs greater than 11 should work, please report if they don't.
 
 
 To build the war:
