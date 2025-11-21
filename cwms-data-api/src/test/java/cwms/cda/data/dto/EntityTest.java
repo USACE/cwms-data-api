@@ -3,11 +3,17 @@ package cwms.cda.data.dto;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.helpers.DTOMatch;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
+
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 final class EntityTest {
@@ -33,6 +39,31 @@ final class EntityTest {
                 () -> assertEquals("GOV", entity.getCategoryId(), "Category id"),
                 () -> assertEquals("National Weather Service", entity.getLongName(), "Long name")
         );
+    }
+
+    @Test
+    void testIOSerializationRoundTrip() throws Exception {
+        Entity expectedEntity= new Entity.Builder()
+                .withId(new CwmsId.Builder()
+                        .withName("NWS")
+                        .withOfficeId("SPK")
+                        .build())
+                .withParentEntityId("NOAA")
+                .withCategoryId("GOV")
+                .withLongName("National Weather Service")
+                .build();
+
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/entity.json");
+        assertNotNull(resource);
+        String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        ContentType contentType = new ContentType(Formats.JSONV2);
+        Entity deserialized = Formats.parseContent(contentType, json, Entity.class);
+
+        DTOMatch.assertMatch(expectedEntity, deserialized);
+
+        String serialized = JsonV2.buildObjectMapper().writeValueAsString(deserialized);
+        assertEquals(json.replaceAll("\\s+", ""), serialized.replaceAll("\\s+", ""));
+
     }
 
     @Test

@@ -68,7 +68,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.formatBool;
+import static cwms.cda.data.dao.Dao.formatBool;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;

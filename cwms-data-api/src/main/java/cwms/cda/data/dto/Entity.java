@@ -13,7 +13,7 @@ import cwms.cda.formatters.json.JsonV2;
 @JsonDeserialize(builder = Entity.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class Entity extends CwmsDTOBase {
+public final class Entity extends CwmsDTOBase {
 
     @JsonProperty(required = true)
     private final CwmsId id;
