@@ -26,7 +26,7 @@
 
 package cwms.cda.data.dao.watersupply;
 
-import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.Dao;
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
@@ -118,7 +118,7 @@ final class WaterSupplyUtils {
         lookupTypeObjT.setOFFICE_ID(lookupType.getOfficeId());
         lookupTypeObjT.setDISPLAY_VALUE(lookupType.getDisplayValue());
         lookupTypeObjT.setTOOLTIP(lookupType.getTooltip());
-        lookupTypeObjT.setACTIVE(JooqDao.formatBool(lookupType.getActive()));
+        lookupTypeObjT.setACTIVE(Dao.formatBool(lookupType.getActive()));
         return lookupTypeObjT;
     }
 

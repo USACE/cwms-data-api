@@ -38,6 +38,7 @@ import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.TimeSeriesGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.FunctionalSchemas;
 import fixtures.TestAccounts;
@@ -67,7 +68,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.formatBool;
+import static cwms.cda.data.dao.Dao.formatBool;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -398,22 +399,27 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         createTimeseriesWithNewLRTSInterval(officeId, timeSeriesId, 0);
 
         // try to create a group without setting the LRTS header
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .contentType(Formats.JSON)
-            .body(groupXml)
-            .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, false)
-            .queryParam(FAIL_IF_EXISTS, false)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/group")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        var assertThat =
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .body(groupXml)
+                .header("Authorization", user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, false)
+                .queryParam(FAIL_IF_EXISTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/group")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat();
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
+            assertThat.statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+        } else {
+            assertThat.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        }
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
