@@ -1,16 +1,16 @@
 API References
 ===============
 
-.. note::
-    This page demonstrates an option for utilizing the OpenAPI documentation generated for the CWMS Data API.
+This feature is currently in an experimental stage. Check back later for updates and improvements.
+
+ .. note::
+    This page intends to demonstrate an option for utilizing the OpenAPI documentation generated for the CWMS Data API.
     It is a possible option but will need further refinement and customization to be fully effective.
-    Will test with spinxcontrib-redoc and verify results.
 
-This page aggregates the OpenAPI documentation for the TimeSeries endpoints in a single location.
+.. This page aggregates the OpenAPI documentation for the TimeSeries endpoints in a single location.
 
-.. openapi:: ../build/openapi/openapi.json
+.. .. openapi:: openapi/openapi.json
    :paths:
-
       /timeseries
       /timeseries/recent
       /timeseries/profile

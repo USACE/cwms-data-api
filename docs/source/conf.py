@@ -1,5 +1,5 @@
 # Configuration file for the Sphinx documentation builder.
-import os, json, urllib.request
+import os, json
 
 # -- Project information
 
@@ -13,7 +13,7 @@ version = "0.0.0"
 
 # -- General configuration
 
-# TODO: sphinxjs? direct use of API in the docs?
+# TODO: sphinxjs? also could try sphinx-apidoc direct use of API in the docs?
 extensions = [
     "sphinx.ext.duration",
     "sphinx.ext.doctest",
@@ -22,10 +22,10 @@ extensions = [
     "sphinx.ext.intersphinx",
     "myst_parser", # enables Markdown via MyST
     "sphinxcontrib.mermaid", # render Mermaid
-    # OpenAPI / API reference extensions
-    "sphinxcontrib.openapi",
-    "sphinxcontrib.redoc",
     "sphinx_design",
+    # OpenAPI / API reference extensions options for api-reference.rst
+    # "sphinxcontrib.openapi",
+    # "sphinxcontrib.redoc",
 ]
 
 # Recognize both .rst and .md files
@@ -70,23 +70,3 @@ html_theme_options = {
 # -- Options for EPUB output
 epub_show_urls = "footnote"
 
-
-
-here = os.path.dirname(__file__)
-out_dir = os.path.join(here, '..', 'build', 'openapi')
-os.makedirs(out_dir, exist_ok=True)
-openapi_json = os.path.join(out_dir, 'openapi.json')
-
-OPENAPI_URL = os.environ.get('OPENAPI_URL', 'https://cwms-data.usace.army.mil/cwms-data/swagger-docs')  # default to public instance
-if not os.path.exists(openapi_json):
-    try:
-        with urllib.request.urlopen(OPENAPI_URL) as resp:
-            data = resp.read()
-            with open(openapi_json, 'wb') as f:
-                f.write(data)
-    except Exception:
-        # Fall back to a vendored copy if live fetch isn’t available
-        vendored = os.path.join(here, 'openapi', 'openapi.json')
-        if os.path.exists(vendored):
-            with open(vendored, 'rb') as src, open(openapi_json, 'wb') as dst:
-                dst.write(src.read())
