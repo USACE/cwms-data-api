@@ -1,7 +1,6 @@
 TimeSeries — GET /timeseries
 ==============================
 
-See Time Series in the CWMS database: https://cwms-database.readthedocs.io/en/latest/naming.html#time-series
 
 What it does
 ------------

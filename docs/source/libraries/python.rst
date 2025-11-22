@@ -1,6 +1,5 @@
 .. _cwms-python:
 
-===================================
 CWMS Python Client Library - CWMSpy
 ===================================
 
@@ -12,13 +11,13 @@ It provides a convenient way to access and manipulate CWMS data using Python.
 
 
 Maintainers
-===========
+------------
 
 The `cwms-python` library is maintained by the U.S. Army Corps of Engineers (USACE).
 Contributions and feedback are welcome.
 
 Latest Version
-==============
+---------------
 
 The latest version of the `cwms-python` library can be found on GitHub:
 

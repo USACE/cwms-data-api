@@ -1,8 +1,7 @@
 .. _timeSeries_all_params:
 
-
-timeseries catalog parameters
-###################################
+/timeseries endpoint parameters
+================================
 
 This page serves as a reference for all parameters used across the TimeSeries endpoints. It may be useful only for
 building the documentation and then be removed later.

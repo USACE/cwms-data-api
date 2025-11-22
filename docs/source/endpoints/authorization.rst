@@ -1,6 +1,5 @@
-#############
 Authorization
-#############
+==============
 
 
 This document provides an overview of the `Authorization API` endpoints used for managing `CWMS Data API` authentication keys.
@@ -16,11 +15,7 @@ Endpoints
 
 
 **Request**
-
-    - **Method**: GET
-    - **Endpoint**: `/cwms-data/auth/keys/{key-name}`
-    - **Path Parameters**:
-        - `key-name` (string): The name of the authentication key to retrieve.
+    -
 
 **Response**
 
@@ -35,7 +30,7 @@ The following table provides an overview of the available endpoints in the Autho
 
 .. csv-table:: Authorization API Endpoints
    :header: "Method", "Endpoint", "Description", "Details"
-   :widths: 15, 40, 35, 35
+   :widths: 18, 55, 35, 35
 
    "GET", "/cwms-data/auth/keys/{key-name}", "Retrieve a specific auth key by `keyName`.", "Returns key details in JSON."
    "DELETE", "/cwms-data/auth/keys/{key-name}", "Delete a specific auth key by `keyName`.", "Returns `204 No Content` status."

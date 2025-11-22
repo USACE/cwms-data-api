@@ -1,5 +1,5 @@
-Shared timeseries parameters
-==================================
+Shared timeseries endpoint parameters
+======================================
 
 .. _shared-defs:
 

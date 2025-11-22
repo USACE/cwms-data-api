@@ -29,10 +29,9 @@ Welcome to CWMS Data API documentation!
 
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Concepts and Data
+   :maxdepth: 2
+   :caption: Data and References
 
-   Concepts <./concepts/index.rst>
    Data <./data/index.rst>
    Client Libraries <libraries/index.rst>
    RFCs <./rfc/index.rst>

@@ -24,6 +24,7 @@ Browse Time Series GET Endpoints:
 .. toctree::
     :maxdepth: 1
 
+    TimeSeries Basics <./timeseries_basics.rst>
     /timeseries <timeSeries>
     /timeseries/recent <timeSeries-recent>
     /timeseries/profile <timeSeries-profile>
@@ -32,6 +33,7 @@ Browse Time Series GET Endpoints:
     /timeseries/profile-parser/{location-id}/{parameter-id} <timeSeries-profile-parser-byIDs>
     /timeseries/profile-instance <timeSeries-profile-instance>
     /timeseries/profile-instance/{location-id}/{parameter-id}/{version} <timeSeries-profile-instance-byIDs>
+    Shared Definitions <./shared_definitions.rst>
 
 
 .. note::

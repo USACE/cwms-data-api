@@ -1,8 +1,13 @@
-timeseries endpoints landing page
-==================================
+.. _timeseries-basics:
+
+Time Series
+==============
+
 
 
 - What is a TimeSeries?
+
+    `CWMS database - Time Series Definition <https://cwms-database.readthedocs.io/en/latest/naming.html#time-series>`_
 
   - A TimeSeries is a sequence of timestamped values measured or computed at a location for a specific
     parameter (e.g., stage, flow), possibly in a given interval (e.g., 15-min) and type (e.g., observed, computed).
@@ -10,8 +15,10 @@ timeseries endpoints landing page
 
 - Data structure overview
 
-  - Core pieces: Location, Parameter, Type, Interval, Version
-  - Link each to `concepts/definitions.rst` anchors
+  - Core Components: Location, Parameter, Type, Interval, Duration, Version
+
+    `CWMS database - Component Definitions <https://cwms-database.readthedocs.io/en/latest/naming.html#>`_
+
 
 - Typical use cases (plain language)
 
@@ -19,14 +26,8 @@ timeseries endpoints landing page
   - Retrieve a historical range to chart or analyze
   - Access a specific profile at a location/parameter
 
-- Where to start
 
-  - Quick links to the 8 GET endpoints
-  - Link to “API Reference” (Swagger/Redoc) for full parameter/response schemas
-
-
-
-The TimeSeries endpoints allow you to retrieve and manage time series data stored in the CWMS database.
+The time series endpoints allow you to retrieve and manage time series data stored in the CWMS database.
 See the individual endpoint documentation for details on each available operation:
 
 - :ref:`timeSeries-endpoints`

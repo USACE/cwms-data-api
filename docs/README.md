@@ -1,5 +1,13 @@
 Development in docs module:
 
+.rst title/section hierarchies for this project follow this convention:
+
+1. Title ========
+2. Section ---------
+3. Subsection ~~~~~~
+4. Subsubsection ^^^^^
+
+
 \cwms-data-api\docs> .venv\Scripts\Activate.ps1
 (.venv) 
 \cwms-data-api\docs> pip install -r requirements.txt
