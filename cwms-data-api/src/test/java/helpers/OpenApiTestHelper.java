@@ -1,7 +1,13 @@
 package helpers;
 
 import com.github.javaparser.JavaParser;
+import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.symbolsolver.JavaSymbolSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.ClassLoaderTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import java.io.IOException;
@@ -110,15 +116,20 @@ public class OpenApiTestHelper {
         return output;
     }
 
-    private static Path getPackagePath(String packagePath) {
-        // Assuming the test is run from project root, adjust path as needed
-        Path srcPath = Paths.get("cwms-data-api/src/main/java", packagePath);
+    private static Path getSrcRootPath() {
+        Path srcPath = Paths.get("cwms-data-api/src/main/java");
 
         if (!Files.exists(srcPath)) {
             // Try alternative path
-            srcPath = Paths.get("src/main/java", packagePath);
+            srcPath = Paths.get("src/main/java");
         }
+
         return srcPath;
+    }
+
+    private static Path getPackagePath(String packagePath) {
+        // Assuming the test is run from project root, adjust path as needed
+        return getSrcRootPath().resolve(packagePath);
     }
 
     public static <T> OpenApiDocTestInfo readOpenApiDocs(Class<? super T> baseClass, Class<T> primaryClass) {
@@ -134,9 +145,19 @@ public class OpenApiTestHelper {
         String fullyQualifiedName = clazz.getName().replace(".", "/") + ".java";
         Path path = getPackagePath(fullyQualifiedName);
         assertTrue(Files.exists(path));
-        JavaParser parser = new JavaParser();
+        ParserConfiguration config = buildParserConfig();
+        JavaParser parser = new JavaParser(config);
         return parser.parse(path)
                      .getResult()
                      .orElseThrow(() -> new RuntimeException("Failed to parse file"));
+    }
+
+    private static ParserConfiguration buildParserConfig() {
+        CombinedTypeSolver combinedTypeSolver = new CombinedTypeSolver(new ReflectionTypeSolver(),
+                                                                       new ClassLoaderTypeSolver(OpenApiTestHelper.class.getClassLoader()),
+                                                                       new JavaParserTypeSolver(getSrcRootPath()));
+
+        return new ParserConfiguration()
+                .setSymbolResolver(new JavaSymbolSolver(combinedTypeSolver));
     }
 }

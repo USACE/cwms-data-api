@@ -115,6 +115,7 @@ hamcrest-all = { module = "org.hamcrest:hamcrest-all", version.ref = "hamcrest" 
 apache-freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
 apache-commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "apache-commons.csv" }
 javaparser-core = { module = "com.github.javaparser:javaparser-core", version.ref = "javaparser" }
+javaparser-symbol-solver-core = { module = "com.github.javaparser:javaparser-symbol-solver-core", version.ref = "javaparser"}
 # test runtime
 
 # tomcat
@@ -142,3 +143,4 @@ testcontainers = [ "testcontainers-base", "testcontainers-database-commons", "te
 metrics = ["metrics-core", "metrics-servlets", "metrics-prometheus-client", "metrics-prometheus-servlets" ]
 jackson = ["jackson-core", "jackson-dataformat-csv", "jackson-dataformat-xml", "jackson-datatype-jsr310" ]
 overrides = ["io-github.classgraph", "io-swagger-parser"]
+java-parser = ["javaparser-core", "javaparser-symbol-solver-core"]

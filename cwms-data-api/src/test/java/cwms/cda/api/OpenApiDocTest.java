@@ -32,7 +32,11 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.ThrowStmt;
+import com.github.javaparser.resolution.Resolvable;
+import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
+import com.github.javaparser.resolution.declarations.ResolvedValueDeclaration;
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.CdaError;
 import helpers.OpenApiDocInfo;
 import helpers.OpenApiDocTestInfo;
 import helpers.OpenApiParamInfo;
@@ -48,10 +52,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -79,7 +85,7 @@ class OpenApiDocTest {
 
     @Test
     void test_time_series_controller() throws IOException {
-        OpenApiDocTestInfo testInfo = OpenApiTestHelper.readOpenApiDocs(CrudHandler.class, TimeSeriesController.class);
+        OpenApiDocTestInfo testInfo = OpenApiTestHelper.readOpenApiDocs(CrudHandler.class, StateController.class);
         CompilationUnit compilationUnit = OpenApiTestHelper.readCompilationUnit(testInfo.getClazz());
         assertAll(buildTestAssertions(compilationUnit, testInfo));
     }
@@ -103,20 +109,40 @@ class OpenApiDocTest {
 
     private Executable testIgnoredMethod(CompilationUnit unit, OpenApiDocInfo testInfo, Class<?> clazz) {
 
-        // 16/24 cases throw an UnsupportedOperationException, so verify that behavior here for now.
-        // Other cases use the context to provide additional feedback, but the feedback is not consistent.
-        // Could be an improvement for the corps to define it more strictly here.
+        // Expected format for ignored methods is just one call to:
+        // `ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());`
         MethodDeclaration method = getMethodDeclaration(unit, testInfo.getMethod());
-        boolean throwsException = method.findAll(ThrowStmt.class)
-                                        .stream()
-                                        .anyMatch(throwStmt -> {
-                                            if (throwStmt.getExpression() instanceof ObjectCreationExpr) {
-                                                ObjectCreationExpr creation = (ObjectCreationExpr) throwStmt.getExpression();
-                                                return creation.getType().getNameAsString().equals("UnsupportedOperationException");
-                                            }
-                                            return false;
-                                        });
-        return () -> assertTrue(throwsException, clazz.getSimpleName() + "::" + testInfo.getMethod().getName() + " is marked as ignored, but does not throw an UnsupportedOperationException.");
+
+        Optional<MethodCallExpr> statusCall = method.findAll(MethodCallExpr.class)
+                                                    .stream()
+                                                    .filter(exp -> exp.getNameAsString().equals("status"))
+                                                    .findFirst();
+
+        Optional<MethodCallExpr> jsonCall = method.findAll(MethodCallExpr.class)
+                                                  .stream()
+                                                  .filter(exp -> exp.getNameAsString().equals("json"))
+                                                  .findFirst();
+
+        try {
+            boolean usesStatus = statusCall.isPresent();
+            boolean isCorrectCode = statusCall.stream()
+                                              .map(exp -> parseParameterName(exp.getArgument(0)))
+                                              .mapToInt(Integer::parseInt)
+                                              .anyMatch(v -> v == HttpServletResponse.SC_NOT_IMPLEMENTED);
+
+            boolean usesJson = jsonCall.isPresent();
+            boolean isCorrectJson = jsonCall.map(exp -> parseParameterName(exp.getArgument(0)))
+                                            .map("CdaError.notImplemented()"::equals)
+                                            .orElse(false);
+            return () -> assertAll(
+                    "Testing ignored method " + method.getNameAsString() + ":  Incorrect response for ignored endpoint.  Expecting `ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented())`",
+                    () -> assertTrue(usesStatus && isCorrectCode,
+                                     "Incorrect status code used, context should provide HttpServletResponse.SC_NOT_IMPLEMENTED."),
+                    () -> assertTrue(usesJson && isCorrectJson,
+                                     "Incorrect JSON returned, context should respond with CdaError.notImplemented()"));
+        } catch (Exception ex) {
+            return () -> fail("Testing ignored method " + method.getNameAsString() + ":  Error analyzing method.  Expected `ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());`.", ex);
+        }
     }
 
     private Executable testMethod(OpenApiDocInfo testInfo,
@@ -134,10 +160,10 @@ class OpenApiDocTest {
 
     private void testPathParameters(List<OpenApiParamInfo> expectedPathParameters, Set<OpenApiParamUsageInfo> receivedPathParameters,
                                     OpenApiParamUsageInfo receivedResourceId) {
-        List<OpenApiParamUsageInfo> verifiedUsages = new ArrayList<>();
-        List<OpenApiParamInfo> expectedParams = new ArrayList<>();
-        List<OpenApiParamInfo> missingItems = new ArrayList<>();
-        List<OpenApiParamUsageInfo> receivedItems = new ArrayList<>(receivedPathParameters);
+        Set<OpenApiParamUsageInfo> verifiedUsages = new HashSet<>();
+        Set<OpenApiParamInfo> expectedParams = new HashSet<>();
+        Set<OpenApiParamInfo> missingItems = new HashSet<>();
+        Set<OpenApiParamUsageInfo> receivedItems = new HashSet<>(receivedPathParameters);
 
         if (receivedResourceId != null) {
             //Special case, equivalent to the last expectedPathParameters, but it can have an ambiguous name.
@@ -172,17 +198,17 @@ class OpenApiDocTest {
         String missingInfo = missingItems.stream()
                                          .map(OpenApiParamInfo::getName)
                                          .collect(Collectors.joining(", "));
-        assertAll(() -> assertTrue(receivedItems.isEmpty(), "Found extra path parameters: " + extraInfo),
-                  () -> assertTrue(missingItems.isEmpty(), "Found missing path parameters: " + missingInfo),
+        assertAll(() -> assertTrue(receivedItems.isEmpty(), "Found used undocumented path parameter: " + extraInfo),
+                  () -> assertTrue(missingItems.isEmpty(), "Found documented path parameter that is not used: " + missingInfo),
                   () -> assertAll(expectedParams.stream().map(expectedParam -> testParamInfo(expectedParam, verifiedUsages))));
     }
 
     private void testQueryParameters(List<OpenApiParamInfo> expectedQueryParameters,
                                      Set<OpenApiParamUsageInfo> receivedQueryParameters) {
-        List<OpenApiParamUsageInfo> verifiedUsages = new ArrayList<>();
-        List<OpenApiParamInfo> expectedParams = new ArrayList<>();
-        List<OpenApiParamInfo> missingItems = new ArrayList<>();
-        List<OpenApiParamUsageInfo> receivedItems = new ArrayList<>(receivedQueryParameters);
+        Set<OpenApiParamUsageInfo> verifiedUsages = new HashSet<>();
+        Set<OpenApiParamInfo> expectedParams = new HashSet<>();
+        Set<OpenApiParamInfo> missingItems = new HashSet<>();
+        Set<OpenApiParamUsageInfo> receivedItems = new HashSet<>(receivedQueryParameters);
 
         for (OpenApiParamInfo paramInfo : expectedQueryParameters) {
             OpenApiParamUsageInfo equivalent = null;
@@ -207,22 +233,26 @@ class OpenApiDocTest {
         String missingInfo = missingItems.stream()
                                          .map(OpenApiParamInfo::getName)
                                          .collect(Collectors.joining(", "));
-        assertAll(() -> assertTrue(receivedItems.isEmpty(), "Found extra query parameters: " + extraInfo),
-                  () -> assertTrue(missingItems.isEmpty(), "Found missing query parameters: " + missingInfo),
+        assertAll(() -> assertTrue(receivedItems.isEmpty(), "Found used undocumented query parameter: " + extraInfo),
+                  () -> assertTrue(missingItems.isEmpty(), "Found documented query parameter that is not used: " + missingInfo),
                   () -> assertAll(expectedParams.stream().map(expectedParam -> testParamInfo(expectedParam, verifiedUsages))));
     }
 
     private Executable testParamInfo(OpenApiParamInfo expectedParam,
-                                     List<OpenApiParamUsageInfo> receivedQueryParameters) {
+                                     Set<OpenApiParamUsageInfo> receivedQueryParameters) {
         OpenApiParamUsageInfo receivedInfo = receivedQueryParameters.stream()
                                                                     .filter(receivedUsageInfo -> receivedUsageInfo.getParamInfo()
                                                                                                                                        .getName()
                                                                                                                                        .equals(expectedParam.getName()))
                                                                     .findFirst()
                                                                     .orElse(null);
+
+        //This should not happen, just a sanity check
         assertNotNull(receivedInfo, "Unable to find " + expectedParam.getName() + " in the code.");
-        return () -> assertAll(() -> assertTrue(receivedInfo.isUsed(), "Unable to find a usage of " + expectedParam.getName()),
-                               () -> assertTrue(receivedInfo.isNullHandled(), "Unable to find a null handled usage of " + expectedParam.getName()));
+
+        //Real tests
+        return () -> assertAll(() -> assertTrue(receivedInfo.isUsed(), "Unable to find a usage of documented parameter: " + expectedParam.getName()),
+                               () -> assertTrue(receivedInfo.isNullHandled(), "Unable to find a null handled usage of documented parameter: " + expectedParam.getName()));
     }
 
     private OpenApiParamUsage parseParamInfo(CompilationUnit unit, Class<?> clazz, Method method) {
@@ -230,37 +260,40 @@ class OpenApiDocTest {
         String context = methodDeclaration.getParameter(0).getNameAsString();
 
         List<MethodCallExpr> methodCalls = methodDeclaration.findAll(MethodCallExpr.class);
-        List<OpenApiParamUsageInfo> optionalTypedQueryParams = readParamUsagesFromCall(methodCalls, call -> readQueryParamAsClassFromCall(unit, context, clazz, call), "queryParamAsClass");
+        Set<OpenApiParamUsageInfo> optionalTypedQueryParams = readParamUsagesFromCall(methodCalls, call -> readQueryParamAsClassFromCall(unit, context, clazz, call), "queryParamAsClass");
+        Set<OpenApiParamUsageInfo> optionalDoubleQueryParams = readParamUsagesFromCall(methodCalls, call -> readUsageFromCall(unit, clazz, call, false), "queryParamAsDouble");
 
-        List<OpenApiParamUsageInfo> optionalStringQueryParams = methodCalls.stream()
+        Set<OpenApiParamUsageInfo> optionalStringQueryParams = methodCalls.stream()
                                                                            .filter(call -> call.getNameAsString().equals("queryParam"))
                                                                            .map(call -> readUsageFromCall(unit, clazz, call, false))
-                                                                           .collect(Collectors.toList());
+                                                                           .collect(Collectors.toSet());
 
-        List<OpenApiParamUsageInfo> requiredQueryParams = methodCalls.stream()
-                                                                     .filter(call -> call.getNameAsString().equals("requiredParam"))
+        Set<OpenApiParamUsageInfo> requiredQueryParams = methodCalls.stream()
+                                                                     .filter(call -> call.getNameAsString().equals("requiredParam") ||
+                                                                             call.getNameAsString().equals("requiredParamAs"))
                                                                      .map(call -> readUsageFromCall(unit, clazz, call, true))
-                                                                     .collect(Collectors.toList());
+                                                                     .collect(Collectors.toSet());
 
-        List<OpenApiParamUsageInfo> optionalTimeQueryParams = methodCalls.stream()
+        Set<OpenApiParamUsageInfo> optionalTimeQueryParams = methodCalls.stream()
                                                                          .filter(call -> call.getNameAsString().equals("queryParamAsInstant") ||
                                                                                  call.getNameAsString().equals("queryParamAsZdt"))
                                                                          .map(call -> readJavaTimeFromCall(call, false))
-                                                                         .flatMap(List::stream)
-                                                                         .collect(Collectors.toList());
+                                                                         .flatMap(Set::stream)
+                                                                         .collect(Collectors.toSet());
 
-        List<OpenApiParamUsageInfo> requiredTimeQueryParams = methodCalls.stream()
+        Set<OpenApiParamUsageInfo> requiredTimeQueryParams = methodCalls.stream()
                                                                          .filter(call -> call.getNameAsString().equals("requiredZdt") ||
                                                                                  call.getNameAsString().equals("requiredInstant"))
                                                                          .map(call -> readJavaTimeFromCall(call, true))
-                                                                         .flatMap(List::stream)
-                                                                         .collect(Collectors.toList());
+                                                                         .flatMap(Set::stream)
+                                                                         .collect(Collectors.toSet());
 
         Set<OpenApiParamUsageInfo> queryParams = new HashSet<>(optionalStringQueryParams);
         queryParams.addAll(optionalTypedQueryParams);
         queryParams.addAll(requiredQueryParams);
         queryParams.addAll(optionalTimeQueryParams);
         queryParams.addAll(requiredTimeQueryParams);
+        queryParams.addAll(optionalDoubleQueryParams);
 
 
         Set<OpenApiParamUsageInfo> pathParams = methodCalls.stream()
@@ -329,27 +362,24 @@ class OpenApiDocTest {
         return new OpenApiParamUsageInfo(new OpenApiParamInfo(name, false, type), true, true);
     }
 
-    private List<OpenApiParamUsageInfo> readParamUsagesFromCall(List<MethodCallExpr> methodCalls,
+    private Set<OpenApiParamUsageInfo> readParamUsagesFromCall(List<MethodCallExpr> methodCalls,
                                                                 Function<MethodCallExpr, OpenApiParamUsageInfo> paramReader,
                                                                 String... functions) {
         List<String> realFunctions = Arrays.asList(functions);
         return methodCalls.stream()
                           .filter(call -> realFunctions.contains(call.getNameAsString()))
                           .map(paramReader)
-                          .collect(Collectors.toList());
+                          .collect(Collectors.toSet());
     }
 
-    private List<OpenApiParamUsageInfo> readJavaTimeFromCall(MethodCallExpr call, boolean required) {
+    private Set<OpenApiParamUsageInfo> readJavaTimeFromCall(MethodCallExpr call, boolean required) {
         //Should only be 2 parameters, and parameter 2 is the parameter name
         String paramName = parseParameterName(call.getArgument(1));
         Class<?> type = String.class;
         boolean used = true;
         boolean nullHandled = true;
-        if (!required) {
-            //Check if null is handled via getOrDefault
-        }
-        return Arrays.asList(new OpenApiParamUsageInfo(new OpenApiParamInfo(paramName, required, type), used, nullHandled),
-                             new OpenApiParamUsageInfo(new OpenApiParamInfo(Controllers.TIMEZONE, required, type), used, nullHandled));
+        return Set.of(new OpenApiParamUsageInfo(new OpenApiParamInfo(paramName, required, type), used, nullHandled),
+                      new OpenApiParamUsageInfo(new OpenApiParamInfo(Controllers.TIMEZONE, required, type), used, nullHandled));
     }
 
     private OpenApiParamUsageInfo readUsageFromCall(CompilationUnit unit, Class<?> clazz, MethodCallExpr call, boolean required) {
@@ -387,30 +417,41 @@ class OpenApiDocTest {
         });
     }
 
-    private static @NotNull String parseParameterName(Expression arg) {
+    private @NotNull String parseParameterName(Expression arg) {
         String value;
-        if (arg instanceof StringLiteralExpr) {
+        if (arg.isStringLiteralExpr()) {
             // Using a literal, which is problematic on its own, but we can get the value.
             value = arg.asStringLiteralExpr().getValue();
-        } else if (arg instanceof FieldAccessExpr) {
+        } else if (arg.isFieldAccessExpr()) {
             // It's using a field accessor - this means it's calling Controllers.NAME for instance.
             // This doesn't apply to when the field is statically imported though.
-            FieldAccessExpr fieldExp = arg.asFieldAccessExpr();
-            value = parseParameterName(fieldExp.getNameAsExpression());
-        } else if (arg instanceof NameExpr) {
-            // Assume it's coming from the Controllers class, as that's a normal location for constants
-            // This is effectively like...we have a name, but we're not sure where it's coming from and we're
-            // Not a string literal.
-            try {
-                Field field = Controllers.class.getField(arg.asNameExpr().getNameAsString());
-                value = field.get(null).toString();
-            }  catch (Exception e) {
-                throw new UnsupportedOperationException("Unable to find Controllers field for " + arg.asNameExpr().getNameAsString(), e);
-            }
+            FieldAccessExpr exp = arg.asFieldAccessExpr();
+            value = resolveValue(exp, exp.getNameAsString());
+        } else if (arg.isNameExpr()) {
+            NameExpr exp = arg.asNameExpr();
+            value = resolveValue(exp, exp.getNameAsString());
         } else {
             value = arg.toString();
         }
         return value;
+    }
+
+    private String resolveValue(Resolvable<ResolvedValueDeclaration> exp, String name) {
+        try {
+            ResolvedValueDeclaration resolve = exp.resolve();
+            if (resolve.isField()) {
+                Class<?> clazz = Class.forName(resolve.asField().declaringType().getQualifiedName());
+                Field field = clazz.getDeclaredField(name);
+                field.setAccessible(true);
+                return field.get(null).toString();
+            } else if (resolve.isEnumConstant()) {
+                return resolve.asEnumConstant().getName();
+            } else {
+                throw new UnsupportedOperationException("Unable to parse resolved value declaration type of " + resolve.getClass().getName());
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private Class<?> identifyClassFromExpression(CompilationUnit unit, Class<?> clazz, ClassExpr expression) {

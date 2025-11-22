@@ -160,7 +160,7 @@ dependencies {
     // override versions
     implementation(libs.bundles.overrides)
 
-    testImplementation(libs.javaparser.core)
+    testImplementation(libs.bundles.java.parser)
 }
 
 task extractWebJars(type: Copy) {
