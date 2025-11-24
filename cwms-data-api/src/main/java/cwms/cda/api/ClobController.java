@@ -242,6 +242,14 @@ public class ClobController implements CrudHandler {
                 description = "If true, null and empty fields in the provided clob "
                         + "will be ignored and the existing value of those fields "
                         + "left in place. Default: true"),
+            @OpenApiParam(name = CLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                + "is ignored and the value of the query parameter is used.   "
+                + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                + "characters.  Because of abuse even properly escaped '/' in url paths are blocked.  "
+                + "When using this query parameter a valid path parameter must still be provided for the request"
+                + " to be properly routed.  If your clob id contains '/' you can't specify the clob-id query "
+                + "parameter and also specify the id path parameter because firewall and/or server rules will "
+                + "deny the request even though you are specifying this override. \"ignored\" is suggested."),
         },
         requestBody = @OpenApiRequestBody(
             content = {
@@ -259,6 +267,10 @@ public class ClobController implements CrudHandler {
         boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
 
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
+            String idQueryParam = ctx.queryParam(CLOB_ID);
+            if (idQueryParam != null) {
+                clobId = idQueryParam;
+            }
             DSLContext dsl = getDslContext(ctx);
 
             String formatHeader = ctx.req.getContentType();
@@ -311,6 +323,14 @@ public class ClobController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true,
                 description = "Specifies the office of the clob."),
+            @OpenApiParam(name = CLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                + "is ignored and the value of the query parameter is used.   "
+                + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                + "characters.  Because of abuse even properly escaped '/' in url paths are blocked.  "
+                + "When using this query parameter a valid path parameter must still be provided for the request"
+                + " to be properly routed.  If your clob id contains '/' you can't specify the clob-id query "
+                + "parameter and also specify the id path parameter because firewall and/or server rules will "
+                + "deny the request even though you are specifying this override. \"ignored\" is suggested."),
         },
         description = "Delete clob",
         method = HttpMethod.DELETE,
@@ -321,6 +341,10 @@ public class ClobController implements CrudHandler {
         String office = requiredParam(ctx, OFFICE);
 
         try (final Timer.Context ignored = markAndTime(DELETE)) {
+            String idQueryParam = ctx.queryParam(CLOB_ID);
+            if (idQueryParam != null) {
+                clobId = idQueryParam;
+            }
             DSLContext dsl = getDslContext(ctx);
             ClobDao dao = new ClobDao(dsl);
             dao.delete(office, clobId);

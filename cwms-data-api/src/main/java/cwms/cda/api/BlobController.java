@@ -131,6 +131,14 @@ public class BlobController implements CrudHandler {
                     + "appropriate media type.",
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
+                @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                    + "is ignored and the value of the query parameter is used.   "
+                    + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                    + "characters.  Because of abuse even properly escaped '/' in url paths are blocked.  "
+                    + "When using this query parameter a valid path parameter must still be provided for the request"
+                    + " to be properly routed.  If your blob id contains '/' you can't specify the blob-id query "
+                    + "parameter and also specify the id path parameter because firewall and/or server rules will "
+                    + "deny the request even though you are specifying this override. \"ignored\" is suggested."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -145,6 +153,10 @@ public class BlobController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            String idQueryParam = ctx.queryParam(CLOB_ID);
+            if (idQueryParam != null) {
+                blobId = idQueryParam;
+            }
             DSLContext dsl = getDslContext(ctx);
             BlobDao dao = new BlobDao(dsl);
             String officeQP = ctx.queryParam(OFFICE);
@@ -211,12 +223,26 @@ public class BlobController implements CrudHandler {
                     @OpenApiContent(from = Blob.class, type = Formats.JSON)
                 },
                 required = true),
+            queryParams = {
+                @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                    + "is ignored and the value of the query parameter is used.   "
+                    + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                    + "characters.  Because of abuse even properly escaped '/' in url paths are blocked.  "
+                    + "When using this query parameter a valid path parameter must still be provided for the request"
+                    + " to be properly routed.  If your blob id contains '/' you can't specify the blob-id query "
+                    + "parameter and also specify the id path parameter because firewall and/or server rules will "
+                    + "deny the request even though you are specifying this override. \"ignored\" is suggested."),
+            },
             method = HttpMethod.PATCH,
             tags = {TAG}
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
+            String idQueryParam = ctx.queryParam(CLOB_ID);
+            if (idQueryParam != null) {
+                blobId = idQueryParam;
+            }
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
@@ -252,6 +278,14 @@ public class BlobController implements CrudHandler {
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                     + "owning office of the blob to be deleted"),
+                @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                    + "is ignored and the value of the query parameter is used.   "
+                    + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                    + "characters.  Because of abuse even properly escaped '/' in url paths are blocked.  "
+                    + "When using this query parameter a valid path parameter must still be provided for the request"
+                    + " to be properly routed.  If your blob id contains '/' you can't specify the blob-id query "
+                    + "parameter and also specify the id path parameter because firewall and/or server rules will "
+                    + "deny the request even though you are specifying this override. \"ignored\" is suggested."),
             },
             method = HttpMethod.DELETE,
             tags = {TAG}
@@ -259,6 +293,10 @@ public class BlobController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
+            String idQueryParam = ctx.queryParam(CLOB_ID);
+            if (idQueryParam != null) {
+                blobId = idQueryParam;
+            }
             DSLContext dsl = getDslContext(ctx);
             String office = requiredParam(ctx, OFFICE);
             BlobDao dao = new BlobDao(dsl);
