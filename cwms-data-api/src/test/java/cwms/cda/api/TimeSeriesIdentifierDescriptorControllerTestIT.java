@@ -13,6 +13,7 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
@@ -178,57 +179,74 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         Assertions.assertTrue(names.isEmpty());
 
         // Try to store it again, but this time with the new LRTS flag set to false.
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .contentType(Formats.JSONV2)
-            .body(serializedTs)
-            .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, false)
-            .queryParam("office",OFFICE)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/identifier-descriptor/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-            .body("details.message",
-                is("Invalid time series description: "
+        var assertThat =
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSONV2)
+                .body(serializedTs)
+                .header("Authorization", user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, false)
+                .queryParam("office",OFFICE)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/identifier-descriptor/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat();
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
+            assertThat
+                .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+                .body("details.message",
+                    is(String.format("Invalid time series description: ORA-20998: ERROR: " +
+                                     "INVALID Time Series Identifier \"%s\": No such interval", tsId)));
+        } else {
+            assertThat
+                .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+                .body("details.message",
+                    is("Invalid time series description: "
                     + "12HoursLocal is not a valid interval"));
+        }
     }
 
     @Test
-    void testInvalidItem() throws Exception {
+    void test_invalid_ts_id() throws Exception {
         createLocation("BadLocationTSTest",true,"SPK");
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String tsId = "BadLocationTSTest" +
-            ".Precip-Cumulative.Avg.12HoursLocal.12HoursLocal.DescriptorTEST_LRTS25";
+            ".Precip-Cumulative.Ave.~12Hours.12HoursLocal.DescriptorTEST_LRTS25";
         TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
 
         ObjectMapper om = JsonV2.buildObjectMapper();
         String serializedTs = om.writeValueAsString(ts);
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.DEFAULT)
-            .contentType(Formats.JSONV2)
-            .body(serializedTs)
-            .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, false)
-            .queryParam("office",OFFICE)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/identifier-descriptor/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-            .body("message", equalTo("Bad Request."))
-            .body("source", equalTo("User Input"))
-            .body("details.message",
+        var assertThat =
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.DEFAULT)
+                .contentType(Formats.JSONV2)
+                .body(serializedTs)
+                .header("Authorization", user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, false)
+                .queryParam("office",OFFICE)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/identifier-descriptor/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+                .body("message", equalTo("Bad Request."))
+                .body("source", equalTo("User Input"))
+            ;
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
+            assertThat.body("details.message",
+                is(String.format("Invalid time series description: ORA-20998: ERROR: INVALID Time Series Identifier \"%s\": No such duration", tsId)));
+        } else {
+            assertThat.body("details.message",
                 is("Invalid time series description: 12HoursLocal is not a valid duration"));
+        }
     }
 
     @Test

@@ -24,7 +24,7 @@ jjwt = "0.11.5"
 jstl = "1.2"
 junit = "5.11.1"
 junit-launcher = "1.11.2"
-testcontainers = { strictly = "1.20.4" }
+testcontainers = { strictly = "2.0.2" }
 cwms-testcontainers = "2.0.0"
 oracle-jdbc = "19.3.0.0"
 mockito = "4.6.1"
@@ -35,6 +35,7 @@ google-auto-service = "1.0-rc6"
 freemarker = "2.3.32"
 auto-service = "1.1.1"
 openapi-validation = "2.44.9"
+javaparser = "3.26.2"
 
 #Overrides
 classgraph = { strictly = '4.8.176' }
@@ -101,9 +102,9 @@ openapi-spec-validation = { module = "com.atlassian.oai:swagger-request-validato
 
 
 testcontainers-base = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers"}
-testcontainers-database-commons = { module = "org.testcontainers:database-commons", version.ref = "testcontainers" }
-testcontainers-jdbc = { module = "org.testcontainers:jdbc", version.ref = "testcontainers"}
-testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers"}
+testcontainers-database-commons = { module = "org.testcontainers:testcontainers-database-commons", version.ref = "testcontainers" }
+testcontainers-jdbc = { module = "org.testcontainers:testcontainers-jdbc", version.ref = "testcontainers"}
+testcontainers-junit-jupiter = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers"}
 testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "cwms-testcontainers"}
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 oracle-jdbc-driver = { module ="com.oracle.database.jdbc:ojdbc8", version.ref = "oracle-jdbc" }
@@ -111,6 +112,8 @@ rest-assured = { module = "io.rest-assured:rest-assured", version.ref = "rest-as
 hamcrest-all = { module = "org.hamcrest:hamcrest-all", version.ref = "hamcrest" }
 apache-freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
 apache-commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "apache-commons.csv" }
+javaparser-core = { module = "com.github.javaparser:javaparser-core", version.ref = "javaparser" }
+javaparser-symbol-solver-core = { module = "com.github.javaparser:javaparser-symbol-solver-core", version.ref = "javaparser"}
 # test runtime
 
 # tomcat
@@ -138,3 +141,4 @@ testcontainers = [ "testcontainers-base", "testcontainers-database-commons", "te
 metrics = ["metrics-core", "metrics-servlets", "metrics-prometheus-client", "metrics-prometheus-servlets" ]
 jackson = ["jackson-core", "jackson-dataformat-csv", "jackson-dataformat-xml", "jackson-datatype-jsr310" ]
 overrides = ["io-github.classgraph", "io-swagger-parser"]
+java-parser = ["javaparser-core", "javaparser-symbol-solver-core"]

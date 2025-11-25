@@ -25,6 +25,7 @@
 package cwms.cda.helpers;
 
 import cwms.cda.data.dto.CwmsIdTimeExtentsEntry;
+import cwms.cda.data.dto.Entity;
 import cwms.cda.data.dto.TimeExtents;
 import cwms.cda.data.dto.TimeSeriesExtents;
 import cwms.cda.data.dto.catalog.LocationAlias;
@@ -638,6 +639,15 @@ public final class DTOMatch {
         assertAll(
             () -> assertEquals(first.getRatingSpecId(), second.getRatingSpecId(), "Rating Spec ID does not match"),
             () -> assertEquals(first.getEffectiveDates(), second.getEffectiveDates(), "Effective dates doe not match")
+        );
+    }
+
+    public static void assertMatch(Entity first, Entity second) {
+        assertAll(
+            () -> assertMatch(first.getId(), second.getId()),
+            () -> assertEquals(first.getCategoryId(), second.getCategoryId(), "Entity category Ids do not match"),
+            () -> assertEquals(first.getParentEntityId(), second.getParentEntityId(), "Entity parent Ids do not match"),
+            () -> assertEquals(first.getLongName(), second.getLongName(), "Entity long names do not match")
         );
     }
 
