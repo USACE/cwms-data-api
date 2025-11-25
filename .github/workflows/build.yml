@@ -33,7 +33,7 @@ jobs:
           java-version: ${{matrix.jdk}}
           cache: 'gradle'
       - name: install node for cda-gui audit
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'npm'
