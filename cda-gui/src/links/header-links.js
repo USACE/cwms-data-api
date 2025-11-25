@@ -63,6 +63,11 @@ export default [
         text: "Timestamps (times)",
         href: "timestamps",
       },
+      {
+        id: "legacy",
+        text: "Legacy Formats",
+        href: "legacy-format",
+      },
     ],
   },
   {
