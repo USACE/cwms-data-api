@@ -8,7 +8,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.TimeSeriesDao;
@@ -147,8 +146,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "'True' or 'False', default is 'False'"),
                 @OpenApiParam(name = STORE_RULE, type = StoreRule.class,  description = STORE_RULE_DESC),
                 @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description = "A flag "
-                        + "to ignore the protected data quality when storing data. 'True' or 'False'" +
-                        ", default is " + TimeSeriesDaoImpl.OVERRIDE_PROTECTION)
+                        + "to ignore the protected data quality when storing data. 'True' or 'False'"
+                        + ", default is " + TimeSeriesDaoImpl.OVERRIDE_PROTECTION)
             },
             method = HttpMethod.POST,
             path = "/timeseries",
@@ -308,8 +307,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "\n* `Other`  Any units returned in the response to the units URI "
                         + "request that is appropriate for the requested parameters."),
                 @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date of a "
-                        + "time series trace to be selected. " + TIME_FORMAT_DESC +
-                        "If field is empty, query will return a max aggregate for the timeseries. "
+                        + "time series trace to be selected. " + TIME_FORMAT_DESC
+                        + "If field is empty, query will return a max aggregate for the timeseries. "
                         + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2),
                 @OpenApiParam(name = DATUM,  description = "Specifies the "
                         + "elevation datum of the response. This field affects only elevation"
@@ -322,13 +321,13 @@ public class TimeSeriesController implements CrudHandler {
                 @OpenApiParam(name = BEGIN,  description = "Specifies the "
                         + "start of the time window for data to be included in the response. "
                         + "If this field is not specified, any required time window begins 24"
-                        + " hours prior to the specified or default end time. " +
-                        TIME_FORMAT_DESC),
+                        + " hours prior to the specified or default end time. "
+                        + TIME_FORMAT_DESC),
                 @OpenApiParam(name = END,  description = "Specifies the "
                         + "end of the time window for data to be included in the response. If"
                         + " this field is not specified, any required time window ends at the"
-                        + " current time. " +
-                        TIME_FORMAT_DESC),
+                        + " current time. "
+                        + TIME_FORMAT_DESC),
                 @OpenApiParam(name = TIMEZONE,  description = "Specifies "
                         + "the time zone of the values of the begin and end fields (unless "
                         + "otherwise specified).  "
@@ -350,7 +349,9 @@ public class TimeSeriesController implements CrudHandler {
                         + "\n* `csv`"
                         + "\n* `xml`"
                         + "\n* `wml2` (only if name field is specified)"
-                        + "\n* `json` (default)"),
+                        + "\n* `json` (default)"
+                        + "\n\nSee <a href=\"legacy-format/\">this page</a> for more "
+                        + "information about accept header usage."),
                 @OpenApiParam(name = INCLUDE_ENTRY_DATE, type = Boolean.class, description = "Specifies "
                     + "whether to include the data entry date of each value in the response. Including the data entry "
                     + "date will increase the size of the array containing each data value from three to four, "
@@ -481,11 +482,6 @@ public class TimeSeriesController implements CrudHandler {
             }
             addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
-        } catch (NotFoundException e) {
-            CdaError re = new CdaError("Not found.");
-            logger.log(Level.WARNING, re.toString(), e);
-            ctx.status(HttpServletResponse.SC_NOT_FOUND);
-            ctx.json(re);
         } catch (IllegalArgumentException ex) {
             CdaError re = new CdaError("Invalid arguments supplied");
             logger.log(Level.SEVERE, re.toString(), ex);

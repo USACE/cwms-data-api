@@ -346,7 +346,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_level_as_timeseries() throws Exception {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         createLocation("level_as_timeseries", true, OFFICE);
         String levelId = "level_as_timeseries.Flow.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));

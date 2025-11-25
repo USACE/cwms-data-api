@@ -54,11 +54,17 @@ public abstract class Dao<T> {
             .build();
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
+    protected static Integer CURRENT_SCHEMA_VERSION = null;
+
     @SuppressWarnings("unused")
     protected DSLContext dsl;
 
     protected Dao(DSLContext dsl) {
         this.dsl = dsl;
+        if (CURRENT_SCHEMA_VERSION == null)
+        {
+            CURRENT_SCHEMA_VERSION = getDbVersion();
+        }
     }
 
     public static String getVersion(DSLContext dsl) {
@@ -84,7 +90,7 @@ public abstract class Dao<T> {
     }
 
     public static int versionAsInteger(String version) {
-        String[] parts = version.split("\\.");
+        String[] parts = version.split("[\\.-]");
 
         return Integer.parseInt(parts[0]) * 10000
                 + Integer.parseInt(parts[1]) * 100
@@ -114,7 +120,7 @@ public abstract class Dao<T> {
      * @param tf
      * @return
      */
-    protected static String formatBool(Boolean tf)
+    public static String formatBool(Boolean tf)
     {
         String parsed = null;
         if(tf != null)

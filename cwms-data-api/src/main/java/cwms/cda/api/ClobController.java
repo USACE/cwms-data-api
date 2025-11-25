@@ -1,5 +1,26 @@
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.CLOB_ID;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.CURSOR;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.IGNORE_NULLS;
+import static cwms.cda.api.Controllers.INCLUDE_VALUES;
+import static cwms.cda.api.Controllers.LIKE;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.requiredParam;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -22,17 +43,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.jetbrains.annotations.NotNull;
-import org.jooq.DSLContext;
-
-import javax.servlet.http.HttpServletResponse;
-
 import java.io.InputStream;
 import java.util.Objects;
 import java.util.Optional;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
 
 
 public class ClobController implements CrudHandler {
@@ -133,7 +149,8 @@ public class ClobController implements CrudHandler {
                 + "If the accept header is set to " + TEXT_PLAIN + ", the raw value is returned as the response body. "
                 + "Responses to " + TEXT_PLAIN + " requests are streamed and support the Range header.  "
                 + "When the accept header is set to " + Formats.JSONV2 + " the clob will be returned as a serialized Clob "
-                + "object with fields for office-id, id, description and value.",
+                + "object with fields for office-id, id, description and value. "
+                + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
                 @OpenApiParam(name = CLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "

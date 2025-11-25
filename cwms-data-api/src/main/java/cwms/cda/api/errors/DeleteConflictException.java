@@ -24,25 +24,33 @@
 
 package cwms.cda.api.errors;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import javax.servlet.http.HttpServletResponse;
 
-public final class DeleteConflictException extends RuntimeException {
+public final class DeleteConflictException extends ApplicationException {
+    private static final Level LOG_LEVEL = Level.INFO;
 
     public DeleteConflictException(String message, SQLException cause) {
-        super(message, cause);
+        super(message, DATABASE_SOURCE, "Cannot delete this record because it is linked to other data in CWMS",
+            HttpServletResponse.SC_CONFLICT, LOG_LEVEL, new HashMap<>(), cause);
     }
 
-    public Map<String, Object> getDetails() {
+    @Override
+    public Map<String, Serializable> getDetails() {
         String sqlExceptionMessage = getCause().getLocalizedMessage();
         String[] parts = sqlExceptionMessage.split("\n");
         if (parts.length > 1) {
             sqlExceptionMessage = parts[0];
         }
-        Map<String, Object> retval = new HashMap<>();
-        retval.put(getMessage(), sqlExceptionMessage);
+        Map<String, Serializable> retval = new HashMap<>();
+        if (sqlExceptionMessage.endsWith(".")) {
+            sqlExceptionMessage = sqlExceptionMessage.substring(0, sqlExceptionMessage.length() - 1);
+        }
+        retval.put("message", String.format("%s: %s.", getMessage(), sqlExceptionMessage));
         return retval;
     }
-
 }

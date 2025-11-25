@@ -28,6 +28,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import cwms.cda.data.dao.LocationCategoryDao;
 import cwms.cda.data.dao.LocationGroupDao;
 import fixtures.CwmsDataApiSetupCallback;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -48,7 +49,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -56,7 +57,6 @@ import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
@@ -723,7 +723,8 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-            .body(containsString("One or more provided values exceeds the maximum length for the parameter."));
+            .body("source", equalTo("User Input"))
+            .body("message", equalTo("One or more provided values exceeds the maximum length for the parameter."));
     }
 
     @Test
@@ -846,6 +847,137 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
+    }
+
+    @Test
+    void testAlreadyExists() throws Exception {
+        KeyUser user = KeyUser.SPK_NORMAL;
+
+        Location location = new Location
+            .Builder("Putah_Creek", "STREAM",
+                ZoneId.of("UTC"), 38.55, -121.74,
+                "NGVD29", user.getOperatingOffice())
+            .withActive(true)
+            .withNearestCity("Davis")
+            .withOfficeId(user.getOperatingOffice())
+            .withBoundingOfficeId(user.getOperatingOffice())
+            .build();
+        createLocation(location.getName(), location.getActive(), location.getOfficeId(), location.getLatitude(),
+            location.getLongitude(), location.getHorizontalDatum(), location.getTimezoneName(), location.getLocationKind());
+
+        String locationString = Formats.format(new ContentType(Formats.JSON), location);
+
+        // attempt to create location of the same name as existing location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(locationString)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/locations")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CONFLICT))
+            .body("message", equalTo("Already exists"))
+            .body("source", equalTo("Database"))
+            .body("details.message",
+                equalTo(String.format("The location with name: %s already exists in office: %s",
+                    location.getName(), user.getOperatingOffice())));
+    }
+
+    @Test
+    void testDeleteConflict() throws Exception {
+        KeyUser user = KeyUser.SPK_NORMAL;
+
+        Location location = new Location
+            .Builder("Putah_Creek", "STREAM",
+            ZoneId.of("UTC"), 38.55, -121.74,
+            "NGVD29", user.getOperatingOffice())
+            .withActive(true)
+            .withNearestCity("Davis")
+            .build();
+        createLocation(location.getName(), location.getActive(), location.getOfficeId(), location.getLatitude(),
+            location.getLongitude(), location.getHorizontalDatum(), location.getTimezoneName(), location.getLocationKind());
+
+        String timeseriesId = "Putah_Creek.Elev.Ave.30Minutes.30Minutes.Raw";
+        createTimeseries(user.getOperatingOffice(), timeseriesId);
+
+        // attempt to delete location that is referenced by TS
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, user.getOperatingOffice())
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + location.getName())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CONFLICT))
+            .body("source", equalTo("Database"))
+            .body("message",
+                equalTo("Cannot delete this record because it is linked to other data in CWMS"))
+            .body("details.message", equalTo("Unable to delete requested location: "
+                + "Putah_Creek for office: SPK: ORA-20031: CAN_NOT_DELETE_LOC_1: "
+                + "Can not delete location: \"Putah_Creek\" because Timeseries Identifiers exist."));
+    }
+
+    @Test
+    void testNotFound() {
+        String location = "NonExistentLoc123";
+        String officeId = "SPK";
+        String unitSystem = "SI";
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT, unitSystem)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + location)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+            .body("message", equalTo(String.format("Location not found for office:%s and unit system:%s and id:%s",
+                officeId, unitSystem, location)))
+            .body("source", equalTo("Database"))
+        ;
+    }
+
+    @Test
+    void testRequiredQueryParam() throws Exception {
+        String location = "Putah_Creek_Basin";
+        String officeId = "SPK";
+
+        createLocation(location, true, officeId);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + location)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("message", equalTo("Bad Request"))
+            .body("source", equalTo("User Input"))
+            .body("details.'missing query parameters'", equalTo("office"))
         ;
     }
 
