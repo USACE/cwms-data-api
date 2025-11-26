@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2025 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,6 @@
 
 package cwms.cda.data.dao;
 
-import static org.jooq.impl.DSL.noCondition;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -33,14 +32,18 @@ import cwms.cda.data.dto.TimeSeriesIdentifierDescriptors;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.util.Collection;
-import java.util.Objects;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import org.jooq.Condition;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record5;
+import org.jooq.Record6;
+import org.jooq.Table;
+import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2;
 
@@ -68,7 +71,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
     }
 
     public TimeSeriesIdentifierDescriptors getTimeSeriesIdentifiers(String cursor, int pageSize, String office,
-                                                                    String idRegex) {
+                                                                    String idRegex, boolean includeAliases) {
         Integer total = null;
         int offset = 0;
 
@@ -88,7 +91,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
             }
         }
 
-        Condition whereCondition = noCondition();
+        Condition whereCondition = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.ALIASED_ITEM.isNull();
         if (office != null && !office.isEmpty()) {
             whereCondition = whereCondition.and(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID.equalIgnoreCase(office));
         }
@@ -97,50 +100,79 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
                     JooqDao.caseInsensitiveLikeRegex(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID, idRegex));
         }
 
-        Collection<TimeSeriesIdentifierDescriptor> retval = dsl
-                .selectDistinct(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID,
+        Collection<TimeSeriesIdentifierDescriptor> retval;
+
+        if (!includeAliases) {
+            retval = dsl
+                    .selectDistinct(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
-                .from(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2)
-                .where(whereCondition)
-                .orderBy(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID, AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
+                    .from(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2)
+                    .where(whereCondition)
+                    .orderBy(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID, AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
                         AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
+                    .limit(pageSize)
+                    .offset(offset)
+                    .stream()
+                    .map(this::toDescriptor)
+                    .collect(Collectors.toList());
+        } else {
+            Table<?> innerTable = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.as("tab1");
+            Field<String> tsId = innerTable.field("CWMS_TS_ID", String.class);
+            Field<BigDecimal> innerTsCode = innerTable.field("TS_CODE", BigDecimal.class);
+            Field<String> aliasedItem = innerTable.field("ALIASED_ITEM", String.class);
+            retval = dsl
+                .select(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID,
+                    DSL.multiset(
+                        dsl.selectDistinct(
+                            tsId
+                        ).from(innerTable)
+                            .where(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_CODE.eq(innerTsCode))
+                            .and(aliasedItem.isNotNull())
+                    ).convertFrom(rs -> rs.map(r -> r.get(tsId, String.class)))
+                )
+                .from(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2)
+                .where(whereCondition)
+                .orderBy(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID, AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
+                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
                 .limit(pageSize)
                 .offset(offset)
                 .stream()
-                .map(this::toDescriptor)
-                .filter(Objects::nonNull)
+                .map(this::toDescriptorWithAliases)
                 .collect(Collectors.toList());
+        }
 
         if (!retval.isEmpty() && total == null) {
-            var totalCount = dsl.selectCount().from(dsl
+            total = dsl.selectCount().from(dsl
                 .selectDistinct(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID,
                     AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
                     AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
                     AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
                     AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
                 .from(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2)
-                .where(whereCondition)
-                .orderBy(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID, AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
-                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
-                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
-                    AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
-                .offset(offset)).fetch();
-            total = totalCount.get(0).value1();
+                .where(whereCondition))
+                .fetchOne(0, Integer.class);
         } else if (total == null) {
             total = 0;
         }
 
-        TimeSeriesIdentifierDescriptors.Builder builder = new TimeSeriesIdentifierDescriptors.Builder(offset, pageSize, total);
+        TimeSeriesIdentifierDescriptors.Builder builder = new TimeSeriesIdentifierDescriptors
+                    .Builder(offset, pageSize, total);
         builder.withDescriptors(retval);
         return builder.build();
     }
 
-    private TimeSeriesIdentifierDescriptor toDescriptor(org.jooq.Record5<String, String, BigDecimal, String, String> r) {
+    private TimeSeriesIdentifierDescriptor toDescriptor(Record5<String, String, BigDecimal, String, String> r) {
         String officeId = r.get(r.field1());
         String tsId = r.get(r.field2());
         BigDecimal utcOffset = r.get(r.field3());
@@ -148,7 +180,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
         String zoneId = r.get(r.field5());
 
         String locationId = null;
-        if ( tsId != null && tsId.contains(".")) {
+        if (tsId != null && tsId.contains(".")) {
             locationId = tsId.substring(0, tsId.indexOf('.'));
         }
 
@@ -161,12 +193,38 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
                 .build();
     }
 
+    private TimeSeriesIdentifierDescriptor toDescriptorWithAliases(Record6<String, String, BigDecimal,
+                String, String, List<String>> r) {
+
+        String officeId = r.get(r.field1());
+        String tsId = r.get(r.field2());
+        BigDecimal utcOffset = r.get(r.field3());
+        String activeFlag = r.get(r.field4());
+        String zoneId = r.get(r.field5());
+        List<String> aliases = r.get(r.field6());
+
+        String locationId = null;
+        if (tsId != null && tsId.contains(".")) {
+            locationId = tsId.substring(0, tsId.indexOf('.'));
+        }
+
+        return new TimeSeriesIdentifierDescriptor.Builder()
+            .withOfficeId(officeId)
+            .withTimeSeriesId(tsId)
+            .withZoneId(toZoneId(zoneId, locationId))
+            .withIntervalOffsetMinutes(utcOffset.longValueExact())
+            .withActive(parseBool(activeFlag))
+            .withAliases(aliases)
+            .build();
+    }
+
 
     public Optional<TimeSeriesIdentifierDescriptor> getTimeSeriesIdentifier(String office, String timeseriesId) {
         AV_CWMS_TS_ID2 view = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
         return connectionResult(dsl, connection -> {
             Record5<String, String, Long, String, String>
-                result = dsl.select(view.CWMS_TS_ID, view.DB_OFFICE_ID, view.INTERVAL, view.TIME_ZONE_ID, view.TS_ACTIVE_FLAG)
+                result = dsl.select(view.CWMS_TS_ID, view.DB_OFFICE_ID, view.INTERVAL,
+                                    view.TIME_ZONE_ID, view.TS_ACTIVE_FLAG)
                 .from(view)
                 .where(view.CWMS_TS_ID.eq(timeseriesId).and(view.DB_OFFICE_ID.eq(office))).fetchOne();
             Optional<TimeSeriesIdentifierDescriptor> retval = Optional.empty();
