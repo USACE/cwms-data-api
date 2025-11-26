@@ -613,7 +613,10 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     private ConstantLocationLevel buildConstantLocationLevel(LOCATION_LEVEL_T level, String officeId, String units,
             String locationLevelName, ZonedDateTime realEffectiveDate, Double constantValue) {
-        ZonedDateTime expirationDate = ZonedDateTime.ofInstant(level.getEXPIRATION_DATE().toInstant(), realEffectiveDate.getZone());
+        ZonedDateTime expirationDate = Optional.ofNullable(level.getEXPIRATION_DATE())
+            .map(Timestamp::toInstant)
+            .map(i -> i.atZone(realEffectiveDate.getZone()))
+            .orElse(null);
         return new ConstantLocationLevel.Builder(locationLevelName, realEffectiveDate)
                 .withLevelUnitsId(units)
                 .withAttributeUnitsId(units)
@@ -628,7 +631,10 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     private SeasonalLocationLevel buildSeasonalLocationLevel(LOCATION_LEVEL_T level, String officeId, String units,
             String locationLevelName, ZonedDateTime effectiveDate, ZonedDateTime realEffectiveDate, List<SeasonalValueBean> seasonalValues) {
-        ZonedDateTime expirationDate = ZonedDateTime.ofInstant(level.getEXPIRATION_DATE().toInstant(), realEffectiveDate.getZone());
+        ZonedDateTime expirationDate = Optional.ofNullable(level.getEXPIRATION_DATE())
+            .map(Timestamp::toInstant)
+            .map(i -> i.atZone(realEffectiveDate.getZone()))
+            .orElse(null);
         return new SeasonalLocationLevel.Builder(locationLevelName, realEffectiveDate)
                 .withLevelUnitsId(units)
                 .withAttributeUnitsId(units)
@@ -648,7 +654,10 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     private TimeSeriesLocationLevel buildTimeSeriesLocationLevel(LOCATION_LEVEL_T level, String officeId, String units,
             String locationLevelName, ZonedDateTime realEffectiveDate) {
-        ZonedDateTime expirationDate = ZonedDateTime.ofInstant(level.getEXPIRATION_DATE().toInstant(), realEffectiveDate.getZone());
+        ZonedDateTime expirationDate = Optional.ofNullable(level.getEXPIRATION_DATE())
+            .map(Timestamp::toInstant)
+            .map(i -> i.atZone(realEffectiveDate.getZone()))
+            .orElse(null);
         return new TimeSeriesLocationLevel.Builder(locationLevelName, realEffectiveDate, level.getTSID())
                 .withLevelUnitsId(units)
                 .withAttributeUnitsId(units)
