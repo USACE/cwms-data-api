@@ -434,7 +434,7 @@ public abstract class LocationLevel extends CwmsDTO {
 
             builder = new ConstantLocationLevel.Builder(locationId, unmarshalledDate)
                 .withExpirationDate(updatedLevel.getExpirationDate() == null
-                    ? updatedLevel.getExpirationDate() : updatedLevel.getExpirationDate())
+                    ? existingLevel.getExpirationDate() : updatedLevel.getExpirationDate())
                     .withConstantValue(siParameterUnitsConstantValue);
         } else if (existingLevel instanceof TimeSeriesLocationLevel) {
             TimeSeriesLocationLevel timeSeriesLevel = (TimeSeriesLocationLevel) existingLevel;
@@ -445,7 +445,7 @@ public abstract class LocationLevel extends CwmsDTO {
 
             builder = new TimeSeriesLocationLevel.Builder(locationId, unmarshalledDate, seasonalTimeSeriesId)
                 .withExpirationDate(updatedLevel.getExpirationDate() == null
-                    ? updatedLevel.getExpirationDate() : updatedLevel.getExpirationDate());
+                    ? existingLevel.getExpirationDate() : updatedLevel.getExpirationDate());
         } else if (existingLevel instanceof SeasonalLocationLevel) {
             SeasonalLocationLevel seasonalLevel = (SeasonalLocationLevel) existingLevel;
             SeasonalLocationLevel updatedSeasonalLevel = (SeasonalLocationLevel) updatedLevel;
@@ -476,7 +476,7 @@ public abstract class LocationLevel extends CwmsDTO {
                     .withIntervalOrigin(intervalOrigin)
                     .withInterpolateString(interpolateString)
                     .withExpirationDate(updatedLevel.getExpirationDate() == null
-                        ? updatedLevel.getExpirationDate() : updatedLevel.getExpirationDate());
+                        ? existingLevel.getExpirationDate() : updatedLevel.getExpirationDate());
         } else {
             throw new UnsupportedFormatException("Unsupported Location Level type: "
                     + existingLevel.getClass().getName());
