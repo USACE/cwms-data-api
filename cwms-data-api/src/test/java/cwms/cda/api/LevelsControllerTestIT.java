@@ -1776,7 +1776,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("expiration-date", equalTo(levelDate.plusYears(50).toString()))
+            .body("expiration-date", equalTo(levelDate.plusYears(50).toInstant().toString()))
             .body("seasonal-values.size()", is(numValues));
     }
 
@@ -1831,7 +1831,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("expiration-date", equalTo(time.plusYears(50).toString()))
+            .body("expiration-date", equalTo(time.plusYears(50).toInstant().toString()))
             .body("seasonal-time-series-id", equalTo(tsId));
     }
 
@@ -1866,7 +1866,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
-            .body("expiration-date", equalTo(time.plusYears(50).toString()))
             .body(OFFICE_ID, equalTo(OFFICE))
             .body(MESSAGE, equalTo("Created Location Level"))
             .body(IDENTIFIER, equalTo(levelId));
@@ -1886,6 +1885,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("expiration-date", equalTo(time.plusYears(50).toInstant().toString()))
             .body("constant-value", equalTo(8675.309f));
     }
 

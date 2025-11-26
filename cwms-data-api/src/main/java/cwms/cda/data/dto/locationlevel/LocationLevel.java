@@ -80,6 +80,8 @@ public abstract class LocationLevel extends CwmsDTO {
 
     private final String specifiedLevelId;
 
+    @Schema(description = "The expiration date of the location level.")
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private final ZonedDateTime expirationDate;
 
     @Schema(description = "Data Type such as Stage, Elevation, or others.")
