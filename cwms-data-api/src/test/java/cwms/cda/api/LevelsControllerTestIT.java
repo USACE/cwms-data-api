@@ -1737,6 +1737,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .withIntervalOrigin(intervalOrigin)
                 .withSeasonalValues(values)
                 .withInterpolateString("T")
+                .withExpirationDate(levelDate.plusYears(50))
                 .build();
 
         String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
@@ -1775,6 +1776,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("expiration-date", equalTo(levelDate.plusYears(50).toString()))
             .body("seasonal-values.size()", is(numValues));
     }
 
@@ -1785,11 +1787,12 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String levelId = String.format("%s.Elev.Ave.1Day.Regulating", locName);
         String tsId = String.format("%s.Elev.Ave.1Day.1Week.Regulating", locName);
         createTimeseries(OFFICE, tsId);
-        ZonedDateTime time = ZonedDateTime.now();
+        ZonedDateTime time = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:00Z"), ZoneId.of("UTC"));
         TimeSeriesLocationLevel level = new TimeSeriesLocationLevel.Builder(levelId, time, tsId)
             .withOfficeId(OFFICE)
             .withLevelUnitsId("ft")
             .withInterpolateString("T")
+            .withExpirationDate(time.plusYears(50))
             .build();
 
         String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
@@ -1828,6 +1831,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("expiration-date", equalTo(time.plusYears(50).toString()))
             .body("seasonal-time-series-id", equalTo(tsId));
     }
 
@@ -1836,11 +1840,12 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String locName = "constLocation123";
         createLocation(locName, true, OFFICE);
         String levelId = String.format("%s.Elev.Ave.1Day.Regulating", locName);
-        ZonedDateTime time = ZonedDateTime.now();
+        ZonedDateTime time = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:00Z"), ZoneId.of("UTC"));
         ConstantLocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
             .withOfficeId(OFFICE)
             .withLevelUnitsId("ft")
             .withConstantValue(8675.309)
+            .withExpirationDate(time.plusYears(50))
             .build();
 
         String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
@@ -1861,6 +1866,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body("expiration-date", equalTo(time.plusYears(50).toString()))
             .body(OFFICE_ID, equalTo(OFFICE))
             .body(MESSAGE, equalTo("Created Location Level"))
             .body(IDENTIFIER, equalTo(levelId));
