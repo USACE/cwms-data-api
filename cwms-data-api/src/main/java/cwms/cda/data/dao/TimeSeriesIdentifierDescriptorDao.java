@@ -121,7 +121,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
                     .map(this::toDescriptor)
                     .collect(Collectors.toList());
         } else {
-            Table<?> innerTable = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.as("tab1");
+            Table<?> innerTable = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.as("alias_table");
             Field<String> tsId = innerTable.field("CWMS_TS_ID", String.class);
             Field<BigDecimal> innerTsCode = innerTable.field("TS_CODE", BigDecimal.class);
             Field<String> aliasedItem = innerTable.field("ALIASED_ITEM", String.class);

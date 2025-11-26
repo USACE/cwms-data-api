@@ -28,9 +28,11 @@ import static cwms.cda.api.Controllers.CATEGORY_ID;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_TS;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -409,6 +411,28 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             tsDescriptors.add(ts);
         }
 
+        // Add TS with differing ID to verify we don't get it back
+        String tsId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorDO_NOT_INCLUDE";
+        TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
+        String serializedTs = om.writeValueAsString(ts);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(serializedTs)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam("office",OFFICE)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/identifier-descriptor/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+        tsDescriptors.add(ts);
+
         // Check that we have the right number of ts like this in the catalog.
         names = getIdsLike(OFFICE, likePattern);
         assertFalse(names.isEmpty());
@@ -422,7 +446,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .accept(Formats.JSONV2)
             .queryParam(Controllers.PAGE_SIZE, pageSize)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.LIKE, likePattern)
+            .queryParam(Controllers.TIMESERIES_ID_REGEX, likePattern)
             .queryParam(Controllers.EXCLUDE_EMPTY, false)
         .when()
             .get("/timeseries/identifier-descriptor/")
@@ -430,7 +454,9 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("descriptors.size()", is(pageSize))
             .body("total", is(count))
+            .body(not(contains("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorDO_NOT_INCLUDE")))
             .extract()
             .response();
 
@@ -442,7 +468,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         .accept(Formats.JSONV2)
             .queryParam(Controllers.PAGE, nextPage)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.LIKE, likePattern)
+            .queryParam(Controllers.TIMESERIES_ID_REGEX, likePattern)
             .queryParam(Controllers.EXCLUDE_EMPTY, false)
         .when()
             .get("/timeseries/identifier-descriptor/")
@@ -451,7 +477,50 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("total", is(count))
-        .body("descriptors.size()", is(count - pageSize));
+            .body(not(contains("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorDO_NOT_INCLUDE")))
+            .body("descriptors.size()", is(count - pageSize));
+
+        // testing paging with aliases, make sure totals are present
+        response = given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.PAGE_SIZE, pageSize)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.TIMESERIES_ID_REGEX, likePattern)
+            .queryParam(Controllers.EXCLUDE_EMPTY, false)
+            .queryParam(Controllers.INCLUDE_ALIASES, true)
+        .when()
+            .get("/timeseries/identifier-descriptor/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("descriptors.size()", is(pageSize))
+            .body("total", is(count))
+            .body(not(contains("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorDO_NOT_INCLUDE")))
+            .extract()
+            .response();
+
+        nextPage =  response.path("next-page").toString();
+
+        // verify correct total count on next page
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.PAGE, nextPage)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.TIMESERIES_ID_REGEX, likePattern)
+            .queryParam(Controllers.EXCLUDE_EMPTY, false)
+            .queryParam(Controllers.INCLUDE_ALIASES, true)
+        .when()
+            .get("/timeseries/identifier-descriptor/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("total", is(count))
+            .body(not(contains("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorDO_NOT_INCLUDE")))
+            .body("descriptors.size()", is(count - pageSize));
     }
 
 
@@ -562,7 +631,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.LIKE, likePattern)
+            .queryParam(Controllers.TIMESERIES_ID_REGEX, likePattern)
             .queryParam(Controllers.EXCLUDE_EMPTY, false)
         .when()
             .get("/timeseries/identifier-descriptor/")
@@ -570,6 +639,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("descriptors.size()", is(count))
             .body("total", is(count))
             .extract()
             .response();
@@ -582,7 +652,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.LIKE, likePattern)
+            .queryParam(Controllers.TIMESERIES_ID_REGEX, likePattern)
             .queryParam(Controllers.EXCLUDE_EMPTY, false)
             .queryParam(Controllers.INCLUDE_ALIASES, true)
         .when()
@@ -695,7 +765,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.LIKE, likePattern)
+            .queryParam(Controllers.TIMESERIES_ID_REGEX, likePattern)
             .queryParam(Controllers.EXCLUDE_EMPTY, false)
         .when()
             .get("/timeseries/identifier-descriptor/")
@@ -703,6 +773,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("descriptors.size()", is(count))
             .body("total", is(count))
             .extract()
             .response();
@@ -715,7 +786,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .log().ifValidationFails(LogDetail.ALL,true)
         .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.LIKE, likePattern)
+            .queryParam(Controllers.TIMESERIES_ID_REGEX, likePattern)
             .queryParam(Controllers.EXCLUDE_EMPTY, false)
             .queryParam(Controllers.INCLUDE_ALIASES, true)
         .when()
