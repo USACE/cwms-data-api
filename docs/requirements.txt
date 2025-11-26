@@ -1,2 +1,16 @@
 sphinx
 sphinx_rtd_theme
+sphinx-design
+sphinx-copybutton
+sphinx-tabs
+myst-parser
+sphinxcontrib-mermaid>=0.9
+
+#These might be utilized later to get OpenAPI specs integrated in the docs
+#sphinxcontrib-openapi
+#sphinxcontrib-redoc
+# Required by sphinxcontrib-redoc (provides pkg_resources)
+setuptools>=68
+
+# Helpful for modern builds (sdist/wheel)
+wheel
