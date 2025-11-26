@@ -25,7 +25,7 @@ When to use
     format, "", ""
     include-entry-date, "", ""
     name(required), "", "Yes"
-    office, "see :ref:`def-office", ""
+    office, "see :ref:`def-office`", ""
     page, ":ref:`def-page`", ""
     page-size, ":ref:`def-page-size`", ""
     timezone, ":ref:`def-timezone`", ""
