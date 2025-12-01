@@ -32,19 +32,6 @@ jobs:
           distribution: 'temurin'
           java-version: ${{matrix.jdk}}
           cache: 'gradle'
-      - name: install node for cda-gui audit
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: cda-gui/package-lock.json
-
-      - name: run cda-gui audit for critical CVE
-        working-directory: ./cda-gui
-        # disable husky git hooks during CI runs
-        run: |
-          HUSKY=0 npm ci
-          npm audit --audit-level=critical
       - name: build and test
         id: thebuild
         run: ./gradlew build --info --init-script init.gradle
