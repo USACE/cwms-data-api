@@ -9,7 +9,6 @@ import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.helpers.DateUtils;
 
 import java.sql.Connection;
-import java.util.*;
 
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.countDistinct;
@@ -34,9 +33,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheStats;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
-import cwms.cda.data.dao.rsql.FieldResolver;
-import cwms.cda.data.dao.rsql.MapFieldResolver;
-import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.RecentValue;
@@ -47,12 +43,8 @@ import cwms.cda.data.dto.TsvDqu;
 import cwms.cda.data.dto.TsvId;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
-import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
-import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
-import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.xml.XMLv1;
-import cwms.cda.helpers.DateUtils;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.SQLException;
@@ -72,6 +64,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -107,7 +100,6 @@ import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
@@ -445,7 +437,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             // Fetch vertical datum info separately only when needed
             VerticalDatumInfo verticalDatumInfo = null;
-            if (parmPart != null && shouldFetchVerticalDatum(parmPart)) {
+            if (shouldFetchVerticalDatum(parmPart)) {
                     verticalDatumInfo = fetchVerticalDatumInfoSeparately( locPart, units, office);
             }
 
@@ -1455,9 +1447,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public void create(TimeSeries input,
                        boolean createAsLrts, StoreRule storeRule, boolean overrideProtection, VerticalDatum vd) {
 
-        int intervalForward = 0;
-        int intervalBackward = 0;
-        boolean activeFlag = true;
         Timestamp versionDate;
         if (input.getVersionDate() != null) {
             versionDate = Timestamp.from(input.getVersionDate().toInstant());
@@ -1492,10 +1481,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
      * @param targetDatum The desired ver
      * @param dslContext
      * @param cr
-     * @throws Throwable
      */
-    private void withDefaultDatum(@Nullable VerticalDatum targetDatum, DSLContext dslContext, ConnectionRunnable cr) throws Throwable {
-        final String defaultVertDatum = CWMS_LOC_PACKAGE.call_GET_DEFAULT_VERTICAL_DATUM(dslContext.configuration());
+    private void withDefaultDatum(@Nullable VerticalDatum targetDatum, DSLContext dslContext, ConnectionRunnable cr) {
+        String defaultVertDatum = CWMS_LOC_PACKAGE.call_GET_DEFAULT_VERTICAL_DATUM(dslContext.configuration());
         String targetName = (targetDatum != null) ? targetDatum.toString() : null;
         boolean changeDefaultDatum = !Objects.equals(targetDatum, defaultVertDatum);
         try {
@@ -1535,23 +1523,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 versionDate, input.getValues(), createAsLrts, replaceAll, overrideProtection));
     }
 
-
-    /**
-     *
-     * @param dslContext A DSLContext that is already in the correct office
-     * @param officeId
-     * @param tsId
-     * @param units
-     * @param versionDate
-     * @param values
-     * @param createAsLrts
-     * @param storeRule
-     * @param overrideProtection
-     * @throws SQLException
-     */
     private void store(DSLContext dslContext, String officeId, String tsId, String units,
                        Timestamp versionDate, List<TimeSeries.Record> values, boolean createAsLrts,
-                       StoreRule storeRule, boolean overrideProtection) throws SQLException {
+                       StoreRule storeRule, boolean overrideProtection) {
 
         final ZTSV_ARRAY tsvArray = new ZTSV_ARRAY();
 

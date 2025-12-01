@@ -1840,8 +1840,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK));
 
 
-        System.out.println("Data has been inserted for " + location);
-
         // 1209654000000 as ms == Thursday, May 1, 2008 3:00:00 PM
 
         // get it back
@@ -1865,7 +1863,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
 
-        System.out.println(validatableResponse.extract().asString());
  // verify that there is vertical-datum-info in the response.
         validatableResponse.body("vertical-datum-info", notNullValue())
                 .body("vertical-datum-info.location", equalTo(location))
@@ -1881,16 +1878,15 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(UNIT, "m")
                 .queryParam(NAME, ts.get(NAME).asText())
                 .queryParam(BEGIN, firstPoint)
-                .when()
+            .when()
                 .redirects().follow(true)
                 .redirects().max(3)
                 .get("/timeseries/")
-                .then()
+            .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
+            .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
 
-        System.out.println(validatableResponse.extract().asString());
         // verify that there is vertical-datum-info in the response.
         validatableResponse.body("vertical-datum-info", notNullValue())
                 .body("vertical-datum-info.location", equalTo(location))
@@ -1907,16 +1903,15 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(NAME, ts.get(NAME).asText())
                 .queryParam(BEGIN, firstPoint)
                 .queryParam(DATUM, "NAVD88")
-                .when()
+            .when()
                 .redirects().follow(true)
                 .redirects().max(3)
                 .get("/timeseries/")
-                .then()
+            .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
+            .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
 
-        System.out.println(validatableResponse.extract().asString());
         // verify that there is vertical-datum-info in the response.
         validatableResponse.body("vertical-datum-info", notNullValue())
                 .body("vertical-datum-info.location", equalTo(location))
@@ -1940,13 +1935,13 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(NAME, ts.get(NAME).asText())
                 .queryParam(BEGIN, firstPoint)
                 .queryParam(DATUM, "NGVD29")
-                .when()
+            .when()
                 .redirects().follow(true)
                 .redirects().max(3)
                 .get("/timeseries/")
-                .then()
+            .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
+            .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
         // verify that there is vertical-datum-info in the response.
         validatableResponseConverted.body("vertical-datum-info", notNullValue())
@@ -2016,6 +2011,10 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
     //
     @Test
     void test_create_without_vertical_datum_info() throws Exception {
+        if(getSchemaVersion() < SCHEMA_VERSION.LATEST_DEV.numeric())
+        {
+            return;
+        }
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
@@ -2084,7 +2083,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
         // GET after scenario 1 and verify values equal input (NAVD88 native)
         ValidatableResponse vr1 = doGet.get();
-        System.out.println("1:" + vr1.extract().asString());
 
         /* Response includes
         "vertical-datum-info": {
@@ -2130,7 +2128,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
         // GET after scenario 2 and verify values equal input; also capture NGVD29 offset
         ValidatableResponse vr2 = doGet.get();
-        System.out.println("2:" + vr2.extract().asString());
         vr2.body("values.size()", equalTo(inputValues.size()));
         for (int i = 0; i < inputValues.size(); i++) {
             vr2.body("values[" + i + "][1]", floatCloseTo(inputValues.get(i), 1e-6));
@@ -2178,7 +2175,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
         // GET after scenario 3 and verify the conversion was applied
         ValidatableResponse vr3 = doGet.get();
-        System.out.println("3:" + vr3.extract().asString());
         vr3.body("values.size()", equalTo(expectedNavd88.size()));
         for (int i = 0; i < expectedNavd88.size(); i++) {
             vr3.body("values[" + i + "][1]", floatCloseTo(expectedNavd88.get(i), 1e-4));

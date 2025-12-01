@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class TimeSeriesVerticalDatumConverter {
 
@@ -17,7 +18,8 @@ public final class TimeSeriesVerticalDatumConverter {
     }
 
     public static TimeSeries convertToVerticalDatum(TimeSeries originalTimeSeries, VerticalDatum convertTo) {
-        if(originalTimeSeries.getVerticalDatumInfo() == null || Objects.equals(convertTo, getVerticalDatum(originalTimeSeries))) {
+        VerticalDatum vd = getVerticalDatum(originalTimeSeries).orElse(convertTo);
+        if(Objects.equals(convertTo, vd)) {
             return originalTimeSeries; //no conversion needed
         }
         TimeSeries retVal = originalTimeSeries;
@@ -57,24 +59,17 @@ public final class TimeSeriesVerticalDatumConverter {
         return newValues;
     }
 
-    private static VerticalDatum getVerticalDatum(@Nullable TimeSeries timeSeries) {
-
-        VerticalDatum retVal = null;
-        if (timeSeries != null) {
-            VerticalDatumInfo vdi = timeSeries.getVerticalDatumInfo();
-            if (vdi != null) {
-                String nativeDatum = vdi.getNativeDatum();
-                if (nativeDatum != null && !nativeDatum.isEmpty()) {
-                    if (nativeDatum.equalsIgnoreCase("OTHER")) {
+    public static Optional<VerticalDatum> getVerticalDatum(TimeSeries timeSeries) {
+        return Optional.ofNullable(timeSeries)
+                .map(TimeSeries::getVerticalDatumInfo)
+                .map(VerticalDatumInfo::getNativeDatum)
+                .filter(s -> !s.isEmpty())
+                .map(s -> {
+                    if (s.equalsIgnoreCase(VerticalDatum.OTHER.toString())) {
                         throw new IllegalArgumentException("Vertical Datum of OTHER is not currently supported.");
-                    } else {
-                        retVal = VerticalDatum.getVerticalDatum(nativeDatum);
                     }
-                }
-            }
-        }
-
-        return retVal;
+                    return VerticalDatum.getVerticalDatum(s);
+                });
     }
 
 }

@@ -18,7 +18,6 @@ import cwms.cda.data.dao.TimeSeriesRequestParameters;
 import cwms.cda.data.dao.TimeSeriesVerticalDatumConverter;
 import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.TimeSeries;
-import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
@@ -47,7 +46,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
@@ -188,7 +186,7 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
 
-            vd = getVerticalDatum(timeSeries, vd);
+            vd = TimeSeriesVerticalDatumConverter.getVerticalDatum(timeSeries).orElse(vd);
 
             dao.create(timeSeries, createAsLrts, storeRule, overrideProtection, vd);
             ctx.status(HttpServletResponse.SC_OK);
@@ -197,26 +195,6 @@ public class TimeSeriesController implements CrudHandler {
             logger.log(Level.SEVERE, re.toString(), ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-    }
-
-    @Nullable
-    private static VerticalDatum getVerticalDatum(@Nullable TimeSeries timeSeries, @Nullable VerticalDatum vd) {
-
-        if (timeSeries != null) {
-            VerticalDatumInfo vdi = timeSeries.getVerticalDatumInfo();
-            if (vdi != null) {
-                String nativeDatum = vdi.getNativeDatum();
-                if (nativeDatum != null && !nativeDatum.isEmpty()) {
-                    if (nativeDatum.equalsIgnoreCase("OTHER")) {
-                        throw new IllegalArgumentException("Vertical Datum of OTHER is not currently supported.");
-                    } else {
-                        vd = VerticalDatum.getVerticalDatum(nativeDatum);
-                    }
-                }
-            }
-        }
-
-        return vd;
     }
 
     protected DSLContext getDslContext(Context ctx) {
@@ -623,7 +601,7 @@ public class TimeSeriesController implements CrudHandler {
 
             VerticalDatum vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
                     .getOrDefault(null);
-            vd = getVerticalDatum(timeSeries, vd);
+            vd = TimeSeriesVerticalDatumConverter.getVerticalDatum(timeSeries).orElse(vd);
 
             dao.store(timeSeries, createAsLrts, storeRule, overrideProtection, vd);
 
