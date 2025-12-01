@@ -65,7 +65,7 @@ export default function LocationCard({ location }) {
           </p>
           <p className="mb-1">
             <strong>Vertical Datum:</strong> {verticalDatum} <br />
-            </p>
+          </p>
           <p className="mb-1 flex items-center gap-1">
             <MdLocationCity />
             <strong>Nearest City:</strong> {nearestCity}
@@ -90,7 +90,6 @@ export default function LocationCard({ location }) {
     </UsaceBox>
   );
 }
-
 
 LocationCard.propTypes = {
   location: PropTypes.shape({
