@@ -3,7 +3,7 @@ name: CDA Web GUI NPM Audit (CVE)
 on:
   push:
     branches:
-      - main
+      - develop
     pull_request:
       branches:
         - develop
