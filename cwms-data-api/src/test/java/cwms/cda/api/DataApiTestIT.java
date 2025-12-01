@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2025 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,6 @@ import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import com.google.common.flogger.FluentLogger;
 
-import cwms.cda.data.dao.Dao;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
 import cwms.cda.data.dao.basin.BasinDao;
@@ -554,14 +553,15 @@ public class DataApiTestIT {
             logger.atInfo().log("No groups to cleanup.");
             return;
         }
-        logger.atInfo().log("Cleaning up groups test did not remove.");
+        logger.atInfo().log("Cleaning up groups that tests did not remove.");
         CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
         cwmsDb.connection(c -> {
-            try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_group(?,'T',?); end;")) {
+            try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_group(?, ?,'T',?); end;")) {
                 for (LocationGroup g : groupsCreated) {
                     delGroup.clearParameters();
-                    delGroup.setString(1, g.getId());
-                    delGroup.setString(2, g.getOfficeId());
+                    delGroup.setString(1, g.getLocationCategory().getId());
+                    delGroup.setString(2, g.getId());
+                    delGroup.setString(3, g.getOfficeId());
                     delGroup.executeUpdate();
                 }
             } catch (SQLException ex) {
