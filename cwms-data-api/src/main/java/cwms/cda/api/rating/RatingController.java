@@ -187,8 +187,7 @@ public class RatingController implements CrudHandler {
         } else {
             throw new IOException("Unexpected format:" + contentType);
         }
-        if(!storeTemplate)
-        {
+        if (!storeTemplate) {
             retval = removeTemplate(retval);
         }
         return retval;
@@ -369,7 +368,8 @@ public class RatingController implements CrudHandler {
                 @OpenApiResponse(status = STATUS_200, content = {
                     @OpenApiContent(type = Formats.JSONV2),
                     @OpenApiContent(type = Formats.XMLV2)})},
-            description = "Returns CWMS Rating Data",
+            description = "Returns CWMS Rating Data. Supports accept header formatting. "
+                + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
             tags = {TAG})
 
     @Override
