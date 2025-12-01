@@ -1,0 +1,37 @@
+name: CDA Web GUI NPM Audit (CVE)
+
+on:
+  push:
+    branches:
+      - develop
+    pull_request:
+      branches:
+        - develop
+    # Only run when relevant files change (i.e. packages are bumped into new NPM versions)
+    paths:
+      - "cda-gui/**"
+      - ".github/workflows/web-gui-*.yml"
+
+  # Allow running audits adhoc via "run task" in the UI
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install node for cda-gui audit
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: cda-gui/package-lock.json
+
+      - name: run cda-gui audit for critical CVE
+        working-directory: ./cda-gui
+        # disable husky git hooks during CI runs
+        run: |
+          HUSKY=0 npm ci
+          npm audit --audit-level=critical

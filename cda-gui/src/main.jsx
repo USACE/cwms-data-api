@@ -45,7 +45,7 @@ const router = createBrowserRouter(
       ],
     },
   ],
-  { basename: "/cwms-data" }
+  { basename: "/cwms-data" },
 );
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -55,5 +55,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <RouterProvider router={router} />
       </LinkProvider>
     </QueryClientProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );
