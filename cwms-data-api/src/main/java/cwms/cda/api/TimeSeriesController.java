@@ -1,19 +1,61 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.CREATE_AS_LRTS;
+import static cwms.cda.api.Controllers.CURSOR;
+import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.END_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.FORMAT;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.INCLUDE_ENTRY_DATE;
+import static cwms.cda.api.Controllers.MAX_VERSION;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.STORE_RULE;
+import static cwms.cda.api.Controllers.TIMESERIES;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.UNITS;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.queryParamAsZdt;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.requiredZdt;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dao.TimeSeriesDeleteOptions;
 import cwms.cda.data.dao.TimeSeriesRequestParameters;
+import cwms.cda.data.dao.TimeSeriesVerticalDatumConverter;
+import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -118,6 +160,7 @@ public class TimeSeriesController implements CrudHandler {
 
     static {
         JavalinValidation.register(StoreRule.class, StoreRule::getStoreRule);
+        JavalinValidation.register(VerticalDatum.class, VerticalDatum::getVerticalDatum);
     }
 
     private Timer.Context markAndTime(String subject) {
@@ -147,7 +190,16 @@ public class TimeSeriesController implements CrudHandler {
                 @OpenApiParam(name = STORE_RULE, type = StoreRule.class,  description = STORE_RULE_DESC),
                 @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description = "A flag "
                         + "to ignore the protected data quality when storing data. 'True' or 'False'"
-                        + ", default is " + TimeSeriesDaoImpl.OVERRIDE_PROTECTION)
+                        + ", default is " + TimeSeriesDaoImpl.OVERRIDE_PROTECTION),
+                @OpenApiParam(name = DATUM, type = VerticalDatum.class, description = "If the provided "
+                        + "time-series includes an explicit vertical-datum-info attribute "
+                        + "then it is assumed that the data is in the datum specified by the vertical-datum-info. "
+                        + "If the input timeseries does not include vertical-datum-info and "
+                        + "this parameter is not provided it is assumed that the data is in the as-stored "
+                        + "datum and no conversion is necessary.  "
+                        + "If the input timeseries does not include vertical-datum-info and "
+                        + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
+                        + "and should be converted to the as-stored datum before being saved.")
             },
             method = HttpMethod.POST,
             path = "/timeseries",
@@ -162,12 +214,18 @@ public class TimeSeriesController implements CrudHandler {
         boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)
                 .getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
+        VerticalDatum vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
+                .getOrDefault(null);
+
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
-            dao.create(timeSeries, createAsLrts, storeRule, overrideProtection);
+
+            vd = TimeSeriesVerticalDatumConverter.getVerticalDatum(timeSeries).orElse(vd);
+
+            dao.create(timeSeries, createAsLrts, storeRule, overrideProtection, vd);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
             CdaError re = new CdaError("Internal Error");
@@ -435,11 +493,6 @@ public class TimeSeriesController implements CrudHandler {
 
             if (version != null && version.equals("2")) {
 
-                if (datum != null) {
-                    throw new IllegalArgumentException(String.format("Datum is not supported for:%s and %s",
-                            Formats.JSONV2, Formats.XMLV2));
-                }
-
                 String office = requiredParam(ctx, OFFICE);
                 TimeSeriesRequestParameters requestParameters = new TimeSeriesRequestParameters.Builder()
                         .withNames(names)
@@ -452,6 +505,12 @@ public class TimeSeriesController implements CrudHandler {
                         .withIncludeEntryDate(includeEntryDate)
                         .build();
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters);
+
+                if(datum != null) { //this will be null for non-elevation ts
+                    // user has requested a specific vertical datum
+                    VerticalDatum vd = VerticalDatum.valueOf(datum);  // the users request
+                    ts = TimeSeriesVerticalDatumConverter.convertToVerticalDatum(ts, vd);
+                }
 
                 results = Formats.format(contentType, ts);
 
@@ -482,6 +541,11 @@ public class TimeSeriesController implements CrudHandler {
             }
             addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
+        } catch (NotFoundException e) {
+            CdaError re = new CdaError("Not found.");
+            logger.log(Level.WARNING, re.toString(), e);
+            ctx.status(HttpServletResponse.SC_NOT_FOUND);
+            ctx.json(re);
         } catch (IllegalArgumentException ex) {
             CdaError re = new CdaError("Invalid arguments supplied");
             logger.log(Level.SEVERE, re.toString(), ex);
@@ -542,7 +606,16 @@ public class TimeSeriesController implements CrudHandler {
                 @OpenApiParam(name = CREATE_AS_LRTS, type = Boolean.class, description = ""),
                 @OpenApiParam(name = STORE_RULE,  type = StoreRule.class, description = STORE_RULE_DESC),
                 @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description =
-                        "A flag to ignore the protected data quality when storing data.  \"'true' or 'false'\"")
+                        "A flag to ignore the protected data quality when storing data.  \"'true' or 'false'\""),
+                @OpenApiParam(name = DATUM, type = VerticalDatum.class, description = "If the provided "
+                        + "time-series includes an explicit vertical-datum-info attribute "
+                        + "then it is assumed that the data is in the datum specified by the vertical-datum-info. "
+                        + "If the input timeseries does not include vertical-datum-info and "
+                        + "this parameter is not provided it is assumed that the data is in the as-stored "
+                        + "datum and no conversion is necessary.  "
+                        + "If the input timeseries does not include vertical-datum-info and "
+                        + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
+                        + "and should be converted to the as-stored datum before being saved.")
             },
             method = HttpMethod.PATCH,
             path = "/timeseries/{timeseries}",
@@ -563,7 +636,11 @@ public class TimeSeriesController implements CrudHandler {
             boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)
                     .getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
-            dao.store(timeSeries, createAsLrts, storeRule, overrideProtection);
+            VerticalDatum vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
+                    .getOrDefault(null);
+            vd = TimeSeriesVerticalDatumConverter.getVerticalDatum(timeSeries).orElse(vd);
+
+            dao.store(timeSeries, createAsLrts, storeRule, overrideProtection, vd);
 
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
