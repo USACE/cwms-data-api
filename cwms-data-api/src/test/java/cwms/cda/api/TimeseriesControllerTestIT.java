@@ -1221,7 +1221,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_v2_cant_datum() throws Exception {
+    void test_v2_can_datum() throws Exception {
         InputStream resource = this.getClass().getResourceAsStream(
                 "/cwms/cda/api/lrl/1day_offset.json");
         assertNotNull(resource);
@@ -1253,7 +1253,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .statusCode(is(HttpServletResponse.SC_OK))
         ;
     }
 
