@@ -17,12 +17,12 @@ public interface TimeSeriesDao {
     void create(TimeSeries input);
 
     void create(TimeSeries input,
-                boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection);
+                boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection, VerticalDatum vd);
 
     void store(TimeSeries timeSeries, Timestamp versionDate);
 
     void store(TimeSeries timeSeries, boolean createAsLrts,
-               StoreRule replaceAll, boolean overrideProtection);
+               StoreRule replaceAll, boolean overrideProtection, VerticalDatum vd);
 
     void delete(String officeId, String tsId, TimeSeriesDeleteOptions options);
 

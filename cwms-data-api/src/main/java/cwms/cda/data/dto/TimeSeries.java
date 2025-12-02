@@ -244,6 +244,12 @@ public class TimeSeries extends CwmsDTOPaginated {
         }
     }
 
+    public TimeSeries withValues(List<Record> values) {
+        this.values.clear();
+        this.values.addAll(values);
+        return this;
+    }
+
     public static List<Column> getColumnDescriptor() {
         List<Column> columns = new ArrayList<>();
         for (Field f: Record.class.getDeclaredFields()) {

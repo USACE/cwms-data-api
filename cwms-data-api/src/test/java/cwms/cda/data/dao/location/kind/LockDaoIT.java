@@ -433,7 +433,7 @@ final class LockDaoIT extends ProjectStructureIT {
 
     private Location buildTestLocation() {
         return new Location.Builder("TEST_LOCATION2", "LOCK", ZoneId.of("UTC"),
-            50.0, 50.0, "NVGD29", "SPK")
+            50.0, 50.0, "NGVD29", "SPK")
             .withElevation(10.0)
             .withElevationUnits("ft")
             .withLocationType("SITE")
