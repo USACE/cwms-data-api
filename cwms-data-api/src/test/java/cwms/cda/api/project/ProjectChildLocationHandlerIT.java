@@ -180,7 +180,7 @@ public class ProjectChildLocationHandlerIT extends DataApiTestIT {
 
     private Location buildTestLocation(String office, String name) {
         return new Location.Builder(name, "EMBANKMENT", ZoneId.of("UTC"),
-                50.0, 50.0, "NVGD29", office)
+                50.0, 50.0, "NGVD29", office)
                 .withElevation(10.0)
                 .withElevationUnits("ft")
                 .withLocationType("SITE")
