@@ -127,7 +127,7 @@ services:
 
   # Proxy for HTTPS for OpenID
   traefik:
-    image: "traefik:v3.3.3"
+    image: "traefik:v3.6.2"
     ports:
       - "${APP_PORT:-8081}:80"
     expose:
