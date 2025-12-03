@@ -267,7 +267,8 @@ time series retrieval.
 Composite Time Series Definition
 ================================
 
-.. code-block:: jsonc
+.. code-block:: json
+    :caption: Schema
 
     {
     "office": "<string>",   
@@ -278,7 +279,7 @@ Composite Time Series Definition
     "members": [
         {
             "time-series-id": "TS ID for this range",
-            "start": "start date of this", // Inclusive
+            "start": "start date of this", // Inclusive, ISO 8601 Full
             "end": "end date of this range", // Exclusive, can be null
             "notes": "text",            
         }
@@ -286,6 +287,38 @@ Composite Time Series Definition
     // array above *should* be sorted by start when provided to user.
     }
 
+
+.. code-block:: json
+    :caption: Example (Using Option 5)
+
+    // NOTE: While a specific location was used, the dates and time series are arbitrary and may not exist.
+    {
+    "office": "SPK",   
+    "name": "Alder Springs.Precip-Cumulative.Inst.0.0.Best",
+    "is-authoritative": true,
+    "seasonal-information": null, // This location's measurement is not seasonal
+    "members": [
+        {
+            "time-series-id": "Alder Springs.Precip-Cumulative.Inst.1DayLocal.0.Best",
+            "start": "1948-04-01T14:14:00Z", // Inclusive
+            "end": null, // Exclusive, can be null
+            "notes": "Drum Chart Recorder, Catch Tube",
+        },
+        {
+            "time-series-id": "Alder Springs.Precip-Cumulative.Inst.1Hour.0.Best",
+            "start": "1962-04-01T14:14:00Z", // Inclusive
+            "end": null, // Exclusive, can be null
+            "notes": "Punched Tape Recorder, Catch Tube",
+        },
+        {
+            "time-series-id": "Alder Springs.Precip-Cumulative.Inst.1DayLocal.0.Best",
+            "start": "1990-04-01T14:14:00Z", // Inclusive
+            "end": null, // Exclusive, can be null
+            "notes": "Digital Logger, Catch Tube",
+        },
+    ]
+    // array above *WILL* be sorted by start when provided to user.
+    }
 
 Operations required:
 --------------------
