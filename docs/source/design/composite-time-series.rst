@@ -58,15 +58,15 @@ only one of which is valid for certain conditions.
 Period of Record
 ~~~~~~~~~~~~~~~~
 
-The Period of Record (POR, period-of-record) for a measurement (such as the Stage at a river or the pool elevation of a 
-dam) is *ALL* available (time,value) pairs since recording began until either recording as ended or the most recent available
-regardless of changes in intervals and, if unavoidable changes in averaging.
+The Period of Record (POR, period-of-record) for a measurement (such as the Stage at a river or the pool elevation of 
+a dam) is ALL available (time,value) pairs since recording began until recording has ended or the most recent available 
+pair, regardless of changes in intervals or unavoidable changes in averaging.
 
 The POR is the "best" available combined dataset that would be desired for studies requiring all values for a given
 location.
 
 However, "best" is subjective. The POR of data used to make a given decision may not be the same as data that has formal
-validation. Additionally having a POR of the raw, unedited data may be what 
+validation. Additionally having a POR of the raw, unedited data, may be what a user studying data validation requires.
 
 
 Naming Option 3, below, is selected for the path forward. A future design document will develop appropriate naming
@@ -78,7 +78,7 @@ Authoritative
 An authoritative time series is a period-of-record time series with the additional constraint that is contains the best
 official data. In other words the data that is determined to be "correct" by appropriate methods of validation.
 
-The data provide will have validated or corrected after events when additional information become available.
+The data provide will have been validated or corrected after events when additional information become available.
 The data may not match what was used at the moment a decision was made.
 
 .. NOTE::
@@ -127,9 +127,11 @@ Axioms
    #. Each member *MUST* have a start date
    #. The last member *MAY* have an end date indicating no more data will be available for this location and measure.
    #. Data may have gaps, an explanation range *SHOULD* be provided. For data with regular gaps, e.g. season gauges
-      a description should be provided in the notes. A Link to a Location Level can be provided if the timing is well known.
-#. The members of a composite time measure the same thing. (e.g. all members are Elevation, not some are elevation and some are stage.)
-#. The interval and duration of each member *MAY* be different.
+      a description should be provided in the notes. 
+      Example: A Link to a Location Level can be provided if the seasonal timing is well known. This would let users
+      of the data now if the gap is missing data "an error" or if just out-of-service.
+#. The members of a composite time series measure the same thing. (e.g. all members are Elevation, not some are elevation and some are stage.)
+#. The parameter type (e.g. Instantaneous; Average; etc), interval, and duration of each member *MAY* be different.
 
 
 Time Series Naming
@@ -296,6 +298,17 @@ Operations required:
 * Update member
 * Delete
 
+
+Events Requires:
+----------------
+
+* Composite Time Series created
+* Composite Time Series deleted
+* Composite Time Series modified
+  * Member added
+  * Member modified
+  * Member removed
+
 Immutable fields:
 
 Fields marked immutable above cannot be updated. At this time no field are thought to be immutable.
@@ -363,7 +376,8 @@ Error handling and other conditions.
 Versioned (date) time series
 ----------------------------
 
-It is an error to specify a Version (date) when requesting composite data.
+It is an error to specify a Version (date) when requesting composite data. Only the latest data of each member will
+be returned.
 
 Datum conversions
 -----------------
