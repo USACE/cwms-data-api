@@ -363,6 +363,7 @@ public class ForecastSpecControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("source-entity-id", equalTo("USGS"))
+            .body("time-series-ids.size()", equalTo(3))
         ;
     }
 
