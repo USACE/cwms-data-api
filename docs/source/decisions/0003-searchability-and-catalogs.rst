@@ -14,11 +14,11 @@ Additional Information
 Catalog - a complete list of items, for examples of things that people can look at or buy [3]
 
 By having a well defined structure of information users can more easily discover what they are looking for. While the
-Sagger-UI, if used, presented all of the types of data that can be found. The `catalog` for each type should present
+Swagger-UI, if used, presented all of the types of data that can be found. The `catalog` for each type should present
 a clear way to find the available data of each type.
 
 The catalog of each data set would include only metadata associated with each data type. For example a time series
-catalog would include support to discover primary timeseries names, aliases, extends, and the like but not actual time
+catalog would include support to discover primary timeseries names, aliases, extents, and the like but not actual time
 series data.
 
 However, for data that are primarily metadata, such as Locations, they would be one and the same.

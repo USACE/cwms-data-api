@@ -18,6 +18,6 @@ Some decisions may also be a proposal and marked appropriately.
     :caption: Decisions
 
     Api Versioning <./0001-api-versioning.rst>
-    Data Versioning <./0002-data-versioning.rst>
+    Data Versioning <./0002-data-versioning.rst> (rejected, remains for historical context.)
     Catalogs and Search <./0003-searchability-and-catalogs.rst>
     Versioning <./0004-versioning.rst>

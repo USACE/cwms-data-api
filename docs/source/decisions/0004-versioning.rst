@@ -72,6 +72,8 @@ an easier time keeping existing behavior while also allowing more drastic improv
 Decision Status
 ===============
 
+Status: accepted
+
 [comment:] <> (Status: request for comments | proposed | accepted | rejected | deprecated | superseded)
 
 References
