@@ -267,7 +267,7 @@ time series retrieval.
 Composite Time Series Definition
 ================================
 
-.. code-block::jsonc
+.. code-block:: jsonc
 
     {
     "office": "<string>",   

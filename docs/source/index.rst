@@ -45,8 +45,9 @@ Welcome to CWMS Data API documentation!
 
 .. toctree::
    :maxdepth: 1
-   :caption: Design
+   :caption: Design Documents
    
    Design <./introduction/design.rst>
    Decision Records <./decisions/index.rst>
    Design Documents <./design/index.rst>
+  
