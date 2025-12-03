@@ -6,9 +6,14 @@ import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.helpers.DatabaseHelpers;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ResponseBody;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -398,22 +403,28 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         // Step 1)
         // Try to create the binary time series without LRTS header set
+        
+        var assertThat = 
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header("Authorization", user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/binary/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat();
 
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .contentType(Formats.JSONV2)
-            .body(tsData)
-            .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, false)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/binary/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
+            assertThat.statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+        } else {
+            assertThat.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        }
 
         // Step 2)
         // Create the binary time series
