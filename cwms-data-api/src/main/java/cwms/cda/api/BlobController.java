@@ -134,11 +134,9 @@ public class BlobController implements CrudHandler {
                 @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
                     + "is ignored and the value of the query parameter is used.   "
                     + "Note: this query parameter is necessary for id's that contain '/' or other special "
-                    + "characters.  Because of abuse even properly escaped '/' in url paths are blocked.  "
-                    + "When using this query parameter a valid path parameter must still be provided for the request"
-                    + " to be properly routed.  If your blob id contains '/' you can't specify the blob-id query "
-                    + "parameter and also specify the id path parameter because firewall and/or server rules will "
-                    + "deny the request even though you are specifying this override. \"ignored\" is suggested."),
+                    + "characters. This is due to limitations in path pattern matching. "
+                    + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                    + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -227,11 +225,9 @@ public class BlobController implements CrudHandler {
                 @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
                     + "is ignored and the value of the query parameter is used.   "
                     + "Note: this query parameter is necessary for id's that contain '/' or other special "
-                    + "characters.  Because of abuse even properly escaped '/' in url paths are blocked.  "
-                    + "When using this query parameter a valid path parameter must still be provided for the request"
-                    + " to be properly routed.  If your blob id contains '/' you can't specify the blob-id query "
-                    + "parameter and also specify the id path parameter because firewall and/or server rules will "
-                    + "deny the request even though you are specifying this override. \"ignored\" is suggested."),
+                    + "characters. This is due to limitations in path pattern matching. "
+                    + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                    + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
             method = HttpMethod.PATCH,
             tags = {TAG}
@@ -281,11 +277,9 @@ public class BlobController implements CrudHandler {
                 @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
                     + "is ignored and the value of the query parameter is used.   "
                     + "Note: this query parameter is necessary for id's that contain '/' or other special "
-                    + "characters.  Because of abuse even properly escaped '/' in url paths are blocked.  "
-                    + "When using this query parameter a valid path parameter must still be provided for the request"
-                    + " to be properly routed.  If your blob id contains '/' you can't specify the blob-id query "
-                    + "parameter and also specify the id path parameter because firewall and/or server rules will "
-                    + "deny the request even though you are specifying this override. \"ignored\" is suggested."),
+                    + "characters. This is due to limitations in path pattern matching. "
+                    + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                    + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
             method = HttpMethod.DELETE,
             tags = {TAG}
