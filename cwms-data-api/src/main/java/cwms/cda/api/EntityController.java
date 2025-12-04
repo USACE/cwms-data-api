@@ -1,8 +1,8 @@
 package cwms.cda.api;
 
+import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.EntityDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Entity;
@@ -19,274 +19,235 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-public class EntityController implements CrudHandler
-{
-    public static final Logger LOGGER = Logger.getLogger(EntityController.class.getName());
+public class EntityController implements CrudHandler {
     public static final String TAG = "Entity";
-
+    public static final Logger LOGGER = Logger.getLogger(EntityController.class.getName());
     private final MetricRegistry metrics;
+    private final Histogram requestResultSize;
 
 
-    public EntityController(MetricRegistry metrics)
-    {
+    public EntityController(MetricRegistry metrics) {
         this.metrics = metrics;
+        String className = this.getClass().getName();
+        requestResultSize = this.metrics.histogram(name(className, "results", "size"));
     }
 
-    private Timer.Context markAndTime(String subject)
-    {
+    private Timer.Context markAndTime(String subject) {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    // getAll() openApi setup
-        // Parent_id, category_id and entity_name are optional parameters, not sure about how to use/handle matchNullParents
-        // EntityDao, fromJooqEntityRecord() creates a CwmsId, which requires the office_id and name(entity_id)
     @OpenApi(
+            description = "Returns all CWMS Entity Data filtered by optional masks.",
             queryParams = {
-                    @OpenApiParam(name = EntityDao.OFFICE_ID, description = " office id, ex: SPK"),
-                    @OpenApiParam(name = EntityDao.ENTITY_ID, description = "ex: GOV or NWS"),
-                    @OpenApiParam(name = EntityDao.PARENT_ENTITY_ID, description = "ex: NOAA"),
-                    @OpenApiParam(name = CATEGORY_ID, description = "ex: GOV"),
-                    @OpenApiParam(name = EntityDao.ENTITY_NAME, description = "ex: National Weather Service")
-
+                    @OpenApiParam(name = OFFICE, description = "Office ID to filter entities (e.g., SPK). If omitted, " +
+                            "returns entities for all offices."),
+                    @OpenApiParam(name = ENTITY_ID, description = "Entity ID to filter by specific entity, If omitted, " +
+                            "returns all entities. (e.g., GOV or NWS)."),
+                    @OpenApiParam(name = PARENT_ENTITY_ID, description = "Parent Entity ID to filter entities " +
+                            "by parent (e.g., NOAA)."),
+                    @OpenApiParam(name = CATEGORY_ID, description = "Category ID to filter entities by category (e.g., GOV)."),
+                    @OpenApiParam(name = LONG_NAME, description = "Entity long name to filter entities " +
+                            "(e.g., National Weather Service)."),
+                    @OpenApiParam(name = MATCH_NULL_PARENTS, type = Boolean.class, description = "If true, include " +
+                            "entities with null parent IDs. Default is true.")
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            content = {
-                                    @OpenApiContent(isArray = true, from = Entity.class, type = Formats.JSON)}),
-                    //TODO: if its ok to return an empty array then don't need 404
-                    @OpenApiResponse(status = STATUS_404, description = "No matching entities found"),
-                    @OpenApiResponse(status = STATUS_400, description = "Invalid input or missing/invalid parameters"),
-                    @OpenApiResponse(status = STATUS_501, description = "Request format is not supported")
+                    @OpenApiResponse(status = STATUS_200, content = {
+                            @OpenApiContent(isArray = true, from = Entity.class, type = Formats.JSONV2)
+                    })
             },
-            description = "Returns all CWMS Entity Data filtered by optional masks.",
             tags = {TAG}
     )
 
-    // getAll() should only have errors if required fields are missing, verify: handled with requiredParam, no need to catch
     @Override
-    public void getAll(@NotNull Context ctx)
-    {
-        try (final Timer.Context ignored = markAndTime(GET_ALL))
-        {
+    public void getAll(@NotNull Context ctx) {
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
-            // Extract queryParams
-            String officeId = ctx.queryParam(EntityDao.OFFICE_ID);
-            String entityId = ctx.queryParam(EntityDao.ENTITY_ID);
-            String parentId = ctx.queryParam(EntityDao.PARENT_ENTITY_ID);
-            boolean matchNullParents = true; //TODO: how do I handle this variable?? tests show = true
+            String officeId = ctx.queryParam(OFFICE);
+            String entityId = ctx.queryParam(ENTITY_ID);
+            String parentId = ctx.queryParam(PARENT_ENTITY_ID);
+            Boolean matchNullParents = ctx.queryParamAsClass(MATCH_NULL_PARENTS, Boolean.class)
+                    .getOrDefault(true);
             String categoryId = ctx.queryParam(CATEGORY_ID);
-            String entityName = ctx.queryParam(EntityDao.ENTITY_NAME);
+            String entityName = ctx.queryParam(LONG_NAME);
 
-            // Instantiate DAO and call retrieveEntities
             EntityDao dao = new EntityDao(dsl);
             List<Entity> entities = dao.retrieveEntities(
                     officeId, entityId, parentId, matchNullParents, categoryId, entityName);
 
-            // Format response
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Entity.class);
             ctx.contentType(contentType.toString());
             String result = Formats.format(contentType, entities, Entity.class);
-
-            // Return result
-            if (entities.isEmpty())
-            {
-                ctx.status(HttpServletResponse.SC_NOT_FOUND);
-            } else
-            {
-                ctx.result(result);
-                ctx.status(HttpServletResponse.SC_OK);
-            }
-        } // no catch block //TODO: does it need to log error messages here?
-
+            ctx.result(result);
+            ctx.status(HttpServletResponse.SC_OK);
+            requestResultSize.update(result.length());
+        }
     }
 
-    // getOne() openApi setup
-    // CwmsId is required, which needs the office_id and name, which here is entity_id
     @OpenApi(
+            description = "Returns CWMS Entity data by entity id and office id.",
             pathParams = {
-                    @OpenApiParam(name = EntityDao.ENTITY_ID, required = true, description = "Specifies the entity " +
-                            "name as an id, example: NWS")
+                    @OpenApiParam(name = ENTITY_ID, required = true, description = "Specifies the Entity ID of the entity to be " +
+                            " retrieved. (e.g., NWS)."),
             },
             queryParams = {
-                    @OpenApiParam(name = EntityDao.OFFICE_ID, required = true, description = "Office id, ex: SPK")
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                            + "the entity to be retrieved. e.g., SPK)")
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            content = {
-                                    @OpenApiContent(from = Entity.class, type = Formats.JSON)}),
-                    @OpenApiResponse(status = STATUS_404, description = "Entity not found"),
-                    @OpenApiResponse(status = STATUS_400, description = "Missing Required parameter: office_id")
+                    @OpenApiResponse(status = STATUS_200, content = {
+                                    @OpenApiContent(from = Entity.class, type = Formats.JSONV2)
+                    })
             },
-            description = "Returns a single CWMS Entity by entity id and office id.",
             tags = {TAG}
     )
 
     @Override
-    public void getOne(@NotNull Context ctx, @NotNull String entityId)
-    {
-        try (final Timer.Context ignored = markAndTime(GET_ONE))
-        {
+    public void getOne(@NotNull Context ctx, @NotNull String entityId) {
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
-            // Extract required queryParams
-            String officeId = requiredParam(ctx, EntityDao.OFFICE_ID);
+            String officeId = requiredParam(ctx, OFFICE);
 
-            // build cwmsId and Instantiate DAO
             CwmsId cwmsId = new CwmsId.Builder()
                     .withOfficeId(officeId)
                     .withName(entityId)
                     .build();
 
             EntityDao dao = new EntityDao(dsl);
-            // throws a NotFoundException
-            try
-            {
-                Entity foundEntity = dao.retrieveEntity(cwmsId);
-                // format response
-                String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeader(formatHeader, Entity.class);
-                ctx.contentType(contentType.toString());
-                String result = Formats.format(contentType, foundEntity);
-                ctx.result(result);
-                ctx.status(HttpServletResponse.SC_OK);
-            } catch (NotFoundException e)
-            {
-                ctx.status(HttpServletResponse.SC_NOT_FOUND);
-            }
-
+            Entity foundEntity = dao.retrieveEntity(cwmsId);
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(formatHeader, Entity.class);
+            ctx.contentType(contentType.toString());
+            String result = Formats.format(contentType, foundEntity);
+            ctx.result(result);
+            ctx.status(HttpServletResponse.SC_OK);
+            requestResultSize.update(result.length());
         }
     }
 
-    // create() openApi setup
     @OpenApi(
-            description = "Create new Entity",
+            description = "Create CWMS Entity",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = Entity.class, type = Formats.JSON)
+                            @OpenApiContent(from = Entity.class, type = Formats.JSONV2)
                     },
                     required = true),
-            queryParams = {
-                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                            description = "Create will fail if provided entity ID already exists. Default: true")
+            responses = {
+                    @OpenApiResponse(status = STATUS_201, description = "Entity successfully stored to CWMS")
             },
             method = HttpMethod.POST,
-            path = "/entities",
             tags = {TAG}
     )
 
     @Override
-    public void create(@NotNull Context ctx)
-    {
-        try (final Timer.Context ignored = markAndTime(CREATE))
-        {
+    public void create(@NotNull Context ctx) {
+        try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Entity.class);
-            Entity entity = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Entity.class);
+            Entity entity = Formats.parseContent(contentType, ctx.body(), Entity.class);
             EntityDao dao = new EntityDao(dsl);
             dao.createEntity(entity);
             ctx.status(HttpServletResponse.SC_CREATED);
-
-
         }
     }
 
     // update() openApi setup
     @OpenApi(
-            description = "Update an existing Entity",
+            description = "Update an existing Entity.",
             requestBody = @OpenApiRequestBody(
-                    content = {@OpenApiContent(from = Entity.class, type = Formats.JSON)},
+                    content = {@OpenApiContent(from = Entity.class, type = Formats.JSONV2)},
                     required = true),
             pathParams = {
-                    @OpenApiParam(name = EntityDao.ENTITY_ID, required = true, description = "Specifies the entity " +
-                            "name as an id, example: NWS")
+                    @OpenApiParam(name = ENTITY_ID, required = true, description = "Specifies the entity ID of the " +
+                            " Entity to be updated. (e.g., NWS)")
+            },
+            queryParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office "+
+                            " of the entity to be updated. (e.g., SPK)")
             },
             method = HttpMethod.PATCH,
-            path = "/entity",
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_200, description = "Entity updated successfully"),
-                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of inputs provided"
-                    + "the entity was not found.")
+                    @OpenApiResponse(status = STATUS_200, description = "Entity updated successfully in CWMS"),
             }
     )
 
-    // throws exception, non specific
     @Override
-    public void update(@NotNull Context ctx, @NotNull String entityId)
-    {
-        try (final Timer.Context ignored = markAndTime(UPDATE))
-        {
+    public void update(@NotNull Context ctx, @NotNull String entityId) {
+        try (final Timer.Context ignored = markAndTime(UPDATE)) {
+            String officeId = requiredParam(ctx, OFFICE);
             DSLContext dsl = getDslContext(ctx);
-            String originalEntityId = ctx.queryParam(EntityDao.ENTITY_ID);
-
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Entity.class);
-//            Entity entity = Formats.parseContent(contentType, ctx.body(), Entity.class); //TODO: some classes use this??
             Entity entity = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Entity.class);
-
-            CwmsId entityCwmsId = entity.getId();
-            String officeId = ctx.queryParam(EntityDao.OFFICE_ID);
-
-            if (originalEntityId != null && originalEntityId.equals(entityId)) {
-                ctx.status(HttpServletResponse.SC_EXPECTATION_FAILED);
+            if (entity.getId() == null || entity.getId().getOfficeId() == null || entity.getId().getName() == null) {
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                ctx.result("Entity ID and Office ID must be provided in the request body.");
+                return;
             }
-
             EntityDao dao = new EntityDao(dsl);
+            // verify entity exists before updating
+            CwmsId id = new CwmsId.Builder()
+                    .withOfficeId(officeId)
+                    .withName(entityId)
+                    .build();
+            try {
+                dao.retrieveEntity(id);
+            } catch (Exception e) {
+                ctx.status(HttpServletResponse.SC_NOT_FOUND);
+                ctx.result("Entity not found for the given parameters.");
+                return;
+            }
             dao.updateEntity(entity);
             ctx.status(HttpServletResponse.SC_OK);
-
-            //TODO: need to verify what exception would be thrown here
-            //TODO: need to see how you verify that the update was successful
-
         }
     }
 
-    // delete() openApi setup
     @OpenApi(
-            description = "Deletes specified entity",
+            description = "Delete CWMS Entity.",
             pathParams = {
-                    @OpenApiParam(name = EntityDao.ENTITY_ID, required = true, description = "Specifies the entity " +
-                            "name as an id, example: NWS")
+                    @OpenApiParam(name = ENTITY_ID, required = true, description = "Specifies the entity ID " +
+                            "of the Entity to be deleted (e.g., NWS).")
+
             },
             queryParams = {
-                    @OpenApiParam(name = EntityDao.OFFICE_ID, description = "Office id, ex: SPK"),
-                    @OpenApiParam(name = "deleteChildren", type = Boolean.class, description = "Delete all children"
-                            + " of the entity")
-
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office "+
+                            " of the entity to be updated. (e.g., SPK)"),
+                    @OpenApiParam(name = CASCADE_DELETE, required = true, type = Boolean.class,
+                            description = "If true, also delete all descendant child entities.")
+            },
+            responses = {
+                    @OpenApiResponse(status = STATUS_204, description = "Entity deleted successfully"),
+                    @OpenApiResponse(status = STATUS_404, description = "Entity not found for the given parameters."),
             },
             method = HttpMethod.DELETE,
             tags = {TAG}
+
     )
 
-    // throws a notfoundexception if no entity id
     @Override
-    public void delete(@NotNull Context ctx, @NotNull String entityId)
-    {
-        try (final Timer.Context ignored = markAndTime(DELETE))
-        {
+    public void delete(@NotNull Context ctx, @NotNull String entityId) {
+        try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            String officeId = ctx.queryParam(EntityDao.OFFICE_ID);
-            boolean deleteAll = true; //TODO: need to figure out how this happens- when/how is the user asked to do this
-            // TODO: not sure you can delete just a child entity..
-            // build cwmsId and Instantiate DAO
+            String officeId = requiredParam(ctx, OFFICE);
+            Boolean deleteEntityAndChildren = requiredParamAs(ctx, CASCADE_DELETE, Boolean.class);
+
             CwmsId cwmsId = new CwmsId.Builder()
                     .withOfficeId(officeId)
                     .withName(entityId)
                     .build();
 
             EntityDao dao = new EntityDao(dsl);
-            dao.deleteEntity(cwmsId, deleteAll);
+            dao.deleteEntity(cwmsId, deleteEntityAndChildren);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
-
-
-
-
 }
