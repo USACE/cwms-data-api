@@ -151,7 +151,7 @@ public class BlobController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            String idQueryParam = ctx.queryParam(CLOB_ID);
+            String idQueryParam = ctx.queryParam(BLOB_ID);
             if (idQueryParam != null) {
                 blobId = idQueryParam;
             }
@@ -235,7 +235,7 @@ public class BlobController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
-            String idQueryParam = ctx.queryParam(CLOB_ID);
+            String idQueryParam = ctx.queryParam(BLOB_ID);
             if (idQueryParam != null) {
                 blobId = idQueryParam;
             }
@@ -287,7 +287,7 @@ public class BlobController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
-            String idQueryParam = ctx.queryParam(CLOB_ID);
+            String idQueryParam = ctx.queryParam(BLOB_ID);
             if (idQueryParam != null) {
                 blobId = idQueryParam;
             }
