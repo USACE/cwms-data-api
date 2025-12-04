@@ -148,22 +148,6 @@ public final class SeasonalLocationLevel extends LocationLevel {
 			withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
 		}
 
-		public Builder(JDomLocationLevelImpl copyFrom) {
-			super(copyFrom);
-			withInterpolateString(copyFrom.getInterpolateString());
-			withIntervalMinutes(copyFrom.getIntervalMinutes());
-			withIntervalMonths(copyFrom.getIntervalMonths());
-			Date intervalOriginDate = copyFrom.getIntervalOrigin();
-			if (intervalOriginDate != null) {
-				withIntervalOrigin(ZonedDateTime.ofInstant(intervalOriginDate.toInstant(),
-						ZoneId.of("UTC")));
-			}
-
-			withISeasonalValues(copyFrom.getSeasonalValues());
-
-			withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
-		}
-
 		public SeasonalLocationLevel.Builder withSeasonalValues(List<SeasonalValueBean> seasonalValues) {
 			this.seasonalValues = seasonalValues;
 			return this;

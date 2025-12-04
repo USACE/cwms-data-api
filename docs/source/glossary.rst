@@ -6,7 +6,8 @@ CDA Glossary
 General Terms
 -------------
 **API**:
-    An Application Programming Interface (API) is a set of rules and protocols that allows different software applications to communicate with each other.
+    An Application Programming Interface (API) is a set of rules and protocols that allows different software
+    applications to communicate with each other.
 
 **Client**:
     A client is a computer program or device that requests services or resources from a server.
@@ -15,7 +16,8 @@ General Terms
     A server is a computer program or device that provides services or resources to clients.
 
 **URL**:
-    A Uniform Resource Locator (URL) is a reference to a web resource that specifies its location on a computer network and the protocol used to access it.
+    A Uniform Resource Locator (URL) is a reference to a web resource that specifies its location on a computer network
+    and the protocol used to access it.
 
 **URI**:
     A Uniform Resource Identifier (URI) is a string of characters that identifies a resource on the internet.
@@ -31,10 +33,12 @@ CDA Glossary Terms
 ------------------
 
 **CWMS**: 
-    The Corps Water Management System (CWMS) is a comprehensive water management system used by the U.S. Army Corps of Engineers.
+    The Corps Water Management System (CWMS) is a comprehensive water management system used by the U.S. Army Corps
+    of Engineers.
 
 **Data API**:
-    A Data API is an Application Programming Interface that allows users to access and manipulate data from a database or other data source.
+    A Data API is an Application Programming Interface that allows users to access and manipulate data from a database
+    or other data source.
 
 **CDA**:
     The CWMS Data API (CDA) is an API that provides access to data from the Corps Water Management System.
@@ -49,7 +53,8 @@ CDA Glossary Terms
     A key is a unique identifier used for authentication and authorization purposes.
 
 **Base URL**:
-    The base URL is the starting point for a URL or URI, typically indicating the domain or server where the resource is located.
+    The base URL is the starting point for a URL or URI, typically indicating the domain or server where the resource
+    is located.
 
 **Client Library**:
     A client library is a set of pre-written code that simplifies the process of interacting with an API or service.
@@ -61,7 +66,8 @@ CDA Glossary Terms
     A contributor is a person who contributes code, documentation, or other resources to a software project.
 
 **GitHub**:
-    GitHub is a web-based platform for hosting and collaborating on software development projects using the Git version control system.
+    GitHub is a web-based platform for hosting and collaborating on software development projects using the Git version
+    control system.
 
 
 Hydrologic Terms
@@ -83,7 +89,8 @@ Hydrologic Terms
     Flood control involves the management of water resources to prevent or reduce the risk of flooding.
 
 **Water Quality**: 
-    Water quality refers to the chemical, physical, and biological characteristics of water, usually in respect to its suitability for a particular purpose.
+    Water quality refers to the chemical, physical, and biological characteristics of water, usually in respect to its
+    suitability for a particular purpose.
 
 **Watershed**: 
     A watershed is an area of land that separates waters flowing to different rivers, basins, or seas.
@@ -101,7 +108,8 @@ Hydrologic Terms
     Precipitation is any form of water - liquid or solid - falling from the sky, including rain, snow, sleet, and hail.
 
 **Runoff**: 
-    Runoff is the part of precipitation that flows over the land surface towards streams, rivers, or other bodies of water.
+    Runoff is the part of precipitation that flows over the land surface towards streams, rivers, or other bodies of
+    water.
 
 **Water Conservation**: 
     Water conservation involves the careful use and management of water resources to ensure their sustainability.
@@ -119,19 +127,22 @@ Hydrologic Terms
     Riparian refers to the interface between land and a river or stream.
 
 **Erosion**: 
-    Erosion is the process by which soil and rock are removed from the Earth's surface by wind, water flow, and other natural processes.
+    Erosion is the process by which soil and rock are removed from the Earth's surface by wind, water flow, and other
+    natural processes.
 
 **Levee**: 
     A levee is an embankment built to prevent the overflow of a river.
 
 **Dam**: 
-    A dam is a barrier constructed to hold back water and raise its level, forming a reservoir used to generate electricity or as a water supply.
+    A dam is a barrier constructed to hold back water and raise its level, forming a reservoir used to generate
+    electricity or as a water supply.
 
 **Water Table**: 
     The water table is the level below which the ground is saturated with water.
 
 **Groundwater**: 
-    Groundwater is the water present beneath Earth's surface in soil pore spaces and in the fractures of rock formations.
+    Groundwater is the water present beneath Earth's surface in soil pore spaces and in the fractures of rock
+    formations.
 
 **Surface Water**: 
     Surface water is water that collects on the surface of the ground, including rivers, lakes, and reservoirs.

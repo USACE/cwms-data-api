@@ -22,10 +22,7 @@ export default function TimeSeriesManager({
       <h4 className="text-md font-bold mb-2">TimeSeries</h4>
 
       {tsids.map((tsid) => (
-        <div
-          key={tsid}
-          className="flex items-center justify-between gap-2 mb-1"
-        >
+        <div key={tsid} className="flex items-center justify-between gap-2 mb-1">
           <span className="truncate text-sm">{tsid}</span>
           <div className="flex items-center gap-2">
             <button

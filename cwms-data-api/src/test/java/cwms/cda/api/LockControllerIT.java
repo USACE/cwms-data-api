@@ -116,7 +116,7 @@ final class LockControllerIT extends DataApiTestIT {
                     .withName("TEST_LOCATION3")
                     .withLocationKind("LOCK")
                     .withDescription("Test Lock")
-                    .withHorizontalDatum("NVGD29")
+                    .withHorizontalDatum("NGVD29")
                     .withTimeZoneName(ZoneId.of("UTC"))
                     .withOfficeId("SPK")
                     .withActive(true)

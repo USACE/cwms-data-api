@@ -25,7 +25,7 @@ export default function DataTabs({
           content: (
             <div
               key={`cwms-${tsids.join(
-                ","
+                ",",
               )}-${begin.toISOString()}-${end.toISOString()}`}
               className="relative z-10 bg-white"
             >

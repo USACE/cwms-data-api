@@ -99,7 +99,7 @@ class LocationTest
 	void canBuildNullLatLon(){
 		Location location = new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
 				null, null,  // lat/lon are null in this test
-				"NVGD29", "LRL")
+				"NGVD29", "LRL")
 				.withElevation(10.0)
 				.withCountyName("Sacramento")
 				.withNation(Nation.US)
@@ -143,7 +143,7 @@ class LocationTest
 
 		Location location = new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
 			null, null,  // lat/lon are null in this test
-			"NVGD29", "LRL")
+			"NGVD29", "LRL")
 			.withElevation(10.0)
 			.withCountyName("Sacramento")
 			.withNation(Nation.US)
@@ -186,7 +186,7 @@ class LocationTest
 	void test_serialization_empty_alias()
 	{
 		Location location = new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
-		50.0, 50.0, "NVGD29", "LRL")
+		50.0, 50.0, "NGVD29", "LRL")
 			.withElevation(10.0)
 			.withCountyName("Sacramento")
 			.withNation(Nation.US)
@@ -211,7 +211,7 @@ class LocationTest
 
 	private Location buildTestLocation() {
 		return new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
-				50.0, 50.0, "NVGD29", "LRL")
+				50.0, 50.0, "NGVD29", "LRL")
 				.withElevation(10.0)
 				.withCountyName("Sacramento")
 				.withNation(Nation.US)
@@ -228,7 +228,7 @@ class LocationTest
 
 	private Location buildTestLocationNewLine() {
 		return new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
-				50.0, 50.0, "NVGD29", "LRL")
+				50.0, 50.0, "NGVD29", "LRL")
 				.withElevation(10.0)
 				.withCountyName("Sacramento")
 				.withNation(Nation.US)

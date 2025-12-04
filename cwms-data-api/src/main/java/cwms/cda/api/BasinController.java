@@ -109,7 +109,9 @@ public class BasinController implements CrudHandler {
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                     + "implemented")
         },
-        description = "Returns CWMS Basin Data",
+        description = "Returns CWMS Basin Data. "
+            + "This endpoint handles multiple accept header types, including named pg json. "
+            + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
         tags = {TAG}
     )
     @Override
@@ -179,7 +181,9 @@ public class BasinController implements CrudHandler {
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                     + "implemented")
         },
-        description = "Returns CWMS Basin Data",
+        description = "Returns CWMS Basin Data. "
+            + "This endpoint handles multiple accept header types, including named pg json. "
+            + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
         tags = {TAG}
     )
     @Override
