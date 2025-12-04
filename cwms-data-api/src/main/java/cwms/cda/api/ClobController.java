@@ -75,36 +75,36 @@ public class ClobController implements CrudHandler {
     }
 
     @OpenApi(
-            queryParams = {
-                @OpenApiParam(name = OFFICE,
-                        description = "Specifies the owning office. If this field is not "
-                                + "specified, matching information from all offices shall be "
-                                + "returned."),
-                @OpenApiParam(name = PAGE,
-                        description = "This end point can return a lot of data, this "
-                                + "identifies where in the request you are. This is an opaque"
-                                + " value, and can be obtained from the 'next-page' value in "
-                                + "the response."),
-                @OpenApiParam(name = PAGE_SIZE,
-                        type = Integer.class,
-                        description = "How many entries per page returned. Default "
-                                + DEFAULT_PAGE_SIZE + "."),
-                @OpenApiParam(name = INCLUDE_VALUES,
-                        type = Boolean.class,
-                        description = "Do you want the value associated with this particular "
-                                + "clob (default: false)"),
-                @OpenApiParam(name = LIKE,
-                        description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                                + "matching against the id")
-            },
-            responses = {@OpenApiResponse(status = STATUS_200,
-                    description = "A list of clobs.",
-                    content = {
-                        @OpenApiContent(type = Formats.JSONV2, from = Clobs.class),
-                        @OpenApiContent(type = Formats.XMLV2, from = Clobs.class)
-                    })
-            },
-            tags = {TAG}
+        queryParams = {
+            @OpenApiParam(name = OFFICE,
+                description = "Specifies the owning office. If this field is not "
+                        + "specified, matching information from all offices shall be "
+                        + "returned."),
+            @OpenApiParam(name = PAGE,
+                description = "This end point can return a lot of data, this "
+                        + "identifies where in the request you are. This is an opaque"
+                        + " value, and can be obtained from the 'next-page' value in "
+                        + "the response."),
+            @OpenApiParam(name = PAGE_SIZE,
+                type = Integer.class,
+                description = "How many entries per page returned. Default "
+                        + DEFAULT_PAGE_SIZE + "."),
+            @OpenApiParam(name = INCLUDE_VALUES,
+                type = Boolean.class,
+                description = "Do you want the value associated with this particular "
+                        + "clob (default: false)"),
+            @OpenApiParam(name = LIKE,
+                description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                        + "matching against the id")
+        },
+        responses = {@OpenApiResponse(status = STATUS_200,
+            description = "A list of clobs.",
+            content = {
+                @OpenApiContent(type = Formats.JSONV2, from = Clobs.class),
+                @OpenApiContent(type = Formats.XMLV2, from = Clobs.class)
+            })
+        },
+        tags = {TAG}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -156,11 +156,9 @@ public class ClobController implements CrudHandler {
                 @OpenApiParam(name = CLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
                     + "is ignored and the value of the query parameter is used.   "
                     + "Note: this query parameter is necessary for id's that contain '/' or other special "
-                    + "characters.  Because of abuse even properly escaped '/' in url paths are blocked.  "
-                    + "When using this query parameter a valid path parameter must still be provided for the request"
-                    + " to be properly routed.  If your clob id contains '/' you can't specify the clob-id query "
-                    + "parameter and also specify the id path parameter because firewall and/or server rules will "
-                    + "deny the request even though you are specifying this override. \"ignored\" is suggested.")
+                    + "characters. This is due to limitations in path pattern matching. "
+                    + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                    + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
             responses = {@OpenApiResponse(status = STATUS_200,
                     description = "Returns requested clob.",
@@ -221,19 +219,19 @@ public class ClobController implements CrudHandler {
     }
 
     @OpenApi(
-            description = "Create new Clob",
-            requestBody = @OpenApiRequestBody(
-                    content = {
-                        @OpenApiContent(from = Clob.class, type = Formats.JSONV2),
-                        @OpenApiContent(from = Clob.class, type = Formats.XMLV2)
-                    },
-                    required = true),
+        description = "Create new Clob",
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = Clob.class, type = Formats.JSONV2),
+                @OpenApiContent(from = Clob.class, type = Formats.XMLV2)
+            },
+            required = true),
             queryParams = {
                 @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                        description = "Create will fail if provided ID already exists. Default: true")
+                    description = "Create will fail if provided ID already exists. Default: true")
             },
-            method = HttpMethod.POST,
-            tags = {TAG}
+        method = HttpMethod.POST,
+        tags = {TAG}
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -250,25 +248,31 @@ public class ClobController implements CrudHandler {
     }
 
     @OpenApi(
-            pathParams = {
-                @OpenApiParam(name = CLOB_ID, required = true,
-                            description = "Specifies the id of the clob to be updated"),
+        pathParams = {
+            @OpenApiParam(name = CLOB_ID, required = true,
+                description = "Specifies the id of the clob to be updated"),
+        },
+        queryParams = {
+            @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class,
+                description = "If true, null and empty fields in the provided clob "
+                        + "will be ignored and the existing value of those fields "
+                        + "left in place. Default: true"),
+            @OpenApiParam(name = CLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                + "is ignored and the value of the query parameter is used.   "
+                    + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                    + "characters. This is due to limitations in path pattern matching. "
+                    + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                    + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+        },
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = Clob.class, type = Formats.JSONV2),
+                @OpenApiContent(from = Clob.class, type = Formats.XMLV2)
             },
-            queryParams = {
-                @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class,
-                        description = "If true, null and empty fields in the provided clob "
-                                + "will be ignored and the existing value of those fields "
-                                + "left in place. Default: true")
-            },
-            requestBody = @OpenApiRequestBody(
-                content = {
-                    @OpenApiContent(from = Clob.class, type = Formats.JSONV2),
-                    @OpenApiContent(from = Clob.class, type = Formats.XMLV2)
-                },
-                    required = true),
-            description = "Update clob",
-            method = HttpMethod.PATCH,
-            tags = {TAG}
+            required = true),
+        description = "Update clob",
+        method = HttpMethod.PATCH,
+        tags = {TAG}
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String clobId) {
@@ -276,6 +280,10 @@ public class ClobController implements CrudHandler {
         boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
 
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
+            String idQueryParam = ctx.queryParam(CLOB_ID);
+            if (idQueryParam != null) {
+                clobId = idQueryParam;
+            }
             DSLContext dsl = getDslContext(ctx);
 
             String formatHeader = ctx.req.getContentType();
@@ -321,23 +329,33 @@ public class ClobController implements CrudHandler {
     }
 
     @OpenApi(
-            pathParams = {
-                    @OpenApiParam(name = CLOB_ID, required = true,
-                            description = "Specifies the id of the clob to be deleted"),
-            },
-            queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true,
-                            description = "Specifies the office of the clob.")
-            },
-            description = "Delete clob",
-            method = HttpMethod.DELETE,
-            tags = {TAG}
+        pathParams = {
+            @OpenApiParam(name = CLOB_ID, required = true,
+                description = "Specifies the id of the clob to be deleted"),
+        },
+        queryParams = {
+            @OpenApiParam(name = OFFICE, required = true,
+                description = "Specifies the office of the clob."),
+            @OpenApiParam(name = CLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                + "is ignored and the value of the query parameter is used.   "
+                    + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                    + "characters. This is due to limitations in path pattern matching. "
+                    + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                    + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+        },
+        description = "Delete clob",
+        method = HttpMethod.DELETE,
+        tags = {TAG}
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String clobId) {
         String office = requiredParam(ctx, OFFICE);
 
         try (final Timer.Context ignored = markAndTime(DELETE)) {
+            String idQueryParam = ctx.queryParam(CLOB_ID);
+            if (idQueryParam != null) {
+                clobId = idQueryParam;
+            }
             DSLContext dsl = getDslContext(ctx);
             ClobDao dao = new ClobDao(dsl);
             dao.delete(office, clobId);
