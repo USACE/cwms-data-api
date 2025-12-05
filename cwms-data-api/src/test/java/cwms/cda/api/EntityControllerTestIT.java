@@ -3,9 +3,9 @@ package cwms.cda.api;
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
+import io.restassured.path.json.JsonPath;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -13,10 +13,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
+import java.util.List;
+import java.util.Map;
 
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 final class EntityControllerTestIT extends DataApiTestIT {
@@ -45,6 +48,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
             ));
     }
 
+
     // Test CRUD  
     // create -> getOne -> update -> getOne to verify updated
     // delete -> getOne to verify deleted
@@ -54,7 +58,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         InputStream in = this.getClass().getResourceAsStream("/cwms/cda/data/dto/entity.json");
-        Assertions.assertNotNull(in);
+        assertNotNull(in);
         String entityJson = IOUtils.toString(in, java.nio.charset.StandardCharsets.UTF_8);
 
         // CREATE
@@ -159,7 +163,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
     void create_duplicate_entity_bad_request() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         InputStream in = this.getClass().getResourceAsStream("/cwms/cda/data/dto/entity.json");
-        Assertions.assertNotNull(in);
+        assertNotNull(in);
         String entityJson = IOUtils.toString(in, java.nio.charset.StandardCharsets.UTF_8);
 
         // CREATE
@@ -196,7 +200,6 @@ final class EntityControllerTestIT extends DataApiTestIT {
     }
 
 
-
     // Controller-owned validation: missing required query param
     @Test
     void get_one_missing_office_bad_request() {
@@ -214,15 +217,16 @@ final class EntityControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
     }
 
+
     // Entity ID in the URL must match the id.name in the request body
     @Test
-    void update_mismatched_entity_id_bad_request() throws Exception {
+    void update_non_existing_entity_id_or_missing_office_id_400_or_404() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         InputStream in = this.getClass().getResourceAsStream("/cwms/cda/data/dto/entity.json");
-        Assertions.assertNotNull(in);
+        assertNotNull(in);
         String entity = IOUtils.toString(in, java.nio.charset.StandardCharsets.UTF_8);
 
-        // different entity id
+        // UPDATE - non-existing entity id - 404
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -239,7 +243,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
 
-        // missing office id
+        // UPDATE - missing office id - 400
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -255,6 +259,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
     }
+
 
     // getAll with no query params: must return 200 and a list (empty allowed)
     @ParameterizedTest
@@ -275,6 +280,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
             .body("entities.size()", greaterThanOrEqualTo(0));
     }
 
+
     // Show simple filtering works with getAll and parent entity id only
     @Test
     void getAll_with_parent_filter_returns_200_empty_list_ok() {
@@ -290,5 +296,106 @@ final class EntityControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
+    }
+    
+    
+    @Test
+    void getAll_match_null_parents_flag_() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        InputStream in = this.getClass().getResourceAsStream("/cwms/cda/data/dto/entity.json");
+        assertNotNull(in);
+        String entity = IOUtils.toString(in, java.nio.charset.StandardCharsets.UTF_8);
+        // make parent-entity-id null
+        String nullParentEntity = entity.replace(
+                "\"parent-entity-id\" : \"NOAA\",", "");
+
+        // CREATE entity with null parent - default match-null-parents = true
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV2)
+            .body(nullParentEntity)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/entity")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // GET - verify getAll includes nullParentEntity when match-null-parents = true (default)
+        String json =
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/entity")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .statusCode(HttpServletResponse.SC_OK)
+                .extract().asString();
+
+        List<Map<String, Object>> items = JsonPath.from(json).getList("");
+        Map<String, Object> target = null;
+        for (Map<String, Object> m : items) {
+            Map<?, ?> id = (Map<?, ?>) m.get("id");
+            if (id != null
+                    && "SPK".equals(id.get("office-id"))
+                    && "NWS".equals(id.get("name"))) {
+                target = m;
+                break;
+            }
+        }
+
+        assertNotNull(target, "Entity with null parent-id should be present when match-null-parents=true");
+        assertTrue(!target.containsKey("parent-entity-id") || target.get("parent-entity-id") == null,
+                "parent-entity-id should be null/absent"
+        );
+
+        // GET - verify getAll does NOT include nullParentEntity when match-null-parents = false
+        String json2 =
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .queryParam(Controllers.MATCH_NULL_PARENTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/entity")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .statusCode(HttpServletResponse.SC_OK)
+                .extract().asString();
+
+        List<Map<String, Object>> items2 = JsonPath.from(json2).getList("");
+        boolean present = false;
+        for (Map<String, Object> m : items2) {
+            Map<?, ?> id = (Map<?, ?>) m.get("id");
+            if (id != null
+                    && "SPK".equals(id.get("office-id"))
+                    && "NWS".equals(id.get("name"))) {
+                present = true;
+                break;
+            }
+        }
+
+        assertFalse(present, "Entity with null parent-id should be filtered out when match-null-parents=false");
+
+        // DELETE nullParentEntity
+        given()
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, OFFICE_ID)
+            .queryParam(Controllers.CASCADE_DELETE, CASCADE_DELETE)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/entity/" + ENTITY_ID)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 }

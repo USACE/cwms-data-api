@@ -17,15 +17,13 @@ import org.jooq.DSLContext;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 public class EntityController implements CrudHandler {
-    public static final String TAG = "Entity";
-    public static final Logger LOGGER = Logger.getLogger(EntityController.class.getName());
+    private static final String TAG = "Entity";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -45,7 +43,7 @@ public class EntityController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, description = "Office ID to filter entities (e.g., SPK). If omitted, " +
                             "returns entities for all offices."),
-                    @OpenApiParam(name = ENTITY_ID, description = "Entity ID to filter by specific entity, If omitted, " +
+                    @OpenApiParam(name = ENTITY_ID, description = "Entity ID to filter by specific entity. If omitted, " +
                             "returns all entities. (e.g., GOV or NWS)."),
                     @OpenApiParam(name = PARENT_ENTITY_ID, description = "Parent Entity ID to filter entities " +
                             "by parent (e.g., NOAA)."),
@@ -183,7 +181,6 @@ public class EntityController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String entityId) {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
-            String officeId = requiredParam(ctx, OFFICE);
             DSLContext dsl = getDslContext(ctx);
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Entity.class);
@@ -194,18 +191,6 @@ public class EntityController implements CrudHandler {
                 return;
             }
             EntityDao dao = new EntityDao(dsl);
-            // verify entity exists before updating
-            CwmsId id = new CwmsId.Builder()
-                    .withOfficeId(officeId)
-                    .withName(entityId)
-                    .build();
-            try {
-                dao.retrieveEntity(id);
-            } catch (Exception e) {
-                ctx.status(HttpServletResponse.SC_NOT_FOUND);
-                ctx.result("Entity not found for the given parameters.");
-                return;
-            }
             dao.updateEntity(entity);
             ctx.status(HttpServletResponse.SC_OK);
         }

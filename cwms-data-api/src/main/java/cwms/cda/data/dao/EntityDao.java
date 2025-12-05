@@ -48,6 +48,14 @@ public class EntityDao extends JooqDao<Entity> {
     }
 
     public void updateEntity(Entity entity) {
+        // verify entity exists before updating
+        CwmsId id = new CwmsId.Builder()
+                .withOfficeId(entity.getId().getOfficeId())
+                .withName(entity.getId().getName())
+                .build();
+
+        retrieveEntity(id);
+
         storeEntity(entity, false, false);
     }
 
