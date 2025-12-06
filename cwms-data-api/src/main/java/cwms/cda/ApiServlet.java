@@ -58,6 +58,7 @@ import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
 import cwms.cda.api.DownstreamLocationsGetController;
 import cwms.cda.api.EmbankmentController;
+import cwms.cda.api.EntityController;
 import cwms.cda.api.ForecastFileController;
 import cwms.cda.api.ForecastInstanceController;
 import cwms.cda.api.ForecastSpecController;
@@ -226,6 +227,7 @@ import org.owasp.html.PolicyFactory;
     "/counties/*",
     "/location/*",
     "/locations/*",
+    "/entity/*",
     "/parameters/*",
     "/timezones/*",
     "/units/*",
@@ -424,6 +426,8 @@ public class ApiServlet extends HttpServlet {
         get("/locations/with-kinds/", new LocationKindController(metrics));
         cdaCrudCache("/locations/{location-id}",
                 new LocationController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+        cdaCrudCache("/entity/{entity-id}",
+                new EntityController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
         cdaCrudCache("/states/{state}",
                 new StateController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
         cdaCrudCache("/counties/{county}",
