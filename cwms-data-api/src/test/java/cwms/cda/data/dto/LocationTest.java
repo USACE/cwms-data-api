@@ -12,6 +12,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
 
 import cwms.cda.helpers.DTOMatch;
+import java.io.Serializable;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -98,7 +99,7 @@ class LocationTest
 	void canBuildNullLatLon(){
 		Location location = new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
 				null, null,  // lat/lon are null in this test
-				"NVGD29", "LRL")
+				"NGVD29", "LRL")
 				.withElevation(10.0)
 				.withCountyName("Sacramento")
 				.withNation(Nation.US)
@@ -120,10 +121,14 @@ class LocationTest
 			location.validate();
 			fail();
 		} catch (FieldException e) {
-			Map<String, ? extends List<String>> details = e.getDetails();
+			Map<String, Serializable> details = e.getDetails();
 			assertNotNull(details);
+			assertEquals(400, e.getCdaHttpErrorCode());
+			assertEquals("required fields not present", e.getCdaErrorMessage());
+			assertEquals("required fields not present", e.getMessage());
+			assertEquals("Parser", e.getSource());
 			assertTrue(details.containsKey(RequiredFieldException.MISSING_FIELDS));
-			List<String> missingFields = details.get(RequiredFieldException.MISSING_FIELDS);
+			String missingFields = String.valueOf(details.get(RequiredFieldException.MISSING_FIELDS));
 			assertTrue(missingFields.contains("latitude"));
 			assertTrue(missingFields.contains("longitude"));
 		}
@@ -138,7 +143,7 @@ class LocationTest
 
 		Location location = new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
 			null, null,  // lat/lon are null in this test
-			"NVGD29", "LRL")
+			"NGVD29", "LRL")
 			.withElevation(10.0)
 			.withCountyName("Sacramento")
 			.withNation(Nation.US)
@@ -181,7 +186,7 @@ class LocationTest
 	void test_serialization_empty_alias()
 	{
 		Location location = new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
-		50.0, 50.0, "NVGD29", "LRL")
+		50.0, 50.0, "NGVD29", "LRL")
 			.withElevation(10.0)
 			.withCountyName("Sacramento")
 			.withNation(Nation.US)
@@ -206,7 +211,7 @@ class LocationTest
 
 	private Location buildTestLocation() {
 		return new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
-				50.0, 50.0, "NVGD29", "LRL")
+				50.0, 50.0, "NGVD29", "LRL")
 				.withElevation(10.0)
 				.withCountyName("Sacramento")
 				.withNation(Nation.US)
@@ -223,7 +228,7 @@ class LocationTest
 
 	private Location buildTestLocationNewLine() {
 		return new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
-				50.0, 50.0, "NVGD29", "LRL")
+				50.0, 50.0, "NGVD29", "LRL")
 				.withElevation(10.0)
 				.withCountyName("Sacramento")
 				.withNation(Nation.US)

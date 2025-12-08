@@ -63,32 +63,32 @@ public class BlobController implements CrudHandler {
     }
 
     @OpenApi(
-            queryParams = {
-                    @OpenApiParam(name = OFFICE,
-                            description = "Specifies the owning office. If this field is not "
-                                    + "specified, matching information from all offices shall be "
-                                    + "returned."),
-                    @OpenApiParam(name = PAGE,
-                            description = "This end point can return a lot of data, this "
-                                    + "identifies where in the request you are. This is an opaque"
-                                    + " value, and can be obtained from the 'next-page' value in "
-                                    + "the response."),
-                    @OpenApiParam(name = PAGE_SIZE,
-                            type = Integer.class,
-                            description = "How many entries per page returned. Default "
-                                    + DEFAULT_PAGE_SIZE + "."),
-                    @OpenApiParam(name = LIKE,
-                            description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                                    + "describing the blob id's you want")
-            },
-            responses = {@OpenApiResponse(status = STATUS_200,
-                    description = "A list of blobs.",
-                    content = {
-                            @OpenApiContent(type = Formats.JSON, from = Blobs.class),
-                            @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
-                    })
-            },
-            tags = {TAG}
+        queryParams = {
+            @OpenApiParam(name = OFFICE,
+                description = "Specifies the owning office. If this field is not "
+                        + "specified, matching information from all offices shall be "
+                        + "returned."),
+            @OpenApiParam(name = PAGE,
+                description = "This end point can return a lot of data, this "
+                        + "identifies where in the request you are. This is an opaque"
+                        + " value, and can be obtained from the 'next-page' value in "
+                        + "the response."),
+            @OpenApiParam(name = PAGE_SIZE,
+                type = Integer.class,
+                description = "How many entries per page returned. Default "
+                        + DEFAULT_PAGE_SIZE + "."),
+            @OpenApiParam(name = LIKE,
+                description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                        + "describing the blob id's you want")
+        },
+        responses = {@OpenApiResponse(status = STATUS_200,
+            description = "A list of blobs.",
+            content = {
+                @OpenApiContent(type = Formats.JSON, from = Blobs.class),
+                @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
+            })
+        },
+        tags = {TAG}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -130,14 +130,20 @@ public class BlobController implements CrudHandler {
             description = "Returns the binary value of the requested blob as a seekable stream with the "
                     + "appropriate media type.",
             queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
+                @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
+                @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                    + "is ignored and the value of the query parameter is used.   "
+                    + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                    + "characters. This is due to limitations in path pattern matching. "
+                    + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                    + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            description = "Returns requested blob.",
-                            content = {
-                                    @OpenApiContent(type = "application/octet-stream")
-                            })
+                @OpenApiResponse(status = STATUS_200,
+                    description = "Returns requested blob.",
+                    content = {
+                        @OpenApiContent(type = "application/octet-stream")
+                    })
             },
             tags = {TAG}
     )
@@ -145,6 +151,10 @@ public class BlobController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            String idQueryParam = ctx.queryParam(CLOB_ID);
+            if (idQueryParam != null) {
+                blobId = idQueryParam;
+            }
             DSLContext dsl = getDslContext(ctx);
             BlobDao dao = new BlobDao(dsl);
             String officeQP = ctx.queryParam(OFFICE);
@@ -175,13 +185,13 @@ public class BlobController implements CrudHandler {
     @OpenApi(
             description = "Create new Blob",
             requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = Blob.class, type = Formats.JSONV2)
-                    },
-                    required = true),
+                content = {
+                    @OpenApiContent(from = Blob.class, type = Formats.JSONV2)
+                },
+                required = true),
             queryParams = {
-                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                            description = "Create will fail if provided ID already exists. Default: true")
+                @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                    description = "Create will fail if provided ID already exists. Default: true")
             },
             method = HttpMethod.POST,
             tags = {TAG}
@@ -203,20 +213,32 @@ public class BlobController implements CrudHandler {
     @OpenApi(
             description = "Update an existing Blob",
             pathParams = {
-                    @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
+                @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
             },
             requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
-                            @OpenApiContent(from = Blob.class, type = Formats.JSON)
-                    },
-                    required = true),
+                content = {
+                    @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
+                    @OpenApiContent(from = Blob.class, type = Formats.JSON)
+                },
+                required = true),
+            queryParams = {
+                @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                    + "is ignored and the value of the query parameter is used.   "
+                    + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                    + "characters. This is due to limitations in path pattern matching. "
+                    + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                    + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+            },
             method = HttpMethod.PATCH,
             tags = {TAG}
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
+            String idQueryParam = ctx.queryParam(CLOB_ID);
+            if (idQueryParam != null) {
+                blobId = idQueryParam;
+            }
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
@@ -247,11 +269,17 @@ public class BlobController implements CrudHandler {
     @OpenApi(
             description = "Deletes requested blob",
             pathParams = {
-                    @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
+                @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "owning office of the blob to be deleted"),
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                    + "owning office of the blob to be deleted"),
+                @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                    + "is ignored and the value of the query parameter is used.   "
+                    + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                    + "characters. This is due to limitations in path pattern matching. "
+                    + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                    + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
             method = HttpMethod.DELETE,
             tags = {TAG}
@@ -259,6 +287,10 @@ public class BlobController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
+            String idQueryParam = ctx.queryParam(CLOB_ID);
+            if (idQueryParam != null) {
+                blobId = idQueryParam;
+            }
             DSLContext dsl = getDslContext(ctx);
             String office = requiredParam(ctx, OFFICE);
             BlobDao dao = new BlobDao(dsl);

@@ -3,26 +3,17 @@ package cwms.cda.data.dao;
 import static org.jooq.impl.DSL.*;
 
 import java.sql.CallableStatement;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
-import org.jooq.Record;
 import org.jooq.Record1;
-import org.jooq.Record4;
 import org.jooq.Record5;
 import org.jooq.SelectConditionStep;
-import org.jooq.SelectLimitPercentStep;
 import org.jooq.SelectSeekStep2;
 import org.jooq.Table;
 import org.jooq.conf.ParamType;
@@ -30,12 +21,9 @@ import org.jooq.impl.DSL;
 
 import com.google.common.flogger.FluentLogger;
 
-import cwms.cda.data.dto.Clob;
-import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.auth.users.User;
 import cwms.cda.data.dto.auth.users.Users;
-import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.DataApiPrincipal;
 import usace.cwms.db.jooq.codegen.tables.AV_SEC_USERS;
 
@@ -237,10 +225,9 @@ public class UserDao extends JooqDao<User> {
 
             logger.atInfo().log(query.getSQL(ParamType.INLINED));
 
-
             final Users.Builder builder = new Users.Builder(cursor, pageSizeTmp, total, limitOffice);
 
-            final HashMap<String, User.Builder> tmpUsers = new HashMap<>();
+            final Map<String, User.Builder> tmpUsers = new LinkedHashMap<>();
 
             query.fetch().forEach(row -> {
                 User.Builder userBuilder = tmpUsers.computeIfAbsent(row.get(userId), (key) -> {

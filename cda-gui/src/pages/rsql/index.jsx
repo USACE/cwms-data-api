@@ -1,52 +1,39 @@
-import {
-  UsaceBox,
-  BadgeButton,
-  Code,
-  Divider,
-  H3,
-  H4,
-} from "@usace/groundwork";
+import { UsaceBox, BadgeButton, Code, Divider, H3, H4 } from "@usace/groundwork";
 
 export default function FilterExpressions() {
   return (
     <>
       <UsaceBox title="Filter Expression Language - RSQL">
-        The Filtered Time Series end point allows the user to supply a Filter
-        Expression to reduce the amount of data returned. This user-provided
-        filter is <b>not SQL</b> but instead a super-set of the Feed Item Query
-        Language {"("}
-        <a href="http://tools.ietf.org/html/draft-nottingham-atompub-fiql-00">
-          FIQL
-        </a>
+        The Filtered Time Series end point allows the user to supply a Filter Expression
+        to reduce the amount of data returned. This user-provided filter is{" "}
+        <b>not SQL</b> but instead a super-set of the Feed Item Query Language {"("}
+        <a href="http://tools.ietf.org/html/draft-nottingham-atompub-fiql-00">FIQL</a>
         {")"} This capability is based on
         <a href="https://github.com/jirutka/rsql-parser">rsql-parser</a>
         and inspired by
         <a href="https://www.baeldung.com/rest-api-search-language-rsql-fiql">
           this article
         </a>
-        . A somewhat similar approach was used to parse the filter-expression
-        into an AST and then to walk the tree and make use of jOOQ to build up a
-        SQL Condition.
+        . A somewhat similar approach was used to parse the filter-expression into an
+        AST and then to walk the tree and make use of jOOQ to build up a SQL Condition.
         <H3 className="mt-4">RSQL Syntax</H3>
         <p>
-          RSQL is a query language for parametrized filtering of resources. It's
-          based on FIQL (Feed Item Query Language) and provides a simple yet
-          powerful syntax for filtering data.
+          RSQL is a query language for parametrized filtering of resources. It's based
+          on FIQL (Feed Item Query Language) and provides a simple yet powerful syntax
+          for filtering data.
         </p>
         <H4 className="mt-4 font-semibold">Comparison</H4>
         <p>
-          A comparison expression consists of three components: a selector, an
-          operator, and a value
+          A comparison expression consists of three components: a selector, an operator,
+          and a value
         </p>
         <H4 className="mt-4 font-semibold">Selector</H4>
         <p>
-          The selector is a reference to some field in the input data. Places
-          where filter-expressions are used will specify the selectors that are
-          available.
+          The selector is a reference to some field in the input data. Places where
+          filter-expressions are used will specify the selectors that are available.
         </p>
         <p>
-          For TimeSeries the selectors are: value, datetime, quality,
-          data_entry_date
+          For TimeSeries the selectors are: value, datetime, quality, data_entry_date
         </p>
         <Divider text={"Operators"} />
         <H4 className="mt-4 font-semibold">Basic Operators</H4>
@@ -97,42 +84,38 @@ export default function FilterExpressions() {
           </li>
           <li>
             When a timestamp selector (such as datetime or data_entry_date) is
-            encountered an attempt is made to convert the corresponding value
-            into a Timestamp. The same timestamp parsing methods used in other
-            portions of CDA (such as parsing start/end parameters) are used in
-            the filter-expression feature.
+            encountered an attempt is made to convert the corresponding value into a
+            Timestamp. The same timestamp parsing methods used in other portions of CDA
+            (such as parsing start/end parameters) are used in the filter-expression
+            feature.
           </li>
         </ul>
       </UsaceBox>
 
       <UsaceBox className="mt-1" title="Filter Expression Language Examples">
         <p>
-          The TimeSeries end-point can return a large amount of data. Using RSQL
-          filter expressions allows you to narrow results based on specific
-          criteria.
+          The TimeSeries end-point can return a large amount of data. Using RSQL filter
+          expressions allows you to narrow results based on specific criteria.
         </p>
         <Divider text={"Examples"} />
         <H4 className="mt-4 font-semibold">Basic Filtering</H4>
         <ul className="pl-5 list-disc">
           <li>
-            <Code>value==5.0</Code> - Find time series points where value equal
-            to 5
+            <Code>value==5.0</Code> - Find time series points where value equal to 5
           </li>
           <li>
-            <Code>value{">"}25</Code> - Find time series with values greater
-            than 25
+            <Code>value{">"}25</Code> - Find time series with values greater than 25
           </li>
           <li>
-            <Code>value{">="}100</Code> - Find time series with values greater
-            than or equal to 100
+            <Code>value{">="}100</Code> - Find time series with values greater than or
+            equal to 100
           </li>
           <li>
-            <Code>value{">"}50</Code> - Find time series with values less than
-            50
+            <Code>value{">"}50</Code> - Find time series with values less than 50
           </li>
           <li>
-            <Code>value{">="}75</Code> - Find time series with values less than
-            or equal to 75
+            <Code>value{">="}75</Code> - Find time series with values less than or equal
+            to 75
           </li>
           <li>
             <Code>value!=null</Code> - Find time series with non-null values
@@ -145,12 +128,12 @@ export default function FilterExpressions() {
             <Code>
               data_entry_date{">="}2021-04-05T00:00:00Z;value{">"}25
             </Code>
-            - Find points where value is greater than 25 AND the data_entry_date
-            is on or before April 4 2021
+            - Find points where value is greater than 25 AND the data_entry_date is on
+            or before April 4 2021
           </li>
           <li>
-            <Code>value==null or value==-901</Code> - Find points where the
-            value is null OR the value is equal to negative 901
+            <Code>value==null or value==-901</Code> - Find points where the value is
+            null OR the value is equal to negative 901
           </li>
         </ul>
       </UsaceBox>
