@@ -387,18 +387,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (authFilter != null && authFilter.hasAuthorizationContext()) {
             Field<String> officeField = valid.field("office_id", String.class);
 
-            Condition embargoFilter = authFilter.getEmbargoFilter(dataEntryDate, officeField);
-            if (embargoFilter != null) {
-                filterConditions = filterConditions.and(embargoFilter);
-                logger.log(Level.FINE, "Applied embargo filter to timeseries query");
-            }
+            Condition embargoFilter = authFilter.getEmbargoFilter(dataEntryDate, officeField, office);
+            filterConditions = filterConditions.and(embargoFilter);
+            logger.log(Level.FINE, "Applied embargo filter to timeseries query");
 
             Condition timeWindowFilter = authFilter.getTimeWindowFilter(dataEntryDate,
                 Timestamp.from(beginTime.toInstant()));
-            if (timeWindowFilter != null) {
-                filterConditions = filterConditions.and(timeWindowFilter);
-                logger.log(Level.FINE, "Applied time window filter to timeseries query");
-            }
+            filterConditions = filterConditions.and(timeWindowFilter);
+            logger.log(Level.FINE, "Applied time window filter to timeseries query");
         }
 
         Field<Integer> totalField;
