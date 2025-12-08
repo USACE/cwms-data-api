@@ -11,7 +11,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,7 +59,7 @@ public class AuthorizationFilterHelper {
 
     public Condition getOfficeFilter(Field<String> officeField, String requestedOffice) {
         if (constraints == null || !constraints.has("allowed_offices")) {
-            return null;
+            return DSL.noCondition();
         }
 
         JsonNode allowedOfficesNode = constraints.get("allowed_offices");
@@ -72,10 +71,9 @@ public class AuthorizationFilterHelper {
             }
         }
 
-        // System admins can access all offices
         if (allowedOffices.contains("*")) {
             logger.log(Level.FINE, "User has access to all offices");
-            return null;
+            return DSL.noCondition();
         }
 
         if (allowedOffices.isEmpty()) {
@@ -97,74 +95,52 @@ public class AuthorizationFilterHelper {
         return officeField.in(allowedOffices);
     }
 
-    public Condition getEmbargoFilter(Field<Timestamp> timestampField, Field<String> officeField) {
+    public Condition getEmbargoFilter(Field<Timestamp> timestampField, Field<String> officeField, String requestedOffice) {
         if (constraints == null) {
-            return null;
+            return DSL.noCondition();
         }
 
-        // Check if user is exempt from embargo
         boolean embargoExempt = constraints.has("embargo_exempt") &&
                                 constraints.get("embargo_exempt").asBoolean();
 
         if (embargoExempt) {
             logger.log(Level.FINE, "User is exempt from embargo rules");
-            return null;
+            return DSL.noCondition();
         }
 
-        // Get embargo rules
         JsonNode embargoRulesNode = constraints.get("embargo_rules");
         if (embargoRulesNode == null || embargoRulesNode.isNull()) {
             logger.log(Level.FINE, "No embargo rules present");
-            return null;
+            return DSL.noCondition();
         }
 
-        // Build office-specific embargo condition
-        // For each office, calculate: data_timestamp + embargo_hours < current_time
-        Condition embargoCondition = null;
-        Timestamp currentTime = Timestamp.from(Instant.now());
+        if (requestedOffice != null && embargoRulesNode.has(requestedOffice)) {
+            int embargoHours = embargoRulesNode.get(requestedOffice).asInt();
+            Timestamp cutoff = Timestamp.from(Instant.now().minus(embargoHours, ChronoUnit.HOURS));
+            logger.log(Level.FINE, "Applying {0} embargo: {1} hours (data before {2})",
+                new Object[]{requestedOffice, embargoHours, cutoff});
+            return timestampField.lessThan(cutoff);
+        }
 
         if (embargoRulesNode.has("default")) {
             int defaultHours = embargoRulesNode.get("default").asInt();
-            // Default case: timestamp must be older than embargo period
             Timestamp defaultCutoff = Timestamp.from(Instant.now().minus(defaultHours, ChronoUnit.HOURS));
-            embargoCondition = timestampField.lessThan(defaultCutoff);
-
             logger.log(Level.FINE, "Applying default embargo: {0} hours (data before {1})",
                 new Object[]{defaultHours, defaultCutoff});
+            return timestampField.lessThan(defaultCutoff);
         }
 
-        // Add office-specific embargo rules
-        if (embargoRulesNode.has("SPK")) {
-            int spkHours = embargoRulesNode.get("SPK").asInt();
-            Timestamp spkCutoff = Timestamp.from(Instant.now().minus(spkHours, ChronoUnit.HOURS));
-            Condition spkCondition = officeField.eq("SPK").and(timestampField.lessThan(spkCutoff));
-
-            embargoCondition = embargoCondition != null
-                ? DSL.or(spkCondition, embargoCondition)
-                : spkCondition;
-        }
-
-        if (embargoRulesNode.has("SWT")) {
-            int swtHours = embargoRulesNode.get("SWT").asInt();
-            Timestamp swtCutoff = Timestamp.from(Instant.now().minus(swtHours, ChronoUnit.HOURS));
-            Condition swtCondition = officeField.eq("SWT").and(timestampField.lessThan(swtCutoff));
-
-            embargoCondition = embargoCondition != null
-                ? DSL.or(swtCondition, embargoCondition)
-                : swtCondition;
-        }
-
-        return embargoCondition;
+        return DSL.noCondition();
     }
 
     public Condition getTimeWindowFilter(Field<Timestamp> timestampField, Timestamp userRequestedBeginTime) {
         if (constraints == null || !constraints.has("time_window")) {
-            return null;
+            return DSL.noCondition();
         }
 
         JsonNode timeWindowNode = constraints.get("time_window");
         if (timeWindowNode.isNull() || !timeWindowNode.has("restrict_hours")) {
-            return null;
+            return DSL.noCondition();
         }
 
         int restrictHours = timeWindowNode.get("restrict_hours").asInt();
@@ -184,7 +160,7 @@ public class AuthorizationFilterHelper {
 
     public Condition getClassificationFilter(Field<String> classificationField) {
         if (constraints == null || !constraints.has("data_classification")) {
-            return null;
+            return DSL.noCondition();
         }
 
         JsonNode classificationNode = constraints.get("data_classification");
@@ -215,34 +191,13 @@ public class AuthorizationFilterHelper {
             String requestedOffice,
             Timestamp userRequestedBeginTime) {
 
-        List<Condition> conditions = new ArrayList<>();
-
         Condition officeFilter = getOfficeFilter(officeField, requestedOffice);
-        if (officeFilter != null) {
-            conditions.add(officeFilter);
-        }
-
-        Condition embargoFilter = getEmbargoFilter(timestampField, officeField);
-        if (embargoFilter != null) {
-            conditions.add(embargoFilter);
-        }
-
+        Condition embargoFilter = getEmbargoFilter(timestampField, officeField, requestedOffice);
         Condition timeWindowFilter = getTimeWindowFilter(timestampField, userRequestedBeginTime);
-        if (timeWindowFilter != null) {
-            conditions.add(timeWindowFilter);
-        }
+        Condition classificationFilter = classificationField != null
+            ? getClassificationFilter(classificationField)
+            : DSL.noCondition();
 
-        if (classificationField != null) {
-            Condition classificationFilter = getClassificationFilter(classificationField);
-            if (classificationFilter != null) {
-                conditions.add(classificationFilter);
-            }
-        }
-
-        if (conditions.isEmpty()) {
-            return null;
-        }
-
-        return DSL.and(conditions);
+        return DSL.and(officeFilter, embargoFilter, timeWindowFilter, classificationFilter);
     }
 }
