@@ -1,5 +1,6 @@
 package cwms.cda.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
@@ -24,28 +25,30 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag("integration")
 final class EntityControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
-    private static final String ENTITY_ID = "NWS";
-    private static final String CASCADE_DELETE = "true";
-    private static final String PARENT_ID = "NOAA";
+    private static final String OFFICE = Controllers.OFFICE;
+    private static final String CASCADE_DELETE = Controllers.CASCADE_DELETE;
 
 
     @AfterEach
-    void tearDown() {
-        given()
-            .accept(Formats.JSONV2)
-            .queryParam(Controllers.OFFICE, OFFICE_ID)
-            .queryParam(Controllers.CASCADE_DELETE, true)
-            .header(AUTH_HEADER, TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .delete("/entity/" + ENTITY_ID)
-        .then()
-            .statusCode(isOneOf(
-                    HttpServletResponse.SC_NO_CONTENT,
-                    HttpServletResponse.SC_NOT_FOUND,
-                    HttpServletResponse.SC_BAD_REQUEST
-            ));
+    void tearDown() throws Exception {
+
+        for (Map<String, String> entityMap : loadTestEntityJsonList()) {
+            String entityJson = new ObjectMapper().writeValueAsString(entityMap);
+            String entityName = JsonPath.from(entityJson).getString("id.name");
+            given()
+                .queryParam(OFFICE, OFFICE_ID)
+                .queryParam(CASCADE_DELETE, true)
+                .header(AUTH_HEADER, TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/entity/" + entityName)
+            .then()
+                .statusCode(isOneOf(
+                        HttpServletResponse.SC_NO_CONTENT,
+                        HttpServletResponse.SC_NOT_FOUND
+                ));
+        }
     }
 
 
@@ -57,9 +60,9 @@ final class EntityControllerTestIT extends DataApiTestIT {
     void test_entity_create_get_update_delete(String format) throws Exception {
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        InputStream in = this.getClass().getResourceAsStream("/cwms/cda/data/dto/entity.json");
-        assertNotNull(in);
-        String entityJson = IOUtils.toString(in, java.nio.charset.StandardCharsets.UTF_8);
+        String entityJson = getUniqueTestEntityJsonByIndex(0);
+        String entityName = JsonPath.from(entityJson).getString("id.name");
+        String longName = JsonPath.from(entityJson).getString("long-name");
 
         // CREATE
         given()
@@ -80,64 +83,64 @@ final class EntityControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
-            .queryParam(Controllers.OFFICE, OFFICE_ID)
+            .queryParam(OFFICE, OFFICE_ID)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/entity/" + ENTITY_ID)
+            .get("/entity/" + entityName)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("id.name", equalTo(ENTITY_ID))
+            .body("id.name", equalTo(entityName))
             .body("id.office-id", equalTo(OFFICE_ID))
-            .body("long-name", equalTo("National Weather Service"));
+            .body("long-name", equalTo(longName));
 
         // UPDATE — modify long-name to verify persistence
         String updatedEntityJson = entityJson.replace(
-                "\"National Weather Service\"",
-                "\"National Weather Service (Updated)\"");
+                "\"" + longName + "\"",
+                "\"Updated long name\"");
 
         given()
             .contentType(Formats.JSONV2)
             .body(updatedEntityJson)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(Controllers.OFFICE, OFFICE_ID)
+            .queryParam(OFFICE, OFFICE_ID)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .patch("/entity/" + ENTITY_ID)
+            .patch("/entity/" + entityName)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
-        // GET to confirm updated field persisted
+        // GET to confirm the updated field persisted
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
-            .queryParam(Controllers.OFFICE, OFFICE_ID)
+            .queryParam(OFFICE, OFFICE_ID)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/entity/" + ENTITY_ID)
+            .get("/entity/" + entityName)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("id.name", equalTo(ENTITY_ID))
+            .body("id.name", equalTo(entityName))
             .body("id.office-id", equalTo(OFFICE_ID))
-            .body("long-name", equalTo("National Weather Service (Updated)"));
+            .body("long-name", equalTo("Updated long name"));
 
         // DELETE
         given()
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(Controllers.OFFICE, OFFICE_ID)
-            .queryParam(Controllers.CASCADE_DELETE, CASCADE_DELETE)
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(CASCADE_DELETE, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/entity/" + ENTITY_ID)
+            .delete("/entity/" + entityName)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -146,11 +149,11 @@ final class EntityControllerTestIT extends DataApiTestIT {
         // verify deleted
         given()
             .accept(format)
-            .queryParam(Controllers.OFFICE, OFFICE_ID)
+            .queryParam(OFFICE, OFFICE_ID)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/entity/" + ENTITY_ID)
+            .get("/entity/" + entityName)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -162,15 +165,13 @@ final class EntityControllerTestIT extends DataApiTestIT {
     @Test
     void create_duplicate_entity_bad_request() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        InputStream in = this.getClass().getResourceAsStream("/cwms/cda/data/dto/entity.json");
-        assertNotNull(in);
-        String entityJson = IOUtils.toString(in, java.nio.charset.StandardCharsets.UTF_8);
+        String entityJson1 = getUniqueTestEntityJsonByIndex(1);
 
         // CREATE
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV2)
-            .body(entityJson)
+            .body(entityJson1)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -186,7 +187,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV2)
-            .body(entityJson)
+            .body(entityJson1)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -202,15 +203,34 @@ final class EntityControllerTestIT extends DataApiTestIT {
 
     // Controller-owned validation: missing required query param
     @Test
-    void get_one_missing_office_bad_request() {
+    void get_one_missing_office_bad_request() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String entityJson2 = getUniqueTestEntityJsonByIndex(2);
+        String entityName = JsonPath.from(entityJson2).getString("id.name");
 
+        // CREATE
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV2)
+            .body(entityJson2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/entity")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // getOne with no office param
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/entity/" + ENTITY_ID)
+            .get("/entity/" + entityName)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -222,38 +242,52 @@ final class EntityControllerTestIT extends DataApiTestIT {
     @Test
     void update_non_existing_entity_id_or_missing_office_id_400_or_404() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        InputStream in = this.getClass().getResourceAsStream("/cwms/cda/data/dto/entity.json");
-        assertNotNull(in);
-        String entity = IOUtils.toString(in, java.nio.charset.StandardCharsets.UTF_8);
+        String entityJson3 = getUniqueTestEntityJsonByIndex(3);
+        String entityName = JsonPath.from(entityJson3).getString("id.name");
 
         // UPDATE - non-existing entity id - 404
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .body(entity)
+            .body(entityJson3)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(Controllers.OFFICE, OFFICE_ID)
+            .queryParam(OFFICE, OFFICE_ID)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .patch("/entity/" + "different")
+            .patch("/entity/" + entityName)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
+        // CREATE the non-existing entity id
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV2)
+            .body(entityJson3)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/entity")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
 
         // UPDATE - missing office id - 400
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .body(entity)
+            .body(entityJson3)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .patch("/entity/" + ENTITY_ID)
+            .patch("/entity/" + entityName)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -287,7 +321,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
-            .queryParam(Controllers.PARENT_ENTITY_ID, PARENT_ID)
+            .queryParam(Controllers.PARENT_ENTITY_ID, "NOAA")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -300,20 +334,16 @@ final class EntityControllerTestIT extends DataApiTestIT {
     
     
     @Test
-    void getAll_match_null_parents_flag_() throws Exception {
+    void getAll_match_null_parents_flag() throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        InputStream in = this.getClass().getResourceAsStream("/cwms/cda/data/dto/entity.json");
-        assertNotNull(in);
-        String entity = IOUtils.toString(in, java.nio.charset.StandardCharsets.UTF_8);
-        // make parent-entity-id null
-        String nullParentEntity = entity.replace(
-                "\"parent-entity-id\" : \"NOAA\",", "");
+        String entityJson4 = getUniqueTestEntityJsonByIndex(4);
+        String entityName = JsonPath.from(entityJson4).getString("id.name");
 
         // CREATE entity with null parent - default match-null-parents = true
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV2)
-            .body(nullParentEntity)
+            .body(entityJson4)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -343,8 +373,8 @@ final class EntityControllerTestIT extends DataApiTestIT {
         for (Map<String, Object> m : items) {
             Map<?, ?> id = (Map<?, ?>) m.get("id");
             if (id != null
-                    && "SPK".equals(id.get("office-id"))
-                    && "NWS".equals(id.get("name"))) {
+                    && OFFICE_ID.equals(id.get("office-id"))
+                    && entityName.equals(id.get("name"))) {
                 target = m;
                 break;
             }
@@ -375,8 +405,8 @@ final class EntityControllerTestIT extends DataApiTestIT {
         for (Map<String, Object> m : items2) {
             Map<?, ?> id = (Map<?, ?>) m.get("id");
             if (id != null
-                    && "SPK".equals(id.get("office-id"))
-                    && "NWS".equals(id.get("name"))) {
+                    && OFFICE_ID.equals(id.get("office-id"))
+                    && entityName.equals(id.get("name"))) {
                 present = true;
                 break;
             }
@@ -387,15 +417,33 @@ final class EntityControllerTestIT extends DataApiTestIT {
         // DELETE nullParentEntity
         given()
             .header(AUTH_HEADER, user.toHeaderValue())
-            .queryParam(Controllers.OFFICE, OFFICE_ID)
-            .queryParam(Controllers.CASCADE_DELETE, CASCADE_DELETE)
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(CASCADE_DELETE, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/entity/" + ENTITY_ID)
+            .delete("/entity/" + entityName)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    }
+
+    // Helper to clean up test Entities
+    private static List<Map<String, String>> loadTestEntityJsonList() throws Exception {
+        InputStream in = EntityControllerTestIT.class.getResourceAsStream("/cwms/cda/data/dto/entity_test.json");
+        assertNotNull(in);
+        String json = IOUtils.toString(in, java.nio.charset.StandardCharsets.UTF_8);
+        return JsonPath.from(json).getList("");
+    }
+
+    // Helper to create unique Test entities
+    private static String getUniqueTestEntityJsonByIndex(int index) throws Exception {
+        InputStream in = EntityControllerTestIT.class.getResourceAsStream("/cwms/cda/data/dto/entity_test.json");
+        assertNotNull(in);
+        String json = IOUtils.toString(in, java.nio.charset.StandardCharsets.UTF_8);
+        List<Map<String, String>> entities = JsonPath.from(json).getList("");
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.writeValueAsString(entities.get(index));
     }
 }

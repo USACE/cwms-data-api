@@ -182,6 +182,7 @@ public class EntityController implements CrudHandler {
     public void update(@NotNull Context ctx, @NotNull String entityId) {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
+            String officeId = requiredParam(ctx, OFFICE);
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Entity.class);
             Entity entity = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Entity.class);
@@ -190,13 +191,27 @@ public class EntityController implements CrudHandler {
                 ctx.result("Entity ID and Office ID must be provided in the request body.");
                 return;
             }
+
+            if (!entityId.equalsIgnoreCase(entity.getId().getName())) {
+                ctx.status(HttpServletResponse.SC_NOT_FOUND);
+                ctx.result("Entity not found for the given entity-id.");
+                return;
+            }
+
+            if (!officeId.equalsIgnoreCase(entity.getId().getOfficeId())) {
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                ctx.result("Office ID in query parameter must match the Office ID in the request body.");
+                return;
+            }
+
             EntityDao dao = new EntityDao(dsl);
             dao.updateEntity(entity);
             ctx.status(HttpServletResponse.SC_OK);
         }
     }
 
-    @OpenApi(
+
+        @OpenApi(
             description = "Delete CWMS Entity.",
             pathParams = {
                     @OpenApiParam(name = ENTITY_ID, required = true, description = "Specifies the entity ID " +
