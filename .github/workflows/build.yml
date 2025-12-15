@@ -27,7 +27,7 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v5.0.0
       - name: setup java
-        uses: actions/setup-java@v5.0.0
+        uses: actions/setup-java@v5.1.0
         with:
           distribution: 'temurin'
           java-version: ${{matrix.jdk}}
@@ -53,7 +53,7 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v5.0.0
       - name: setup java
-        uses: actions/setup-java@v5.0.0
+        uses: actions/setup-java@v5.1.0
         with:
           distribution: 'temurin'
           java-version: 11
