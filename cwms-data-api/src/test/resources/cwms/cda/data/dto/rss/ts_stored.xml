@@ -1,0 +1,13 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>SWT_TS_STORED</title>
+        <description>CWMS messages about time series operations, such as data stored and deleted</description>
+        <atom:link rel="next" href="https://localhost:7001/swt-data/rss/swt/ts_stored?page=fHx8fDUwMHx8MQ%3D%3D"
+                   type="application/rss+xml"/>
+        <item>
+            <description>{"office_id":"SWT","start_time":1765033200000,"ts_id":"AARK.Area.Inst.~1Day.0.TEST2","ts_code":263191,"end_time":1766847600000,"store_time":1765614311370,"store_rule":"DELETE INSERT","version_date":-27079747200000,"type":"TSDataStored","millis":1765585516312}</description>
+            <pubDate>Sat, 13 Dec 2025 00:25:19 Z</pubDate>
+            <guid isPermaLink="false">45CB69B75AC67335E063400215ACD414</guid>
+        </item>
+    </channel>
+</rss>

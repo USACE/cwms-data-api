@@ -60,6 +60,7 @@ public class Formats {
     public static final String GEOJSON = "application/geo+json";
     public static final String PGJSON = "application/vnd.pg+json";
     public static final String NAMED_PGJSON = "application/vnd.named+pg+json";
+    public static final String RSS = "application/rss+xml";
     public static final String DEFAULT = "*/*";
 
     public static final String JSON_LEGACY = "json";
@@ -76,7 +77,7 @@ public class Formats {
 
     static {
         contentTypeList.addAll(
-                Stream.of(DEFAULT, JSON, JSONV1, XML, XMLV1, XMLV2, WML2, JSONV2,
+                Stream.of(DEFAULT, JSON, JSONV1, XML, XMLV1, XMLV2, RSS, WML2, JSONV2,
                         TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON)
                         .map(ContentType::new)
                         .collect(Collectors.toList()));
