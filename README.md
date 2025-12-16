@@ -38,6 +38,7 @@ This is a new implementation of a REST API for data retrieval of USACE Water Dat
 
 See the [📃 Wiki](https://github.com/USACE/cwms-data-api/wiki) for how to get started
 
+End user documentation available here: [📕 Read the Docs](https://cwms-data-api.readthedocs.io/latest)
 
 ## Development notes
 

@@ -122,6 +122,10 @@ public final class Controllers {
     public static final String CATEGORY_ID = "category-id";
     public static final String CATEGORY_ID_MASK = "category-id-mask";
     public static final String VERSION_DATE = "version-date";
+    public static final String LONG_NAME = "long-name";
+    public static final String MATCH_NULL_PARENTS = "match-null-parents";
+    public static final String ENTITY_ID = "entity-id";
+    public static final String PARENT_ENTITY_ID = "parent-entity-id";
 
     public static final String CREATE_AS_LRTS = "create-as-lrts";
     public static final String STORE_RULE = "store-rule";

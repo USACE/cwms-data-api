@@ -39,6 +39,11 @@ export default [
     href: "#",
     children: [
       {
+        id: "read-the-docs",
+        text: "User Documentation",
+        href: "https://cwms-data-api.readthedocs.io/latest",
+      },
+      {
         id: "github-wiki",
         text: "Wiki",
         href: "https://github.com/USACE/cwms-data-api/wiki",
