@@ -542,7 +542,7 @@ public class TimeSeriesController implements CrudHandler {
             requestResultSize.update(results.length());
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
-            logger.log(Level.WARNING, re.toString(), e);
+            logger.atSevere().withCause(e).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_NOT_FOUND);
             ctx.json(re);
         } catch (IllegalArgumentException ex) {

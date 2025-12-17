@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,7 +52,7 @@ public class UserDao extends JooqDao<User> {
 
     @Override
     public Optional<User> getByUniqueName(String uniqueName, String cac_role) {
-        return Optional.of(dsl.connectionResult(c -> {
+        return Optional.ofNullable(dsl.connectionResult(c -> {
                 AuthDao.setSessionForAuthCheck(c);
                 try (PreparedStatement getUser = c.prepareStatement(GET_USER)) {
                     getUser.setString(1, uniqueName);
@@ -77,7 +78,7 @@ public class UserDao extends JooqDao<User> {
                             logger.atInfo().log("Building user object.");
                            return new User(userName, principalName, email, cac_role != null,  roles);
                         } else {
-                            return (User)null;
+                            return null;
                         }
                     }
                 }
