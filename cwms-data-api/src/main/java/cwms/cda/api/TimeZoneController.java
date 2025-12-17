@@ -71,7 +71,9 @@ public class TimeZoneController implements CrudHandler {
                             + "\n* `tab`  "
                             + "\n* `csv`  "
                             + "\n* `xml`  "
-                            + "\n* `json`  (default)")
+                            + "\n* `json`  (default)"
+                            + "\n\nSee <a href=\"legacy-format/\">this page</a> for more "
+                            + "information about accept header usage.")
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
@@ -97,25 +99,18 @@ public class TimeZoneController implements CrudHandler {
             boolean isLegacyVersion = version.equals("1");
 
             String results;
-            if (format.isEmpty() && !isLegacyVersion)
-            {
+            if (format.isEmpty() && !isLegacyVersion) {
                 TimeZoneIds zones = dao.getTimeZones();
                 results = Formats.format(contentType, zones);
                 ctx.contentType(contentType.toString());
-            }
-            else
-            {
-                if (isLegacyVersion)
-                {
+            } else {
+                if (isLegacyVersion) {
                     format = Formats.getLegacyTypeFromContentType(contentType);
                 }
                 results = dao.getTimeZones(format);
-                if (isLegacyVersion)
-                {
+                if (isLegacyVersion) {
                     ctx.contentType(contentType.toString());
-                }
-                else
-                {
+                } else {
                     ctx.contentType(contentType.getType());
                 }
             }

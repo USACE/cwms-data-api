@@ -347,7 +347,7 @@ public class LocationLevelsDaoTest extends DaoTest
     }
 
     private Location buildTestLocation(String name) {
-        return new Location.Builder(name, "SITE", ZoneId.of("UTC"), 50.0, 50.0, "NVGD29", OFFICE_ID)
+        return new Location.Builder(name, "SITE", ZoneId.of("UTC"), 50.0, 50.0, "NGVD29", OFFICE_ID)
                 .withElevation(10.0)
                 .withCountyName("Sacramento")
                 .withNation(Nation.US)

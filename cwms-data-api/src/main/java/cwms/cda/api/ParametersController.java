@@ -27,7 +27,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-
 import java.util.List;
 import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
@@ -65,13 +64,14 @@ public class ParametersController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
-                    @OpenApiParam(name = FORMAT, deprecated = true, required = false, description = "Specifies the"
+                    @OpenApiParam(name = FORMAT, deprecated = true, description = "Specifies the"
                             + " encoding format of the response. Valid value for the format field"
                             + " for this URI are:"
                             + "\n* `tab`"
                             + "\n* `csv`"
                             + "\n* `xml`"
-                            + "\n* `json` (default)"),
+                            + "\n* `json` (default)"
+                            + "\n\nSee <a href=\"legacy-format/\">this page</a> for more information about accept header usage."),
                     @OpenApiParam(name = OFFICE, description = "Specifies the"
                             + " owning office of the parameters whose data is to be included in the "
                             + "response. If this field is not specified, the session user's default office will be"
@@ -100,26 +100,19 @@ public class ParametersController implements CrudHandler {
             boolean isLegacyVersion = version.equals("1");
 
             String results;
-            if (format.isEmpty() && !isLegacyVersion)
-            {
+            if (format.isEmpty() && !isLegacyVersion) {
                 List<Parameter> params = dao.getParametersV2(office);
                 results = Formats.format(contentType, params, Parameter.class);
                 ctx.contentType(contentType.toString());
-            }
-            else
-            {
-                if (isLegacyVersion)
-                {
+            } else {
+                if (isLegacyVersion) {
                     format = Formats.getLegacyTypeFromContentType(contentType);
                 }
 
                 results = dao.getParameters(format);
-                if (isLegacyVersion)
-                {
+                if (isLegacyVersion) {
                     ctx.contentType(contentType.toString());
-                }
-                else
-                {
+                } else {
                     ctx.contentType(contentType.getType());
                 }
             }

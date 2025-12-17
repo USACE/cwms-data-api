@@ -80,6 +80,8 @@ public abstract class LocationLevel extends CwmsDTO {
 
     private final String specifiedLevelId;
 
+    @Schema(description = "The expiration date of the location level.")
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private final ZonedDateTime expirationDate;
 
     @Schema(description = "Data Type such as Stage, Elevation, or others.")
@@ -257,30 +259,7 @@ public abstract class LocationLevel extends CwmsDTO {
             withOfficeId(copyFrom.getOfficeId());
             withParameterTypeId(copyFrom.getParameterTypeId());
             withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
-        }
-
-        Builder(JDomLocationLevelImpl copyFrom) {
-            withAttributeComment(copyFrom.getAttributeComment());
-            withAttributeDurationId(copyFrom.getAttributeDurationId());
-            withAttributeParameterId(copyFrom.getAttributeParameterId());
-            ILocationLevelRef locationLevelRef = copyFrom.getLocationLevelRef();
-            if (locationLevelRef != null) {
-                withLocationLevelId(locationLevelRef.getLocationLevelId());
-            }
-            withAttributeValue(copyFrom.getAttributeValue());
-            withAttributeParameterTypeId(copyFrom.getAttributeParameterTypeId());
-            withAttributeUnitsId(copyFrom.getAttributeUnitsId());
-            withDurationId(copyFrom.getDurationId());
-            withLevelComment(copyFrom.getLevelComment());
-            Date copyLevelDate = copyFrom.getLevelDate();
-            if (copyLevelDate != null) {
-                withLevelDate(ZonedDateTime.ofInstant(copyLevelDate.toInstant(), ZoneId.of("UTC")));
-            }
-            withLevelUnitsId(copyFrom.getLevelUnitsId());
-            withOfficeId(copyFrom.getOfficeId());
-            withParameterId(copyFrom.getParameterId());
-            withParameterTypeId(copyFrom.getParameterTypeId());
-            withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
+            withExpirationDate(copyFrom.getExpirationDate());
         }
 
         protected T self() {
@@ -454,6 +433,8 @@ public abstract class LocationLevel extends CwmsDTO {
                     ? constantLevel.getConstantValue() : updatedConstantLevel.getConstantValue());
 
             builder = new ConstantLocationLevel.Builder(locationId, unmarshalledDate)
+                .withExpirationDate(updatedLevel.getExpirationDate() == null
+                    ? existingLevel.getExpirationDate() : updatedLevel.getExpirationDate())
                     .withConstantValue(siParameterUnitsConstantValue);
         } else if (existingLevel instanceof TimeSeriesLocationLevel) {
             TimeSeriesLocationLevel timeSeriesLevel = (TimeSeriesLocationLevel) existingLevel;
@@ -462,7 +443,9 @@ public abstract class LocationLevel extends CwmsDTO {
             String seasonalTimeSeriesId = (updatedTimeSeriesLevel.getSeasonalTimeSeriesId() == null
                     ? timeSeriesLevel.getSeasonalTimeSeriesId() : updatedTimeSeriesLevel.getSeasonalTimeSeriesId());
 
-            builder = new TimeSeriesLocationLevel.Builder(locationId, unmarshalledDate, seasonalTimeSeriesId);
+            builder = new TimeSeriesLocationLevel.Builder(locationId, unmarshalledDate, seasonalTimeSeriesId)
+                .withExpirationDate(updatedLevel.getExpirationDate() == null
+                    ? existingLevel.getExpirationDate() : updatedLevel.getExpirationDate());
         } else if (existingLevel instanceof SeasonalLocationLevel) {
             SeasonalLocationLevel seasonalLevel = (SeasonalLocationLevel) existingLevel;
             SeasonalLocationLevel updatedSeasonalLevel = (SeasonalLocationLevel) updatedLevel;
@@ -491,7 +474,9 @@ public abstract class LocationLevel extends CwmsDTO {
                     .withIntervalMinutes(intervalMinutes)
                     .withIntervalMonths(intervalMonths)
                     .withIntervalOrigin(intervalOrigin)
-                    .withInterpolateString(interpolateString);
+                    .withInterpolateString(interpolateString)
+                    .withExpirationDate(updatedLevel.getExpirationDate() == null
+                        ? existingLevel.getExpirationDate() : updatedLevel.getExpirationDate());
         } else {
             throw new UnsupportedFormatException("Unsupported Location Level type: "
                     + existingLevel.getClass().getName());

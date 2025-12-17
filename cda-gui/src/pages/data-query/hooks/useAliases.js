@@ -20,16 +20,18 @@ export default function useAliases({ office, kind, cacheDuration, props }) {
     select: (data) => {
       const aliasMap = {};
 
-      data?.entries.sort((a, b) => (
-        a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
-      )).forEach((loc) => {
-        aliasMap[loc.name] = {
-          name: loc.name,
-          publicName: loc.publicName,
-          office: loc.office,
-          aliases: loc.aliases,
-        };
-      });
+      data?.entries
+        .sort((a, b) =>
+          a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+        )
+        .forEach((loc) => {
+          aliasMap[loc.name] = {
+            name: loc.name,
+            publicName: loc.publicName,
+            office: loc.office,
+            aliases: loc.aliases,
+          };
+        });
       return aliasMap;
     },
     ...props,

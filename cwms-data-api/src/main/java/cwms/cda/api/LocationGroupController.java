@@ -168,7 +168,10 @@ public class LocationGroupController implements CrudHandler {
                 @OpenApiContent(type = Formats.GEOJSON)
             })
         },
-        description = "Retrieves requested Location Group", tags = {TAG}
+        description = "Retrieves requested Location Group. This endpoint supports GEO JSON responses with "
+            + Formats.GEOJSON + "."
+            + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
+        tags = {TAG}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String groupId) {

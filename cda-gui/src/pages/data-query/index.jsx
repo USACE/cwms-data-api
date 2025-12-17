@@ -44,7 +44,7 @@ export default function DataQuery() {
 
   const toggleTSID = (tsid) =>
     setVisibleTSIDs((prev) =>
-      prev.includes(tsid) ? prev.filter((t) => t !== tsid) : [...prev, tsid]
+      prev.includes(tsid) ? prev.filter((t) => t !== tsid) : [...prev, tsid],
     );
 
   const offices = useQuery({
@@ -58,9 +58,7 @@ export default function DataQuery() {
     retry: 1,
     staleTime: 1000 * 60 * 60 * 24,
   });
-  const [beginDateTime, setBeginDateTime] = useState(
-    dayjs().subtract(1, "day")
-  );
+  const [beginDateTime, setBeginDateTime] = useState(dayjs().subtract(1, "day"));
   const [endDateTime, setEndDateTime] = useState(dayjs());
 
   async function fetchAllTSData(data) {
@@ -140,7 +138,7 @@ export default function DataQuery() {
       tsids.every(
         (tsid) =>
           tsid.split(".").length === 6 &&
-          tsid.split(".").every((part) => part.trim() !== "")
+          tsid.split(".").every((part) => part.trim() !== ""),
       ) &&
       office !== undefined,
   });
@@ -163,7 +161,7 @@ export default function DataQuery() {
       end: endDateTime.format("YYYY-MM-DDTHH:mm:ssZZ"),
       office: office,
     }),
-    [beginDateTime, endDateTime, office]
+    [beginDateTime, endDateTime, office],
   );
   const handleDownloadCSV = () => {
     if (!timeseriesData || timeseriesData.dates.length === 0) {
@@ -191,8 +189,8 @@ export default function DataQuery() {
     link.setAttribute(
       "download",
       `${locName}_${parameters.length}_params_${beginDateTime.format(
-        "YYYY-MM-DD"
-      )}_${endDateTime.format("YYYY-MM-DD")}.csv`
+        "YYYY-MM-DD",
+      )}_${endDateTime.format("YYYY-MM-DD")}.csv`,
     );
     link.style.visibility = "hidden";
     document.body.appendChild(link);
@@ -218,8 +216,8 @@ export default function DataQuery() {
     link.setAttribute(
       "download",
       `${locName}_${paramName}_${beginDateTime.format(
-        "YYYY-MM-DD"
-      )}_${endDateTime.format("YYYY-MM-DD")}.json`
+        "YYYY-MM-DD",
+      )}_${endDateTime.format("YYYY-MM-DD")}.json`,
     );
     link.style.visibility = "hidden";
     document.body.appendChild(link);
@@ -305,9 +303,7 @@ export default function DataQuery() {
                 />
               </>
             )}
-            {!office && (
-              <H3 className="text-center mt-4">Select an office to begin</H3>
-            )}
+            {!office && <H3 className="text-center mt-4">Select an office to begin</H3>}
           </div>
           <TimeSeriesManager
             tsids={tsids}
@@ -326,9 +322,7 @@ export default function DataQuery() {
             <Button
               onClick={handleDownloadCSV}
               className={`mb-4 bg-blue-500 text-white px-4 py-2 rounded ${
-                !timeseriesData?.tsids.length || timeseriesLoading
-                  ? "hidden"
-                  : ""
+                !timeseriesData?.tsids.length || timeseriesLoading ? "hidden" : ""
               }`}
             >
               Download CSV
@@ -336,9 +330,7 @@ export default function DataQuery() {
             <Button
               onClick={handleDownloadJSON}
               className={`mb-4 bg-green-600 text-white px-4 py-2 rounded ms-2 ${
-                !timeseriesData?.tsids.length || timeseriesLoading
-                  ? "hidden"
-                  : ""
+                !timeseriesData?.tsids.length || timeseriesLoading ? "hidden" : ""
               }`}
             >
               Download JSON
@@ -351,15 +343,11 @@ export default function DataQuery() {
             timeseriesData?.raw?.every((ts) => ts?.values?.length === 0) ? (
             <>
               <div className="text-center text-red-600 font-semibold mt-4">
-                No TimeSeries values found for the selected parameters, office,
-                or date range.
+                No TimeSeries values found for the selected parameters, office, or date
+                range.
               </div>
-              <Badge
-                color="blue"
-                className="my-2 mx-auto block w-1/2 text-center"
-              >
-                Try expanding the date range if querying daily, monthly, or
-                yearly data.
+              <Badge color="blue" className="my-2 mx-auto block w-1/2 text-center">
+                Try expanding the date range if querying daily, monthly, or yearly data.
               </Badge>
             </>
           ) : (

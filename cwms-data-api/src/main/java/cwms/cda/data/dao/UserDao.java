@@ -231,7 +231,7 @@ public class UserDao extends JooqDao<User> {
 
             final Users.Builder builder = new Users.Builder(cursor, pageSizeTmp, total, limitOffice);
 
-            final HashMap<String, User.Builder> tmpUsers = new HashMap<>();
+            final Map<String, User.Builder> tmpUsers = new LinkedHashMap<>();
 
             query.fetch().forEach(row -> {
                 User.Builder userBuilder = tmpUsers.computeIfAbsent(row.get(userId), (key) -> {
