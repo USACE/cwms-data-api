@@ -1,6 +1,6 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
     <channel>
-        <title>SWT_TS_STORED</title>
+        <title>TS_STORED</title>
         <description>CWMS messages about time series operations, such as data stored and deleted</description>
         <atom:link rel="next" href="https://localhost:7001/swt-data/rss/swt/ts_stored?page=fHx8fDUwMHx8MQ%3D%3D"
                    type="application/rss+xml"/>

@@ -97,7 +97,7 @@ public final class MessageDao extends JooqDao<RssFeed> {
             default:
                 description = null;
         }
-        RssChannel channel = new RssChannel(office + "_" + name, nextLink, description, items);
+        RssChannel channel = new RssChannel(name, nextLink, description, items);
         return new RssFeed(channel);
     }
 
