@@ -55,7 +55,7 @@ public class EntityController implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, from = Entity.class, type = Formats.JSONV2)
+                            @OpenApiContent(isArray = true, from = Entity.class, type = Formats.JSONV1)
                     })
             },
             tags = {TAG}
@@ -106,7 +106,7 @@ public class EntityController implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                                    @OpenApiContent(from = Entity.class, type = Formats.JSONV2)
+                                    @OpenApiContent(from = Entity.class, type = Formats.JSONV1)
                     })
             },
             tags = {TAG}
@@ -139,7 +139,7 @@ public class EntityController implements CrudHandler {
             description = "Create CWMS Entity",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = Entity.class, type = Formats.JSONV2)
+                            @OpenApiContent(from = Entity.class, type = Formats.JSONV1)
                     },
                     required = true),
             responses = {
@@ -167,7 +167,7 @@ public class EntityController implements CrudHandler {
     @OpenApi(
             description = "Update an existing Entity.",
             requestBody = @OpenApiRequestBody(
-                    content = {@OpenApiContent(from = Entity.class, type = Formats.JSONV2)},
+                    content = {@OpenApiContent(from = Entity.class, type = Formats.JSONV1)},
                     required = true),
             pathParams = {
                     @OpenApiParam(name = ENTITY_ID, required = true, description = "Specifies the entity ID of the " +

@@ -57,7 +57,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
     // create -> getOne -> update -> getOne to verify updated
     // delete -> getOne to verify deleted
     @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     void test_entity_create_get_update_delete(String format) throws Exception {
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
@@ -68,7 +68,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         // CREATE
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
             .body(crudEntityJson)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -104,7 +104,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
 
         String updatedEntityJson = mapper.writeValueAsString(root);
         given()
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
             .body(updatedEntityJson)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -170,7 +170,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         // CREATE
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
             .body(duplicateEntityJson)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -186,7 +186,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         // CREATE
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
             .body(duplicateEntityJson)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -211,7 +211,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         // CREATE
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
             .body(getOneEntityJson)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -226,7 +226,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         // getOne with no office param
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSONV1)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -248,7 +248,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
 
         // CREATE the entity in SPK as SPK user
         given()
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
             .body(updateOfficeEntityJson)
             .header(AUTH_HEADER, spkUser.toHeaderValue()) // authenticated as SPK
         .when()
@@ -268,7 +268,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         String entityName = JsonPath.from(updateJson).getString("id.name");
 
         given()
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
             .body(updateJson)
             .header(AUTH_HEADER, swtUser.toHeaderValue()) // authenticated as SWT
         .when()
@@ -291,8 +291,8 @@ final class EntityControllerTestIT extends DataApiTestIT {
         // UPDATE - non-existing new entity id - 404
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(newEntityJson)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -308,7 +308,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         // CREATE the new Entity, then update it without an entity id
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
             .body(newEntityJson)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -332,8 +332,8 @@ final class EntityControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
             .body(missingIdInBodyJson)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -348,7 +348,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
 
     // getAll with no query params: must return 200 and a list (empty allowed)
     @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     void getAll_no_params_returns_200_empty_list_ok(String format) {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -371,7 +371,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
     void getAll_with_parent_filter_returns_200_empty_list_ok() {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSONV1)
             .queryParam(Controllers.PARENT_ENTITY_ID, "NOAA")
         .when()
             .redirects().follow(true)
@@ -393,7 +393,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         // CREATE entity with null parent - default match-null-parents = true
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
             .body(nullParentEntityJson)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -409,7 +409,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         String json =
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
+                .accept(Formats.JSONV1)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -440,7 +440,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         String json2 =
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
+                .accept(Formats.JSONV1)
                 .queryParam(Controllers.MATCH_NULL_PARENTS, false)
             .when()
                 .redirects().follow(true)
@@ -469,7 +469,7 @@ final class EntityControllerTestIT extends DataApiTestIT {
         String jsonParent =
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(Formats.JSONV1)
             .queryParam(Controllers.PARENT_ENTITY_ID, "NOAA")
             .queryParam(Controllers.MATCH_NULL_PARENTS, true)
         .when()
