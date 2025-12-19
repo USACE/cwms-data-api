@@ -55,7 +55,7 @@ public class EntityController implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, from = Entity.class, type = Formats.JSONV2)
+                            @OpenApiContent(isArray = true, from = Entity.class, type = Formats.JSONV1)
                     })
             },
             tags = {TAG}
@@ -69,8 +69,14 @@ public class EntityController implements CrudHandler {
             String officeId = ctx.queryParam(OFFICE);
             String entityId = ctx.queryParam(ENTITY_ID);
             String parentId = ctx.queryParam(PARENT_ENTITY_ID);
-            Boolean matchNullParents = ctx.queryParamAsClass(MATCH_NULL_PARENTS, Boolean.class)
-                    .getOrDefault(true);
+            Boolean matchNullParents;
+            if (parentId != null) {
+                matchNullParents = false;
+            } else {
+                matchNullParents = ctx.queryParamAsClass(MATCH_NULL_PARENTS, Boolean.class)
+                        .getOrDefault(true);
+            }
+
             String categoryId = ctx.queryParam(CATEGORY_ID);
             String entityName = ctx.queryParam(LONG_NAME);
 
@@ -100,7 +106,7 @@ public class EntityController implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                                    @OpenApiContent(from = Entity.class, type = Formats.JSONV2)
+                                    @OpenApiContent(from = Entity.class, type = Formats.JSONV1)
                     })
             },
             tags = {TAG}
@@ -133,7 +139,7 @@ public class EntityController implements CrudHandler {
             description = "Create CWMS Entity",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = Entity.class, type = Formats.JSONV2)
+                            @OpenApiContent(from = Entity.class, type = Formats.JSONV1)
                     },
                     required = true),
             responses = {
@@ -161,15 +167,11 @@ public class EntityController implements CrudHandler {
     @OpenApi(
             description = "Update an existing Entity.",
             requestBody = @OpenApiRequestBody(
-                    content = {@OpenApiContent(from = Entity.class, type = Formats.JSONV2)},
+                    content = {@OpenApiContent(from = Entity.class, type = Formats.JSONV1)},
                     required = true),
             pathParams = {
                     @OpenApiParam(name = ENTITY_ID, required = true, description = "Specifies the entity ID of the " +
                             " Entity to be updated. (e.g., NWS)")
-            },
-            queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office "+
-                            " of the entity to be updated. (e.g., SPK)")
             },
             method = HttpMethod.PATCH,
             tags = {TAG},
@@ -185,9 +187,12 @@ public class EntityController implements CrudHandler {
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Entity.class);
             Entity entity = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Entity.class);
-            if (entity.getId() == null || entity.getId().getOfficeId() == null || entity.getId().getName() == null) {
-                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
-                ctx.result("Entity ID and Office ID must be provided in the request body.");
+            // Validate the office ID and entity ID are provided.
+            entity.validate();
+
+            if (!entityId.equalsIgnoreCase(entity.getId().getName())) {
+                ctx.status(HttpServletResponse.SC_NOT_FOUND);
+                ctx.result("Entity ID in path parameter must match the Entity ID in the request body.");
                 return;
             }
             EntityDao dao = new EntityDao(dsl);
@@ -196,7 +201,8 @@ public class EntityController implements CrudHandler {
         }
     }
 
-    @OpenApi(
+
+        @OpenApi(
             description = "Delete CWMS Entity.",
             pathParams = {
                     @OpenApiParam(name = ENTITY_ID, required = true, description = "Specifies the entity ID " +
