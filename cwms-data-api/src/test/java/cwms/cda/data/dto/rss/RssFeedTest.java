@@ -53,7 +53,7 @@ final class RssFeedTest {
             "{\"office_id\":\"SWT\",\"start_time\":1765033200000,\"ts_id\":\"AARK.Area.Inst.~1Day.0.TEST2\",\"ts_code\":263191,\"end_time\":1766847600000,\"store_time\":1765614311370,\"store_rule\":\"DELETE" +
                 " INSERT\",\"version_date\":-27079747200000,\"type\":\"TSDataStored\",\"millis\":1765585516312}",
             Instant.parse("2025-12-13T00:25:19.600607Z").atZone(ZoneOffset.UTC), "45CB69B75AC67335E063400215ACD414"));
-        RssChannel channel = new RssChannel("SWT_TS_STORED", next,
+        RssChannel channel = new RssChannel("TS_STORED", next,
             "CWMS messages about time series operations, such as data stored and deleted", items);
         RssFeed rssFeed = new RssFeed(channel);
         String xmlSerialization = Formats.format(contentType, rssFeed);
