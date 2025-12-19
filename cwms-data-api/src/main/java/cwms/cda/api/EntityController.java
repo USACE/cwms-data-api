@@ -69,8 +69,14 @@ public class EntityController implements CrudHandler {
             String officeId = ctx.queryParam(OFFICE);
             String entityId = ctx.queryParam(ENTITY_ID);
             String parentId = ctx.queryParam(PARENT_ENTITY_ID);
-            Boolean matchNullParents = ctx.queryParamAsClass(MATCH_NULL_PARENTS, Boolean.class)
-                    .getOrDefault(true);
+            Boolean matchNullParents;
+            if (parentId != null) {
+                matchNullParents = false;
+            } else {
+                matchNullParents = ctx.queryParamAsClass(MATCH_NULL_PARENTS, Boolean.class)
+                        .getOrDefault(true);
+            }
+
             String categoryId = ctx.queryParam(CATEGORY_ID);
             String entityName = ctx.queryParam(LONG_NAME);
 

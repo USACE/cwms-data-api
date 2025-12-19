@@ -465,6 +465,32 @@ final class EntityControllerTestIT extends DataApiTestIT {
 
         assertFalse(present, "Entity with null parent-id should be filtered out when match-null-parents=false");
 
+        // GET - parent-entity-id filter is present, match-null-parents should be ignored and treated as false
+        String jsonParent =
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.PARENT_ENTITY_ID, "NOAA")
+            .queryParam(Controllers.MATCH_NULL_PARENTS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/entity")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(HttpServletResponse.SC_OK)
+            .extract().asString();
+
+        List<Map<String, Object>> itemsParent = JsonPath.from(jsonParent).getList("");
+        boolean foundParent = itemsParent.stream().anyMatch(m -> {
+            Map<?, ?> id = (Map<?, ?>) m.get("id");
+            return id != null
+                    && OFFICE_ID.equals(id.get("office-id"))
+                    && entityName.equals(id.get("name"));
+        });
+        assertFalse(foundParent, "Entity with null parent-id should be filtered out when parent filter is present, regardless of match-null-parents");
+
+
         // DELETE nullParentEntity
         given()
             .header(AUTH_HEADER, user.toHeaderValue())
