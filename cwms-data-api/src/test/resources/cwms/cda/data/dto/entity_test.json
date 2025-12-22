@@ -1,0 +1,62 @@
+[
+
+  {
+    "id" : {
+      "office-id" : "SPK",
+      "name" : "0_CRUD_TE"
+    },
+    "parent-entity-id" : "NOAA",
+    "category-id" : "GOV",
+    "long-name" : "Test Entity"
+  },
+
+  {
+    "id" : {
+      "office-id" : "SPK",
+      "name" : "1_DUP_ENTITY_ID_TE"
+    },
+    "parent-entity-id" : "NOAA",
+    "category-id" : "GOV",
+    "long-name" : "Duplicate Test Entity"
+  },
+
+  {
+    "id" : {
+      "office-id": "SPK",
+      "name": "2_GET_ONE_TE"
+    },
+    "parent-entity-id" : "NOAA",
+    "category-id" : "GOV",
+    "long-name" : "Test Entity for Get One"
+  },
+
+  {
+    "id" : {
+      "office-id" : "SPK",
+      "name" : "3_NON_EXISTENT_TE"
+    },
+    "parent-entity-id" : "NOAA",
+    "category-id" : "GOV",
+    "long-name" : "Test Entity that does not exist"
+  },
+
+  {
+    "id" : {
+      "office-id" : "SPK",
+      "name" : "4_UPDATE_OFFICE_TE"
+    },
+    "parent-entity-id" : "NOAA",
+    "category-id" : "GOV",
+    "long-name" : "Test Entity for Update Office"
+  },
+
+  {
+    "id" : {
+      "office-id" : "SPK",
+      "name" : "5_NULL_PARENT_TE"
+    },
+    "category-id" : "GOV",
+    "long-name" : "Null Parent Test Entity"
+  }
+
+]
