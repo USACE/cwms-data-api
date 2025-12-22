@@ -39,7 +39,7 @@ jobs:
           cache: 'gradle'
       - name: build and test
         id: thebuild
-        run: ./gradlew build --info --init-script init.gradle
+        run: ./gradlew clean build --info --init-script init.gradle
       - name: integration tests
         run: ./gradlew integrationtest --info --init-script init.gradle -PCDA.oracle.database.image=${{matrix.schema.image}}
       - name: Publish Test Report
@@ -65,7 +65,7 @@ jobs:
           cache: 'gradle'
       - name: build and test
         id: thebuild
-        run: ./gradlew :cwms-data-api:test --tests "cwms.cda.api.OpenApiDocTest" --info --init-script init.gradle
+        run: ./gradlew clean :cwms-data-api:test --tests "cwms.cda.api.OpenApiDocTest" --info --init-script init.gradle
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v5
         if: always()
