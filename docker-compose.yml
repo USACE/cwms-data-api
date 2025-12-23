@@ -1,6 +1,11 @@
 volumes:
   oracle_data_1:
   auth_data:
+  minio_data:
+    driver: local
+  minio_config:
+    driver: local
+
 services:
   db:
     image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev
@@ -50,6 +55,8 @@ services:
         condition: service_completed_successfully
       traefik:
         condition: service_healthy
+      minio:
+        condition: service_healthy
     image: cwms-rest-api:local-dev
     build:
       target: api
@@ -77,6 +84,11 @@ services:
       - cwms.dataapi.access.openid.altAuthUrl=http://localhost:${APP_PORT:-8081}
       - cwms.dataapi.access.openid.useAltWellKnown=true
       - cwms.dataapi.access.openid.issuer=http://localhost:${APP_PORT:-8081}/auth/realms/cwms
+      - blob.store.endpoint=http://minio:9000
+      - blob.store.region=docker
+      - blob.store.bucket=cwms-test
+      - blob.store.accessKey=cda_user
+      - blob.store.secretKey=cda_password
     expose:
       - 7000
       - 5005
@@ -133,7 +145,7 @@ services:
     expose:
       - "8080"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
       test: traefik healthcheck --ping
     command:
@@ -147,3 +159,46 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=PathPrefix(`/traefik`)"
       - "traefik.http.routers.traefik.service=api@internal"
+
+  minio:
+    container_name: minio_server
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    volumes:
+      - minio_data:/data
+      - minio_config:/root/.minio
+    ports:
+      - '${FORWARD_MINIO_API_PORT0:-9000}:9000'
+      - '${FORWARD_MINIO_PORT:-9001}:9001'
+      - '${FORWARD_MINIO_API_PORT2:-9002}:9002'
+    environment:
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: saersdbewadfqewrbwreq12rfgweqrffw52354ec@%fwewEFFWSE
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: [ "CMD", "mc", "ready", "local" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.5"
+          memory: 1G
+        limits:
+          cpus: "1.0"
+          memory: 2G
+
+  minio-setup:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 minio_admin saersdbewadfqewrbwreq12rfgweqrffw52354ec@%fwewEFFWSE;
+      /usr/bin/mc admin user add myminio cda_user cda_password;
+      /usr/bin/mc mb --ignore-existing myminio/cwms-test;
+      /usr/bin/mc admin policy attach myminio readwrite --user cda_user;
+      exit 0;
+      "

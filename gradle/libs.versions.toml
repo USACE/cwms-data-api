@@ -36,6 +36,8 @@ freemarker = "2.3.32"
 auto-service = "1.1.1"
 openapi-validation = "2.44.9"
 javaparser = "3.26.2"
+togglz = "3.3.3"
+minio = "8.6.0"
 
 #Overrides
 classgraph = { strictly = '4.8.176' }
@@ -79,7 +81,9 @@ jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-dat
 jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson" }
 jackson-datatype-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jdk8", version.ref = "jackson" }
 
+togglz-core = { module = "org.togglz:togglz-core", version.ref = "togglz" }
 
+minio = { module = "io.minio:minio", version.ref = "minio"}
 
 #compile compileOnly
 javaee-web-api = { module = "javax:javaee-web-api", version.ref = "java-ee" }

@@ -18,6 +18,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import static io.restassured.RestAssured.given;
@@ -36,6 +37,11 @@ public class BlobControllerTestIT extends DataApiTestIT {
     private static final String EXISTING_BLOB_VALUE = "test value";
 
     @BeforeAll
+    public static void setup() throws Exception {
+        createExistingBlob();
+    }
+
+
     static void createExistingBlob() throws Exception
     {
         String origDesc = "test description";
@@ -67,7 +73,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
     @Test
     void test_getOne_not_found() throws UnsupportedEncodingException {
         String blobId = "TEST";
-        String urlencoded = URLEncoder.encode(blobId, "UTF-8");
+        String urlencoded = URLEncoder.encode(blobId, StandardCharsets.UTF_8);
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -406,7 +412,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
 
                 nextPage = pageN.path("next-page");
                 int pageTotal = pageN.path("blobs.size()");
-                assertTrue(pageTotal <= pageSize, "Expected the page to return no more than the configured page size");
+                assertTrue(pageTotal <= pageSize, "Expected the page to return no more than the configured page size. Expected " + pageTotal + "<=" + pageSize);
 
                 totalRetrieved += pageTotal;
             } while( nextPage != null );

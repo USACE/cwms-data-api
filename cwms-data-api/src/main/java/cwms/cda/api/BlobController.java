@@ -9,6 +9,9 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.BlobDao;
+import cwms.cda.data.dao.BlobAccess;
+import cwms.cda.data.dao.ObjectStorageBlobDao;
+import cwms.cda.data.dao.ObjectStorageConfig;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.Blobs;
@@ -33,6 +36,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+import org.togglz.core.context.FeatureContext;
+import cwms.cda.features.CdaFeatures;
+import org.togglz.core.manager.FeatureManager;
 
 
 /**
@@ -60,6 +66,31 @@ public class BlobController implements CrudHandler {
 
     protected DSLContext getDslContext(Context ctx) {
         return JooqDao.getDslContext(ctx);
+    }
+
+    private BlobAccess chooseBlobAccess(DSLContext dsl) {
+        boolean useObjectStore = isObjectStorageEnabled();
+        try {
+            // Prefer Togglz if available
+            FeatureManager featureManager = FeatureContext.getFeatureManager();
+            useObjectStore = featureManager.isActive(CdaFeatures.USE_OBJECT_STORAGE_BLOBS);
+        } catch (Throwable ignore) {
+            // fall back to system/env property check
+        }
+        if (useObjectStore) {
+            ObjectStorageConfig cfg = ObjectStorageConfig.fromSystem();
+            return new ObjectStorageBlobDao(cfg);
+        }
+        return new BlobDao(dsl);
+    }
+
+    private boolean isObjectStorageEnabled() {
+        // System properties first, then env. Accept FEATURE=true
+        String key = String.valueOf(CdaFeatures.USE_OBJECT_STORAGE_BLOBS);
+        String v = System.getProperty(key);
+        if (v == null) v = System.getProperty(key);
+        if (v == null) v = System.getenv(key);
+        return v != null && ("true".equalsIgnoreCase(v) || "1".equals(v));
     }
 
     @OpenApi(
@@ -115,7 +146,7 @@ public class BlobController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Blobs.class);
 
-            BlobDao dao = new BlobDao(dsl);
+            BlobAccess dao = chooseBlobAccess(dsl);
             Blobs blobs = dao.getBlobs(cursor, pageSize, office, like);
 
             String result = Formats.format(contentType, blobs);
@@ -151,12 +182,13 @@ public class BlobController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            String idQueryParam = ctx.queryParam(CLOB_ID);
+            String idQueryParam = ctx.queryParam(BLOB_ID);
             if (idQueryParam != null) {
                 blobId = idQueryParam;
             }
             DSLContext dsl = getDslContext(ctx);
-            BlobDao dao = new BlobDao(dsl);
+
+            BlobAccess dao = chooseBlobAccess(dsl);
             String officeQP = ctx.queryParam(OFFICE);
             Optional<String> office = Optional.ofNullable(officeQP);
 
@@ -204,7 +236,7 @@ public class BlobController implements CrudHandler {
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
             Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
-            BlobDao dao = new BlobDao(dsl);
+            BlobAccess dao = chooseBlobAccess(dsl);
             dao.create(blob, failIfExists, false);
             ctx.status(HttpCode.CREATED);
         }
@@ -213,7 +245,7 @@ public class BlobController implements CrudHandler {
     @OpenApi(
             description = "Update an existing Blob",
             pathParams = {
-                @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
+                @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be updated"),
             },
             requestBody = @OpenApiRequestBody(
                 content = {
@@ -235,7 +267,7 @@ public class BlobController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
-            String idQueryParam = ctx.queryParam(CLOB_ID);
+            String idQueryParam = ctx.queryParam(BLOB_ID);
             if (idQueryParam != null) {
                 blobId = idQueryParam;
             }
@@ -260,7 +292,13 @@ public class BlobController implements CrudHandler {
                         + "updating a blob");
             }
 
-            BlobDao dao = new BlobDao(dsl);
+            if(!blob.getId().equals(blobId)) {
+                throw new FormattingException("The blob id parameter does not match the blob id in the body. " +
+                        "The blob end-point does not support renaming blobs.  " +
+                        "Create a new blob with the new id and delete the old one.");
+            }
+
+            BlobAccess dao = chooseBlobAccess(dsl);
             dao.update(blob, false);
             ctx.status(HttpServletResponse.SC_OK);
         }
@@ -287,13 +325,13 @@ public class BlobController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
-            String idQueryParam = ctx.queryParam(CLOB_ID);
+            String idQueryParam = ctx.queryParam(BLOB_ID);
             if (idQueryParam != null) {
                 blobId = idQueryParam;
             }
             DSLContext dsl = getDslContext(ctx);
             String office = requiredParam(ctx, OFFICE);
-            BlobDao dao = new BlobDao(dsl);
+            BlobAccess dao = chooseBlobAccess(dsl);
             dao.delete(office, blobId);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }

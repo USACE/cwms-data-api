@@ -151,6 +151,8 @@ dependencies {
     implementation(libs.bundles.overrides)
 
     testImplementation(libs.bundles.java.parser)
+    implementation(libs.togglz.core)
+    implementation(libs.minio)
 }
 
 task extractWebJars(type: Copy) {
@@ -245,7 +247,7 @@ task run(type: JavaExec) {
 }
 
 task integrationTests(type: Test) {
-    dependsOn test
+//    dependsOn test
     dependsOn generateConfig
     dependsOn war
 

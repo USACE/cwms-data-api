@@ -34,7 +34,7 @@ import static org.jooq.impl.DSL.noCondition;
 import static org.jooq.impl.DSL.table;
 import static org.jooq.impl.DSL.upper;
 
-public class BlobDao extends JooqDao<Blob> {
+public class BlobDao extends JooqDao<Blob> implements BlobAccess {
 
     public static final String ID = "ID";
     public static final String DESCRIPTION = "DESCRIPTION";
@@ -85,6 +85,7 @@ public class BlobDao extends JooqDao<Blob> {
         return Optional.ofNullable(retVal);
     }
 
+    @Override
     public void getBlob(String id, String office, BlobConsumer consumer) {
         // Not using jOOQ here because we want the java.sql.Blob and not an automatic field binding.  We want
         // blob so that we can pull out a stream to the data and pass that to javalin.
@@ -179,6 +180,7 @@ public class BlobDao extends JooqDao<Blob> {
      * @param like     filter blobs by a case-insensitive regex pattern on their IDs, can be null or empty
      * @return a Blobs object containing the retrieved blobs and pagination information
      */
+    @Override
     public @NotNull Blobs getBlobs(@Nullable String cursor, int pageSize, @Nullable String officeId, @Nullable String like) {
 
         String cursorOffice = null;
@@ -249,6 +251,7 @@ public class BlobDao extends JooqDao<Blob> {
         return builder.build();
     }
 
+    @Override
     public void create(Blob blob, boolean failIfExists, boolean ignoreNulls) {
         String pFailIfExists = formatBool(failIfExists);
         String pIgnoreNulls = formatBool(ignoreNulls);
@@ -265,6 +268,7 @@ public class BlobDao extends JooqDao<Blob> {
                         blob.getOfficeId()));
     }
 
+    @Override
     public void update(Blob blob, boolean ignoreNulls) {
         String pFailIfExists = formatBool(false);
         String pIgnoreNulls = formatBool(ignoreNulls);
@@ -288,6 +292,7 @@ public class BlobDao extends JooqDao<Blob> {
                 blob.getOfficeId()));
     }
 
+    @Override
     public void delete(String office, String id) {
         if (!blobExists(office, id)) {
             throw new NotFoundException("Unable to find blob with id " + id + " in office " + office);
