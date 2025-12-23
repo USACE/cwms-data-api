@@ -128,9 +128,9 @@ public final class ForecastInstanceController implements CrudHandler {
                 @OpenApiParam(name = NAME, description = "Specifies the "
                         + "spec id of the forecast spec whose forecast instance data is to be "
                         + "included in the response. Default will be all names."),
-                @OpenApiParam(name = DESIGNATOR, description = "Specifies the "
-                        + "designator of the forecast spec whose forecast instance data to be included "
-                        + "in the response. "),
+                @OpenApiParam(name = DESIGNATOR, description = "Specifies the designator of the forecast spec to filter the "
+                        + "forecast instance data in the response. "
+                        + "This parameter is an exact-match string; if not provided, no filter is applied. Default is no filter."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -148,7 +148,7 @@ public final class ForecastInstanceController implements CrudHandler {
     public void getAll(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = ctx.queryParam(OFFICE);
-            String designatorMask = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).allowNullable().get();
+            String designatorMask = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
             String name = ctx.queryParam(NAME);
 
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));

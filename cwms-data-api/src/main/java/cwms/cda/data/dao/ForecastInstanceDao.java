@@ -6,7 +6,6 @@ import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.forecast.ForecastInstance;
 import cwms.cda.data.dto.forecast.ForecastSpec;
-import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.helpers.ReplaceUtils;
 import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
@@ -97,8 +96,8 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
             " from CWMS_20.AT_FCST_INST inst" +
             "         left outer join CWMS_20.AT_FCST_SPEC spec on inst.FCST_SPEC_CODE = spec.FCST_SPEC_CODE";
 
-    private static final String GET_ALL_CONDITIONS = " WHERE (? IS NULL OR spec_office_id = ?)" +
-            " AND (? IS NULL OR spec_id = ?)" +
+    private static final String GET_ALL_CONDITIONS = " WHERE ((spec_office_id = ?) OR (spec_office_id IS NULL AND ? IS NULL))" +
+            " AND ((spec_id = ?) OR (spec_id IS NULL AND ? IS NULL))" +
             " AND ((spec_designator = ?) OR (spec_designator IS NULL AND ? IS NULL))";
     private static final String GET_ONE_CONDITIONS = " WHERE (spec_office_id = ?)" +
             " AND (spec_id = ?)" +
@@ -162,6 +161,9 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
 
         String query = INSTANCE_QUERY + GET_ALL_CONDITIONS;
         return connectionResult(dsl, (Connection c) -> {
+            if(office != null) {
+                setOffice(c, office);
+            }
             try (PreparedStatement preparedStatement = c.prepareStatement(query)) {
                 //redundant variables for null checks within the condition
                 preparedStatement.setString(1, office);
