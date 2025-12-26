@@ -70,7 +70,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -327,7 +326,7 @@ public class TimeSeriesGroupController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(@NotNull Context ctx, @NonNull String groupId) {
+    public void delete(@NotNull Context ctx, @NotNull String groupId) {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
