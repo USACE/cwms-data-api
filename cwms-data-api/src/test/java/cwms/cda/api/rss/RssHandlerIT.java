@@ -36,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
@@ -60,21 +61,37 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_MSG_PACKAGE;
 
 @Tag("integration")
 final class RssHandlerIT extends DataApiTestIT {
-    private static final String OFFICE_ID = "SWT";
-    private static final TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
+    private static final String OFFICE_ID = "SPK";
+    private static final TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
     @BeforeEach
     void setup() throws Exception {
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
             Configuration configuration = DSL.using(c).configuration();
+            //Need to have at least one subscriber for the messages to not automatically disappear from the table
+            configuration.dsl().execute(
+                "BEGIN " +
+                    "  BEGIN " +
+                    "    DBMS_AQADM.ADD_SUBSCRIBER(" +
+                    "      queue_name => ?, " +
+                    "      subscriber => sys.aq$_agent(?, NULL, NULL)" +
+                    "    ); " +
+                    "  EXCEPTION " +
+                    "    WHEN OTHERS THEN " +
+                    "      IF SQLCODE != -24034 THEN RAISE; END IF; " + // Ignore "Already a subscriber"
+                    "  END; " +
+                    "END;",
+                "CWMS_20.SPK_STATUS",
+                "RSS_FEED_READER"
+            );
             CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(configuration, OFFICE_ID);
             String text = "<cwms_message type=\"Status\">\n" +
                 "  <property name=\"operation\" type=\"String\">%s</property>\n" +
                 "</cwms_message>";
             for (int i = 0; i < 12; i++) {
-                CWMS_MSG_PACKAGE.call_LOG_MESSAGE(configuration, "CDA IT", "TEST_RUNNER",
-                    "test.github.com", BigInteger.ZERO, new Timestamp(System.currentTimeMillis()),
-                    format(text, i), BigInteger.ONE, true, true);
+                BigInteger bigInteger = CWMS_MSG_PACKAGE.call_PUBLISH_STATUS_MESSAGE__2(configuration, text, true);
+                LOGGER.atFine().log("Created message test message: %s", bigInteger);
             }
         });
     }
