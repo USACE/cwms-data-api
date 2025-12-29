@@ -133,6 +133,7 @@ import cwms.cda.api.rating.RatingSpecController;
 import cwms.cda.api.rating.RatingTemplateController;
 import cwms.cda.api.rating.ReverseRateTimeSeriesController;
 import cwms.cda.api.rating.ReverseRateValuesController;
+import cwms.cda.api.rss.RssHandler;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCatalogController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCreateController;
@@ -254,7 +255,8 @@ import org.owasp.html.PolicyFactory;
     "/user/*",
     "/users/*",
     "/roles/*",
-    "/version/*"
+    "/version/*",
+    "/rss/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -600,6 +602,7 @@ public class ApiServlet extends HttpServlet {
         addUserManagementHandlers();
 
         get("/version/", new CdaVersionHandler(metrics), requiredRoles);
+        get(format("/rss/{%s}/{%s}", Controllers.OFFICE, Controllers.NAME), new RssHandler(metrics), requiredRoles);
     }
 
     private void addUserManagementHandlers() {
