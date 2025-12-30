@@ -10,8 +10,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVPrinter;
@@ -23,7 +22,7 @@ import org.apache.commons.io.IOUtils;
  */
 public class TsRandomSampler {
 
-    private static final Logger logger = Logger.getLogger(TsRandomSampler.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static CSVFormat TS_SAMPLE_FORMAT = CSVFormat.Builder
             .create(CSVFormat.DEFAULT)
             .setNullString("null")
@@ -81,7 +80,7 @@ public class TsRandomSampler {
                 }
             }
         } catch (SQLException e) {
-            logger.log(Level.SEVERE, "failed to sample data", e);
+            logger.atSevere().withCause(e).log("failed to sample data");
         }
     }
 
@@ -286,8 +285,7 @@ public class TsRandomSampler {
 
 
         } catch (SQLException e) {
-            logger.log(Level.WARNING, "failed to save timeseries and location base data at "
-                    + "element " + lastSample, e);
+            logger.atWarning().withCause(e).log("failed to save timeseries and location base data at element %s", lastSample);
         } catch (IOException e) {
             throw new RuntimeException("Unable to load creation query", e);
         }

@@ -22,11 +22,10 @@ import java.io.InputStream;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 
 public class XMLv1 implements OutputFormatter {
-    private static final Logger logger = Logger.getLogger(XMLv1.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     public XMLv1() {
 
@@ -50,7 +49,7 @@ public class XMLv1 implements OutputFormatter {
                     "Error rendering '" + dto + "' to XML"
                     :
                     "Null element passed to formatter";
-            logger.log(Level.WARNING, msg, ex);
+            logger.atWarning().withCause(ex).log(msg);
             throw new InternalServerErrorResponse("Invalid Parameters");
         }
     }
@@ -65,7 +64,7 @@ public class XMLv1 implements OutputFormatter {
             }
             return xmlMapper.writeValueAsString(dtoList);
         } catch (Exception err) {
-            logger.log(Level.WARNING, "Error doing XML format of office list", err);
+            logger.atWarning().withCause(err).log("Error doing XML format of office list");
             throw new InternalServerErrorResponse("Invalid Parameters");
         }
     }

@@ -67,15 +67,14 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.time.Instant;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
 public class AccountingCatalogController implements Handler {
-    private static final Logger LOGGER = Logger.getLogger(AccountingCatalogController.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String TAG = "Pump Accounting";
     private static final String ROW_LIMIT = "row-limit";
     private static final String ASCENDING = "ascending";
@@ -175,7 +174,7 @@ public class AccountingCatalogController implements Handler {
             if (waterUser.getEntityName() == null) {
                 CdaError error = new CdaError("Unable to retrieve accounting - no water user found for the"
                         + " provided parameters.");
-                LOGGER.log(Level.SEVERE, "Error retrieving water pump accounting - no water user found.");
+                LOGGER.atSevere().log("Error retrieving water pump accounting - no water user found.");
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
                 return;
             }
@@ -191,7 +190,7 @@ public class AccountingCatalogController implements Handler {
             if (!contractExists) {
                 CdaError error = new CdaError("Unable to retrieve accounting - no matching contract found for the"
                         + " provided parameters.");
-                LOGGER.log(Level.SEVERE, "Error retrieving water pump accounting - no contract found.");
+                LOGGER.atSevere().log("Error retrieving water pump accounting - no contract found.");
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(error);
                 return;
             }

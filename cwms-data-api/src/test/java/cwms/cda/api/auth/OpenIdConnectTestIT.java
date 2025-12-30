@@ -5,7 +5,6 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
-import java.util.logging.Logger;
 
 
 import org.junit.jupiter.api.Tag;
@@ -16,12 +15,10 @@ import cwms.cda.api.DataApiTestIT;
 import fixtures.KeyCloakExtension;
 import io.javalin.http.HttpCode;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.http.ContentType;
 
 @Tag("integration")
 @ExtendWith(KeyCloakExtension.class)
 public class OpenIdConnectTestIT extends DataApiTestIT {
-    private static final Logger logger = Logger.getLogger(OpenIdConnectTestIT.class.getName());
         
 
     @Test

@@ -34,8 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
@@ -43,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
-    private static final Logger logger = Logger.getLogger(TimeSeriesProfileInstanceDaoIT.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     @Test
     void testStoreTimeSeriesProfileInstanceWithDataBlock() throws SQLException {
@@ -897,7 +896,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             }
             catch(cwms.cda.api.errors.NotFoundException ex)
             {
-                logger.log(Level.SEVERE, "TimeSeriesProfileInstance not found");
+                logger.atSevere().withCause(ex).log("TimeSeriesProfileInstance not found");
                 // return null for not found
             }
         }, CwmsDataApiSetupCallback.getWebUser());
