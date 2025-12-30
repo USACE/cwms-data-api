@@ -163,6 +163,7 @@ import cwms.cda.api.watersupply.WaterUserCreateController;
 import cwms.cda.api.watersupply.WaterUserDeleteController;
 import cwms.cda.api.watersupply.WaterUserUpdateController;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.rss.QueueManager;
 import cwms.cda.formatters.Formats;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
@@ -395,6 +396,7 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(200); // Respond with a 200 OK status
                 })
                 .javalinServlet();
+        QueueManager.ensureRssSubscribers(cwms);
         logger.atInfo().log("Javalin initialized.");
     }
 
