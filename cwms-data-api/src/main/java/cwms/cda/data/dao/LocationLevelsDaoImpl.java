@@ -37,13 +37,16 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
+import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevels;
 import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
 import cwms.cda.data.dto.locationlevel.SeasonalValueBean;
-import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
+import cwms.cda.data.dto.locationlevel.VirtualLocationLevel;
+import cwms.cda.formatters.UnsupportedFormatException;
 import hec.data.Duration;
 import hec.data.Parameter;
 import hec.data.ParameterType;
@@ -73,9 +76,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
-import cwms.cda.data.dto.locationlevel.VirtualLocationLevel;
-import cwms.cda.formatters.UnsupportedFormatException;
 import mil.army.usace.hec.metadata.Interval;
 import mil.army.usace.hec.metadata.IntervalFactory;
 import mil.army.usace.hec.metadata.constants.NumericalConstants;
@@ -783,25 +783,31 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
             JDomSeasonalIntervalImpl newSeasonalOffset = buildSeasonalOffset(calOffset, timeOffset);
             SeasonalValueBean seasonalValue = buildSeasonalValueBean(seasonalLevel, newSeasonalOffset);
-            SeasonalLocationLevel.Builder seasonalBuilder = new SeasonalLocationLevel.Builder(locLevelId, levelZdt);
-            seasonalBuilder.withSeasonalValue(seasonalValue);
-            seasonalBuilder.withInterpolateString(interp);
-            if (timeInterval != null) {
-                seasonalBuilder.withIntervalMinutes(timeInterval.getMinutes());
+            if (builderMap.containsKey(levelLookup)) {
+                SeasonalLocationLevel.Builder existingBuilder = (SeasonalLocationLevel.Builder) builderMap.get(levelLookup);
+                existingBuilder.withSeasonalValue(seasonalValue);
+                builderMap.put(levelLookup, existingBuilder);
+            } else {
+                SeasonalLocationLevel.Builder seasonalBuilder = new SeasonalLocationLevel.Builder(locLevelId, levelZdt);
+                seasonalBuilder.withSeasonalValue(seasonalValue);
+                seasonalBuilder.withInterpolateString(interp);
+                if (timeInterval != null) {
+                    seasonalBuilder.withIntervalMinutes(timeInterval.getMinutes());
+                }
+                seasonalBuilder.withAttributeParameterId(attrId);
+                seasonalBuilder.withAttributeUnitsId(attrUnit);
+                seasonalBuilder.withLevelUnitsId(levelUnit);
+                seasonalBuilder.withLevelComment(levelComment);
+                seasonalBuilder.withAttributeComment(attributeComment);
+                seasonalBuilder = withLocationLevelRef(seasonalBuilder, locationLevelRef);
+                JDomSeasonalIntervalImpl offset = new JDomSeasonalIntervalImpl();
+                offset.setYearMonthString(calendarInterval);
+                seasonalBuilder.withIntervalMonths(offset.getMonths());
+                seasonalBuilder.withIntervalOrigin(intervalOrigin, levelZdt);
+                seasonalBuilder.withAliases(aliases);
+                seasonalBuilder.withExpirationDate(expireDate);
+                builderMap.put(levelLookup, seasonalBuilder);
             }
-            seasonalBuilder.withAttributeParameterId(attrId);
-            seasonalBuilder.withAttributeUnitsId(attrUnit);
-            seasonalBuilder.withLevelUnitsId(levelUnit);
-            seasonalBuilder.withLevelComment(levelComment);
-            seasonalBuilder.withAttributeComment(attributeComment);
-            seasonalBuilder = withLocationLevelRef(seasonalBuilder, locationLevelRef);
-            JDomSeasonalIntervalImpl offset = new JDomSeasonalIntervalImpl();
-            offset.setYearMonthString(calendarInterval);
-            seasonalBuilder.withIntervalMonths(offset.getMonths());
-            seasonalBuilder.withIntervalOrigin(intervalOrigin, levelZdt);
-            seasonalBuilder.withAliases(aliases);
-            seasonalBuilder.withExpirationDate(expireDate);
-            builderMap.put(levelLookup, seasonalBuilder);
         } else if (tsId != null) {
             TimeSeriesLocationLevel.Builder timeSeriesBuilder = new TimeSeriesLocationLevel.Builder(locLevelId, levelZdt, tsId);
             timeSeriesBuilder.withAttributeParameterId(attrId);
@@ -1172,7 +1178,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         @Override
         public Field<Timestamp> getExpirationDate() {
-            return AV_VIRTUAL_LOCATION_LEVEL.EXPIRATION_DATE_UTC;
+            return AV_LOCATION_LEVEL.EXPIRATION_DATE;
         }
 
         @Override
@@ -1314,7 +1320,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         @Override
         public Field<Timestamp> getExpirationDate() {
-            return DSL.field(DSL.name(TABLE_ALIAS2, "EXPIRATION_DATE_UTC"), Timestamp.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, "EXPIRATION_DATE"), Timestamp.class);
         }
 
         @Override
@@ -1403,13 +1409,13 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         LOCATION_LEVEL_FIELDS.add(virtView.EFFECTIVE_DATE_UTC);
         LOCATION_LEVEL_FIELDS.add(virtView.CONNECTIONS);
         LOCATION_LEVEL_FIELDS.add(virtView.DURATION_ID);
-        LOCATION_LEVEL_FIELDS.add(virtView.EXPIRATION_DATE_UTC);
         LOCATION_LEVEL_FIELDS.add(virtView.ATTR_UNIT_EN);
         LOCATION_LEVEL_FIELDS.add(virtView.ATTR_VALUE_EN);
         LOCATION_LEVEL_FIELDS.add(virtView.ATTR_UNIT_SI);
         LOCATION_LEVEL_FIELDS.add(virtView.ATTR_VALUE_SI);
         LOCATION_LEVEL_FIELDS.add(view.OFFICE_ID);
         LOCATION_LEVEL_FIELDS.add(view.LOCATION_LEVEL_ID);
+        LOCATION_LEVEL_FIELDS.add(view.EXPIRATION_DATE);
         LOCATION_LEVEL_FIELDS.add(view.LEVEL_DATE);
         LOCATION_LEVEL_FIELDS.add(view.TSID);
         LOCATION_LEVEL_FIELDS.add(view.CONSTANT_LEVEL);
@@ -1440,12 +1446,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         LOCATION_ALIAS_FIELDS.add(field(virtView.EFFECTIVE_DATE_UTC.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(virtView.CONNECTIONS.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(DSL.name(TABLE_ALIAS1, "DURATION_ID")));
-        LOCATION_ALIAS_FIELDS.add(field(virtView.EXPIRATION_DATE_UTC.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_UNIT_EN.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_VALUE_EN.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_UNIT_SI.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_VALUE_SI.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(view.LEVEL_DATE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.EXPIRATION_DATE.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(view.TSID.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(view.CONSTANT_LEVEL.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(view.INTERVAL_ORIGIN.getUnqualifiedName()));
