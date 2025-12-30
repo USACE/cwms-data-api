@@ -29,7 +29,6 @@ package cwms.cda.api.rss;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
-import static java.lang.String.format;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -48,7 +47,6 @@ import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import java.math.BigInteger;
 import java.net.URI;
-import java.sql.Timestamp;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jooq.Configuration;
@@ -69,22 +67,6 @@ final class RssHandlerIT extends DataApiTestIT {
     void setup() throws Exception {
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
             Configuration configuration = DSL.using(c).configuration();
-            //Need to have at least one subscriber for the messages to not automatically disappear from the table
-            configuration.dsl().execute(
-                "BEGIN " +
-                    "  BEGIN " +
-                    "    DBMS_AQADM.ADD_SUBSCRIBER(" +
-                    "      queue_name => ?, " +
-                    "      subscriber => sys.aq$_agent(?, NULL, NULL)" +
-                    "    ); " +
-                    "  EXCEPTION " +
-                    "    WHEN OTHERS THEN " +
-                    "      IF SQLCODE != -24034 THEN RAISE; END IF; " + // Ignore "Already a subscriber"
-                    "  END; " +
-                    "END;",
-                "CWMS_20.SPK_STATUS",
-                "RSS_FEED_READER"
-            );
             CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(configuration, OFFICE_ID);
             String text = "<cwms_message type=\"Status\">\n" +
                 "  <property name=\"operation\" type=\"String\">%s</property>\n" +
