@@ -36,8 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +44,7 @@ import org.jetbrains.annotations.Nullable;
 
 
 public class Formats {
-    public static final Logger logger = Logger.getLogger(Formats.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String PLAIN = "text/plain";    // Only used as a constant, not for any
     // data mapping
     public static final String JSON = "application/json";
@@ -115,7 +114,7 @@ public class Formats {
 
     private String getFormatted(ContentType type, CwmsDTOBase toFormat) throws FormattingException {
         Objects.requireNonNull(toFormat, "Object to be formatted should not be null");
-        formatters.keySet().forEach(k -> logger.fine(k::toString));
+        formatters.keySet().forEach(k -> logger.atFine().log("%s", k.toString()));
         OutputFormatter outputFormatter = getOutputFormatterInternal(type, toFormat.getClass());
 
         if (outputFormatter != null) {
@@ -131,7 +130,7 @@ public class Formats {
     private String getFormatted(ContentType type, List<? extends CwmsDTOBase> dtos, Class<?
             extends CwmsDTOBase> rootType) throws FormattingException {
         for (ContentType key : formatters.keySet()) {
-            logger.finest(() -> key.toString());
+            logger.atFinest().log("%s", key.toString());
         }
 
         OutputFormatter outputFormatter = getOutputFormatterInternal(type, rootType);
@@ -210,7 +209,7 @@ public class Formats {
                         formatters.computeIfAbsent(type, k -> new HashMap<>())
                                   .put(klass,outputFormatter);
                     } catch (Exception ex) {
-                        logger.log(Level.SEVERE, "Unable to create formatter.", ex);
+                        logger.atSevere().withCause(ex).log("Unable to create formatter.");
                         return null;
                     }
                 }
@@ -354,12 +353,12 @@ public class Formats {
         //if multiple valid content types are specified in the header.
         SortedSet<ContentType> contentTypes = new TreeSet<>();
         String[] all = header.split(",");
-        logger.log(Level.FINEST, "Finding handlers {0}", all.length);
+        logger.atFinest().log("Finding handlers %d", all.length);
         for (String ct : all) {
             ContentType aliasType = aliasMap.getContentType(ct);
             //Found type defined in annotations, add to the priority list.
             if (aliasType != null) {
-                logger.finest(() -> ct + " converted to " + aliasType);
+                logger.atFinest().log("%s converted to %s", ct, aliasType);
                 contentTypes.add(aliasType);
             } else {
                 //If the DTO parameter is null, alias map is empty. Compare against well-known types
@@ -371,10 +370,10 @@ public class Formats {
                 }
             }
         }
-        logger.finest(() -> "have " + contentTypes.size());
+        logger.atFinest().log("have %d", contentTypes.size());
         //Look through known content types to match using priority sorted TreeSet
         for (ContentType ct : contentTypes) {
-            logger.finest(() -> "checking " + ct.toString());
+            logger.atFinest().log("checking %s", ct.toString());
             if (contentTypeList.contains(ct)) {
                 return ct;
             }

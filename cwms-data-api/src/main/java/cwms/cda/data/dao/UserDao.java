@@ -1,11 +1,17 @@
 package cwms.cda.data.dao;
 
+import static com.google.common.flogger.LazyArgs.lazy;
 import static org.jooq.impl.DSL.*;
 
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
@@ -28,7 +34,7 @@ import cwms.cda.security.DataApiPrincipal;
 import usace.cwms.db.jooq.codegen.tables.AV_SEC_USERS;
 
 public class UserDao extends JooqDao<User> {
-    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private static final String GET_USER =
         "select ut.userid as username,ut.email, ut.principle_name,groups.db_office_id as \"office\",groups.user_group_id as \"role\" " +
@@ -46,7 +52,7 @@ public class UserDao extends JooqDao<User> {
 
     @Override
     public Optional<User> getByUniqueName(String uniqueName, String cac_role) {
-        return Optional.of(dsl.connectionResult(c -> {
+        return Optional.ofNullable(dsl.connectionResult(c -> {
                 AuthDao.setSessionForAuthCheck(c);
                 try (PreparedStatement getUser = c.prepareStatement(GET_USER)) {
                     getUser.setString(1, uniqueName);
@@ -72,7 +78,7 @@ public class UserDao extends JooqDao<User> {
                             logger.atInfo().log("Building user object.");
                            return new User(userName, principalName, email, cac_role != null,  roles);
                         } else {
-                            return (User)null;
+                            return null;
                         }
                     }
                 }
@@ -221,9 +227,8 @@ public class UserDao extends JooqDao<User> {
                 // association and always fully included per use in the response.
                 .orderBy(limitUserId, vUserGroups.DB_OFFICE_ID)
                 ;
-                
-
-            logger.atInfo().log(query.getSQL(ParamType.INLINED));
+            
+            logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
             final Users.Builder builder = new Users.Builder(cursor, pageSizeTmp, total, limitOffice);
 

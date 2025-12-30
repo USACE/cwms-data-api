@@ -24,6 +24,8 @@
 
 package cwms.cda.data.dao;
 
+import static com.google.common.flogger.LazyArgs.lazy;
+
 import static java.util.stream.Collectors.toList;
 import static mil.army.usace.hec.metadata.IntervalFactory.equalsName;
 import static mil.army.usace.hec.metadata.IntervalFactory.isRegular;
@@ -73,8 +75,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.regex.Pattern;
 import mil.army.usace.hec.metadata.Interval;
 import mil.army.usace.hec.metadata.IntervalFactory;
@@ -105,7 +106,7 @@ import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
 
 public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements LocationLevelsDao {
-    private static final Logger logger = Logger.getLogger(LocationLevelsDaoImpl.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private static final String ATTRIBUTE_ID_PARSING_REGEXP = "(.*)\\.(.*)\\.(.*)";
     public static final Pattern attributeIdParsingPattern =
@@ -160,7 +161,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                         total = Integer.valueOf(parts[1]);
                         totalSet = true;
                     } catch (NumberFormatException e) {
-                        logger.log(Level.INFO, "Could not parse {0}", parts[1]);
+                        logger.atInfo().log("Could not parse %s", parts[1]);
                     }
                 }
                 pageSize = Integer.parseInt(parts[2]);
@@ -266,7 +267,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         final SelectLimitPercentAfterOffsetStep<Record> queryFinal = query;
 
-        logger.fine(() -> "getLocationLevels query: " + queryFinal.getSQL(ParamType.INLINED));
+        logger.atFine().log("getLocationLevels query: %s", lazy(() -> queryFinal.getSQL(ParamType.INLINED)));
 
         if (includeAliases) {
             Result<?> result = query.fetch();
@@ -538,10 +539,10 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 units = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(configuration,
                         parameter, units);
             } else if (units == null) {
-                logger.info("Getting default units for " + parameter);
+                logger.atInfo().log("Getting default units for %s", parameter);
                 String defaultUnits = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
                         configuration, parameter, UnitSystem.SI.getValue());
-                logger.info("Default units are " + defaultUnits);
+                logger.atInfo().log("Default units are %s", defaultUnits);
                 units = defaultUnits;
             }
             LOCATION_LEVEL_T level = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOCATION_LEVEL__2(

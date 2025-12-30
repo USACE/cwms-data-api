@@ -53,8 +53,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 
 
 @Tag("integration")
@@ -64,8 +63,7 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID_TEXT = "office-id";
     private static final String MESSAGE = "message";
     private static final String IDENTIFIER = "identifier";
-    public static final Logger LOGGER =
-            Logger.getLogger(WaterContractTypeControllerTestIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     static {
         CONTRACT_TYPE = new LookupType.Builder().withActive(true).withOfficeId(OFFICE_ID)
                 .withDisplayValue("TEST Contract Type").withTooltip("TEST LOOKUP").build();
@@ -251,7 +249,7 @@ class WaterContractTypeControllerTestIT extends DataApiTestIT {
                 lookupTypeDao.deleteLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE",
                         CONTRACT_TYPE.getOfficeId(), CONTRACT_TYPE.getDisplayValue());
             } catch (NotFoundException e) {
-                LOGGER.log(Level.CONFIG, format("Cleanup failed to delete lookup type: %s", e.getMessage()));
+                LOGGER.atConfig().log("Cleanup failed to delete lookup type: %s", e.getMessage());
             }
         }, CwmsDataApiSetupCallback.getWebUser());
     }

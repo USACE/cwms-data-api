@@ -5,11 +5,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 
 public class DelegatingConnectionPreparer implements ConnectionPreparer {
 
-    public static final Logger logger = Logger.getLogger(DelegatingConnectionPreparer.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final List<ConnectionPreparer> delegates = new ArrayList<>();
 
     public DelegatingConnectionPreparer(List<ConnectionPreparer> preparers) {
@@ -20,7 +20,7 @@ public class DelegatingConnectionPreparer implements ConnectionPreparer {
 
     public DelegatingConnectionPreparer(ConnectionPreparer... preparers) {
         for(ConnectionPreparer p : preparers) {
-            Objects.requireNonNull(p,"A null prepared should not be passed to this function");
+            Objects.requireNonNull(p,"A null ConnectionPreparer should not be passed to this function");
             delegates.add(p);
         }
     }
@@ -38,7 +38,7 @@ public class DelegatingConnectionPreparer implements ConnectionPreparer {
     public Connection prepare(Connection connection) throws SQLException {
         Connection retval = connection;
         for (ConnectionPreparer delegate : delegates) {
-            logger.fine(delegate.getClass().getName());
+            logger.atFine().log(delegate.getClass().getName());
             retval = delegate.prepare(retval);
         }
 

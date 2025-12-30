@@ -54,8 +54,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 
@@ -75,8 +74,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
-    public static final Logger LOGGER =
-            Logger.getLogger(TimeSeriesProfileInstanceControllerIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE_ID = "SPK";
     private static final TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     private final InputStream resource = this.getClass()
@@ -1850,7 +1848,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             TimeSeriesProfileParserDao dao = new TimeSeriesProfileParserDao(dsl);
             dao.deleteTimeSeriesProfileParser(locationId, parameterId, OFFICE_ID);
         } catch (NotFoundException e) {
-            LOGGER.log(Level.CONFIG, "Cleanup failed for parser - no matching parser found in DB", e);
+            LOGGER.atConfig().withCause(e).log("Cleanup failed for parser - no matching parser found in DB");
         }
     }
 
@@ -1859,7 +1857,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             TimeSeriesProfileDao dao = new TimeSeriesProfileDao(dsl);
             dao.deleteTimeSeriesProfile(locationId, keyParameter, OFFICE_ID);
         } catch (NotFoundException e) {
-            LOGGER.log(Level.CONFIG, "Cleanup failed for Timeseries - no matching TS found in DB", e);
+            LOGGER.atConfig().withCause(e).log("Cleanup failed for Timeseries - no matching TS found in DB");
         }
     }
 
@@ -1870,7 +1868,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             dao.deleteTimeSeriesProfileInstance(locationId, keyParameter, version, firstDate, timeZone,
                     overrideProt, versionDate);
         } catch (NotFoundException e) {
-            LOGGER.log(Level.CONFIG, "Cleanup failed for instance - no matching instance found in DB", e);
+            LOGGER.atConfig().withCause(e).log("Cleanup failed for instance - no matching instance found in DB");
         }
     }
 
