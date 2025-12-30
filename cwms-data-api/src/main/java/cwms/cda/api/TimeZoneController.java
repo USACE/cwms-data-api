@@ -29,13 +29,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 
 public class TimeZoneController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(TimeZoneController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private final MetricRegistry metrics;
 
@@ -122,7 +121,7 @@ public class TimeZoneController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(results);
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, null, ex);
+            logger.atSevere().withCause(ex).log("Failed to process request");
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             ctx.result("Failed to process request");
         }

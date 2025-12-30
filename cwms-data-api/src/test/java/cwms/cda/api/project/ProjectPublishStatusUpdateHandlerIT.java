@@ -41,7 +41,6 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.logging.Level;
 import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
@@ -78,7 +77,7 @@ public class ProjectPublishStatusUpdateHandlerIT extends DataApiTestIT {
             try {
                 prjDao.delete(OFFICE, projId, DeleteRule.DELETE_ALL);
             } catch (Exception e) {
-                logger.at(Level.WARNING).withCause(e).log("Failed to delete project: %s", projId);
+                logger.atWarning().withCause(e).log("Failed to delete project: %s", projId);
             }
         });
     }

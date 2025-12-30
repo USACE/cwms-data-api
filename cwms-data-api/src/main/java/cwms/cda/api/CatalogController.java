@@ -30,7 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.owasp.html.PolicyFactory;
@@ -38,7 +38,7 @@ import cwms.cda.api.errors.UnsupportedParametersException;
 
 public class CatalogController implements CrudHandler {
 
-    private static final Logger logger = Logger.getLogger(CatalogController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final String TAG = "Catalog";
     public static final boolean INCLUDE_EXTENTS_DEFAULT = true;
     public static final boolean EXCLUDE_EMPTY_DEFAULT = true;
@@ -290,7 +290,7 @@ public class CatalogController implements CrudHandler {
                 final CdaError re = new CdaError("Cannot create catalog of requested "
                         + "information");
 
-                logger.info(() -> re + " with url:" + ctx.fullUrl());
+                logger.atInfo().log("%s with url:%s", re, ctx.fullUrl());
                 ctx.json(re).status(HttpCode.NOT_FOUND);
             }
         }
