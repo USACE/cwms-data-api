@@ -133,6 +133,7 @@ import cwms.cda.api.rating.RatingSpecController;
 import cwms.cda.api.rating.RatingTemplateController;
 import cwms.cda.api.rating.ReverseRateTimeSeriesController;
 import cwms.cda.api.rating.ReverseRateValuesController;
+import cwms.cda.api.rss.RssHandler;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCatalogController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCreateController;
@@ -254,11 +255,12 @@ import org.owasp.html.PolicyFactory;
     "/user/*",
     "/users/*",
     "/roles/*",
-    "/version/*"
+    "/version/*",
+    "/rss/*"
 })
 public class ApiServlet extends HttpServlet {
 
-    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     // based on https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_aaa/browse/IntegrationTests/src/test/resources/sql/load_testusers.sql
     public static final String CWMS_USERS_ROLE = "CWMS Users";
@@ -599,6 +601,7 @@ public class ApiServlet extends HttpServlet {
         addUserManagementHandlers();
 
         get("/version/", new CdaVersionHandler(metrics), requiredRoles);
+        get(format("/rss/{%s}/{%s}", Controllers.OFFICE, Controllers.NAME), new RssHandler(metrics), requiredRoles);
     }
 
     private void addUserManagementHandlers() {

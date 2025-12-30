@@ -51,8 +51,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
@@ -82,7 +81,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     private List<TimeSeriesCategory> categoriesToCleanup = new ArrayList<>();
     private List<TimeSeriesGroup> groupsToCleanup = new ArrayList<>();
     private List<TimeSeries> timeSeriesToCleanup = new ArrayList<>();
-    private static final Logger LOGGER = Logger.getLogger(TimeSeriesGroupControllerTestIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     TestAccounts.KeyUser user2 = TestAccounts.KeyUser.SWT_NORMAL;
 
@@ -123,14 +122,14 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                         groupDao.delete(group.getTimeSeriesCategory().getId(), group.getId(), group.getOfficeId());
                     }
                 } catch (NotFoundException e) {
-                    LOGGER.log(Level.CONFIG, "Group not found", e);
+                    LOGGER.atConfig().withCause(e).log("Group not found");
                 }
             }
             for (TimeSeriesCategory category : categoriesToCleanup) {
                 try {
                     categoryDao.delete(category.getId(), true, category.getOfficeId());
                 } catch (NotFoundException e) {
-                    LOGGER.log(Level.CONFIG, "Category not found", e);
+                    LOGGER.atConfig().withCause(e).log("Category not found");
                 }
             }
             for (TimeSeries ts : timeSeriesToCleanup) {
@@ -139,7 +138,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                             .withStartTimeInclusive(true).withEndTimeInclusive(true).withMaxVersion(false)
                             .withOverrideProtection(formatBool(true)).build());
                 } catch (NotFoundException e) {
-                    LOGGER.log(Level.CONFIG, "Time Series not found", e);
+                    LOGGER.atConfig().withCause(e).log("Time Series not found");
                 }
             }
             groupsToCleanup.clear();
