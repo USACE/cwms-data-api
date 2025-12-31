@@ -24,6 +24,7 @@
 
 package cwms.cda.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import cwms.cda.data.dao.LocationCategoryDao;
 import cwms.cda.data.dao.LocationGroupDao;
@@ -129,8 +130,24 @@ class LocationControllerTestIT extends DataApiTestIT {
     void test_location_create_get_delete() throws Exception {
         String officeId = "SPK";
         String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
+        String expectedIdentifier = "LOC_TEST";
+
+        create_get_delete(json, officeId, expectedIdentifier);
+    }
+
+    @Test
+    void test_location_create_get_delete_slash() throws Exception {
+        String officeId = "SPK";
+        String json = loadResourceAsString("cwms/cda/api/location_create_spk_slash.json");
+        String expectedIdentifier = "/SLASH_TEST"; // needs to match id in json
+
+        create_get_delete(json, officeId, expectedIdentifier);
+    }
+
+
+    private static void create_get_delete(String json, String officeId, String expectedIdentifier) throws JsonProcessingException {
         Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
-            json, Location.class))
+                json, Location.class))
                 .withOfficeId(officeId)
                 //withName(getClass().getSimpleName())
                 .build();
@@ -155,7 +172,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED))
             .body(OFFICE_ID, equalTo(officeId))
             .body(MESSAGE, equalTo("Created Location"))
-            .body(IDENTIFIER, equalTo("LOC_TEST"));
+            .body(IDENTIFIER, equalTo(expectedIdentifier));
         //Create associated time series so delete fails without cascade
         try {
             createTimeseries(officeId, location.getName() + ".Flow.Inst.~1Hour.0.cda-test");
@@ -171,7 +188,7 @@ class LocationControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/locations/" + location.getName())
+            .get("/locations/{loc-id}" , location.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
@@ -187,7 +204,7 @@ class LocationControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/locations/" + location.getName())
+            .delete("/locations/{loc-id}" , location.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
@@ -203,14 +220,14 @@ class LocationControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/locations/" + location.getName())
+            .delete("/locations/{loc-id}" , location.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body(OFFICE_ID, equalTo(officeId))
             .body(MESSAGE, equalTo("Deleted CWMS Location"))
-            .body(IDENTIFIER, equalTo("LOC_TEST"));
+            .body(IDENTIFIER, equalTo(expectedIdentifier));
 
         // get it back
         given()
@@ -220,7 +237,7 @@ class LocationControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/locations/" + location.getName())
+            .get("/locations/{loc-id}" , location.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()

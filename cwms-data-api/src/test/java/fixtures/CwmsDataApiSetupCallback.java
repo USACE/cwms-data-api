@@ -144,6 +144,8 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             this.loadDefaultData(cwmsDb);
             this.loadTimeSeriesData(cwmsDb);
 
+
+
             System.setProperty("RADAR_JDBC_URL", jdbcUrl);
             System.setProperty("RADAR_JDBC_USERNAME", webUser);
             System.setProperty("RADAR_JDBC_PASSWORD", pw);
@@ -159,6 +161,10 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             System.setProperty(OpenIdConnectIdentitityProvider.ISSUER_PROPERTY,KeyCloakExtension.getIssuer());
 
             logger.atInfo().log("warFile property:" + System.getProperty("warFile"));
+
+
+            // https://stackoverflow.com/questions/13482020/encoded-slash-2f-with-spring-requestmapping-path-param-gives-http-400
+            System.setProperty("org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH", "true");
 
             cdaInstance = new TomcatServer("build/tomcat",
                                              System.getProperty("warFile"),
