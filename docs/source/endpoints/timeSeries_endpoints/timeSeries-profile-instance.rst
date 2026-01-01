@@ -5,6 +5,20 @@ What it does
 ------------
 Enumerate profile instances (actual profile datasets) and their versions. Use this to discover which instances exist before fetching a specific one.
 
+A profile instance is data recorded by a single cycle of the sensor as it
+sweeps through its range of the key parameter, including the timestamps of each reading. The
+profile instance data stored in the CWMS database will be a subset of the data recorded if the
+recorded data include parameters that aren’t included in the profile definition.
+
+Profile instances are keyed to location, key parameter, version identifier, first recorded time, and version date.
+This means that:
+- Multiple first recorded times can exist for a single location, key parameter, version
+identifier, and version date combination.
+- Multiple version identifiers can exist for a single location, key parameter, first recorded
+time, and version date combination.
+- Multiple version dates can exist for a single location, key parameter, version identifier,
+and first recorded time combination
+
 When to use
 -----------
 - Browse available instances by location/parameter

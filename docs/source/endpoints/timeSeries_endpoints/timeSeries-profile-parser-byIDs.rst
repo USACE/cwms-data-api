@@ -5,6 +5,8 @@ What it does
 ------------
 Retrieve parser information associated with a specific profile identified by location and parameter.
 
+Profile parsers can be defined to enable storage of profile instance data directly from text output from data loggers.
+
 When to use
 -----------
 - You need the parser used for a specific profile to understand how values are interpreted

@@ -5,6 +5,14 @@ What it does
 ------------
 List or inspect available profile parsers (the logic that interprets profile data formats).
 
+Profile parsers hold information about how to parse text output from data
+loggers. Although parameter values for profile instance data are stored in CWMS time series,
+the profile data are not delivered in the most standard way for CWMS time series: GOES
+transmissions that decoded by third-party software and either stored directly to the database or
+encoded as SHEF to be processed by CWMS data stream processes. In addition, profiles consist
+of identifiable instances instead of a continuous time series. Profile parsers allow storing of
+profile instances by providing the instance text as exported from a data logger.
+
 When to use
 -----------
 - Discover parser options before requesting a specific profile parser by IDs
