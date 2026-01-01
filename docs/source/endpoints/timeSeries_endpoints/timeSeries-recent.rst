@@ -4,6 +4,7 @@ TimeSeries — GET /timeSeries/recent
 What it does
 ------------
 Return the most recent value(s) from one or more time series without downloading a historical range.
+Retrieves time series data between 28 days prior to and 14 days after the current date.
 
 When to use
 -----------

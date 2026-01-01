@@ -19,12 +19,12 @@ end
 .. _def-location-id:
 
 location-id
-  Description pending.
+  The text representation of the location associated with the time series data.
 
 .. _def-location-mask:
 
 location-mask
-  Description pending.
+  A regular expression used to filter the location name associated with the queried time series data. See the Regex documentation page for more information on usage.
 
 .. _def-office:
 
@@ -34,7 +34,7 @@ office
 .. _def-office-mask:
 
 office-mask
-  Description pending.
+  A regular expression used to filter the office identifier associated with the queried time series data. See the Regex documentation page for more information on usage.
 
 .. _def-page:
 
@@ -49,17 +49,17 @@ page-size
 .. _def-parameter-id:
 
 parameter-id
-  Description pending.
+  The text representation of the data parameter represented by the desired time series data, describing "what" is measured. Examples include "Flow", "Stage", "Elev", etc.
 
 .. _def-parameter-id-mask:
 
 parameter-id-mask
-  Description pending.
+  A regular expression used to filter the parameter of the queried time series data. See the Regex documentation for more information on usage.
 
 .. _def-timezone:
 
 timezone
-  Description pending.
+  The timezone to use for retrieved time data. Examples include "UTC", "America/Los_Angeles", etc.
 
 .. _def-unit:
 
@@ -69,4 +69,5 @@ unit
 .. _def-version-date:
 
 version-date
-  Description pending.
+  Common information that is captured in the version of the time series includes: the data source, telemetry method, the quality of the data or the state of the data processing, dates for the range of the data, time stamp if the data is daily, models used to generate the data, an indication of whether the data is observed or derived from observed or forecasted or study data, etc.
+Segmenting the version is an attempt to provide some structure for the information that is typically captured in this free form text portion of the time-series identifier. Limited to 32 characters.
