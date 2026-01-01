@@ -15,7 +15,7 @@ profile instances by providing the instance text as exported from a data logger.
 
 When to use
 -----------
-- Discover parser options before requesting a specific profile parser by IDs
+- Discover available existing parsers before requesting a specific profile parser by ID
 
 
 .. csv-table:: /timeseries/profile Endpoint Parameters

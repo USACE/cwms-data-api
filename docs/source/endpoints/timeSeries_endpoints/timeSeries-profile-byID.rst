@@ -20,7 +20,7 @@ Profile data may have quality and notes, as other time series conventions. Profi
 
 When to use
 -----------
-- You know the location and parameter and want the profile details
+- You wish to retrieve a specific time series profile and already know the location and parameter.
 
 
 Examples

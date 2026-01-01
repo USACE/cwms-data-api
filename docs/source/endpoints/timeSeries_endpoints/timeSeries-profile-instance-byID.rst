@@ -7,7 +7,7 @@ Fetch a specific versioned profile instance for a location and parameter.
 
 When to use
 -----------
-- You know the exact version you need to retrieve
+- You wish to retrieve a specific instance of a time series profile and know the version, parameter, and location.
 
 
 .. csv-table:: /timeseries/profile-instance{location-id}/{parameter-id}/{version} Endpoint Parameters
@@ -27,7 +27,7 @@ When to use
     start,"also begin. need to verify if duplicate def",""
     start-time-inclusive,"",""
     timezone,":ref:`def-timezone`",""
-    unit,"deprecated, prefer units/unit-system. need to verify",""
+    unit,"deprecated, prefer units/unit-system. Comma separated list of unit values.",""
     version,"",""
     version-date,":ref:`def-version-date`",""
 
