@@ -8,6 +8,8 @@ building the documentation and then be removed later.
 
     - begin
         - Specifies the date and time for the start of the time window for data to be included in the response.
+            The format for this field is ISO 8601 extended, with optional offset and timezone,
+            i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., '2021-06-10T13:00:00-07:00'.
     - category-id
         - The text identifier for the time series category defined in the CWMS database for a specific time series.
     - datum
@@ -15,6 +17,8 @@ building the documentation and then be removed later.
             Examples include "NAVD88", "NGVD29", "LOCAL", etc.
     - end
         - Specifies the date and time for the end of the time window for data to be included in the response.
+            The format for this field is ISO 8601 extended, with optional offset and timezone,
+            i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., '2021-06-10T13:00:00-07:00'.
     - end-time-inclusive
         - Whether the resulting data set should include data occurring at the moment of the end of the time window. Acceptable values are 'true' or 'false'.
     - format
@@ -50,6 +54,8 @@ building the documentation and then be removed later.
         - Whether to include the previous time window of the time series profile instance. Acceptable values are 'true' or 'false'.
     - start
         - Specifies the date and time for the start of the time window for data to be included in the response.
+            The format for this field is ISO 8601 extended, with optional offset and timezone,
+            i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., '2021-06-10T13:00:00-07:00'.
     - start-time-inclusive
         - Whether the resulting data set should include data occurring at the moment of the beginning of the time window. Acceptable values are 'true' or 'false'.
     - timezone

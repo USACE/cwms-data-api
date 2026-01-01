@@ -18,7 +18,7 @@ profile definition may exist for each location, key parameter combination.
 
 When to use
 -----------
-- Inventory the profiles available for your office
+- Catalog the profiles available for your office
 - Filter by location or parameter to narrow results
 
 

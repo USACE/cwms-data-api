@@ -14,7 +14,8 @@ endpoint documentation.
 .. _def-end:
 
 end
-  End date/time for the time series data to stop.
+  End date/time for the time series data to stop. The format for this field is ISO 8601 extended,
+  with optional offset and timezone, i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., '2021-06-10T13:00:00-07:00'.
 
 .. _def-location-id:
 
@@ -70,4 +71,4 @@ unit
 
 version-date
   Common information that is captured in the version of the time series includes: the data source, telemetry method, the quality of the data or the state of the data processing, dates for the range of the data, time stamp if the data is daily, models used to generate the data, an indication of whether the data is observed or derived from observed or forecasted or study data, etc.
-Segmenting the version is an attempt to provide some structure for the information that is typically captured in this free form text portion of the time-series identifier. Limited to 32 characters.
+  Segmenting the version is an attempt to provide some structure for the information that is typically captured in this free form text portion of the time-series identifier. Limited to 32 characters.
