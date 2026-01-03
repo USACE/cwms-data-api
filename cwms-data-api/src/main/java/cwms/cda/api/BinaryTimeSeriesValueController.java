@@ -29,16 +29,17 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.BlobDao;
+import cwms.cda.data.dao.StreamConsumer;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.InputStream;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
@@ -84,26 +85,37 @@ public class BinaryTimeSeriesValueController implements Handler {
                     )},
             tags = {BinaryTimeSeriesController.TAG}
     )
-    public void handle(Context ctx) {
+    public void handle(@NotNull Context ctx) {
         //Implementation will change with new CWMS schema
         //https://www.hec.usace.army.mil/confluence/display/CWMS/2024-02-29+Task2A+Text-ts+and+Binary-ts+Design
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String binaryId = requiredParam(ctx, BLOB_ID);
             String officeId = requiredParam(ctx, OFFICE);
             DSLContext dsl = getDslContext(ctx);
+
+            final Long offset;
+            final Long end ;
+            long[] ranges = RangeParser.parseFirstRange(ctx.header(io.javalin.core.util.Header.RANGE));
+            if (ranges != null) {
+                offset = ranges[0];
+                end = ranges[1];
+            } else {
+                offset = null;
+                end = null;
+            }
+
             BlobDao blobDao = new BlobDao(dsl);
-            blobDao.getBlob(binaryId, officeId, (blob, mediaType) -> {
-                if (blob == null) {
+            StreamConsumer streamConsumer = (is, isPosition, mediaType, totalLength) -> {
+                if (is == null) {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                             + "blob based on given parameters"));
                 } else {
-                    long size = blob.length();
-                    requestResultSize.update(size);
-                    try (InputStream is = blob.getBinaryStream()) {
-                        RangeRequestUtil.seekableStream(ctx, is, mediaType, size);
-                    }
+                    requestResultSize.update(totalLength);
+                    RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
                 }
-            });
+            };
+
+            blobDao.getBlob(binaryId, officeId, streamConsumer, offset, end);
         }
     }
 }

@@ -29,6 +29,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.ForecastInstanceDao;
+import cwms.cda.data.dao.StreamConsumer;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -36,9 +37,9 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.InputStream;
 import java.time.Instant;
 
 import static com.codahale.metrics.MetricRegistry.name;
@@ -92,7 +93,7 @@ public final class ForecastFileController implements Handler {
             },
             tags = {ForecastSpecController.TAG}
     )
-    public void handle(Context ctx) {
+    public void handle(@NotNull Context ctx) {
         String specId = requiredParam(ctx, NAME);
         String office = requiredParam(ctx, OFFICE);
         String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
@@ -102,18 +103,16 @@ public final class ForecastFileController implements Handler {
         Instant issueInstant = DateUtils.parseUserDate(issueDate, "UTC").toInstant();
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
-            dao.getFileBlob(office, specId, designator, forecastInstant, issueInstant, (blob, mediaType) -> {
-                if (blob == null) {
+            StreamConsumer streamConsumer = (is, isPosition, mediaType, totalLength) -> {
+                if (is == null) {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                             + "blob based on given parameters"));
                 } else {
-                    long size = blob.length();
-                    requestResultSize.update(size);
-                    try (InputStream is = blob.getBinaryStream()) {
-                        RangeRequestUtil.seekableStream(ctx, is, mediaType, size);
-                    }
+                    requestResultSize.update(totalLength);
+                    RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
                 }
-            });
+            };
+            dao.getFileBlob(office, specId, designator, forecastInstant, issueInstant, streamConsumer);
         }
     }
 }

@@ -12,11 +12,7 @@ public interface BlobAccess {
 
     Optional<Blob> getByUniqueName(String id, String office);
 
-    void getBlob(String id, String office, BlobDao.BlobConsumer consumer);
-
-    default void getBlob(String id, BlobDao.BlobConsumer consumer) {
-        getBlob(id, null, consumer);
-    }
+    void getBlob(String id, String office, StreamConsumer consumer, @Nullable Long offset, @Nullable Long end);
 
     void create(Blob blob, boolean failIfExists, boolean ignoreNulls);
 

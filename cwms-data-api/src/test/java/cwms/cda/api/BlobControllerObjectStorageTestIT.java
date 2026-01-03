@@ -3,7 +3,6 @@ package cwms.cda.api;
 import cwms.cda.features.CdaFeatures;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.Extension;
@@ -15,19 +14,18 @@ import org.togglz.core.manager.FeatureManager;
 @ExtendWith(BlobControllerObjectStorageTestIT.FeatureEnableExtension.class)
 public class BlobControllerObjectStorageTestIT extends BlobControllerTestIT{
 
+    static class FeatureEnableExtension implements Extension, BeforeAllCallback {
+
+        @Override
+        public void beforeAll(ExtensionContext context) {
+            setObjectStoreProperties();
+        }
+    }
+
     static boolean wasActive;
 
-
-    // I need this to happen before super.BeforeAll is run so that the create will create into Object-store version
-//    @BeforeAll
-//    public static void setup() throws Exception {
-//        setObjectStoreProperties();
-//
-//        // now call the method that the super calls.
-//        createExistingBlob();
-//    }
-
     private static void setObjectStoreProperties() {
+        // This is to get the feature enabled before we try and use the controller
         FeatureManager featureManager = FeatureContext.getFeatureManager();
         wasActive=featureManager.isActive(CdaFeatures.USE_OBJECT_STORAGE_BLOBS);
         featureManager.enable(CdaFeatures.USE_OBJECT_STORAGE_BLOBS);
@@ -51,18 +49,4 @@ public class BlobControllerObjectStorageTestIT extends BlobControllerTestIT{
 
     }
 
-    @Override
-    @Test
-    void test_create_getOne()
-    {
-        super.test_create_getOne();
-    }
-
-    static class FeatureEnableExtension implements Extension, BeforeAllCallback {
-
-        @Override
-        public void beforeAll(ExtensionContext context) {
-            setObjectStoreProperties();
-        }
-    }
 }

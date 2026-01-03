@@ -104,7 +104,26 @@ class RangeParserTest {
         assertArrayEquals(new long[]{8L, 99L}, RangeParser.interpret(new long[]{8L, 100L}, 100));
         assertArrayEquals(new long[]{8L, 99L}, RangeParser.interpret(new long[]{8L, 200L}, 100));
 
+        // typical resume bytes=10-
+        assertArrayEquals(new long[]{10L, 99L}, RangeParser.interpret(new long[]{10L, -1L}, 100));
+
+        // bytes=0-0
+        assertArrayEquals(new long[]{0L, 0L}, RangeParser.interpret(new long[]{0L, 0L}, 100));
+        // bytes=-1
+        assertArrayEquals(new long[]{99L, 99L}, RangeParser.interpret(new long[]{-1L, 1L}, 100));
+
+        // bytes=-50
+        assertArrayEquals(new long[]{50L, 99L}, RangeParser.interpret(new long[]{-1L, 50L}, 100));
+
     }
 
-// probably invalid  assertArrayEquals(new long[]{8L, 100L}, RangeParser.interpret(new long[]{100L, 200L}, 100));
+    @Test
+    void testInvalidInterp() {
+        // They requested 100-200 but our file is 100 long (only 0-99).
+        assertThrows(IllegalArgumentException.class, () -> RangeParser.interpret(new long[]{100L, 200L}, 100));
+        assertThrows(IllegalArgumentException.class, () -> RangeParser.interpret(new long[]{200L, 100L}, 100));
+        assertThrows(IllegalArgumentException.class, () -> RangeParser.interpret(new long[]{100L, 100L}, 100));
+
+    }
+
 }

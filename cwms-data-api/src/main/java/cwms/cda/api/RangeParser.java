@@ -1,6 +1,6 @@
 package cwms.cda.api;
 
-import org.jspecify.annotations.NonNull;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.regex.*;
@@ -29,8 +29,8 @@ public class RangeParser {
      * If the range only includes a negative byte (e.g bytes=-50) then -1 is returned as the start of the range
      * and -1*end is returned as the end of the range.    bytes=-50 will result in [-1,50]
      *
-     * @param header the HTTP Range header
-     * @return a list of byte ranges
+     * @param header the HTTP Range header this should start with "bytes=" if it is null or empty an empty list is returned
+     * @return a list of long[2] holding the ranges
      */
     public static List<long[]> parse(String header) {
         if (header == null || header.isEmpty() ) {
@@ -47,7 +47,17 @@ public class RangeParser {
         return retval;
     }
 
-    public static @NonNull List<long[]> parseRanges(String rangePart) {
+    public static long[] parseFirstRange(String header) {
+        if(header != null) {
+            List<long[]> ranges = RangeParser.parse(header);
+            if (!ranges.isEmpty()) {
+                return ranges.get(0);
+            }
+        }
+        return null;
+    }
+
+    public static @NotNull List<long[]> parseRanges(String rangePart) {
         if( rangePart == null || rangePart.isEmpty() ){
             throw new IllegalArgumentException("Invalid range specified: " + rangePart);
         }
@@ -92,11 +102,22 @@ public class RangeParser {
             start = totalBytes - end;
             end = totalBytes - 1;
         } else {
-            if (start < 0 || end < start) {
+            if (start < 0 ) {
                 throw new IllegalArgumentException("Invalid range specified: " + Arrays.toString(inputs));
             }
 
-            start = Math.min(start, totalBytes - 1);
+            if(end == -1L){
+                end = totalBytes - 1;
+            }
+
+            if(end < start){
+                throw new IllegalArgumentException("Invalid range specified: " + Arrays.toString(inputs));
+            }
+
+            if(start > totalBytes - 1){
+                throw new IllegalArgumentException("Can't satisfy range request: " + Arrays.toString(inputs) + " Range starts beyond end of file.");
+            }
+
             end = Math.min(end, totalBytes - 1);
         }
 
