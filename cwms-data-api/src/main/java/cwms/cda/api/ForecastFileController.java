@@ -31,6 +31,7 @@ import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.ForecastInstanceDao;
 import cwms.cda.data.dao.StreamConsumer;
 import cwms.cda.helpers.DateUtils;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -109,6 +110,7 @@ public final class ForecastFileController implements Handler {
                             + "blob based on given parameters"));
                 } else {
                     requestResultSize.update(totalLength);
+                    ctx.header(Header.ACCEPT_RANGES, "bytes");
                     RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
                 }
             };

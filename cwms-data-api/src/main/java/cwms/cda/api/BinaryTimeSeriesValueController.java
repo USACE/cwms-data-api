@@ -30,6 +30,7 @@ import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.BlobDao;
 import cwms.cda.data.dao.StreamConsumer;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -92,6 +93,8 @@ public class BinaryTimeSeriesValueController implements Handler {
             String binaryId = requiredParam(ctx, BLOB_ID);
             String officeId = requiredParam(ctx, OFFICE);
             DSLContext dsl = getDslContext(ctx);
+
+            ctx.header(Header.ACCEPT_RANGES, "bytes");
 
             final Long offset;
             final Long end ;
