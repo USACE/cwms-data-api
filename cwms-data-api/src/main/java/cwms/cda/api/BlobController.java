@@ -200,6 +200,8 @@ public class BlobController implements CrudHandler {
                 end = null;
             }
 
+            ctx.header(Header.ACCEPT_RANGES, "bytes");
+
             StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
                 if (is == null) {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "

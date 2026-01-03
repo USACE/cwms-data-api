@@ -22,6 +22,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -220,20 +221,18 @@ public class ClobDao extends JooqDao<Clob> {
      *
      * @param clobId the id to search for
      * @param officeId the office
-     * @param clobConsumer a consumer that should be handed the input stream and the length of the stream.
+     * @param streamConsumer a consumer that should be handed the input stream and the length of the stream.
      */
-    public void getClob(String clobId, String officeId, ClobConsumer clobConsumer) {
-        // Not using jOOQ here because we want the java.sql.Clob and not an automatic field binding.  We want
-        // clob so that we can pull out a stream to the data and pass that to javalin.
-        // If the request included Content-Ranges Javalin can have the stream skip to the correct
-        // location, which will avoid reading unneeded data.  Passing this stream right to the javalin
-        // response should let CDA return a huge (2Gb) clob to the client without ever holding the entire String
-        // in memory.
-        // We can't use the stream once the connection we get from jooq is closed, so we have to pass in
-        // what we want javalin to do with the stream as a consumer.
-        //
-
+    public void getClob(String clobId, String officeId, StreamConsumer streamConsumer) {
         dsl.connection(connection -> {
+            // Not using jOOQ here because we want the java.sql.Clob and not an automatic field binding.  We want
+            // clob so that we can pull out a stream to the data and pass that to javalin.
+            // If the request included Content-Ranges Javalin can have the stream skip to the correct
+            // location, which will avoid reading unneeded data.  Passing this stream right to the javalin
+            // response should let CDA return a huge (2Gb) clob to the client without ever holding the entire String
+            // in memory.
+            // We can't use the stream once the connection we get from jooq is closed, so we have to pass in
+            // what we want javalin to do with the stream as a consumer.
             try (PreparedStatement preparedStatement = connection.prepareStatement(SELECT_CLOB_QUERY)) {
                 preparedStatement.setString(1, officeId);
                 preparedStatement.setString(2, clobId);
@@ -241,13 +240,12 @@ public class ClobDao extends JooqDao<Clob> {
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         java.sql.Clob clob = resultSet.getClob("VALUE");
+                        long length = clob.length();
 
-                        try {
-                            clobConsumer.accept(clob);
+                        try (InputStream is = clob.getAsciiStream()){
+                            streamConsumer.accept(is, 0, "text/plain", length);
                         } finally {
-                            if (clob != null) {
-                                clob.free();
-                            }
+                            clob.free();
                         }
                     } else {
                         throw new NotFoundException("Unable to find clob with id " + clobId + " in office " + officeId);
@@ -269,8 +267,5 @@ public class ClobDao extends JooqDao<Clob> {
         }
     }
 
-    @FunctionalInterface
-    public interface ClobConsumer {
-        void accept(java.sql.Clob blob) throws SQLException, IOException;
-    }
+
 }

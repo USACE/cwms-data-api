@@ -27,6 +27,7 @@ import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.ClobDao;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.StreamConsumer;
 import cwms.cda.data.dto.Clob;
 import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -43,7 +44,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.InputStream;
+
 import java.util.Objects;
 import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
@@ -187,16 +188,16 @@ public class ClobController implements CrudHandler {
             if (TEXT_PLAIN.equals(formatHeader)) {
                 // useful cmd:  curl -X 'GET' 'http://localhost:7000/cwms-data/clobs/encoded?office=SPK&id=%2FTIME%20SERIES%20TEXT%2F6261044'
                 // -H 'accept: text/plain' --header "Range: bytes=20000-40000"
-                dao.getClob(clobId, office, c -> {
-                    if (c == null) {
-                        ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
-                                + "clob based on given parameters"));
-                    } else {
-                        try (InputStream is = c.getAsciiStream()) {
-                            RangeRequestUtil.seekableStream(ctx, is, TEXT_PLAIN, c.length());
-                        }
-                    }
-                });
+
+                ctx.header(Header.ACCEPT_RANGES, "bytes");
+
+                StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
+                        requestResultSize.update(totalLength);
+                        RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
+                };
+
+                dao.getClob(clobId, office, consumer);
+
             } else {
                 Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
 
