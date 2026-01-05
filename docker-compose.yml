@@ -57,6 +57,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      minio-setup:
+        condition: service_completed_successfully
     image: cwms-rest-api:local-dev
     build:
       target: api
@@ -191,6 +193,7 @@ services:
 
   minio-setup:
     image: minio/mc:latest
+    restart: "no"
     depends_on:
       minio:
         condition: service_healthy
