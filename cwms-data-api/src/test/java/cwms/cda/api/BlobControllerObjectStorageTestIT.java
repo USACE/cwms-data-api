@@ -19,7 +19,7 @@ import org.togglz.core.manager.FeatureManager;
 @Tag("integration")
 @ExtendWith(BlobControllerObjectStorageTestIT.FeatureEnableExtension.class)
 public class BlobControllerObjectStorageTestIT extends BlobControllerTestIT{
-    FluentLogger logger = FluentLogger.forEnclosingClass();
+    static FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String MINIO_ADMIN = "minio_admin";
     public static final String MINIO_ADMIN_SECRET = "saersdbewadfqewrbwreq12rfgweqrffw52354ec";
     public static final String IMAGE_NAME = "minio/minio:RELEASE.2025-04-22T22-12-26Z";
@@ -46,34 +46,36 @@ public class BlobControllerObjectStorageTestIT extends BlobControllerTestIT{
                 setupMinioResources();
             }
 
-
             setObjectStoreProperties();
         }
     }
 
     private static void setupMinioResources() {
-        try {
+
             String address = "http://" + MINIO_CONTAINER.getHost() + ":" + MINIO_CONTAINER.getMappedPort(PORT);
-            GenericContainer<?> mc = new GenericContainer<>(DockerImageName.parse("minio/mc:latest"))
-                    .withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint("/bin/sh", "-c"))
-                    .withCommand(
-                            String.format("mc alias set %s %s %s %s;" , CONTAINER_NAME, address, MINIO_ADMIN, MINIO_ADMIN_SECRET) +
-                                    String.format(" mc admin user add %s %s %s;", CONTAINER_NAME, MINIO_USER, MINIO_USER_SECRET) +
-                                    String.format(" mc mb --ignore-existing %s/%s;", CONTAINER_NAME, BUCKET) +
-                                    String.format(" mc admin policy attach %s readwrite --user %s;", CONTAINER_NAME, MINIO_USER)
-                            )
-                    .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger("minio-mc")))
-                    .withAccessToHost(true);
+            String setupScript = String.format("mc alias set %s %s %s %s; ", CONTAINER_NAME, address, MINIO_ADMIN, MINIO_ADMIN_SECRET) +
+                    String.format("mc admin user add %s %s %s; ", CONTAINER_NAME, MINIO_USER, MINIO_USER_SECRET) +
+                    String.format("mc mb --ignore-existing %s/%s; ", CONTAINER_NAME, BUCKET) +
+                    String.format("mc admin policy attach %s readwrite --user %s;", CONTAINER_NAME, MINIO_USER);
+
+        try (GenericContainer<?> mc = new GenericContainer<>(DockerImageName.parse("minio/mc:latest"))
+                // Use the string array version of withCommand to ensure /bin/sh -c gets exactly one string
+                .withCommand("/bin/sh", "-c", setupScript)
+                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger("minio-mc")))
+                .withAccessToHost(true)) {
             mc.start();
 
             long startTime = System.currentTimeMillis();
-            while (mc.isRunning() && (System.currentTimeMillis() - startTime) < 10000) {
-                Thread.sleep(100);
+            while (mc.isRunning() && (System.currentTimeMillis() - startTime) < 20000) {
+                Thread.sleep(200);
             }
 
             if (mc.isRunning()) {
-                throw new RuntimeException("MinIO setup timed out after 10 seconds");
+                mc.stop();
+                throw new RuntimeException("MinIO setup timed out");
             }
+
+            logger.atInfo().log(mc.getLogs());
 
             // Check if it exited successfully (0)
             if (mc.getContainerInfo().getState().getExitCodeLong() != 0) {
