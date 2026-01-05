@@ -1,5 +1,6 @@
 package cwms.cda.api;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.features.CdaFeatures;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Tag;
@@ -7,7 +8,9 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 import org.togglz.core.context.FeatureContext;
@@ -16,20 +19,21 @@ import org.togglz.core.manager.FeatureManager;
 @Tag("integration")
 @ExtendWith(BlobControllerObjectStorageTestIT.FeatureEnableExtension.class)
 public class BlobControllerObjectStorageTestIT extends BlobControllerTestIT{
-
+    FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String MINIO_ADMIN = "minio_admin";
     public static final String MINIO_ADMIN_SECRET = "saersdbewadfqewrbwreq12rfgweqrffw52354ec";
     public static final String IMAGE_NAME = "minio/minio:RELEASE.2025-04-22T22-12-26Z";
     public static final int PORT = 9000;
+    public static final String MINIO_USER = "cda_user";
+    public static final String MINIO_USER_SECRET = "cda_password";
     private static final GenericContainer<?> MINIO_CONTAINER = new GenericContainer<>(DockerImageName.parse(IMAGE_NAME))
             .withExposedPorts(PORT)
             .withEnv("MINIO_ROOT_USER", MINIO_ADMIN)
             .withEnv("MINIO_ROOT_PASSWORD", MINIO_ADMIN_SECRET)
             .withCommand("server /data")
             .waitingFor(Wait.forHttp("/minio/health/live").forPort(PORT));
+
     public static final String BUCKET = "cwms-test";
-    public static final String MINIO_USER = "cda_user";
-    public static final String MINIO_USER_SECRET = "cda_password";
     public static final String CONTAINER_NAME = "myminio";
 
 
@@ -58,10 +62,24 @@ public class BlobControllerObjectStorageTestIT extends BlobControllerTestIT{
                                     String.format(" mc mb --ignore-existing %s/%s;", CONTAINER_NAME, BUCKET) +
                                     String.format(" mc admin policy attach %s readwrite --user %s;", CONTAINER_NAME, MINIO_USER)
                             )
+                    .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger("minio-mc")))
                     .withAccessToHost(true);
             mc.start();
-            // wait for setup to complete
-            while (mc.isRunning()) { Thread.sleep(100); }
+
+            long startTime = System.currentTimeMillis();
+            while (mc.isRunning() && (System.currentTimeMillis() - startTime) < 10000) {
+                Thread.sleep(100);
+            }
+
+            if (mc.isRunning()) {
+                throw new RuntimeException("MinIO setup timed out after 10 seconds");
+            }
+
+            // Check if it exited successfully (0)
+            if (mc.getContainerInfo().getState().getExitCodeLong() != 0) {
+                throw new RuntimeException("MinIO setup failed with exit code: "
+                        + mc.getContainerInfo().getState().getExitCodeLong());
+            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to setup MinIO resources", e);
         }
