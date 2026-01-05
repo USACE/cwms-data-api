@@ -37,14 +37,14 @@
         <rating-spec-id>{location}.Elev;Area.Standard.Production</rating-spec-id>
         <vertical-datum-info unit="ft">
             <native-datum>NGVD-29</native-datum>
-            <elevation>612.99</elevation>
+            <elevation>36.089</elevation>
             <offset estimate="false">
                 <to-datum>NGVD-29</to-datum>
                 <value>0.0</value>
             </offset>
             <offset estimate="true">
                 <to-datum>NAVD-88</to-datum>
-                <value>2.393</value>
+                <value>-2.532</value>
             </offset>
         </vertical-datum-info>
         <units-id>ft;acre</units-id>

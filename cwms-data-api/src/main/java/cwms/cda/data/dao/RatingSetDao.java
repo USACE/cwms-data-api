@@ -48,25 +48,8 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     }
 
     @Override
-    public void create(String ratingSetXml, boolean replaceBaseCurve) throws IOException, RatingException {
-        try {
-            connection(dsl, c -> {
-                // can't exist if we are creating, if it exists use store
-                String office = extractOfficeId(ratingSetXml);
-                DSLContext context = getDslContext(c, office);
-                String errs = CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
-                        ratingSetXml, "T", replaceBaseCurve ? "T" : "F");
-                if (errs != null && !errs.isEmpty()) {
-                    throw new DataAccessException("Failed to create Rating", new RatingException(errs));
-                }
-            });
-        } catch (DataAccessException ex) {
-            Throwable cause = ex.getCause();
-            if (cause instanceof RatingException) {
-                throw (RatingException) cause;
-            }
-            throw new IOException("Failed to create Rating", ex);
-        }
+    public void create(String ratingSetXml, boolean replaceBaseCurve, VerticalDatum vd) throws IOException, RatingException {
+        connection(dsl, connection -> storeWithDefaultDatum(ratingSetXml, replaceBaseCurve, true, vd, connection));
     }
 
     private static String extractOfficeId(String ratingSet) throws JsonProcessingException {
@@ -116,9 +99,11 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
             RatingSet.DatabaseLoadMethod finalMethod = method;
 
-            connection(dsl, c -> retval[0] =
-                    RatingJdbcFactory.ratingSet(finalMethod, new RatingConnectionProvider(c), officeId,
-                            specificationId, start, end, false));
+            connection(dsl, c -> {
+                setOffice(c, officeId);
+                retval[0] = RatingJdbcFactory.ratingSet(finalMethod, new RatingConnectionProvider(c), officeId,
+                                specificationId, start, end, false);
+            });
 
 
         } catch (DataAccessException ex) {
@@ -137,18 +122,20 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
     // store/update
     @Override
-    public void store(String ratingSetXml, boolean replaceBaseCurve) throws IOException, RatingException {
+    public void store(String ratingSetXml, boolean replaceBaseCurve, VerticalDatum vd) throws IOException, RatingException {
+        connection(dsl, connection -> storeWithDefaultDatum(ratingSetXml, replaceBaseCurve, false, vd, connection));
+    }
+
+    private static void storeRatingSetXml(String ratingSetXml, boolean replaceBaseCurve, boolean failIfExists, Connection c) throws RatingException, IOException {
         try {
-            connection(dsl, c -> {
-                String office = extractOfficeId(ratingSetXml);
-                DSLContext context = getDslContext(c, office);
-                String errs = CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
-                        ratingSetXml, "F", replaceBaseCurve ? "T" : "F");
-                if (errs != null && !errs.isEmpty())
-                {
-                    throw new DataAccessException("Failed to store Rating", new RatingException(errs));
-                }
-            });
+            String office = extractOfficeId(ratingSetXml);
+            DSLContext context = getDslContext(c, office);
+            String errs = CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
+                    ratingSetXml, formatBool(failIfExists), formatBool(replaceBaseCurve));
+            if (errs != null && !errs.isEmpty())
+            {
+                throw new DataAccessException("Failed to store Rating", new RatingException(errs));
+            }
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
             if (cause instanceof RatingException) {
@@ -156,6 +143,13 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
             }
             throw new IOException("Failed to store Rating", ex);
         }
+    }
+
+    private void storeWithDefaultDatum(String ratingSetXml, boolean replaceBaseCurve, boolean failIfExists,
+                                       VerticalDatum vd, Connection connection) throws Throwable {
+        String office = extractOfficeId(ratingSetXml);
+        DSLContext dslContext = getDslContext(connection, office);
+        withDefaultDatum(vd, dslContext, (conn)-> storeRatingSetXml(ratingSetXml, replaceBaseCurve, failIfExists, connection));
     }
 
     @Override
