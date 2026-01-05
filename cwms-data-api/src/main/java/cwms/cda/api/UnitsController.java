@@ -27,13 +27,12 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 
 public class UnitsController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(UnitsController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -117,7 +116,7 @@ public class UnitsController implements CrudHandler {
             addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
         } catch (Exception ex) {
-            logger.log(Level.SEVERE, null, ex);
+            logger.atSevere().withCause(ex).log("Failed to process request");
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             ctx.result("Failed to process request");
         }

@@ -4,12 +4,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 
 public final class ResourceHelper {
-    private static final Logger logger = Logger.getLogger(ResourceHelper.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     /**
      * Returns resource as a string, null if resource can't be found.
      * @param resource The path to the resource
@@ -18,10 +17,10 @@ public final class ResourceHelper {
      * */
     public static String getResourceAsString(String resource, Class<?> context) {
         InputStream formatList = getResourceAsStream(resource, context);
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(formatList));) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(formatList))) {
             return reader.lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {
-            logger.log(Level.SEVERE,"Error access resource",e);
+            logger.atSevere().withCause(e).log("Error access resource");
         }
         return null;
     }

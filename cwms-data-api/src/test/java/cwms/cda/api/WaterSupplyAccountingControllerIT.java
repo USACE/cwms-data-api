@@ -62,8 +62,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
@@ -74,7 +73,7 @@ import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
 class WaterSupplyAccountingControllerIT extends DataApiTestIT {
-    private static final Logger LOGGER = Logger.getLogger(WaterSupplyAccountingControllerIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE_ID = "SPK";
     private static WaterSupplyAccounting waterSupplyAccounting;
     private static final String START_TIME = "start";
@@ -121,7 +120,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             pump3 = buildTestLocation(waterSupplyAccounting.getPumpLocations().getPumpBelow().getName(),
                     "PUMP");
         } catch (Exception e) {
-            LOGGER.log(Level.CONFIG, String.format("Unable to delete location: %s", e.getMessage()));
+            LOGGER.atConfig().log("Unable to delete location: %s", e.getMessage());
         }
     }
 
@@ -154,13 +153,13 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
                 lookupTypeDao.storeLookupType("AT_PHYSICAL_TRANSFER_TYPE","PHYS_TRANS_TYPE",
                         testTransferType);
             } catch (Exception e) {
-                LOGGER.log(Level.CONFIG, String.format("Unable to store lookup type: %s", e.getMessage()));
+                LOGGER.atConfig().log("Unable to store lookup type: %s", e.getMessage());
             }
             try {
                 lookupTypeDao.storeLookupType("AT_WS_CONTRACT_TYPE","WS_CONTRACT_TYPE",
                         testContractType);
             } catch (Exception e) {
-                LOGGER.log(Level.CONFIG, String.format("Unable to store lookup type: %s", e.getMessage()));
+                LOGGER.atConfig().log("Unable to store lookup type: %s", e.getMessage());
             }
             try {
                 projectDao.store(project, false);
@@ -218,55 +217,55 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
                 {
                     waterContractDao.deleteWaterContract(contract, DeleteMethod.DELETE_ALL);
                 } catch (Exception e) {
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete water contract: %s", e.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete water contract: %s", e.getMessage());
                 }
                 try
                 {
                     lookupTypeDao.deleteLookupType("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE",
                             OFFICE_ID, testTransferType.getDisplayValue());
                 } catch (Exception e) {
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete lookup type: %s", e.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete lookup type: %s", e.getMessage());
                 }
                 try {
                     lookupTypeDao.deleteLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE",
                             OFFICE_ID, testContractType.getDisplayValue());
                 } catch (Exception e) {
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete contract lookup type: %s", e.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete contract lookup type: %s", e.getMessage());
                 }
                 try
                 {
                     projectDao.delete(contract.getOfficeId(), contract.getWaterUser().getProjectId().getName(),
                             DeleteRule.DELETE_ALL);
                 } catch (Exception e) {
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete project: %s", e.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete project: %s", e.getMessage());
                 }
                 try
                 {
                     locationsDao.deleteLocation(pump1.getName(), pump1.getOfficeId(), true);
                 } catch (Exception e) {
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete location: %s", e.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete location: %s", e.getMessage());
                 }
                 try
                 {
                     locationsDao.deleteLocation(pump3.getName(), pump3.getOfficeId(), true);
                 } catch (Exception e) {
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete location: %s", e.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete location: %s", e.getMessage());
                 }
                 try
                 {
                     locationsDao.deleteLocation(contractLocation.getName(), contractLocation.getOfficeId(), true);
                 } catch (Exception e) {
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete location: %s", e.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete location: %s", e.getMessage());
                 }
                 try
                 {
                 locationsDao.deleteLocation(parentLocation.getName(), parentLocation.getOfficeId(), true);
                 } catch (Exception e) {
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete location: %s", e.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete location: %s", e.getMessage());
                 }
             }, CwmsDataApiSetupCallback.getWebUser());
         } catch (Exception e) {
-            LOGGER.log(Level.CONFIG, String.format("Unable to delete object: %s", e.getMessage()));
+            LOGGER.atConfig().log("Unable to delete object: %s", e.getMessage());
         }
     }
 

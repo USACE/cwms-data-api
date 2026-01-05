@@ -1,20 +1,19 @@
 package cwms.cda.data.dto;
 
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.formatters.ContentType;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.helpers.DTOMatch;
-import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Test;
-
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV1;
+import cwms.cda.helpers.DTOMatch;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Test;
 
 final class EntityTest {
 
@@ -56,12 +55,12 @@ final class EntityTest {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/entity.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        ContentType contentType = new ContentType(Formats.JSONV2);
+        ContentType contentType = new ContentType(Formats.JSONV1);
         Entity deserialized = Formats.parseContent(contentType, json, Entity.class);
 
         DTOMatch.assertMatch(expectedEntity, deserialized);
 
-        String serialized = JsonV2.buildObjectMapper().writeValueAsString(deserialized);
+        String serialized = JsonV1.buildObjectMapper().writeValueAsString(deserialized);
         assertEquals(json.replaceAll("\\s+", ""), serialized.replaceAll("\\s+", ""));
 
     }

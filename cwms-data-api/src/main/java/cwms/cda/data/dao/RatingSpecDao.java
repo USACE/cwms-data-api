@@ -24,6 +24,8 @@
 
 package cwms.cda.data.dao;
 
+import static com.google.common.flogger.LazyArgs.lazy;
+
 import static cwms.cda.data.dto.rating.RatingSpec.Builder.buildIndependentRoundingSpecs;
 import static java.util.stream.Collectors.toList;
 
@@ -56,8 +58,7 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.sql.rowset.CachedRowSet;
@@ -76,7 +77,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 
 public class RatingSpecDao extends JooqDao<RatingSpec> {
     public static final Calendar GMT_CALENDAR = getGmtCalendar();
-    private static final Logger logger = Logger.getLogger(RatingSpecDao.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String OFFICE_ID = "OFFICE_ID";
     public static final String SPECIFICATION_ID = "SPECIFICATION_ID";
     public static final String LOCATION_ID = "LOCATION_ID";
@@ -142,7 +143,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .where(condition)
                 .fetchSize(DEFAULT_FETCH_SIZE);
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
         try (Stream<? extends Record> stream = query.fetchStream()) {
@@ -182,7 +183,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                     try {
                         total = Integer.valueOf(parts[1]);
                     } catch (NumberFormatException e) {
-                        logger.log(Level.INFO, "Could not parse " + parts[1]);
+                        logger.atInfo().log("Could not parse %s", parts[1]);
                     }
                 }
                 pageSize = Integer.parseInt(parts[2]);
@@ -236,7 +237,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .limit(pageSize)
                 .offset(firstRow);
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
         try (Stream<? extends Record> stream = query.fetchStream()) {
@@ -296,7 +297,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .orderBy(specView.OFFICE_ID, specView.RATING_ID, ratView.EFFECTIVE_DATE)
                 .fetchSize(DEFAULT_FETCH_SIZE);
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
         try (Stream<? extends Record> stream = query.fetchStream()) {

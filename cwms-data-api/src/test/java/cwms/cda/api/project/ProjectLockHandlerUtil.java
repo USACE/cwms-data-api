@@ -35,7 +35,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.logging.Level;
+
 import org.jooq.DSLContext;
 
 public class ProjectLockHandlerUtil {
@@ -88,7 +88,7 @@ public class ProjectLockHandlerUtil {
             prjDao.delete(office, projId, DeleteRule.DELETE_ALL);
         } catch (Exception e) {
             ProjectLockDao lockDao = new ProjectLockDao(dsl);
-            logger.at(Level.WARNING).withCause(e).log("Failed to delete project: %s", projId);
+            logger.atWarning().withCause(e).log("Failed to delete project: %s", projId);
             List<ProjectLock> locks = lockDao.retrieveLocks(office, projId, appId);
             locks.forEach(lock -> {
                 logger.atFine().log("Remaining Locks: " + lock.getProjectId() + " " +
