@@ -176,8 +176,9 @@ public abstract class JooqDao<T> extends Dao<T> {
         // This method should probably be called from within a connection{  } block and jOOQ
         // code within the block should use the returned DSLContext or the connection.
         DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
-        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
-
+        if(officeId != null && !"CWMS".equals(officeId)) {
+            CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
+        }
         return dsl;
     }
 

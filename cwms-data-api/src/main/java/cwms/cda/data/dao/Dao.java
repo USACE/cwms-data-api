@@ -109,7 +109,9 @@ public abstract class Dao<T> {
     }
 
     protected void setOffice(Connection c, String office) throws SQLException {
-        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
+        if(office != null && !"CWMS".equals(office)) {
+            CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
+        }
     }
 
     public abstract Optional<T> getByUniqueName(String uniqueName, String office);
