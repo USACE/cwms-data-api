@@ -24,6 +24,8 @@
 
 package cwms.cda.data.dao;
 
+import static com.google.common.flogger.LazyArgs.lazy;
+
 import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
 import static cwms.cda.api.Controllers.LIKE;
 import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
@@ -67,8 +69,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Stream;
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
@@ -94,7 +95,7 @@ import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 
 
 public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao {
-    private static final Logger logger = Logger.getLogger(LocationsDaoImpl.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final long DELETED_TS_MARKER = 0L;
 
 
@@ -505,7 +506,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
                 .from(table)
                 .where(condition);
-            logger.log(Level.FINER, () -> count.getSQL(ParamType.INLINED));
+            logger.atFiner().log("%s", lazy(() -> count.getSQL(ParamType.INLINED)));
             total = count.fetchOne().value1();
         } else {
             cursorLocation = catPage.getCursorId();
@@ -554,7 +555,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             .from(limiter)
             .leftOuterJoin(table).on(fieldMapping.getLocationCode().eq(limitCode))
             .orderBy(orderFields);
-        logger.log(Level.FINER, () -> query.getSQL(ParamType.INLINED));
+        logger.atFiner().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         try (Stream<Record> recordStream = (Stream<Record>) query
                 .fetchSize(DEFAULT_FETCH_SIZE)
@@ -654,9 +655,9 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
     static String warnIfMismatch(String paramName, String pageParam, String queryParam) {
         if (queryParam != null && (!queryParam.equals(pageParam))) {
-            logger.log(Level.WARNING, "The {0} query parameter:{1} and page cursor parameter:{2} do not match."
-                                    + "  The value provided in the page parameter will be used.",
-                            new Object[]{paramName, queryParam, pageParam});
+            logger.atWarning().log(
+                    "The %s query parameter:%s and page cursor parameter:%s do not match.  The value provided in the page parameter will be used.",
+                    paramName, queryParam, pageParam);
         }
         return pageParam;
     }

@@ -73,6 +73,7 @@ jobs:
           annotate_only: true
           include_passed: true
           report_paths: '**/TEST-*.xml'
+          detailed_summary: true
   build-docker-image:
     runs-on: ubuntu-latest
     steps:

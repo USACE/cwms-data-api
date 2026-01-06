@@ -13,7 +13,7 @@ import io.javalin.http.Context;
 import io.javalin.http.Handler;
 
 public final class Authenticator implements Handler {
-    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final ArrayList<IdentityProvider> providers = new ArrayList<>();
 
     public Authenticator() {

@@ -65,8 +65,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
@@ -84,7 +83,7 @@ import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 
 @Tag("integration")
 final class LockControllerIT extends DataApiTestIT {
-    private static final Logger LOGGER = Logger.getLogger(LockControllerIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final Location PROJECT_LOC;
     private static final Location PROJECT_LOC2;
     private static final Location LOCK_LOC;
@@ -177,14 +176,14 @@ final class LockControllerIT extends DataApiTestIT {
 
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
-                LOGGER.log(Level.CONFIG, String.format("Unable to delete Lock location: %s", ex.getMessage()));
+                LOGGER.atConfig().log("Unable to delete Lock location: %s", ex.getMessage());
             }
             try {
                 locationsDao.deleteLocation(LOCK_LOC2.getName(), LOCK_LOC2.getOfficeId(), true);
 
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
-                LOGGER.log(Level.CONFIG, String.format("Unable to delete Lock location: %s", ex.getMessage()));
+                LOGGER.atConfig().log("Unable to delete Lock location: %s", ex.getMessage());
             }
             try {
                 CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
@@ -192,19 +191,19 @@ final class LockControllerIT extends DataApiTestIT {
 
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
-                LOGGER.log(Level.CONFIG, String.format("Unable to delete project: %s", ex.getMessage()));
+                LOGGER.atConfig().log("Unable to delete project: %s", ex.getMessage());
             }
             try {
                 locationsDao.deleteLocation(PROJECT_LOC.getName(), PROJECT_LOC.getOfficeId(), true);
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
-                LOGGER.log(Level.CONFIG, String.format("Unable to delete project location: %s", ex.getMessage()));
+                LOGGER.atConfig().log("Unable to delete project location: %s", ex.getMessage());
             }
             try {
                 locationsDao.deleteLocation(PROJECT_LOC2.getName(), PROJECT_LOC2.getOfficeId(), true);
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
-                LOGGER.log(Level.CONFIG, String.format("Unable to delete project location: %s", ex.getMessage()));
+                LOGGER.atConfig().log("Unable to delete project location: %s", ex.getMessage());
             }
         }, CwmsDataApiSetupCallback.getWebUser());
     }
@@ -221,7 +220,7 @@ final class LockControllerIT extends DataApiTestIT {
                     lockDao.deleteLock(CwmsId.buildCwmsId(lockToCleanup.getLocation().getOfficeId(), lockToCleanup.getLocation().getName()), DeleteRule.DELETE_ALL);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete lock: %s", ex.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete lock: %s", ex.getMessage());
                 }
             }
             for (LocationLevel level : createLocationLevelList(LOCK)) {
@@ -229,7 +228,7 @@ final class LockControllerIT extends DataApiTestIT {
                     levelsDao.deleteLocationLevel(level.getLocationLevelId(), level.getLevelDate(), level.getOfficeId(), true);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete location level: %s", ex.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete location level: %s", ex.getMessage());
                 }
             }
             for (LocationLevel level : locationLevelsToCleanup) {
@@ -237,7 +236,7 @@ final class LockControllerIT extends DataApiTestIT {
                     levelsDao.deleteLocationLevel(level.getLocationLevelId(), level.getLevelDate(), level.getOfficeId(), true);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete location level: %s", ex.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete location level: %s", ex.getMessage());
                 }
             }
             locationLevelsToCleanup.clear();

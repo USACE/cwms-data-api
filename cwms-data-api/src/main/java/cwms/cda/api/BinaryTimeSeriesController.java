@@ -63,8 +63,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.time.Instant;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -72,7 +71,7 @@ import org.jooq.DSLContext;
 
 
 public class BinaryTimeSeriesController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(BinaryTimeSeriesController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     static final String TAG = "Binary-TimeSeries";
 
     public static final String REPLACE_ALL = "replace-all";
@@ -172,7 +171,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
         } catch (URISyntaxException | UnsupportedEncodingException ex) {
             CdaError re =
                     new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }

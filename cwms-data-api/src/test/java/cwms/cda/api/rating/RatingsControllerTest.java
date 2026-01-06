@@ -54,8 +54,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
@@ -71,7 +70,7 @@ import org.junit.jupiter.api.Test;
 
 class RatingsControllerTest {
 
-    private static final Logger logger = Logger.getLogger(RatingsControllerTest.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private DataSource ds = mock(DataSource.class);
     private Connection conn = null;
@@ -114,11 +113,11 @@ class RatingsControllerTest {
         when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.XMLV2);
         when(request.getContentType()).thenReturn(Formats.XMLV2);
 
-        logger.log(Level.INFO, "Test post_to_create_passed_to_deserializeXml may trigger a RatingException - this is fine.");
+        logger.atInfo().log("Test post_to_create_passed_to_deserializeXml may trigger a RatingException - this is fine.");
         try {
             controller.create(context);
         } catch (IllegalArgumentException e){
-            logger.log(Level.INFO, "Test post_to_create_passed_to_deserializeXml caught an IllegalArgumentException - this is fine.");
+            logger.atInfo().log("Test post_to_create_passed_to_deserializeXml caught an IllegalArgumentException - this is fine.");
         }
         // For this test, it's ok that the server throws a RatingException
         // Only want to check that the controller accessed our mock dao in the expected way
@@ -351,7 +350,7 @@ class RatingsControllerTest {
             }
 
             @Override
-            public Logger getParentLogger() throws SQLFeatureNotSupportedException
+            public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException
             {
                 return null;
             }
