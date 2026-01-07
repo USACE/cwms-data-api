@@ -42,8 +42,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -64,7 +63,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 class LocationGroupControllerTestIT extends DataApiTestIT {
-    private static final Logger LOGGER = Logger.getLogger(LocationGroupControllerTestIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private final List<LocationGroup> groupsToCleanup = new ArrayList<>();
     private final List<LocationCategory> categoriesToCleanup = new ArrayList<>();
     TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
@@ -86,14 +85,14 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
                         locationGroupDao.delete(group.getLocationCategory().getId(), group.getId(), true, group.getOfficeId());
                     }
                 } catch (NotFoundException e) {
-                    LOGGER.log(Level.CONFIG, String.format("Failed to delete location group: %s", group.getId()), e);
+                    LOGGER.atConfig().withCause(e).log("Failed to delete location group: %s", group.getId());
                 }
             }
             for (LocationCategory category : categoriesToCleanup) {
                 try {
                     locationCategoryDao.delete(category.getId(), true, category.getOfficeId());
                 } catch (NotFoundException e) {
-                    LOGGER.log(Level.CONFIG, String.format("Failed to delete location category: %s", category.getId()), e);
+                    LOGGER.atConfig().withCause(e).log("Failed to delete location category: %s", category.getId());
                 }
             }
         }, CwmsDataApiSetupCallback.getWebUser());

@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
@@ -74,6 +75,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         // 1)Retrieve a ForecastInstance and assert that it does not exist
         // 2)Create the ForecastInstance
         // 3)Retrieve the ForecastInstance and assert that it exists
+        // 4)Issue a getAll request and verify that created instance present
 
         // Step 1)
         // Retrieve a ForecastInstance and assert that it does not exist
@@ -164,6 +166,26 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
             .body("filename", equalTo("testFilename.txt"))
 //                .body("file-description", equalTo( "test file description"))
             .body("file-data", equalTo("dGVzdCBmaWxlIGNvbnRlbnQ="))
+        ;
+
+        // Step 4 issue a getAll request and verify that created instance present
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, SPEC_ID)
+            .queryParam(Controllers.DESIGNATOR, designator)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("$", is(instanceOf(List.class)))
+            .body("$", not(empty()))  // Assert array is not empty
+            .body("find { it.spec.'spec-id' == '" + SPEC_ID + "' }", notNullValue())
         ;
 
 

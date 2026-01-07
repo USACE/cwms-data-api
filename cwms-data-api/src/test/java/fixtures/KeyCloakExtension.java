@@ -13,8 +13,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -36,7 +35,7 @@ import io.restassured.response.Response;
  * Sets up a KeyCloak instance to use for testing.
  */
 public final class KeyCloakExtension implements BeforeAllCallback {
-    private static final Logger logger = Logger.getLogger(KeyCloakExtension.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final String WELL_KNOWN = "realms/cwms/.well-known/openid-configuration";
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final GenericContainer<?> kcc = new GenericContainer<>("quay.io/keycloak/keycloak:19.0.1")
@@ -49,7 +48,7 @@ public final class KeyCloakExtension implements BeforeAllCallback {
                                                     .withReuse(false)
                                                     .withLogConsumer(frame -> 
                                                     {
-                                                        logger.info(frame.getUtf8String());
+                                                        logger.atInfo().log(frame.getUtf8String());
                                                     })
                                                     ;
                                                     
@@ -92,7 +91,7 @@ public final class KeyCloakExtension implements BeforeAllCallback {
         issuer = oidcConfig.get("issuer").asText();
         codeUrl = oidcConfig.get("authorization_endpoint").asText();
         tokenUrl = oidcConfig.get("token_endpoint").asText();
-        logger.fine(response::asPrettyString);
+        logger.atFine().log(response.asPrettyString());
     }
 
     @Override
@@ -144,11 +143,11 @@ public final class KeyCloakExtension implements BeforeAllCallback {
                 .when()
                     .post(new URL(getTokenUrl()));
       
-            logger.fine(response::asPrettyString);
+            logger.atFine().log(response.asPrettyString());
             JsonNode tokenInfo = mapper.readTree(response.asString());
             return Optional.of(tokenInfo.get("access_token").asText());
         } catch (JsonProcessingException | MalformedURLException ex) {
-            logger.log(Level.WARNING, ex, () -> "Unable to retrieve token for user " + username);
+            logger.atWarning().withCause(ex).log("Unable to retrieve token for user %s", username);
             return Optional.empty();
         }
     }
