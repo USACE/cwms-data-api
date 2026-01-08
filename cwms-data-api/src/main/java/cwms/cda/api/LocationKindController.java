@@ -84,7 +84,7 @@ public class LocationKindController implements Handler {
         responses = {
             @OpenApiResponse(status = STATUS_200,
                 content = {
-                    @OpenApiContent(isArray = true, type = Formats.JSONV2, from = Location.class),
+                    @OpenApiContent(isArray = true, type = Formats.JSONV2, from = CwmsIdLocationKind.class),
                 })
         },
         description = "Returns CWMS Location Data.  The Catalog end-point is also capable of "
