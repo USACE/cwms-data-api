@@ -154,9 +154,9 @@ class LocationLevelTest {
 
 	@Test
 	void test_mutual_exclusivity_seasonal() {
-		assertThrows(RequiredFieldException.class, () -> new SeasonalLocationLevel.Builder("Test", ZonedDateTime.now()).build());
+		assertThrows(RequiredFieldException.class, () -> new SeasonalLocationLevel.Builder("Test", ZonedDateTime.now()).build().validate());
 		assertThrows(RequiredFieldException.class, () -> new SeasonalLocationLevel.Builder("Test", ZonedDateTime.now())
-						.withIntervalMinutes(25).withIntervalMonths(12).build());
+						.withIntervalMinutes(25).withIntervalMonths(12).build().validate());
 	}
 
 	@Test
@@ -267,7 +267,7 @@ class LocationLevelTest {
 			.withIntervalOrigin(ZonedDateTime.now())
 			.withSeasonalValue(new SeasonalValueBean.Builder(12.0).withOffsetMonths(2).build());
 
-		assertThrows(ExclusiveFieldsException.class, sb::build);
+		assertThrows(ExclusiveFieldsException.class, () -> sb.build().validate());
 
 		try {
 			sb.build();
