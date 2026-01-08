@@ -22,7 +22,8 @@ public class StreamReachDao extends JooqDao<StreamReach> {
         String pStationUnitIn = Unit.KILOMETER.getValue();
 
         return connectionResult(dsl, c -> {
-            Result<Record> rs = CWMS_STREAM_PACKAGE.call_CAT_STREAM_REACHES(dsl.configuration(), streamId,
+            var configuration = getDslContext(c, officeId).configuration();
+            Result<Record> rs = CWMS_STREAM_PACKAGE.call_CAT_STREAM_REACHES(configuration, streamId,
                 null, null, null, pStationUnitIn, officeId);
             return buildReachesFromResultSet(rs.intoResultSet());
         });

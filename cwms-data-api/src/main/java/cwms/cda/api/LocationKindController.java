@@ -84,7 +84,7 @@ public class LocationKindController implements Handler {
         responses = {
             @OpenApiResponse(status = STATUS_200,
                 content = {
-                    @OpenApiContent(isArray = true, type = Formats.JSONV2, from = Location.class),
+                    @OpenApiContent(isArray = true, type = Formats.JSONV1, from = CwmsIdLocationKind.class),
                 })
         },
         description = "Returns CWMS Location Data.  The Catalog end-point is also capable of "
@@ -103,9 +103,9 @@ public class LocationKindController implements Handler {
         String kindRegexMask = ctx.queryParam(LOCATION_KIND_LIKE);
         String office = ctx.queryParam(OFFICE);
 
-        String formatParm = ctx.queryParamAsClass(Formats.JSONV2, String.class).getOrDefault("");
+        String formatParm = ctx.queryParamAsClass(Formats.JSONV1, String.class).getOrDefault("");
         String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm, Location.class);
+        ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm, CwmsIdLocationKind.class);
 
         String results;
 
