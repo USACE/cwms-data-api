@@ -487,7 +487,9 @@ public class RatingController implements CrudHandler {
                         } else {
                             //the toXml method in RatingXmlFactory converts to native-datum which breaks things coming back in the user-requested datum
                             //setting the current-datum to an unknown value prevents the call to convert to native-datum
-                            ratingSet.getVerticalDatumContainer().currentDatum = "ignoreConversionToNativeDatum";
+                            if(ratingSet.getVerticalDatumContainer() != null && ratingSet.getVerticalDatumContainer().currentDatum != null) {
+                                ratingSet.getVerticalDatumContainer().currentDatum = "ignoreConversionToNativeDatum";
+                            }
                             retval = RatingXmlFactory.toXml(ratingSet, " ");
                         }
                     } else {
