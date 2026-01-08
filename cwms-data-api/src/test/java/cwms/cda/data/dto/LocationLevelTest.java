@@ -154,9 +154,11 @@ class LocationLevelTest {
 
 	@Test
 	void test_mutual_exclusivity_seasonal() {
-		assertThrows(RequiredFieldException.class, () -> new SeasonalLocationLevel.Builder("Test", ZonedDateTime.now()).build().validate());
-		assertThrows(RequiredFieldException.class, () -> new SeasonalLocationLevel.Builder("Test", ZonedDateTime.now())
-						.withIntervalMinutes(25).withIntervalMonths(12).build().validate());
+		var noSeasonalIntervals = new SeasonalLocationLevel.Builder("Test", ZonedDateTime.now()).build();
+		assertThrows(RequiredFieldException.class, noSeasonalIntervals::validate);
+		var conflictingSeasonalIntervals = new SeasonalLocationLevel.Builder("Test", ZonedDateTime.now())
+			.withIntervalMinutes(25).withIntervalMonths(12).build();
+		assertThrows(RequiredFieldException.class, conflictingSeasonalIntervals::validate);
 	}
 
 	@Test
@@ -259,18 +261,18 @@ class LocationLevelTest {
 
 	@Test
 	void testMutuallyExclusiveSeasonalLevel() {
-		SeasonalLocationLevel.Builder sb = new SeasonalLocationLevel
+		var level = new SeasonalLocationLevel
 			.Builder("LocationLevelId", ZonedDateTime.now())
 			.withIntervalMinutes(120)
 			.withIntervalMonths(2)
 			.withOfficeId("LRL")
 			.withIntervalOrigin(ZonedDateTime.now())
-			.withSeasonalValue(new SeasonalValueBean.Builder(12.0).withOffsetMonths(2).build());
-
-		assertThrows(ExclusiveFieldsException.class, () -> sb.build().validate());
+			.withSeasonalValue(new SeasonalValueBean.Builder(12.0).withOffsetMonths(2).build())
+			.build();
+		assertThrows(ExclusiveFieldsException.class, level::validate);
 
 		try {
-			sb.build();
+			level.validate();
 		} catch (ExclusiveFieldsException e) {
 			assertEquals("Parser", e.getSource());
 			assertEquals("Mutually exclusive fields were provided in the request.", e.getCdaErrorMessage());
