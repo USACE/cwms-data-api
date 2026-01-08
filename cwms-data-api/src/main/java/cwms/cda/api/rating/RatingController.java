@@ -164,8 +164,12 @@ public class RatingController implements CrudHandler {
             RatingDao ratingDao = getRatingDao(dsl);
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
             String ratingSet = deserializeRatingSet(ctx, storeTemplate);
-            VerticalDatum vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
-                    .getOrDefault(null);
+            String datum = ctx.queryParam(DATUM);
+            VerticalDatum vd = null;
+            if(datum != null) {
+               vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
+                        .getOrDefault(null);
+            }
             vd = RatingsVerticalDatumExtractor.getVerticalDatum(ratingSet).orElse(vd);
             ratingDao.create(ratingSet, false, vd);
             StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Rating Set successfully stored to CWMS.");
@@ -573,8 +577,12 @@ public class RatingController implements CrudHandler {
             boolean replaceBaseCurve = ctx.queryParamAsClass(REPLACE_BASE_CURVE, Boolean.class)
                     .getOrDefault(false);
             String ratingSet = deserializeRatingSet(ctx, storeTemplate);
-            VerticalDatum vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
-                    .getOrDefault(null);
+            String datum = ctx.queryParam(DATUM);
+            VerticalDatum vd = null;
+            if(datum != null) {
+                vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
+                        .getOrDefault(null);
+            }
             vd = RatingsVerticalDatumExtractor.getVerticalDatum(ratingSet).orElse(vd);
             ratingDao.store(ratingSet, replaceBaseCurve, vd);
             StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Updated RatingSet");
