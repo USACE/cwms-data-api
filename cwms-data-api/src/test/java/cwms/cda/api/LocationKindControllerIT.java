@@ -47,7 +47,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 @Tag("integration")
 final class LocationKindControllerIT extends DataApiTestIT {
     @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     void test_get_location_kinds(String format) throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
@@ -61,7 +61,7 @@ final class LocationKindControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -75,7 +75,7 @@ final class LocationKindControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
             .queryParam(NAMES, randomName)
             .queryParam(OFFICE, officeId)
             .queryParam(LOCATION_KIND_LIKE, "SITE")
@@ -94,7 +94,7 @@ final class LocationKindControllerIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     void testLocationKindLike(String format) throws Exception {
         String locationName = RandomStringUtils.randomAlphabetic(20);
         String officeId = "SPK";
@@ -113,7 +113,7 @@ final class LocationKindControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
             .queryParam(LOCATION_KIND_LIKE, "BASIN")
         .when()
             .redirects().follow(true)

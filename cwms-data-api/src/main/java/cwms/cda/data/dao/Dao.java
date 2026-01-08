@@ -102,14 +102,18 @@ public abstract class Dao<T> {
      * Sets session office on specific connection.
      * @param c opened connection
      * @param object Data containing a valid CWMS office
-     * @throws SQLException if the underlying database throws an exception
      */
-    protected void setOffice(Connection c, CwmsDTO object) throws SQLException {
-        this.setOffice(c,object.getOfficeId());
+    protected void setOffice(Connection c, CwmsDTO object) {
+        setOffice(c,object.getOfficeId());
     }
 
-    protected void setOffice(Connection c, String office) throws SQLException {
-        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
+    protected static void setOffice(Connection c, String office) {
+        //null office id is invalid for the session office, the client may send null if looking for data across all offices
+        //CWMS is not a valid session office id and maybe be parameterized from the client when
+        //searching for CWMS-owned data.
+        if(office != null && !"CWMS".equals(office)) {
+            CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
+        }
     }
 
     public abstract Optional<T> getByUniqueName(String uniqueName, String office);

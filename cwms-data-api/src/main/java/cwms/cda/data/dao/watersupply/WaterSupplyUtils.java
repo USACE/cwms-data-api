@@ -70,13 +70,21 @@ final class WaterSupplyUtils {
     }
 
     static WaterUserContract toWaterContract(WATER_USER_CONTRACT_OBJ_T contract) {
+        Instant effectiveDate = null;
+        if(contract.getWS_CONTRACT_EFFECTIVE_DATE() != null) {
+            effectiveDate = contract.getWS_CONTRACT_EFFECTIVE_DATE().toInstant();
+        }
+        Instant expirationDate = null;
+        if(contract.getWS_CONTRACT_EXPIRATION_DATE() != null) {
+            expirationDate = contract.getWS_CONTRACT_EXPIRATION_DATE().toInstant();
+        }
         return new WaterUserContract.Builder().withContractedStorage(contract.getCONTRACTED_STORAGE())
                 .withTotalAllocPercentActivated(contract.getTOTAL_ALLOC_PERCENT_ACTIVATED())
                 .withContractType(LocationUtil.getLookupType(contract.getWATER_SUPPLY_CONTRACT_TYPE()))
-                .withContractEffectiveDate(contract.getWS_CONTRACT_EFFECTIVE_DATE().toInstant())
+                .withContractEffectiveDate(effectiveDate)
                 .withOfficeId(contract.getWATER_SUPPLY_CONTRACT_TYPE().getOFFICE_ID())
                 .withStorageUnitsId(contract.getSTORAGE_UNITS_ID())
-                .withContractExpirationDate(contract.getWS_CONTRACT_EXPIRATION_DATE().toInstant())
+                .withContractExpirationDate(expirationDate)
                 .withWaterUser(toWaterUser(contract.getWATER_USER_CONTRACT_REF().getWATER_USER()))
                 .withContractId(new CwmsId.Builder().withOfficeId(contract.getWATER_SUPPLY_CONTRACT_TYPE()
                                 .getOFFICE_ID()).withName(contract.getWATER_USER_CONTRACT_REF()
