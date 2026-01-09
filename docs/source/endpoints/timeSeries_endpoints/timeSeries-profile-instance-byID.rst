@@ -26,7 +26,7 @@ When to use
     previous,"Whether to include the previous time window of the time series profile instance. Acceptable values are 'true' or 'false'.",""
     start,"Specifies the date and time for the start of the time window for data to be included in the response.
             The format for this field is ISO 8601 extended, with optional offset and timezone,
-            i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., '2021-06-10T13:00:00-07:00'.","Yes"
+            i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., '2021-06-10T13:00:00-07:00', '2025-10-25T12:25:00Z'.","Yes"
     start-time-inclusive,"Whether the resulting data set should include data occurring at the moment of the beginning of the time window. Acceptable values are 'true' or 'false'.",""
     timezone,":ref:`def-timezone`",""
     unit,"(Deprecated, prefer 'units') The unit system or specific unit to convert the response data into.

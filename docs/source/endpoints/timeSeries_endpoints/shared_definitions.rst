@@ -15,17 +15,18 @@ endpoint documentation.
 
 end
   End date/time for the time series data to stop. The format for this field is ISO 8601 extended,
-  with optional offset and timezone, i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., '2021-06-10T13:00:00-07:00'.
+  with optional offset and timezone, i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., '2021-06-10T13:00:00-07:00', '2025-10-25T12:25:00Z'.
 
 .. _def-location-id:
 
 location-id
-  The text representation of the location associated with the time series data.
+    https://cwms-database.readthedocs.io/en/latest/naming.html#locations
+    https://cwms-database.readthedocs.io/en/latest/locations.html#overview
 
 .. _def-location-mask:
 
 location-mask
-  A regular expression used to filter the location name associated with the queried time series data. See the Regex documentation page for more information on usage.
+  A regular expression used to filter the location name associated with the queried time series data. See the Regex documentation page for more information on usage: `/cwms-data/regexp`.
 
 .. _def-office:
 
@@ -35,7 +36,7 @@ office
 .. _def-office-mask:
 
 office-mask
-  A regular expression used to filter the office identifier associated with the queried time series data. See the Regex documentation page for more information on usage.
+  A regular expression used to filter the office identifier associated with the queried time series data. See the Regex documentation page for more information on usage.: `/cwms-data/regexp`
 
 .. _def-page:
 
@@ -55,7 +56,7 @@ parameter-id
 .. _def-parameter-id-mask:
 
 parameter-id-mask
-  A regular expression used to filter the parameter of the queried time series data. See the Regex documentation for more information on usage.
+  A regular expression used to filter the parameter of the queried time series data. See the Regex documentation for more information on usage: `/cwms-data/regexp`.
 
 .. _def-timezone:
 
