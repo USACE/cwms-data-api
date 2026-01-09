@@ -55,8 +55,8 @@ public final class LockDao extends JooqDao<Lock> {
 
     public List<Lock> retrieveLockCatalog(CwmsId projectId) {
         return connectionResult(dsl, c -> {
-            setOffice(c, projectId.getOfficeId());
-            Result<Record> catalogResults = CWMS_LOCK_PACKAGE.call_CAT_LOCK(dsl.configuration(),
+            var configuration = getDslContext(c, projectId.getOfficeId()).configuration();
+            Result<Record> catalogResults = CWMS_LOCK_PACKAGE.call_CAT_LOCK(configuration,
                     projectId.getName(), projectId.getOfficeId());
             return catalogResults.stream().map(LockDao::catMap).collect(toList());
         });
@@ -64,14 +64,14 @@ public final class LockDao extends JooqDao<Lock> {
 
     public Lock retrieveLock(CwmsId lockId, UnitSystem unitSystem) {
         return connectionResult(dsl, c -> {
-            setOffice(c, lockId.getOfficeId());
+            var configuration = getDslContext(c, lockId.getOfficeId()).configuration();
             LOCATION_REF_T locationRef = getLocationRef(CwmsId.buildCwmsId(lockId.getOfficeId(),
                     lockId.getName()));
             Lock retVal;
             if (unitSystem.equals(UnitSystem.EN)) {
-                retVal = unitConvertToEN(map(CWMS_LOCK_PACKAGE.call_RETRIEVE_LOCK(dsl.configuration(), locationRef)));
+                retVal = unitConvertToEN(map(CWMS_LOCK_PACKAGE.call_RETRIEVE_LOCK(configuration, locationRef)));
             } else {
-                retVal = map(CWMS_LOCK_PACKAGE.call_RETRIEVE_LOCK(dsl.configuration(), locationRef));
+                retVal = map(CWMS_LOCK_PACKAGE.call_RETRIEVE_LOCK(configuration, locationRef));
             }
             if (retVal == null) {
                 throw new NotFoundException("Lock not found: " + lockId);
@@ -228,44 +228,43 @@ public final class LockDao extends JooqDao<Lock> {
 
     Lock unitConvertToEN(Lock lock) {
         return connectionResult(dsl, c -> {
-            setOffice(c, lock.getLocation().getOfficeId());
-
-            String length = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(dsl.configuration(), "Length", "EN");
-            String volume = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(dsl.configuration(), "Volume", "EN");
+            var configuration = getDslContext(c, lock.getLocation().getOfficeId()).configuration();
+            String length = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(configuration, "Length", "EN");
+            String volume = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(configuration, "Volume", "EN");
             return new Lock.Builder()
                 .withElevationUnits(length)
                 .withVolumeUnits(volume)
                 .withLengthUnits(length)
                 .withLocation(lock.getLocation())
                 .withProjectId(lock.getProjectId())
-                .withLockWidth(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(), lock.getLockWidth(),
+                .withLockWidth(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(configuration, lock.getLockWidth(),
                         lock.getLengthUnits(), length))
-                .withLockLength(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(), lock.getLockLength(),
+                .withLockLength(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(configuration, lock.getLockLength(),
                         lock.getLengthUnits(), length))
-                .withNormalLockLift(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(), lock.getNormalLockLift(),
+                .withNormalLockLift(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(configuration, lock.getNormalLockLift(),
                         lock.getLengthUnits(), length))
-                .withVolumePerLockage(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(),
+                .withVolumePerLockage(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(configuration,
                         lock.getVolumePerLockage(), lock.getVolumeUnits(), volume))
-                .withMinimumDraft(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(), lock.getMinimumDraft(),
+                .withMinimumDraft(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(configuration, lock.getMinimumDraft(),
                         lock.getElevationUnits(), length))
-                .withHighWaterLowerPoolWarningLevel(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(),
+                .withHighWaterLowerPoolWarningLevel(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(configuration,
                         lock.getHighWaterLowerPoolWarningLevel(), lock.getElevationUnits(), length))
-                .withHighWaterUpperPoolWarningLevel(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(),
+                .withHighWaterUpperPoolWarningLevel(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(configuration,
                         lock.getHighWaterUpperPoolWarningLevel(), lock.getElevationUnits(), length))
                 .withChamberType(lock.getChamberType())
                 .withHighWaterLowerPoolLocationLevel(new LockLocationLevelRef(lock.getHighWaterLowerPoolLocationLevel().getLevelLink(),
-                        CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(), lock.getHighWaterLowerPoolLocationLevel().getLevelValue(),
+                        CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(configuration, lock.getHighWaterLowerPoolLocationLevel().getLevelValue(),
                                 lock.getElevationUnits(), length)))
                 .withHighWaterUpperPoolLocationLevel(new LockLocationLevelRef(lock.getHighWaterUpperPoolLocationLevel().getLevelLink(),
-                        CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(), lock.getHighWaterUpperPoolLocationLevel().getLevelValue(),
+                        CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(configuration, lock.getHighWaterUpperPoolLocationLevel().getLevelValue(),
                                 lock.getElevationUnits(), length)))
                 .withLowWaterLowerPoolLocationLevel(new LockLocationLevelRef(lock.getLowWaterLowerPoolLocationLevel().getLevelLink(),
-                        CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(), lock.getLowWaterLowerPoolLocationLevel().getLevelValue(),
+                        CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(configuration, lock.getLowWaterLowerPoolLocationLevel().getLevelValue(),
                                 lock.getElevationUnits(), length)))
                 .withLowWaterUpperPoolLocationLevel(new LockLocationLevelRef(lock.getLowWaterUpperPoolLocationLevel().getLevelLink(),
-                        CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(), lock.getLowWaterUpperPoolLocationLevel().getLevelValue(),
+                        CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(configuration, lock.getLowWaterUpperPoolLocationLevel().getLevelValue(),
                                 lock.getElevationUnits(), length)))
-                .withMaximumLockLift(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(), lock.getMaximumLockLift(),
+                .withMaximumLockLift(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(configuration, lock.getMaximumLockLift(),
                         lock.getElevationUnits(), length))
                 .build();
         });

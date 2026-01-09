@@ -28,7 +28,8 @@ public class StreamDao extends JooqDao<Stream> {
                 Unit.KILOMETER.getValue();
 
         return connectionResult(dsl, c -> {
-            RETRIEVE_STREAM stream = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAM(dsl.configuration(), streamId, pStationUnit, officeId);
+            var configuration = getDslContext(c, officeId).configuration();
+            RETRIEVE_STREAM stream = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAM(configuration, streamId, pStationUnit, officeId);
             return new Stream.Builder(streamId, parseBool(stream.getP_STATIONING_STARTS_DS()),
                     stream.getP_LENGTH(), officeId)
                     .withDivertingStreamId(stream.getP_DIVERTS_FROM_STREAM())
@@ -62,7 +63,8 @@ public class StreamDao extends JooqDao<Stream> {
         return connectionResult(dsl, c -> {
             String pStationUnit = UnitSystem.EN.value().equals(unitSystem)
                     ? Unit.MILE.getValue() : Unit.KILOMETER.getValue();
-            Result<Record> rs = CWMS_STREAM_PACKAGE.call_CAT_STREAMS(dsl.configuration(), null, pStationUnit, null, null,
+            var configuration = getDslContext(c, officeId).configuration();
+            Result<Record> rs = CWMS_STREAM_PACKAGE.call_CAT_STREAMS(configuration, null, pStationUnit, null, null,
                 null, null, null, null, null, null, null,
                 null, null, null, null, null, officeId);
             return buildStreamsFromResultSet(rs.intoResultSet(), streamId, unitSystem);

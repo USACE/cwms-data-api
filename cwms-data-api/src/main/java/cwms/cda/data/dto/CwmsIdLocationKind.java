@@ -32,9 +32,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class,
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class,
     aliases = {Formats.JSON, Formats.DEFAULT})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonDeserialize(builder = CwmsIdLocationKind.Builder.class)

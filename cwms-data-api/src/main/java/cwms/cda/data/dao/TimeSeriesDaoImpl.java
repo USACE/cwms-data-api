@@ -554,9 +554,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private VerticalDatumInfo fetchVerticalDatumInfoSeparately(String locPart, String units, String office) {
 
         return connectionResult(dsl, conn -> {
+            String datumUnits = units;
+            if ("SI".equalsIgnoreCase(datumUnits)) {
+                datumUnits = "m";
+            } else if ("EN".equalsIgnoreCase(datumUnits)) {
+                datumUnits = "ft";
+            }
             DSLContext dslContext = getDslContext(conn, office);
             String result = CWMS_LOC_PACKAGE.call_GET_VERTICAL_DATUM_INFO_F__2(dslContext.configuration(),
-                    locPart, units, office);
+                    locPart, datumUnits, office);
             return parseVerticalDatumInfo(result);
         });
     }

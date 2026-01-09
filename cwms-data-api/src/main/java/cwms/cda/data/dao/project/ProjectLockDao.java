@@ -67,7 +67,6 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
         String office = request.getOfficeId();
         return connectionResult(dsl, c -> {
             Configuration configuration = getDslContext(c, office).configuration();
-            setOffice(c, office);
             return CWMS_PROJECT_PACKAGE.call_REQUEST_LOCK(configuration, request.getProjectId(),
                 request.getApplicationId(), formatBool(revokeExisting), BigInteger.valueOf(revokeTimeout),
                 office, request.getSessionUser(), request.getOsUser(), request.getSessionProgram(),
