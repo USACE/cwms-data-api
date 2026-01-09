@@ -29,7 +29,7 @@ When to use
     :header: "Parameter", "Description", "Required"
     :widths: 20, 60, 15
 
-    version-mask,"",""
+    version-mask,"A regular expression used to filter the version field for time series retrieval. See the Regex documentation for more information on usage.",""
     office-mask,":ref:`def-office-mask`",""
     location-mask,":ref:`def-location-mask`",""
     parameter-id-mask,":ref:`def-parameter-id-mask`",""

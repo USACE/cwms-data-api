@@ -5,8 +5,8 @@ TimeSeries — GET /timeSeries/profile/{location-id}/{parameter-id}
     :header: "Parameter", "Description", "Required"
     :widths: 20, 60, 15
 
-    location-id,":ref:`def-location-id`",""
-    parameter-id,":ref:`def-parameter-id`",""
+    location-id,":ref:`def-location-id`","Yes"
+    parameter-id,":ref:`def-parameter-id`","Yes"
     office,":ref:`def-office`",""
 
 

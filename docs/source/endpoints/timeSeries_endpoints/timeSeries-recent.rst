@@ -16,9 +16,9 @@ When to use
     :header: "Parameter", "Description", "Required"
     :widths: 20, 60, 15
 
-    category-id,"",""
-    group-id,"",""
-    ts-ids,"",""
+    category-id," The text identifier for the time series category defined in the CWMS database for a specific time series.",""
+    group-id,"The text identifier of the time series group defined in the CWMS database for a specific time series.",""
+    ts-ids,"A comma separated list of timeseries identifiers to be included in the response. Example: 'Location.Elev.Inst.0.1Day.lrgs,Location2.Elev.Inst.0.12Hour.lrgs'.",""
     unit-system,"SI or EN or other",""
     office,":ref:`def-office`",""
 
