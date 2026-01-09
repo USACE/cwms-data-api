@@ -26,7 +26,6 @@ package cwms.cda.api.rating;
 
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import hec.data.cwmsRating.io.RatingSetContainer;
@@ -34,17 +33,17 @@ import hec.data.cwmsRating.io.RatingSpecContainer;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
-import java.io.IOException;
-import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+
+import javax.servlet.http.HttpServletResponse;
+
+import java.io.IOException;
+
 import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
@@ -89,7 +88,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 	static void store(boolean storeTemplate) throws Exception
 	{
 		//Make sure we always have something.
-		createLocationWithVerticalDatum(EXISTING_LOC, true, SPK, VerticalDatum.NAVD88);
+		createLocation(EXISTING_LOC, true, SPK);
 
 		String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
 		ratingXml = ratingXml.replaceAll("Zanesville", EXISTING_LOC);
@@ -417,5 +416,6 @@ class RatingsControllerTestIT extends DataApiTestIT
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpServletResponse.SC_CREATED));
     }
+
 }
 
