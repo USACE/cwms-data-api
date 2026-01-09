@@ -28,7 +28,7 @@ When to use
     format, "The desired response format. Usage differs between endpoints. See the Legacy Format Responses documentation page for more information.", ""
     include-entry-date, "Whether to include in the response for a data retrieval the timestamps at which each data point was entered into the CWMS database. Acceptable values are 'true' or 'false'.", ""
     name(required), "The text representation of the unique time series identifier.", "Yes"
-    office, "see :ref:`def-office`", "Yes"
+    office, "see :ref:`def-office`", "Format Dependent"
     page, ":ref:`def-page`", ""
     page-size, ":ref:`def-page-size`", ""
     timezone, ":ref:`def-timezone`", ""
