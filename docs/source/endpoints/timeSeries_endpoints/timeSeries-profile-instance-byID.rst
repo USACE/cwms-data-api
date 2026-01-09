@@ -14,21 +14,24 @@ When to use
     :header: "Parameter", "Description", "Required"
     :widths: 20, 60, 15
 
-    end, ":ref:`def-end`", ""
-    end-time-inclusive,"",""
-    location-id,":ref:`def-location-id`",""
-    max-version,"",""
-    next,"",""
-    office,":ref:`def-office`",""
+    end, ":ref:`def-end`", "Yes"
+    end-time-inclusive,"Whether the resulting data set should include data occurring at the moment of the end of the time window. Acceptable values are 'true' or 'false'.",""
+    location-id,":ref:`def-location-id`","Yes"
+    max-version,"Whether to use the most recent version date in the response. Only applies to time series that utilize dates in the version field. Acceptable values are 'true' or 'false'.",""
+    next,"Whether to include the next time window of the time series profile instance.",""
+    office,":ref:`def-office`","Yes"
     page,":ref:`def-page`",""
     page-size,":ref:`def-page-size`",""
-    parameter-id,":ref:`def-parameter-id`",""
-    previous,"",""
-    start,"also begin. need to verify if duplicate def",""
-    start-time-inclusive,"",""
+    parameter-id,":ref:`def-parameter-id`","Yes"
+    previous,"Whether to include the previous time window of the time series profile instance. Acceptable values are 'true' or 'false'.",""
+    start,"Specifies the date and time for the start of the time window for data to be included in the response.
+            The format for this field is ISO 8601 extended, with optional offset and timezone,
+            i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., '2021-06-10T13:00:00-07:00'.","Yes"
+    start-time-inclusive,"Whether the resulting data set should include data occurring at the moment of the beginning of the time window. Acceptable values are 'true' or 'false'.",""
     timezone,":ref:`def-timezone`",""
-    unit,"deprecated, prefer units/unit-system. Comma separated list of unit values.",""
-    version,"",""
+    unit,"(Deprecated, prefer 'units') The unit system or specific unit to convert the response data into.
+            Available unit systems are SI or EN. Examples of other units are "m", "ft", "m3", etc.","Yes"
+    version,"https://cwms-database.readthedocs.io/en/latest/naming.html#versions","Yes"
     version-date,":ref:`def-version-date`",""
 
 Examples

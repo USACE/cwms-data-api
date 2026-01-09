@@ -16,9 +16,9 @@ When to use
     :header: "Parameter", "Description", "Required"
     :widths: 20, 60, 15
 
-    location-id,":ref:`def-location-id`",""
-    office,":ref:`def-office`",""
-    parameter-id,":ref:`def-parameter-id`",""
+    location-id,":ref:`def-location-id`","Yes"
+    office,":ref:`def-office`","Yes"
+    parameter-id,":ref:`def-parameter-id`","Yes"
 
 Examples
 --------
