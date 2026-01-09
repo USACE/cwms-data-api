@@ -34,7 +34,8 @@ public class StreamLocationDao extends JooqDao<StreamLocation> {
                 ? Unit.SQUARE_MILES.getValue() : Unit.SQUARE_KILOMETERS.getValue();
 
         return connectionResult(dsl, c -> {
-            Result<Record> rs = CWMS_STREAM_PACKAGE.call_CAT_STREAM_LOCATIONS(dsl.configuration(), pStreamIdMaskIn,
+            var configuration = getDslContext(c, officeId).configuration();
+            Result<Record> rs = CWMS_STREAM_PACKAGE.call_CAT_STREAM_LOCATIONS(configuration, pStreamIdMaskIn,
                     pLocationIdMaskIn, pStationUnitIn, pStageUnitIn, pAreaUnitIn, officeId);
             return buildStreamLocations(rs.intoResultSet());
         });

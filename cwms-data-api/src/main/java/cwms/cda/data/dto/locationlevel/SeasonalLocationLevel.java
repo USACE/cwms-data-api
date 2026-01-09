@@ -87,7 +87,6 @@ public final class SeasonalLocationLevel extends LocationLevel {
 		intervalOrigin = builder.intervalOrigin;
 		intervalMonths = builder.intervalMonths;
 		intervalMinutes = builder.intervalMinutes;
-		validate();
 	}
 
 	public List<SeasonalValueBean> getSeasonalValues() {

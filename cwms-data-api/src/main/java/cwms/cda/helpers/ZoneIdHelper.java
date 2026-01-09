@@ -147,8 +147,7 @@ public class ZoneIdHelper {
      * @throws DateTimeException if the zone ID has an invalid format or the zone ID is not available
      */
     public static ZoneId parseZoneIdWithAliases(String zoneId) {
-
-        return ZoneId.of(zoneId, tzAliases);
+        return zoneId == null ? null : ZoneId.of(zoneId, tzAliases);
     }
     
     /**
