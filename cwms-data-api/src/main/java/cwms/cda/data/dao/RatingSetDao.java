@@ -168,7 +168,13 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
         String office = extractOfficeId(ratingSetXml);
         String locationId = extractLocationId(ratingSetXml);
         DSLContext dslContext = getDslContext(connection, office);
-        withLocalAndDefaultDatum(locationId, office, vd, dslContext, c -> storeRatingSetXml(ratingSetXml, replaceBaseCurve, failIfExists, c));
+        if(vd != null) {
+            withLocalAndDefaultDatum(locationId, office, vd, dslContext, c -> storeRatingSetXml(ratingSetXml, replaceBaseCurve, failIfExists, c));
+        }
+        else {
+            storeRatingSetXml(ratingSetXml, replaceBaseCurve, failIfExists, connection);
+        }
+
     }
 
     protected void withLocalAndDefaultDatum(String locationId, String officeId, @Nullable VerticalDatum targetDatum, DSLContext dslContext, ConnectionRunnable cr) {
