@@ -190,7 +190,7 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
                     String nativeDatum = vdi.getNativeDatum();
                     // Only set local datum temporarily if native datum is NAVD88 or NGVD29 to allow conversion
                     // If native datum is unknown for some reason then just set to the target datum since there is no conversion needed anyways
-                    if(nativeDatum == null || "UNKNOWN".equalsIgnoreCase(nativeDatum)) {
+                    if(nativeDatum == null || nativeDatum.isBlank() || "UNKNOWN".equalsIgnoreCase(nativeDatum)) {
                         CWMS_LOC_PACKAGE.call_SET_LOCAL_VERT_DATUM_NAME__2(dslContext.configuration(), locationId, targetDatum.toString(), "T", officeId);
                         localDatumAdded = true;
                     } else if(VerticalDatum.NAVD88 == VerticalDatum.getVerticalDatum(nativeDatum) || VerticalDatum.NGVD29 == VerticalDatum.getVerticalDatum(nativeDatum)) {
