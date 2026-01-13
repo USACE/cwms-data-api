@@ -1,20 +1,23 @@
-TimeSeries — GET /timeSeries/profile
+.. _timeseries-profile-endpoint:
+
+TimeSeries — GET /timeseries/profile
 =====================================
 
 What it does
 ------------
-List or discover available time series profiles. Use this to see what profiles exist before requesting a specific profile by ID.
+Lists available time series profiles. Use this to see what profiles exist before requesting a specific
+profile by ID.
 
-CWMS database time series profiles are collections of time stamped values for a set of parameters that
-are associated with a specific location and key parameter. The proximate purpose is to facilitate the
-storage of depth-keyed profiles for water quality parameters in reservoirs, but they may be useful for
-storing other hydrometeorological profile information such as height-keyed meteorological profiles. The
-time stamped values are stored as normal CWMS time series. The CWMS time series for a specific
-location and parameter will hold values for all profile instances <./timeSeries-profile-instance> for that location/key
-parameter/version identifier combination.
+A time series profile is a collection of timestamped values for a set of parameters associated with a specific location
+and key parameter. These profiles are primarily used for the storage of depth-linked water quality data in reservoirs,
+but can also store other types of profiles such as height-linked meteorological data.
 
-Profile definitions are keyed to the combination of location and key parameter. That is, only one
-profile definition may exist for each location, key parameter combination.
+The timestamped values are stored as standard CWMS time series. For each location and key parameter, the CWMS time
+series includes values from all profile instances that share the same combination of location, key parameter, and
+version identifier. (:ref:`See timeseries/profile-instance endpoint for details. <timeseries-profile-instance-endpoint>`
+
+Profile definitions are linked to a specific combination of location and key parameter. Only one profile definition
+can exist for each location-key parameter pair.
 
 When to use
 -----------
@@ -22,7 +25,7 @@ When to use
 - Filter by location or parameter to narrow results
 
 
-.. csv-table:: /timeseries/profile Endpoint Parameters
+.. csv-table:: GET /timeseries/profile - Endpoint Parameters
     :header: "Parameter", "Description", "Required"
     :widths: 20, 60, 15
 
@@ -31,6 +34,11 @@ When to use
     page,":ref:`def-page`",""
     page-size,":ref:`def-page-size`",""
     parameter-id-mask,":ref:`def-parameter-id-mask`",""
+
+.. note::
+        Detailed documentation for Regex usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/cwms-data/regexp in a future release.
+
 
 Examples
 --------

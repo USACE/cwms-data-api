@@ -6,7 +6,7 @@ Shared timeseries endpoint parameters
 Shared parameter definitions
 ----------------------------
 
-This section lists and describes the parameters that are shared across multiple TimeSeries endpoints.
+This section lists and describes common parameters that are used by multiple TimeSeries endpoints.
 If the parameter is only used by a single endpoint, please refer to that endpoint's documentation for details.
 If a shared parameter has endpoint-specific behavior or constraints, those details will be noted in the individual
 endpoint documentation.
@@ -14,29 +14,47 @@ endpoint documentation.
 .. _def-end:
 
 end
-  End date/time for the time series data to stop. The format for this field is ISO 8601 extended,
-  with optional offset and timezone, i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., '2021-06-10T13:00:00-07:00', '2025-10-25T12:25:00Z'.
+  The date and time marking the end of the time window for data included in the response.
+  The format for this field is ISO 8601 extended with optional offset and timezone.
+
+    .. code-block:: sql
+
+        Example:
+        YYYY-MM-ddThh:mm:ss[Z[VV]]
+        2021-06-10T13:00:00-07:00  OR  2025-10-25T12:25:00Z
+
 
 .. _def-location-id:
 
 location-id
-    https://cwms-database.readthedocs.io/en/latest/naming.html#locations
-    https://cwms-database.readthedocs.io/en/latest/locations.html#overview
+    `CWMS database - Location Naming <https://cwms-database.readthedocs.io/en/latest/naming.html#locations>`_
+    `CWMS database - Location Definition <https://cwms-database.readthedocs.io/en/latest/locations.html#overview>`_
 
 .. _def-location-mask:
 
 location-mask
-  A regular expression used to filter the location name associated with the queried time series data. See the Regex documentation page for more information on usage: `/cwms-data/regexp`.
+  A regular expression used to filter the location name associated with the queried time series data. See the Regex
+  documentation page for more information on usage:
+
+    .. note::
+        Detailed documentation for Regex usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/cwms-data/regexp in a future release.
 
 .. _def-office:
 
 office
-  The organizational context used to scope data access and defaults. Some endpoints infer a default office; you can also specify it explicitly.
+  The organizational context used to scope data access and defaults. Some endpoints infer a default office;
+  you can also specify it explicitly.
 
 .. _def-office-mask:
 
 office-mask
-  A regular expression used to filter the office identifier associated with the queried time series data. See the Regex documentation page for more information on usage.: `/cwms-data/regexp`
+  A regular expression used to filter the office identifier associated with the queried time series data.
+  See the Regex documentation page for more information on usage:
+
+    .. note::
+        Detailed documentation for Regex usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/cwms-data/regexp in a future release.
 
 .. _def-page:
 
@@ -51,25 +69,44 @@ page-size
 .. _def-parameter-id:
 
 parameter-id
-  The text representation of the data parameter represented by the desired time series data, describing "what" is measured. Examples include "Flow", "Stage", "Elev", etc.
+  A text identifier specifying the type of data measured by the time series, such as "Flow", "Stage", "Elev", etc.
 
 .. _def-parameter-id-mask:
 
 parameter-id-mask
-  A regular expression used to filter the parameter of the queried time series data. See the Regex documentation for more information on usage: `/cwms-data/regexp`.
+  A regular expression used to filter the parameter of the queried time series data.
+  See the Regex documentation for more information on usage:
+
+    .. note::
+        Detailed documentation for Regex usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/cwms-data/regexp in a future release.
+
+.. _def-start:
+
+start (also referred to as begin)
+  The date and time marking the beginning of the time window for data included in the response.
+  The format for this field is ISO 8601 extended with optional offset and timezone.
+
+    .. code-block:: sql
+
+        Example:
+        YYYY-MM-ddThh:mm:ss[Z[VV]]
+        2021-06-10T13:00:00-07:00  OR  2025-10-25T12:25:00Z
 
 .. _def-timezone:
 
 timezone
-  The timezone to use for retrieved time data. Examples include "UTC", "America/Los_Angeles", etc.
+  The timezone to use for retrieved time data, such as "UTC", "America/Los_Angeles", etc.
 
 .. _def-unit:
 
-unit
-  Deprecated; prefer units or unit-system.
+unit `(Deprecated, prefer units or unit-system)`
+  The unit system or specific unit to convert the response data into. Available unit systems are SI or EN.
+  Examples of other units are m, ft, m3, etc.
 
 .. _def-version-date:
 
 version-date
-  Common information that is captured in the version of the time series includes: the data source, telemetry method, the quality of the data or the state of the data processing, dates for the range of the data, time stamp if the data is daily, models used to generate the data, an indication of whether the data is observed or derived from observed or forecasted or study data, etc.
-  Segmenting the version is an attempt to provide some structure for the information that is typically captured in this free form text portion of the time-series identifier. Limited to 32 characters.
+  A date associated with a time series to make identification of the most recent data possible.
+  Often uses the forecast date.
+

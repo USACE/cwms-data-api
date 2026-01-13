@@ -1,3 +1,5 @@
+.. _timeSeries_endpoint:
+
 TimeSeries — GET /timeseries
 ==============================
 
@@ -15,28 +17,31 @@ When to use
 - Compare units or intervals
 
 
-.. csv-table:: GET Parameters
+.. csv-table:: GET /timeseries - Endpoint Parameters
     :header: "Parameter", "Description", "Required"
     :widths: 20, 60, 15
 
-    begin, "Specifies the date and time for the start of the time window for data to be included in the response.
-            The format for this field is ISO 8601 extended, with optional offset and timezone,
-            i.e., 'YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']', e.g., '2021-06-10T13:00:00-07:00', '2025-10-25T12:25:00Z'.", ""
+    begin, ":ref:`def-start`", ""
     datum, "The standardized reference system used for either vertical or horizontal measurements.
-            Examples include "NAVD88", "NGVD29", "LOCAL", etc.", ""
+    Examples: NAVD88, NGVD29, LOCAL, etc.", ""
     end, ":ref:`def-end`", ""
-    format, "The desired response format. Usage differs between endpoints. See the Legacy Format Responses documentation page for more information.", ""
-    include-entry-date, "Whether to include in the response for a data retrieval the timestamps at which each data point was entered into the CWMS database. Acceptable values are 'true' or 'false'.", ""
+    format, "The desired response format. Usage differs between endpoints.", ""
+    include-entry-date, "The response includes timestamps for when each data point was added to the CWMS
+    database (true/false).", ""
     name(required), "The text representation of the unique time series identifier.", "Yes"
-    office, "see :ref:`def-office`", "Format Dependent"
+    office, "see :ref:`def-office`", ""
     page, ":ref:`def-page`", ""
     page-size, ":ref:`def-page-size`", ""
     timezone, ":ref:`def-timezone`", ""
-    trim, "Specifies whether to trim missing values from the beginning and end of the retrieved values. Acceptable values are 'true' or 'false'.", ""
+    trim, "Trim missing values from the beginning and end of the retrieved values (true/false).", ""
     unit, ":ref:`def-unit`", ""
-    units, "https://cwms-database.readthedocs.io/en/latest/naming.html#units", ""
+    units, "`CWMS database - units <https://cwms-database.readthedocs.io/en/latest/naming.html#units>`_", ""
     version-date, ":ref:`def-version-date`", ""
 
+
+.. note::
+            Detailed documentation for Legacy Format Responses in CDA is currently in development and will be
+            available at https://cwms-data.usace.army.mil/cwms-data/cwms-data/legacy-format in a future release.
 
 Examples
 ----------

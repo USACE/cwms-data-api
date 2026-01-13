@@ -1,18 +1,20 @@
-TimeSeries — GET /timeSeries/profile-parser/{location-id}/{parameter-id}
+.. _timeSeries-profile-parser-byID-endpoint:
+
+TimeSeries — GET /timeseries/profile-parser/{location-id}/{parameter-id}
 =========================================================================
 
 What it does
 ------------
-Retrieve parser information associated with a specific profile identified by location and parameter.
+Retrieves parser information associated with a specific profile identified by location and parameter.
 
-Profile parsers can be defined to enable storage of profile instance data directly from text output from data loggers.
+Profile parsers can be defined to enable storage of profile instance data directly from the text output of data loggers.
 
 When to use
 -----------
-- You need the parser used for a specific profile to understand how values are interpreted
+- You need the parser used for a specific profile to understand how values are interpreted.
 
 
-.. csv-table:: /timeseries/profile-parser{location-id}/{parameter-id} Endpoint Parameters
+.. csv-table:: GET /timeseries/profile-parser{location-id}/{parameter-id} - Endpoint Parameters
     :header: "Parameter", "Description", "Required"
     :widths: 20, 60, 15
 

@@ -1,30 +1,35 @@
-TimeSeries — GET /timeSeries/profile-parser
+TimeSeries — GET /timeseries/profile-parser
 =============================================
 
 What it does
 ------------
-List or inspect available profile parsers (the logic that interprets profile data formats).
+Lists or inspects available profile parsers, these are the rules or logic used to interpret profile data formats.
 
-Profile parsers hold information about how to parse text output from data
-loggers. Although parameter values for profile instance data are stored in CWMS time series,
-the profile data are not delivered in the most standard way for CWMS time series: GOES
-transmissions that decoded by third-party software and either stored directly to the database or
-encoded as SHEF to be processed by CWMS data stream processes. In addition, profiles consist
-of identifiable instances instead of a continuous time series. Profile parsers allow storing of
-profile instances by providing the instance text as exported from a data logger.
+Profile parsers explain how to read text output from data loggers.  While parameter values for profile instance data
+are stored in CWMS time series, the data often arrives in non-standard format.  For example:
+
+- GOES transmissions decoded by third-party software
+- Data stored directly in the database or encoded as SHEF for CWMS processing.
+
+Profiles consist of identifiable instances instead of a continuous time series. Profile parsers make it possible to
+store these instances by by using the text exported from a data logger.
 
 When to use
 -----------
-- Discover available existing parsers before requesting a specific profile parser by ID
+- To discover available parsers before requesting a specific profile parser by its ID.
 
 
-.. csv-table:: /timeseries/profile Endpoint Parameters
+.. csv-table:: GET /timeseries/profile - Endpoint Parameters
     :header: "Parameter", "Description", "Required"
     :widths: 20, 60, 15
 
     office-mask,":ref:`def-office-mask`",""
     location-mask,":ref:`def-location-mask`",""
     parameter-id-mask,":ref:`def-parameter-id-mask`",""
+
+.. note::
+        Detailed documentation for Regex usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/cwms-data/regexp in a future release.
 
 
 Examples
