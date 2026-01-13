@@ -1,0 +1,1653 @@
+office,ts_id
+mvp,LockDam_05-TainterGate23.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate23.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate23.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,TraverseWR_Dam-MainLake.Elev.Inst.~15Minutes.0.Raw-USGS-NAVD88
+mvp,TraverseWR_Dam-MainLake.Elev.Inst.~15Minutes.0.rev-USGS-NAVD88
+mvp,TraverseWR_Dam-MainLake.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,TraverseWR_Dam-MainLake.Stage.Inst.~15Minutes.0.best
+mvp,TraverseWR_Dam-MainLake.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,Highway75_Dam-EmergencySpillway.Flow.Inst.15Minutes.0.comp
+mvp,Highway75_Dam-EmergencySpillway.Flow.Inst.15Minutes.0.rev
+mvp,Highway75_Dam-LeafGate.Elev.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,Highway75_Dam-LeafGate.Elev.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,Highway75_Dam-LeafGate.Flow.Inst.15Minutes.0.comp
+mvp,Highway75_Dam-LeafGate.Head.Inst.15Minutes.0.comp
+mvp,Highway75_Dam-LowFlow-Tailwater.Elev.Ave.1Day.1Day.merged-NGVD29
+mvp,Highway75_Dam-LowFlow-Tailwater.Elev.Inst.15Minutes.0.merged-NGVD29
+mvp,Highway75_Dam-LowFlow-Tailwater.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,Highway75_Dam-LowFlow-Tailwater.Elev.Inst.15Minutes.0.rev-NGVD29
+mvp,Highway75_Dam-LowFlow-Tailwater.Elev.Inst.~15Minutes.0.best-NGVD29
+mvp,Highway75_Dam-LowFlow-Tailwater.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,Highway75_Dam-LowFlow-Tailwater.Stage.Ave.1Day.1Day.comp
+mvp,Highway75_Dam-LowFlow-Tailwater.Stage.Ave.6Hours.6Hours.comp
+mvp,Highway75_Dam-LowFlow-Tailwater.Stage.Inst.0.0.Raw-CEMVP
+mvp,Highway75_Dam-LowFlow-Tailwater.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Highway75_Dam-LowFlow-Tailwater.Stage.Inst.15Minutes.0.rev
+mvp,Highway75_Dam-LowFlow-Tailwater.Stage.Inst.~15Minutes.0.best
+mvp,Highway75_Dam-LowFlow.Elev.Ave.1Day.1Day.merged-NGVD29
+mvp,Highway75_Dam-LowFlow.Elev.Inst.15Minutes.0.merged-NGVD29
+mvp,Highway75_Dam-LowFlow.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,Highway75_Dam-LowFlow.Elev.Inst.15Minutes.0.rev-NGVD29
+mvp,Highway75_Dam-LowFlow.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Highway75_Dam-LowFlow.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Highway75_Dam-LowFlow.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Highway75_Dam-LowFlow.Flow.Inst.15Minutes.0.comp
+mvp,Highway75_Dam-LowFlow.Flow.Inst.15Minutes.0.rev
+mvp,Highway75_Dam-LowFlow.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Highway75_Dam-LowFlow.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,Highway75_Dam-LowFlow.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,Highway75_Dam-LowFlow.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,Highway75_Dam-LowFlow.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,Highway75_Dam-LowFlow.Precip-cum.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Highway75_Dam-LowFlow.Precip-cum.Inst.15Minutes.0.rev
+mvp,Highway75_Dam-LowFlow.Precip-inc.Total.15Minutes.15Minutes.comp
+mvp,Highway75_Dam-LowFlow.Precip-inc.Total.1Day.1Day.comp
+mvp,Highway75_Dam-LowFlow.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,Highway75_Dam-LowFlow.Stage.Ave.1Day.1Day.comp
+mvp,Highway75_Dam-LowFlow.Stage.Ave.6Hours.6Hours.comp
+mvp,Highway75_Dam-LowFlow.Stage.Inst.0.0.Raw-CEMVP
+mvp,Highway75_Dam-LowFlow.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Highway75_Dam-LowFlow.Stage.Inst.15Minutes.0.rev
+mvp,Highway75_Dam-LowFlow.Stage.Inst.~15Minutes.0.best
+mvp,Highway75_Dam-LowFlow.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,Highway75_Dam-ServiceSpillway.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,Highway75_Dam-ServiceSpillway.Elev.Inst.15Minutes.0.rev-NGVD29
+mvp,Highway75_Dam-ServiceSpillway.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,Highway75_Dam-ServiceSpillway.Stage.Ave.1Day.1Day.comp
+mvp,Highway75_Dam-ServiceSpillway.Stage.Ave.6Hours.6Hours.comp
+mvp,Highway75_Dam-ServiceSpillway.Stage.Inst.0.0.Raw-CEMVP
+mvp,Highway75_Dam-ServiceSpillway.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Highway75_Dam-ServiceSpillway.Stage.Inst.15Minutes.0.rev
+mvp,Highway75_Dam-ServiceSpillway.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,Highway75_Dam.Area.Inst.15Minutes.0.comp
+mvp,Highway75_Dam.Elev.Inst.1Hour.0.Fcst-CEMVP
+mvp,Highway75_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Highway75_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Highway75_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,Highway75_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,Highway75_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Highway75_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Highway75_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Highway75_Dam.Flow-In.Ave.1Day.1Day.comp
+mvp,Highway75_Dam.Flow-In.Ave.1Day.1Month.comp
+mvp,Highway75_Dam.Flow-In.Ave.1Day.1Week.comp
+mvp,Highway75_Dam.Flow-In.Ave.1Day.3Days.comp
+mvp,Highway75_Dam.Flow-In.Ave.6Hours.1Day.comp
+mvp,Highway75_Dam.Flow-In.Ave.6Hours.1Day.comp-noNeg
+mvp,Highway75_Dam.Flow-In.Ave.6Hours.3Days.comp
+mvp,Highway75_Dam.Flow-In.Ave.6Hours.3Days.comp-noNeg
+mvp,Highway75_Dam.Flow-In.Ave.6Hours.6Hours.comp
+mvp,Highway75_Dam.Flow-In.Inst.1Hour.0.Fcst-CEMVP
+mvp,Highway75_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Highway75_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Highway75_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,Highway75_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,Highway75_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Highway75_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Highway75_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Highway75_Dam.Flow-In.Inst.~15Minutes.0.best
+mvp,Highway75_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Highway75_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Highway75_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,Highway75_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,Highway75_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Highway75_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Highway75_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Highway75_Dam.Flow-Out.Ave.1Day.1Day.MVDhist-rev
+mvp,Highway75_Dam.Flow-Out.Ave.1Day.1Day.comp
+mvp,Highway75_Dam.Flow-Out.Ave.6Hours.6Hours.comp
+mvp,Highway75_Dam.Flow-Out.Inst.15Minutes.0.comp
+mvp,Highway75_Dam.Flow-Out.Inst.15Minutes.0.rev
+mvp,Highway75_Dam.Flow-Out.Inst.~15Minutes.0.best
+mvp,Highway75_Dam.Flow-Sim-RainOnPool.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Highway75_Dam.Flow-Sim-RainOnPool.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Highway75_Dam.Flow-Sim-RainOnPool.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,Highway75_Dam.Flow-Sim-RainOnPool.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,Highway75_Dam.Flow-Sim-RainOnPool.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Highway75_Dam.Flow-Sim-RainOnPool.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Highway75_Dam.Flow-Sim-RainOnPool.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Highway75_Dam.Flow.Inst.1Hour.0.Fcst-CEMVP
+mvp,Highway75_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Highway75_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Highway75_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,Highway75_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,Highway75_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Highway75_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Highway75_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Highway75_Dam.Head.Inst.15Minutes.0.comp
+mvp,Highway75_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Highway75_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Highway75_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,Highway75_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,Highway75_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Highway75_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,Highway75_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,Highway75_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Highway75_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Highway75_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,Highway75_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,Highway75_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Highway75_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,Highway75_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,Highway75_Dam.Stage.Ave.1Day.1Day.comp
+mvp,Highway75_Dam.Stage.Ave.6Hours.6Hours.comp
+mvp,Highway75_Dam.Stage.Inst.15Minutes.0.rev
+mvp,Highway75_Dam.Stage.Inst.~15Minutes.0.best
+mvp,Highway75_Dam.Stor.Ave.1Day.1Day.comp
+mvp,Highway75_Dam.Stor.Ave.6Hours.6Hours.comp
+mvp,MissHW_Gull-SlideGate01.Flow.Inst.1Hour.0.comp
+mvp,MissHW_Gull-SlideGate01.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull-SlideGate01.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate25.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate25.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate25.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-Tailwater.Elev.Ave.1Day.1Day.merged-MSL1912
+mvp,LockDam_05a-Tailwater.Elev.Inst.12Hours.0.Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05a-Tailwater.Elev.Inst.15Minutes.0.merged-MSL1912
+mvp,LockDam_05a-Tailwater.Elev.Inst.15Minutes.0.rev-MSL1912
+mvp,LockDam_05a-Tailwater.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,LockDam_05a-Tailwater.Elev.Inst.~15Minutes.0.best-MSL1912
+mvp,LockDam_05a-Tailwater.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-Tailwater.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,LockDam_05a-Tailwater.Stage.Ave.1Day.1Day.comp
+mvp,LockDam_05a-Tailwater.Stage.Ave.6Hours.6Hours.comp
+mvp,LockDam_05a-Tailwater.Stage.Inst.0.0.Raw-CEMVP
+mvp,LockDam_05a-Tailwater.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_05a-Tailwater.Stage.Inst.15Minutes.0.rev
+mvp,LockDam_05a-Tailwater.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,LockDam_05a-Tailwater.Stage.Inst.~15Minutes.0.best
+mvp,LockDam_05a-Tailwater.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,LockDam_05-TainterGate27.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate27.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate27.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,ZUMM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,ZUMM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,ZUMM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,ZUMM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,ZUMM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,ZUMM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,ZUMM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,ZUMM5.Flow.Inst.15Minutes.0.comp
+mvp,ZUMM5.Flow.Inst.15Minutes.0.rev
+mvp,ZUMM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,ZUMM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,ZUMM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,ZUMM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,ZUMM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,ZUMM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,ZUMM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,ZUMM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,ZUMM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,ZUMM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,ZUMM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,ZUMM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,ZUMM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,ZUMM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,ZUMM5.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,ZUMM5.Stage.Inst.15Minutes.0.corrected-comp
+mvp,ZUMM5.Stage.Inst.15Minutes.0.rev
+mvp,ZUMM5.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,ZUMM5.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,ZUMM5.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,MissHW_PineRiver-SlideGate04.Flow.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver-SlideGate04.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate04.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,TraverseWR_Dam-TainterGate01.Flow.Inst.15Minutes.0.comp
+mvp,TraverseWR_Dam-TainterGate01.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,TraverseWR_Dam-TainterGate01.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LFKM5S.Depth-SWE.Inst.~1Week.0.CEMVP-ProjectEntry
+mvp,LFKM5S.Depth-Snow.Inst.~1Week.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGates.Flow-PerFootOpen.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGates.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGates.Flow.Inst.15Minutes.0.test
+mvp,LockDam_05-TainterGates.Opening-MaxAllow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGates.Opening-Normal.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGates.Opening-Normal.Inst.15Minutes.0.test
+mvp,LockDam_05-TainterGates.Opening-Submerged.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGates.Opening-Submerged.Inst.15Minutes.0.test
+mvp,LockDam_05a-RollerGate01.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-RollerGate01.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-RollerGate01.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate02.Flow.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver-SlideGate02.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate02.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,TraverseWR_Dam-TainterGate03.Flow.Inst.15Minutes.0.comp
+mvp,TraverseWR_Dam-TainterGate03.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,TraverseWR_Dam-TainterGate03.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate01.Flow.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver-SlideGate01.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate01.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate03.Flow.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver-SlideGate03.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate03.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate05.Flow.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver-SlideGate05.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate05.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate06.Flow.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver-SlideGate06.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate06.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate07.Flow.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver-SlideGate07.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate07.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate08.Flow.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver-SlideGate08.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate08.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate09.Flow.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver-SlideGate09.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate09.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate10.Flow.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver-SlideGate10.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate10.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate11.Flow.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver-SlideGate11.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate11.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate12.Flow.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver-SlideGate12.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate12.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate13.Flow.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver-SlideGate13.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-SlideGate13.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver-Tailwater.Elev.Ave.1Day.1Day.merged-NGVD29
+mvp,MissHW_PineRiver-Tailwater.Elev.Inst.15Minutes.0.merged-NGVD29
+mvp,MissHW_PineRiver-Tailwater.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,MissHW_PineRiver-Tailwater.Elev.Inst.15Minutes.0.rev-NGVD29
+mvp,MissHW_PineRiver-Tailwater.Elev.Inst.~15Minutes.0.best-NGVD29
+mvp,MissHW_PineRiver-Tailwater.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,MissHW_PineRiver-Tailwater.Stage.Ave.1Day.1Day.comp
+mvp,MissHW_PineRiver-Tailwater.Stage.Ave.6Hours.6Hours.comp
+mvp,MissHW_PineRiver-Tailwater.Stage.Inst.0.0.Raw-CEMVP
+mvp,MissHW_PineRiver-Tailwater.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,MissHW_PineRiver-Tailwater.Stage.Inst.15Minutes.0.rev
+mvp,MissHW_PineRiver-Tailwater.Stage.Inst.~15Minutes.0.best
+mvp,MissHW_PineRiver.%-Ice.Inst.~1Week.0.Raw-NWS-IEM
+mvp,MissHW_PineRiver.Area.Inst.15Minutes.0.comp
+mvp,MissHW_PineRiver.Depth-Inc-Snow.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,MissHW_PineRiver.Depth-SWE.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,MissHW_PineRiver.Depth-Snow.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,MissHW_PineRiver.Dir-Wind.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,MissHW_PineRiver.Dir-Wind.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,MissHW_PineRiver.Elev.Ave.1Day.1Day.merged-NGVD29
+mvp,MissHW_PineRiver.Elev.Inst.15Minutes.0.merged-NGVD29
+mvp,MissHW_PineRiver.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,MissHW_PineRiver.Elev.Inst.15Minutes.0.rev-NGVD29
+mvp,MissHW_PineRiver.Elev.Inst.1Hour.0.Fcst-CEMVP
+mvp,MissHW_PineRiver.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,MissHW_PineRiver.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,MissHW_PineRiver.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,MissHW_PineRiver.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,MissHW_PineRiver.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,MissHW_PineRiver.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,MissHW_PineRiver.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,MissHW_PineRiver.Elev.Inst.~15Minutes.0.best-NGVD29
+mvp,MissHW_PineRiver.Flow-In.Ave.1Day.1Day.comp
+mvp,MissHW_PineRiver.Flow-In.Ave.1Day.1Month.comp
+mvp,MissHW_PineRiver.Flow-In.Ave.1Day.1Week.comp
+mvp,MissHW_PineRiver.Flow-In.Ave.1Day.3Days.comp
+mvp,MissHW_PineRiver.Flow-In.Ave.6Hours.1Day.comp
+mvp,MissHW_PineRiver.Flow-In.Ave.6Hours.1Day.comp-noNeg
+mvp,MissHW_PineRiver.Flow-In.Ave.6Hours.3Days.comp
+mvp,MissHW_PineRiver.Flow-In.Ave.6Hours.3Days.comp-noNeg
+mvp,MissHW_PineRiver.Flow-In.Ave.6Hours.6Hours.comp
+mvp,MissHW_PineRiver.Flow-In.Inst.1Hour.0.Fcst-CEMVP
+mvp,MissHW_PineRiver.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,MissHW_PineRiver.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,MissHW_PineRiver.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,MissHW_PineRiver.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,MissHW_PineRiver.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,MissHW_PineRiver.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,MissHW_PineRiver.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,MissHW_PineRiver.Flow-In.Inst.~15Minutes.0.best
+mvp,MissHW_PineRiver.Flow-Out.Ave.1Day.1Day.MVDhist-rev
+mvp,MissHW_PineRiver.Flow-Out.Ave.1Day.1Day.comp
+mvp,MissHW_PineRiver.Flow-Out.Ave.6Hours.6Hours.comp
+mvp,MissHW_PineRiver.Flow-Out.Inst.15Minutes.0.rev
+mvp,MissHW_PineRiver.Flow-Out.Inst.1Hour.0.Fcst-CEMVP
+mvp,MissHW_PineRiver.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,MissHW_PineRiver.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,MissHW_PineRiver.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,MissHW_PineRiver.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,MissHW_PineRiver.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,MissHW_PineRiver.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,MissHW_PineRiver.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,MissHW_PineRiver.Flow-Out.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_PineRiver.Flow-Out.Inst.~15Minutes.0.best
+mvp,MissHW_PineRiver.Flow.Inst.15Minutes.0.comp-gates
+mvp,MissHW_PineRiver.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,MissHW_PineRiver.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,MissHW_PineRiver.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,MissHW_PineRiver.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,MissHW_PineRiver.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,MissHW_PineRiver.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,MissHW_PineRiver.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,MissHW_PineRiver.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,MissHW_PineRiver.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,MissHW_PineRiver.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,MissHW_PineRiver.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,MissHW_PineRiver.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,MissHW_PineRiver.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,MissHW_PineRiver.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,MissHW_PineRiver.Precip-cum.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,MissHW_PineRiver.Precip-cum.Inst.15Minutes.0.rev
+mvp,MissHW_PineRiver.Precip-cum.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,MissHW_PineRiver.Precip-cum.Inst.1Hour.0.rev
+mvp,MissHW_PineRiver.Precip-inc.Total.15Minutes.15Minutes.comp
+mvp,MissHW_PineRiver.Precip-inc.Total.1Day.1Day.comp
+mvp,MissHW_PineRiver.Precip-inc.Total.1Hour.1Hour.comp
+mvp,MissHW_PineRiver.Precip.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,MissHW_PineRiver.Speed-Wind.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,MissHW_PineRiver.Speed-Wind.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,MissHW_PineRiver.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,MissHW_PineRiver.Stage.Ave.1Day.1Day.comp
+mvp,MissHW_PineRiver.Stage.Ave.6Hours.6Hours.comp
+mvp,MissHW_PineRiver.Stage.Inst.0.0.Raw-CEMVP
+mvp,MissHW_PineRiver.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,MissHW_PineRiver.Stage.Inst.15Minutes.0.rev
+mvp,MissHW_PineRiver.Stage.Inst.~15Minutes.0.best
+mvp,MissHW_PineRiver.Stor.Ave.1Day.1Day.comp
+mvp,MissHW_PineRiver.Stor.Ave.6Hours.6Hours.comp
+mvp,MissHW_PineRiver.Temp-Air.Inst.~1Day.0.Raw-NWS-ACIS
+mvp,MissHW_PineRiver.Temp-Air.Max.~1Day.1Day.Raw-NWS-ACIS
+mvp,MissHW_PineRiver.Temp-Air.Min.~1Day.1Day.Raw-NWS-ACIS
+mvp,MissHW_PineRiver.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,LockDam_02-TainterValves.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterValves.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterValves.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate13.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate13.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate13.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull-Lake.Elev.Ave.1Day.1Day.merged-NGVD29
+mvp,MissHW_Gull-Lake.Elev.Inst.15Minutes.0.merged-NGVD29
+mvp,MissHW_Gull-Lake.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,MissHW_Gull-Lake.Elev.Inst.15Minutes.0.rev-NGVD29
+mvp,MissHW_Gull-Lake.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,MissHW_Gull-Lake.Stage.Ave.1Day.1Day.comp
+mvp,MissHW_Gull-Lake.Stage.Ave.6Hours.6Hours.comp
+mvp,MissHW_Gull-Lake.Stage.Inst.0.0.Raw-CEMVP
+mvp,MissHW_Gull-Lake.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,MissHW_Gull-Lake.Stage.Inst.15Minutes.0.rev
+mvp,MissHW_Gull-Lake.Stor.Ave.1Day.1Day.comp
+mvp,MissHW_Gull-Lake.Stor.Ave.6Hours.6Hours.comp
+mvp,MissHW_Gull-Lake.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,MissHW_Gull-Tailwater.Elev.Ave.1Day.1Day.merged-NGVD29
+mvp,MissHW_Gull-Tailwater.Elev.Inst.1Hour.0.merged-NGVD29
+mvp,MissHW_Gull-Tailwater.Elev.Inst.1Hour.0.rev-NAVD88
+mvp,MissHW_Gull-Tailwater.Elev.Inst.1Hour.0.rev-NGVD29
+mvp,MissHW_Gull-Tailwater.Elev.Inst.~15Minutes.0.best-NGVD29
+mvp,MissHW_Gull-Tailwater.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,MissHW_Gull-Tailwater.Stage.Ave.1Day.1Day.comp
+mvp,MissHW_Gull-Tailwater.Stage.Ave.6Hours.6Hours.comp
+mvp,MissHW_Gull-Tailwater.Stage.Inst.0.0.Raw-CEMVP
+mvp,MissHW_Gull-Tailwater.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,MissHW_Gull-Tailwater.Stage.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,MissHW_Gull-Tailwater.Stage.Inst.1Hour.0.rev
+mvp,MissHW_Gull-Tailwater.Stage.Inst.~15Minutes.0.best
+mvp,LockDam_05-TainterGate15.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate15.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate15.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull-SlideGate03.Flow.Inst.1Hour.0.comp
+mvp,MissHW_Gull-SlideGate03.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull-SlideGate03.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate17.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate17.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate17.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate19.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate19.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate19.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,DAWM5.Flow.Inst.15Minutes.0.Raw-MDNR
+mvp,DAWM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,DAWM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,DAWM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,DAWM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,DAWM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,DAWM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,DAWM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,DAWM5.Stage.Inst.15Minutes.0.Raw-MDNR
+mvp,MissHW_Gull-SlideGate05.Flow.Inst.1Hour.0.comp
+mvp,MissHW_Gull-SlideGate05.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull-SlideGate05.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate21.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate21.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate21.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate13.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate13.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate13.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate32.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate32.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate32.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam-FishPondSiphon.Flow.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam-FishPondSiphon.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam-FishPondSiphon.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate33.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate33.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate33.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate15.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate15.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate15.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam-Tailwater.Cond.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Baldhill_Dam-Tailwater.Elev.Ave.1Day.1Day.merged-NGVD29
+mvp,Baldhill_Dam-Tailwater.Elev.Inst.15Minutes.0.merged-NGVD29
+mvp,Baldhill_Dam-Tailwater.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,Baldhill_Dam-Tailwater.Elev.Inst.15Minutes.0.rev-NGVD29
+mvp,Baldhill_Dam-Tailwater.Elev.Inst.~15Minutes.0.Raw-USGS-NAVD88
+mvp,Baldhill_Dam-Tailwater.Elev.Inst.~15Minutes.0.best-NGVD29
+mvp,Baldhill_Dam-Tailwater.Elev.Inst.~15Minutes.0.rev-USGS-NAVD88
+mvp,Baldhill_Dam-Tailwater.Flow.Ave.1Day.1Day.rev-USGS
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.15Minutes.0.comp
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 15:24:48+00:00
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:41:17+00:00
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:01:27+00:00
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 01:58:47+00:00
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-11 15:04:10+00:00
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.~15Minutes.0.Raw-USGS
+mvp,Baldhill_Dam-Tailwater.Flow.Inst.~15Minutes.0.rev-USGS
+mvp,Baldhill_Dam-Tailwater.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,Baldhill_Dam-Tailwater.Stage.Ave.1Day.1Day.comp
+mvp,Baldhill_Dam-Tailwater.Stage.Ave.1Day.1Day.rev-USGS
+mvp,Baldhill_Dam-Tailwater.Stage.Ave.6Hours.6Hours.comp
+mvp,Baldhill_Dam-Tailwater.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Baldhill_Dam-Tailwater.Stage.Inst.15Minutes.0.corrected-comp
+mvp,Baldhill_Dam-Tailwater.Stage.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam-Tailwater.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,Baldhill_Dam-Tailwater.Stage.Inst.~15Minutes.0.best
+mvp,Baldhill_Dam-Tailwater.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,Baldhill_Dam-Tailwater.Temp-Water.Ave.1Day.1Day.merged
+mvp,Baldhill_Dam-Tailwater.Temp-Water.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Baldhill_Dam-Tailwater.Temp-Water.Inst.15Minutes.0.merged
+mvp,Baldhill_Dam-Tailwater.Volt.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_02-TainterGate17.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate17.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate17.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate34.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate34.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate34.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate29.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate29.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate29.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate07.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate07.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate07.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate30.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate30.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate30.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate19.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate19.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate19.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,Clayton.Elev.Ave.1Day.1Day.merged-MSL1912
+mvp,Clayton.Elev.Inst.15Minutes.0.merged-MSL1912
+mvp,Clayton.Elev.Inst.15Minutes.0.rev-MSL1912
+mvp,Clayton.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,Clayton.Stage-Sensor02.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Clayton.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,Clayton.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Clayton.Stage.Inst.15Minutes.0.rev
+mvp,Clayton.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,Clayton.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,Clayton.Temp-Water.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Clayton.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,Baldhill_Dam-TainterGate02.Flow.Inst.15Minutes.0.comp
+mvp,Baldhill_Dam-TainterGate02.Flow.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam-TainterGate02.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam-TainterGate02.Opening.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam-TainterGate02.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate09.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate09.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate09.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate31.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate31.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate31.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate11.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate11.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate11.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-TainterValves.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-TainterValves.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-TainterValves.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-RollerGate04.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-RollerGate04.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-RollerGate04.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-RollerGate01.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-RollerGate01.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-RollerGate01.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-RollerGate02.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-RollerGate02.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-RollerGate02.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-RollerGate03.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-RollerGate03.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-RollerGate03.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-RollerGate04.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-RollerGate04.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-RollerGate04.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-RollerGate05.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-RollerGate05.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-RollerGate05.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-RollerGate06.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-RollerGate06.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-RollerGate06.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-RollerGates.Flow-PerFootOpen.Inst.15Minutes.0.comp
+mvp,LockDam_05-RollerGates.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-RollerGates.Flow.Inst.15Minutes.0.test
+mvp,LockDam_05-RollerGates.Opening-MaxAllow.Inst.15Minutes.0.comp
+mvp,LockDam_05-RollerGates.Opening-Normal.Inst.15Minutes.0.comp
+mvp,LockDam_05-RollerGates.Opening-Normal.Inst.15Minutes.0.test
+mvp,LockDam_05-RollerGates.Opening-Submerged.Inst.15Minutes.0.comp
+mvp,LockDam_05-RollerGates.Opening-Submerged.Inst.15Minutes.0.test
+mvp,LockDam_05-Tailwater.Elev.Ave.1Day.1Day.merged-MSL1912
+mvp,LockDam_05-Tailwater.Elev.Inst.12Hours.0.Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05-Tailwater.Elev.Inst.15Minutes.0.merged-MSL1912
+mvp,LockDam_05-Tailwater.Elev.Inst.15Minutes.0.rev-MSL1912
+mvp,LockDam_05-Tailwater.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,LockDam_05-Tailwater.Elev.Inst.~15Minutes.0.best-MSL1912
+mvp,LockDam_05-Tailwater.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-Tailwater.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,LockDam_05-Tailwater.Stage.Ave.1Day.1Day.comp
+mvp,LockDam_05-Tailwater.Stage.Ave.6Hours.6Hours.comp
+mvp,LockDam_05-Tailwater.Stage.Inst.0.0.Raw-CEMVP
+mvp,LockDam_05-Tailwater.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_05-Tailwater.Stage.Inst.15Minutes.0.rev
+mvp,LockDam_05-Tailwater.Stage.Inst.~15Minutes.0.best
+mvp,LockDam_05-TainterGate08.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate08.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate08.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate10.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate10.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate10.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate12.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate12.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate12.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate14.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate14.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate14.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate16.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate16.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate16.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate18.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate18.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate18.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate20.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate20.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate20.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate22.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate22.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate22.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate24.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate24.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate24.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate26.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate26.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate26.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate28.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterGate28.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterGate28.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterValves.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05-TainterValves.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05-TainterValves.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05.%-Ice.Inst.~1Week.0.Raw-NWS-IEM
+mvp,LockDam_05.Code-OpenRiver.Inst.15Minutes.0.comp
+mvp,LockDam_05.Code-OpenRiver.Inst.1Hour.0.Fcst-CEMVP
+mvp,LockDam_05.Depth-Ice.Inst.~1Week.0.Raw-NWS-IEM
+mvp,LockDam_05.Depth-Inc-Snow.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,LockDam_05.Depth-SWE.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,LockDam_05.Depth-Snow.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,LockDam_05.Dir-Wind.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_05.Elev.Ave.1Day.1Day.merged-MSL1912
+mvp,LockDam_05.Elev.Inst.12Hours.0.740Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05.Elev.Inst.12Hours.0.741Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05.Elev.Inst.12Hours.0.742Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05.Elev.Inst.12Hours.0.743Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05.Elev.Inst.12Hours.0.745Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05.Elev.Inst.12Hours.0.746Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05.Elev.Inst.12Hours.0.747Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05.Elev.Inst.12Hours.0.748Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05.Elev.Inst.12Hours.0.749Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05.Elev.Inst.12Hours.0.Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05.Elev.Inst.15Minutes.0.merged-MSL1912
+mvp,LockDam_05.Elev.Inst.15Minutes.0.rev-MSL1912
+mvp,LockDam_05.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,LockDam_05.Elev.Inst.1Hour.0.Regulating
+mvp,LockDam_05.Elev.Inst.~15Minutes.0.best-MSL1912
+mvp,LockDam_05.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,LockDam_05.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,LockDam_05.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,LockDam_05.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,LockDam_05.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,LockDam_05.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,LockDam_05.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,LockDam_05.Flow-Out.Ave.1Day.1Day.MVDhist-rev
+mvp,LockDam_05.Flow-Out.Ave.1Day.1Day.comp
+mvp,LockDam_05.Flow-Out.Ave.6Hours.6Hours.comp
+mvp,LockDam_05.Flow-Out.Inst.15Minutes.0.rev
+mvp,LockDam_05.Flow-Out.Inst.1Hour.0.Fcst-CEMVP
+mvp,LockDam_05.Flow-Out.Inst.~15Minutes.0.best
+mvp,LockDam_05.Flow.Ave.1Day.1Day.merged
+mvp,LockDam_05.Flow.Inst.12Hours.0.Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05.Flow.Inst.15Minutes.0.merged
+mvp,LockDam_05.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,LockDam_05.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,LockDam_05.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,LockDam_05.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,LockDam_05.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,LockDam_05.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,LockDam_05.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,LockDam_05.Head.Inst.15Minutes.0.comp
+mvp,LockDam_05.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,LockDam_05.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,LockDam_05.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,LockDam_05.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,LockDam_05.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,LockDam_05.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,LockDam_05.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,LockDam_05.Precip.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,LockDam_05.Speed-Wind.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_05.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,LockDam_05.Stage.Ave.1Day.1Day.comp
+mvp,LockDam_05.Stage.Ave.6Hours.6Hours.comp
+mvp,LockDam_05.Stage.Inst.0.0.Raw-CEMVP
+mvp,LockDam_05.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_05.Stage.Inst.15Minutes.0.rev
+mvp,LockDam_05.Stage.Inst.~15Minutes.0.best
+mvp,LockDam_05.Temp-Air.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_05.Temp-Water.Ave.1Day.1Day.merged
+mvp,LockDam_05.Temp-Water.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_05.Temp-Water.Inst.15Minutes.0.merged
+mvp,LockDam_05.Temp-Water.Inst.~1Day.0.Raw-NWS-IEM
+mvp,LockDam_05.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,LockDam_05a-CrookedSlough.Stage.Ave.1Day.1Day.comp
+mvp,LockDam_05a-CrookedSlough.Stage.Ave.6Hours.6Hours.comp
+mvp,LockDam_05a-CrookedSlough.Stage.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,LockDam_05a-CrookedSlough.Stage.Inst.1Hour.0.rev
+mvp,LockDam_05a-CrookedSlough.Temp-Water.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,LockDam_05a-CrookedSlough.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,LockDam_05a-RollerGate02.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-RollerGate02.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-RollerGate02.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-RollerGate03.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-RollerGate03.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-RollerGate03.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-RollerGate05.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-RollerGate05.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-RollerGate05.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-RollerGates.Flow-PerFootOpen.Inst.15Minutes.0.comp
+mvp,LockDam_05a-RollerGates.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-RollerGates.Flow.Inst.15Minutes.0.test
+mvp,LockDam_05a-RollerGates.Opening-MaxAllow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-RollerGates.Opening-Normal.Inst.15Minutes.0.comp
+mvp,LockDam_05a-RollerGates.Opening-Normal.Inst.15Minutes.0.test
+mvp,LockDam_05a-RollerGates.Opening-Submerged.Inst.15Minutes.0.comp
+mvp,LockDam_05a-RollerGates.Opening-Submerged.Inst.15Minutes.0.test
+mvp,LockDam_05a-Spillway.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-TainterGate06.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-TainterGate06.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-TainterGate06.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-TainterGate07.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-TainterGate07.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-TainterGate07.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-TainterGate08.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-TainterGate08.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-TainterGate08.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-TainterGate09.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-TainterGate09.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-TainterGate09.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-TainterGate10.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-TainterGate10.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-TainterGate10.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_05a-TainterGates.Flow-PerFootOpen.Inst.15Minutes.0.comp
+mvp,LockDam_05a-TainterGates.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-TainterGates.Flow.Inst.15Minutes.0.test
+mvp,LockDam_05a-TainterGates.Opening-MaxAllow.Inst.15Minutes.0.comp
+mvp,LockDam_05a-TainterGates.Opening-Normal.Inst.15Minutes.0.comp
+mvp,LockDam_05a-TainterGates.Opening-Normal.Inst.15Minutes.0.test
+mvp,LockDam_05a-TainterGates.Opening-Submerged.Inst.15Minutes.0.comp
+mvp,LockDam_05a-TainterGates.Opening-Submerged.Inst.15Minutes.0.test
+mvp,LockDam_05a.%-Ice.Inst.~1Week.0.Raw-NWS-IEM
+mvp,LockDam_05a.Code-OpenRiver.Inst.15Minutes.0.comp
+mvp,LockDam_05a.Code-OpenRiver.Inst.1Hour.0.Fcst-CEMVP
+mvp,LockDam_05a.Depth-Ice.Inst.~1Week.0.Raw-NWS-IEM
+mvp,LockDam_05a.Depth-Inc-Snow.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,LockDam_05a.Depth-SWE.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,LockDam_05a.Depth-Snow.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,LockDam_05a.Dir-Wind.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_05a.Elev.Ave.1Day.1Day.merged-MSL1912
+mvp,LockDam_05a.Elev.Inst.12Hours.0.730Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05a.Elev.Inst.12Hours.0.731Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05a.Elev.Inst.12Hours.0.Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05a.Elev.Inst.15Minutes.0.merged-MSL1912
+mvp,LockDam_05a.Elev.Inst.15Minutes.0.rev-MSL1912
+mvp,LockDam_05a.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,LockDam_05a.Elev.Inst.1Hour.0.Regulating
+mvp,LockDam_05a.Elev.Inst.~15Minutes.0.best-MSL1912
+mvp,LockDam_05a.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,LockDam_05a.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,LockDam_05a.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,LockDam_05a.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,LockDam_05a.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,LockDam_05a.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,LockDam_05a.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,LockDam_05a.Flow-Out.Ave.1Day.1Day.MVDhist-rev
+mvp,LockDam_05a.Flow-Out.Ave.1Day.1Day.comp
+mvp,LockDam_05a.Flow-Out.Ave.6Hours.6Hours.comp
+mvp,LockDam_05a.Flow-Out.Inst.15Minutes.0.rev
+mvp,LockDam_05a.Flow-Out.Inst.1Hour.0.Fcst-CEMVP
+mvp,LockDam_05a.Flow-Out.Inst.~15Minutes.0.best
+mvp,LockDam_05a.Flow.Ave.1Day.1Day.merged
+mvp,LockDam_05a.Flow.Inst.12Hours.0.Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_05a.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_05a.Flow.Inst.15Minutes.0.merged
+mvp,LockDam_05a.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,LockDam_05a.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,LockDam_05a.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,LockDam_05a.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,LockDam_05a.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,LockDam_05a.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,LockDam_05a.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,LockDam_05a.Head.Inst.15Minutes.0.comp
+mvp,LockDam_05a.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,LockDam_05a.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,LockDam_05a.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,LockDam_05a.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,LockDam_05a.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,LockDam_05a.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,LockDam_05a.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,LockDam_05a.Precip.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,LockDam_05a.Speed-Wind.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_05a.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,LockDam_05a.Stage.Ave.1Day.1Day.comp
+mvp,LockDam_05a.Stage.Ave.6Hours.6Hours.comp
+mvp,LockDam_05a.Stage.Inst.0.0.Raw-CEMVP
+mvp,LockDam_05a.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_05a.Stage.Inst.15Minutes.0.rev
+mvp,LockDam_05a.Stage.Inst.~15Minutes.0.best
+mvp,LockDam_05a.Temp-Air.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_05a.Temp-Air.Inst.~1Day.0.Raw-NWS-ACIS
+mvp,LockDam_05a.Temp-Air.Max.~1Day.1Day.Raw-NWS-ACIS
+mvp,LockDam_05a.Temp-Air.Min.~1Day.1Day.Raw-NWS-ACIS
+mvp,LockDam_05a.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,LockDam_02-TainterGate03.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate03.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate03.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate05.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate05.Opening-MaxAllow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate05.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate05.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGates.Flow-PerFootOpen.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGates.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGates.Flow.Inst.15Minutes.0.test
+mvp,LockDam_02-TainterGates.Opening-Normal.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGates.Opening-Normal.Inst.15Minutes.0.test
+mvp,LockDam_02-TainterGates.Opening-Submerged.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGates.Opening-Submerged.Inst.15Minutes.0.test
+mvp,Baldhill_Dam-EmergencySpillway.Flow.Inst.15Minutes.0.comp
+mvp,Baldhill_Dam-LowFlow01.Flow.Inst.15Minutes.0.comp
+mvp,Baldhill_Dam-LowFlow01.Flow.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam-LowFlow01.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam-LowFlow01.Opening.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam-LowFlow01.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam-LowFlow02.Flow.Inst.15Minutes.0.comp
+mvp,Baldhill_Dam-LowFlow02.Flow.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam-LowFlow02.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam-LowFlow02.Opening.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam-LowFlow02.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam-TainterGate01.Flow.Inst.15Minutes.0.comp
+mvp,Baldhill_Dam-TainterGate01.Flow.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam-TainterGate01.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam-TainterGate01.Opening.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam-TainterGate01.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam-TainterGate03.Flow.Inst.15Minutes.0.comp
+mvp,Baldhill_Dam-TainterGate03.Flow.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam-TainterGate03.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam-TainterGate03.Opening.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam-TainterGate03.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam.%-Ice.Inst.~1Week.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam.%-Ice.Inst.~1Week.0.Raw-NWS-IEM
+mvp,Baldhill_Dam.Area.Inst.15Minutes.0.comp
+mvp,Baldhill_Dam.Depth-Frost-Thawed.Inst.~1Week.0.Raw-NWS-IEM
+mvp,Baldhill_Dam.Depth-Frost.Inst.~1Week.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam.Depth-Frost.Inst.~1Week.0.Raw-NWS-IEM
+mvp,Baldhill_Dam.Depth-Ice.Inst.~1Week.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam.Depth-Ice.Inst.~1Week.0.Raw-NWS-IEM
+mvp,Baldhill_Dam.Depth-Inc-Snow.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,Baldhill_Dam.Depth-SWE.Inst.~1Week.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam.Depth-Snow.Inst.~1Week.0.CEMVP-ProjectEntry
+mvp,Baldhill_Dam.Depth-Snow.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,Baldhill_Dam.Dir-Wind.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Baldhill_Dam.Elev.Ave.1Day.1Day.merged-NGVD29
+mvp,Baldhill_Dam.Elev.Inst.15Minutes.0.merged-NGVD29
+mvp,Baldhill_Dam.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,Baldhill_Dam.Elev.Inst.15Minutes.0.rev-NGVD29
+mvp,Baldhill_Dam.Elev.Inst.1Day.0.Regulating
+mvp,Baldhill_Dam.Elev.Inst.1Hour.0.Fcst-CEMVP
+mvp,Baldhill_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Baldhill_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Baldhill_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Baldhill_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Baldhill_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Baldhill_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 15:24:46+00:00
+mvp,Baldhill_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:41:16+00:00
+mvp,Baldhill_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:01:26+00:00
+mvp,Baldhill_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 01:58:45+00:00
+mvp,Baldhill_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-11 15:04:08+00:00
+mvp,Baldhill_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Baldhill_Dam.Elev.Inst.~15Minutes.0.Raw-USGS-NGVD29
+mvp,Baldhill_Dam.Elev.Inst.~15Minutes.0.best-NGVD29
+mvp,Baldhill_Dam.Elev.Inst.~15Minutes.0.rev-USGS-NGVD29
+mvp,Baldhill_Dam.Elev.Inst.~1Day.0.Regulating
+mvp,Baldhill_Dam.Flow-In.Ave.15Minutes.1Day.comp
+mvp,Baldhill_Dam.Flow-In.Ave.15Minutes.1Day.rev
+mvp,Baldhill_Dam.Flow-In.Ave.15Minutes.6Hours.comp
+mvp,Baldhill_Dam.Flow-In.Ave.15Minutes.6Hours.rev
+mvp,Baldhill_Dam.Flow-In.Ave.1Day.1Day.comp
+mvp,Baldhill_Dam.Flow-In.Ave.1Day.1Month.comp
+mvp,Baldhill_Dam.Flow-In.Ave.1Day.1Week.comp
+mvp,Baldhill_Dam.Flow-In.Ave.1Day.3Days.comp
+mvp,Baldhill_Dam.Flow-In.Ave.6Hours.1Day.comp
+mvp,Baldhill_Dam.Flow-In.Ave.6Hours.1Day.comp-noNeg
+mvp,Baldhill_Dam.Flow-In.Ave.6Hours.3Days.comp
+mvp,Baldhill_Dam.Flow-In.Ave.6Hours.3Days.comp-noNeg
+mvp,Baldhill_Dam.Flow-In.Ave.6Hours.6Hours.comp
+mvp,Baldhill_Dam.Flow-In.Inst.1Hour.0.Fcst-CEMVP
+mvp,Baldhill_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 15:24:45+00:00
+mvp,Baldhill_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:41:15+00:00
+mvp,Baldhill_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:01:25+00:00
+mvp,Baldhill_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 01:58:44+00:00
+mvp,Baldhill_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-11 15:04:08+00:00
+mvp,Baldhill_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Baldhill_Dam.Flow-In.Inst.~15Minutes.0.best
+mvp,Baldhill_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 15:24:45+00:00
+mvp,Baldhill_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:41:15+00:00
+mvp,Baldhill_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:01:25+00:00
+mvp,Baldhill_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 01:58:44+00:00
+mvp,Baldhill_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-11 15:04:07+00:00
+mvp,Baldhill_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Baldhill_Dam.Flow-Out.Ave.1Day.1Day.MVDhist-rev
+mvp,Baldhill_Dam.Flow-Out.Ave.1Day.1Day.comp
+mvp,Baldhill_Dam.Flow-Out.Ave.1Day.1Day.merged
+mvp,Baldhill_Dam.Flow-Out.Ave.6Hours.6Hours.comp
+mvp,Baldhill_Dam.Flow-Out.Inst.15Minutes.0.merged
+mvp,Baldhill_Dam.Flow-Out.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam.Flow-Out.Inst.1Hour.0.rev
+mvp,Baldhill_Dam.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Baldhill_Dam.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 15:24:47+00:00
+mvp,Baldhill_Dam.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:41:16+00:00
+mvp,Baldhill_Dam.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:01:27+00:00
+mvp,Baldhill_Dam.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 01:58:46+00:00
+mvp,Baldhill_Dam.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-11 15:04:09+00:00
+mvp,Baldhill_Dam.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Baldhill_Dam.Flow-Out.Inst.~15Minutes.0.best
+mvp,Baldhill_Dam.Flow.Inst.15Minutes.0.comp-gates
+mvp,Baldhill_Dam.Flow.Inst.1Hour.0.Fcst-CEMVP
+mvp,Baldhill_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Baldhill_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Baldhill_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Baldhill_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Baldhill_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Baldhill_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 15:24:37+00:00
+mvp,Baldhill_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:41:09+00:00
+mvp,Baldhill_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:01:18+00:00
+mvp,Baldhill_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 01:58:37+00:00
+mvp,Baldhill_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-11 15:04:01+00:00
+mvp,Baldhill_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,Baldhill_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Baldhill_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Baldhill_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Baldhill_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Baldhill_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Baldhill_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 15:25:04+00:00
+mvp,Baldhill_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:41:30+00:00
+mvp,Baldhill_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:01:42+00:00
+mvp,Baldhill_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 01:59:01+00:00
+mvp,Baldhill_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-11 15:04:24+00:00
+mvp,Baldhill_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,Baldhill_Dam.Precip-cum.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Baldhill_Dam.Precip-cum.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam.Precip-inc.Total.15Minutes.15Minutes.comp
+mvp,Baldhill_Dam.Precip-inc.Total.1Day.1Day.comp
+mvp,Baldhill_Dam.Precip-inc.Total.~1Day.1Day.CEMVP-ProjectEntry
+mvp,Baldhill_Dam.Precip.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,Baldhill_Dam.Speed-Wind.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Baldhill_Dam.Stage-Sensor02.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Baldhill_Dam.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,Baldhill_Dam.Stage.Ave.1Day.1Day.comp
+mvp,Baldhill_Dam.Stage.Ave.6Hours.6Hours.comp
+mvp,Baldhill_Dam.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Baldhill_Dam.Stage.Inst.15Minutes.0.rev
+mvp,Baldhill_Dam.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,Baldhill_Dam.Stage.Inst.~15Minutes.0.best
+mvp,Baldhill_Dam.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,Baldhill_Dam.Stor.Ave.15Minutes.2Hours.comp
+mvp,Baldhill_Dam.Stor.Ave.1Day.1Day.comp
+mvp,Baldhill_Dam.Stor.Ave.6Hours.6Hours.comp
+mvp,Baldhill_Dam.Temp-Air.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Baldhill_Dam.Temp-Air.Inst.~1Day.0.Raw-NWS-ACIS
+mvp,Baldhill_Dam.Temp-Air.Max.~1Day.1Day.Raw-NWS-ACIS
+mvp,Baldhill_Dam.Temp-Air.Min.~1Day.1Day.Raw-NWS-ACIS
+mvp,Baldhill_Dam.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,LockDam_02-TainterGate07.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate07.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate07.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate09.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate09.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate09.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-Powerhouse.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-Powerhouse.Power.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-Powerhouse.Power.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,Rafferty_Dam-Tailwater.Flow.Inst.5Minutes.0.Raw-EnvCan
+mvp,Rafferty_Dam-Tailwater.Stage.Inst.5Minutes.0.Raw-EnvCan
+mvp,Cooperstown200.Elev.Inst.~15Minutes.0.Raw-USGS-NAVD88
+mvp,Cooperstown200.Elev.Inst.~15Minutes.0.rev-USGS-NAVD88
+mvp,Cooperstown200.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,Cooperstown200.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,ChippewaDiv_Dam-LowFlow.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,ChippewaDiv_Dam-LowFlow.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate11.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate11.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate11.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,ChippewaDiv_Dam-TainterGate.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,ChippewaDiv_Dam-TainterGate.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,ELZM5.Flow.Ave.1Day.1Day.rev-USGS
+mvp,ELZM5.Flow.Inst.0.0.Raw-USGS
+mvp,ELZM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,ELZM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,ELZM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,ELZM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,ELZM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,ELZM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,ELZM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,ELZM5.Flow.Inst.~15Minutes.0.Raw-USGS
+mvp,ELZM5.Flow.Inst.~15Minutes.0.rev-USGS
+mvp,ELZM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,ELZM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,ELZM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,ELZM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,ELZM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,ELZM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,ELZM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,ELZM5.Stage.Inst.0.0.Raw-USGS
+mvp,ELZM5.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,ELZM5.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,TraverseWR_Dam-Lake.Elev.Ave.1Day.1Day.merged-MSL1912
+mvp,TraverseWR_Dam-Lake.Elev.Inst.15Minutes.0.merged-MSL1912
+mvp,TraverseWR_Dam-Lake.Elev.Inst.15Minutes.0.rev-MSL1912
+mvp,TraverseWR_Dam-Lake.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,TraverseWR_Dam-Lake.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,TraverseWR_Dam-Lake.Stage.Ave.1Day.1Day.comp
+mvp,TraverseWR_Dam-Lake.Stage.Ave.6Hours.6Hours.comp
+mvp,TraverseWR_Dam-Lake.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,TraverseWR_Dam-Lake.Stage.Inst.15Minutes.0.rev
+mvp,TraverseWR_Dam-Lake.Stor.Ave.1Day.1Day.comp
+mvp,TraverseWR_Dam-Lake.Stor.Ave.6Hours.6Hours.comp
+mvp,TraverseWR_Dam-TainterGate02.Flow.Inst.15Minutes.0.comp
+mvp,TraverseWR_Dam-TainterGate02.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,TraverseWR_Dam-TainterGate02.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate01.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate01.Opening-MaxAllow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate01.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate01.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,ChippewaDiv_Dam-Tailwater.Elev.Ave.1Day.1Day.merged-NGVD29
+mvp,ChippewaDiv_Dam-Tailwater.Elev.Inst.15Minutes.0.merged-NGVD29
+mvp,ChippewaDiv_Dam-Tailwater.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,ChippewaDiv_Dam-Tailwater.Elev.Inst.15Minutes.0.rev-NGVD29
+mvp,ChippewaDiv_Dam-Tailwater.Elev.Inst.~15Minutes.0.best-NGVD29
+mvp,ChippewaDiv_Dam-Tailwater.Flow.Ave.1Day.1Day.rev-USGS
+mvp,ChippewaDiv_Dam-Tailwater.Flow.Inst.15Minutes.0.comp
+mvp,ChippewaDiv_Dam-Tailwater.Flow.Inst.15Minutes.0.rev
+mvp,ChippewaDiv_Dam-Tailwater.Flow.Inst.~15Minutes.0.Raw-USGS
+mvp,ChippewaDiv_Dam-Tailwater.Flow.Inst.~15Minutes.0.rev-USGS
+mvp,ChippewaDiv_Dam-Tailwater.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,ChippewaDiv_Dam-Tailwater.Stage.Ave.1Day.1Day.comp
+mvp,ChippewaDiv_Dam-Tailwater.Stage.Ave.6Hours.6Hours.comp
+mvp,ChippewaDiv_Dam-Tailwater.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,ChippewaDiv_Dam-Tailwater.Stage.Inst.15Minutes.0.corrected-comp
+mvp,ChippewaDiv_Dam-Tailwater.Stage.Inst.15Minutes.0.rev
+mvp,ChippewaDiv_Dam-Tailwater.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,ChippewaDiv_Dam-Tailwater.Stage.Inst.~15Minutes.0.best
+mvp,ChippewaDiv_Dam-Tailwater.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,TraverseWR_Dam-Tailwater.Elev.Ave.1Day.1Day.merged-MSL1912
+mvp,TraverseWR_Dam-Tailwater.Elev.Inst.15Minutes.0.merged-MSL1912
+mvp,TraverseWR_Dam-Tailwater.Elev.Inst.15Minutes.0.rev-MSL1912
+mvp,TraverseWR_Dam-Tailwater.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,TraverseWR_Dam-Tailwater.Elev.Inst.~15Minutes.0.best-MSL1912
+mvp,TraverseWR_Dam-Tailwater.Flow.Inst.15Minutes.0.comp
+mvp,TraverseWR_Dam-Tailwater.Flow.Inst.15Minutes.0.rev
+mvp,TraverseWR_Dam-Tailwater.Flow.Inst.~15Minutes.0.Raw-USGS
+mvp,TraverseWR_Dam-Tailwater.Flow.Inst.~15Minutes.0.rev-USGS
+mvp,TraverseWR_Dam-Tailwater.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,TraverseWR_Dam-Tailwater.Stage.Ave.1Day.1Day.comp
+mvp,TraverseWR_Dam-Tailwater.Stage.Ave.6Hours.6Hours.comp
+mvp,TraverseWR_Dam-Tailwater.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,TraverseWR_Dam-Tailwater.Stage.Inst.15Minutes.0.corrected-comp
+mvp,TraverseWR_Dam-Tailwater.Stage.Inst.15Minutes.0.rev
+mvp,TraverseWR_Dam-Tailwater.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,TraverseWR_Dam-Tailwater.Stage.Inst.~15Minutes.0.best
+mvp,TraverseWR_Dam-Tailwater.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,TraverseWR_Dam.Area.Inst.15Minutes.0.comp
+mvp,TraverseWR_Dam.Depth-Inc-Snow.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,TraverseWR_Dam.Depth-SWE.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,TraverseWR_Dam.Depth-Snow.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,TraverseWR_Dam.Elev.Ave.1Day.1Day.merged-MSL1912
+mvp,TraverseWR_Dam.Elev.Inst.15Minutes.0.merged-MSL1912
+mvp,TraverseWR_Dam.Elev.Inst.15Minutes.0.rev-MSL1912
+mvp,TraverseWR_Dam.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,TraverseWR_Dam.Elev.Inst.1Hour.0.Fcst-CEMVP
+mvp,TraverseWR_Dam.Elev.Inst.~15Minutes.0.Raw-USGS-NAVD88
+mvp,TraverseWR_Dam.Elev.Inst.~15Minutes.0.best-MSL1912
+mvp,TraverseWR_Dam.Elev.Inst.~15Minutes.0.rev-USGS-NAVD88
+mvp,TraverseWR_Dam.Flow-In.Ave.15Minutes.1Day.comp
+mvp,TraverseWR_Dam.Flow-In.Ave.15Minutes.1Day.rev
+mvp,TraverseWR_Dam.Flow-In.Ave.15Minutes.6Hours.comp
+mvp,TraverseWR_Dam.Flow-In.Ave.15Minutes.6Hours.rev
+mvp,TraverseWR_Dam.Flow-In.Ave.1Day.1Day.comp
+mvp,TraverseWR_Dam.Flow-In.Ave.1Day.1Month.comp
+mvp,TraverseWR_Dam.Flow-In.Ave.1Day.1Week.comp
+mvp,TraverseWR_Dam.Flow-In.Ave.1Day.3Days.comp
+mvp,TraverseWR_Dam.Flow-In.Ave.6Hours.1Day.comp
+mvp,TraverseWR_Dam.Flow-In.Ave.6Hours.1Day.comp-noNeg
+mvp,TraverseWR_Dam.Flow-In.Ave.6Hours.3Days.comp
+mvp,TraverseWR_Dam.Flow-In.Ave.6Hours.3Days.comp-noNeg
+mvp,TraverseWR_Dam.Flow-In.Ave.6Hours.6Hours.comp
+mvp,TraverseWR_Dam.Flow-In.Inst.1Hour.0.Fcst-CEMVP
+mvp,TraverseWR_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,TraverseWR_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,TraverseWR_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,TraverseWR_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,TraverseWR_Dam.Flow-Out.Ave.1Day.1Day.MVDhist-rev
+mvp,TraverseWR_Dam.Flow-Out.Ave.1Day.1Day.comp
+mvp,TraverseWR_Dam.Flow-Out.Ave.6Hours.6Hours.comp
+mvp,TraverseWR_Dam.Flow-Out.Inst.15Minutes.0.comp
+mvp,TraverseWR_Dam.Flow-Out.Inst.15Minutes.0.rev
+mvp,TraverseWR_Dam.Flow-Out.Inst.1Hour.0.rev
+mvp,TraverseWR_Dam.Flow-Out.Inst.~15Minutes.0.best
+mvp,TraverseWR_Dam.Flow.Inst.1Hour.0.Fcst-CEMVP
+mvp,TraverseWR_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,TraverseWR_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,TraverseWR_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,TraverseWR_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,TraverseWR_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,TraverseWR_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,TraverseWR_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,TraverseWR_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,TraverseWR_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,TraverseWR_Dam.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,TraverseWR_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,TraverseWR_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,TraverseWR_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,TraverseWR_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,TraverseWR_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,TraverseWR_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,TraverseWR_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,TraverseWR_Dam.Precip-inc.Total.~1Day.1Day.CEMVP-ProjectEntry
+mvp,TraverseWR_Dam.Precip.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,TraverseWR_Dam.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,TraverseWR_Dam.Stage.Ave.1Day.1Day.comp
+mvp,TraverseWR_Dam.Stage.Ave.6Hours.6Hours.comp
+mvp,TraverseWR_Dam.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,TraverseWR_Dam.Stage.Inst.15Minutes.0.rev
+mvp,TraverseWR_Dam.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,TraverseWR_Dam.Stage.Inst.~15Minutes.0.best
+mvp,TraverseWR_Dam.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,TraverseWR_Dam.Stor.Ave.15Minutes.2Hours.comp
+mvp,TraverseWR_Dam.Stor.Ave.1Day.1Day.comp
+mvp,TraverseWR_Dam.Stor.Ave.6Hours.6Hours.comp
+mvp,TraverseWR_Dam.Temp-Air.Inst.~1Day.0.Raw-NWS-ACIS
+mvp,TraverseWR_Dam.Temp-Air.Max.~1Day.1Day.Raw-NWS-ACIS
+mvp,TraverseWR_Dam.Temp-Air.Min.~1Day.1Day.Raw-NWS-ACIS
+mvp,TraverseWR_Dam.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,Cooperstown.Conc-OXYGEN.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Cooperstown.Cond.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Cooperstown.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,Cooperstown.Elev.Inst.15Minutes.0.rev-NGVD29
+mvp,Cooperstown.Elev.Inst.~15Minutes.0.Raw-USGS-NAVD88
+mvp,Cooperstown.Elev.Inst.~15Minutes.0.rev-USGS-NAVD88
+mvp,Cooperstown.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Cooperstown.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Cooperstown.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Cooperstown.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Cooperstown.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Cooperstown.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 15:24:42+00:00
+mvp,Cooperstown.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:41:13+00:00
+mvp,Cooperstown.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:01:23+00:00
+mvp,Cooperstown.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 01:58:42+00:00
+mvp,Cooperstown.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-11 15:04:05+00:00
+mvp,Cooperstown.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Cooperstown.Flow.Ave.1Day.1Day.rev-USGS
+mvp,Cooperstown.Flow.Inst.15Minutes.0.comp
+mvp,Cooperstown.Flow.Inst.15Minutes.0.rev
+mvp,Cooperstown.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Cooperstown.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Cooperstown.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Cooperstown.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Cooperstown.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Cooperstown.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 15:24:43+00:00
+mvp,Cooperstown.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:41:13+00:00
+mvp,Cooperstown.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:01:23+00:00
+mvp,Cooperstown.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-12 01:58:42+00:00
+mvp,Cooperstown.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto:2025-06-11 15:04:06+00:00
+mvp,Cooperstown.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Cooperstown.Flow.Inst.~15Minutes.0.Raw-USGS
+mvp,Cooperstown.Flow.Inst.~15Minutes.0.rev-USGS
+mvp,Cooperstown.Precip-RainAndMelt-Non_contrib.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Cooperstown.Precip-RainAndMelt-Non_contrib.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Cooperstown.Precip-RainAndMelt-Non_contrib.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Cooperstown.Precip-RainAndMelt-Non_contrib.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Cooperstown.Precip-RainAndMelt-Non_contrib.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Cooperstown.Precip-RainAndMelt-Non_contrib.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 15:25:07+00:00
+mvp,Cooperstown.Precip-RainAndMelt-Non_contrib.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:41:32+00:00
+mvp,Cooperstown.Precip-RainAndMelt-Non_contrib.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:01:45+00:00
+mvp,Cooperstown.Precip-RainAndMelt-Non_contrib.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 01:59:04+00:00
+mvp,Cooperstown.Precip-RainAndMelt-Non_contrib.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-11 15:04:27+00:00
+mvp,Cooperstown.Precip-RainAndMelt-Non_contrib.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,Cooperstown.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Cooperstown.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Cooperstown.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Cooperstown.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Cooperstown.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Cooperstown.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 15:25:07+00:00
+mvp,Cooperstown.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:41:31+00:00
+mvp,Cooperstown.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 13:01:44+00:00
+mvp,Cooperstown.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-12 01:59:04+00:00
+mvp,Cooperstown.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto:2025-06-11 15:04:26+00:00
+mvp,Cooperstown.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,Cooperstown.Stage.Ave.1Day.1Day.rev-USGS
+mvp,Cooperstown.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Cooperstown.Stage.Inst.15Minutes.0.corrected-comp
+mvp,Cooperstown.Stage.Inst.15Minutes.0.rev
+mvp,Cooperstown.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,Cooperstown.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,Cooperstown.Temp-Water.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Cooperstown.Volt.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,MOOM5S.Depth-SWE.Inst.~1Week.0.CEMVP-ProjectEntry
+mvp,MOOM5S.Depth-Snow.Inst.~1Week.0.CEMVP-ProjectEntry
+mvp,ChippewaDiv_Dam.Area.Inst.15Minutes.0.comp
+mvp,ChippewaDiv_Dam.Depth-Frost-Thawed.Inst.~1Week.0.Raw-NWS-IEM
+mvp,ChippewaDiv_Dam.Depth-Frost.Inst.~1Week.0.Raw-NWS-IEM
+mvp,ChippewaDiv_Dam.Depth-Inc-Snow.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,ChippewaDiv_Dam.Depth-Snow.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,ChippewaDiv_Dam.Elev.Ave.1Day.1Day.merged-NGVD29
+mvp,ChippewaDiv_Dam.Elev.Inst.15Minutes.0.merged-NGVD29
+mvp,ChippewaDiv_Dam.Elev.Inst.15Minutes.0.rev-NGVD29
+mvp,ChippewaDiv_Dam.Elev.Inst.~15Minutes.0.best-NGVD29
+mvp,ChippewaDiv_Dam.Flow-In.Ave.1Day.1Day.comp
+mvp,ChippewaDiv_Dam.Flow-In.Ave.1Day.1Month.comp
+mvp,ChippewaDiv_Dam.Flow-In.Ave.1Day.1Week.comp
+mvp,ChippewaDiv_Dam.Flow-In.Ave.1Day.3Days.comp
+mvp,ChippewaDiv_Dam.Flow-In.Ave.6Hours.1Day.comp
+mvp,ChippewaDiv_Dam.Flow-In.Ave.6Hours.1Day.comp-noNeg
+mvp,ChippewaDiv_Dam.Flow-In.Ave.6Hours.3Days.comp
+mvp,ChippewaDiv_Dam.Flow-In.Ave.6Hours.3Days.comp-noNeg
+mvp,ChippewaDiv_Dam.Flow-In.Ave.6Hours.6Hours.comp
+mvp,ChippewaDiv_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,ChippewaDiv_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,ChippewaDiv_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,ChippewaDiv_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,ChippewaDiv_Dam.Flow-Out.Ave.1Day.1Day.MVDhist-rev
+mvp,ChippewaDiv_Dam.Flow-Out.Ave.1Day.1Day.comp
+mvp,ChippewaDiv_Dam.Flow-Out.Ave.1Day.1Day.merged
+mvp,ChippewaDiv_Dam.Flow-Out.Ave.6Hours.6Hours.comp
+mvp,ChippewaDiv_Dam.Flow-Out.Inst.15Minutes.0.merged
+mvp,ChippewaDiv_Dam.Flow-Out.Inst.15Minutes.0.rev
+mvp,ChippewaDiv_Dam.Flow-Out.Inst.1Hour.0.Fcst-CEMVP
+mvp,ChippewaDiv_Dam.Flow-Out.Inst.~15Minutes.0.best
+mvp,ChippewaDiv_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,ChippewaDiv_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,ChippewaDiv_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,ChippewaDiv_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,ChippewaDiv_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,ChippewaDiv_Dam.Precip.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,ChippewaDiv_Dam.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,ChippewaDiv_Dam.Stage.Ave.1Day.1Day.comp
+mvp,ChippewaDiv_Dam.Stage.Ave.6Hours.6Hours.comp
+mvp,ChippewaDiv_Dam.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,ChippewaDiv_Dam.Stage.Inst.15Minutes.0.rev
+mvp,ChippewaDiv_Dam.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,ChippewaDiv_Dam.Stage.Inst.~15Minutes.0.best
+mvp,ChippewaDiv_Dam.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,ChippewaDiv_Dam.Stor.Ave.1Day.1Day.comp
+mvp,ChippewaDiv_Dam.Stor.Ave.6Hours.6Hours.comp
+mvp,ChippewaDiv_Dam.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,Muscoda.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,Muscoda.Elev.Inst.~15Minutes.0.Raw-USGS-NAVD88
+mvp,Muscoda.Elev.Inst.~15Minutes.0.rev-USGS-NAVD88
+mvp,Muscoda.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Muscoda.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Muscoda.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,Muscoda.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Muscoda.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Muscoda.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Muscoda.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Muscoda.Flow.Ave.1Day.1Day.rev-USGS
+mvp,Muscoda.Flow.Inst.15Minutes.0.comp
+mvp,Muscoda.Flow.Inst.15Minutes.0.rev
+mvp,Muscoda.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Muscoda.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Muscoda.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,Muscoda.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Muscoda.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Muscoda.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Muscoda.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Muscoda.Flow.Inst.~15Minutes.0.Raw-USGS
+mvp,Muscoda.Flow.Inst.~15Minutes.0.rev-USGS
+mvp,Muscoda.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Muscoda.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Muscoda.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,Muscoda.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Muscoda.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Muscoda.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,Muscoda.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,Muscoda.Precip-cum.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Muscoda.Precip-cum.Inst.15Minutes.0.rev
+mvp,Muscoda.Precip-inc.Total.15Minutes.15Minutes.comp
+mvp,Muscoda.Precip-inc.Total.1Day.1Day.comp
+mvp,Muscoda.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Muscoda.Stage.Inst.15Minutes.0.corrected-comp
+mvp,Muscoda.Stage.Inst.15Minutes.0.rev
+mvp,Muscoda.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,Muscoda.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,Muscoda.Temp-Water.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,Muscoda.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,MissHW_Gull-SlideGate04.Flow.Inst.1Hour.0.comp
+mvp,MissHW_Gull-SlideGate04.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull-SlideGate04.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull-SlideGate02.Flow.Inst.1Hour.0.comp
+mvp,MissHW_Gull-SlideGate02.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull-SlideGate02.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull-StopLog01.Flow.Inst.1Hour.0.comp
+mvp,MissHW_Gull-StopLog01.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull-StopLog01.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,NWUM5.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,NWUM5.Elev.Inst.~15Minutes.0.Raw-USGS
+mvp,NWUM5.Elev.Inst.~15Minutes.0.rev-USGS
+mvp,NWUM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,NWUM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,NWUM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,NWUM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,NWUM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,NWUM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,NWUM5.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,NWUM5.Flow.Ave.1Day.1Day.rev-USGS
+mvp,NWUM5.Flow.Inst.0.0.Raw-USGS
+mvp,NWUM5.Flow.Inst.15Minutes.0.comp
+mvp,NWUM5.Flow.Inst.15Minutes.0.rev
+mvp,NWUM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,NWUM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,NWUM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,NWUM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,NWUM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,NWUM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,NWUM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,NWUM5.Flow.Inst.~15Minutes.0.Raw-USGS
+mvp,NWUM5.Flow.Inst.~15Minutes.0.rev-USGS
+mvp,NWUM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,NWUM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,NWUM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,NWUM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,NWUM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,NWUM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,NWUM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,NWUM5.Stage.Inst.0.0.Raw-USGS
+mvp,NWUM5.Stage.Inst.15Minutes.0.OTHER-GOES-Raw
+mvp,NWUM5.Stage.Inst.15Minutes.0.corrected-comp
+mvp,NWUM5.Stage.Inst.15Minutes.0.rev
+mvp,NWUM5.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,NWUM5.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,NWUM5.Volt.Inst.1Hour.0.OTHER-GOES-Raw
+mvp,LockDam_02-TainterGate12.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate12.Opening-MaxAllow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate12.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate12.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate14.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate14.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate14.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,AGYM5.Flow.Ave.1Day.1Day.rev-USGS
+mvp,AGYM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,AGYM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,AGYM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,AGYM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,AGYM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,AGYM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,AGYM5.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,AGYM5.Flow.Inst.~15Minutes.0.Raw-USGS
+mvp,AGYM5.Flow.Inst.~15Minutes.0.rev-USGS
+mvp,AGYM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,AGYM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,AGYM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,AGYM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,AGYM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,AGYM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,AGYM5.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,AGYM5.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,AGYM5.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,LockDam_02-TainterGate16.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate16.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate16.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate18.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate18.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate18.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LFKM5.Flow.Ave.1Day.1Day.rev-USGS
+mvp,LFKM5.Flow.Inst.15Minutes.0.comp
+mvp,LFKM5.Flow.Inst.15Minutes.0.rev
+mvp,LFKM5.Flow.Inst.~15Minutes.0.Raw-USGS
+mvp,LFKM5.Flow.Inst.~15Minutes.0.rev-USGS
+mvp,LFKM5.Precip-cum.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LFKM5.Precip-cum.Inst.15Minutes.0.rev
+mvp,LFKM5.Precip-inc.Total.15Minutes.15Minutes.comp
+mvp,LFKM5.Precip-inc.Total.1Day.1Day.comp
+mvp,LFKM5.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LFKM5.Stage.Inst.15Minutes.0.corrected-comp
+mvp,LFKM5.Stage.Inst.15Minutes.0.rev
+mvp,LFKM5.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,LFKM5.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,LFKM5.Temp-Air.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LFKM5.Volt.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,ABRN8.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,ABRN8.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,ABRN8.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,ABRN8.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,ABRN8.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,ABRN8.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,ABRN8.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,ABRN8.Flow.Ave.1Day.1Day.rev-USGS
+mvp,ABRN8.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,ABRN8.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,ABRN8.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,ABRN8.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,ABRN8.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,ABRN8.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,ABRN8.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,ABRN8.Flow.Inst.~15Minutes.0.Raw-USGS
+mvp,ABRN8.Flow.Inst.~15Minutes.0.rev-USGS
+mvp,ABRN8.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,ABRN8.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,ABRN8.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,ABRN8.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,ABRN8.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,ABRN8.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,ABRN8.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,ABRN8.Stage.Ave.1Day.1Day.rev-USGS
+mvp,ABRN8.Stage.Inst.~15Minutes.0.Raw-USGS
+mvp,ABRN8.Stage.Inst.~15Minutes.0.rev-USGS
+mvp,LockDam_02-Tailwater.Elev.Ave.1Day.1Day.merged-MSL1912
+mvp,LockDam_02-Tailwater.Elev.Inst.12Hours.0.Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_02-Tailwater.Elev.Inst.15Minutes.0.merged-MSL1912
+mvp,LockDam_02-Tailwater.Elev.Inst.15Minutes.0.rev-MSL1912
+mvp,LockDam_02-Tailwater.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,LockDam_02-Tailwater.Elev.Inst.~15Minutes.0.best-MSL1912
+mvp,LockDam_02-Tailwater.Flow.Ave.1Day.1Day.merged
+mvp,LockDam_02-Tailwater.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-Tailwater.Flow.Inst.15Minutes.0.merged
+mvp,LockDam_02-Tailwater.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,LockDam_02-Tailwater.Stage.Ave.1Day.1Day.comp
+mvp,LockDam_02-Tailwater.Stage.Ave.6Hours.6Hours.comp
+mvp,LockDam_02-Tailwater.Stage.Inst.0.0.Raw-CEMVP
+mvp,LockDam_02-Tailwater.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_02-Tailwater.Stage.Inst.15Minutes.0.rev
+mvp,LockDam_02-Tailwater.Stage.Inst.~15Minutes.0.best
+mvp,LockDam_02-TainterGate02.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate02.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate02.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull-Fishway.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull-Fishway.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate04.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate04.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate04.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate06.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate06.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate06.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull.%-Ice.Inst.~1Week.0.Raw-NWS-IEM
+mvp,MissHW_Gull.Area.Inst.1Hour.0.comp
+mvp,MissHW_Gull.Depth-Ice.Inst.~1Week.0.Raw-NWS-IEM
+mvp,MissHW_Gull.Depth-Inc-Snow.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,MissHW_Gull.Depth-SWE.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,MissHW_Gull.Depth-Snow.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,MissHW_Gull.Dir-Wind.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,MissHW_Gull.Elev.Ave.1Day.1Day.merged-NGVD29
+mvp,MissHW_Gull.Elev.Inst.1Hour.0.Fcst-CEMVP
+mvp,MissHW_Gull.Elev.Inst.1Hour.0.merged-NGVD29
+mvp,MissHW_Gull.Elev.Inst.1Hour.0.rev-NAVD88
+mvp,MissHW_Gull.Elev.Inst.1Hour.0.rev-NGVD29
+mvp,MissHW_Gull.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,MissHW_Gull.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,MissHW_Gull.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,MissHW_Gull.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,MissHW_Gull.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,MissHW_Gull.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,MissHW_Gull.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,MissHW_Gull.Elev.Inst.~15Minutes.0.best-NGVD29
+mvp,MissHW_Gull.Flow-In.Ave.1Day.1Day.comp
+mvp,MissHW_Gull.Flow-In.Ave.1Day.1Month.comp
+mvp,MissHW_Gull.Flow-In.Ave.1Day.1Week.comp
+mvp,MissHW_Gull.Flow-In.Ave.1Day.3Days.comp
+mvp,MissHW_Gull.Flow-In.Ave.6Hours.1Day.comp
+mvp,MissHW_Gull.Flow-In.Ave.6Hours.1Day.comp-noNeg
+mvp,MissHW_Gull.Flow-In.Ave.6Hours.3Days.comp
+mvp,MissHW_Gull.Flow-In.Ave.6Hours.3Days.comp-noNeg
+mvp,MissHW_Gull.Flow-In.Ave.6Hours.6Hours.comp
+mvp,MissHW_Gull.Flow-In.Inst.1Hour.0.Fcst-CEMVP
+mvp,MissHW_Gull.Flow-In.Inst.~15Minutes.0.best
+mvp,MissHW_Gull.Flow-Out.Ave.1Day.1Day.MVDhist-rev
+mvp,MissHW_Gull.Flow-Out.Ave.1Day.1Day.comp
+mvp,MissHW_Gull.Flow-Out.Ave.6Hours.6Hours.comp
+mvp,MissHW_Gull.Flow-Out.Inst.1Hour.0.Fcst-CEMVP
+mvp,MissHW_Gull.Flow-Out.Inst.1Hour.0.rev
+mvp,MissHW_Gull.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,MissHW_Gull.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,MissHW_Gull.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,MissHW_Gull.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,MissHW_Gull.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,MissHW_Gull.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,MissHW_Gull.Flow-Out.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,MissHW_Gull.Flow-Out.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,MissHW_Gull.Flow-Out.Inst.~15Minutes.0.best
+mvp,MissHW_Gull.Flow-Sim.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,MissHW_Gull.Flow-Sim.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,MissHW_Gull.Flow-Sim.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,MissHW_Gull.Flow-Sim.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,MissHW_Gull.Flow-Sim.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,MissHW_Gull.Flow-Sim.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,MissHW_Gull.Flow-Sim.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,MissHW_Gull.Flow.Inst.1Hour.0.comp-gates
+mvp,MissHW_Gull.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,MissHW_Gull.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,MissHW_Gull.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,MissHW_Gull.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,MissHW_Gull.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,MissHW_Gull.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,MissHW_Gull.Precip-Rain.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,MissHW_Gull.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,MissHW_Gull.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,MissHW_Gull.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,MissHW_Gull.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,MissHW_Gull.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,MissHW_Gull.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,MissHW_Gull.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,MissHW_Gull.Precip-cum.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,MissHW_Gull.Precip-cum.Inst.1Hour.0.rev
+mvp,MissHW_Gull.Precip-inc.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,MissHW_Gull.Precip-inc.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,MissHW_Gull.Precip-inc.Total.1Day.1Day.comp
+mvp,MissHW_Gull.Precip-inc.Total.1Hour.1Hour.comp
+mvp,MissHW_Gull.Precip.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,MissHW_Gull.Speed-Wind.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,MissHW_Gull.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,MissHW_Gull.Stage.Ave.1Day.1Day.comp
+mvp,MissHW_Gull.Stage.Ave.6Hours.6Hours.comp
+mvp,MissHW_Gull.Stage.Inst.0.0.Raw-CEMVP
+mvp,MissHW_Gull.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,MissHW_Gull.Stage.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,MissHW_Gull.Stage.Inst.1Hour.0.rev
+mvp,MissHW_Gull.Stage.Inst.~15Minutes.0.best
+mvp,MissHW_Gull.Stor.Ave.1Day.1Day.comp
+mvp,MissHW_Gull.Stor.Ave.6Hours.6Hours.comp
+mvp,MissHW_Gull.Temp-Air.Inst.~1Day.0.Raw-NWS-ACIS
+mvp,MissHW_Gull.Temp-Air.Max.~1Day.1Day.Raw-NWS-ACIS
+mvp,MissHW_Gull.Temp-Air.Min.~1Day.1Day.Raw-NWS-ACIS
+mvp,MissHW_Gull.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
+mvp,Rafferty_Dam.Elev.Inst.5Minutes.0.Raw-EnvCan
+mvp,Rafferty_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Rafferty_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Rafferty_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Rafferty_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Rafferty_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Rafferty_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Rafferty_Dam.Elev.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Rafferty_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Rafferty_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Rafferty_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Rafferty_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Rafferty_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Rafferty_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Rafferty_Dam.Flow-In.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Rafferty_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Rafferty_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Rafferty_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Rafferty_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Rafferty_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Rafferty_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Rafferty_Dam.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Rafferty_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Rafferty_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Rafferty_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Rafferty_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Rafferty_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Rafferty_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,Rafferty_Dam.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,Rafferty_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,Rafferty_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,Rafferty_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,Rafferty_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-07 01:11:00+00:00
+mvp,Rafferty_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-06 01:11:00+00:00
+mvp,Rafferty_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,Rafferty_Dam.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,Rafferty_Dam.Stage.Inst.5Minutes.0.Raw-EnvCan
+mvp,LockDam_02-TainterGate08.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate08.Opening-MaxAllow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate08.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate08.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate10.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02-TainterGate10.Opening.Inst.15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02-TainterGate10.Opening.Inst.~15Minutes.0.CEMVP-ProjectEntry
+mvp,LockDam_02.%-Ice.Inst.~1Week.0.Raw-NWS-IEM
+mvp,LockDam_02.Code-OpenRiver.Inst.15Minutes.0.comp
+mvp,LockDam_02.Code-OpenRiver.Inst.1Hour.0.Fcst-CEMVP
+mvp,LockDam_02.Depth-Ice.Inst.~1Week.0.Raw-NWS-IEM
+mvp,LockDam_02.Depth-Inc-Snow.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,LockDam_02.Depth-SWE.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,LockDam_02.Depth-Snow.Total.~1Week.1Month.Raw-NWS-ACIS
+mvp,LockDam_02.Dir-Wind.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_02.Elev.Ave.1Day.1Day.merged-MSL1912
+mvp,LockDam_02.Elev.Inst.12Hours.0.818Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_02.Elev.Inst.12Hours.0.819Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_02.Elev.Inst.12Hours.0.820Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_02.Elev.Inst.12Hours.0.823Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_02.Elev.Inst.12Hours.0.824Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_02.Elev.Inst.12Hours.0.827Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_02.Elev.Inst.12Hours.0.837Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_02.Elev.Inst.12Hours.0.839Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_02.Elev.Inst.12Hours.0.Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_02.Elev.Inst.15Minutes.0.merged-MSL1912
+mvp,LockDam_02.Elev.Inst.15Minutes.0.rev-MSL1912
+mvp,LockDam_02.Elev.Inst.15Minutes.0.rev-NAVD88
+mvp,LockDam_02.Elev.Inst.1Hour.0.Regulating
+mvp,LockDam_02.Elev.Inst.~15Minutes.0.best-MSL1912
+mvp,LockDam_02.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,LockDam_02.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,LockDam_02.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,LockDam_02.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,LockDam_02.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,LockDam_02.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,LockDam_02.Flow-Local.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,LockDam_02.Flow-Out.Ave.1Day.1Day.MVDhist-rev
+mvp,LockDam_02.Flow-Out.Ave.1Day.1Day.comp
+mvp,LockDam_02.Flow-Out.Ave.6Hours.6Hours.comp
+mvp,LockDam_02.Flow-Out.Inst.15Minutes.0.rev
+mvp,LockDam_02.Flow-Out.Inst.1Hour.0.Fcst-CEMVP
+mvp,LockDam_02.Flow-Out.Inst.~15Minutes.0.best
+mvp,LockDam_02.Flow.Ave.1Day.1Day.merged
+mvp,LockDam_02.Flow.Inst.12Hours.0.Fcst-CEMVP-CWMS:120HoursQPF
+mvp,LockDam_02.Flow.Inst.15Minutes.0.comp
+mvp,LockDam_02.Flow.Inst.15Minutes.0.merged
+mvp,LockDam_02.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,LockDam_02.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,LockDam_02.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,LockDam_02.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,LockDam_02.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,LockDam_02.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-Auto
+mvp,LockDam_02.Flow.Inst.6Hours.0.Fcst-NCRFC-CHIPS-CRF
+mvp,LockDam_02.Head.Inst.15Minutes.0.comp
+mvp,LockDam_02.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-12 01:11:00+00:00
+mvp,LockDam_02.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-11 01:11:00+00:00
+mvp,LockDam_02.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-10 01:11:00+00:00
+mvp,LockDam_02.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-09 01:11:00+00:00
+mvp,LockDam_02.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS:2025-06-08 01:11:00+00:00
+mvp,LockDam_02.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-Auto
+mvp,LockDam_02.Precip-RainAndMelt.Total.6Hours.6Hours.Fcst-NCRFC-CHIPS-CRF
+mvp,LockDam_02.Precip.Total.~1Day.1Day.Raw-NWS-ACIS
+mvp,LockDam_02.Speed-Wind.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_02.Stage.Ave.1Day.1Day.MVDhist-rev
+mvp,LockDam_02.Stage.Ave.1Day.1Day.comp
+mvp,LockDam_02.Stage.Ave.6Hours.6Hours.comp
+mvp,LockDam_02.Stage.Inst.0.0.Raw-CEMVP
+mvp,LockDam_02.Stage.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_02.Stage.Inst.15Minutes.0.rev
+mvp,LockDam_02.Stage.Inst.~15Minutes.0.best
+mvp,LockDam_02.Temp-Air.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_02.Temp-Air.Inst.~1Day.0.Raw-NWS-ACIS
+mvp,LockDam_02.Temp-Air.Max.~1Day.1Day.Raw-NWS-ACIS
+mvp,LockDam_02.Temp-Air.Min.~1Day.1Day.Raw-NWS-ACIS
+mvp,LockDam_02.Temp-Water.Ave.1Day.1Day.merged
+mvp,LockDam_02.Temp-Water.Inst.15Minutes.0.CEMVP-GOES-Raw
+mvp,LockDam_02.Temp-Water.Inst.15Minutes.0.merged
+mvp,LockDam_02.Temp-Water.Inst.~1Day.0.Raw-NWS-IEM
+mvp,LockDam_02.Volt.Inst.1Hour.0.CEMVP-GOES-Raw
