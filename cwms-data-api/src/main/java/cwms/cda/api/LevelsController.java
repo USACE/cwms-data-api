@@ -66,7 +66,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -74,7 +73,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -120,7 +118,8 @@ public class LevelsController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.storeLocationLevel(level);
-            StatusResponse re = new StatusResponse(level.getOfficeId(),"Created Location Level", level.getLocationLevelId());
+            StatusResponse re = new StatusResponse(level.getOfficeId(),
+                "Created Location Level", level.getLocationLevelId());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to parse the request body", e);
@@ -237,7 +236,12 @@ public class LevelsController implements CrudHandler {
                         + "\n* `csv`"
                         + "\n* `xml`"
                         + "\n* `wml2` (only if name field is specified)"
-                        + "\n* `json` (default)"),
+                        + "\n* `json` (default)"
+                        + "\n\nSee <a href=\"legacy-format/\">this page</a> for more "
+                        + "information about accept header usage."),
+                @OpenApiParam(name = INCLUDE_ALIASES, description = "Whether to include the "
+                        + "aliases for the location levels in the response. The default is false.",
+                        type = Boolean.class),
                 @OpenApiParam(name = PAGE, description = "This identifies where in the "
                         + "request you are. This is an opaque value, and can be obtained from "
                         + "the 'next-page' value in the response."),
@@ -265,6 +269,8 @@ public class LevelsController implements CrudHandler {
 
             String office = ctx.queryParam(OFFICE);
             String unit = ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.SI.getValue());
+            boolean includeAliases = ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class)
+                    .getOrDefault(false);
             if (!unit.equalsIgnoreCase(UnitSystem.SI.getValue()) && !unit.equalsIgnoreCase(UnitSystem.EN.getValue())) {
                 throw new IllegalArgumentException(String.format("Provided unit system is not supported: %s", unit));
             }
@@ -294,7 +300,7 @@ public class LevelsController implements CrudHandler {
 
                 LocationLevels levels;
                 levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
-                        office, unit, datum, beginZdt, endZdt);
+                        office, unit, datum, beginZdt, endZdt, includeAliases);
                 String result = Formats.format(contentType, levels);
 
                 ctx.result(result);
@@ -330,8 +336,14 @@ public class LevelsController implements CrudHandler {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "office of the Location Level to be returned"),
                 @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
-                        + "the effective date of Location Level to be returned. "
+                        + "the effective date of Location Level to be returned."
                         + "Expected formats are `YYYY-MM-DDTHH:MM` or `YYYY-MM-DDTHH:MM:SS`"),
+                @OpenApiParam(name = EFFECTIVE_DATE_EXACT, description = "If true"
+                        + " only a level with the exact provided date will be returned. If false"
+                        + " The most recent level on or before this time will be returned."
+                        + " The default is false.",
+                        type = Boolean.class
+                ),
                 @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
                         + "the values of the effective date field (unless otherwise "
                         + "specified), as well as the time zone of any times in the response."
@@ -364,6 +376,8 @@ public class LevelsController implements CrudHandler {
         String dateString = queryParamAsClass(ctx, new String[]{EFFECTIVE_DATE, DATE},
                 String.class, null, metrics, name(LevelsController.class.getName(),
                         GET_ONE));
+        boolean exactDateMatch =  queryParamAsClass(ctx, new String[]{EFFECTIVE_DATE_EXACT},
+                Boolean.class, false, metrics, name(LevelsController.class.getName(),GET_ONE));
         String timezone = ctx.queryParamAsClass(TIMEZONE, String.class)
                 .getOrDefault("UTC");
 
@@ -374,7 +388,7 @@ public class LevelsController implements CrudHandler {
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             //retrieveLocationLevel will throw an error if level does not exist
             LocationLevel locationLevel = levelsDao.retrieveLocationLevel(levelId,
-                    units, unmarshalledDateTime, office);
+                    units, unmarshalledDateTime, office, exactDateMatch);
             ctx.json(locationLevel);
             ctx.status(HttpServletResponse.SC_OK);
         }
@@ -431,7 +445,7 @@ public class LevelsController implements CrudHandler {
                         ZoneId.systemDefault().getId());
                 //retrieveLocationLevel will throw an error if level does not exist
                 LocationLevel existingLevelLevel = levelsDao.retrieveLocationLevel(oldLevelId,
-                    UnitSystem.EN.getValue(), unmarshalledDateTime, officeId);
+                    UnitSystem.EN.getValue(), unmarshalledDateTime, officeId, true);
                 existingLevelLevel = updatedClearedFields(ctx.body(), contentType.getType(),
                     existingLevelLevel);
                 //only store (update) if level does exist

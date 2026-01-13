@@ -33,7 +33,7 @@ import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;

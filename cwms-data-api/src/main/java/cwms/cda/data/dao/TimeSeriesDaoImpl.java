@@ -1,14 +1,16 @@
 package cwms.cda.data.dao;
 
 
+import static com.google.common.flogger.LazyArgs.lazy;
 import cwms.cda.data.dao.rsql.FieldResolver;
 import cwms.cda.data.dao.rsql.MapFieldResolver;
 import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
 import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.helpers.DateUtils;
-import java.util.HashSet;
-import java.util.Set;
+
+import java.sql.Connection;
+
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.countDistinct;
 import static org.jooq.impl.DSL.field;
@@ -18,6 +20,8 @@ import static org.jooq.impl.DSL.noCondition;
 import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
+
+import org.jooq.ConnectionRunnable;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
@@ -41,30 +45,30 @@ import cwms.cda.data.dto.TsvId;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
-import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.xml.XMLv1;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -75,12 +79,13 @@ import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Record1;
+import org.jooq.Record10;
 import org.jooq.Record3;
 import org.jooq.Record4;
 import org.jooq.Record7;
-import org.jooq.Record10;
 import org.jooq.Result;
 import org.jooq.SQL;
+import org.jooq.Select;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectHavingStep;
 import org.jooq.SelectJoinStep;
@@ -89,12 +94,9 @@ import org.jooq.Table;
 import org.jooq.TableField;
 import org.jooq.TableLike;
 import org.jooq.TableOnConditionStep;
-import org.jooq.Select;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
-import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
@@ -103,11 +105,12 @@ import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
+import usace.cwms.db.jooq.codegen.udt.records.DATE_TABLE_TYPE;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
 
 public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeriesDao {
-    private static final Logger logger = Logger.getLogger(TimeSeriesDaoImpl.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     /**
      * String constants for accessing alias tables and columns in TimeSeriesRecent querying
@@ -262,14 +265,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (page != null && !page.isEmpty()) {
             final String[] parts = CwmsDTOPaginated.decodeCursor(page);
 
-            logger.fine("Decoded cursor");
-            logger.finest(() -> {
+            logger.atFine().log("Decoded cursor");
+            logger.atFinest().log("%s", lazy(() -> {
                 StringBuilder sb = new StringBuilder();
                 for (String p : parts) {
                     sb.append(p).append("\n");
                 }
                 return sb.toString();
-            });
+            }));
 
             if (parts.length > 1) {
                 cursor = parts[0];
@@ -411,15 +414,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                 valid.field("interval", BigDecimal.class).as("interval"),
                                 valid.field("loc_part", String.class).as("loc_part"),
                                 valid.field("parm_part", String.class).as("parm_part"),
-                                DSL.choose(valid.field("parm_part", String.class))
-                                        .when(
-                                                "ELEV",
-                                                CWMS_LOC_PACKAGE.call_GET_VERTICAL_DATUM_INFO_F__2(
-                                                        valid.field("loc_part", String.class),
-                                                        valid.field("units", String.class),
-                                                        valid.field("office_id", String.class)))
-                                        .otherwise("")
-                                        .as("VERTICAL_DATUM"),
                                 totalField,
                                 AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
                                 AV_CWMS_TS_ID2.TIME_ZONE_ID
@@ -434,12 +428,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                         .and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull())
                         );
 
-        logger.fine(() -> metadataQuery.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> metadataQuery.getSQL(ParamType.INLINED)));
 
 
         TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> {
-            String vert = (String) tsMetadata.getValue("VERTICAL_DATUM");
-            VerticalDatumInfo verticalDatumInfo = parseVerticalDatumInfo(vert);
+            String parmPart = tsMetadata.getValue("parm_part", String.class);
+            String locPart = tsMetadata.getValue("loc_part", String.class);
+
+            // Fetch vertical datum info separately only when needed
+            VerticalDatumInfo verticalDatumInfo = null;
+            if (shouldFetchVerticalDatum(parmPart)) {
+                    verticalDatumInfo = fetchVerticalDatumInfoSeparately( locPart, units, office);
+            }
+
             VersionType finalDateVersionType = getVersionType(dsl, names, office, versionDate != null);
                 return new TimeSeries(recordCursor, recordPageSize, tsMetadata.getValue("TOTAL",
                         Integer.class), tsMetadata.getValue("NAME", String.class),
@@ -514,7 +515,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
 
             if (requestParameters.isIncludeEntryDate()) {
-                logger.fine(() -> query2.getSQL(ParamType.INLINED));
+                logger.atFine().log("%s", lazy(() -> query2.getSQL(ParamType.INLINED)));
                 try (Cursor<Record4<Timestamp, Double, BigDecimal, Timestamp>> recCursor = query2.fetchLazy()) {
                     for (Record tsRecord: recCursor) {
                         timeseries.addValue(
@@ -525,7 +526,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     }
                 }
             } else {
-                logger.fine(() -> query.getSQL(ParamType.INLINED));
+                logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
                 try (Cursor<Record3<Timestamp, Double, BigDecimal>> recCursor = query.fetchLazy()) {
                     for (Record tsRecord: recCursor) {
                         timeseries.addValue(
@@ -541,7 +542,32 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return retVal;
     }
 
-    private void validateEntryDateSupport(boolean includeEntryDate) {
+    private boolean shouldFetchVerticalDatum(String parmPart) {
+        // Check if parameter requires vertical datum (e.g., "ELEV")
+        if (parmPart == null) {
+            return false;
+        }
+        String upperParm = parmPart.toUpperCase();
+        return upperParm.equals("ELEV");
+    }
+
+    private VerticalDatumInfo fetchVerticalDatumInfoSeparately(String locPart, String units, String office) {
+
+        return connectionResult(dsl, conn -> {
+            String datumUnits = units;
+            if ("SI".equalsIgnoreCase(datumUnits)) {
+                datumUnits = "m";
+            } else if ("EN".equalsIgnoreCase(datumUnits)) {
+                datumUnits = "ft";
+            }
+            DSLContext dslContext = getDslContext(conn, office);
+            String result = CWMS_LOC_PACKAGE.call_GET_VERTICAL_DATUM_INFO_F__2(dslContext.configuration(),
+                    locPart, datumUnits, office);
+            return parseVerticalDatumInfo(result);
+        });
+    }
+
+    public void validateEntryDateSupport(boolean includeEntryDate) {
         if (includeEntryDate) {
             Record entryDateSupport = dsl.select(asterisk()).from(table("ALL_TYPES"))
                     .where(field("TYPE_NAME").eq("ZTSV_ENTRY_TYPE"))
@@ -613,11 +639,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public static VerticalDatumInfo parseVerticalDatumInfo(String body) {
         VerticalDatumInfo retVal = null;
         if (body != null && !body.isEmpty()) {
-            try {
-                retVal = new XMLv1().parseContent(body, VerticalDatumInfo.class);
-            } catch (FormattingException e) {
-                logger.log(Level.WARNING, e, () -> "Failed to parse:" + body);
-            }
+             retVal = new XMLv1().parseContent(body, VerticalDatumInfo.class);
         }
         return retVal;
     }
@@ -636,10 +658,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             SelectJoinStep<Record1<Integer>> totalQuery = dsl.with(limiter)
                     .select(countDistinct(limiter.field(cwmsTsIdFields.getTsCode())))
                     .from(limiter);
-            logger.fine(() -> totalQuery.getSQL(ParamType.INLINED));
+            logger.atFine().log("%s", lazy(() -> totalQuery.getSQL(ParamType.INLINED)));
             total = totalQuery.fetchOne(0, int.class);
         } else {
-            logger.fine("getting non-default page");
+            logger.atFine().log("getting non-default page");
             // Information provided by the page value overrides anything provided
             catPage = new Catalog.CatalogPage(page);
             total = catPage.getTotal();
@@ -684,7 +706,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         final SelectSeekStep2<?, String, String> overallQuery = tmpQuery
                 .orderBy(cwmsTsIdFields.getDbOfficeId(),
                         cwmsTsIdFields.getCwmsTsId());
-        logger.fine(() -> overallQuery.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> overallQuery.getSQL(ParamType.INLINED)));
         Result<?> result = overallQuery.fetch();
 
         Map<String, TimeseriesCatalogEntry.Builder> tsIdExtentMap = new LinkedHashMap<>();
@@ -1224,7 +1246,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .where(field(name(maxValues.getName(), DATE_TIME), java.sql.Date.class)
                             .eq(field(name(maxValues.getName(), MAX_DATE_TIME), java.sql.Date.class)));
 
-            logger.fine(() -> query.getSQL(ParamType.INLINED));
+            logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
             // fetch and build records
             retval = query.fetch(r -> {
@@ -1255,7 +1277,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<RecentValue> retval;
 
         // Create whereCondition for filtering by category, group, and office
-        Condition whereCondition = DSL.trueCondition();
+        Condition whereCondition = DSL.noCondition();
         if (categoryId != null) {
             whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.CATEGORY_ID.eq(categoryId));
         }
@@ -1376,7 +1398,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .where(field(name(maxValues.getName(), DATE_TIME), java.sql.Date.class)
                         .eq(field(name(maxValues.getName(), MAX_DATE_TIME), java.sql.Date.class)));
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         // fetch and build records
         retval = query.fetch(r -> {
@@ -1401,7 +1423,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     @Override
     public void create(TimeSeries input) {
-        create(input, false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
+        create(input, false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION, null);
     }
 
     /**
@@ -1424,51 +1446,92 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
      *
      * @param storeRule How to update the database if data exists. {@see cwms.cda.data.dao.StoreRule for more detail}
      * @param overrideProtection honor override protection
+     * @param vd The VerticalDatum in which specified elevations are interpreted.
      *
      */
     @SuppressWarnings("unused")
     public void create(TimeSeries input,
-                       boolean createAsLrts, StoreRule storeRule, boolean overrideProtection) {
-        connection(dsl, connection -> {
-            int intervalForward = 0;
-            int intervalBackward = 0;
-            boolean activeFlag = true;
-            // the code does not need to be created before hand.
-            // do not add a call to create_ts_code
-            if (!input.getValues().isEmpty()) {
-                Timestamp versionDate = null;
-                if (input.getVersionDate() != null) {
-                    versionDate = Timestamp.from(input.getVersionDate().toInstant());
-                }
+                       boolean createAsLrts, StoreRule storeRule, boolean overrideProtection, VerticalDatum vd) {
 
-                store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
-                        versionDate, input.getValues(), createAsLrts, storeRule,
-                        overrideProtection);
-            }
+        Timestamp versionDate;
+        if (input.getVersionDate() != null) {
+            versionDate = Timestamp.from(input.getVersionDate().toInstant());
+        } else {
+            versionDate = null;
+        }
+
+        connection(dsl, connection -> {
+            DSLContext dslContext = getDslContext(connection, input.getOfficeId());
+
+            withDefaultDatum(vd, dslContext, (conn)-> {
+                // the code does not need to be created before hand.
+                // do not add a call to create_ts_code
+
+                if (!input.getValues().isEmpty()) {
+                    store(dslContext, input.getOfficeId(), input.getName(), input.getUnits(),
+                            versionDate, input.getValues(), createAsLrts, storeRule,
+                            overrideProtection);
+                }
+            });
         });
+    }
+
+    //
+
+    /**
+     * The idea here is that this will check the current default datum,
+     *     possible switch to the specified datum and
+     *     then run the code and
+     *     if the datum was previously switched
+     *     then switch back to the initial datum.
+     * @param targetDatum The desired ver
+     * @param dslContext
+     * @param cr
+     */
+    private void withDefaultDatum(@Nullable VerticalDatum targetDatum, DSLContext dslContext, ConnectionRunnable cr) {
+        String defaultVertDatum = CWMS_LOC_PACKAGE.call_GET_DEFAULT_VERTICAL_DATUM(dslContext.configuration());
+        String targetName = (targetDatum != null) ? targetDatum.toString() : null;
+        boolean changeDefaultDatum = !Objects.equals(targetDatum, defaultVertDatum);
+        try {
+            if (changeDefaultDatum) {
+                CWMS_LOC_PACKAGE.call_SET_DEFAULT_VERTICAL_DATUM(dslContext.configuration(), targetName);
+            }
+
+            connection(dslContext, cr);
+        }finally{
+            if (changeDefaultDatum) {
+                // If we changed it we should restore.
+                CWMS_LOC_PACKAGE.call_SET_DEFAULT_VERTICAL_DATUM(dslContext.configuration(), defaultVertDatum);
+            }
+        }
     }
 
     @Override
     public void store(TimeSeries timeSeries, Timestamp versionDate) {
-        store(timeSeries, false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
+        store(timeSeries, false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION, null);
     }
 
-    public void store(TimeSeries input, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection) {
-        connection(dsl, connection -> {
-            Timestamp versionDate = null;
-            if (input.getVersionDate() != null) {
-                versionDate = Timestamp.from(input.getVersionDate().toInstant());
-            }
+    public void store(TimeSeries input, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection, VerticalDatum vd) {
+        Timestamp versionDate;
+        if (input.getVersionDate() != null) {
+            versionDate = Timestamp.from(input.getVersionDate().toInstant());
+        } else {
+            versionDate = null;
+        }
 
-            store(connection, input.getOfficeId(), input.getName(), input.getUnits(),
-                    versionDate, input.getValues(), createAsLrts, replaceAll, overrideProtection);
-        });
+        connection(dsl, connection -> storeWithDefaultDatum(input, createAsLrts, replaceAll, overrideProtection, vd, connection, versionDate));
     }
 
-    private void store(Connection connection, String officeId, String tsId, String units,
+    private void storeWithDefaultDatum(TimeSeries input, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection,
+                                       VerticalDatum vd, Connection connection, Timestamp versionDate) throws Throwable {
+        DSLContext dslContext = getDslContext(connection, input.getOfficeId());
+        withDefaultDatum(vd, dslContext, (conn)-> store(dslContext, input.getOfficeId(), input.getName(), input.getUnits(),
+                versionDate, input.getValues(), createAsLrts, replaceAll, overrideProtection));
+    }
+
+    private void store(DSLContext dslContext, String officeId, String tsId, String units,
                        Timestamp versionDate, List<TimeSeries.Record> values, boolean createAsLrts,
-                       StoreRule storeRule, boolean overrideProtection) throws SQLException {
-        setOffice(connection,officeId);
+                       StoreRule storeRule, boolean overrideProtection) {
 
         final ZTSV_ARRAY tsvArray = new ZTSV_ARRAY();
 
@@ -1482,9 +1545,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 			}
         }
 
+
         if (versionDate != null) {
             try {
-                CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(getDslContext(connection, officeId).configuration(),
+                CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(dslContext.configuration(),
                         tsId, "T", officeId);
             } catch (DataAccessException e) {
                 if (e.getCause() instanceof SQLException) {
@@ -1494,13 +1558,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         throw e;
                     }
                     // Ignore tsId not found exceptions. tsDao.store() will create tsId if it is not found
-                    logger.log(Level.FINER, e, () -> "TS ID: " + tsId + " not found at office: " + officeId);
+                    logger.atFiner().withCause(e).log("TS ID: %s not found at office: %s", tsId, officeId);
                 } else {
                     throw e;
                 }
             }
         }
-        CWMS_TS_PACKAGE.call_ZSTORE_TS(getDslContext(connection, officeId).configuration(),
+        CWMS_TS_PACKAGE.call_ZSTORE_TS(dslContext.configuration(),
                                       tsId,
                                       units,
                                       tsvArray,
@@ -1510,21 +1574,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                       officeId,
                                       formatBool(createAsLrts));
     }
-
-    public void update(TimeSeries input, boolean createAsLrts, StoreRule storeRule,
-                       Timestamp versionDate, boolean overrideProtection) throws SQLException {
-        String name = input.getName();
-        if (!timeseriesExists(name)) {
-            throw new SQLException("Cannot update a non-existant Timeseries. Create " + name + " "
-                    + "first.");
-        }
-        connection(dsl, connection -> {
-            setOffice(connection,input.getOfficeId());
-            store(connection, input.getOfficeId(), name, input.getUnits(), versionDate,
-                    input.getValues(), createAsLrts, storeRule, overrideProtection);
-        });
-    }
-
 
     protected BigDecimal retrieveTsCode(String tsId) {
 
@@ -1541,12 +1590,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     public void delete(String officeId, String tsId, TimeSeriesDeleteOptions options) {
         connection(dsl, connection -> {
-            setOffice(connection,officeId);
-            CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, connection);
-            tsDao.deleteTs(connection, officeId, tsId, options.getStartTime(), options.getEndTime(),
-                    options.isStartTimeInclusive(), options.isEndTimeInclusive(),
-                    options.getVersionDate(), null, options.getMaxVersion(),
-                    options.getTsItemMask(), options.getOverrideProtection());
+            Timestamp startTime = options.getStartTime() == null ? null : Timestamp.from(options.getStartTime().toInstant());
+            Timestamp endTime = options.getEndTime() == null ? null : Timestamp.from(options.getEndTime().toInstant());
+            Timestamp versionDate = options.getVersionDate() == null ? null : Timestamp.from(options.getVersionDate().toInstant());
+            DATE_TABLE_TYPE pDateTimes = null;
+            BigInteger pTsItemMask = null;
+            if (options.getTsItemMask() != null) {
+                pTsItemMask = BigInteger.valueOf(options.getTsItemMask());
+            }
+            CWMS_TS_PACKAGE.call_DELETE_TS__3(getDslContext(connection, officeId).configuration(), tsId, options.getOverrideProtection(),
+                startTime, endTime,
+                formatBool(options.isStartTimeInclusive()), formatBool(options.isEndTimeInclusive()),
+                versionDate, "UTC", pDateTimes, formatBool(options.getMaxVersion()),
+                pTsItemMask, officeId);
         });
     }
 

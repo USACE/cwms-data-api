@@ -1,4 +1,4 @@
-import {  Input, Field, Label } from "@usace/groundwork";
+import { Input, Field, Label } from "@usace/groundwork";
 import PropTypes from "prop-types";
 import dayjs from "dayjs";
 
@@ -47,7 +47,6 @@ export default function Controls({
     </div>
   );
 }
-
 
 Controls.propTypes = {
   setBeginDateTime: PropTypes.func.isRequired,

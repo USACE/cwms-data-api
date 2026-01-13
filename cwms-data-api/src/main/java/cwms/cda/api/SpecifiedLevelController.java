@@ -41,8 +41,7 @@ import org.jooq.DSLContext;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
@@ -50,7 +49,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
 public class SpecifiedLevelController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(SpecifiedLevelController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final String TAG = "Levels";
     private final MetricRegistry metrics;
 
@@ -114,7 +113,7 @@ public class SpecifiedLevelController implements CrudHandler {
         } catch (Exception ex) {
             CdaError re =
                     new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 

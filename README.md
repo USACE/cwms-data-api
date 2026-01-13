@@ -38,10 +38,11 @@ This is a new implementation of a REST API for data retrieval of USACE Water Dat
 
 See the [📃 Wiki](https://github.com/USACE/cwms-data-api/wiki) for how to get started
 
+End user documentation available here: [📕 Read the Docs](https://cwms-data-api.readthedocs.io/latest)
 
 ## Development notes
 
-Development and runtime currently requires java 8.
+Development and runtime currently requires java 11. JDKs and JREs greater than 11 should work, please report if they don't.
 
 
 To build the war:
@@ -52,7 +53,7 @@ This will compile the jar and run the basic unit tests.
 
 ## Development stack
 
-See the README.docker-compose.md for instructions using the docker-compose environment
+See the docker-compose.README.md for instructions using the docker-compose environment
 
 ## Testing
 

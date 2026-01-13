@@ -26,7 +26,7 @@
 
 package cwms.cda.data.dao.watersupply;
 
-import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.Dao;
 import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
@@ -46,8 +46,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
@@ -64,20 +63,28 @@ import usace.cwms.db.jooq.codegen.udt.records.WAT_USR_CONTRACT_ACCT_TAB_T;
 
 
 final class WaterSupplyUtils {
-    private static final Logger LOGGER = Logger.getLogger(WaterSupplyUtils.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     private WaterSupplyUtils() {
         throw new IllegalStateException("Utility class");
     }
 
     static WaterUserContract toWaterContract(WATER_USER_CONTRACT_OBJ_T contract) {
+        Instant effectiveDate = null;
+        if(contract.getWS_CONTRACT_EFFECTIVE_DATE() != null) {
+            effectiveDate = contract.getWS_CONTRACT_EFFECTIVE_DATE().toInstant();
+        }
+        Instant expirationDate = null;
+        if(contract.getWS_CONTRACT_EXPIRATION_DATE() != null) {
+            expirationDate = contract.getWS_CONTRACT_EXPIRATION_DATE().toInstant();
+        }
         return new WaterUserContract.Builder().withContractedStorage(contract.getCONTRACTED_STORAGE())
                 .withTotalAllocPercentActivated(contract.getTOTAL_ALLOC_PERCENT_ACTIVATED())
                 .withContractType(LocationUtil.getLookupType(contract.getWATER_SUPPLY_CONTRACT_TYPE()))
-                .withContractEffectiveDate(contract.getWS_CONTRACT_EFFECTIVE_DATE().toInstant())
+                .withContractEffectiveDate(effectiveDate)
                 .withOfficeId(contract.getWATER_SUPPLY_CONTRACT_TYPE().getOFFICE_ID())
                 .withStorageUnitsId(contract.getSTORAGE_UNITS_ID())
-                .withContractExpirationDate(contract.getWS_CONTRACT_EXPIRATION_DATE().toInstant())
+                .withContractExpirationDate(expirationDate)
                 .withWaterUser(toWaterUser(contract.getWATER_USER_CONTRACT_REF().getWATER_USER()))
                 .withContractId(new CwmsId.Builder().withOfficeId(contract.getWATER_SUPPLY_CONTRACT_TYPE()
                                 .getOFFICE_ID()).withName(contract.getWATER_USER_CONTRACT_REF()
@@ -119,7 +126,7 @@ final class WaterSupplyUtils {
         lookupTypeObjT.setOFFICE_ID(lookupType.getOfficeId());
         lookupTypeObjT.setDISPLAY_VALUE(lookupType.getDisplayValue());
         lookupTypeObjT.setTOOLTIP(lookupType.getTooltip());
-        lookupTypeObjT.setACTIVE(JooqDao.formatBool(lookupType.getActive()));
+        lookupTypeObjT.setACTIVE(Dao.formatBool(lookupType.getActive()));
         return lookupTypeObjT;
     }
 
@@ -201,7 +208,7 @@ final class WaterSupplyUtils {
                         watUsrContractAcctObjT.setPUMP_LOCATION_REF(pumpBelow);
                         break;
                     default:
-                        LOGGER.log(Level.WARNING, "Invalid pump type");
+                        LOGGER.atWarning().log("Invalid pump type");
                         throw new IllegalArgumentException(
                             String.format("Invalid pump type for mapping to DB object: %s", transfer.getPumpType()));
                 }
@@ -232,7 +239,7 @@ final class WaterSupplyUtils {
                         timeWindow.setLOCATION_REF(pumpBelow);
                         break;
                     default:
-                        LOGGER.log(Level.WARNING, "Invalid pump type");
+                        LOGGER.atWarning().log("Invalid pump type");
                         break;
                 }
                 timeWindow.setSTART_DATE(Timestamp.from(entry.getKey()));

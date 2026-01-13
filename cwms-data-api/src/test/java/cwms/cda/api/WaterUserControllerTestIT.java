@@ -63,6 +63,8 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 
 @Tag("integration")
@@ -138,8 +140,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    @Test
-    void test_create_get_delete_WaterUser() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_create_get_delete_WaterUser(String format) throws Exception {
         // Test Structure
         // 1) Create a WaterUser
         // 2) Get the WaterUser, assert that it exists
@@ -153,7 +156,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -173,7 +176,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(LOCATION_ID, WATER_USER.getProjectId().getName())
         .when()
@@ -216,7 +219,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(LOCATION_ID, WATER_USER.getProjectId().getName())
         .when()
@@ -345,8 +348,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
 
     }
 
-    @Test
-    void test_getAllWaterUsers() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_getAllWaterUsers(String format) throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
         String json = JsonV1.buildObjectMapper().writeValueAsString(WATER_USER);
 
@@ -359,7 +363,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .body(json)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -379,7 +383,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .body(json2)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -397,7 +401,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         // get water users
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, TestAccounts.KeyUser.SWT_NORMAL.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -421,7 +425,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(LOCATION_ID, WATER_USER.getProjectId().getName())
             .queryParam(METHOD, DeleteMethod.DELETE_ALL)
@@ -443,7 +447,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(LOCATION_ID, WATER_USER.getProjectId().getName())
             .queryParam(METHOD, DeleteMethod.DELETE_ALL)
@@ -481,7 +485,6 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()

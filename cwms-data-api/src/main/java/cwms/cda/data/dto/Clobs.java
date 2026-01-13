@@ -53,9 +53,9 @@ public class Clobs extends CwmsDTOPaginated {
     public static String getOffice(String cursor) {
         String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
         if (parts.length > 1) {
-            String[] idAndOffice = CwmsDTOPaginated.decodeCursor(parts[0]);
-            if (idAndOffice.length > 0) {
-                return idAndOffice[0];
+            String[] officeAndId = CwmsDTOPaginated.decodeCursor(parts[0]);
+            if (officeAndId.length > 0) {
+                return officeAndId[0];
             }
         }
         return null;
@@ -70,9 +70,9 @@ public class Clobs extends CwmsDTOPaginated {
     public static String getId(String cursor) {
         String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
         if (parts.length > 1) {
-            String[] idAndOffice = CwmsDTOPaginated.decodeCursor(parts[0]);
-            if (idAndOffice.length > 1) {
-                return idAndOffice[1];
+            String[] officeAndId = CwmsDTOPaginated.decodeCursor(parts[0]);
+            if (officeAndId.length > 1) {
+                return officeAndId[1];
             }
         }
         return null;

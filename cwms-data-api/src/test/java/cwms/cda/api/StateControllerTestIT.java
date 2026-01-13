@@ -36,12 +36,11 @@ import io.javalin.core.util.Header;
 import io.restassured.filter.log.LogDetail;
 import javax.servlet.http.HttpServletResponse;
 
-import io.restassured.response.ValidatableResponse;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 @Tag("integration")
-public class StateControllerTestIT extends DataApiTestIT {
+final class StateControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_state_catalog()  {
@@ -75,6 +74,23 @@ public class StateControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
         .body("[0].name", equalTo("Unknown State or State N/A"))
         .body("[0].state-initial", equalTo("00"));
+    }
+
+    @Test
+    void test_state_catalog_with_default()  {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.DEFAULT)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/states/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("[0].name", equalTo("Unknown State or State N/A"))
+            .body("[0].state-initial", equalTo("00"));
     }
 
     @Test

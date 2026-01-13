@@ -1,0 +1,119 @@
+{
+  "noNamespaceSchemaLocation": "http://www.hec.usace.army.mil/xmlSchema/cwms/Ratings.xsd",
+  "rating-template": {
+    "office-id": "SPK",
+    "parameters-id": "Opening-L1,Opening-BP1,Elev;Flow-BP1",
+    "version": "Standard",
+    "ind-parameter-specs": {
+      "ind-parameter-spec": [
+        {
+          "position": "1",
+          "parameter": "Opening-L1",
+          "in-range-method": "CLOSEST",
+          "out-range-low-method": "NULL",
+          "out-range-high-method": "NULL"
+        },
+        {
+          "position": "2",
+          "parameter": "Opening-BP1",
+          "in-range-method": "LINEAR",
+          "out-range-low-method": "NULL",
+          "out-range-high-method": "NULL"
+        },
+        {
+          "position": "3",
+          "parameter": "Elev",
+          "in-range-method": "LINEAR",
+          "out-range-low-method": "NULL",
+          "out-range-high-method": "LINEAR"
+        }
+      ]
+    },
+    "dep-parameter": "Flow-BP1",
+    "description": ""
+  },
+  "rating-spec": {
+    "office-id": "SPK",
+    "rating-spec-id": "Barren.Opening-L1,Opening-BP1,Elev;Flow-BP1.Standard.Production",
+    "template-id": "Opening-L1,Opening-BP1,Elev;Flow-BP1.Standard",
+    "location-id": "Barren",
+    "version": "Production",
+    "source-agency": "",
+    "in-range-method": "LINEAR",
+    "out-range-low-method": "NULL",
+    "out-range-high-method": "LINEAR",
+    "active": "true",
+    "auto-update": "true",
+    "auto-activate": "true",
+    "auto-migrate-extension": "true",
+    "ind-rounding-specs": {
+      "ind-rounding-spec": [
+        {
+          "position": "1",
+          "element-value": "2222233332"
+        },
+        {
+          "position": "2",
+          "element-value": "2222233332"
+        },
+        {
+          "position": "3",
+          "element-value": "2222233332"
+        }
+      ]
+    },
+    "dep-rounding-spec": "2222233332",
+    "description": ""
+  },
+  "simple-rating": {
+    "office-id": "SPK",
+    "rating-spec-id": "Barren.Opening-L1,Opening-BP1,Elev;Flow-BP1.Standard.Production",
+    "vertical-datum-info": {
+      "unit": "ft",
+      "native-datum": "NGVD-29",
+      "elevation": "",
+      "offset": [
+        {
+          "estimate": "false",
+          "to-datum": "NGVD-29",
+          "value": "0.0"
+        },
+        {
+          "estimate": "true",
+          "to-datum": "NAVD-88",
+          "value": "-0.4403"
+        }
+      ]
+    },
+    "units-id": "ft,ft,ft;cfs",
+    "effective-date": "2001-01-01T06:00:00Z",
+    "transition-start-date": "",
+    "create-date": "2018-05-04T19:21:00Z",
+    "active": "true",
+    "description": "",
+    "rating-points": [
+      {
+        "other-ind": [
+          {
+            "position": "1",
+            "value": "0.0"
+          },
+          {
+            "position": "2",
+            "value": "0.0"
+          }
+        ],
+        "point": [
+          {
+            "ind": "510.0",
+            "dep": "0.0"
+          },
+          {
+            "ind": "590.0",
+            "dep": "0.0"
+          }
+        ]
+      }
+    ]
+  }
+}

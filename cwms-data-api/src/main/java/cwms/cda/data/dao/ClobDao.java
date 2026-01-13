@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+import static com.google.common.flogger.LazyArgs.lazy;
 import static org.jooq.impl.DSL.*;
 
 public class ClobDao extends JooqDao<Clob> {
@@ -123,7 +124,7 @@ public class ClobDao extends JooqDao<Clob> {
 
         Clobs.Builder builder = new Clobs.Builder(cursor, pageSize, total);
 
-        logger.atFine().log(query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(()->query.getSQL(ParamType.INLINED)));
 
         query.fetch().forEach(row -> {
             usace.cwms.db.jooq.codegen.tables.records.AV_CLOB clob = row.into(vClob);
@@ -189,7 +190,7 @@ public class ClobDao extends JooqDao<Clob> {
     }
 
     public void delete(String officeId, String id) {
-        dsl.connection(c -> CWMS_TEXT_PACKAGE.call_DELETE_TEXT(
+        connection(dsl,c -> CWMS_TEXT_PACKAGE.call_DELETE_TEXT(
                 getDslContext(c,officeId).configuration(), id, officeId)
         );
     }
@@ -204,7 +205,7 @@ public class ClobDao extends JooqDao<Clob> {
         // it throws -  ORA-20244: NULL_ARGUMENT: Argument P_TEXT is not allowed to be null
         // Also note: when pIgnoreNulls == 'F' and the value is "" (empty string)
         // it throws -  ORA-20244: NULL_ARGUMENT: Argument P_TEXT is not allowed to be null
-        dsl.connection(c ->
+        connection(dsl,c ->
             CWMS_TEXT_PACKAGE.call_UPDATE_TEXT(
                 getDslContext(c,clob.getOfficeId()).configuration(),
                 clob.getValue(),
@@ -241,7 +242,14 @@ public class ClobDao extends JooqDao<Clob> {
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         java.sql.Clob clob = resultSet.getClob("VALUE");
-                        clobConsumer.accept(clob);
+
+                        try {
+                            clobConsumer.accept(clob);
+                        } finally {
+                            if (clob != null) {
+                                clob.free();
+                            }
+                        }
                     } else {
                         throw new NotFoundException("Unable to find clob with id " + clobId + " in office " + officeId);
                     }
@@ -264,6 +272,6 @@ public class ClobDao extends JooqDao<Clob> {
 
     @FunctionalInterface
     public interface ClobConsumer {
-        void accept(java.sql.Clob blob) throws SQLException;
+        void accept(java.sql.Clob blob) throws SQLException, IOException;
     }
 }

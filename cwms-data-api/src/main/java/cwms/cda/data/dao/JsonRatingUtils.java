@@ -97,7 +97,7 @@ public class JsonRatingUtils {
         return xml;
     }
 
-    private static Source buildSourceFromResource(String filename) {
+    static Source buildSourceFromResource(String filename) {
         String resourceLocation = "/cwms/cda/data/rating/" + filename;
         InputStream resourceAsStream = JsonRatingUtils.class.getResourceAsStream(resourceLocation);
         if (resourceAsStream == null) {
@@ -112,7 +112,7 @@ public class JsonRatingUtils {
                 .lines().collect(Collectors.joining("\n"));
     }
 
-    private static String applyTransform(String xml, Source xslt) throws TransformerException {
+    static String applyTransform(String xml, Source xslt) throws TransformerException {
         TransformerFactory factory = TransformerFactory.newInstance();
         factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
         factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");

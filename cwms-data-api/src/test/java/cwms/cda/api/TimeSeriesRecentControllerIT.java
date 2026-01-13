@@ -56,21 +56,21 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 
 @Tag("integration")
 class TimeSeriesRecentControllerIT extends DataApiTestIT {
     TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-    private static final Logger LOGGER = Logger.getLogger(TimeSeriesRecentControllerIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE_ID = "SPK";
     private static final String LOCATION = "Sacramento River Delta";
     private static final String TS_ID = LOCATION + ".Depth.Inst.15Minutes.0.OBS-Raw";
@@ -99,24 +99,25 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
                         .withVersionDate(Date.from(VERSION_DATE.toInstant())).withMaxVersion(false)
                         .withOverrideProtection("F").withEndTimeInclusive(true).withStartTimeInclusive(true).build());
             } catch (NotFoundException e) {
-                LOGGER.log(Level.CONFIG, "TimeSeries not found");
+                LOGGER.atConfig().log("TimeSeries not found");
             }
             try {
                 tsGroupDao.unassignAllTs(group, OFFICE_ID);
                 tsGroupDao.delete(CATEGORY_ID, GROUP_ID, OFFICE_ID);
             } catch (NotFoundException e) {
-                LOGGER.log(Level.CONFIG, "Group not found");
+                LOGGER.atConfig().log("Group not found");
             }
             try {
                 tsCategoryDao.delete(CATEGORY_ID, true, OFFICE_ID);
             } catch (NotFoundException e) {
-                LOGGER.log(Level.CONFIG, "Category not found");
+                LOGGER.atConfig().log("Category not found");
             }
         });
     }
 
-    @Test
-    void test_retrieving_recent_ts_data() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_retrieving_recent_ts_data(String format) throws Exception {
         TimeSeries ts = buildTimeSeries(OFFICE_ID, TS_ID);
         ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeries.class);
         String json = Formats.format(contentType, ts);
@@ -145,7 +146,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
             .body(json)
@@ -169,7 +170,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
             .body(json)
@@ -187,7 +188,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(Controllers.CATEGORY_ID, CATEGORY_ID)
@@ -208,7 +209,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(TS_IDS, TS_ID)

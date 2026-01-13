@@ -14,11 +14,21 @@ export default function SwaggerUI() {
     // TODO: add endpoint that dynamic returns swagger generated doc
     SwaggerUIBundle({
       url: getBasePath() + "/swagger-docs",
-      configUrl: getBasePath() + "/swagger-config.yaml",
       dom_id: "#swagger-ui",
       deepLinking: false,
       presets: [SwaggerUIBundle.presets.apis],
       plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+      requestInterceptor: (req) => {
+        // Add a cache-busting query param
+        const sep = req.url.includes("?") ? "&" : "?";
+        req.url = `${req.url}${sep}_cb=${Date.now()}`;
+
+        // Also ask intermediaries not to serve from cache
+        req.headers["Cache-Control"] = "no-cache, no-store, max-age=0";
+        req.headers["Pragma"] = "no-cache";
+
+        return req;
+      },
     });
   }, []);
 

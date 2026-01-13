@@ -42,7 +42,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class ProjectLockRevokeDeny implements Handler {
     public static final String TAGS = "Project Locks";
-    public static final String PATH = "/project-locks/";
+    public static final String PATH = "/project-locks/deny";
     private final MetricRegistry metrics;
 
     private Timer.Context markAndTime(String subject) {

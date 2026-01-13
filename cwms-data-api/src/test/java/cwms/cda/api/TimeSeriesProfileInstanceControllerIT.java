@@ -54,8 +54,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 
@@ -69,12 +68,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 
 @Tag("integration")
 final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
-    public static final Logger LOGGER =
-            Logger.getLogger(TimeSeriesProfileInstanceControllerIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE_ID = "SPK";
     private static final TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     private final InputStream resource = this.getClass()
@@ -293,8 +293,9 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    @Test
-    void test_create_retrieve_TimeSeriesProfileInstance_Columnar() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_create_retrieve_TimeSeriesProfileInstance_Columnar(String format) throws Exception {
 
         storeParser(null, tspParserColumnar);
 
@@ -303,7 +304,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -325,7 +326,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -358,7 +359,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Delete instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -388,7 +389,6 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -474,8 +474,9 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void store_retrieve_instance_with_ref_TS() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void store_retrieve_instance_with_ref_TS(String format) throws Exception {
         storeParser(tspParserIndexed2, null);
 
         assertParserInDb(tspParserIndexed2);
@@ -483,7 +484,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .body(tspData2)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -505,7 +506,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -538,8 +539,9 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void store_retrieve_instance_with_ref_LRTS() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void store_retrieve_instance_with_ref_LRTS(String format) throws Exception {
         storeParser(tspParserIndexed3, null);
 
         assertParserInDb(tspParserIndexed3);
@@ -549,7 +551,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .body(tspData3)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -571,7 +573,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .header(ApiServlet.IS_NEW_LRTS, true)
@@ -605,8 +607,9 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_create_retrieve_TimeSeriesProfileInstance_Indexed() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_create_retrieve_TimeSeriesProfileInstance_Indexed(String format) throws Exception {
 
         storeParser(tspParserIndexed, null);
 
@@ -615,7 +618,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -637,7 +640,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -679,7 +682,6 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -779,8 +781,9 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_create_retrieve_paged_TimeSeriesProfileInstance_Columnar() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_create_retrieve_paged_TimeSeriesProfileInstance_Columnar(String format) throws Exception {
 
         storeParser(null, tspParserColumnar);
 
@@ -789,7 +792,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -811,7 +814,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance
         ExtractableResponse<Response> extractableResponse = given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -850,7 +853,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -884,8 +887,9 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_retrieve_TimeSeriesProfileInstance_Columnar_maxVersion() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_retrieve_TimeSeriesProfileInstance_Columnar_maxVersion(String format) throws Exception {
         storeParser(null, tspParserColumnar);
 
         assertParserInDb(tspParserColumnar);
@@ -893,7 +897,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -915,7 +919,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance with different version date
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -942,7 +946,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance with max version set and provided version date (throws error)
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -971,7 +975,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // retrieve with no max version (should return the specified version)
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1008,7 +1012,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // retrieve with max version (should return the max version)
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1044,7 +1048,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // retrieve with no max version (should return the min version)
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1079,7 +1083,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Delete instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1101,7 +1105,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Delete instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1121,8 +1125,9 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_retrieve_TimeSeriesProfileInstance_Indexed_LRTS_interval_id() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_retrieve_TimeSeriesProfileInstance_Indexed_LRTS_interval_id(String format) throws Exception {
         storeParser(tspParserIndexed3, null);
 
         assertParserInDb(tspParserIndexed3);
@@ -1132,7 +1137,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .body(tspData3)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -1154,7 +1159,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance with different version date
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .body(tspData3)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -1181,7 +1186,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance with max version set and provided version date (throws error)
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1210,7 +1215,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // retrieve with no max version (should return the specified version)
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .header(ApiServlet.IS_NEW_LRTS, true)
@@ -1249,7 +1254,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // retrieve with max version (should return the max version)
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1285,7 +1290,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // retrieve with no max version (should return the min version)
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1320,7 +1325,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Delete instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1342,7 +1347,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Delete instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1363,8 +1368,9 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
     }
 
     // This test needs the functionality to be confirmed - unsure if this is how it should work
-    @Test
-    void test_previous_next_TimeSeriesProfileInstance_Indexed() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_previous_next_TimeSeriesProfileInstance_Indexed(String format) throws Exception {
         storeParser(tspParserIndexed, null);
 
         assertParserInDb(tspParserIndexed);
@@ -1372,7 +1378,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -1394,7 +1400,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance with next and previous set (should return values from the next and previous time windows)
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1431,7 +1437,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance with next set to true
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1468,7 +1474,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance with both next and previous set to false (should return the first page)
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1503,8 +1509,9 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_delete_TimeSeriesProfileInstance_Columnar() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_delete_TimeSeriesProfileInstance_Columnar(String format) throws Exception {
 
         storeParser(null, tspParserColumnar);
 
@@ -1513,7 +1520,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -1535,7 +1542,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Delete instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1557,7 +1564,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance and assert it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1582,8 +1589,9 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_delete_TimeSeriesProfileInstance_Indexed() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_delete_TimeSeriesProfileInstance_Indexed(String format) throws Exception {
 
         storeParser(tspParserIndexed, null);
 
@@ -1592,7 +1600,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -1614,7 +1622,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Delete instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1636,7 +1644,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Retrieve instance and assert it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1659,12 +1667,13 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_delete_nonExistent_TimeSeriesProfileInstance() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_delete_nonExistent_TimeSeriesProfileInstance(String format) {
         // Delete instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
@@ -1694,7 +1703,6 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -1769,7 +1777,6 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
         // Create instance
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
             .body(tspData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -1841,7 +1848,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             TimeSeriesProfileParserDao dao = new TimeSeriesProfileParserDao(dsl);
             dao.deleteTimeSeriesProfileParser(locationId, parameterId, OFFICE_ID);
         } catch (NotFoundException e) {
-            LOGGER.log(Level.CONFIG, "Cleanup failed for parser - no matching parser found in DB", e);
+            LOGGER.atConfig().withCause(e).log("Cleanup failed for parser - no matching parser found in DB");
         }
     }
 
@@ -1850,7 +1857,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             TimeSeriesProfileDao dao = new TimeSeriesProfileDao(dsl);
             dao.deleteTimeSeriesProfile(locationId, keyParameter, OFFICE_ID);
         } catch (NotFoundException e) {
-            LOGGER.log(Level.CONFIG, "Cleanup failed for Timeseries - no matching TS found in DB", e);
+            LOGGER.atConfig().withCause(e).log("Cleanup failed for Timeseries - no matching TS found in DB");
         }
     }
 
@@ -1861,7 +1868,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             dao.deleteTimeSeriesProfileInstance(locationId, keyParameter, version, firstDate, timeZone,
                     overrideProt, versionDate);
         } catch (NotFoundException e) {
-            LOGGER.log(Level.CONFIG, "Cleanup failed for instance - no matching instance found in DB", e);
+            LOGGER.atConfig().withCause(e).log("Cleanup failed for instance - no matching instance found in DB");
         }
     }
 

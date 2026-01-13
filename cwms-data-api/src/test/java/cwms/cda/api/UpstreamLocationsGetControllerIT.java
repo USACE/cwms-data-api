@@ -37,7 +37,8 @@ import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
@@ -46,7 +47,7 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
 
     @BeforeAll
-    public static void setup() throws SQLException {
+    static void setup() throws SQLException {
         createLocation("StreamLoc1234", true, OFFICE_ID, "STREAM_LOCATION");
         createLocation("StreamLoc23", true, OFFICE_ID, "STREAM_LOCATION");
         createAndStoreTestStream("ImOnThisStream3");
@@ -72,7 +73,7 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() {
+    static void tearDown() {
         for (Stream stream : STREAMS_CREATED) {
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -91,8 +92,9 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
         STREAMS_CREATED.clear();
     }
 
-    @Test
-    void test_getUpstreamLocations() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_getUpstreamLocations(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream_location4.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -110,7 +112,7 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
         // Create the StreamLocation
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(FAIL_IF_EXISTS, false)
                 .contentType(Formats.JSON)
                 .body(json)
@@ -129,7 +131,7 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
         // Retrieve the StreamLocation and assert that it exists
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(NAME, streamLocationId)
                 .queryParam(OFFICE, OFFICE_ID)
                 .queryParam(STREAM_ID, streamLocation.getStreamId().getName())
@@ -170,7 +172,7 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
         // Create the StreamLocation2
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(FAIL_IF_EXISTS, false)
                 .contentType(Formats.JSON)
                 .body(json)
@@ -187,7 +189,7 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
         // Retrieve the StreamLocation2 and assert that it exists
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(NAME, streamLocationId2)
                 .queryParam(OFFICE, OFFICE_ID)
                 .queryParam(STREAM_ID, streamLocation2.getStreamId().getName())
@@ -220,7 +222,7 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
         // Retrieve upstream locations and assert they exist
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(ALL_UPSTREAM, true)
                 .queryParam(SAME_STREAM_ONLY, true)
                 .queryParam(STATION_UNIT, "km")
@@ -252,7 +254,7 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
         // Delete the StreamLocation
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(OFFICE, OFFICE_ID)
                 .queryParam(STREAM_ID, streamLocationId)
                 .contentType(Formats.JSON)
@@ -269,7 +271,7 @@ final class UpstreamLocationsGetControllerIT extends DataApiTestIT {
         // Delete the StreamLocation2
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(OFFICE, OFFICE_ID)
                 .queryParam(STREAM_ID, streamLocationId2)
                 .contentType(Formats.JSON)

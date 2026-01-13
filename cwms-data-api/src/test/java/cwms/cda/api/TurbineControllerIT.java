@@ -44,11 +44,12 @@ import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -82,7 +83,7 @@ final class TurbineControllerIT extends DataApiTestIT {
     }
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE);
@@ -92,7 +93,7 @@ final class TurbineControllerIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE);
@@ -101,8 +102,9 @@ final class TurbineControllerIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    @Test
-    void test_get_create_delete() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_get_create_delete(String format) {
 
         // Structure of test:
         // 1)Create the Turbine
@@ -134,7 +136,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         // Retrieve the Turbine and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -170,7 +172,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         // Retrieve a Turbine and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -223,8 +225,9 @@ final class TurbineControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_get_all() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_get_all(String format) {
 
         // Structure of test:
         // 1)Create the Turbine
@@ -255,7 +258,7 @@ final class TurbineControllerIT extends DataApiTestIT {
         // Retrieve the Turbine and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.PROJECT_ID, TURBINE.getProjectId().getName())
         .when()

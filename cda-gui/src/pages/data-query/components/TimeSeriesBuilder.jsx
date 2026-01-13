@@ -39,9 +39,7 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
         duration +
         "." +
         version;
-      setTsids((prev) =>
-        prev.includes(fullTsid) ? prev : [...prev, fullTsid]
-      );
+      setTsids((prev) => (prev.includes(fullTsid) ? prev : [...prev, fullTsid]));
     }
   }, [location, parameter, type, interval, duration, version]);
 
@@ -172,7 +170,7 @@ Dropdown.propTypes = {
     PropTypes.shape({
       value: PropTypes.string.isRequired,
       label: PropTypes.string.isRequired,
-    })
+    }),
   ).isRequired,
   disabled: PropTypes.bool,
   loading: PropTypes.bool,

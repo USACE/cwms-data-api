@@ -11,3 +11,4 @@ kdata
 pki/certs
 compose.env
 .vscode
+**/node_modules/

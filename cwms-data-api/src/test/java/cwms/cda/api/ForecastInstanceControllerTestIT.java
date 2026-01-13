@@ -24,9 +24,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.api.ForecastSpecControllerTestIT.*;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
@@ -64,19 +67,21 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         deleteSpec();
     }
 
-    @Test
-    void test_get_create_get() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_get_create_get(String format) throws IOException {
 
         // Structure of test:
         // 1)Retrieve a ForecastInstance and assert that it does not exist
         // 2)Create the ForecastInstance
         // 3)Retrieve the ForecastInstance and assert that it exists
+        // 4)Issue a getAll request and verify that created instance present
 
         // Step 1)
         // Retrieve a ForecastInstance and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
             .queryParam(Controllers.FORECAST_DATE, forecastDate)
@@ -104,7 +109,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(specJson)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -120,7 +125,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -137,7 +142,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         // Retrieve the inst and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
             .queryParam(Controllers.FORECAST_DATE, forecastDate)
@@ -163,11 +168,32 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
             .body("file-data", equalTo("dGVzdCBmaWxlIGNvbnRlbnQ="))
         ;
 
+        // Step 4 issue a getAll request and verify that created instance present
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, SPEC_ID)
+            .queryParam(Controllers.DESIGNATOR, designator)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("$", is(instanceOf(List.class)))
+            .body("$", not(empty()))  // Assert array is not empty
+            .body("find { it.spec.'spec-id' == '" + SPEC_ID + "' }", notNullValue())
+        ;
+
 
     }
 
-    @Test
-    void test_get_create_get_null_designator() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_get_create_get_null_designator(String format) throws IOException {
 
 
         // Structure of test:
@@ -179,7 +205,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         // Retrieve a ForecastInstance and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.FORECAST_DATE, forecastDate)
             .queryParam(Controllers.ISSUE_DATE, issueDate)
@@ -206,7 +232,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(specJson)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -222,7 +248,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -239,7 +265,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         // Retrieve the inst and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.FORECAST_DATE, forecastDate)
             .queryParam(Controllers.ISSUE_DATE, issueDate)
@@ -263,8 +289,9 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
     }
 
-    @Test
-    void test_large_file_download_null_designator() throws IOException, URISyntaxException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_large_file_download_null_designator(String format) throws IOException, URISyntaxException {
 
         // Structure of test:
         // 1)Create the ForecastInstance with large file
@@ -290,7 +317,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(specJson)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -305,7 +332,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(largeInstanceJson)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -322,7 +349,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         // Retrieve the inst and assert that it exists
         String fileDataUrl = given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(Controllers.FORECAST_DATE, forecastDate)
                 .queryParam(Controllers.ISSUE_DATE, issueDate)
@@ -351,7 +378,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
                 .collect(toMap(NameValuePair::getName, NameValuePair::getValue));
         ResponseBody body = given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .queryParams(params)
                 .basePath("")
             .when()
@@ -379,8 +406,9 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         }
     }
 
-    @Test
-    void test_large_file_download() throws IOException, URISyntaxException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_large_file_download(String format) throws IOException, URISyntaxException {
 
         // Structure of test:
         // 1)Create the ForecastInstance with large file
@@ -406,7 +434,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(specJson)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -421,7 +449,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(largeInstanceJson)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -438,7 +466,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         // Retrieve the inst and assert that it exists
         String fileDataUrl = given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(Controllers.DESIGNATOR, designator)
                 .queryParam(Controllers.FORECAST_DATE, forecastDate)
@@ -468,7 +496,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
                 .collect(toMap(NameValuePair::getName, NameValuePair::getValue));
         ResponseBody body = given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .queryParams(params)
                 .basePath("")
             .when()
@@ -496,8 +524,9 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         }
     }
 
-    @Test
-    void test_create_get_delete_get() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_get_delete_get(String format) throws IOException {
 
         // Structure of test:
         //
@@ -521,7 +550,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(specJson)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -536,7 +565,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -553,7 +582,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         // Retrieve the inst and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
             .queryParam(Controllers.FORECAST_DATE, forecastDate)
@@ -583,7 +612,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         // Delete the inst
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(Controllers.NAME, SPEC_ID)
@@ -603,7 +632,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         // Retrieve the inst and assert that it does not exist
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .queryParam(Controllers.OFFICE, OFFICE)
                  .queryParam(Controllers.DESIGNATOR, designator)
                 .queryParam(Controllers.FORECAST_DATE, forecastDate)
@@ -619,8 +648,9 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_create_get_delete_get_lrts() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_get_delete_get_lrts(String format) throws Exception {
 
         // Structure of test:
         //
@@ -648,7 +678,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(specJson)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -664,7 +694,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
@@ -681,7 +711,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         // Retrieve the inst and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
             .queryParam(Controllers.FORECAST_DATE, forecastDate)
@@ -707,7 +737,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         // Delete the inst
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, specId)
@@ -727,7 +757,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         // Retrieve the inst and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.DESIGNATOR, designator)
             .queryParam(Controllers.FORECAST_DATE, forecastDate)

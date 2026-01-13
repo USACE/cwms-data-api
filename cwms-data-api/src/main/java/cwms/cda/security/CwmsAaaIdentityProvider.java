@@ -14,8 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -24,7 +23,7 @@ import cwms.auth.CwmsUserPrincipal;
 @AutoService(IdentityProvider.class)
 public class CwmsAaaIdentityProvider implements IdentityProvider {
 
-    private static final Logger logger = Logger.getLogger(CwmsAaaIdentityProvider.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final String SESSION_COOKIE_NAME = "JSESSIONIDSSO";    
 
     private DataApiPrincipal getApiPrincipal(Context ctx) {
@@ -42,7 +41,7 @@ public class CwmsAaaIdentityProvider implements IdentityProvider {
         if (ctx != null && ctx.req != null && ctx.req.getUserPrincipal() != null) {
             retval = Optional.of(ctx.req.getUserPrincipal().getName());
         } else {
-            logger.log(Level.FINE, "No user principal found in request.");
+            logger.atFine().log("No user principal found in request.");
         }
         return retval;
     }
@@ -75,9 +74,9 @@ public class CwmsAaaIdentityProvider implements IdentityProvider {
                 if (roleNames != null) {
                     roleNames.stream().map(CwmsAaaIdentityProvider::buildRole).forEach(retval::add);
                 }
-                logger.log(Level.FINE, "Principal had roles: {0}", retval);
+                logger.atFine().log("Principal had roles: %s", retval);
             } catch (ClassCastException e) {
-                logger.severe("cwmsaaa api and implementation jars should only be in the system "
+                logger.atSevere().log("cwmsaaa api and implementation jars should only be in the system "
                         + "classpath, not the war file. Verify and restart application");
             }
         } else {

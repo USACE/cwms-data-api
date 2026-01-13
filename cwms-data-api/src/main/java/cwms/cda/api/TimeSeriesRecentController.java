@@ -65,8 +65,7 @@ import java.util.Scanner;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -77,7 +76,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class TimeSeriesRecentController implements Handler {
-    private static final Logger logger = Logger.getLogger(TimeSeriesRecentController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -163,7 +162,7 @@ public class TimeSeriesRecentController implements Handler {
                 // has both = this is an error
                 CdaError re = new CdaError("Invalid arguments supplied, group has both "
                         + "Timeseries Group info and Timeseries IDs.");
-                logger.log(Level.SEVERE, "{0} for request {1}", new Object[]{ re, ctx.fullUrl()});
+                logger.atSevere().log("%s for request %s", re, ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                 ctx.json(re);
                 return;
@@ -171,7 +170,7 @@ public class TimeSeriesRecentController implements Handler {
                 // doesn't have either?  Just return empty results?
                 CdaError re = new CdaError("Invalid arguments supplied, group has neither "
                         + "Timeseries Group info nor Timeseries IDs");
-                logger.log(Level.SEVERE, "{0} for request {1}", new Object[]{ re, ctx.fullUrl()});
+                logger.atSevere().log("%s for request %s", re, ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                 ctx.json(re);
                 return;

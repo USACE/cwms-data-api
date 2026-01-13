@@ -204,7 +204,7 @@ class RSQLJooqConditionVisitorTest {
         condition = RSQLJooqConditionVisitor.buildCondition(field, RSQLOperators.IN, value, values);
         assertNotNull(condition);
         conditionStr = condition.toString();
-        System.out.println("[DEBUG_LOG] IN condition: " + conditionStr);
+
         // The format of the IN condition might vary depending on the jOOQ version and dialect
         // So we'll check for the field name and each value separately
         assertTrue(conditionStr.contains("TEST_FIELD"));
@@ -217,7 +217,7 @@ class RSQLJooqConditionVisitorTest {
         condition = RSQLJooqConditionVisitor.buildCondition(field, RSQLOperators.NOT_IN, value, values);
         assertNotNull(condition);
         conditionStr = condition.toString();
-        System.out.println("[DEBUG_LOG] NOT_IN condition: " + conditionStr);
+
         // The format of the NOT IN condition might vary depending on the jOOQ version and dialect
         // So we'll check for the field name and each value separately
         assertTrue(conditionStr.contains("TEST_FIELD"));

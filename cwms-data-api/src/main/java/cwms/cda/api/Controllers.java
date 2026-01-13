@@ -96,6 +96,7 @@ public final class Controllers {
     public static final String NAME = "name";
     public static final String CASCADE_DELETE = "cascade-delete";
     public static final String DATUM = "datum";
+    public static final String SINCE = "since";
     public static final String BEGIN = "begin";
     public static final String END = "end";
     public static final String TIMEZONE = "timezone";
@@ -110,6 +111,7 @@ public final class Controllers {
     public static final String TEMPLATE_ID_MASK = "template-id-mask";
     public static final String STORE_TEMPLATE = "store-template";
     public static final String REPLACE_BASE_CURVE = "replace-base-curve";
+    public static final String EFFECTIVE_DATE_EXACT = "use-exact-effective-date";
 
     public static final String TIMESERIES_ID_REGEX = "timeseries-id-regex";
     public static final String TIMESERIES_ID = "timeseries-id";
@@ -121,6 +123,10 @@ public final class Controllers {
     public static final String CATEGORY_ID = "category-id";
     public static final String CATEGORY_ID_MASK = "category-id-mask";
     public static final String VERSION_DATE = "version-date";
+    public static final String LONG_NAME = "long-name";
+    public static final String MATCH_NULL_PARENTS = "match-null-parents";
+    public static final String ENTITY_ID = "entity-id";
+    public static final String PARENT_ENTITY_ID = "parent-entity-id";
 
     public static final String CREATE_AS_LRTS = "create-as-lrts";
     public static final String STORE_RULE = "store-rule";

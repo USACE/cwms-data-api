@@ -60,7 +60,7 @@ export function getMinInterval(tsids) {
  *   @param {Array<Array<number|string>>} timeseriesList[].values - An array of values for the timeseries.
  *   Each value should be an array containing [epoch, value, quality_code].
  *   @param {string} timeseriesList[].units - The unit of measurement for the timeseries values.
- * 
+ *
  * @returns {Object} A merged timeseries object with the following properties:
  *   @property {Array<string>} tsids - List of timeseries identifiers that were successfully merged.
  *   @property {Object} values - An object where each key is an epoch (timestamp), and the value is an array of merged values for that timestamp.
@@ -68,7 +68,7 @@ export function getMinInterval(tsids) {
  *   @property {Array<string>} failed - List of timeseries identifiers that failed to merge (i.e., had no values).
  */
 export function mergeTimeseries(timeseriesList) {
-  const merged = { tsids: [], values: {}, dates: [], failed: []};
+  const merged = { tsids: [], values: {}, dates: [], failed: [] };
   timeseriesList.forEach((ts) => {
     if (ts?.values.length) {
       merged.tsids.push({ name: ts.name, units: ts.units });
@@ -82,7 +82,7 @@ export function mergeTimeseries(timeseriesList) {
           merged.values[_d] = [_v];
           merged.dates.push(_d);
         } else {
-            merged.values[_d].push(_v);
+          merged.values[_d].push(_v);
         }
       });
     } else {

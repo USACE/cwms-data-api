@@ -65,8 +65,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
@@ -76,13 +75,15 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 
 @Tag("integration")
 final class LockControllerIT extends DataApiTestIT {
-    private static final Logger LOGGER = Logger.getLogger(LockControllerIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final Location PROJECT_LOC;
     private static final Location PROJECT_LOC2;
     private static final Location LOCK_LOC;
@@ -114,7 +115,7 @@ final class LockControllerIT extends DataApiTestIT {
                     .withName("TEST_LOCATION3")
                     .withLocationKind("LOCK")
                     .withDescription("Test Lock")
-                    .withHorizontalDatum("NVGD29")
+                    .withHorizontalDatum("NGVD29")
                     .withTimeZoneName(ZoneId.of("UTC"))
                     .withOfficeId("SPK")
                     .withActive(true)
@@ -175,14 +176,14 @@ final class LockControllerIT extends DataApiTestIT {
 
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
-                LOGGER.log(Level.CONFIG, String.format("Unable to delete Lock location: %s", ex.getMessage()));
+                LOGGER.atConfig().log("Unable to delete Lock location: %s", ex.getMessage());
             }
             try {
                 locationsDao.deleteLocation(LOCK_LOC2.getName(), LOCK_LOC2.getOfficeId(), true);
 
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
-                LOGGER.log(Level.CONFIG, String.format("Unable to delete Lock location: %s", ex.getMessage()));
+                LOGGER.atConfig().log("Unable to delete Lock location: %s", ex.getMessage());
             }
             try {
                 CWMS_PROJECT_PACKAGE.call_DELETE_PROJECT(context.configuration(), PROJECT_LOC.getName(),
@@ -190,19 +191,19 @@ final class LockControllerIT extends DataApiTestIT {
 
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
-                LOGGER.log(Level.CONFIG, String.format("Unable to delete project: %s", ex.getMessage()));
+                LOGGER.atConfig().log("Unable to delete project: %s", ex.getMessage());
             }
             try {
                 locationsDao.deleteLocation(PROJECT_LOC.getName(), PROJECT_LOC.getOfficeId(), true);
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
-                LOGGER.log(Level.CONFIG, String.format("Unable to delete project location: %s", ex.getMessage()));
+                LOGGER.atConfig().log("Unable to delete project location: %s", ex.getMessage());
             }
             try {
                 locationsDao.deleteLocation(PROJECT_LOC2.getName(), PROJECT_LOC2.getOfficeId(), true);
             } catch (NotFoundException ex) {
                 /* only an error within the tests below. */
-                LOGGER.log(Level.CONFIG, String.format("Unable to delete project location: %s", ex.getMessage()));
+                LOGGER.atConfig().log("Unable to delete project location: %s", ex.getMessage());
             }
         }, CwmsDataApiSetupCallback.getWebUser());
     }
@@ -219,7 +220,7 @@ final class LockControllerIT extends DataApiTestIT {
                     lockDao.deleteLock(CwmsId.buildCwmsId(lockToCleanup.getLocation().getOfficeId(), lockToCleanup.getLocation().getName()), DeleteRule.DELETE_ALL);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete lock: %s", ex.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete lock: %s", ex.getMessage());
                 }
             }
             for (LocationLevel level : createLocationLevelList(LOCK)) {
@@ -227,7 +228,7 @@ final class LockControllerIT extends DataApiTestIT {
                     levelsDao.deleteLocationLevel(level.getLocationLevelId(), level.getLevelDate(), level.getOfficeId(), true);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete location level: %s", ex.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete location level: %s", ex.getMessage());
                 }
             }
             for (LocationLevel level : locationLevelsToCleanup) {
@@ -235,16 +236,17 @@ final class LockControllerIT extends DataApiTestIT {
                     levelsDao.deleteLocationLevel(level.getLocationLevelId(), level.getLevelDate(), level.getOfficeId(), true);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, String.format("Unable to delete location level: %s", ex.getMessage()));
+                    LOGGER.atConfig().log("Unable to delete location level: %s", ex.getMessage());
                 }
             }
             locationLevelsToCleanup.clear();
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void test_get_create_delete_EN() {
+    void test_get_create_delete_EN(String format) {
 
         // Structure of test:
         // 1)Create the Lock
@@ -297,7 +299,7 @@ final class LockControllerIT extends DataApiTestIT {
         // Retrieve the Lock and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(UNIT, "EN")
         .when()
@@ -356,7 +358,7 @@ final class LockControllerIT extends DataApiTestIT {
         // Retrieve a Lock and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -369,9 +371,10 @@ final class LockControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void test_get_create_delete_SI() throws Exception {
+    void test_get_create_delete_SI(String format) throws Exception {
 
         // Structure of test:
         // 1)Create the Lock
@@ -457,7 +460,7 @@ final class LockControllerIT extends DataApiTestIT {
             // Retrieve the Lock and assert that it exists
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
+                .accept(format)
                 .queryParam(Controllers.OFFICE, office)
             .when()
                 .redirects().follow(true)
@@ -510,7 +513,7 @@ final class LockControllerIT extends DataApiTestIT {
         // Retrieve a Lock and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -542,9 +545,10 @@ final class LockControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void storeRetrieveSameLockNameDifferentProject() throws Exception {
+    void storeRetrieveSameLockNameDifferentProject(String format) throws Exception {
         // Structure of test:
         // 1)Create the two Locks
         // 2)Retrieve the Locks and assert that they exist
@@ -723,7 +727,7 @@ final class LockControllerIT extends DataApiTestIT {
             // Retrieve the Lock and assert that it exists
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
+                .accept(format)
                 .queryParam(Controllers.OFFICE, office)
                 .queryParam(UNIT, "SI")
             .when()
@@ -758,7 +762,7 @@ final class LockControllerIT extends DataApiTestIT {
             // Retrieve the Lock and assert that it exists
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
+                .accept(format)
                 .queryParam(Controllers.OFFICE, office)
                 .queryParam(UNIT, "SI")
             .when()
@@ -820,7 +824,7 @@ final class LockControllerIT extends DataApiTestIT {
         // Retrieve a Lock and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(PROJECT_ID, metricLockProj1.getProjectId().getName())
         .when()
@@ -854,7 +858,7 @@ final class LockControllerIT extends DataApiTestIT {
         // Retrieve a Lock and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -932,9 +936,10 @@ final class LockControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     @FunctionalSchemas(values = {"99.99.99.9-CDA_STAGING"})
-    void test_get_all() {
+    void test_get_all(String format) {
 
         // Structure of test:
         // 1)Create the Lock
@@ -985,7 +990,7 @@ final class LockControllerIT extends DataApiTestIT {
         // Retrieve the Lock and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.PROJECT_ID, LOCK.getProjectId().getName())
         .when()

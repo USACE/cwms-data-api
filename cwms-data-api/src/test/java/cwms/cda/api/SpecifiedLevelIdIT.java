@@ -41,14 +41,17 @@ import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 public class SpecifiedLevelIdIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
 
-    @Test
-    void test_create_read_delete() throws JsonProcessingException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_read_delete(String format) throws JsonProcessingException {
         ObjectMapper om = JsonV2.buildObjectMapper();
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         SpecifiedLevel specifiedLevel = new SpecifiedLevel("TestCRD" + Instant.now().getEpochSecond(), OFFICE, "CDA Integration Test");
@@ -56,7 +59,7 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
         //Create
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(serializedLevel)
             .header("Authorization", user.toHeaderValue())
@@ -73,9 +76,8 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam("office", OFFICE)
             .queryParam(Controllers.TEMPLATE_ID_MASK, specifiedLevel.getId())
         .when()
@@ -92,7 +94,7 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
         //Delete
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam("office", OFFICE)
@@ -109,9 +111,8 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
         //Read Empty
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam("office", OFFICE)
             .queryParam(Controllers.TEMPLATE_ID_MASK, specifiedLevel.getId())
         .when()
@@ -171,7 +172,6 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.TEMPLATE_ID_MASK, newId)
         .when()
@@ -185,15 +185,16 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK));
     }
 
-    @Test
-    void test_update_does_not_exist() throws JsonProcessingException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_update_does_not_exist(String format) {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         long epochSeconds = Instant.now().getEpochSecond();
         SpecifiedLevel specifiedLevel = new SpecifiedLevel("BadUpdate" + epochSeconds, OFFICE, "CDA Integration Test");
         //Update
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
@@ -210,7 +211,7 @@ public class SpecifiedLevelIdIT extends DataApiTestIT {
 
 
     @Test
-    void test_delete_does_not_exist() throws JsonProcessingException {
+    void test_delete_does_not_exist() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         long epochSeconds = Instant.now().getEpochSecond();
         SpecifiedLevel specifiedLevel = new SpecifiedLevel("TestBadDelete" + epochSeconds, OFFICE, "CDA Integration Test");

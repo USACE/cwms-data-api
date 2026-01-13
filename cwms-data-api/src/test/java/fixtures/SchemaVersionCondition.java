@@ -44,7 +44,7 @@ public class SchemaVersionCondition implements ExecutionCondition {
             .filter(Objects::nonNull)
             .map(annotation -> {
                 int version = annotation.value();
-                int currentVersion = getCurrentSchemaVersion();
+                int currentVersion = CwmsDataApiSetupCallback.getSchemaVersion();
                 if (currentVersion < version) {
                     return ConditionEvaluationResult.disabled("Test disabled because schema version "
                         + currentVersion + " is less than " + version);
@@ -53,15 +53,5 @@ public class SchemaVersionCondition implements ExecutionCondition {
                     + currentVersion + " is at least " + version);
             })
             .orElse(ENABLED);
-    }
-
-    private int getCurrentSchemaVersion() {
-        try {
-            return CwmsDataApiSetupCallback.getDatabaseLink().connection(c->{
-                return AuthDao.getInstance(DSL.using(c)).getDbVersion();
-            }, CwmsDataApiSetupCallback.getWebUser());
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

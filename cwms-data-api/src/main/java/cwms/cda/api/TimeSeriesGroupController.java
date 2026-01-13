@@ -68,14 +68,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
-import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class TimeSeriesGroupController implements CrudHandler {
-    public static final Logger logger = Logger.getLogger(TimeSeriesGroupController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String TAG = "Timeseries Groups";
 
     private final MetricRegistry metrics;
@@ -139,7 +138,7 @@ public class TimeSeriesGroupController implements CrudHandler {
                     includeAssigned, tsCategoryLike, tsGroupLike);
             if (grps.isEmpty()) {
                 CdaError re = new CdaError("No data found for The provided office");
-                logger.info(() -> re + " for request " + ctx.fullUrl());
+                logger.atInfo().log("%s for request %s", re, ctx.fullUrl());
                 ctx.status(HttpCode.NOT_FOUND).json(re);
             } else {
                 String formatHeader = ctx.header(Header.ACCEPT);
@@ -223,7 +222,7 @@ public class TimeSeriesGroupController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
                 CdaError re = new CdaError("Unable to find group based on parameters given");
-                logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
+                logger.atInfo().log("%s%sfor request %s", re, System.lineSeparator(), ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
 
@@ -327,7 +326,7 @@ public class TimeSeriesGroupController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(@NotNull Context ctx, @NonNull String groupId) {
+    public void delete(@NotNull Context ctx, @NotNull String groupId) {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 

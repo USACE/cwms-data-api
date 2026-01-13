@@ -58,6 +58,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
@@ -74,7 +76,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
     private static final String IDENTIFIER = "identifier";
 
     @BeforeAll
-    public static void setup() throws SQLException {
+    static void setup() throws SQLException {
         //Create setup that matches stream_reach.json
         String testLoc = "Reach123";
         createLocation(testLoc, true, OFFICE_ID, "STREAM_REACH");
@@ -131,7 +133,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() {
+    static void tearDown() {
         for (Stream stream : STREAMS_CREATED) {
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -170,8 +172,9 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
         STREAM_LOCATIONS_CREATED.clear();
     }
 
-    @Test
-    void test_get_create_delete() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_get_create_delete(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream_reach.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -188,7 +191,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
         // Create the StreamReach
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .contentType(Formats.JSON)
                 .body(json)
                 .header(AUTH_HEADER, user.toHeaderValue())
@@ -209,7 +212,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
         // Retrieve the StreamReach and assert that it exists
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(NAME, streamReachId)
                 .queryParam(OFFICE, OFFICE_ID)
                 .queryParam(STREAM_ID, streamReach.getStreamId().getName())
@@ -247,7 +250,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
         // Delete the StreamReach
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .header(AUTH_HEADER, user.toHeaderValue())
                 .queryParam(OFFICE, OFFICE_ID)
         .when()
@@ -265,7 +268,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
         // Retrieve the StreamReach and assert that it does not exist
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(NAME, streamReachId)
                 .queryParam(OFFICE, OFFICE_ID)
                 .queryParam(STREAM_ID, streamReach.getStreamId().getName())
@@ -317,8 +320,9 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
-    void test_get_all() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_get_all(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream_reach.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -355,7 +359,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
         // Retrieve the StreamReach and assert that it exists
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(OFFICE_MASK, office)
                 .queryParam(NAME_MASK, streamReachId)
                 .queryParam(STREAM_ID_MASK, streamReach.getStreamId().getName())
@@ -411,7 +415,7 @@ final class StreamReachControllerTestIT extends DataApiTestIT {
         //verify deletion
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(NAME, streamReachId)
                 .queryParam(OFFICE, OFFICE_ID)
                 .queryParam(STREAM_ID, streamReach.getStreamId().getName())

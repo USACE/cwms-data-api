@@ -54,14 +54,20 @@ public abstract class Dao<T> {
             .build();
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
+    protected static Integer CURRENT_SCHEMA_VERSION = null;
+
     @SuppressWarnings("unused")
     protected DSLContext dsl;
 
     protected Dao(DSLContext dsl) {
         this.dsl = dsl;
+        if (CURRENT_SCHEMA_VERSION == null)
+        {
+            CURRENT_SCHEMA_VERSION = getDbVersion();
+        }
     }
 
-    private static String getVersion(DSLContext dsl) {
+    public static String getVersion(DSLContext dsl) {
         return dsl.connectionResult(c -> DSL.using(c,SQLDialect.ORACLE18C)
                 .select(AV_DB_CHANGE_LOG.VERSION)
                 .from(AV_DB_CHANGE_LOG)
@@ -84,7 +90,7 @@ public abstract class Dao<T> {
     }
 
     public static int versionAsInteger(String version) {
-        String[] parts = version.split("\\.");
+        String[] parts = version.split("[\\.-]");
 
         return Integer.parseInt(parts[0]) * 10000
                 + Integer.parseInt(parts[1]) * 100
@@ -96,14 +102,18 @@ public abstract class Dao<T> {
      * Sets session office on specific connection.
      * @param c opened connection
      * @param object Data containing a valid CWMS office
-     * @throws SQLException if the underlying database throws an exception
      */
-    protected void setOffice(Connection c, CwmsDTO object) throws SQLException {
-        this.setOffice(c,object.getOfficeId());
+    protected void setOffice(Connection c, CwmsDTO object) {
+        setOffice(c,object.getOfficeId());
     }
 
-    protected void setOffice(Connection c, String office) throws SQLException {
-        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
+    protected static void setOffice(Connection c, String office) {
+        //null office id is invalid for the session office, the client may send null if looking for data across all offices
+        //CWMS is not a valid session office id and maybe be parameterized from the client when
+        //searching for CWMS-owned data.
+        if(office != null && !"CWMS".equals(office)) {
+            CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
+        }
     }
 
     public abstract Optional<T> getByUniqueName(String uniqueName, String office);
@@ -114,7 +124,7 @@ public abstract class Dao<T> {
      * @param tf
      * @return
      */
-    protected static String formatBool(Boolean tf)
+    public static String formatBool(Boolean tf)
     {
         String parsed = null;
         if(tf != null)

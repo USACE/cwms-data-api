@@ -38,9 +38,9 @@ final class JooqDaoTest {
 
     @Test
     void testFormatBool() {
-        assertEquals("T", JooqDao.formatBool(true));
-        assertEquals("F", JooqDao.formatBool(false));
-        assertNull(JooqDao.formatBool(null));
+        assertEquals("T", Dao.formatBool(true));
+        assertEquals("F", Dao.formatBool(false));
+        assertNull(Dao.formatBool(null));
     }
 
     @Test

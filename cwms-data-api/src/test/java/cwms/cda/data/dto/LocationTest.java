@@ -3,13 +3,18 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.api.errors.RequiredFieldException;
+import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
 
+import cwms.cda.helpers.DTOMatch;
+import java.io.Serializable;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -28,6 +33,7 @@ class LocationTest
 		assertNotNull(location);
 
 		ObjectMapper om = new ObjectMapper();
+		om.registerModule(new Jdk8Module());	// Must be registered to handle Optionals correctly
 		String serializedLocation = om.writeValueAsString(location);
 		assertNotNull(serializedLocation);
 
@@ -42,6 +48,7 @@ class LocationTest
 		assertNotNull(location);
 
 		ObjectMapper om = JsonV1.buildObjectMapper();
+		om.registerModule(new Jdk8Module());
 		String serializedLocation = om.writeValueAsString(location);
 		assertNotNull(serializedLocation);
 
@@ -75,7 +82,7 @@ class LocationTest
 
 	@ParameterizedTest
 	@ValueSource(strings = { Formats.JSONV2, Formats.XMLV2 })
-	void testSerializationRoundTrip(String format) throws JsonProcessingException
+	void testSerializationRoundTrip(String format)
 	{
 		Location location = buildTestLocation();
 		assertNotNull(location);
@@ -85,14 +92,14 @@ class LocationTest
 
 		Location deserialized = Formats.parseContent(Formats.parseHeader(format, Location.class),
 			serialized, Location.class);
-		assertEquals(location, deserialized);
+		DTOMatch.assertMatch(location, deserialized);
 	}
 
 	@Test
 	void canBuildNullLatLon(){
 		Location location = new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
 				null, null,  // lat/lon are null in this test
-				"NVGD29", "LRL")
+				"NGVD29", "LRL")
 				.withElevation(10.0)
 				.withCountyName("Sacramento")
 				.withNation(Nation.US)
@@ -114,18 +121,97 @@ class LocationTest
 			location.validate();
 			fail();
 		} catch (FieldException e) {
-			Map<String, ? extends List<String>> details = e.getDetails();
+			Map<String, Serializable> details = e.getDetails();
 			assertNotNull(details);
+			assertEquals(400, e.getCdaHttpErrorCode());
+			assertEquals("required fields not present", e.getCdaErrorMessage());
+			assertEquals("required fields not present", e.getMessage());
+			assertEquals("Parser", e.getSource());
 			assertTrue(details.containsKey(RequiredFieldException.MISSING_FIELDS));
-			List<String> missingFields = details.get(RequiredFieldException.MISSING_FIELDS);
+			String missingFields = String.valueOf(details.get(RequiredFieldException.MISSING_FIELDS));
 			assertTrue(missingFields.contains("latitude"));
 			assertTrue(missingFields.contains("longitude"));
 		}
 	}
 
+	@Test
+	void test_alias_roundtrip() {
+		List<LocationAlias> aliases = new ArrayList<>();
+
+		aliases.add(new LocationAlias("alias1", "type1"));
+		aliases.add(new LocationAlias("alias2", "type2"));
+
+		Location location = new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
+			null, null,  // lat/lon are null in this test
+			"NGVD29", "LRL")
+			.withElevation(10.0)
+			.withCountyName("Sacramento")
+			.withNation(Nation.US)
+			.withActive(true)
+			.withStateInitial("CA")
+			.withBoundingOfficeId("LRL")
+			.withLongName("TEST_LOCATION")
+			.withPublishedLatitude(50.0)
+			.withPublishedLongitude(50.0)
+			.withDescription("for testing")
+			.withLatitude(50.0)
+			.withLongitude(50.0)
+			.withAliases(aliases)
+			.build();
+
+		assertNotNull(location);
+
+		String serialized = Formats.format(Formats.parseHeader(Formats.JSONV2, Location.class), location);
+		assertNotNull(serialized);
+
+		Location deserialized = Formats.parseContent(Formats.parseHeader(Formats.JSONV2, Location.class),
+			serialized, Location.class);
+		assertEquals(location, deserialized);
+	}
+
+	@Test
+	void test_serialization_no_alias()
+	{
+		Location location = buildTestLocation();
+		assertNotNull(location);
+		assertFalse(location.getAliases().isPresent());
+
+		String serialized = Formats.format(Formats.parseHeader(Formats.JSONV2, Location.class), location);
+		assertNotNull(serialized);
+
+		assertFalse(serialized.contains("aliases"));
+	}
+
+	@Test
+	void test_serialization_empty_alias()
+	{
+		Location location = new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
+		50.0, 50.0, "NGVD29", "LRL")
+			.withElevation(10.0)
+			.withCountyName("Sacramento")
+			.withNation(Nation.US)
+			.withActive(true)
+			.withStateInitial("CA")
+			.withBoundingOfficeId("LRL")
+			.withLongName("TEST_LOCATION")
+			.withPublishedLatitude(50.0)
+			.withPublishedLongitude(50.0)
+			.withDescription("for testing")
+			.withElevationUnits("m")
+			.withAliases(new ArrayList<>())
+			.build();
+		assertNotNull(location);
+		assertTrue(location.getAliases().isPresent());
+
+		String serialized = Formats.format(Formats.parseHeader(Formats.JSONV2, Location.class), location);
+		assertNotNull(serialized);
+
+		assertTrue(serialized.contains("aliases"));
+	}
+
 	private Location buildTestLocation() {
 		return new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
-				50.0, 50.0, "NVGD29", "LRL")
+				50.0, 50.0, "NGVD29", "LRL")
 				.withElevation(10.0)
 				.withCountyName("Sacramento")
 				.withNation(Nation.US)
@@ -142,7 +228,7 @@ class LocationTest
 
 	private Location buildTestLocationNewLine() {
 		return new Location.Builder("TEST_LOCATION2", "SITE", ZoneId.of("UTC"),
-				50.0, 50.0, "NVGD29", "LRL")
+				50.0, 50.0, "NGVD29", "LRL")
 				.withElevation(10.0)
 				.withCountyName("Sacramento")
 				.withNation(Nation.US)
@@ -155,9 +241,4 @@ class LocationTest
 				.withDescription("for testing\r\n  next line\nhas a double quote \"\r\n this line has a single quote '\r")
 				.build();
 	}
-
-
-
-
-
 }

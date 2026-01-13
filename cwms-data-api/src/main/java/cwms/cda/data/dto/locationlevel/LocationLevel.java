@@ -26,15 +26,16 @@
 
 package cwms.cda.data.dto.locationlevel;
 
+import cwms.cda.data.dto.catalog.LocationAlias;
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -55,7 +56,6 @@ import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import hec.data.level.ILocationLevelRef;
 import hec.data.level.JDomLocationLevelImpl;
 
@@ -80,6 +80,8 @@ public abstract class LocationLevel extends CwmsDTO {
 
     private final String specifiedLevelId;
 
+    @Schema(description = "The expiration date of the location level.")
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private final ZonedDateTime expirationDate;
 
     @Schema(description = "Data Type such as Stage, Elevation, or others.")
@@ -120,6 +122,9 @@ public abstract class LocationLevel extends CwmsDTO {
 
     private final String attributeComment;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private final List<LocationAlias> aliases;
+
     LocationLevel(LocationLevel.Builder builder) {
         super(builder.officeId);
         specifiedLevelId = builder.specifiedLevelId;
@@ -138,6 +143,7 @@ public abstract class LocationLevel extends CwmsDTO {
         parameterId = builder.parameterId;
         interpolateString = builder.interpolateString;
         expirationDate = builder.expirationDate;
+        aliases = builder.aliases;
     }
 
     public String getSpecifiedLevelId() {
@@ -204,6 +210,10 @@ public abstract class LocationLevel extends CwmsDTO {
         return parameterId;
     }
 
+    public List<LocationAlias> getAliases() {
+        return aliases;
+    }
+
     @JsonPOJOBuilder
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public abstract static class Builder<T extends Builder<T>> {
@@ -224,6 +234,7 @@ public abstract class LocationLevel extends CwmsDTO {
         String officeId;
         String interpolateString;
         ZonedDateTime expirationDate;
+        List<LocationAlias> aliases = new ArrayList<>();
         final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
         @JsonCreator
@@ -248,30 +259,7 @@ public abstract class LocationLevel extends CwmsDTO {
             withOfficeId(copyFrom.getOfficeId());
             withParameterTypeId(copyFrom.getParameterTypeId());
             withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
-        }
-
-        Builder(JDomLocationLevelImpl copyFrom) {
-            withAttributeComment(copyFrom.getAttributeComment());
-            withAttributeDurationId(copyFrom.getAttributeDurationId());
-            withAttributeParameterId(copyFrom.getAttributeParameterId());
-            ILocationLevelRef locationLevelRef = copyFrom.getLocationLevelRef();
-            if (locationLevelRef != null) {
-                withLocationLevelId(locationLevelRef.getLocationLevelId());
-            }
-            withAttributeValue(copyFrom.getAttributeValue());
-            withAttributeParameterTypeId(copyFrom.getAttributeParameterTypeId());
-            withAttributeUnitsId(copyFrom.getAttributeUnitsId());
-            withDurationId(copyFrom.getDurationId());
-            withLevelComment(copyFrom.getLevelComment());
-            Date copyLevelDate = copyFrom.getLevelDate();
-            if (copyLevelDate != null) {
-                withLevelDate(ZonedDateTime.ofInstant(copyLevelDate.toInstant(), ZoneId.of("UTC")));
-            }
-            withLevelUnitsId(copyFrom.getLevelUnitsId());
-            withOfficeId(copyFrom.getOfficeId());
-            withParameterId(copyFrom.getParameterId());
-            withParameterTypeId(copyFrom.getParameterTypeId());
-            withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
+            withExpirationDate(copyFrom.getExpirationDate());
         }
 
         protected T self() {
@@ -374,6 +362,11 @@ public abstract class LocationLevel extends CwmsDTO {
             return self();
         }
 
+        public T withAliases(List<LocationAlias> aliases) {
+            this.aliases = aliases;
+            return self();
+        }
+
         public abstract LocationLevel build();
     }
 
@@ -440,6 +433,8 @@ public abstract class LocationLevel extends CwmsDTO {
                     ? constantLevel.getConstantValue() : updatedConstantLevel.getConstantValue());
 
             builder = new ConstantLocationLevel.Builder(locationId, unmarshalledDate)
+                .withExpirationDate(updatedLevel.getExpirationDate() == null
+                    ? existingLevel.getExpirationDate() : updatedLevel.getExpirationDate())
                     .withConstantValue(siParameterUnitsConstantValue);
         } else if (existingLevel instanceof TimeSeriesLocationLevel) {
             TimeSeriesLocationLevel timeSeriesLevel = (TimeSeriesLocationLevel) existingLevel;
@@ -448,7 +443,9 @@ public abstract class LocationLevel extends CwmsDTO {
             String seasonalTimeSeriesId = (updatedTimeSeriesLevel.getSeasonalTimeSeriesId() == null
                     ? timeSeriesLevel.getSeasonalTimeSeriesId() : updatedTimeSeriesLevel.getSeasonalTimeSeriesId());
 
-            builder = new TimeSeriesLocationLevel.Builder(locationId, unmarshalledDate, seasonalTimeSeriesId);
+            builder = new TimeSeriesLocationLevel.Builder(locationId, unmarshalledDate, seasonalTimeSeriesId)
+                .withExpirationDate(updatedLevel.getExpirationDate() == null
+                    ? existingLevel.getExpirationDate() : updatedLevel.getExpirationDate());
         } else if (existingLevel instanceof SeasonalLocationLevel) {
             SeasonalLocationLevel seasonalLevel = (SeasonalLocationLevel) existingLevel;
             SeasonalLocationLevel updatedSeasonalLevel = (SeasonalLocationLevel) updatedLevel;
@@ -477,7 +474,9 @@ public abstract class LocationLevel extends CwmsDTO {
                     .withIntervalMinutes(intervalMinutes)
                     .withIntervalMonths(intervalMonths)
                     .withIntervalOrigin(intervalOrigin)
-                    .withInterpolateString(interpolateString);
+                    .withInterpolateString(interpolateString)
+                    .withExpirationDate(updatedLevel.getExpirationDate() == null
+                        ? existingLevel.getExpirationDate() : updatedLevel.getExpirationDate());
         } else {
             throw new UnsupportedFormatException("Unsupported Location Level type: "
                     + existingLevel.getClass().getName());

@@ -1,17 +1,24 @@
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import cwms.cda.data.dao.VerticalDatum;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @JsonRootName("vertical-datum-info")
 @JsonDeserialize(builder = VerticalDatumInfo.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class VerticalDatumInfo extends CwmsDTOBase {
+
+
     String office;
 
     String unit;
@@ -19,6 +26,8 @@ public class VerticalDatumInfo extends CwmsDTOBase {
 
     String nativeDatum;
     Double elevation;
+
+    String localDatumName;
 
     // Serialize empty arrays in the xml
     @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -51,6 +60,58 @@ public class VerticalDatumInfo extends CwmsDTOBase {
         return offsets;
     }
 
+    public String getLocalDatumName() {
+        return localDatumName;
+    }
+
+    @JsonIgnore
+    public VerticalDatumInfo.Offset getOffsetForDatum(VerticalDatum convertTo) {
+        VerticalDatumInfo.Offset retVal = null;
+        VerticalDatumInfo.Offset[] offsets = getOffsets();
+        for (VerticalDatumInfo.Offset offset : offsets) {
+            if (offset.isForDatum(convertTo.toString())) {
+                retVal = offset;
+                break;
+            }
+        }
+        return retVal;
+    }
+
+    @JsonIgnore
+    public VerticalDatumInfo convertedTo(VerticalDatumInfo.Offset convertToOffset) {
+        VerticalDatum convertTo = VerticalDatum.getVerticalDatum(convertToOffset.getToDatum());
+        Double offsetValue = convertToOffset.getValue();
+        return new VerticalDatumInfo.Builder()
+                .from(this)
+                .withElevation(getElevation() + offsetValue)
+                .withNativeDatum(convertToOffset.getToDatum())
+                .withOffsets(buildConvertedOffsets(convertTo, convertToOffset))
+                .build();
+    }
+
+    private VerticalDatumInfo.Offset[] buildConvertedOffsets(VerticalDatum convertTo, VerticalDatumInfo.Offset convertToOffset) {
+        List<Offset> newOffsets = new ArrayList<>();
+
+        //add the reverse offset
+        Double conversionFactor = convertToOffset.getValue();
+        double convertToOffsetToOriginal = -conversionFactor;
+        VerticalDatumInfo.Offset reverseOffset = new VerticalDatumInfo.Offset(convertToOffset.isEstimate(), getNativeDatum(), convertToOffsetToOriginal);
+        newOffsets.add(reverseOffset);
+
+        //add the other offsets, adjusted
+        VerticalDatumInfo.Offset[] offsets = getOffsets();
+        for (VerticalDatumInfo.Offset offset : offsets) {
+            String toDatum = offset.getToDatum();
+            if (!offset.isForDatum(convertTo.toString())) {
+                Double newOffsetValue = convertToOffsetToOriginal + offset.getValue();
+                boolean isEstimate = offset.isEstimate() || convertToOffset.isEstimate();
+                VerticalDatumInfo.Offset newOffset = new VerticalDatumInfo.Offset(isEstimate, toDatum, newOffsetValue);
+                newOffsets.add(newOffset);
+            }
+        }
+        return newOffsets.toArray(new VerticalDatumInfo.Offset[]{});
+    }
+
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Offset {
         boolean estimate;
@@ -78,6 +139,17 @@ public class VerticalDatumInfo extends CwmsDTOBase {
             this.estimate = isEstimate;
             this.toDatum = toDatum;
             this.value = value;
+        }
+
+        @JsonIgnore
+        public boolean isForDatum(String verticalDatum) {
+            if(verticalDatum == null && toDatum == null) {
+                return true;
+            }
+            if(verticalDatum == null || toDatum == null) {
+                return false;
+            }
+            return toDatum.replaceAll("-", "").equalsIgnoreCase(verticalDatum.replaceAll("-", ""));
         }
 
         @Override
@@ -118,6 +190,7 @@ public class VerticalDatumInfo extends CwmsDTOBase {
         this.nativeDatum = builder.nativeDatum;
         this.elevation = builder.elevation;
         this.offsets = builder.offsets;
+        this.localDatumName = builder.localDatumName;
     }
 
     @JsonPOJOBuilder
@@ -129,6 +202,8 @@ public class VerticalDatumInfo extends CwmsDTOBase {
         String nativeDatum;
         Double elevation;
         Offset[] offsets = new Offset[0];
+
+        String localDatumName = null;
 
 
         public VerticalDatumInfo.Builder withOffice(String office) {
@@ -161,9 +236,25 @@ public class VerticalDatumInfo extends CwmsDTOBase {
             return this;
         }
 
-        public VerticalDatumInfo.Builder withOffset(boolean isEstimate, String toDatum,
-                                                    Double value) {
+        public VerticalDatumInfo.Builder withOffset(boolean isEstimate, String toDatum, Double value) {
             this.offsets = new Offset[]{new Offset(isEstimate, toDatum, value)};
+            return this;
+        }
+
+        public VerticalDatumInfo.Builder withLocalDatumName(String localDatumName) {
+            this.localDatumName = localDatumName;
+            return this;
+        }
+
+        @JsonIgnore
+        public Builder from(VerticalDatumInfo vdi) {
+            this.office = vdi.getOffice();
+            this.unit = vdi.getUnit();
+            this.location = vdi.getLocation();
+            this.nativeDatum = vdi.getNativeDatum();
+            this.elevation = vdi.getElevation();
+            this.offsets = vdi.getOffsets();
+            this.localDatumName = vdi.getLocalDatumName();
             return this;
         }
 

@@ -2,6 +2,7 @@ package cwms.cda.helpers;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.UnaryOperator;
@@ -101,11 +102,7 @@ public class ReplaceUtils {
                 value = "";
             }
             if (encode) {
-                try {
-                    value = URLEncoder.encode(value, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException(e);
-                }
+                value = URLEncoder.encode(value, StandardCharsets.UTF_8);
             }
             replacements.put(key, value);
             return this;
