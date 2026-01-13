@@ -22,7 +22,7 @@ When to use
     :widths: 20, 60, 15
 
     begin, ":ref:`def-start`", ""
-    datum, "The standardized reference system used for either vertical or horizontal measurements.
+    datum, "The standardized reference system used for either vertical measurements.
     Examples: NAVD88, NGVD29, LOCAL, etc.", ""
     end, ":ref:`def-end`", ""
     format, "The desired response format. Usage differs between endpoints.", ""
@@ -41,7 +41,7 @@ When to use
 
 .. note::
             Detailed documentation for Legacy Format Responses in CDA is currently in development and will be
-            available at https://cwms-data.usace.army.mil/cwms-data/cwms-data/legacy-format in a future release.
+            available at https://cwms-data.usace.army.mil/cwms-data/legacy-format in a future release.
 
 Examples
 ----------

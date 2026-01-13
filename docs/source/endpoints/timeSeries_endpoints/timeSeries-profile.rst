@@ -35,10 +35,6 @@ When to use
     page-size,":ref:`def-page-size`",""
     parameter-id-mask,":ref:`def-parameter-id-mask`",""
 
-.. note::
-        Detailed documentation for Regex usage in CDA is currently in development and will be available at
-        https://cwms-data.usace.army.mil/cwms-data/cwms-data/regexp in a future release.
-
 
 Examples
 --------

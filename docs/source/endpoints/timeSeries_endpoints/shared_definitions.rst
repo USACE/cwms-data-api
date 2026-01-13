@@ -23,6 +23,10 @@ end
         YYYY-MM-ddThh:mm:ss[Z[VV]]
         2021-06-10T13:00:00-07:00  OR  2025-10-25T12:25:00Z
 
+    .. note::
+        Detailed documentation for Timestamps usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/timestamps in a future release.
+
 
 .. _def-location-id:
 
@@ -38,7 +42,7 @@ location-mask
 
     .. note::
         Detailed documentation for Regex usage in CDA is currently in development and will be available at
-        https://cwms-data.usace.army.mil/cwms-data/cwms-data/regexp in a future release.
+        https://cwms-data.usace.army.mil/cwms-data/regexp in a future release.
 
 .. _def-office:
 
@@ -54,7 +58,7 @@ office-mask
 
     .. note::
         Detailed documentation for Regex usage in CDA is currently in development and will be available at
-        https://cwms-data.usace.army.mil/cwms-data/cwms-data/regexp in a future release.
+        https://cwms-data.usace.army.mil/cwms-data/regexp in a future release.
 
 .. _def-page:
 
@@ -79,7 +83,7 @@ parameter-id-mask
 
     .. note::
         Detailed documentation for Regex usage in CDA is currently in development and will be available at
-        https://cwms-data.usace.army.mil/cwms-data/cwms-data/regexp in a future release.
+        https://cwms-data.usace.army.mil/cwms-data/regexp in a future release.
 
 .. _def-start:
 
@@ -93,6 +97,10 @@ start (also referred to as begin)
         YYYY-MM-ddThh:mm:ss[Z[VV]]
         2021-06-10T13:00:00-07:00  OR  2025-10-25T12:25:00Z
 
+    .. note::
+        Detailed documentation for Timestamps usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/timestamps in a future release.
+
 .. _def-timezone:
 
 timezone
@@ -103,6 +111,7 @@ timezone
 unit `(Deprecated, prefer units or unit-system)`
   The unit system or specific unit to convert the response data into. Available unit systems are SI or EN.
   Examples of other units are m, ft, m3, etc.
+  For reference: `CWMS database - units <https://cwms-database.readthedocs.io/en/latest/naming.html#units>`_
 
 .. _def-version-date:
 

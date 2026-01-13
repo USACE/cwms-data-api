@@ -12,7 +12,7 @@ NON SHARED PARAMETER DEFINITIONS ARE DOCUMENTED BELOW:
     - The text identifier for the time series category defined in the CWMS database for a specific time series.
 
 - datum
-    - The standardized reference system used for either vertical or horizontal measurements.
+    - The standardized reference system used for either vertical measurements.
       Examples: NAVD88, NGVD29, LOCAL, etc.
 
 - end-time-inclusive
@@ -23,10 +23,9 @@ NON SHARED PARAMETER DEFINITIONS ARE DOCUMENTED BELOW:
     - The desired response format. Usage differs between endpoints. See the Legacy Format Responses documentation
       page for more information.
 
-
     .. note::
             Detailed documentation for Legacy Format Responses in CDA is currently in development and will be
-            available at https://cwms-data.usace.army.mil/cwms-data/cwms-data/legacy-format in a future release.
+            available at https://cwms-data.usace.army.mil/cwms-data/legacy-format in a future release.
 
 - group-id
     - The text identifier of the time series group defined in the CWMS database for a specific time series.
