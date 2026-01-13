@@ -9,8 +9,8 @@ Lists all available profile instances (datasets) and their versions. Use it to s
 retrieving a specific one.
 
 A profile instance is data recorded by one full cycle of the sensor as it sweeps through the key parameter range. This
-includes the timestamps for each reading. The profile instance data stored in the CWMS database will be a subset of the
-data recorded if the recorded data include parameters that aren not included in the profile definition.
+includes the timestamps for each reading. If the recorded data includes parameters not specified in the time series
+profile definition, the profile instance data stored in the CWMS database will be a subset of the overall recorded data.
 
 Profile instances are identified by location, key parameter, version identifier, first recorded time, and version date.
 This means:

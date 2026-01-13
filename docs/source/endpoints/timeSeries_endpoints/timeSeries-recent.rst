@@ -17,12 +17,9 @@ When to use
     :header: "Parameter", "Description", "Required"
     :widths: 20, 60, 15
 
-    category-id, "The text identifier for the time series category defined in the CWMS database for a specific time
-    series.",""
-    group-id, "The text identifier of the time series group defined in the CWMS database for a specific time series.",
-    "Only if ts-ids are NOT provided"
-    ts-ids, "A comma separated list of timeseries identifiers to be included in the response.
-    Example: 'Location.Elev.Inst.0.1Day.lrgs,Location2.Elev.Inst.0.12Hour.lrgs'.","Only if group-id is NOT provided)"
+    category-id, "The text identifier for the time series category defined in the CWMS database for a specific time series.",""
+    group-id, "The text identifier of the time series group defined in the CWMS database for a specific time series.","Only if ts-ids are NOT provided"
+    ts-ids, "`CWMS database - time series <https://cwms-database.readthedocs.io/en/latest/naming.html#time-series>`_","Only if group-id is NOT provided"
     unit-system, "SI or EN, default: EN",""
     office, ":ref:`def-office`",""
 

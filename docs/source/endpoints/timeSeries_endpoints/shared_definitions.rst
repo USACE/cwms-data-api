@@ -75,6 +75,13 @@ page-size
 parameter-id
   A text identifier specifying the type of data measured by the time series, such as "Flow", "Stage", "Elev", etc.
 
+    .. note::
+        This link will take you to the Parameter Types definition. Scroll up one section to see the Parameter Definition.
+        `CWMS database - parameter types <https://cwms-database.readthedocs.io/en/latest/naming.html#parameter-types>`_
+
+        As soon as this link is repaired, we will replace the above link with the correct one:
+        `CWMS database - parameters <https://cwms-database.readthedocs.io/en/latest/naming.html#parameters>`_
+
 .. _def-parameter-id-mask:
 
 parameter-id-mask

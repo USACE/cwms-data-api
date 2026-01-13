@@ -14,7 +14,8 @@ but can also store other types of profiles such as height-linked meteorological 
 
 The timestamped values are stored as standard CWMS time series. For each location and key parameter, the CWMS time
 series includes values from all profile instances that share the same combination of location, key parameter, and
-version identifier. (:ref:`See timeseries/profile-instance endpoint for details. <timeseries-profile-instance-endpoint>`
+version identifier.
+(:ref:`See timeseries/profile-instance endpoint for details. <timeseries-profile-instance-endpoint>`)
 
 Profile definitions are linked to a specific combination of location and key parameter. Only one profile definition
 can exist for each location-key parameter pair.

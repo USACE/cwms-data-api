@@ -26,8 +26,7 @@ When to use
     Examples: NAVD88, NGVD29, LOCAL, etc.", ""
     end, ":ref:`def-end`", ""
     format, "The desired response format. Usage differs between endpoints.", ""
-    include-entry-date, "The response includes timestamps for when each data point was added to the CWMS
-    database (true/false).", ""
+    include-entry-date, "Include timestamps for when each data point was added to the CWMS database (true/false).", ""
     name(required), "The text representation of the unique time series identifier.", "Yes"
     office, "see :ref:`def-office`", ""
     page, ":ref:`def-page`", ""

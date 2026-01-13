@@ -12,7 +12,7 @@ are stored in CWMS time series, the data often arrives in non-standard format.  
 - Data stored directly in the database or encoded as SHEF for CWMS processing.
 
 Profiles consist of identifiable instances instead of a continuous time series. Profile parsers make it possible to
-store these instances by by using the text exported from a data logger.
+store these instances by using the text exported from a data logger.
 
 When to use
 -----------

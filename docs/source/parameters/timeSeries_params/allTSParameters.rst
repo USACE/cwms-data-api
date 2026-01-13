@@ -58,6 +58,7 @@ NON SHARED PARAMETER DEFINITIONS ARE DOCUMENTED BELOW:
 - ts-ids
     - A comma separated list of timeseries identifiers to be included in the response.
       Example: 'Location.Elev.Inst.0.1Day.lrgs,Location2.Elev.Inst.0.12Hour.lrgs'.
+      `CWMS database - time series definition <https://cwms-database.readthedocs.io/en/latest/naming.html#time-series>`_
 
 - unit-system
     - The unit system to convert the response data into. Available unit systems are 'SI' or 'EN'.
@@ -70,7 +71,11 @@ NON SHARED PARAMETER DEFINITIONS ARE DOCUMENTED BELOW:
 
 - version-mask
     - A regular expression used to filter the version field for time series retrieval.
-      See the Regex documentation for more information on usage: `/cwms-data/regexp`.
+      See the Regex documentation for more information on usage.
+
+    .. note::
+        Detailed documentation for Regex usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/regexp in a future release.
 
 
 
@@ -152,8 +157,7 @@ version and version-date and version-mask:
     /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
     "trim","/timeSeries;
     /timeSeries/profile"
-    "ts-ids","/timeSeries/recent;
-    /timeSeries/profile-parser"
+    "ts-ids","/timeSeries/recent"
     "unit","/timeSeries;
     /timeSeries/profile-instance;
     /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
