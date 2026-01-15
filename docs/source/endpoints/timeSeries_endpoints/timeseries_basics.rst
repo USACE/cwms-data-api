@@ -10,8 +10,8 @@ Time Series
     `CWMS database - Time Series Definition <https://cwms-database.readthedocs.io/en/latest/naming.html#time-series>`_
 
   - A TimeSeries is a sequence of timestamped values measured or computed at a location for a specific
-    parameter (e.g., stage, flow), possibly in a given interval (e.g., 15-min) and type (e.g., observed, computed).
-    Some series have versions.
+    parameter (e.g., stage, flow). Each series may be recorded at a given interval (e.g., 15-min) and type
+    (e.g., observed, computed). Some series also have versions.
 
 - Data structure overview
 
@@ -20,7 +20,7 @@ Time Series
     `CWMS database - Component Definitions <https://cwms-database.readthedocs.io/en/latest/naming.html#>`_
 
 
-- Typical use cases (plain language)
+- Typical use cases
 
   - View most recent observation values
   - Retrieve a historical range to chart or analyze

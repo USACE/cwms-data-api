@@ -1,16 +1,25 @@
-TimeSeries — GET /timeSeries/profile-parser
+TimeSeries — GET /timeseries/profile-parser
 =============================================
 
 What it does
 ------------
-List or inspect available profile parsers (the logic that interprets profile data formats).
+Lists or inspects available profile parsers, these are the rules or logic used to interpret profile data formats.
+
+Profile parsers explain how to read text output from data loggers.  While parameter values for profile instance data
+are stored in CWMS time series, the data often arrives in non-standard format.  For example:
+
+- GOES transmissions decoded by third-party software
+- Data stored directly in the database or encoded as SHEF for CWMS processing.
+
+Profiles consist of identifiable instances instead of a continuous time series. Profile parsers make it possible to
+store these instances by using the text exported from a data logger.
 
 When to use
 -----------
-- Discover parser options before requesting a specific profile parser by IDs
+- To discover available parsers before requesting a specific profile parser by its ID.
 
 
-.. csv-table:: /timeseries/profile Endpoint Parameters
+.. csv-table:: GET /timeseries/profile - Endpoint Parameters
     :header: "Parameter", "Description", "Required"
     :widths: 20, 60, 15
 
