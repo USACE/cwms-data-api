@@ -450,12 +450,12 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     private Map<Instant, List<PumpTransfer>> buildTestPumpAccountingList() {
         Map<Instant, List<PumpTransfer>> retList = new TreeMap<>();
         List<PumpTransfer> transfers = new ArrayList<>();
-        transfers.add(new PumpTransfer(PumpType.IN, "Conduit", 100.0, "Test Transfer"));
-        transfers.add(new PumpTransfer(PumpType.OUT, "Pipeline", 200.0, "Emergency Transfer"));
+        transfers.add(new PumpTransfer(PumpType.IN, "Conduit", 100.0, "cms", "Test Transfer"));
+        transfers.add(new PumpTransfer(PumpType.OUT, "Pipeline", 200.0, "cms", "Emergency Transfer"));
         retList.put(Instant.parse("2025-10-01T00:00:00Z"), transfers);
         transfers.clear();
-        transfers.add(new PumpTransfer(PumpType.OUT, "Canal", 300.0, "Test Transfer"));
-        transfers.add(new PumpTransfer(PumpType.BELOW, "Stream", 400.0, "Emergency Transfer"));
+        transfers.add(new PumpTransfer(PumpType.OUT, "Canal", 300.0, "cms", "Test Transfer"));
+        transfers.add(new PumpTransfer(PumpType.BELOW, "Stream", 400.0, "cms", "Emergency Transfer"));
         retList.put(Instant.parse("2025-10-02T00:00:00Z"), transfers);
         return retList;
     }
@@ -463,9 +463,9 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     private Map<Instant, List<PumpTransfer>> buildTestPumpAccountingListWithFewerPumps() {
         Map<Instant, List<PumpTransfer>> retList = new TreeMap<>();
         retList.put(Instant.parse("2025-10-01T00:00:00Z"),
-                Collections.singletonList(new PumpTransfer(PumpType.IN, "Conduit", 560.0, "Test Transfer")));
+                Collections.singletonList(new PumpTransfer(PumpType.IN, "Conduit", 560.0, "cms", "Test Transfer")));
         retList.put(Instant.parse("2025-10-02T00:00:00Z"),
-                Collections.singletonList(new PumpTransfer(PumpType.IN, "Canal", 750.0, "Test Transfer")));
+                Collections.singletonList(new PumpTransfer(PumpType.IN, "Canal", 750.0, "cms", "Test Transfer")));
         return retList;
     }
 

@@ -47,6 +47,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import com.google.common.flogger.FluentLogger;
+import mil.army.usace.hec.metadata.DataSetIllegalArgumentException;
+import mil.army.usace.hec.metadata.Parameter;
+import mil.army.usace.hec.metadata.UnitUtil;
+import mil.army.usace.hec.metadata.UnitsConversionException;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
@@ -62,11 +66,54 @@ import usace.cwms.db.jooq.codegen.udt.records.WAT_USR_CONTRACT_ACCT_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.WAT_USR_CONTRACT_ACCT_TAB_T;
 
 
-final class WaterSupplyUtils {
+public final class WaterSupplyUtils {
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     private WaterSupplyUtils() {
         throw new IllegalStateException("Utility class");
+    }
+
+    /**
+     * Converts all PumpTransfer flow values to SI units and returns a new WaterSupplyAccounting instance.
+     * The SI flow units are determined using metadata for the FLOW parameter. If any conversion fails,
+     * an IllegalArgumentException is thrown wrapping the UnitsConversionException. If the SI units
+     * cannot be determined due to metadata issues, a DataSetIllegalArgumentException may be thrown.
+     *
+     * @param accounting the input WaterSupplyAccounting, possibly containing non-SI flow units
+     * @return a new WaterSupplyAccounting with all flows in SI units
+     * @throws DataSetIllegalArgumentException if SI flow units cannot be determined
+     * @throws IllegalArgumentException if a units conversion fails
+     */
+    public static WaterSupplyAccounting convertAccountingFlowsToSi(WaterSupplyAccounting accounting)
+            throws DataSetIllegalArgumentException, IllegalArgumentException {
+        String siFlowUnits = Parameter.getParameter(Parameter.PARAMID_FLOW)
+                .getUnitsStringForSystem(UnitUtil.SI_ID);
+
+        Map<Instant, List<PumpTransfer>> converted = new java.util.TreeMap<>();
+        for (Map.Entry<Instant, List<PumpTransfer>> entry : accounting.getPumpAccounting().entrySet()) {
+            List<PumpTransfer> transformed = new java.util.ArrayList<>();
+            for (PumpTransfer pt : entry.getValue()) {
+                String fromUnits = pt.getFlowUnit();
+                if (fromUnits != null && !fromUnits.equalsIgnoreCase(siFlowUnits)) {
+                    try {
+                        double siValue = UnitUtil.convertUnits(pt.getFlow(), fromUnits, siFlowUnits);
+                        transformed.add(new PumpTransfer(pt.getPumpType(), pt.getTransferTypeDisplay(), siValue,
+                                siFlowUnits, pt.getComment()));
+                    } catch (UnitsConversionException e) {
+                        throw new IllegalArgumentException(e.getMessage(), e);
+                    }
+                } else {
+                    transformed.add(pt);
+                }
+            }
+            converted.put(entry.getKey(), transformed);
+        }
+        return new WaterSupplyAccounting.Builder()
+                .withWaterUser(accounting.getWaterUser())
+                .withContractName(accounting.getContractName())
+                .withPumpLocations(accounting.getPumpLocations())
+                .withPumpAccounting(converted)
+                .build();
     }
 
     static WaterUserContract toWaterContract(WATER_USER_CONTRACT_OBJ_T contract) {
@@ -251,7 +298,7 @@ final class WaterSupplyUtils {
     }
 
     static List<WaterSupplyAccounting> toWaterSupplyAccountingList(Connection c, WAT_USR_CONTRACT_ACCT_TAB_T
-            watUsrContractAcctTabT) {
+            watUsrContractAcctTabT, String flowUnits) {
 
         List<WaterSupplyAccounting> waterSupplyAccounting = new ArrayList<>();
         Map<AccountingKey, WaterSupplyAccounting> cacheMap = new TreeMap<>();
@@ -269,9 +316,9 @@ final class WaterSupplyUtils {
                 .build();
             if (cacheMap.containsKey(key)) {
                 WaterSupplyAccounting accounting = cacheMap.get(key);
-                addTransfer(watUsrContractAcctObjT, accounting);
+                addTransfer(watUsrContractAcctObjT, accounting, flowUnits);
             } else {
-                cacheMap.put(key, createAccounting(c, watUsrContractAcctObjT));
+                cacheMap.put(key, createAccounting(c, watUsrContractAcctObjT, flowUnits));
             }
         }
         for (Map.Entry<AccountingKey, WaterSupplyAccounting> entry : cacheMap.entrySet()) {
@@ -280,7 +327,7 @@ final class WaterSupplyUtils {
         return waterSupplyAccounting;
     }
 
-    private static WaterSupplyAccounting createAccounting(Connection c, WAT_USR_CONTRACT_ACCT_OBJ_T acctObjT) {
+    private static WaterSupplyAccounting createAccounting(Connection c, WAT_USR_CONTRACT_ACCT_OBJ_T acctObjT, String flowUnits) {
         WaterContractDao waterContractDao = new WaterContractDao(DSL.using(c));
         WATER_USER_OBJ_T waterUserObjT = acctObjT.getWATER_USER_CONTRACT_REF().getWATER_USER();
         WaterUserContract waterUserContract = waterContractDao.getWaterContract(
@@ -307,13 +354,13 @@ final class WaterSupplyUtils {
         PumpTransfer transfer = null;
         if (pumpIn != null && pumpIn.getName().equalsIgnoreCase(pumpLocation)
                 && pumpIn.getOfficeId().equalsIgnoreCase(pumpOffice)) {
-            transfer = new PumpTransfer(PumpType.IN, transferDisplay, flow, remarks);
+            transfer = new PumpTransfer(PumpType.IN, transferDisplay, flow, flowUnits, remarks);
         } else if (pumpOut != null && pumpOut.getName().equalsIgnoreCase(pumpLocation)
                 && pumpOut.getOfficeId().equalsIgnoreCase(pumpOffice)) {
-            transfer = new PumpTransfer(PumpType.OUT, transferDisplay, flow, remarks);
+            transfer = new PumpTransfer(PumpType.OUT, transferDisplay, flow, flowUnits, remarks);
         } else if (pumpBelow != null && pumpBelow.getName().equalsIgnoreCase(pumpLocation)
                 && pumpBelow.getOfficeId().equalsIgnoreCase(pumpOffice)) {
-            transfer = new PumpTransfer(PumpType.BELOW, transferDisplay, flow, remarks);
+            transfer = new PumpTransfer(PumpType.BELOW, transferDisplay, flow, flowUnits, remarks);
         }
         if (transfer != null) {
             pumpAccounting.put(transferStart, Collections.singletonList(transfer));
@@ -330,7 +377,7 @@ final class WaterSupplyUtils {
             .build();
     }
 
-    private static void addTransfer(WAT_USR_CONTRACT_ACCT_OBJ_T acctObjTs, WaterSupplyAccounting accounting) {
+    private static void addTransfer(WAT_USR_CONTRACT_ACCT_OBJ_T acctObjTs, WaterSupplyAccounting accounting, String flowUnits) {
         PumpTransfer transfer = null;
         String transferDisplay = acctObjTs.getPHYSICAL_TRANSFER_TYPE().getDISPLAY_VALUE();
         String accountingRemarks = acctObjTs.getACCOUNTING_REMARKS();
@@ -343,14 +390,14 @@ final class WaterSupplyUtils {
 
         if (pumpIn != null && pumpIn.getName().equalsIgnoreCase(locationId)
                 && pumpIn.getOfficeId().equalsIgnoreCase(officeId)) {
-            transfer = new PumpTransfer(PumpType.IN, transferDisplay, acctObjTs.getPUMP_FLOW(), accountingRemarks);
+            transfer = new PumpTransfer(PumpType.IN, transferDisplay, acctObjTs.getPUMP_FLOW(), flowUnits, accountingRemarks);
         } else if (pumpOut != null && pumpOut.getName().equalsIgnoreCase(locationId)
                 && pumpOut.getOfficeId().equalsIgnoreCase(officeId)) {
-            transfer = new PumpTransfer(PumpType.OUT, transferDisplay, acctObjTs.getPUMP_FLOW(), accountingRemarks);
+            transfer = new PumpTransfer(PumpType.OUT, transferDisplay, acctObjTs.getPUMP_FLOW(), flowUnits, accountingRemarks);
         } else if (pumpBelow != null && pumpBelow.getName().equalsIgnoreCase(locationId)
                 && pumpBelow.getOfficeId().equalsIgnoreCase(officeId)) {
             transfer = new PumpTransfer(PumpType.BELOW, transferDisplay,
-                    acctObjTs.getPUMP_FLOW(), accountingRemarks);
+                    acctObjTs.getPUMP_FLOW(), flowUnits, accountingRemarks);
         }
         if (accounting.getPumpAccounting().get(transferStart) != null) {
             List<PumpTransfer> transfers = new ArrayList<>(accounting.getPumpAccounting().get(transferStart));

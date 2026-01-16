@@ -90,7 +90,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
                 contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
                 endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
             if (!watUsrContractAcctObjTs.isEmpty()) {
-                return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs);
+                return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs, units);
             } else {
                 return new ArrayList<>();
             }

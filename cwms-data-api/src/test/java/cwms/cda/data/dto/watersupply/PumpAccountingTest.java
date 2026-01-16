@@ -57,6 +57,18 @@ class PumpAccountingTest {
     }
 
     @Test
+    void testPumpTransferUnitsPresent() {
+        WaterSupplyAccounting accounting = buildTestAccounting();
+        // Ensure every PumpTransfer has the expected units string
+        for (Map.Entry<Instant, List<PumpTransfer>> e : accounting.getPumpAccounting().entrySet()) {
+            for (PumpTransfer pt : e.getValue()) {
+                assertNotNull(pt.getFlowUnit(), "Flow unit should not be null");
+                assertEquals("cms", pt.getFlowUnit(), "Flow unit should be preserved on PumpTransfer");
+            }
+        }
+    }
+
+    @Test
     void testWaterSupplyPumpAccountingSerializationRoundTripFromFile() throws Exception {
         WaterSupplyAccounting pumpAccounting = buildTestAccounting();
         InputStream resource = this.getClass().getResourceAsStream(
@@ -76,19 +88,24 @@ class PumpAccountingTest {
                 assertDoesNotThrow(pumpAccounting::validate, "Expected validation to pass");
             },
             () -> {
-                PumpTransfer pumpTransfer = new PumpTransfer(null, "Test Transfer Type", 1.0, "Test Comment");
+                PumpTransfer pumpTransfer = new PumpTransfer(null, "Test Transfer Type", 1.0, "cms", "Test Comment");
                 assertThrows(FieldException.class, pumpTransfer::validate, "Expected validation to "
                     + "fail due to null pump type");
             },
             () -> {
-                PumpTransfer pumpTransfer = new PumpTransfer(PumpType.OUT, "Test Transfer Type 3", null, "Test Comment 3");
+                PumpTransfer pumpTransfer = new PumpTransfer(PumpType.OUT, "Test Transfer Type 3", null, "cms", "Test Comment 3");
                 assertThrows(FieldException.class, pumpTransfer::validate, "Expected validation to "
                     + "fail due to null flow value");
             },
             () -> {
-                PumpTransfer pumpTransfer = new PumpTransfer(PumpType.BELOW, null, 4.0, "Test Comment 4");
+                PumpTransfer pumpTransfer = new PumpTransfer(PumpType.BELOW, null, 4.0, "cms", "Test Comment 4");
                 assertThrows(FieldException.class, pumpTransfer::validate, "Expected validation to "
                     + "fail due to null transfer type display value");
+            },
+            () -> {
+                PumpTransfer pumpTransfer = new PumpTransfer(PumpType.IN, "Test Transfer Type 2", 2.0, null, "Test Comment 2");
+                assertThrows(FieldException.class, pumpTransfer::validate, "Expected validation to "
+                        + "fail due to null flow unit");
             },
             () -> {
                 WaterSupplyAccounting pumpAccounting = new WaterSupplyAccounting.Builder().withPumpAccounting(buildTestPumpInAccountingList())
@@ -129,19 +146,19 @@ class PumpAccountingTest {
     private Map<Instant, List<PumpTransfer>> buildTestPumpInAccountingList() {
         Map<Instant, List<PumpTransfer>> retMap = new TreeMap<>();
         List<PumpTransfer> pumpMap = new ArrayList<>();
-        pumpMap.add(new PumpTransfer(PumpType.IN, "Pipeline", 1.0, "Added water to the system"));
-        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 2.0, "Removed excess water"));
-        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 3.0, "Daily water release"));
+        pumpMap.add(new PumpTransfer(PumpType.IN, "Pipeline", 1.0, "cms", "Added water to the system"));
+        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 2.0, "cms", "Removed excess water"));
+        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 3.0, "cms", "Daily water release"));
         retMap.put(Instant.ofEpochMilli(1668979048000L), pumpMap);
         pumpMap = new ArrayList<>();
-        pumpMap.add(new PumpTransfer(PumpType.IN, "Pipeline", 4.0, "Pump transfer for the day"));
-        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 5.0, "Excess water transfer"));
-        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 6.0, "Water returned to the river"));
+        pumpMap.add(new PumpTransfer(PumpType.IN, "Pipeline", 4.0, "cms", "Pump transfer for the day"));
+        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 5.0, "cms", "Excess water transfer"));
+        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 6.0, "cms", "Water returned to the river"));
         retMap.put(Instant.ofEpochMilli(1669065448000L), pumpMap);
         pumpMap = new ArrayList<>();
-        pumpMap.add(new PumpTransfer(PumpType.IN,"Pipeline", 7.0, "Pump transfer for the day"));
-        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 8.0, "Excess water transfer"));
-        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 9.0, "Water returned to the river"));
+        pumpMap.add(new PumpTransfer(PumpType.IN,"Pipeline", 7.0, "cms", "Pump transfer for the day"));
+        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 8.0, "cms", "Excess water transfer"));
+        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 9.0, "cms", "Water returned to the river"));
         retMap.put(Instant.ofEpochMilli(1669151848000L), pumpMap);
         return retMap;
     }

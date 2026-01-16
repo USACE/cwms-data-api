@@ -45,6 +45,8 @@ import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.data.dao.watersupply.WaterSupplyUtils;
+import mil.army.usace.hec.metadata.DataSetIllegalArgumentException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -132,9 +134,15 @@ public class AccountingCreateController implements Handler {
                 }
             }
 
-            waterSupplyAccountingDao.storeAccounting(accounting);
-            StatusResponse re = new StatusResponse(office, "The pump accounting entry was created.", contractId);
-            ctx.status(HttpServletResponse.SC_CREATED).json(re);
+            // Ensure flows are stored in SI units
+            try {
+                WaterSupplyAccounting accountingInSi = WaterSupplyUtils.convertAccountingFlowsToSi(accounting);
+                waterSupplyAccountingDao.storeAccounting(accountingInSi);
+                StatusResponse re = new StatusResponse(office, "The pump accounting entry was created.", contractId);
+                ctx.status(HttpServletResponse.SC_CREATED).json(re);
+            } catch (DataSetIllegalArgumentException | IllegalArgumentException ex) {
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json("Unable to process units for flow: " + ex.getMessage());
+            }
         }
     }
 
@@ -146,4 +154,6 @@ public class AccountingCreateController implements Handler {
         }
         return false;
     }
+
+    
 }
