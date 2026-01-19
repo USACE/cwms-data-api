@@ -162,7 +162,7 @@ public class TextTimeSeriesController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String templateId) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(

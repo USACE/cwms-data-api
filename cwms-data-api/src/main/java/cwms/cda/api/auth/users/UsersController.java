@@ -16,6 +16,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import java.util.List;
 
+import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -63,14 +64,13 @@ public class UsersController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        throw new UnsupportedOperationException("Unimplemented method 'create'");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String username) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'delete'");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
 
@@ -170,7 +170,7 @@ public class UsersController implements CrudHandler {
     )
     @Override
     public void update(Context ctx, String arg1) {
-        throw new UnsupportedOperationException("Unimplemented method 'update'");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     

@@ -46,6 +46,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
 
 import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -180,7 +181,7 @@ public class ApiKeyController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String arg1) {
-        throw new UnsupportedOperationException("Update is not implemented. Delete and create a new key.");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
     
 }

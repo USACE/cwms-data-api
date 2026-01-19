@@ -56,6 +56,7 @@ import static cwms.cda.api.Controllers.queryParamAsDouble;
 import static cwms.cda.api.Controllers.queryParamAsInstant;
 import static cwms.cda.api.Controllers.requiredParam;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.MeasurementDao;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.measurement.Measurement;
@@ -165,10 +166,7 @@ public final class MeasurementController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String locationId) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
-        }
-
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -208,9 +206,7 @@ public final class MeasurementController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void update(@NotNull Context ctx, @NotNull String locationId) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
-        }
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(

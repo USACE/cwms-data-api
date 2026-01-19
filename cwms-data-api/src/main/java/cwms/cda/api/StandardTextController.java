@@ -26,6 +26,7 @@ package cwms.cda.api;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.texttimeseries.StandardTextDao;
@@ -182,7 +183,7 @@ public class StandardTextController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
 

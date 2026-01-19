@@ -179,7 +179,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String templateId) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -232,7 +232,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String oldBinaryTimeSeriesId) {
+    public void update(@NotNull Context ctx, @NotNull String name) {
 
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             boolean maxVersion = true;
@@ -276,7 +276,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void delete(@NotNull Context ctx, @NotNull String binaryTimeSeriesId) {
+    public void delete(@NotNull Context ctx, @NotNull String name) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             String office = requiredParam(ctx, OFFICE);
@@ -289,7 +289,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
 
             TimeSeriesBinaryDao dao = getDao(dsl);
 
-            dao.delete(office, binaryTimeSeriesId, mask, begin, end, version);
+            dao.delete(office, name, mask, begin, end, version);
 
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }

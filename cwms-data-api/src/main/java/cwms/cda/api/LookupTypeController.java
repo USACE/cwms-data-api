@@ -27,6 +27,7 @@ package cwms.cda.api;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.StatusResponse;
@@ -106,9 +107,7 @@ public final class LookupTypeController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(@NotNull Context context, @NotNull String s) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
-        }
+        context.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(

@@ -580,7 +580,7 @@ public class TimeSeriesController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String id) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+            ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
         }
 
     }
