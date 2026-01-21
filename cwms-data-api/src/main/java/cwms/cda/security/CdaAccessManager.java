@@ -20,7 +20,7 @@ import io.javalin.http.Handler;
 import java.util.concurrent.TimeUnit;
 
 public final class CdaAccessManager implements AccessManager {
-    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     // specify the maximum number of requests allowed per time unit
     public static final String REQUEST_LIMIT_KEY = "cwms.dataapi.request.limit";

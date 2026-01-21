@@ -47,14 +47,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class LocationCategoryController implements CrudHandler {
-    public static final Logger logger =
-            Logger.getLogger(LocationCategoryController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final String TAG = "Location Categories";
 
     private final MetricRegistry metrics;
@@ -111,11 +110,7 @@ public class LocationCategoryController implements CrudHandler {
                 CdaError re = new CdaError("Cannot find requested location category for "
                         + "office provided: " + office);
 
-                logger.info(() -> {
-                    StringBuilder builder = new StringBuilder(re.toString())
-                            .append("with url:").append(ctx.fullUrl());
-                    return builder.toString();
-                });
+                logger.atInfo().log("%s with url:%s", re, ctx.fullUrl());
                 ctx.json(re).status(HttpServletResponse.SC_NOT_FOUND);
             }
 
@@ -167,11 +162,7 @@ public class LocationCategoryController implements CrudHandler {
                 CdaError re = new CdaError("Cannot find requested location category id: " + categoryId
                     + " with office: " + office);
 
-                logger.info(() -> {
-                    StringBuilder builder = new StringBuilder(re.toString())
-                            .append("with url:").append(ctx.fullUrl());
-                    return builder.toString();
-                });
+                logger.atInfo().log("%s with url:%s", re, ctx.fullUrl());
                 ctx.json(re).status(HttpServletResponse.SC_NOT_FOUND);
             }
 

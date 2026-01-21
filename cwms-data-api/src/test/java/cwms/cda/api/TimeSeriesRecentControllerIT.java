@@ -56,8 +56,7 @@ import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -71,7 +70,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Tag("integration")
 class TimeSeriesRecentControllerIT extends DataApiTestIT {
     TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-    private static final Logger LOGGER = Logger.getLogger(TimeSeriesRecentControllerIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE_ID = "SPK";
     private static final String LOCATION = "Sacramento River Delta";
     private static final String TS_ID = LOCATION + ".Depth.Inst.15Minutes.0.OBS-Raw";
@@ -100,18 +99,18 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
                         .withVersionDate(Date.from(VERSION_DATE.toInstant())).withMaxVersion(false)
                         .withOverrideProtection("F").withEndTimeInclusive(true).withStartTimeInclusive(true).build());
             } catch (NotFoundException e) {
-                LOGGER.log(Level.CONFIG, "TimeSeries not found");
+                LOGGER.atConfig().log("TimeSeries not found");
             }
             try {
                 tsGroupDao.unassignAllTs(group, OFFICE_ID);
                 tsGroupDao.delete(CATEGORY_ID, GROUP_ID, OFFICE_ID);
             } catch (NotFoundException e) {
-                LOGGER.log(Level.CONFIG, "Group not found");
+                LOGGER.atConfig().log("Group not found");
             }
             try {
                 tsCategoryDao.delete(CATEGORY_ID, true, OFFICE_ID);
             } catch (NotFoundException e) {
-                LOGGER.log(Level.CONFIG, "Category not found");
+                LOGGER.atConfig().log("Category not found");
             }
         });
     }

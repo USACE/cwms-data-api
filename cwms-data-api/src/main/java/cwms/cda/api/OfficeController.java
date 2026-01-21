@@ -27,6 +27,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -158,7 +159,7 @@ public class OfficeController implements CrudHandler {
 
                 requestResultSize.update(result.length());
             } else {
-                Map<String, String> map = new HashMap<>();
+                Map<String, Serializable> map = new HashMap<>();
                 map.put(OFFICE, "An office with that name does not exist");
                 CdaError re = new CdaError("Not Found", map);
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);

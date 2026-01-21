@@ -26,13 +26,6 @@
 
 package cwms.cda.data.dto.locationlevel;
 
-import java.math.BigInteger;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -50,13 +43,16 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
-import io.swagger.v3.oas.annotations.media.Schema;
-
 import hec.data.level.IParameterTypedValue;
 import hec.data.level.ISeasonalInterval;
 import hec.data.level.ISeasonalValue;
 import hec.data.level.ISeasonalValues;
-import hec.data.level.JDomLocationLevelImpl;
+import io.swagger.v3.oas.annotations.media.Schema;
+import java.math.BigInteger;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import rma.util.RMAConst;
 
 @JsonRootName("SeasonalLocationLevel")
@@ -91,7 +87,6 @@ public final class SeasonalLocationLevel extends LocationLevel {
 		intervalOrigin = builder.intervalOrigin;
 		intervalMonths = builder.intervalMonths;
 		intervalMinutes = builder.intervalMinutes;
-		validate();
 	}
 
 	public List<SeasonalValueBean> getSeasonalValues() {
@@ -145,22 +140,6 @@ public final class SeasonalLocationLevel extends LocationLevel {
 			withOfficeId(copyFrom.getOfficeId());
 			withParameterTypeId(copyFrom.getParameterTypeId());
 			withSeasonalValues(copyFrom.getSeasonalValues());
-			withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
-		}
-
-		public Builder(JDomLocationLevelImpl copyFrom) {
-			super(copyFrom);
-			withInterpolateString(copyFrom.getInterpolateString());
-			withIntervalMinutes(copyFrom.getIntervalMinutes());
-			withIntervalMonths(copyFrom.getIntervalMonths());
-			Date intervalOriginDate = copyFrom.getIntervalOrigin();
-			if (intervalOriginDate != null) {
-				withIntervalOrigin(ZonedDateTime.ofInstant(intervalOriginDate.toInstant(),
-						ZoneId.of("UTC")));
-			}
-
-			withISeasonalValues(copyFrom.getSeasonalValues());
-
 			withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
 		}
 

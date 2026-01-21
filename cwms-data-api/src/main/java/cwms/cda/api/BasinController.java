@@ -60,15 +60,14 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
 public class BasinController implements CrudHandler {
-    private static final Logger LOGGER = Logger.getLogger(BasinController.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     public static final String TAG = "Basins";
 
     private final MetricRegistry metrics;
@@ -109,7 +108,9 @@ public class BasinController implements CrudHandler {
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                     + "implemented")
         },
-        description = "Returns CWMS Basin Data",
+        description = "Returns CWMS Basin Data. "
+            + "This endpoint handles multiple accept header types, including named pg json. "
+            + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
         tags = {TAG}
     )
     @Override
@@ -143,7 +144,7 @@ public class BasinController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_OK);
         } catch (SQLException ex) {
             CdaError error = new CdaError("Error retrieving all basins");
-            LOGGER.log(Level.SEVERE, "Error retrieving all basins", ex);
+            LOGGER.atSevere().withCause(ex).log("Error retrieving all basins");
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
@@ -179,7 +180,9 @@ public class BasinController implements CrudHandler {
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                     + "implemented")
         },
-        description = "Returns CWMS Basin Data",
+        description = "Returns CWMS Basin Data. "
+            + "This endpoint handles multiple accept header types, including named pg json. "
+            + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
         tags = {TAG}
     )
     @Override
@@ -210,11 +213,6 @@ public class BasinController implements CrudHandler {
             }
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (SQLException ex) {
-            CdaError error = new CdaError("Error retrieving " + name);
-            String errorMsg = "Error retrieving " + name;
-            LOGGER.log(Level.SEVERE, errorMsg, ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

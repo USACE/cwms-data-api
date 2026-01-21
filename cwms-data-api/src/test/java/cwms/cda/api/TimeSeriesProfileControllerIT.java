@@ -46,8 +46,7 @@ import org.junit.jupiter.api.Test;
 import javax.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -59,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 final class TimeSeriesProfileControllerIT extends DataApiTestIT {
-    private static final Logger LOGGER = Logger.getLogger(TimeSeriesProfileControllerIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE_ID = "SPK";
     private static final TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     private final InputStream resource = this.getClass()
@@ -555,7 +554,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
                 dao.deleteTimeSeriesProfile(locationId, keyParameter, OFFICE_ID);
             });
         } catch (NotFoundException e) {
-            LOGGER.log(Level.CONFIG, "Unable to cleanup TS Profile - not found", e);
+            LOGGER.atConfig().withCause(e).log("Unable to cleanup TS Profile - not found");
         }
     }
 }

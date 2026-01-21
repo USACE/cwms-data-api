@@ -34,13 +34,11 @@ function CWMSTable({
   const config = new Configuration({
     basePath: cdaUrl,
     headers: {
-        accept: "application/json;version=2"
-    }
+      accept: "application/json;version=2",
+    },
   });
   const ts_api = new TimeSeriesApi(config);
-+
-
-  useEffect(() => {
+  +useEffect(() => {
     // Need support for page size, either defined or set with time delta
     // And then code to page thru each page and append into ts data
 
@@ -160,13 +158,25 @@ function CWMSTable({
   const tsids = timeseriesParams.map((item) => item.tsid);
 
   if (!tsids.length) {
-      return <div className="text-center m-auto p-2 gap-2 flex justify-center"><Badge color="red" className="w-1/12">No Data Found</Badge><Badge color="blue">Try A Larger Time Window?</Badge></div>
-    
+    return (
+      <div className="text-center m-auto p-2 gap-2 flex justify-center">
+        <Badge color="red" className="w-1/12">
+          No Data Found
+        </Badge>
+        <Badge color="blue">Try A Larger Time Window?</Badge>
+      </div>
+    );
   }
-  
-  if (!office) return <div className="text-center m-auto"><Badge color="red" className="w-full">No Office Selected</Badge></div>
 
-  
+  if (!office)
+    return (
+      <div className="text-center m-auto">
+        <Badge color="red" className="w-full">
+          No Office Selected
+        </Badge>
+      </div>
+    );
+
   return (
     <Table striped dense className="">
       <TableHead>
@@ -198,4 +208,4 @@ function CWMSTable({
 }
 
 export default CWMSTable;
-export { CWMSTable}
+export { CWMSTable };

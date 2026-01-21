@@ -1,6 +1,7 @@
 package cwms.cda.data.dao.timeseriesprofile;
 
 import cwms.cda.api.DataApiTestIT;
+import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.TimeSeries;
@@ -17,11 +18,10 @@ import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
 import fixtures.CwmsDataApiSetupCallback;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import usace.cwms.db.dao.ifc.ts.CwmsDbTs;
-import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,15 +34,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
+import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
-    private static final Logger logger = Logger.getLogger(TimeSeriesProfileInstanceDaoIT.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     @Test
     void testStoreTimeSeriesProfileInstanceWithDataBlock() throws SQLException {
@@ -869,13 +869,9 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
                     timeSeriesProfile.getKeyParameter(), versionId,
                     firstDate, timeZone, overrideProtection, versionDate);
 
-            try {
-                  CwmsDbTs tsDao = CwmsDbServiceLookup.buildCwmsDb(CwmsDbTs.class, c);
-                tsDao.deleteAll(c, officeId, locationName + "." + keyParameter[0] + ".Inst.0.0." + versionId);
-                tsDao.deleteAll(c, officeId, locationName + "." + parameter1[0] + ".Inst.0.0." + versionId);
-            } catch (SQLException e) {
-                  throw new RuntimeException(e);
-            }
+            Configuration config = getDslContext(c, officeId).configuration();
+            CWMS_TS_PACKAGE.call_DELETE_TS(config, locationName + "." + keyParameter[0] + ".Inst.0.0." + versionId, DeleteRule.DELETE_ALL.toString(), officeId);
+            CWMS_TS_PACKAGE.call_DELETE_TS(config, locationName + "." + parameter1[0] + ".Inst.0.0." + versionId, DeleteRule.DELETE_ALL.toString(), officeId);
 
              assertNotNull(timeSeriesProfileInstance);
         }, CwmsDataApiSetupCallback.getWebUser());
@@ -900,7 +896,7 @@ class TimeSeriesProfileInstanceDaoIT extends DataApiTestIT {
             }
             catch(cwms.cda.api.errors.NotFoundException ex)
             {
-                logger.log(Level.SEVERE, "TimeSeriesProfileInstance not found");
+                logger.atSevere().withCause(ex).log("TimeSeriesProfileInstance not found");
                 // return null for not found
             }
         }, CwmsDataApiSetupCallback.getWebUser());

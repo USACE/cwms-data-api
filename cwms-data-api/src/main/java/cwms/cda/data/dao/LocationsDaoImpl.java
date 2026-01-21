@@ -24,6 +24,8 @@
 
 package cwms.cda.data.dao;
 
+import static com.google.common.flogger.LazyArgs.lazy;
+
 import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
 import static cwms.cda.api.Controllers.LIKE;
 import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
@@ -67,8 +69,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Stream;
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
@@ -88,15 +89,13 @@ import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
-import usace.cwms.db.dao.ifc.loc.CwmsDbLoc;
-import usace.cwms.db.dao.util.services.CwmsDbServiceLookup;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 
 
 public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao {
-    private static final Logger logger = Logger.getLogger(LocationsDaoImpl.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final long DELETED_TS_MARKER = 0L;
 
 
@@ -358,20 +357,17 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         renamedLocation.validate();
         try {
             connection(dsl, c -> {
-                setOffice(c,renamedLocation);
-                CwmsDbLoc locJooq = CwmsDbServiceLookup.buildCwmsDb(CwmsDbLoc.class, c);
-                String elevationUnits = renamedLocation.getElevationUnits() == null
-                        ? Unit.METER.getValue() : renamedLocation.getElevationUnits();
-                locJooq.rename(c, renamedLocation.getOfficeId(), oldLocationName,
-                        renamedLocation.getName(), renamedLocation.getStateInitial(),
-                        renamedLocation.getCountyName(), renamedLocation.getTimezoneName(),
-                        renamedLocation.getLocationType(),
-                        renamedLocation.getLatitude(), renamedLocation.getLongitude(),
-                        renamedLocation.getElevation(), elevationUnits,
-                        renamedLocation.getVerticalDatum(), renamedLocation.getHorizontalDatum(),
-                        renamedLocation.getPublicName(),
-                        renamedLocation.getLongName(), renamedLocation.getDescription(),
-                        renamedLocation.getActive(), true);
+                Configuration config = getDslContext(c, renamedLocation.getOfficeId()).configuration();
+                CWMS_LOC_PACKAGE.call_RENAME_LOC(config,
+                    renamedLocation.getOfficeId(), oldLocationName, renamedLocation.getName());
+                CWMS_LOC_PACKAGE.call_UPDATE_LOCATION(config,
+                    renamedLocation.getName(), renamedLocation.getLocationType(), renamedLocation.getElevation(),
+                    renamedLocation.getElevationUnits(), renamedLocation.getVerticalDatum(),
+                    renamedLocation.getLatitude(), renamedLocation.getLongitude(), renamedLocation.getHorizontalDatum(),
+                    renamedLocation.getPublicName(), renamedLocation.getLongName(), renamedLocation.getDescription(),
+                    renamedLocation.getTimezoneName(), renamedLocation.getCountyName(),
+                    renamedLocation.getStateInitial(), formatBool(renamedLocation.getActive()), formatBool(true),
+                    renamedLocation.getOfficeId());
             });
         } catch (DataAccessException ex) {
             throw new IOException("Failed to rename Location", ex);
@@ -510,7 +506,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
                 .from(table)
                 .where(condition);
-            logger.log(Level.FINER, () -> count.getSQL(ParamType.INLINED));
+            logger.atFiner().log("%s", lazy(() -> count.getSQL(ParamType.INLINED)));
             total = count.fetchOne().value1();
         } else {
             cursorLocation = catPage.getCursorId();
@@ -559,7 +555,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             .from(limiter)
             .leftOuterJoin(table).on(fieldMapping.getLocationCode().eq(limitCode))
             .orderBy(orderFields);
-        logger.log(Level.FINER, () -> query.getSQL(ParamType.INLINED));
+        logger.atFiner().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         try (Stream<Record> recordStream = (Stream<Record>) query
                 .fetchSize(DEFAULT_FETCH_SIZE)
@@ -659,9 +655,9 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
     static String warnIfMismatch(String paramName, String pageParam, String queryParam) {
         if (queryParam != null && (!queryParam.equals(pageParam))) {
-            logger.log(Level.WARNING, "The {0} query parameter:{1} and page cursor parameter:{2} do not match."
-                                    + "  The value provided in the page parameter will be used.",
-                            new Object[]{paramName, queryParam, pageParam});
+            logger.atWarning().log(
+                    "The %s query parameter:%s and page cursor parameter:%s do not match.  The value provided in the page parameter will be used.",
+                    paramName, queryParam, pageParam);
         }
         return pageParam;
     }

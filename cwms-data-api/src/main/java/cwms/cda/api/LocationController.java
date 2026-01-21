@@ -43,7 +43,6 @@ import cwms.cda.api.enums.Nation;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.DeleteConflictException;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.LocationsDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.Location;
@@ -64,8 +63,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
@@ -74,7 +72,7 @@ import org.jooq.exception.DataAccessException;
 
 
 public class LocationController implements CrudHandler {
-    public static final Logger logger = Logger.getLogger(LocationController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -127,7 +125,8 @@ public class LocationController implements CrudHandler {
                         + "\n* `xml`"
                         + "\n* `wml2` (only if name field is specified)"
                         + "\n* `json` (default)\n"
-                        + "\n* `geojson`")
+                        + "\n* `geojson`"
+                        + "\n\nSee <a href=\"legacy-format/\">this page</a> for more information about accept header usage.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -140,7 +139,8 @@ public class LocationController implements CrudHandler {
                             @OpenApiContent(type = Formats.WML2),
                             @OpenApiContent(type = Formats.GEOJSON),
                             @OpenApiContent(type = "")
-                        })
+                        }),
+                @OpenApiResponse(status = STATUS_404)
             },
             description = "Returns CWMS Location Data.  The Catalog end-point is also capable of "
                     + "retrieving lists of locations and can filter on additional fields.",
@@ -199,7 +199,7 @@ public class LocationController implements CrudHandler {
 
         } catch (Exception ex) {
             CdaError re = new CdaError("failed to process request");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
@@ -239,7 +239,7 @@ public class LocationController implements CrudHandler {
 
             String units =
                     ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
             boolean includeAliases =
                     ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class).getOrDefault(false);
             String formatHeader = ctx.header(Header.ACCEPT);
@@ -250,16 +250,11 @@ public class LocationController implements CrudHandler {
             String serializedLocation = Formats.format(contentType, location);
             ctx.result(serializedLocation);
             addDeprecatedContentTypeWarning(ctx, contentType);
-        } catch (NotFoundException e) {
-            CdaError re = new CdaError("Not found.");
-            logger.log(Level.WARNING, re.toString(), e);
-            ctx.status(HttpServletResponse.SC_NOT_FOUND);
-            ctx.json(re);
         } catch (IOException ex) {
             String errorMsg = "Error retrieving " + name;
             CdaError re = new CdaError(errorMsg);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
-            logger.log(Level.SEVERE, errorMsg, ex);
+            logger.atSevere().withCause(ex).log("%s", errorMsg);
         }
     }
 
@@ -300,7 +295,7 @@ public class LocationController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
             CdaError re = new CdaError("failed to process request");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
@@ -349,15 +344,10 @@ public class LocationController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK).json(new StatusResponse(updatedLocation.getOfficeId(),
                         "Updated Location", updatedLocation.getName()));
             }
-        } catch (NotFoundException e) {
-            CdaError re = new CdaError("Not found.");
-            logger.log(Level.WARNING, re.toString(), e);
-            ctx.status(HttpServletResponse.SC_NOT_FOUND);
-            ctx.json(re);
         } catch (IOException ex) {
             CdaError re =
                     new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 

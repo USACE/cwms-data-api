@@ -24,29 +24,30 @@
 
 package cwms.cda.data.dao;
 
-import java.sql.Timestamp;
-import java.time.Instant;
-
 import static org.jooq.SQLDialect.ORACLE;
 
 import com.google.common.flogger.FluentLogger;
 import com.google.common.flogger.StackSize;
 import cwms.cda.ApiServlet;
 import cwms.cda.api.errors.AlreadyExists;
+import cwms.cda.api.errors.FieldLengthExceededException;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
-import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -93,7 +94,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static final Pattern CONVERSION_ERROR = Pattern.compile(
             "^ORA-20998: ERROR: Cannot convert ((parameter .+ from specified units: .+$)"
                     + "|(from unit .+ to unit .+$))");
-    private static final Pattern VALUE_TOO_LONG = Pattern.compile(
+    private static final Pattern FIELD_LENGTH_EXCEEDED = Pattern.compile(
             "^ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
                     + "\\(actual: (\\d+), maximum: (\\d+)\\)\\R*$");
 
@@ -175,8 +176,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         // This method should probably be called from within a connection{  } block and jOOQ
         // code within the block should use the returned DSLContext or the connection.
         DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
-        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
-
+        setOffice(connection, officeId);
         return dsl;
     }
 
@@ -293,7 +293,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         } else if (isInvalidOffice(input)) {
             retVal = buildInvalidOffice(input);
         } else if (isValueTooLargeException(input)) {
-            retVal = buildValueTooLongException(input);
+            retVal = buildFieldLengthExceededException(input);
         } else if (isTSIDInvalidIntervalException(input)) {
             retVal = buildInvalidTSIDIntervalException(input);
         }
@@ -376,8 +376,10 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     public static boolean isTSIDInvalidIntervalException(RuntimeException input) {
         return getSqlException(input.getCause()).map(sqlException -> hasCodeAndMessage(sqlException,
-                Arrays.asList(20205),
-                Arrays.asList("Invalid Time Series Description", "is not a valid interval")))
+                Arrays.asList(20205, 20998),
+                Arrays.asList("Invalid Time Series Description",
+                              "is not a valid interval",
+                              "INVALID Time Series Identifier")))
             .orElse(false);
     }
 
@@ -392,12 +394,15 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
-            if (parts.length > 2) {
-                return new InvalidItemException(String.format("Invalid Time Series Description: %s is not a valid interval",
-                    parts[1]), cause);
+            String errorMessage = parts[0];
+            if (CURRENT_SCHEMA_VERSION <= SCHEMA_VERSION.V2025_07_01.numeric() && parts.length > 2)
+            {
+                errorMessage = parts[1];
             }
+            return new InvalidItemException(String.format("Invalid time series description: %s", 
+                                            errorMessage), cause);
         }
-        return new InvalidItemException("Invalid Time Series Description", cause);
+        return new InvalidItemException("Invalid time series description", cause);
     }
 
     public static boolean isInvalidItem(RuntimeException input) {
@@ -464,7 +469,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
 
         return new CwmsAuthException("User not authorized for this office.", cause,
-                                            HttpServletResponse.SC_UNAUTHORIZED, false);
+                                            HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     public static boolean isAlreadyExists(RuntimeException input) {
@@ -635,7 +640,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new InvalidItemException(localizedMessage, cause);
     }
 
-    private static ValueTooLongException buildValueTooLongException(RuntimeException input) {
+    private static FieldLengthExceededException buildFieldLengthExceededException(RuntimeException input) {
         Throwable cause = input.getCause();
         if (input instanceof DataAccessException) {
             DataAccessException dae = (DataAccessException) input;
@@ -651,15 +656,15 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
 
         if (localizedMessage != null) {
-            Matcher matcher = VALUE_TOO_LONG.matcher(localizedMessage);
+            Matcher matcher = FIELD_LENGTH_EXCEEDED.matcher(localizedMessage);
             if (matcher.matches()) {
                 String parameter = matcher.group(1);
                 int actualLength = Integer.parseInt(matcher.group(2));
                 int maxLength = Integer.parseInt(matcher.group(3));
-                return new ValueTooLongException(parameter, actualLength, maxLength, cause, true);
+                return new FieldLengthExceededException(parameter, actualLength, maxLength, cause, true);
             }
         }
-        return new ValueTooLongException(cause);
+        return new FieldLengthExceededException(cause);
     }
 
     private static InvalidItemException buildInvalidOffice(RuntimeException input) {
@@ -752,14 +757,6 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
     }
 
-    public static String formatBool(Boolean tf) {
-        String parsed = null;
-        if (tf != null) {
-            parsed = tf ? "T" : "F";
-        }
-        return parsed;
-    }
-
     public static boolean parseBool(String str) {
         if ("T".equalsIgnoreCase(str)) {
             return true;
@@ -797,4 +794,37 @@ public abstract class JooqDao<T> extends Dao<T> {
         return (bigDecimal == null) ? 0.0 : bigDecimal.doubleValue();
     }
 
+    protected static void checkMetaData(ResultSetMetaData metaData, List<String> columnList,
+        String type) throws SQLException {
+        int columnCount = metaData.getColumnCount();
+        List<String> metadataColumns = new ArrayList<>();
+        logger.atFine().log("{0} column dump.", type);
+        for (int ii = 1; ii <= columnCount; ii++) {
+            String columnName = metaData.getColumnName(ii).toUpperCase();
+            metadataColumns.add(columnName);
+            logger.atFine().log("{0}: {1}", new Object[]{ii, columnName});
+        }
+        Collections.sort(metadataColumns);
+        if (!metadataColumns.containsAll(columnList)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(type).append(" columns do not match expected names.\nExpected: ");
+            for (String s : columnList) {
+                sb.append(s).append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+            sb.append(".\nReceived: ");
+            for (String s : metadataColumns) {
+                sb.append(s).append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+            List<String> missing = new ArrayList<>(columnList);
+            missing.removeAll(metadataColumns);
+            sb.append(".\nMissing: ");
+            for (String s : missing) {
+                sb.append(s).append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+            throw new SQLException(sb.toString());
+        }
+    }
 }

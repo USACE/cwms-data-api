@@ -7,9 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
-import java.util.Optional;
-import java.util.logging.Logger;
-
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -17,7 +14,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-import cwms.cda.ApiServlet;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.auth.users.User;
 import cwms.cda.data.dto.auth.users.Users;
@@ -32,7 +28,6 @@ import io.restassured.specification.RequestSpecification;
 @Tag("integration")
 @ExtendWith(KeyCloakExtension.class)
 public class UserManagementTestIT extends DataApiTestIT {
-    private static final Logger logger = Logger.getLogger(UserManagementTestIT.class.getName());
     
     @ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)

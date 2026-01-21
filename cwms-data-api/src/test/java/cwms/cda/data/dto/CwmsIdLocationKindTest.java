@@ -46,7 +46,7 @@ final class CwmsIdLocationKindTest {
                 .withLocationId(CwmsId.buildCwmsId(office, locationId))
                 .withLocationKindId(kindName).build();
 
-        ContentType contentType = new ContentType(Formats.JSONV2);
+        ContentType contentType = new ContentType(Formats.JSONV1);
         String json = Formats.format(contentType, kind);
 
         CwmsIdLocationKind parsedKind = Formats.parseContent(contentType, json, CwmsIdLocationKind.class);
@@ -59,7 +59,7 @@ final class CwmsIdLocationKindTest {
     @Test
     void test_DeserializeFromFile() {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/cwmsid_location_kind.json");
-        ContentType contentType = new ContentType(Formats.JSONV2);
+        ContentType contentType = new ContentType(Formats.JSONV1);
         CwmsIdLocationKind parsedKind = Formats.parseContent(contentType, resource, CwmsIdLocationKind.class);
 
         assertEquals("Pine Flat Area", parsedKind.getLocationId().getName());

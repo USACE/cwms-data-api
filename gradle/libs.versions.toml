@@ -3,7 +3,6 @@ jaxb-api = "2.3.1"
 jaxb-impl = "3.0.2"
 jooq-codegen = "24.12.04-2025.01.21"
 jooq = "3.18.7-jdk11"
-hec-data-access = "9.8.0"
 slf4j = "2.0.9"
 hec-monolith = "3.3.20"
 hec-nucleus = "2.0.1"
@@ -12,7 +11,7 @@ google-findbugs = "3.0.2"
 error_prone_annotations = "2.15.0"
 cwms-ratings = "2.0.2"
 javalin = "4.6.8"
-tomcat = "9.0.105"
+tomcat = "9.0.112"
 swagger-core = "2.2.23"
 jackson = "2.17.1"
 geojson-jackson = "1.14"
@@ -25,7 +24,7 @@ jjwt = "0.11.5"
 jstl = "1.2"
 junit = "5.11.1"
 junit-launcher = "1.11.2"
-testcontainers = { strictly = "1.20.4" }
+testcontainers = { strictly = "2.0.2" }
 cwms-testcontainers = "2.0.0"
 oracle-jdbc = "19.3.0.0"
 mockito = "4.6.1"
@@ -36,6 +35,7 @@ google-auto-service = "1.0-rc6"
 freemarker = "2.3.32"
 auto-service = "1.1.1"
 openapi-validation = "2.44.9"
+javaparser = "3.26.2"
 
 #Overrides
 classgraph = { strictly = '4.8.176' }
@@ -50,8 +50,6 @@ jaxb-api = { module = "javax.xml.bind:jaxb-api", version.ref = "jaxb-api" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-impl" }
 jaxb-core = { module = "com.sun.xml.bind:jaxb-core", version.ref = "jaxb-impl" }
 cwms-db-jooq-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version.ref = "jooq-codegen" }
-cwms-db-dao = { module = "mil.army.usace.hec:cwms-db-dao", version.ref = "hec-data-access" }
-cwms-db-jooq-base = { module = "mil.army.usace.hec:cwms-db-jooq", version.ref = "hec-data-access" }
 jooq = { module = "org.jooq.pro-java-11:jooq", version.ref ="jooq" }
 slf4j = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 monolith = { module = "mil.army.usace.hec:hec-monolith", version.ref = "hec-monolith" }
@@ -104,9 +102,9 @@ openapi-spec-validation = { module = "com.atlassian.oai:swagger-request-validato
 
 
 testcontainers-base = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers"}
-testcontainers-database-commons = { module = "org.testcontainers:database-commons", version.ref = "testcontainers" }
-testcontainers-jdbc = { module = "org.testcontainers:jdbc", version.ref = "testcontainers"}
-testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers"}
+testcontainers-database-commons = { module = "org.testcontainers:testcontainers-database-commons", version.ref = "testcontainers" }
+testcontainers-jdbc = { module = "org.testcontainers:testcontainers-jdbc", version.ref = "testcontainers"}
+testcontainers-junit-jupiter = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers"}
 testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "cwms-testcontainers"}
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 oracle-jdbc-driver = { module ="com.oracle.database.jdbc:ojdbc8", version.ref = "oracle-jdbc" }
@@ -114,6 +112,8 @@ rest-assured = { module = "io.rest-assured:rest-assured", version.ref = "rest-as
 hamcrest-all = { module = "org.hamcrest:hamcrest-all", version.ref = "hamcrest" }
 apache-freemarker = { module = "org.freemarker:freemarker", version.ref = "freemarker" }
 apache-commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "apache-commons.csv" }
+javaparser-core = { module = "com.github.javaparser:javaparser-core", version.ref = "javaparser" }
+javaparser-symbol-solver-core = { module = "com.github.javaparser:javaparser-symbol-solver-core", version.ref = "javaparser"}
 # test runtime
 
 # tomcat
@@ -141,3 +141,4 @@ testcontainers = [ "testcontainers-base", "testcontainers-database-commons", "te
 metrics = ["metrics-core", "metrics-servlets", "metrics-prometheus-client", "metrics-prometheus-servlets" ]
 jackson = ["jackson-core", "jackson-dataformat-csv", "jackson-dataformat-xml", "jackson-datatype-jsr310" ]
 overrides = ["io-github.classgraph", "io-swagger-parser"]
+java-parser = ["javaparser-core", "javaparser-symbol-solver-core"]

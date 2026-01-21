@@ -346,7 +346,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_level_as_timeseries() throws Exception {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         createLocation("level_as_timeseries", true, OFFICE);
         String levelId = "level_as_timeseries.Flow.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
@@ -373,7 +372,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(BEGIN, time.toInstant().toString())
                 .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
@@ -413,7 +411,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                         .log().ifValidationFails(LogDetail.ALL,true)
                         .accept(Formats.JSONV2)
                         .contentType(Formats.JSONV2)
-                        .header("Authorization", user.toHeaderValue())
                         .queryParam(Controllers.OFFICE, OFFICE)
                         .queryParam(BEGIN, time.toInstant().toString())
                         .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
@@ -493,7 +490,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .header(ApiServlet.IS_NEW_LRTS, false)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
@@ -515,7 +511,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
@@ -1616,6 +1611,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertThat(response.path("constituents[0].attribute-id"), equalTo("Stage"));
         assertThat(response.path("constituents[1].name"), equalTo(existingSpec));
         assertThat(response.path("constituents[1].type"), equalTo("RATING"));
+        assertThat(response.path("expiration-date"), equalTo(Instant.ofEpochMilli(1685689200000L).toString()));
 
         // Delete the level
         switch (deletionMethod) {
@@ -1742,6 +1738,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .withIntervalOrigin(intervalOrigin)
                 .withSeasonalValues(values)
                 .withInterpolateString("T")
+                .withExpirationDate(levelDate.plusYears(50))
                 .build();
 
         String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
@@ -1780,7 +1777,93 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("expiration-date", equalTo(levelDate.plusYears(50).toInstant().toString()))
             .body("seasonal-values.size()", is(numValues));
+    }
+
+    @Test
+    void testRetrieveAllSeasonalLevel() throws Exception {
+        String locName = "seasonalLoc18";
+        createLocation(locName, true, OFFICE);
+        String levelId = String.format("%s.Elev.Ave.1Day.Top of Spillway", locName);
+        ZonedDateTime intervalOrigin = ZonedDateTime.ofInstant(Instant.parse("2012-01-01T00:00:00Z"), ZoneId.of("UTC"));
+        ZonedDateTime levelDate = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:00Z"), ZoneId.of("UTC"));
+        List<SeasonalValueBean> values = new ArrayList<>();
+        int numValues = 12;
+        for (int i = 1; i <= numValues; i++) {
+            values.add(new SeasonalValueBean.Builder()
+                .withValue(i + 1.0)
+                .withOffsetMonths(i)
+                .build());
+        }
+        SeasonalLocationLevel level = new SeasonalLocationLevel.Builder(levelId, levelDate)
+            .withOfficeId(OFFICE)
+            .withLevelUnitsId("ft")
+            .withIntervalMonths(12)
+            .withIntervalOrigin(intervalOrigin)
+            .withSeasonalValues(values)
+            .withInterpolateString("T")
+            .withExpirationDate(levelDate.plusYears(50))
+            .build();
+
+        String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+            .body(levelJson)
+            .contentType(Formats.JSONV2)
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Created Location Level"))
+            .body(IDENTIFIER, equalTo(levelId));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EFFECTIVE_DATE, levelDate.toInstant().toString())
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("expiration-date", equalTo(levelDate.plusYears(50).toInstant().toString()))
+            .body("seasonal-values.size()", is(numValues));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EFFECTIVE_DATE, levelDate.toInstant().toString())
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .queryParam(LEVEL_ID_MASK, levelId)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(1))
+            .body("levels[0].expiration-date", equalTo(levelDate.plusYears(50).toInstant().toString()))
+            .body("levels[0].seasonal-values.size()", is(numValues))
+            .body("total", is(numValues));
     }
 
     @Test
@@ -1790,11 +1873,12 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String levelId = String.format("%s.Elev.Ave.1Day.Regulating", locName);
         String tsId = String.format("%s.Elev.Ave.1Day.1Week.Regulating", locName);
         createTimeseries(OFFICE, tsId);
-        ZonedDateTime time = ZonedDateTime.now();
+        ZonedDateTime time = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:00Z"), ZoneId.of("UTC"));
         TimeSeriesLocationLevel level = new TimeSeriesLocationLevel.Builder(levelId, time, tsId)
             .withOfficeId(OFFICE)
             .withLevelUnitsId("ft")
             .withInterpolateString("T")
+            .withExpirationDate(time.plusYears(50))
             .build();
 
         String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
@@ -1833,6 +1917,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("expiration-date", equalTo(time.plusYears(50).toInstant().toString()))
             .body("seasonal-time-series-id", equalTo(tsId));
     }
 
@@ -1841,11 +1926,12 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String locName = "constLocation123";
         createLocation(locName, true, OFFICE);
         String levelId = String.format("%s.Elev.Ave.1Day.Regulating", locName);
-        ZonedDateTime time = ZonedDateTime.now();
+        ZonedDateTime time = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:00Z"), ZoneId.of("UTC"));
         ConstantLocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
             .withOfficeId(OFFICE)
             .withLevelUnitsId("ft")
             .withConstantValue(8675.309)
+            .withExpirationDate(time.plusYears(50))
             .build();
 
         String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
@@ -1885,6 +1971,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("expiration-date", equalTo(time.plusYears(50).toInstant().toString()))
             .body("constant-value", equalTo(8675.309f));
     }
 

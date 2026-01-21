@@ -24,10 +24,13 @@
 
 package cwms.cda.data.dao;
 
-import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
+import static com.google.common.flogger.LazyArgs.lazy;
+
 import static cwms.cda.data.dto.rating.RatingSpec.Builder.buildIndependentRoundingSpecs;
+import static java.util.stream.Collectors.toList;
 
 import cwms.cda.data.dto.CwmsDTOPaginated;
+import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
 import cwms.cda.data.dto.rating.RatingSpec;
 import cwms.cda.data.dto.rating.RatingSpecEffectiveDates;
 import cwms.cda.data.dto.rating.RatingSpecs;
@@ -55,10 +58,8 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
-import static java.util.stream.Collectors.toList;
 import java.util.stream.Stream;
 import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.RowSetProvider;
@@ -67,20 +68,16 @@ import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
-import org.jooq.Record2;
-import org.jooq.Result;
 import org.jooq.ResultQuery;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
-import static org.jooq.impl.DSL.field;
-import usace.cwms.db.dao.util.OracleTypeMap;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 
 public class RatingSpecDao extends JooqDao<RatingSpec> {
     public static final Calendar GMT_CALENDAR = getGmtCalendar();
-    private static final Logger logger = Logger.getLogger(RatingSpecDao.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String OFFICE_ID = "OFFICE_ID";
     public static final String SPECIFICATION_ID = "SPECIFICATION_ID";
     public static final String LOCATION_ID = "LOCATION_ID";
@@ -146,7 +143,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .where(condition)
                 .fetchSize(DEFAULT_FETCH_SIZE);
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
         try (Stream<? extends Record> stream = query.fetchStream()) {
@@ -186,7 +183,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                     try {
                         total = Integer.valueOf(parts[1]);
                     } catch (NumberFormatException e) {
-                        logger.log(Level.INFO, "Could not parse " + parts[1]);
+                        logger.atInfo().log("Could not parse %s", parts[1]);
                     }
                 }
                 pageSize = Integer.parseInt(parts[2]);
@@ -240,7 +237,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .limit(pageSize)
                 .offset(firstRow);
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
         try (Stream<? extends Record> stream = query.fetchStream()) {
@@ -300,7 +297,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 .orderBy(specView.OFFICE_ID, specView.RATING_ID, ratView.EFFECTIVE_DATE)
                 .fetchSize(DEFAULT_FETCH_SIZE);
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
         try (Stream<? extends Record> stream = query.fetchStream()) {
@@ -444,7 +441,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 }
             }
             try(ResultSet rs = catRatings(conn, officeIdMask, specIdMask, begin, end)) {
-                OracleTypeMap.checkMetaData(rs.getMetaData(), RATINGS_COLUMN_LIST, "Ratings");
+                checkMetaData(rs.getMetaData(), RATINGS_COLUMN_LIST, "Ratings");
                 while(rs.next()) {
                     String officeId = rs.getString(OFFICE_ID);
                     String specId = rs.getString(SPECIFICATION_ID);
@@ -544,6 +541,5 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                     .orderBy(officeField, idField)
                     .fetchGroups(officeField, idField);
         });
-
     }
 }

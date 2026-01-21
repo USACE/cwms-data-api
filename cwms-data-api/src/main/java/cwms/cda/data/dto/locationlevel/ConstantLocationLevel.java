@@ -87,14 +87,6 @@ public final class ConstantLocationLevel extends LocationLevel {
 			withConstantValue(copyFrom.getConstantValue());
 		}
 
-		public Builder(JDomLocationLevelImpl copyFrom) {
-			super(copyFrom);
-			IParameterTypedValue constantLevel = copyFrom.getConstantLevel();
-			if (constantLevel != null) {
-				withConstantValue(constantLevel.getSiParameterUnitsValue());
-			}
-		}
-
 		public ConstantLocationLevel.Builder withConstantValue(Double value) {
 			if (value != null && RMAConst.isUndefinedValue(value)) {
 				value = null;

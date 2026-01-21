@@ -72,6 +72,7 @@ class LocationControllerTest extends ControllerTest
         attributes.put(JsonMapperKt.JSON_MAPPER_KEY,new JavalinJackson());
 
         when(request.getInputStream()).thenReturn(new TestServletInputStream(testBody));
+        when(request.getQueryString()).thenReturn("office=LRL");
 
         final Context context = ContextUtil.init(request,response,"*", new HashMap<>(), HandlerType.GET,attributes);
         context.attribute("database",getTestConnection());
@@ -79,6 +80,7 @@ class LocationControllerTest extends ControllerTest
         when(request.getAttribute("database")).thenReturn(getTestConnection());
 
         assertNotNull( context.attribute("database"), "could not get the connection back as an attribute");
+        assertNotNull(context.queryParam("office"), "could not get the office back as a query parameter" );
 
         String locationId = "SimpleNoAlias";
 

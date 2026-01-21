@@ -15,7 +15,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import java.util.logging.Logger;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.FORECAST_DATE;
@@ -30,7 +29,6 @@ import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.TIMESERIES_ID;
 
 public class ForecastTimeseriesController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(ForecastSpecController.class.getName());
 
     public static final String TAG = "Forecast";
     private final MetricRegistry metrics;

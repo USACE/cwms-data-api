@@ -550,7 +550,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, String.format("%s*", baseLocationName))
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
@@ -572,7 +571,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
@@ -593,7 +591,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "^(BASIN)$")
@@ -615,7 +612,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "^(STREAM)*$")
@@ -636,7 +632,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "NOT:^(STREAM)*$")
@@ -656,7 +651,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "NOT:^(STREAM)*$")
@@ -677,7 +671,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
@@ -692,5 +685,60 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("entries.size()", is(0));
+    }
+
+    @Test
+    void test_locations_unsupported_param_single() {
+        // When requesting the LOCATIONS catalog, certain timeseries params are not supported.
+        // Verify that supplying a single unsupported parameter results in a 400 with only that parameter listed.
+        Response resp =
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, OFFICE)
+                .queryParam(INCLUDE_EXTENTS, true)
+            .when()
+                .get("/catalog/LOCATIONS")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+                .body("message", is("Unsupported parameter(s) for Locations catalog"))
+                .body("details.'unsupported query parameters'", is(INCLUDE_EXTENTS))
+                .extract()
+                .response();
+
+        // Ensure only the provided unsupported parameter is mentioned
+        String details = resp.path("details.'unsupported query parameters'");
+        assertEquals(INCLUDE_EXTENTS, details);
+    }
+
+    @Test
+    void test_locations_unsupported_params_multiple() {
+        // Verify that if multiple unsupported params are provided, only those provided are reported.
+        Response resp =
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, OFFICE)
+                .queryParam(INCLUDE_EXTENTS, true)
+                .queryParam(EXCLUDE_EMPTY, true)
+            .when()
+                .get("/catalog/LOCATIONS")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+                .body("message", is("Unsupported parameter(s) for Locations catalog"))
+                .body("details", hasKey("unsupported query parameters"))
+                .extract()
+                .response();
+
+        String details = resp.path("details.'unsupported query parameters'");
+        assertNotNull(details);
+        String[] parts = details.split(",");
+        assertEquals(2, parts.length, "Expected exactly two unsupported parameters to be reported");
+        // Order of parameters in the message is not guaranteed; verify as a set
+        assertTrue(List.of(parts).containsAll(List.of(INCLUDE_EXTENTS, EXCLUDE_EMPTY)));
     }
 }

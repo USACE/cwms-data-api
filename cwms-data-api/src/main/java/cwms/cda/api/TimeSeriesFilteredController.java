@@ -9,7 +9,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.FilteredTimeSeriesParameters;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.TimeSeriesDao;
@@ -34,8 +33,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -45,7 +43,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class TimeSeriesFilteredController implements Handler {
-    private static final Logger logger = Logger.getLogger(TimeSeriesFilteredController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String TAG = "TimeSeries";
 
     private static final int DEFAULT_PAGE_SIZE = 500;
@@ -240,14 +238,9 @@ public class TimeSeriesFilteredController implements Handler {
 
             addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
-        } catch (NotFoundException e) {
-            CdaError re = new CdaError("Not found.");
-            logger.log(Level.WARNING, re.toString(), e);
-            ctx.status(HttpServletResponse.SC_NOT_FOUND);
-            ctx.json(re);
         } catch (IllegalArgumentException ex) {
             CdaError re = new CdaError("Invalid arguments supplied");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.json(re);
         }
@@ -272,7 +265,7 @@ public class TimeSeriesFilteredController implements Handler {
 
             ctx.header("Link", linkValue.toString());
         } catch (URISyntaxException ex) {
-            logger.log(Level.WARNING, null, ex);
+            logger.atWarning().withCause(ex).log("Error building Link header");
         }
     }
 

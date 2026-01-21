@@ -30,13 +30,12 @@ import cwms.cda.ApiServlet;
 import cwms.cda.data.dto.CdaVersion;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
 public final class CdaVersionDao extends JooqDao<CdaVersion> {
-    private static final Logger logger = Logger.getLogger(CdaVersionDao.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     public CdaVersionDao(DSLContext dsl) {
         super(dsl);
@@ -69,7 +68,7 @@ public final class CdaVersionDao extends JooqDao<CdaVersion> {
             tsDao.validateEntryDateSupport(true);
             supported = true;
         } catch (DataAccessException e) {
-            logger.log(Level.FINEST, e.getMessage(), e);
+            logger.atFinest().withCause(e).log("%s", e.getMessage());
         }
         return String.valueOf(supported);
     }

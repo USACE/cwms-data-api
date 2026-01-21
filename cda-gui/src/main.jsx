@@ -20,6 +20,7 @@ import "./css/index.css";
 import ErrorFallback from "./pages/ErrorFallback";
 import FilterExpressions from "./pages/rsql";
 import Timestamps from "./pages/timestamps";
+import LegacyFormat from "./pages/legacy-format/index.jsx";
 
 const queryClient = new QueryClient();
 
@@ -39,11 +40,12 @@ const router = createBrowserRouter(
         { path: "regexp", element: <Regexp /> },
         { path: "filter-expressions", element: <FilterExpressions /> },
         { path: "timestamps", element: <Timestamps /> },
+        { path: "legacy-format", element: <LegacyFormat /> },
         { path: "*", element: <NotFound /> },
       ],
     },
   ],
-  { basename: "/cwms-data" }
+  { basename: "/cwms-data" },
 );
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -53,5 +55,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <RouterProvider router={router} />
       </LinkProvider>
     </QueryClientProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

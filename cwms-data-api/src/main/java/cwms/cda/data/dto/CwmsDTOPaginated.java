@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -29,7 +29,7 @@ import kotlin.jvm.functions.Function1;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonPropertyOrder(alphabetic = true)
 public abstract class CwmsDTOPaginated extends CwmsDTOBase {
-    private static final Logger logger = Logger.getLogger(CwmsDTOPaginated.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     @Schema(
         description = "The cursor to the current page of data",
@@ -154,7 +154,7 @@ public abstract class CwmsDTOPaginated extends CwmsDTOBase {
         private static Pattern base64 = Pattern.compile("^[-A-Za-z0-9+/]*={0,3}$");
         @Override
         public Boolean invoke(String cursor) {
-            logger.finest("checking");
+            logger.atFinest().log("checking");
             return base64.matcher(cursor).matches() ? Boolean.TRUE : Boolean.FALSE;
         }
 

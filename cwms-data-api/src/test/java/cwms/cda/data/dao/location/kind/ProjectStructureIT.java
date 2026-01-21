@@ -55,7 +55,7 @@ public abstract class ProjectStructureIT extends DataApiTestIT {
 
 	public static Location buildProjectLocation(String locationId) {
 		return new Location.Builder(locationId, "PROJECT", ZoneId.of("UTC"),
-				38.5613824, -121.7298432, "NVGD29", OFFICE_ID)
+				38.5613824, -121.7298432, "NGVD29", OFFICE_ID)
 				.withElevation(10.0)
 				.withElevationUnits("m")
 				.withLocationType("SITE")
@@ -97,7 +97,7 @@ public abstract class ProjectStructureIT extends DataApiTestIT {
 
 	public static Location buildProjectStructureLocation(String locationId, String locationKind) {
 		return new Location.Builder(locationId, locationKind, ZoneId.of("UTC"),
-			38.5613824, -121.7298432, "NVGD29", OFFICE_ID)
+			38.5613824, -121.7298432, "NGVD29", OFFICE_ID)
 			.withPublicName("Integration Test " + locationId)
 			.withLongName("Integration Test " + locationId + " " + locationKind)
 			.withElevation(10.0)

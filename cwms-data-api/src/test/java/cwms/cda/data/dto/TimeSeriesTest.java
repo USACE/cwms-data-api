@@ -4,6 +4,9 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -20,6 +23,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.formatters.xml.XMLv2;
 
 import java.util.List;
+
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -104,6 +109,33 @@ public class TimeSeriesTest {
 		String tsBody = Formats.format(new ContentType(Formats.JSONV2), ts);
 		assertNotNull(tsBody);
 	}
+
+    @Test
+    void testDeserializeVerticalDatum() throws IOException {
+        InputStream stream;
+
+        // verify that we can deserialize ts that don't have vertical datum info
+        stream = getClass().getClassLoader().getResourceAsStream(
+                "cwms/cda/api/timeseries/ts_no_vertical.json");
+        assertNotNull(stream);
+        String input = IOUtils.toString(stream, StandardCharsets.UTF_8);
+        ObjectMapper om = buildObjectMapper();
+
+        TimeSeries ts = om.readValue(input, TimeSeries.class);
+        assertNotNull(ts);
+        assertNull(ts.getVerticalDatumInfo());
+
+        // verify that we can deserialize ts that do have vertical datum inf
+        stream = getClass().getClassLoader().getResourceAsStream(
+                "cwms/cda/api/timeseries/ts_with_vertical.json");
+        assertNotNull(stream);
+         input = IOUtils.toString(stream, StandardCharsets.UTF_8);
+
+         ts = om.readValue(input, TimeSeries.class);
+        assertNotNull(ts);
+        assertNotNull(ts.getVerticalDatumInfo());
+
+    }
 
 	@NotNull
 	private TimeSeries buildTimeSeries() {

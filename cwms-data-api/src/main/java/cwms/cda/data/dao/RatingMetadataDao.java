@@ -62,8 +62,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -71,7 +70,7 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static org.jooq.impl.DSL.field;
 
 public class RatingMetadataDao extends JooqDao<RatingSpec> {
-    private static final Logger logger = Logger.getLogger(RatingMetadataDao.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     public static final String EMPTY = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
             + "<ratings xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" "
@@ -311,7 +310,7 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
                     try {
                         retVal = RatingXmlFactory.ratingSet(xmlText);
                     } catch (RatingException e) {
-                        logger.log(Level.WARNING, "Could not parse xml: " + xmlText, e);
+                        logger.atWarning().withCause(e).log("Could not parse xml: %s", xmlText);
                     }
                 }
             }

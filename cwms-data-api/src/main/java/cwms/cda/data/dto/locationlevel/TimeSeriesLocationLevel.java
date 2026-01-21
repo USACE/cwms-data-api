@@ -92,11 +92,6 @@ public final class TimeSeriesLocationLevel extends LocationLevel {
 			withSpecifiedLevelId(copyFrom.getSpecifiedLevelId());
 		}
 
-		public Builder(JDomLocationLevelImpl copyFrom) {
-			super(copyFrom);
-			this.seasonalTimeSeriesId = copyFrom.getSeasonalTimeSeriesId();
-		}
-
 		public TimeSeriesLocationLevel.Builder withSeasonalTimeSeriesId(String seasonalTimeSeriesId) {
 			this.seasonalTimeSeriesId = seasonalTimeSeriesId;
 			return this;

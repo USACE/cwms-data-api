@@ -9,7 +9,7 @@
               minIdle="${CDA_POOL_MIN_IDLE}"
               validationQuery="select 1 from dual"
               validationQueryTimeout="1"              
-              removeAbandoned="true"
+              removeAbandoned="false"
               removeAbandonedTimeout="10"
               testOnBorrow="true"
               testOnConnect="true"

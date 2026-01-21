@@ -24,11 +24,11 @@ RUN apk --no-cache upgrade && \
 
 RUN mkdir /download && \
     cd /download && \
-    wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.105/bin/apache-tomcat-9.0.105.tar.gz && \
-    echo "904f10378ee2c7c68529edfefcba50c77eb677aa4586cfac0603e44703b0278f71f683b0295774f3cdcb027229d146490ef2c8868d8c2b5a631cf3db61ff9956 *apache-tomcat-9.0.105.tar.gz" > checksum.txt && \
+    wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.112/bin/apache-tomcat-9.0.112.tar.gz && \
+    echo "fc55589f28bf6659928167461c741649b6005b64285dd81df05bb5ee40f4c6de59b8ee3af84ff756ae1513fc47f5f73070e29313b555e27f096f25881c69841d *apache-tomcat-9.0.112.tar.gz" > checksum.txt && \
     sha512sum -c checksum.txt && \
     tar xzf apache-tomcat-*tar.gz && \
-    mv apache-tomcat-9.0.105 /usr/local/tomcat/ && \
+    mv apache-tomcat-9.0.112 /usr/local/tomcat/ && \
     cd / && \
     rm -rf /download && \
     rm -rf /usr/local/tomcat/webapps/* && \

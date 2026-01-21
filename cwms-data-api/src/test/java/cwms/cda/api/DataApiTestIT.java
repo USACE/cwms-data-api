@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2025 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@ import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
 
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import com.google.common.flogger.FluentLogger;
+
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
 import cwms.cda.data.dao.basin.BasinDao;
@@ -96,7 +97,7 @@ public class DataApiTestIT {
     protected static String createLocationQuery = null;
     protected static String createTimeseriesQuery = null;
     protected static String createTimeseriesOffsetQuery = null;
-    protected static final String registerApiKey = "insert into at_api_keys(userid,key_name,apikey) values(UPPER(?),?,?)";
+    protected static final String registerApiKey = "insert into at_api_keys(userid,key_name,apikey,expires) values(UPPER(?),?,?, null)";
     protected static final String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and apikey = ?";
 
     protected static final Configuration freemarkerConfig = new Configuration(Configuration.VERSION_2_3_32);
@@ -110,11 +111,12 @@ public class DataApiTestIT {
         freemarkerConfig.setClassForTemplateLoading(DataApiTestIT.class, "/");
     }
 
-    public static final String OPEN_API_SPEC_URL = String.format("%s:%s%s/swagger-docs", CwmsDataApiSetupCallback.httpUrl(), CwmsDataApiSetupCallback.httpPort(), System.getProperty("warContext"));
-    private static OpenApiValidationFilter validationFilter;
+    private static String OPEN_API_SPEC_URL = null;
+    private static OpenApiValidationFilter validationFilter = null;
 
     public static OpenApiValidationFilter getOpenApiValidationFilter() {
         if (validationFilter == null) {
+            OPEN_API_SPEC_URL = String.format("%s:%s%s/swagger-docs", CwmsDataApiSetupCallback.httpUrl(), CwmsDataApiSetupCallback.httpPort(), System.getProperty("warContext"));
             validationFilter = new OpenApiValidationFilter(OPEN_API_SPEC_URL);
         }
         return validationFilter;
@@ -276,7 +278,9 @@ public class DataApiTestIT {
                 stmt.setString(2, "CWMS_20");       // CREATEDBY
                 stmt.executeUpdate();
             } catch (SQLException ex) {
-                throw new RuntimeException("Unable to insert user: " + username, ex);
+                if (!ex.getMessage().contains("unique constraint")) {
+                    throw new RuntimeException("Unable to insert user: " + username, ex);
+                }
             }
         }, "cwms_20");
     }
@@ -506,6 +510,10 @@ public class DataApiTestIT {
         return dsl;
     }
 
+    protected static int getSchemaVersion() {
+        return CwmsDataApiSetupCallback.getSchemaVersion();
+    }
+
     protected static String readResourceFile(String resourcePath) throws IOException {
         URL resource = DataApiTestIT.class.getClassLoader().getResource(resourcePath);
         if (resource == null) {
@@ -545,14 +553,15 @@ public class DataApiTestIT {
             logger.atInfo().log("No groups to cleanup.");
             return;
         }
-        logger.atInfo().log("Cleaning up groups test did not remove.");
+        logger.atInfo().log("Cleaning up groups that tests did not remove.");
         CwmsDatabaseContainer<?> cwmsDb = CwmsDataApiSetupCallback.getDatabaseLink();
         cwmsDb.connection(c -> {
-            try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_group(?,'T',?); end;")) {
+            try (PreparedStatement delGroup = c.prepareStatement("begin cwms_loc.delete_loc_group(?, ?,'T',?); end;")) {
                 for (LocationGroup g : groupsCreated) {
                     delGroup.clearParameters();
-                    delGroup.setString(1, g.getId());
-                    delGroup.setString(2, g.getOfficeId());
+                    delGroup.setString(1, g.getLocationCategory().getId());
+                    delGroup.setString(2, g.getId());
+                    delGroup.setString(3, g.getOfficeId());
                     delGroup.executeUpdate();
                 }
             } catch (SQLException ex) {

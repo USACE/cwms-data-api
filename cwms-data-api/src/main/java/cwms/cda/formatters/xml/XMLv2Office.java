@@ -19,8 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -34,7 +33,7 @@ import javax.xml.stream.XMLStreamWriter;
  * overrides.
  */
 public class XMLv2Office implements OutputFormatter {
-    private static final Logger logger = Logger.getLogger(XMLv2Office.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     public XMLv2Office() {
     }
@@ -53,7 +52,7 @@ public class XMLv2Office implements OutputFormatter {
                     "Error rendering '" + dto + "' to XML"
                     :
                     "Null element passed to formatter";
-            logger.log(Level.WARNING, msg, ex);
+            logger.atWarning().withCause(ex).log(msg);
             throw new InternalServerErrorResponse("Invalid Parameters");
         }
     }
@@ -91,7 +90,7 @@ public class XMLv2Office implements OutputFormatter {
                     "Error rendering '" + dtoList + "' to XML"
                     :
                     "Null element passed to formatter";
-            logger.log(Level.WARNING, msg, ex);
+            logger.atWarning().withCause(ex).log(msg);
             throw new InternalServerErrorResponse("Invalid Parameters");
         }
     }

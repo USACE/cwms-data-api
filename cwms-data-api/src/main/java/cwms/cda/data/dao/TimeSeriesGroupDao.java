@@ -24,6 +24,8 @@
 
 package cwms.cda.data.dao;
 
+import static com.google.common.flogger.LazyArgs.lazy;
+
 import static java.util.stream.Collectors.toList;
 
 import cwms.cda.data.dto.AssignedTimeSeries;
@@ -31,7 +33,7 @@ import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.TimeSeriesGroup;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.*;
 import org.jooq.conf.ParamType;
@@ -44,7 +46,7 @@ import usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_TAB_T;
 
 
 public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
-    private static final Logger logger = Logger.getLogger(TimeSeriesGroupDao.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String CWMS = "CWMS";
 
     public TimeSeriesGroupDao(DSLContext dsl) {
@@ -149,7 +151,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 catGrp.GRP_DB_OFFICE_ID,
                 catGrp.TS_GROUP_ID);
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         RecordMapper<? super Record9<String, String, String, String, String, String, String, String,
             List<AssignedTimeSeries>>, TimeSeriesGroup> mapperToTimeSeriesGroup =
@@ -178,7 +180,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 .from(AV_TS_CAT_GRP.AV_TS_CAT_GRP)
                 .where(whereCond);
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         return query.fetch((RecordMapper<org.jooq.Record, TimeSeriesGroup>) this::buildTimeSeriesGroup);
     }

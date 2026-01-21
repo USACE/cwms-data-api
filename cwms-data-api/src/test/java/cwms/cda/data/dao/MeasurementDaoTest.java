@@ -44,7 +44,7 @@ final class MeasurementDaoTest {
         when(record.getHEIGHT_UNIT()).thenReturn("ft");
         when(record.getVELOCITY_UNIT()).thenReturn("fps");
         when(record.getTEMP_UNIT()).thenReturn("F");
-        when(record.getUSED()).thenReturn(JooqDao.formatBool(true));
+        when(record.getUSED()).thenReturn(Dao.formatBool(true));
         when(record.getAIR_TEMP()).thenReturn(25.0);
         when(record.getCUR_RATING_NUM()).thenReturn("1");
         when(record.getCTRL_COND_ID()).thenReturn("UNSPECIFIED");

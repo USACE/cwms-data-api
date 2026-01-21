@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 
 final class StreamLocationNodeTest {
 

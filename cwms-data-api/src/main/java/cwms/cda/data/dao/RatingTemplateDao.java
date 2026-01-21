@@ -24,6 +24,8 @@
 
 package cwms.cda.data.dao;
 
+import static com.google.common.flogger.LazyArgs.lazy;
+
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.rating.ParameterSpec;
 import cwms.cda.data.dto.rating.RatingTemplate;
@@ -36,8 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
@@ -54,7 +55,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_TEMPLATE;
 
 public class RatingTemplateDao extends JooqDao<RatingTemplate> {
-    private static final Logger logger = Logger.getLogger(RatingTemplateDao.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     public RatingTemplateDao(DSLContext dsl) {
         super(dsl);
@@ -89,7 +90,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .where(condition)
                 .fetchSize(DEFAULT_FETCH_SIZE);
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         return buildRatingTemplateSet(query);
     }
@@ -132,7 +133,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .where(condition)
                 .fetchSize(DEFAULT_FETCH_SIZE);
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         Map<RatingTemplate, List<String>> map = new LinkedHashMap<>();
 
@@ -164,8 +165,8 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 ratingSpecs.add(specID);
             }
         } catch(RuntimeException ex) {
-            logger.log(Level.WARNING, ex, () ->
-                "Error transforming rating template table record into RatingTemplate DTO:\n" + rec);
+            logger.atWarning().withCause(ex).log(
+                "Error transforming rating template table record into RatingTemplate DTO:%n%s", rec);
         }
     }
 
@@ -229,7 +230,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                     try {
                         total = Integer.valueOf(parts[1]);
                     } catch (NumberFormatException e) {
-                        logger.log(Level.INFO, "Could not parse " + parts[1]);
+                        logger.atInfo().log("Could not parse %s", parts[1]);
                     }
                 }
                 pageSize = Integer.parseInt(parts[2]);
@@ -273,7 +274,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .limit(pageSize)
                 .offset(firstRow);
 
-		logger.fine(() -> query.getSQL(ParamType.INLINED));
+  logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         return buildRatingTemplateSet(query);
     }

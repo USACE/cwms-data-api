@@ -65,13 +65,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class ProjectController implements CrudHandler {
-    public static final Logger logger = Logger.getLogger(ProjectController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final int DEFAULT_PAGE_SIZE = 100;
     public static final String TAG = "Projects";
 
@@ -177,10 +177,7 @@ public class ProjectController implements CrudHandler {
 
             if (project == null) {
                 CdaError re = new CdaError("Unable to find Project based on parameters given");
-                logger.info(() -> {
-                    String fullUrl = ctx.fullUrl();
-                    return re + System.lineSeparator() + "for request " + fullUrl;
-                });
+                logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             } else {
                 String formatHeader = ctx.header(Header.ACCEPT);

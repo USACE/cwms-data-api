@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+import static com.google.common.flogger.LazyArgs.lazy;
 import static org.jooq.impl.DSL.*;
 
 public class ClobDao extends JooqDao<Clob> {
@@ -123,7 +124,7 @@ public class ClobDao extends JooqDao<Clob> {
 
         Clobs.Builder builder = new Clobs.Builder(cursor, pageSize, total);
 
-        logger.atFine().log(query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(()->query.getSQL(ParamType.INLINED)));
 
         query.fetch().forEach(row -> {
             usace.cwms.db.jooq.codegen.tables.records.AV_CLOB clob = row.into(vClob);

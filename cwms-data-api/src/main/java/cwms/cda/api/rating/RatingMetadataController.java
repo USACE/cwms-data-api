@@ -58,14 +58,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.time.ZonedDateTime;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class RatingMetadataController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(RatingMetadataController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private final MetricRegistry metrics;
 
@@ -171,7 +170,7 @@ public class RatingMetadataController implements CrudHandler {
         } catch (Exception ex) {
             CdaError re =
                     new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }

@@ -5,9 +5,7 @@ import { Link } from "react-router-dom";
 export default function ErrorFallback({ error }) {
   return (
     <div className="p-6">
-      <h2 className="text-lg font-semibold text-red-600">
-        Something went wrong
-      </h2>
+      <h2 className="text-lg font-semibold text-red-600">Something went wrong</h2>
       <p className="mt-2 text-gray-700">
         {error?.message || "An unexpected error occurred."}
       </p>

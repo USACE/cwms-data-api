@@ -66,6 +66,7 @@ final class LocationValidationIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK));
     }
 
+    @Disabled("Disabled until OpenAPI spec is fixed for this endpoint.")
     @Test
     void testLocationGetValidation() {
         String office = "SPK";

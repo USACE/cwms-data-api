@@ -38,6 +38,7 @@ import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.TimeSeriesGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.FunctionalSchemas;
 import fixtures.TestAccounts;
@@ -50,8 +51,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
@@ -68,7 +68,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.formatBool;
+import static cwms.cda.data.dao.Dao.formatBool;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -81,7 +81,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     private List<TimeSeriesCategory> categoriesToCleanup = new ArrayList<>();
     private List<TimeSeriesGroup> groupsToCleanup = new ArrayList<>();
     private List<TimeSeries> timeSeriesToCleanup = new ArrayList<>();
-    private static final Logger LOGGER = Logger.getLogger(TimeSeriesGroupControllerTestIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     TestAccounts.KeyUser user2 = TestAccounts.KeyUser.SWT_NORMAL;
 
@@ -122,14 +122,14 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                         groupDao.delete(group.getTimeSeriesCategory().getId(), group.getId(), group.getOfficeId());
                     }
                 } catch (NotFoundException e) {
-                    LOGGER.log(Level.CONFIG, "Group not found", e);
+                    LOGGER.atConfig().withCause(e).log("Group not found");
                 }
             }
             for (TimeSeriesCategory category : categoriesToCleanup) {
                 try {
                     categoryDao.delete(category.getId(), true, category.getOfficeId());
                 } catch (NotFoundException e) {
-                    LOGGER.log(Level.CONFIG, "Category not found", e);
+                    LOGGER.atConfig().withCause(e).log("Category not found");
                 }
             }
             for (TimeSeries ts : timeSeriesToCleanup) {
@@ -138,7 +138,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                             .withStartTimeInclusive(true).withEndTimeInclusive(true).withMaxVersion(false)
                             .withOverrideProtection(formatBool(true)).build());
                 } catch (NotFoundException e) {
-                    LOGGER.log(Level.CONFIG, "Time Series not found", e);
+                    LOGGER.atConfig().withCause(e).log("Time Series not found");
                 }
             }
             groupsToCleanup.clear();
@@ -399,22 +399,27 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         createTimeseriesWithNewLRTSInterval(officeId, timeSeriesId, 0);
 
         // try to create a group without setting the LRTS header
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .contentType(Formats.JSON)
-            .body(groupXml)
-            .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, false)
-            .queryParam(FAIL_IF_EXISTS, false)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/group")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        var assertThat =
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .body(groupXml)
+                .header("Authorization", user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, false)
+                .queryParam(FAIL_IF_EXISTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/group")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat();
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
+            assertThat.statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+        } else {
+            assertThat.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        }
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -1463,7 +1468,6 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .contentType(Formats.JSONV1)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, CWMS_OFFICE) //office
             .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
             .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
@@ -1500,7 +1504,6 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .contentType(Formats.JSONV1)
-            .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
             .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
