@@ -15,20 +15,22 @@ When to use
 
 
 .. csv-table:: GET /timeseries/profile-parser{location-id}/{parameter-id} - Endpoint Parameters
-    :header: "Parameter", "Description", "Required"
-    :widths: 20, 60, 15
+    :header: "Parameter", "Description", "Required", "When to Use"
+    :widths: 30, 40, 20, 60
 
-    location-id,":ref:`def-location-id`","Yes"
-    office,":ref:`def-office`","Yes"
-    parameter-id,":ref:`def-parameter-id`","Yes"
+    location-id,":ref:`def-location-id`","Yes", "To specify the location name associated with the desired profile \
+    parser."
+    office,":ref:`def-office`","Yes", "To specify the office associated with the desired parser, e.g. `SPK`."
+    parameter-id,":ref:`def-parameter-id`","Yes", "To specify the parameter described by the profile parser, e.g. \
+    `Depth-Temperature`."
 
 Examples
 --------
-- Get the parser for a specific profile:
+- Get the parser for a specific profile with the office `LRL`, location name `STREAM12`, and parameter `Flow-Evap`:
 
-.. code-block:: sql
+.. code-block:: urlencoded
 
-     GET /timeseries/profile-parser/LOC123/Flow?office=HQ
+     GET /timeseries/profile-parser/STREAM12/Flow-Evap?office=LRL
 
 
 See the consolidated API documentation: :doc:`/api-references`.

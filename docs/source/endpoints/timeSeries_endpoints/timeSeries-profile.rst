@@ -27,18 +27,18 @@ When to use
 
 
 .. csv-table:: GET /timeseries/profile - Endpoint Parameters
-    :header: "Parameter", "Description", "Required", "Reason for Use"
-    :widths: 20, 60, 15, 60
+    :header: "Parameter", "Description", "Required", "When to Use"
+    :widths: 30, 40, 20, 65
 
-    location-mask,":ref:`def-location-mask`","", "Use to limit results to a specific location or pattern, \
+    location-mask,":ref:`def-location-mask`","", "To limit results to a specific location or pattern, \
     for example limiting results to locations containing `River`."
-    office-mask,":ref:`def-office-mask`","", "Use to limit results to a specific office, such as `SPK`, or to offices \
+    office-mask,":ref:`def-office-mask`","", "To limit results to a specific office, such as `SPK`, or to offices \
     starting with `S` using `S*`."
-    page,":ref:`def-page`","", "Use to reach a specific page in the set of results to get results beyond the previous \
+    page,":ref:`def-page`","", "To reach a specific page in the set of results to get results beyond the previous \
     page"
-    page-size,":ref:`def-page-size`","", "Use to set the limit of results in one response, such as for the purpose of \
+    page-size,":ref:`def-page-size`","", "To set the limit of results in one response, such as for the purpose of \
     receiving a small set of results out of many, e.g. using `50` to get 50 out of 5000 total results."
-    parameter-id-mask,":ref:`def-parameter-id-mask`","", "Use to limit results to a specific parameter or pattern, \
+    parameter-id-mask,":ref:`def-parameter-id-mask`","", "To limit results to a specific parameter or pattern, \
     such as limiting results to those associated with `Elev`"
 
 
@@ -46,9 +46,28 @@ Examples
 --------
 - List profiles at the `HQ` office for locations starting with `ABC`:
 
-.. code-block:: sql
+.. code-block:: urlencoded
 
      GET /timeseries/profile?location-mask=ABC*&office=HQ
+
+- List profiles for offices starting with `S` for the elevation parameter:
+
+.. code-block:: urlencoded
+
+    GET /timeseries/profile?office-mask=S*&parameter-id-mask=Elev
+
+- List profiles at the `SPK` office with 100 results per page
+
+.. code-block:: urlencoded
+
+    GET /timeseries/profile?office-mask=SPK&page-size=100
+
+- List the following page of profiles for the above query for a next-page value of `t!qqoLun283` provided in the \
+  previous response
+
+.. code-block:: urlencoded
+
+    GET /timeseries/profile?office-mask=SPK&page-size=100&page=t!qqoLun283
 
 
 See the consolidated API documentation: :doc:`/api-references`.

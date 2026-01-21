@@ -63,12 +63,13 @@ office-mask
 .. _def-page:
 
 page
-  Page token for paginated endpoints. Use with next/previous links to continue a result set.
+  Page token for paginated endpoints. Value to use is provided by the `next-page` entry of a qualifying query response.
 
 .. _def-page-size:
 
 page-size
-  Maximum number of items per page (server may enforce an upper bound).
+  Maximum number of items per page (server may enforce an upper bound). Further results must be accessed using the \
+  `next-page` value provided in the response of queries that return more results than will fit on one page.
 
 .. _def-parameter-id:
 

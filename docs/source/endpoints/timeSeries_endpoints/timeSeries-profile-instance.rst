@@ -28,14 +28,18 @@ When to use
 - Find the latest or a specific version of an instance
 
 
-.. csv-table:: GET /timeseries/profile-instanceEndpoint Parameters
-    :header: "Parameter", "Description", "Required"
-    :widths: 20, 60, 15
+.. csv-table:: GET /timeseries/profile-instance - Endpoint Parameters
+    :header: "Parameter", "Description", "Required", "When to Use"
+    :widths: 30, 50, 20, 60
 
-    version-mask,"A regular expression used to filter the version field for time series retrieval.",""
-    office-mask,":ref:`def-office-mask`",""
-    location-mask,":ref:`def-location-mask`",""
-    parameter-id-mask,":ref:`def-parameter-id-mask`",""
+    version-mask,"A regular expression used to filter the version field for time series retrieval.","", "To \
+    limit results to a specific version, such as `CWMS`."
+    office-mask,":ref:`def-office-mask`","", "To limit results to a specific office or pattern, such as `LRL` or \
+    `MV*`."
+    location-mask,":ref:`def-location-mask`","", "To limit results to a specific location or pattern, such as \
+    `RIVER2` or `STATION*`."
+    parameter-id-mask,":ref:`def-parameter-id-mask`","", "To limit results to a specific parameter or pattern \
+    such as `Depth-Temperature` or `Depth*`."
 
 .. note::
         Detailed documentation for Regex usage in CDA is currently in development and will be available at
@@ -44,11 +48,23 @@ When to use
 
 Examples
 --------
-- List instances for a parameter at locations starting with ABC:
+- List all available instances
 
-.. code-block:: sql
+.. code-block::
 
-     GET /timeseries/profile-instance?location-mask=ABC*&parameter-id-mask=Flow*&office=HQ
+    GET /timeseries/profile-instance
+
+- List instances for all offices starting with `MV`
+
+.. code-block:: urlencoded
+
+    GET /timeseries/profile-instance?office-mask=MV*
+
+- List instances for a parameter starting with `Flow` at locations starting with `ABC` for the `HQ` office:
+
+.. code-block:: urlencoded
+
+     GET /timeseries/profile-instance?location-mask=ABC*&parameter-id-mask=Flow*&office-mask=HQ
 
 
 See the consolidated API documentation: :doc:`/api-references`.

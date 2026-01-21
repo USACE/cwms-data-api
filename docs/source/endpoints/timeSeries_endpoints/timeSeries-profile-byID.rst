@@ -38,20 +38,28 @@ When to use
 
 
 .. csv-table:: GET /timeseries/profile/{location-id}/{parameter-id} - Endpoint Parameters
-    :header: "Parameter", "Description", "Required"
-    :widths: 20, 60, 15
+    :header: "Parameter", "Description", "Required", "When to Use"
+    :widths: 30, 40, 20, 65
 
-    location-id,":ref:`def-location-id`","Yes"
-    parameter-id,":ref:`def-parameter-id`","Yes"
-    office,":ref:`def-office`",""
+    location-id,":ref:`def-location-id`","Yes", "To identify the specific location name associated with \
+    the desired profile, e.g. `STATION1`."
+    parameter-id,":ref:`def-parameter-id`","Yes", "To identify the specific parameter combination \
+    associated with the desired profile, e.g. `Flow-Evap`."
+    office,":ref:`def-office`","", "To limit results to a specific office, such as `SRL`."
 
 Examples
 --------
-- Fetch a profile for a location and parameter:
+- Retrieve a profile for the `LOC123` location and `Depth-Temperature` parameter for the `HQ` office:
+
+.. code-block:: urlencoded
+
+    GET /timeseries/profile/LOC123/Depth-Temperature?office=HQ
+
+- Retrieve a profile for the `RIVER-STATION1` location and `Depth-Temperature` parameter:
 
 .. code-block::
 
-    GET /timeseries/profile/LOC123/Depth-Temperature?office=HQ
+    GET /timeseries/profile/RIVER-STATION1/Depth-Temperature
 
 See the consolidated API documentation: :doc:`/api-references`.
 

@@ -20,21 +20,35 @@ When to use
 
 
 .. csv-table:: GET /timeseries/profile - Endpoint Parameters
-    :header: "Parameter", "Description", "Required"
-    :widths: 20, 60, 15
+    :header: "Parameter", "Description", "Required", "When to Use"
+    :widths: 30, 40, 20, 60
 
-    office-mask,":ref:`def-office-mask`",""
-    location-mask,":ref:`def-location-mask`",""
-    parameter-id-mask,":ref:`def-parameter-id-mask`",""
+    office-mask,":ref:`def-office-mask`","", "To limit results to a specific office or pattern, such as `LRL` or `MV*`."
+    location-mask,":ref:`def-location-mask`","", "To limit results to a specific location or pattern, such as `BASIN1`\
+    or `STATION*`."
+    parameter-id-mask,":ref:`def-parameter-id-mask`","", "To limit results to a specific parameter or pattern, such \
+    as `Depth-Temperature` or `*-Temperature`."
 
 
 Examples
 --------
-- List available parsers for your office:
+- List all available parsers:
 
-.. code-block:: sql
+.. code-block::
 
-     GET /timeseries/profile-parser?office=HQ
+     GET /timeseries/profile-parser
+
+- List available parsers for the `HQ` office:
+
+.. code-block:: urlencoded
+
+     GET /timeseries/profile-parser?office-mask=HQ
+
+- List available parsers with the `Area-Evap` parameter for locations ending with `BASIN`:
+
+.. code-block:: urlencoded
+
+     GET /timeseries/profile-parser?parameter-id-mask=Area-Evap&location-mask=*BASIN
 
 
 See the consolidated API documentation: :doc:`/api-references`.
