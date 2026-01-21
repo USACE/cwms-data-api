@@ -30,7 +30,8 @@ When to use
     instance. Not including this parameter will result in the response containing the instance with the most recent \
     version date"
     unit,":ref:`def-unit`
-    Units must be compatible with desired instance data.","Yes", "To specify the \
+    Units must be compatible with desired instance data. For this endpoint, they are comma separated for the two \
+    associated parameters, e.g. `m,F` for the `Depth-Temperature` parameter","Yes", "To specify the \
     desired units for the instance response."
     start-time-inclusive,"Resulting data includes data from the exact start time of the time window (true/false).","\
     ", "To choose whether data points on the configured start-time parameter will be included in the response, \
@@ -38,8 +39,10 @@ When to use
     end-time-inclusive,"Resulting data includes data from the exact end of the time window (true/false).","", "To \
     choose whether data points on the configured end-time parameter will be included in the response, such as for the \
     purpose of calculating averages for a time window."
-    previous,"Include the previous time window of the time series profile instance (true/false).","", ""
-    next,"Include the next time window of the time series profile instance (true/false).","", ""
+    previous,"Include the previous time window of the time series profile instance (true/false).","", "To include data \
+    starting at the closest timestamp before the specified `start` date and time."
+    next,"Include the next time window of the time series profile instance (true/false).","", "To include data up to \
+    the closest timestamp after the specified `end` parameter date and time."
     max-version,"Use the most recent version date (true/false). Only for time series utilizing dates in the version.","\
     ", "To retrieve the instance with the latest version date (true), or to use in combination with a specific \
     version date (false) by providing a date using the version-date parameter."
@@ -53,19 +56,46 @@ When to use
 
 Examples
 --------
-- Fetch the most recent instance version for the `LOC123` location, `Flow` parameter, `CWMS` version, and `HQ` office, \
-  with a time window of `2025-10-01T06:00:00Z` to `2026-01-21T18:00:00Z`:
+- Fetch the most recent instance for the `LOC123` location, `Depth-Temperature` parameter, units of meters \
+  (m) and Fahrenheit (F), `CWMS` version, and `HQ` office, with a time window of \
+  `2025-10-01T06:00:00Z` to `2026-01-21T18:00:00Z`:
 
 .. code-block:: urlencoded
 
-     GET /timeseries/profile-instance/LOC123/Flow-Evap/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&unit=__
+     GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&unit=m,F
 
-- Fetch a specific instance version for the `LOC123` location, `Flow` parameter, `CWMS` version, and `HQ` office, with \
-  a version date of `2026-01-01T12:00:00Z`:
+- Fetch a specific instance version for the `LOC123` location, `Depth-Temperature` parameter, units of meters \
+  (m) and Fahrenheit (F), `CWMS` version, and `HQ` office, with a version date of \
+  `2026-01-01T12:00:00Z` and a time window of `2025-10-01T06:00:00Z` to `2026-01-21T18:00:00Z`:
 
 .. code-block:: urlencoded
 
-     GET /timeseries/profile-instance/LOC123/Flow-Evap/CWMS?office=HQ&unit=__&version-date=2026-01-01T12:00:00Z
+     GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&unit=m,F&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&version-date=2026-01-01T12:00:00Z&max-version=False
+
+- Fetch the most recent instance for the `LOC123` location, `Depth-Temperature` parameter, units of meters \
+  (m) and Fahrenheit (F), `CWMS` version, and `HQ` office, with the latest version date and a time window of \
+  `2025-10-01T06:00:00Z` to `2026-01-21T18:00:00Z`:
+
+.. code-block:: urlencoded
+
+     GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&unit=m,F&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&max-version=True
+
+- Fetch the most recent instance for the `LOC123` location, `Depth-Temperature` parameter, units of meters \
+  (m) and Fahrenheit (F), timezone of `America/Los_Angeles`, `CWMS` version, and `HQ` office, with an inclusive \
+  time window of `2025-10-01T06:00:00Z` to `2026-01-21T18:00:00Z` and a result size of 15:
+
+.. code-block:: urlencoded
+
+     GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&unit=m,F&page-size=15&timezone=America/Los_Angeles&start-time-inclusive=True&end-time-inclusive=True
+
+- Fetch the most recent instance for the `LOC123` location, `Depth-Temperature` parameter, units of meters \
+  (m) and Fahrenheit (F), timezone of `UTC`, `CWMS` version, and `HQ` office, with a \
+  time window of `2025-10-01T06:00:00Z` to `2026-01-21T17:00:00Z` including the single time step of data after the \
+  end date and a result size of 15:
+
+.. code-block:: urlencoded
+
+     GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T17:00:00Z&unit=m,F&page-size=15&timezone=UTC&next=True
 
 
 See the consolidated API documentation: :doc:`/api-references`.
