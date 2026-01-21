@@ -58,7 +58,7 @@ When to use
 Examples
 ----------
 
-- Data for the time series by the name `STATION1.Flow.Inst.15Minutes.0.CWMS` in cubic meters per second
+- Data for the time series by the name `STATION1.Flow.Inst.15Minutes.0.CWMS` in cubic meters per second \
     starting on October 12, 2025 at 12:35PM.
 
 .. code-block:: sql

@@ -27,19 +27,24 @@ When to use
 
 
 .. csv-table:: GET /timeseries/profile - Endpoint Parameters
-    :header: "Parameter", "Description", "Required"
-    :widths: 20, 60, 15
+    :header: "Parameter", "Description", "Required", "Reason for Use"
+    :widths: 20, 60, 15, 60
 
-    location-mask,":ref:`def-location-mask`",""
-    office-mask,":ref:`def-office-mask`",""
-    page,":ref:`def-page`",""
-    page-size,":ref:`def-page-size`",""
-    parameter-id-mask,":ref:`def-parameter-id-mask`",""
+    location-mask,":ref:`def-location-mask`","", "Use to limit results to a specific location or pattern, \
+    for example limiting results to locations containing `River`."
+    office-mask,":ref:`def-office-mask`","", "Use to limit results to a specific office, such as `SPK`, or to offices \
+    starting with `S` using `S*`."
+    page,":ref:`def-page`","", "Use to reach a specific page in the set of results to get results beyond the previous \
+    page"
+    page-size,":ref:`def-page-size`","", "Use to set the limit of results in one response, such as for the purpose of \
+    receiving a small set of results out of many, e.g. using `50` to get 50 out of 5000 total results."
+    parameter-id-mask,":ref:`def-parameter-id-mask`","", "Use to limit results to a specific parameter or pattern, \
+    such as limiting results to those associated with `Elev`"
 
 
 Examples
 --------
-- List profiles for locations starting with ABC:
+- List profiles at the `HQ` office for locations starting with `ABC`:
 
 .. code-block:: sql
 
