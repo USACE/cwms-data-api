@@ -10,6 +10,7 @@ import static org.jooq.impl.DSL.min;
 import static org.jooq.impl.DSL.using;
 import static org.jooq.impl.DSL.val;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -28,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import com.google.common.flogger.FluentLogger;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -240,8 +240,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
             final String[] parts = CwmsDTOPaginated.decodeCursor(page);
 
             logger.atFine().log("Decoded cursor");
-            logger.atFinest().log("%s", lazy(()->
-            {
+            logger.atFinest().log("%s", lazy(() -> {
                 StringBuilder sb = new StringBuilder();
                 for (String part : parts) {
                     sb.append(part).append("\n");
@@ -325,20 +324,20 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         // Add the time windows conditions depending on the inclusive flags
         if (startInclusive && endInclusive) {
             whereCondition = whereCondition
-                    .and(VIEW_TSV2.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
-                    .and(VIEW_TSV2.LAST_DATE_TIME.le(Timestamp.from(endTime)));
+                    .and(VIEW_TSV2.DATE_TIME.ge(Timestamp.from(startTime)))
+                    .and(VIEW_TSV2.DATE_TIME.le(Timestamp.from(endTime)));
         } else if (!startInclusive && endInclusive) {
             whereCondition = whereCondition
-                    .and(VIEW_TSV2.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
-                    .and(VIEW_TSV2.LAST_DATE_TIME.le(Timestamp.from(endTime)));
+                    .and(VIEW_TSV2.DATE_TIME.greaterThan(Timestamp.from(startTime)))
+                    .and(VIEW_TSV2.DATE_TIME.le(Timestamp.from(endTime)));
         } else if (startInclusive) {
             whereCondition = whereCondition
-                    .and(VIEW_TSV2.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
-                    .and(VIEW_TSV2.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
+                    .and(VIEW_TSV2.DATE_TIME.ge(Timestamp.from(startTime)))
+                    .and(VIEW_TSV2.DATE_TIME.lessThan(Timestamp.from(endTime)));
         } else {
             whereCondition = whereCondition
-                    .and(VIEW_TSV2.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
-                    .and(VIEW_TSV2.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
+                    .and(VIEW_TSV2.DATE_TIME.greaterThan(Timestamp.from(startTime)))
+                    .and(VIEW_TSV2.DATE_TIME.lessThan(Timestamp.from(endTime)));
         }
         Condition finalWhereCondition = whereCondition;
 
