@@ -381,7 +381,7 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(Exception.class, (e, ctx) -> {
-                    CdaError errResponse = new CdaError("System Error");
+                    CdaError errResponse = new CdaError("System Error", Map.of("Error message", e.getMessage()));
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
                             errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
                     ctx.status(500);
