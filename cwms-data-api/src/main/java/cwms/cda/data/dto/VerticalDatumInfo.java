@@ -7,10 +7,15 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.data.dao.VerticalDatum;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @JsonRootName("vertical-datum-info")
 @JsonDeserialize(builder = VerticalDatumInfo.Builder.class)
@@ -31,6 +36,8 @@ public class VerticalDatumInfo extends CwmsDTOBase {
 
     // Serialize empty arrays in the xml
     @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JacksonXmlElementWrapper(useWrapping = false)
+    @JacksonXmlProperty(localName = "offset")
     VerticalDatumInfo.Offset[] offsets = new Offset[0];
 
     private VerticalDatumInfo() {
@@ -100,13 +107,24 @@ public class VerticalDatumInfo extends CwmsDTOBase {
 
         //add the other offsets, adjusted
         VerticalDatumInfo.Offset[] offsets = getOffsets();
+        //if contains a zero offset, we will mimic that for the converted datum by adding a zero offset (the datum we converted to)
+        boolean hasZeroOffset = Arrays.stream(offsets)
+                .anyMatch(offset -> offset.getValue() == 0.0);
         for (VerticalDatumInfo.Offset offset : offsets) {
             String toDatum = offset.getToDatum();
-            if (!offset.isForDatum(convertTo.toString())) {
-                Double newOffsetValue = convertToOffsetToOriginal + offset.getValue();
-                boolean isEstimate = offset.isEstimate() || convertToOffset.isEstimate();
-                VerticalDatumInfo.Offset newOffset = new VerticalDatumInfo.Offset(isEstimate, toDatum, newOffsetValue);
-                newOffsets.add(newOffset);
+            Set<String> existingDatums = newOffsets.stream().map(Offset::getToDatum)
+                    .collect(Collectors.toSet());
+            if(!existingDatums.contains(offset.getToDatum())) {
+                if (!offset.isForDatum(convertTo.toString())) {
+                    Double newOffsetValue = convertToOffsetToOriginal + offset.getValue();
+                    boolean isEstimate = offset.isEstimate() || convertToOffset.isEstimate();
+                    VerticalDatumInfo.Offset newOffset = new VerticalDatumInfo.Offset(isEstimate, toDatum, newOffsetValue);
+                    newOffsets.add(newOffset);
+                } else if(hasZeroOffset) {
+                    //this is the one we converted to, its now zero offset
+                    VerticalDatumInfo.Offset newOffset = new VerticalDatumInfo.Offset(false, toDatum, 0.0);
+                    newOffsets.add(newOffset);
+                }
             }
         }
         return newOffsets.toArray(new VerticalDatumInfo.Offset[]{});
@@ -231,6 +249,8 @@ public class VerticalDatumInfo extends CwmsDTOBase {
             return this;
         }
 
+        @JacksonXmlElementWrapper(useWrapping = false)
+        @JacksonXmlProperty(localName = "offset")
         public VerticalDatumInfo.Builder withOffsets(VerticalDatumInfo.Offset[] offsets) {
             this.offsets = offsets;
             return this;
