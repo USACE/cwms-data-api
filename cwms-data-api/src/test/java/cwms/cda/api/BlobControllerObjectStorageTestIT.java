@@ -8,13 +8,9 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.slf4j.LoggerFactory;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.output.Slf4jLogConsumer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.utility.DockerImageName;
+
 import org.togglz.core.context.FeatureContext;
 import org.togglz.core.manager.FeatureManager;
 
@@ -22,8 +18,7 @@ import org.togglz.core.manager.FeatureManager;
 @ExtendWith(BlobControllerObjectStorageTestIT.FeatureEnableExtension.class)
 public class BlobControllerObjectStorageTestIT extends BlobControllerTestIT{
     static FluentLogger logger = FluentLogger.forEnclosingClass();
-    public static final String MINIO_ADMIN = "minio_admin";
-    public static final String MINIO_ADMIN_SECRET = "saersdbewadfqewrbwreq12rfgweqrffw52354ec@%fwewEFFWSE";
+
     public static final String IMAGE_NAME = "minio/minio:RELEASE.2025-04-22T22-12-26Z";
     public static final int PORT = 9000;
     public static final String MINIO_USER = "cda_user";
@@ -31,17 +26,12 @@ public class BlobControllerObjectStorageTestIT extends BlobControllerTestIT{
 
     private static final Network NETWORK = Network.newNetwork();
     @Container
-    private static final GenericContainer<?> MINIO_CONTAINER = new GenericContainer<>(DockerImageName.parse(IMAGE_NAME))
-            .withNetwork(NETWORK)
-            .withNetworkAliases("minio")
-            .withExposedPorts(PORT)
-            .withEnv("MINIO_ROOT_USER", MINIO_ADMIN)
-            .withEnv("MINIO_ROOT_PASSWORD", MINIO_ADMIN_SECRET)
-            .withCommand("server /data")
-            .waitingFor(Wait.forHttp("/minio/health/live").forPort(PORT));
+    private static final MinIOContainer MINIO_CONTAINER = new MinIOContainer(IMAGE_NAME)
+            .withUserName(MINIO_USER)
+            .withPassword(MINIO_USER_SECRET);
 
     public static final String BUCKET = "cwms-test";
-    public static final String CONTAINER_NAME = "myminio";
+
 
 
     static class FeatureEnableExtension implements Extension, BeforeAllCallback {
@@ -50,51 +40,23 @@ public class BlobControllerObjectStorageTestIT extends BlobControllerTestIT{
         public void beforeAll(ExtensionContext context) {
             if (!MINIO_CONTAINER.isRunning()) {
                 MINIO_CONTAINER.start();
-                setupMinioResources();
+                createTestBucket();
             }
 
             setObjectStoreProperties();
         }
     }
 
-    private static void setupMinioResources() {
-        String address = "http://minio:9000";
-
-        String cmd1 = String.format(" /usr/bin/mc alias set %s %s %s %s", CONTAINER_NAME, address, MINIO_ADMIN, MINIO_ADMIN_SECRET);
-        String cmd2 = String.format("/usr/bin/mc admin user add %s %s %s", CONTAINER_NAME, MINIO_USER, MINIO_USER_SECRET);
-        String cmd3 = String.format("/usr/bin/mc mb --ignore-existing %s/%s", CONTAINER_NAME, BUCKET);
-        String cmd4 = String.format("/usr/bin/mc admin policy attach %s readwrite --user %s", CONTAINER_NAME, MINIO_USER);
-
-        String setupScript = String.join("; ", cmd1, cmd2, cmd3, cmd4, "exit 0", " ");
-        logger.atInfo().log("Running setup script: %s", setupScript);
-
-        try (GenericContainer<?> mc = new GenericContainer<>(DockerImageName.parse("minio/mc:latest"))
-                .withNetwork(NETWORK)
-                .withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint("")) // Clear the entrypoint to allow shell usage
-                .withCommand("/bin/sh", "-c", setupScript )
-                .withLogConsumer(new Slf4jLogConsumer(LoggerFactory.getLogger("minio-mc")))
-                .withAccessToHost(true)) {
-            mc.start();
-
-            long startTime = System.currentTimeMillis();
-            while (mc.isRunning() && (System.currentTimeMillis() - startTime) < 20000) {
-                Thread.sleep(200);
-            }
-
-            if (mc.isRunning()) {
-                mc.stop();
-                throw new RuntimeException("MinIO setup timed out");
-            }
-
-            logger.atInfo().log(mc.getLogs());
-
-            // Check if it exited successfully (0)
-            if (mc.getContainerInfo().getState().getExitCodeLong() != 0) {
-                throw new RuntimeException("MinIO setup failed with exit code: "
-                        + mc.getContainerInfo().getState().getExitCodeLong());
+    private static void createTestBucket() {
+        try (var client = io.minio.MinioClient.builder()
+                .endpoint(MINIO_CONTAINER.getS3URL())
+                .credentials(MINIO_USER, MINIO_USER_SECRET)
+                .build()) {
+            if (!client.bucketExists(io.minio.BucketExistsArgs.builder().bucket(BUCKET).build())) {
+                client.makeBucket(io.minio.MakeBucketArgs.builder().bucket(BUCKET).build());
             }
         } catch (Exception e) {
-            throw new RuntimeException("Failed to setup MinIO resources", e);
+            throw new RuntimeException("Failed to create test bucket", e);
         }
     }
 
