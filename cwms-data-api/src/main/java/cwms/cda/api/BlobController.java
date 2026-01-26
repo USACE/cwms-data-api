@@ -65,9 +65,8 @@ public class BlobController implements CrudHandler {
     }
 
     private BlobAccess chooseBlobAccess(DSLContext dsl) {
-        boolean useObjectStore = isObjectStorageEnabled();
+        boolean useObjectStore = false;
         try {
-            // Prefer Togglz if available
             FeatureManager featureManager = FeatureContext.getFeatureManager();
             useObjectStore = featureManager.isActive(CdaFeatures.USE_OBJECT_STORAGE_BLOBS);
         } catch (Throwable ignore) {
@@ -80,14 +79,6 @@ public class BlobController implements CrudHandler {
         return new BlobDao(dsl);
     }
 
-    private boolean isObjectStorageEnabled() {
-        // System properties first, then env. Accept FEATURE=true
-        String key = String.valueOf(CdaFeatures.USE_OBJECT_STORAGE_BLOBS);
-        String v = System.getProperty(key);
-        if (v == null) v = System.getProperty(key);
-        if (v == null) v = System.getenv(key);
-        return v != null && ("true".equalsIgnoreCase(v) || "1".equals(v));
-    }
 
     @OpenApi(
             queryParams = {
