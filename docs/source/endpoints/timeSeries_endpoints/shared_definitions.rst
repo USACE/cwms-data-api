@@ -6,7 +6,7 @@ Shared timeseries endpoint parameters
 Shared parameter definitions
 ----------------------------
 
-This section lists and describes the parameters that are shared across multiple TimeSeries endpoints.
+This section lists and describes common parameters that are used by multiple TimeSeries endpoints.
 If the parameter is only used by a single endpoint, please refer to that endpoint's documentation for details.
 If a shared parameter has endpoint-specific behavior or constraints, those details will be noted in the individual
 endpoint documentation.
@@ -14,27 +14,51 @@ endpoint documentation.
 .. _def-end:
 
 end
-  End date/time for the time series data to stop.
+  The date and time marking the end of the time window for data included in the response.
+  The format for this field is ISO 8601 extended with optional offset and timezone.
+
+    .. code-block:: sql
+
+        Example:
+        YYYY-MM-ddThh:mm:ss[Z[VV]]
+        2021-06-10T13:00:00-07:00  OR  2025-10-25T12:25:00Z
+
+    .. note::
+        Detailed documentation for Timestamps usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/timestamps in a future release.
+
 
 .. _def-location-id:
 
 location-id
-  Description pending.
+    `CWMS database - Location Naming <https://cwms-database.readthedocs.io/en/latest/naming.html#locations>`_
+    `CWMS database - Location Definition <https://cwms-database.readthedocs.io/en/latest/locations.html#overview>`_
 
 .. _def-location-mask:
 
 location-mask
-  Description pending.
+  A regular expression used to filter the location name associated with the queried time series data. See the Regex
+  documentation page for more information on usage:
+
+    .. note::
+        Detailed documentation for Regex usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/regexp in a future release.
 
 .. _def-office:
 
 office
-  The organizational context used to scope data access and defaults. Some endpoints infer a default office; you can also specify it explicitly.
+  The organizational context used to scope data access and defaults. Some endpoints infer a default office;
+  you can also specify it explicitly.
 
 .. _def-office-mask:
 
 office-mask
-  Description pending.
+  A regular expression used to filter the office identifier associated with the queried time series data.
+  See the Regex documentation page for more information on usage:
+
+    .. note::
+        Detailed documentation for Regex usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/regexp in a future release.
 
 .. _def-page:
 
@@ -49,24 +73,56 @@ page-size
 .. _def-parameter-id:
 
 parameter-id
-  Description pending.
+  A text identifier specifying the type of data measured by the time series, such as "Flow", "Stage", "Elev", etc.
+
+    .. note::
+        This link will take you to the Parameter Types definition. Scroll up one section to see the Parameter Definition.
+        `CWMS database - parameter types <https://cwms-database.readthedocs.io/en/latest/naming.html#parameter-types>`_
+
+        As soon as this link is repaired, we will replace the above link with the correct one:
+        `CWMS database - parameters <https://cwms-database.readthedocs.io/en/latest/naming.html#parameters>`_
 
 .. _def-parameter-id-mask:
 
 parameter-id-mask
-  Description pending.
+  A regular expression used to filter the parameter of the queried time series data.
+  See the Regex documentation for more information on usage:
+
+    .. note::
+        Detailed documentation for Regex usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/regexp in a future release.
+
+.. _def-start:
+
+start (also referred to as begin)
+  The date and time marking the beginning of the time window for data included in the response.
+  The format for this field is ISO 8601 extended with optional offset and timezone.
+
+    .. code-block:: sql
+
+        Example:
+        YYYY-MM-ddThh:mm:ss[Z[VV]]
+        2021-06-10T13:00:00-07:00  OR  2025-10-25T12:25:00Z
+
+    .. note::
+        Detailed documentation for Timestamps usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/timestamps in a future release.
 
 .. _def-timezone:
 
 timezone
-  Description pending.
+  The timezone to use for retrieved time data, such as "UTC", "America/Los_Angeles", etc.
 
 .. _def-unit:
 
-unit
-  Deprecated; prefer units or unit-system.
+unit `(Deprecated, prefer units or unit-system)`
+  The unit system or specific unit to convert the response data into. Available unit systems are SI or EN.
+  Examples of other units are m, ft, m3, etc.
+  For reference: `CWMS database - units <https://cwms-database.readthedocs.io/en/latest/naming.html#units>`_
 
 .. _def-version-date:
 
 version-date
-  Description pending.
+  A date associated with a time series to make identification of the most recent data possible.
+  Often uses the forecast date.
+

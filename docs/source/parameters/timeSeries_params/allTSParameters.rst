@@ -3,68 +3,86 @@
 /timeseries endpoint parameters
 ================================
 
-This page serves as a reference for all parameters used across the TimeSeries endpoints. It may be useful only for
-building the documentation and then be removed later.
+This page serves as a reference for all unique parameters used across the TimeSeries endpoints.
+It may be useful only for building the documentation and then be removed later.
 
-    - begin
-    - category-id
-    - datum
-    - end
-    - end-time-inclusive
-    - format
-    - group-id
-    - include-entry-date
-    - location-id:
-        - https://cwms-database.readthedocs.io/en/latest/naming.html#locations
-        - https://cwms-database.readthedocs.io/en/latest/locations.html#overview
-    - location-mask
-    - max-version
-    - name
-    - next
-    - office:
-        - https://cwms-database.readthedocs.io/en/latest/naming.html#offices
-    - office-mask
-    - page
-    - page-size
-    - parameter-id
-    - parameter-id-mask
-    - previous
-    - start
-    - start-time-inclusive
-    - timezone
-    - trim
-    - ts-ids
-    - unit
-    - unit-system
-    - units:
-        - https://cwms-database.readthedocs.io/en/latest/naming.html#units
-    - version:
-        - https://cwms-database.readthedocs.io/en/latest/naming.html#versions
-    - version-date
-    - version-mask
+NON SHARED PARAMETER DEFINITIONS ARE DOCUMENTED BELOW:
+
+- category-id
+    - The text identifier for the time series category defined in the CWMS database for a specific time series.
+
+- datum
+    - The standardized reference system used for either vertical measurements.
+      Examples: NAVD88, NGVD29, LOCAL, etc.
+
+- end-time-inclusive
+    - Whether the resulting data set should include data occurring at the moment of the end of the time window.
+      Acceptable values are 'true' or 'false'.
+
+- format
+    - The desired response format. Usage differs between endpoints. See the Legacy Format Responses documentation
+      page for more information.
+
+    .. note::
+            Detailed documentation for Legacy Format Responses in CDA is currently in development and will be
+            available at https://cwms-data.usace.army.mil/cwms-data/legacy-format in a future release.
+
+- group-id
+    - The text identifier of the time series group defined in the CWMS database for a specific time series.
+
+- include-entry-date
+    - Whether to include in the response for a data retrieval the timestamps at which each data point was entered
+      into the CWMS database. Acceptable values are 'true' or 'false'.
+
+- max-version
+    - Whether to use the most recent version date in the response. Only applies to time series that utilize dates in
+      the version field. Acceptable values are 'true' or 'false'.
+
+- name
+    - The text representation of the unique time series identifier.
+
+- next
+    - Whether to include the next time window of the time series profile instance.
+
+- previous
+    - Whether to include the previous time window of the time series profile instance. Acceptable values are 'true'
+      or 'false'.
+
+- start-time-inclusive
+    - Whether the resulting data set should include data occurring at the moment of the beginning of the time window.
+      Acceptable values are 'true' or 'false'.
+
+- trim
+    - Specifies whether to trim missing values from the beginning and end of the retrieved values. Acceptable values
+      are 'true' or 'false'.
+- ts-ids
+    - A comma separated list of timeseries identifiers to be included in the response.
+      Example: 'Location.Elev.Inst.0.1Day.lrgs,Location2.Elev.Inst.0.12Hour.lrgs'.
+      `CWMS database - time series definition <https://cwms-database.readthedocs.io/en/latest/naming.html#time-series>`_
+
+- unit-system
+    - The unit system to convert the response data into. Available unit systems are 'SI' or 'EN'.
+
+- units:
+    - https://cwms-database.readthedocs.io/en/latest/naming.html#units
+
+- version:
+    - https://cwms-database.readthedocs.io/en/latest/naming.html#versions
+
+- version-mask
+    - A regular expression used to filter the version field for time series retrieval.
+      See the Regex documentation for more information on usage.
+
+    .. note::
+        Detailed documentation for Regex usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/regexp in a future release.
 
 
-Reference values for shared parameters across TimeSeries endpoints for ease of access:
-
-    :ref:`def-end`
-    :ref:`def-location-id`
-    :ref:`def-location-mask`
-    :ref:`def-office`
-    :ref:`def-office-mask`
-    :ref:`def-page`
-    :ref:`def-page-size`
-    :ref:`def-parameter-id`
-    :ref:`def-parameter-id-mask`
-    :ref:`def-timezone`
-    :ref:`def-unit`
-    :ref:`def-version-date`
 
 Notes on duplicates/variations across endpoints:
 
-- end and end-time-inclusive:
-- begin and start and start-time-inclusive
 
-- unit and units and unit-system: Not sure why all three exist, but here is how they are used:
+- unit and units and unit-system: here is how they are used:
 
     - unit: deprecated, prefer units, SI or EN or other
     - units: SI or EN or other
@@ -139,8 +157,7 @@ version and version-date and version-mask:
     /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"
     "trim","/timeSeries;
     /timeSeries/profile"
-    "ts-ids","/timeSeries/recent;
-    /timeSeries/profile-parser"
+    "ts-ids","/timeSeries/recent"
     "unit","/timeSeries;
     /timeSeries/profile-instance;
     /timeSeries/profile-instance{location-id}/{parameter-id}/{version}"

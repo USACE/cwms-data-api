@@ -2,7 +2,7 @@
  *
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,14 +41,17 @@ public final class PumpTransfer extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final Double flow;
     @JsonProperty(required = true)
+    private final String flowUnit;
+    @JsonProperty(required = true)
     private final String comment;
 
     @JsonCreator
     public PumpTransfer(@JsonProperty("pump-type") PumpType pumpType,
-            @JsonProperty("transfer-type-display") String transferTypeDisplay,
-            @JsonProperty("flow") Double flow, @JsonProperty("comment") String comment) {
+                        @JsonProperty("transfer-type-display") String transferTypeDisplay,
+                        @JsonProperty("flow") Double flow, @JsonProperty("flow-unit") String flowUnit, @JsonProperty("comment") String comment) {
         this.transferTypeDisplay = transferTypeDisplay;
         this.flow = flow;
+        this.flowUnit = flowUnit;
         this.comment = comment;
         this.pumpType = pumpType;
     }
@@ -59,6 +62,10 @@ public final class PumpTransfer extends CwmsDTOBase {
 
     public Double getFlow() {
         return this.flow;
+    }
+
+    public String getFlowUnit() {
+        return this.flowUnit;
     }
 
     public PumpType getPumpType() {

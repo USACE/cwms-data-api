@@ -38,8 +38,14 @@ Welcome to CWMS Data API documentation!
 
 
 .. toctree::
-    :maxdepth: 1
-    :caption: Alternative Topics
+   :maxdepth: 1
+   :caption: Alternative Topics
 
-    Alternative Topics <./alternative-topics/index.rst>
+   Alternative Topics <./alternative-topics/index.rst>
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Design
+   
+   Design <./introduction/design.rst>
+   Decision Records <./decisions/index.rst>

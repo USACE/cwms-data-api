@@ -68,6 +68,7 @@ import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -446,6 +447,66 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .body("[0].pump-accounting[\"2022-11-20T21:17:28Z\"].flow[2]", equalTo(ONE_CMS_IN_CFS))
             .body("[0].pump-accounting[\"2022-11-20T21:17:28Z\"].transfer-type-display[2]", equalTo(testTransferType.getDisplayValue()))
             .body("[0].pump-locations.pump-in.name", equalTo(waterSupplyAccounting.getPumpLocations().getPumpIn().getName()))
+        ;
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void testStoreAsCfsThenRetrieveWithUnits(String format) throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String json = JsonV1.buildObjectMapper().writeValueAsString(waterSupplyAccounting);
+
+        json = json.replace("cms", "cfs");
+        // create pump accounting
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .body(json)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
+                        + contract.getWaterUser().getEntityName() + "/contracts/"
+                        + contract.getContractId().getName() + "/accounting")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // retrieve pump accounting
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .accept(format)
+                .queryParam(START_TIME, "2005-04-05T00:00:00Z")
+                .queryParam(END_TIME, "2335-04-06T00:00:00Z")
+                .queryParam(START_INCLUSIVE, "true")
+                .queryParam(END_INCLUSIVE, "true")
+                .queryParam(ASCENDING, "true")
+                .queryParam(ROW_LIMIT, 100)
+                .queryParam(UNIT, "cfs")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
+                        + contract.getWaterUser().getEntityName() + "/contracts/"
+                        + contract.getContractId().getName() + "/accounting")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("[0].contract-name", equalTo(waterSupplyAccounting.getContractName()))
+                .body("[0].water-user.entity-name", equalTo(waterSupplyAccounting.getWaterUser().getEntityName()))
+                .body("[0].water-user.project-id.name", equalTo(waterSupplyAccounting.getWaterUser().getProjectId().getName()))
+                .body("[0].water-user.project-id.office-id", equalTo(waterSupplyAccounting.getWaterUser().getProjectId().getOfficeId()))
+                .body("[0].water-user.water-right", equalTo(waterSupplyAccounting.getWaterUser().getWaterRight()))
+                .body("[0].pump-accounting[\"2022-11-20T21:17:28Z\"].pump-type[2]", equalTo(String.format("%s", PumpType.IN)))
+                .body("[0].pump-accounting[\"2022-11-20T21:17:28Z\"].flow[2].toDouble()", closeTo(1.0, 0.0001))
+                .body("[0].pump-accounting[\"2022-11-20T21:17:28Z\"].transfer-type-display[2]", equalTo(testTransferType.getDisplayValue()))
+                .body("[0].pump-locations.pump-in.name", equalTo(waterSupplyAccounting.getPumpLocations().getPumpIn().getName()))
         ;
     }
 

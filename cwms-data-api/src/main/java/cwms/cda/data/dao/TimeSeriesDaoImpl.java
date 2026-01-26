@@ -1476,36 +1476,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         });
     }
 
-    //
-
-    /**
-     * The idea here is that this will check the current default datum,
-     *     possible switch to the specified datum and
-     *     then run the code and
-     *     if the datum was previously switched
-     *     then switch back to the initial datum.
-     * @param targetDatum The desired ver
-     * @param dslContext
-     * @param cr
-     */
-    private void withDefaultDatum(@Nullable VerticalDatum targetDatum, DSLContext dslContext, ConnectionRunnable cr) {
-        String defaultVertDatum = CWMS_LOC_PACKAGE.call_GET_DEFAULT_VERTICAL_DATUM(dslContext.configuration());
-        String targetName = (targetDatum != null) ? targetDatum.toString() : null;
-        boolean changeDefaultDatum = !Objects.equals(targetDatum, defaultVertDatum);
-        try {
-            if (changeDefaultDatum) {
-                CWMS_LOC_PACKAGE.call_SET_DEFAULT_VERTICAL_DATUM(dslContext.configuration(), targetName);
-            }
-
-            connection(dslContext, cr);
-        }finally{
-            if (changeDefaultDatum) {
-                // If we changed it we should restore.
-                CWMS_LOC_PACKAGE.call_SET_DEFAULT_VERTICAL_DATUM(dslContext.configuration(), defaultVertDatum);
-            }
-        }
-    }
-
     @Override
     public void store(TimeSeries timeSeries, Timestamp versionDate) {
         store(timeSeries, false, StoreRule.REPLACE_ALL, TimeSeriesDaoImpl.OVERRIDE_PROTECTION, null);
