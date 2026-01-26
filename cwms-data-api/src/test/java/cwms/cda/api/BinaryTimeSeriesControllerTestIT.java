@@ -790,7 +790,6 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
                                 .log().ifValidationFails(LogDetail.ALL, true)
                             .assertThat()
                                 .statusCode(is(HttpServletResponse.SC_OK))
-//                                .header("Transfer-Encoding", equalTo("chunked"))
                                 .contentType(equalTo("application/octet-stream"))
                                 .extract()
                                 .response()
