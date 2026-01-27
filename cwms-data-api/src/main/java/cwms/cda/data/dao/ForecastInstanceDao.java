@@ -149,7 +149,7 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
 
     private static Map<String, String> mapFromJson(String forecastInfo) {
         try {
-            return JsonV2.buildObjectMapper().readValue(forecastInfo, new TypeReference<Map<String, String>>() {
+            return JsonV2.buildObjectMapper().readValue(forecastInfo, new TypeReference<>() {
             });
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Error serializing forecast info to JSON", e);
@@ -314,7 +314,7 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     }
 
     public void getFileBlob(String office, String name, String designator,
-            Instant forecastDate, Instant issueDate, BlobDao.BlobConsumer consumer) {
+            Instant forecastDate, Instant issueDate, StreamConsumer consumer) {
 
         String query = FILE_QUERY + FILE_CONDITIONS;
         connection(dsl, c -> {
@@ -337,8 +337,8 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                                 }
 
                                 Blob blob = (Blob) attributes[5];
-                                try {
-                                    consumer.accept(blob, mediaType);
+                                try (InputStream is = blob.getBinaryStream()){
+                                    consumer.accept(is, 0, mediaType, blob.length());
                                     return;
                                 } finally {
                                     if (blob != null) {
@@ -348,7 +348,8 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                             }
                         }
                     }
-                    consumer.accept(null, null);
+                    // If we get here there was some problem finding the stream.
+                    throw new NotFoundException("Forecast Instance file not found");
                 }
             }
         });
