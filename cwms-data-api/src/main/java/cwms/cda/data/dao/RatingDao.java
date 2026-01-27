@@ -35,7 +35,7 @@ public interface RatingDao {
 
     Pattern officeMatcher = Pattern.compile(".*office-id=\"(.*?)\"");
 
-    void create(String ratingSet, boolean replaceBaseCurve) throws IOException, RatingException;
+    void create(String ratingSet, boolean replaceBaseCurve, VerticalDatum vd) throws IOException, RatingException;
 
     RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId,
                        Instant start, Instant end) throws IOException, RatingException;
@@ -46,9 +46,17 @@ public interface RatingDao {
                            String start, String end, String timezone);
 
 
-    void store(String ratingSet, boolean replaceBaseCurve) throws IOException, RatingException;
+    void store(String ratingSet, boolean replaceBaseCurve, VerticalDatum vd) throws IOException, RatingException;
 
     void delete(String officeId, String specificationId, Instant start, Instant end);
+
+    default void create(String ratingSet, boolean replaceBaseCurve) throws IOException, RatingException {
+        create(ratingSet, replaceBaseCurve, null);
+    }
+
+    default void store(String ratingSet, boolean replaceBaseCurve) throws IOException, RatingException {
+        store(ratingSet, replaceBaseCurve, null);
+    }
 
     static String extractOfficeFromXml(String xml) {
         Matcher officeMatch = officeMatcher.matcher(xml);

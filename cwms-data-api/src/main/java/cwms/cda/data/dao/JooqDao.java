@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -72,6 +73,7 @@ import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 
 
@@ -213,6 +215,34 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
 
         return retVal;
+    }
+
+    /**
+     * The idea here is that this will check the current default datum,
+     *     possible switch to the specified datum and
+     *     then run the code and
+     *     if the datum was previously switched
+     *     then switch back to the initial datum.
+     * @param targetDatum The desired ver
+     * @param dslContext
+     * @param cr
+     */
+    protected void withDefaultDatum(@Nullable VerticalDatum targetDatum, DSLContext dslContext, ConnectionRunnable cr) {
+        String defaultVertDatum = CWMS_LOC_PACKAGE.call_GET_DEFAULT_VERTICAL_DATUM(dslContext.configuration());
+        String targetName = (targetDatum != null) ? targetDatum.toString() : null;
+        boolean changeDefaultDatum = !Objects.equals(targetName, defaultVertDatum);
+        try {
+            if (changeDefaultDatum) {
+                CWMS_LOC_PACKAGE.call_SET_DEFAULT_VERTICAL_DATUM(dslContext.configuration(), targetName);
+            }
+
+            connection(dslContext, cr);
+        } finally {
+            if (changeDefaultDatum) {
+                // If we changed it we should restore.
+                CWMS_LOC_PACKAGE.call_SET_DEFAULT_VERTICAL_DATUM(dslContext.configuration(), defaultVertDatum);
+            }
+        }
     }
 
     /**
