@@ -1,6 +1,5 @@
 package fixtures;
 
-import com.google.common.flogger.FluentLogger;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.MinIOContainer;
