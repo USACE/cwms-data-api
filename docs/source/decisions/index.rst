@@ -21,3 +21,4 @@ Some decisions may also be a proposal and marked appropriately.
     Data Versioning <./0002-data-versioning.rst> (rejected, remains for historical context.)
     Catalogs and Search <./0003-searchability-and-catalogs.rst>
     Versioning <./0004-versioning.rst>
+    Comma Separated Values <./0005-comma-separated-values.rst>
