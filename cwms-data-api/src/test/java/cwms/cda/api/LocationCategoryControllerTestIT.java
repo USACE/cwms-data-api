@@ -43,7 +43,7 @@ import org.junit.jupiter.api.Test;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 
 @Tag("integration")
 class LocationCategoryControllerTestIT extends DataApiTestIT {
