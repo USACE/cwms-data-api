@@ -49,17 +49,41 @@ When to use
 
 Examples
 --------
-- Retrieve a profile for the `LOC123` location and `Depth-Temperature` parameter for the `HQ` office:
+
+- | The user wants to retrieve the temperature profile at various depths:
+  | (**parameter-id**) :code:`Depth-Temperature`
+  |
+  | for the RIVER-STATION1 location:
+  | (**location-id**) :code:`RIVER-STATION1`
+  |
+  | but is unsure of which office to use. Query includes required path parameters, `location-id` and `parameter-id`.
+
+.. code-block:: bash
+
+    GET /timeseries/profile/[location-id]/[parameter-id]
+
+.. code-block:: bash
+
+    GET /timeseries/profile/RIVER-STATION1/Depth-Temperature
+
+- The user reviews the results from the previous example query and decides to to narrow the search to the `HQ` office.
+  Query remains the same:
+
+  | (**parameter-id**) :code:`Depth-Temperature`
+  |
+  | (**location-id**) :code:`RIVER-STATION1`
+  |
+  | but adds the optional query parameter, `office`:
+  | (**office**) :code:`HQ`
+
+.. code-block:: urlencoded
+
+    GET /timeseries/profile/[location-id]/[parameter-id]?office=[office]
 
 .. code-block:: urlencoded
 
     GET /timeseries/profile/LOC123/Depth-Temperature?office=HQ
 
-- Retrieve a profile for the `RIVER-STATION1` location and `Depth-Temperature` parameter:
-
-.. code-block::
-
-    GET /timeseries/profile/RIVER-STATION1/Depth-Temperature
 
 See the consolidated API documentation: :doc:`/api-references`.
 

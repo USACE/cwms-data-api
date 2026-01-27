@@ -16,7 +16,7 @@ Browse Time Series GET Endpoints:
 .. toctree::
     :maxdepth: 1
 
-    TimeSeries Basic Information <./timeseries_basics.rst>
+    TimeSeries Basic Information <../../data/timeseries.rst>
     Common Parameter Definitions <./shared_definitions.rst>
     /timeseries <timeSeries>
     /timeseries/recent <timeSeries-recent>

@@ -26,7 +26,14 @@ When to use
 
 Examples
 --------
-- Get the parser for a specific profile with the office `LRL`, location name `STREAM12`, and parameter `Flow-Evap`:
+- | The user wants to retrieve the profile parser for Flow-Evaporation data:
+  | (**parameter-id**) :code:`Flow-Evap`
+  |
+  | at the STREAM12 location:
+  | (**location-id**) :code:`STREAM12`
+  |
+  | for the LRL office:
+  | (**office**) :code:`LRL`
 
 .. code-block:: urlencoded
 

@@ -44,26 +44,47 @@ When to use
 
 Examples
 --------
-- List profiles at the `HQ` office for locations starting with `ABC`:
+- | The user wants to retrieve the profiles of all parameters from the `HQ` office:
+  | (**office**) :code:`HQ`
+
+  but is unsure of the location name. They know the location name starts with `ABC`, so they use a wildcard search:
+
+  | (**location-mask**) :code:`ABC*`
 
 .. code-block:: urlencoded
 
      GET /timeseries/profile?location-mask=ABC*&office=HQ
 
-- List profiles for offices starting with `S` for the elevation parameter:
+- | The user wants to retrieve the profiles for the elevation parameter:
+  | (**parameter-id-mask**) :code:`Elev`
+  |
+  | across all offices starting with `S`, such as `SPK`, `SRL`, and `SWT`, so they use a wildcard search for the office:
+  | (**office-mask**) :code:`S*`
 
 .. code-block:: urlencoded
 
     GET /timeseries/profile?office-mask=S*&parameter-id-mask=Elev
 
-- List profiles at the `SPK` office with 100 results per page
+- | The user wants to list the profiles of all parameters at the `SPK` office:
+  | (**office-mask**) :code:`SPK`
+  |
+  | but only wants to see 100 results at a time.
+  | (**page-size**) :code:`100`
 
 .. code-block:: urlencoded
 
     GET /timeseries/profile?office-mask=SPK&page-size=100
 
-- List the following page of profiles for the above query for a next-page value of `t!qqoLun283` provided in the \
-  previous response
+- The user wants to list the following page of results from the previous query, using the `next-page` value
+  of `t!qqoLun283` returned in the prior response. The query remains the same:
+
+  | (**office-mask**) :code:`SPK`
+  |
+  | (**page-size**) :code:`100`
+  |
+  | but adds the `page` parameter:
+  | (**page**) :code:`t!qqoLun283`
+
 
 .. code-block:: urlencoded
 

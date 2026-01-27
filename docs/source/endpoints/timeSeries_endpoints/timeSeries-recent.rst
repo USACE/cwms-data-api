@@ -30,20 +30,32 @@ When to use
 
 Examples
 --------
-- Latest values for a list of series IDs (`STATION1.Flow.Inst.15Minutes.0.CWMS` and \
-  `STATION2.Stage.Inst.15Minutes.0.CWMS`) in the Imperial unit system:
+- | The user wants to retrieve the recent time series data for the specified time series IDs of
+  | `STATION1.Flow.Inst.15Minutes.0.CWMS` and `STATION2.Stage.Inst.15Minutes.0.CWMS`:
+  | (**ts-ids**) :code:`STATION1.Flow.Inst.15Minutes.0.CWMS,STATION2.Stage.Inst.15Minutes.0.CWMS`
+  |
+  | and they want the data to be in the Imperial unit system:
+  | (**unit-system**) :code:`EN`
 
 .. code-block:: urlencoded
 
      GET /timeseries/recent?ts-ids=STATION1.Flow.Inst.15Minutes.0.CWMS,STATION2.Stage.Inst.15Minutes.0.CWMS&unit-system=EN
 
-- Latest values for time series in the `CALC3` group:
+- | The user wants to retrieve the recent time series data for all time series in the `CALC3` time series group:
+  | (**group-id**) :code:`CALC3`
 
 .. code-block:: urlencoded
 
-     GET /timeseries/recent?group-ide=CALC3
+     GET /timeseries/recent?group-id=CALC3
 
-- Latest values for time series in the `CALC3` group and in the `COMPUTE` category for the `HQ` office:
+- | The user wants to retrieve the recent time series data for all time series in the `CALC3` time series group:
+  | (**group-id**) :code:`CALC3`
+  |
+  | and in the `COMPUTE` time series category:
+  | (**category-id**) :code:`COMPUTE`
+  |
+  | for the `HQ` office:
+  | (**office**) :code:`HQ`
 
 .. code-block:: urlencoded
 

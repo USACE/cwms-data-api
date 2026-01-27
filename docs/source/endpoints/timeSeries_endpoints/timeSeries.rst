@@ -57,39 +57,73 @@ When to use
 Examples
 ----------
 
-- Data for the time series by the name `STATION1.Flow.Inst.15Minutes.0.CWMS` in cubic meters per second
-  starting on October 12, 2025 at 12:35PM.
+- | The user wants to retrieve flow data for `STATION1` at 15-minute intervals from the time series:
+  | (**name**)  :code:`STATION1.Flow.Inst.15Minutes.0.CWMS`
+  |
+  | from October 12, 2025 at 12:35 PM UTC onward:
+  | (**begin**)  :code:`2025-10-12T12:35:00Z`
+  |
+  | with the values converted to cubic meters per second:
+  | (**units**)  :code:`m3/s`.
 
 .. code-block:: urlencoded
 
      GET /timeseries?name=STATION1.Flow.Inst.15Minutes.0.CWMS&begin=2025-10-12T12:35:00.000Z&units=m3/s
 
-- Data for the time series by the name `STATION2.Elev.Avg.15Minutes.1Day.CWMS` in feet
-  using the NAVD88 elevation datum.
+- | The user wants to retrieve elevation data for `STATION2` at 15-minute intervals from the time series:
+  | (**name**) :code:`STATION2.Elev.Avg.15Minutes.1Day.CWMS`
+  |
+  | with the values converted to feet:
+  | (**units**) :code:`ft`
+  |
+  | and using the NAVD88 datum:
+  | (**datum**) :code:`NAVD88`
 
 .. code-block:: urlencoded
 
     GET /timeseries?name=STATION2.Elev.Avg.15Minutes.1Day.CWMS&datum=NAVD88&units=ft
 
-- Data for the time series by the name `STATION3.Temp.Inst.12Hour.1Month.CWMS` with version data `2025-10-01T12:00:00Z`
-  and office ID `NWDP`.
+- | The user wants to retrieve temperature data for `STATION3` at 12-hour intervals from the time series:
+  | (**name**) :code:`STATION3.Temp.Inst.12Hour.1Month.CWMS`
+  |
+  | using the version date of October 1, 2025 at 12:00 PM UTC:
+  | (**version-date**) :code:`2025-10-01T12:00:00Z`
+  |
+  | and limiting results to the office `NWDP`:
+  | (**office**) :code:`NWDP`
 
 .. code-block:: urlencoded
 
     GET /timeseries?name=STATION3.Temp.Inst.12Hour.1Month.CWMS&version-date=2025-10-01T12:00:00Z&office=NWDP
 
-- Data for the time series by the name `STATION4.Area.Total.1Day.1Week.Surface-CWMS` with a page size of 25 in the
-  `America/Los_Angeles` timezone, including the entry dates of the data points.
-
-..
-    The examples listed below are code block literals and thus cannot be placed on separate lines.
+- | The user wants to retrieve area data for `STATION4` at 1-day intervals from the time series:
+  | (**name**) :code:`STATION4.Area.Total.1Day.1Week.Surface-CWMS`
+  |
+  | with 25 results per response:
+  | (**page-size**) :code:`25`
+  |
+  | in the Pacific timezone (Los Angeles):
+  | (**timezone**) :code:`America/Los_Angeles`
+  |
+  | and including the entry dates of each data point:
+  | (**include-entry-date**) :code:`True`
 
 .. code-block:: urlencoded
 
     GET /timeseries?name=STATION4.Area.Total.1Day.1Week.Surface-CWMS&page-size=25&timezone=America/Los_Angeles&include-entry-date=True
 
-- Data for the above time series' next page of results, using the generated next-page value of `rGfes*720SJK`
-  provided in the response from the previous query.
+- The user wants to retrieve the following page of results for the above query with a page value of `rGfes*720SJK`
+  provided by the response from the previous query (`next-page`):
+
+  | (**page**) :code:`rGfes*720SJK`
+  |
+  | (**name**) :code:`STATION4.Area.Total.1Day.1Week.Surface-CWMS`
+  |
+  | (**page-size**) :code:`25`
+  |
+  | (**timezone**) :code:`America/Los_Angeles`
+  |
+  | (**include-entry-date**) :code:`True`
 
 .. code-block:: urlencoded
 

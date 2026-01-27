@@ -32,19 +32,24 @@ When to use
 
 Examples
 --------
-- List all available parsers:
+- The user wants to see all available profile parsers in the system.
 
 .. code-block::
 
      GET /timeseries/profile-parser
 
-- List available parsers for the `HQ` office:
+- | The user wants to see all available profile parsers in the HQ office:
+  | (**office-mask**) :code:`HQ`
 
 .. code-block:: urlencoded
 
      GET /timeseries/profile-parser?office-mask=HQ
 
-- List available parsers with the `Area-Evap` parameter for locations ending with `BASIN`:
+- | The user wants to see all available profile parsers for the Area-Evaporation parameter:
+  | (**parameter-id-mask**) :code:`Area-Evap`
+  |
+  | at location names ending with "BASIN":
+  | (**location-mask**) :code:`*BASIN`
 
 .. code-block:: urlencoded
 

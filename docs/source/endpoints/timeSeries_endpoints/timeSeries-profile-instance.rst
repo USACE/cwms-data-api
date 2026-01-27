@@ -48,19 +48,31 @@ When to use
 
 Examples
 --------
-- List all available instances
+- The user wants to see all available profile instances in the CWMS database.
 
-.. code-block::
+.. note::
+        Depending on the contents of the database, this query may return a large number of results.
+        Consider filtering the results by known values such as the office, location, or parameter ID.
+
+.. code-block:: bash
 
     GET /timeseries/profile-instance
 
-- List instances for all offices starting with `MV`
+- | The user wants to see all available profile instances for offices starting with `MV`, such as `MVR` and `MVS`:
+  | (**office-mask**) :code:`MV*`
 
 .. code-block:: urlencoded
 
     GET /timeseries/profile-instance?office-mask=MV*
 
-- List instances for a parameter starting with `Flow` at locations starting with `ABC` for the `HQ` office:
+- | The user wants to list all profile instances at the HQ office:
+  | (**office-mask**) :code:`HQ`
+  |
+  | at locations starting with "ABC":
+  | (**location-mask**) :code:`ABC*`
+  |
+  | for parameter combinations starting with "Flow" (such as Flow-Freq [Flow-Frequency] and Flow-Evap [Flow-Evaporation]):
+  | (**parameter-id-mask**) :code:`Flow*`
 
 .. code-block:: urlencoded
 

@@ -56,46 +56,173 @@ When to use
 
 Examples
 --------
-- Fetch the most recent instance for the `LOC123` location, `Depth-Temperature` parameter, units of meters \
-  (m) and Fahrenheit (F), `CWMS` version, and `HQ` office, with a time window of \
-  `2025-10-01T06:00:00Z` to `2026-01-21T18:00:00Z`:
+- The user wants to retrieve the latest profile instance data for a specific location and parameter within a defined
+  time range. They specify the location ID as LOC123:
+
+  | (**location-id**) :code:`LOC123`
+  |
+  | the parameter ID as Depth-Temperature:
+  | (**parameter-id**) :code:`Depth-Temperature`
+  |
+  | and the version as CWMS:
+  | (**version**) :code:`CWMS`
+  |
+  | They also set the office to HQ:
+  | (**office**) :code:`HQ`
+  |
+  | and define the time window from October 1, 2025, at 06:00 UTC:
+  | (**start**) :code:`2025-10-01T06:00:00Z`
+  |
+  | to January 21, 2026, at 18:00 UTC:
+  | (**end**) :code:`2026-01-21T18:00:00Z`
+  |
+  | They choose units of meters (m) and Fahrenheit (F) for the response:
+  | (**unit**) :code:`m,F`
+
+.. code-block:: bash
+
+    GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]
 
 .. code-block:: urlencoded
 
-     GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&unit=m,F
+    GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&unit=m,F
 
-- Fetch a specific instance version for the `LOC123` location, `Depth-Temperature` parameter, units of meters \
-  (m) and Fahrenheit (F), `CWMS` version, and `HQ` office, with a version date of \
-  `2026-01-01T12:00:00Z` and a time window of `2025-10-01T06:00:00Z` to `2026-01-21T18:00:00Z`:
+- The user wants to retrieve a specific version of the profile instance by providing a version date.
+  They specify the same location ID, parameter ID, version, office, units, and time window as before:
+
+  | (**location-id**) :code:`LOC123`
+  |
+  | (**parameter-id**) :code:`Depth-Temperature`
+  |
+  | (**version**) :code:`CWMS`
+  |
+  | (**office**) :code:`HQ`
+  |
+  | (**start**) :code:`2025-10-01T06:00:00Z`
+  |
+  | (**end**) :code:`2026-01-21T18:00:00Z`
+  |
+  | (**unit**) :code:`m,F`
+  |
+  | but this time they include the version-date parameter set to January 1, 2026, at 12:00 UTC:
+  | (**version-date**) :code:`2026-01-01T12:00:00Z`
+  |
+  | and the max-version parameter set to False:
+  | (**max-version**) :code:`False`
+
+.. code-block:: bash
+
+    GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]&version-date=[version-date]&max-version=[True/False]
 
 .. code-block:: urlencoded
 
-     GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&unit=m,F&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&version-date=2026-01-01T12:00:00Z&max-version=False
+    GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&unit=m,F&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&version-date=2026-01-01T12:00:00Z&max-version=False
 
-- Fetch the most recent instance for the `LOC123` location, `Depth-Temperature` parameter, units of meters \
-  (m) and Fahrenheit (F), `CWMS` version, and `HQ` office, with the latest version date and a time window of \
-  `2025-10-01T06:00:00Z` to `2026-01-21T18:00:00Z`:
+- The user wants to retrieve the most recent version of the profile instance.
+  They specify the same location ID, parameter ID, version, office, units, and time window as before:
+
+  | (**location-id**) :code:`LOC123`
+  |
+  | (**parameter-id**) :code:`Depth-Temperature`
+  |
+  | (**version**) :code:`CWMS`
+  |
+  | (**office**) :code:`HQ`
+  |
+  | (**start**) :code:`2025-10-01T06:00:00Z`
+  |
+  | (**end**) :code:`2026-01-21T18:00:00Z`
+  |
+  | (**unit**) :code:`m,F`
+  |
+  | but this time they set the max-version parameter to True and do not include a version-date parameter:
+  | (**max-version**) :code:`True`
+
+.. code-block:: bash
+
+    GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]&max-version=[True/False]
+
 
 .. code-block:: urlencoded
 
      GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&unit=m,F&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&max-version=True
 
-- Fetch the most recent instance for the `LOC123` location, `Depth-Temperature` parameter, units of meters \
-  (m) and Fahrenheit (F), timezone of `America/Los_Angeles`, `CWMS` version, and `HQ` office, with an inclusive \
-  time window of `2025-10-01T06:00:00Z` to `2026-01-21T18:00:00Z` and a result size of 15:
+- The user wants to retrieve the most recent version of the profile instance with a specific time zone and
+  inclusivity settings for the time window. They want to include data points that occur at the beginning and end of
+  the provided time window. They specify the same location ID, parameter ID, version, office, units,
+  and time window as before:
+
+  | (**location-id**) :code:`LOC123`
+  |
+  | (**parameter-id**) :code:`Depth-Temperature`
+  |
+  | (**version**) :code:`CWMS`
+  |
+  | (**office**) :code:`HQ`
+  |
+  | (**start**) :code:`2025-10-01T06:00:00Z`
+  |
+  | (**end**) :code:`2026-01-21T18:00:00Z`
+  |
+  | (**unit**) :code:`m,F`
+  |
+  | but this time they set the timezone parameter to Pacific (Los Angeles):
+  | (**timezone**) :code:`America/Los_Angeles`
+  |
+  | and set both the start-time-inclusive and end-time-inclusive parameters to True:
+  | (**start-time-inclusive**) :code:`True`
+  |
+  | (**end-time-inclusive**) :code:`True`
+  |
+  | They want to limit the result size to 15 entries, so they include the page-size parameter:
+  | (**page-size**) :code:`15`
+
+.. code-block:: bash
+
+     GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]&page-size=[page-size]&timezone=[timezone]&start-time-inclusive=[True/False]&end-time-inclusive=[True/False]
+
 
 .. code-block:: urlencoded
 
      GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&unit=m,F&page-size=15&timezone=America/Los_Angeles&start-time-inclusive=True&end-time-inclusive=True
 
-- Fetch the most recent instance for the `LOC123` location, `Depth-Temperature` parameter, units of meters \
-  (m) and Fahrenheit (F), timezone of `UTC`, `CWMS` version, and `HQ` office, with a \
-  time window of `2025-10-01T06:00:00Z` to `2026-01-21T17:00:00Z` including the single time step of data after the \
-  end date and a result size of 15:
+- The user wants to retrieve the most recent version of the profile instance with a specific time zone and
+  inclusivity settings for the time window. They specify the same location ID, parameter ID, version, office, units,
+  and time window as before:
+
+  | (**location-id**) :code:`LOC123`
+  |
+  | (**parameter-id**) :code:`Depth-Temperature`
+  |
+  | (**version**) :code:`CWMS`
+  |
+  | (**office**) :code:`HQ`
+  |
+  | (**start**) :code:`2025-10-01T06:00:00Z`
+  |
+  | (**end**) :code:`2026-01-21T18:00:00Z`
+  |
+  | (**unit**) :code:`m,F`
+  |
+  | but this time they set the timezone parameter to UTC:
+  | (**timezone**) :code:`UTC`
+
+  and include the next parameter set to True to include the single time step of data after the end
+  date of the specified time window:
+
+  | (**next**) :code:`True`
+  |
+  | They want to limit the result size to 15 entries, so they include the page-size parameter:
+  | (**page-size**) :code:`15`
+
+.. code-block:: bash
+
+     GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]&page-size=[page-size]&timezone=[timezone]&next=[True/False]
+
 
 .. code-block:: urlencoded
 
-     GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T17:00:00Z&unit=m,F&page-size=15&timezone=UTC&next=True
+     GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&unit=m,F&page-size=15&timezone=UTC&next=True
 
 
 See the consolidated API documentation: :doc:`/api-references`.
