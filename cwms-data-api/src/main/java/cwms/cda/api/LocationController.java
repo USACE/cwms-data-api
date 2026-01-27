@@ -359,10 +359,8 @@ public class LocationController implements CrudHandler {
                         + "the location whose data is to be deleted. If this field is not "
                         + "specified, matching location information will be deleted from all "
                         + "offices."),
-                //Keeping hidden from the API docs for now as this call is particularly destructive
-                //@OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
-                //description = "Specifies whether to specifies whether to delete associated data " +
-                //"for this location before deleting the location itself. Default: false")
+                @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class, description = "Specifies whether to delete"
+                        + " associated data for this location before deleting the location itself. Default: false")
             },
             description = "Delete CWMS Location",
             method = HttpMethod.DELETE,
