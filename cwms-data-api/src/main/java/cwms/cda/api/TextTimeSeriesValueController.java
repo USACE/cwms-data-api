@@ -67,12 +67,6 @@ public class TextTimeSeriesValueController implements Handler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the Text TimeSeries whose data is to be included in the response."),
-                    @OpenApiParam(name = TIMEZONE,  description = "Specifies "
-                            + "the time zone of the values of the begin and end fields (unless "
-                            + "otherwise specified). If this field is not specified, "
-                            + "the default time zone of UTC shall be used."),
-                    @OpenApiParam(name = DATE, required = true, description = "The date of the text value to retrieve"),
-                    @OpenApiParam(name = VERSION_DATE, description = "The version date for the value to retrieve."),
                     @OpenApiParam(name = CLOB_ID, description = "Will be removed in a schema update. " +
                             "This is a placeholder for integration testing with schema 23.3.16", deprecated = true)
             },
@@ -86,7 +80,7 @@ public class TextTimeSeriesValueController implements Handler {
     )
     public void handle(Context ctx) {
         //Implementation will change with new CWMS schema
-        //https://www.hec.usace.army.mil/confluence/display/CWMS/2024-02-29+Task2A+Text-ts+and+Binary-ts+Design
+        //https://www.hec.usace.army.mil/confluence/spaces/CWMS/pages/183110112/2024-02-29+Developer+Meeting+Task2A+Text-ts+and+Binary-ts+Design
         String textId = requiredParam(ctx, CLOB_ID);
         String officeId = requiredParam(ctx, OFFICE);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {

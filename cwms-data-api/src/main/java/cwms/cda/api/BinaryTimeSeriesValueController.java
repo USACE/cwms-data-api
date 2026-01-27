@@ -67,12 +67,6 @@ public class BinaryTimeSeriesValueController implements Handler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the Binary TimeSeries whose data is to be included in the response."),
-                    @OpenApiParam(name = TIMEZONE,  description = "Specifies "
-                            + "the time zone of the values of the begin and end fields (unless "
-                            + "otherwise specified). If this field is not specified, "
-                            + "the default time zone of UTC shall be used."),
-                    @OpenApiParam(name = DATE, required = true, description = "The date of the binary value to retrieve"),
-                    @OpenApiParam(name = VERSION_DATE, description = "The version date for the value to retrieve."),
                     @OpenApiParam(name = BLOB_ID, description = "Will be removed in a schema update. " +
                             "This is a placeholder for integration testing with schema 23.3.16", deprecated = true)
             },

@@ -241,6 +241,7 @@ public final class Controllers {
     private static final String DEPRECATED_CSV = "2024-11-01 CSV is not used often.";
 
     public static final String QUERY = "query";
+    public static final String INCLUDE_ROLES = "include-roles";
 
 
     static {

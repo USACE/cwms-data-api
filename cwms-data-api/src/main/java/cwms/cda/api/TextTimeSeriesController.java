@@ -95,6 +95,8 @@ public class TextTimeSeriesController implements CrudHandler {
                         + "the time zone of the values of the begin and end fields (unless "
                         + "otherwise specified). If this field is not specified, "
                         + "the default time zone of UTC shall be used."),
+                @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date of the "
+                        + "text timeseries. If not specified, the latest version will be used."),
                 @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
                 @OpenApiParam(name = END, required = true, description = "The end of the time window.")
             },

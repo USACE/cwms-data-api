@@ -47,40 +47,10 @@ public class ForecastTimeseriesController implements CrudHandler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    @OpenApi(
-            description = "Used to create and save a forecast timeseries",
-            requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = TimeSeries.class, type = Formats.JSONV2)
-                    },
-                    required = true
-            ),
-            queryParams = {
-                    @OpenApiParam(name = FORECAST_DATE, required = true, description = "Specifies the " +
-                            "forecast date time of the forecast instance to be associated with the created" +
-                            "forecast timeseries."),
-                    @OpenApiParam(name = ISSUE_DATE, required = true, description = "Specifies the " +
-                            "issue date time of the forecast instance to be associated with the created " +
-                            "forecast timeseries."),
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the " +
-                            "owning office of the forecast spec whose forecast instance will be " +
-                            "associated with the created forecast timeseries."),
-                    @OpenApiParam(name = NAME, required = true, description = "Specifies the " +
-                            "spec id of the forecast spec whose forecast instance will be " +
-                            "associated with the created forecast timeseries."),
-                    @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the " +
-                            "location of the forecast spec whose forecast instance will be" +
-                            "associated with the created forecast timeseries."),
-                    @OpenApiParam(name = TIMESERIES_ID, required = true, description = "Id of timeseries " +
-                            "that will be created.")
-            },
-            method = HttpMethod.POST,
-            path = "/forecast-timeseries",
-            tags = TAG
-    )
+    @OpenApi(ignore = true)
     @Override
     public void create(@NotNull Context ctx) {
-
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     protected DSLContext getDslContext(Context ctx) {

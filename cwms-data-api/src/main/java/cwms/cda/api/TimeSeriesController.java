@@ -178,11 +178,6 @@ public class TimeSeriesController implements CrudHandler {
                     required = true
             ),
             queryParams = {
-                @OpenApiParam(name = TIMEZONE, description = "Specifies "
-                        + "the time zone of the version-date field (unless "
-                        + "otherwise specified). If this field is not specified, the default time zone "
-                        + "of UTC shall be used.\r\nIgnored if version-date was specified with "
-                        + "offset and timezone."),
                 @OpenApiParam(name = CREATE_AS_LRTS,  type = Boolean.class, description = "Flag indicating if "
                         + "timeseries should be created as Local Regular Time Series. "
                         + "'True' or 'False', default is 'False'"),
@@ -597,11 +592,6 @@ public class TimeSeriesController implements CrudHandler {
                     },
                     required = true),
             queryParams = {
-                @OpenApiParam(name = TIMEZONE, description = "Specifies "
-                        + "the time zone of the version-date field (unless "
-                        + "otherwise specified). If this field is not specified, the default time zone "
-                        + "of UTC shall be used.\r\nIgnored if version-date was specified with "
-                        + "offset and timezone."),
                 @OpenApiParam(name = CREATE_AS_LRTS, type = Boolean.class, description = ""),
                 @OpenApiParam(name = STORE_RULE,  type = StoreRule.class, description = STORE_RULE_DESC),
                 @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description =

@@ -76,7 +76,7 @@ public final class PropertyController implements CrudHandler {
             },
             queryParams = {
                 @OpenApiParam(name = OFFICE_MASK, description = "Filters properties to the specified office mask"),
-                @OpenApiParam(name = CATEGORY_ID, description = "Filters properties to the specified category mask"),
+                @OpenApiParam(name = CATEGORY_ID_MASK, description = "Filters properties to the specified category mask"),
                 @OpenApiParam(name = NAME_MASK, description = "Filters properties to the specified name mask"),
             },
             responses = {

@@ -95,10 +95,7 @@ public class StandardTextController implements CrudHandler {
             if (officeMask == null) {
                 officeMask = "*";
             }
-            String idMask = ctx.queryParam(NAME_MASK);
-            if (idMask == null) {
-                idMask = "*";
-            }
+            String idMask = queryParamAsClass(ctx, new String[]{STANDARD_TEXT_ID_MASK, TEXT_MASK}, String.class, "*");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, StandardTextCatalog.class);
             DSLContext dsl = getDslContext(ctx);

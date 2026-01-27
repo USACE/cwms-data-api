@@ -93,7 +93,7 @@ public final class ForecastFileController implements Handler {
             tags = {ForecastSpecController.TAG}
     )
     public void handle(Context ctx) {
-        String specId = requiredParam(ctx, NAME);
+        String specId = ctx.pathParam(NAME);
         String office = requiredParam(ctx, OFFICE);
         String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);

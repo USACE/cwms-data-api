@@ -24,18 +24,7 @@
 
 package cwms.cda.api.rss;
 
-import static cwms.cda.api.Controllers.CURSOR;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.SINCE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_400;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.queryParamAsClass;
-import static cwms.cda.api.Controllers.queryParamAsInstant;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -81,6 +70,11 @@ public final class RssHandler extends BaseHandler {
                 "eg TS_STORED, STATUS, REALTIME_OPS")
         },
         queryParams = {
+            @OpenApiParam(name = TIMEZONE,  description = "Specifies "
+                    + "the time zone of the values of " + SINCE + " fields (unless "
+                    + "otherwise specified).  If this field is not specified, the default time zone "
+                    + "of UTC shall be used.\r\nIgnored if " + SINCE + " was specified with "
+                    + "offset and timezone."),
             @OpenApiParam(name = SINCE, description = "The start the feed time window. " +
                 "The endpoint will not retrieve more than the last week of messages."),
             @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "The number of feed items to include."),
