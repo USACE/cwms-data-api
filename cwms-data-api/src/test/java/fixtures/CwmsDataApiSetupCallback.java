@@ -50,7 +50,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private static final String ORACLE_IMAGE =
         System.getProperty("CDA.oracle.database.image",
-                           "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev"
+                           "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25.07.01"
                        );
     private static final String ORACLE_VOLUME =
         System.getProperty("CDA.oracle.database.volume",
