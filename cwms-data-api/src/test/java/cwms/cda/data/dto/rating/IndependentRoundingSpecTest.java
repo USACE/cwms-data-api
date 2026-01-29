@@ -44,5 +44,49 @@ public class IndependentRoundingSpecTest {
         assertEquals(spec, spec2);
     }
 
+    @Test
+    void testDeserializeXML() throws IOException {
+        InputStream resource = getClass().getResourceAsStream("/cwms/cda/data/dto/rating/independent_rounding_spec.xml");
+        assertNotNull(resource);
+        String xml = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        XMLv2 xmlv2 = new XMLv2();
+        IndependentRoundingSpec spec = xmlv2.parseContent(xml, IndependentRoundingSpec.class);
+
+        assertNotNull(spec);
+        assertEquals(1, spec.getPosition());
+        assertEquals("12345", spec.getValue());
+    }
+
+    @Test
+    void testRoundtripXML() {
+        IndependentRoundingSpec spec = new IndependentRoundingSpec(3, "98765");
+
+        XMLv2 xmlv2 = new XMLv2();
+        String xml = xmlv2.format(spec);
+        assertNotNull(xml);
+
+        IndependentRoundingSpec spec2 = xmlv2.parseContent(xml, IndependentRoundingSpec.class);
+        assertNotNull(spec2);
+        assertEquals(spec.getPosition(), spec2.getPosition());
+        assertEquals(spec.getValue(), spec2.getValue());
+        assertEquals(spec, spec2);
+    }
+
+    @Test
+    void testRoundtripXML_noPosition() {
+        IndependentRoundingSpec spec = new IndependentRoundingSpec("121212");
+
+        XMLv2 xmlv2 = new XMLv2();
+        String xml = xmlv2.format(spec);
+        assertNotNull(xml);
+
+        IndependentRoundingSpec spec2 = xmlv2.parseContent(xml, IndependentRoundingSpec.class);
+        assertNotNull(spec2);
+        assertEquals(spec.getPosition(), spec2.getPosition());
+        assertEquals(spec.getValue(), spec2.getValue());
+        assertEquals(spec, spec2);
+    }
+
 
 }
