@@ -8,8 +8,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.data.dao.BlobDao;
-import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.*;
 import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.Blobs;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -26,13 +25,16 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.InputStream;
+
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+import org.togglz.core.context.FeatureContext;
+import cwms.cda.features.CdaFeatures;
+import org.togglz.core.manager.FeatureManager;
 
 
 /**
@@ -50,33 +52,49 @@ public class BlobController extends BaseCrudHandler {
         return JooqDao.getDslContext(ctx);
     }
 
+    private BlobAccess chooseBlobAccess(DSLContext dsl) {
+        boolean useObjectStore = false;
+        try {
+            FeatureManager featureManager = FeatureContext.getFeatureManager();
+            useObjectStore = featureManager.isActive(CdaFeatures.USE_OBJECT_STORAGE_BLOBS);
+        } catch (Throwable ignore) {
+            // fall back to system/env property check
+        }
+        if (useObjectStore) {
+            ObjectStorageConfig cfg = ObjectStorageConfig.fromSystem();
+            return new ObjectStorageBlobDao(cfg);
+        }
+        return new BlobDao(dsl);
+    }
+
+
     @OpenApi(
-        queryParams = {
-            @OpenApiParam(name = OFFICE,
-                description = "Specifies the owning office. If this field is not "
-                        + "specified, matching information from all offices shall be "
-                        + "returned."),
-            @OpenApiParam(name = PAGE,
-                description = "This end point can return a lot of data, this "
-                        + "identifies where in the request you are. This is an opaque"
-                        + " value, and can be obtained from the 'next-page' value in "
-                        + "the response."),
-            @OpenApiParam(name = PAGE_SIZE,
-                type = Integer.class,
-                description = "How many entries per page returned. Default "
-                        + DEFAULT_PAGE_SIZE + "."),
-            @OpenApiParam(name = LIKE,
-                description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                        + "describing the blob id's you want")
-        },
-        responses = {@OpenApiResponse(status = STATUS_200,
-            description = "A list of blobs.",
-            content = {
-                @OpenApiContent(type = Formats.JSON, from = Blobs.class),
-                @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
-            })
-        },
-        tags = {TAG}
+            queryParams = {
+                    @OpenApiParam(name = OFFICE,
+                            description = "Specifies the owning office. If this field is not "
+                                    + "specified, matching information from all offices shall be "
+                                    + "returned."),
+                    @OpenApiParam(name = PAGE,
+                            description = "This end point can return a lot of data, this "
+                                    + "identifies where in the request you are. This is an opaque"
+                                    + " value, and can be obtained from the 'next-page' value in "
+                                    + "the response."),
+                    @OpenApiParam(name = PAGE_SIZE,
+                            type = Integer.class,
+                            description = "How many entries per page returned. Default "
+                                    + DEFAULT_PAGE_SIZE + "."),
+                    @OpenApiParam(name = LIKE,
+                            description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                                    + "describing the blob id's you want")
+            },
+            responses = {@OpenApiResponse(status = STATUS_200,
+                    description = "A list of blobs.",
+                    content = {
+                            @OpenApiContent(type = Formats.JSON, from = Blobs.class),
+                            @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
+                    })
+            },
+            tags = {TAG}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -103,7 +121,7 @@ public class BlobController extends BaseCrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Blobs.class);
 
-            BlobDao dao = new BlobDao(dsl);
+            BlobAccess dao = chooseBlobAccess(dsl);
             Blobs blobs = dao.getBlobs(cursor, pageSize, office, like);
 
             String result = Formats.format(contentType, blobs);
@@ -126,20 +144,20 @@ public class BlobController extends BaseCrudHandler {
                             + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
             queryParams = {
-                @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
-                @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
-                    + "is ignored and the value of the query parameter is used.   "
-                    + "Note: this query parameter is necessary for id's that contain '/' or other special "
-                    + "characters. This is due to limitations in path pattern matching. "
-                    + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
-                    + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
+                    @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                            + "is ignored and the value of the query parameter is used.   "
+                            + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                            + "characters. This is due to limitations in path pattern matching. "
+                            + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                            + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
             responses = {
-                @OpenApiResponse(status = STATUS_200,
-                    description = "Returns requested blob.",
-                    content = {
-                        @OpenApiContent(type = "application/octet-stream")
-                    })
+                    @OpenApiResponse(status = STATUS_200,
+                            description = "Returns requested blob.",
+                            content = {
+                                    @OpenApiContent(type = "application/octet-stream")
+                            })
             },
             tags = {TAG}
     )
@@ -152,27 +170,40 @@ public class BlobController extends BaseCrudHandler {
                 blobId = idQueryParam;
             }
             DSLContext dsl = getDslContext(ctx);
-            BlobDao dao = new BlobDao(dsl);
+
+            BlobAccess dao = chooseBlobAccess(dsl);
             String officeQP = ctx.queryParam(OFFICE);
             Optional<String> office = Optional.ofNullable(officeQP);
 
-            BlobDao.BlobConsumer tripleConsumer = (blob, mediaType) -> {
 
-                if (blob == null) {
+            final Long offset;
+            final Long end;
+            long[] ranges = RangeParser.parseFirstRange(ctx.header(io.javalin.core.util.Header.RANGE));
+            if (ranges != null) {
+                offset = ranges[0];
+                end = ranges[1];
+            } else {
+                offset = null;
+                end = null;
+            }
+
+            ctx.header(Header.ACCEPT_RANGES, "bytes");
+
+            StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
+                if (is == null) {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                             + "blob based on given parameters"));
                 } else {
-                    long size = blob.length();
-                    updateResultSize(size);
-                    try (InputStream is = blob.getBinaryStream()) { // is  OracleBlobInputStream
-                        RangeRequestUtil.seekableStream(ctx, is, mediaType, size);
-                    }
+                    requestResultSize.update(totalLength);
+                    // is  OracleBlobInputStream or something from MinIO
+                    RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
                 }
             };
+
             if (office.isPresent()) {
-                dao.getBlob(blobId, office.get(), tripleConsumer);
+                dao.getBlob(blobId, office.get(), consumer, offset, end);
             } else {
-                dao.getBlob(blobId, tripleConsumer);
+                dao.getBlob(blobId, null, consumer, offset, end);
             }
         }
     }
@@ -181,13 +212,13 @@ public class BlobController extends BaseCrudHandler {
     @OpenApi(
             description = "Create new Blob",
             requestBody = @OpenApiRequestBody(
-                content = {
-                    @OpenApiContent(from = Blob.class, type = Formats.JSONV2)
-                },
-                required = true),
+                    content = {
+                            @OpenApiContent(from = Blob.class, type = Formats.JSONV2)
+                    },
+                    required = true),
             queryParams = {
-                @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                    description = "Create will fail if provided ID already exists. Default: true")
+                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                            description = "Create will fail if provided ID already exists. Default: true")
             },
             method = HttpMethod.POST,
             tags = {TAG}
@@ -200,7 +231,7 @@ public class BlobController extends BaseCrudHandler {
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
             Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
-            BlobDao dao = new BlobDao(dsl);
+            BlobAccess dao = chooseBlobAccess(dsl);
             dao.create(blob, failIfExists, false);
             ctx.status(HttpCode.CREATED);
         }
@@ -209,21 +240,21 @@ public class BlobController extends BaseCrudHandler {
     @OpenApi(
             description = "Update an existing Blob",
             pathParams = {
-                @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
+                    @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be updated"),
             },
             requestBody = @OpenApiRequestBody(
-                content = {
-                    @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
-                    @OpenApiContent(from = Blob.class, type = Formats.JSON)
-                },
-                required = true),
+                    content = {
+                            @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
+                            @OpenApiContent(from = Blob.class, type = Formats.JSON)
+                    },
+                    required = true),
             queryParams = {
-                @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
-                    + "is ignored and the value of the query parameter is used.   "
-                    + "Note: this query parameter is necessary for id's that contain '/' or other special "
-                    + "characters. This is due to limitations in path pattern matching. "
-                    + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
-                    + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+                    @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                            + "is ignored and the value of the query parameter is used.   "
+                            + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                            + "characters. This is due to limitations in path pattern matching. "
+                            + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                            + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
             method = HttpMethod.PATCH,
             tags = {TAG}
@@ -258,7 +289,13 @@ public class BlobController extends BaseCrudHandler {
                         + "updating a blob");
             }
 
-            BlobDao dao = new BlobDao(dsl);
+            if (!blob.getId().equals(blobId)) {
+                throw new FormattingException("The blob id parameter does not match the blob id in the body. " +
+                        "The blob end-point does not support renaming blobs.  " +
+                        "Create a new blob with the new id and delete the old one.");
+            }
+
+            BlobAccess dao = chooseBlobAccess(dsl);
             dao.update(blob, false);
             ctx.status(HttpServletResponse.SC_OK);
         }
@@ -267,17 +304,17 @@ public class BlobController extends BaseCrudHandler {
     @OpenApi(
             description = "Deletes requested blob",
             pathParams = {
-                @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
+                    @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
             },
             queryParams = {
-                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                    + "owning office of the blob to be deleted"),
-                @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
-                    + "is ignored and the value of the query parameter is used.   "
-                    + "Note: this query parameter is necessary for id's that contain '/' or other special "
-                    + "characters. This is due to limitations in path pattern matching. "
-                    + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
-                    + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                            + "owning office of the blob to be deleted"),
+                    @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+                            + "is ignored and the value of the query parameter is used.   "
+                            + "Note: this query parameter is necessary for id's that contain '/' or other special "
+                            + "characters. This is due to limitations in path pattern matching. "
+                            + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                            + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
             method = HttpMethod.DELETE,
             tags = {TAG}
@@ -291,7 +328,7 @@ public class BlobController extends BaseCrudHandler {
             }
             DSLContext dsl = getDslContext(ctx);
             String office = requiredParam(ctx, OFFICE);
-            BlobDao dao = new BlobDao(dsl);
+            BlobAccess dao = chooseBlobAccess(dsl);
             dao.delete(office, blobId);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }

@@ -58,13 +58,17 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.BaseCrudHandler;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
+import cwms.cda.data.dao.RatingsVerticalDatumExtractor;
+import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.StatusResponse;
+import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -89,7 +93,9 @@ import java.time.Instant;
 import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerException;
+
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
+import mil.army.usace.hec.metadata.VerticalDatumException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
@@ -131,7 +137,16 @@ public class RatingController extends BaseCrudHandler {
             required = true),
             queryParams = {
                 @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
-                        description = "Also store updates to the rating template. Default: true")
+                        description = "Also store updates to the rating template. Default: true"),
+                @OpenApiParam(name = DATUM, type = VerticalDatum.class, description = "If the provided "
+                        + "rating-set includes an explicit vertical-datum-info attribute "
+                        + "then it is assumed that the data is in the datum specified by the vertical-datum-info. "
+                        + "If the input rating-set does not include vertical-datum-info and "
+                        + "this parameter is not provided it is assumed that the data is in the as-stored "
+                        + "datum and no conversion is necessary.  "
+                        + "If the input rating-set does not include vertical-datum-info and "
+                        + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
+                        + "and should be converted to the as-stored datum before being saved.")
             },
             method = HttpMethod.POST, path = "/ratings", tags = {TAG},
             responses = {
@@ -144,7 +159,14 @@ public class RatingController extends BaseCrudHandler {
             RatingDao ratingDao = getRatingDao(dsl);
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
             String ratingSet = deserializeRatingSet(ctx, storeTemplate);
-            ratingDao.create(ratingSet, false);
+            String datum = ctx.queryParam(DATUM);
+            VerticalDatum vd = null;
+            if(datum != null) {
+               vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
+                        .getOrDefault(null);
+            }
+            vd = RatingsVerticalDatumExtractor.getVerticalDatum(ratingSet).orElse(vd);
+            ratingDao.create(ratingSet, false, vd);
             StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Rating Set successfully stored to CWMS.");
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
@@ -256,7 +278,9 @@ public class RatingController extends BaseCrudHandler {
                 + "\n* `NAVD88`  The elevation values will in the "
                 + "specified or default units above the NAVD-88 datum."
                 + "\n* `NGVD29`  The elevation values will be in the "
-                + "specified or default units above the NGVD-29 datum."),
+                + "specified or default units above the NGVD-29 datum."
+                + "\n* `NATIVE`  The elevation values will be in the "
+                + "Location's native datum."),
         @OpenApiParam(name = AT,  description = "Specifies the "
                 + "start of the time window for data to be included in the response. "
                 + "If this field is not specified, any required time window begins 24"
@@ -353,6 +377,16 @@ public class RatingController extends BaseCrudHandler {
                 @OpenApiParam(name = METHOD, description = "Specifies "
                         + "the retrieval method used.  If no method is provided EAGER will be used.",
                         type = RatingSet.DatabaseLoadMethod.class),
+                @OpenApiParam(name = DATUM,  description = "Specifies the "
+                        + "elevation datum of the response. This field affects only elevation"
+                        + " Ratings. Valid values for this field are:"
+                        + "\n* `NAVD88`  The elevation values will in the "
+                        + "specified or default units above the NAVD-88 datum."
+                        + "\n* `NGVD29`  The elevation values will be in the "
+                        + "specified or default units above the NGVD-29 datum."
+                        + "\n* `NATIVE`  The elevation values will be in the "
+                        + "Location's native datum.",
+                        type = VerticalDatum.class),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
@@ -368,6 +402,7 @@ public class RatingController extends BaseCrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             String officeId = ctx.queryParam(OFFICE);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+            VerticalDatum verticalDatum = VerticalDatum.getVerticalDatum(ctx.queryParam(DATUM));
 
             Instant beginInstant = null;
             String begin = ctx.queryParam(BEGIN);
@@ -385,7 +420,7 @@ public class RatingController extends BaseCrudHandler {
                     RatingSet.DatabaseLoadMethod.class)
                     .getOrDefault(RatingSet.DatabaseLoadMethod.EAGER);
 
-            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant);
+            String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant, verticalDatum);
             if (body != null) {
                 ctx.result(body);
                 ctx.status(HttpCode.OK);
@@ -397,7 +432,7 @@ public class RatingController extends BaseCrudHandler {
     @Nullable
     private String getRatingSetString(Context ctx, RatingSet.DatabaseLoadMethod method,
                                       String officeId, String rating, Instant begin,
-                                      Instant end) {
+                                      Instant end, VerticalDatum verticalDatum) {
         String retval = null;
 
         try (final Timer.Context ignored = markAndTime("getRatingSetString")) {
@@ -412,9 +447,44 @@ public class RatingController extends BaseCrudHandler {
                 try {
                     RatingSet ratingSet = getRatingSet(ctx, method, officeId, rating, begin, end);
                     if (ratingSet != null) {
+                        //Apply vertical datum conversion if needed
+                        if (verticalDatum != null) {
+                            try {
+                                switch (verticalDatum)
+                                {
+                                    case NAVD88:
+                                        ratingSet.toNAVD88();
+                                        break;
+                                    case NGVD29:
+                                        ratingSet.toNGVD29();
+                                        break;
+                                    case NATIVE:
+                                        ratingSet.toNativeVerticalDatum();
+                                        break;
+                                    default:
+                                        logger.atSevere().log("Unknown vertical datum: %s", verticalDatum);
+                                        break;
+                                }
+                                VerticalDatumInfo vdi = RatingsVerticalDatumExtractor.deserializeVerticalDatumInfoXml(ratingSet.getVerticalDatumInfo());
+                                if(vdi != null && vdi.getOffsetForDatum(verticalDatum) != null) {
+                                    VerticalDatumInfo newVdi = vdi.convertedTo(vdi.getOffsetForDatum(verticalDatum));
+                                    XmlMapper xmlMapper = new XmlMapper();
+                                    String vdiXml = xmlMapper.writeValueAsString(newVdi);
+                                    ratingSet.setVerticalDatumInfo(vdiXml);
+                                }
+                            } catch (VerticalDatumException vde) {
+                                logger.atWarning().withCause(vde).log("Failed to convert rating %s to requested vertical datum: %s",
+                                        rating, verticalDatum);
+                            }
+                        }
                         if (isJson) {
                             retval = JsonRatingUtils.toJson(ratingSet);
                         } else {
+                            //the toXml method in RatingXmlFactory converts to native-datum which breaks things coming back in the user-requested datum
+                            //setting the current-datum to an unknown value prevents the call to convert to native-datum
+                            if(ratingSet.getVerticalDatumContainer() != null && ratingSet.getVerticalDatumContainer().currentDatum != null) {
+                                ratingSet.getVerticalDatumContainer().currentDatum = "ignoreConversionToNativeDatum";
+                            }
                             retval = RatingXmlFactory.toXml(ratingSet, " ");
                         }
                     } else {
@@ -474,7 +544,16 @@ public class RatingController extends BaseCrudHandler {
                 @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
                         description = "Also store updates to the rating template. Default: true"),
                 @OpenApiParam(name = REPLACE_BASE_CURVE, type = Boolean.class,
-                        description = "Replace the base curve of USGS stream flow rating. Default: false")
+                        description = "Replace the base curve of USGS stream flow rating. Default: false"),
+                @OpenApiParam(name = DATUM, type = VerticalDatum.class, description = "If the provided "
+                            + "rating-set includes an explicit vertical-datum-info attribute "
+                            + "then it is assumed that the data is in the datum specified by the vertical-datum-info. "
+                            + "If the input rating-set does not include vertical-datum-info and "
+                            + "this parameter is not provided it is assumed that the data is in the as-stored "
+                            + "datum and no conversion is necessary.  "
+                            + "If the input rating-set does not include vertical-datum-info and "
+                            + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
+                            + "and should be converted to the as-stored datum before being saved.")
             },
             method = HttpMethod.PATCH, path = "/ratings", tags = {TAG})
     public void update(@NotNull Context ctx, @NotNull String ratingId) {
@@ -489,7 +568,14 @@ public class RatingController extends BaseCrudHandler {
             boolean replaceBaseCurve = ctx.queryParamAsClass(REPLACE_BASE_CURVE, Boolean.class)
                     .getOrDefault(false);
             String ratingSet = deserializeRatingSet(ctx, storeTemplate);
-            ratingDao.store(ratingSet, replaceBaseCurve);
+            String datum = ctx.queryParam(DATUM);
+            VerticalDatum vd = null;
+            if(datum != null) {
+                vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
+                        .getOrDefault(null);
+            }
+            vd = RatingsVerticalDatumExtractor.getVerticalDatum(ratingSet).orElse(vd);
+            ratingDao.store(ratingSet, replaceBaseCurve, vd);
             StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Updated RatingSet");
             ctx.status(HttpServletResponse.SC_OK).json(re);
         } catch (IOException ex) {

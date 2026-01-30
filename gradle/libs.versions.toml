@@ -9,7 +9,7 @@ hec-nucleus = "2.0.1"
 flogger = "0.7.4"
 google-findbugs = "3.0.2"
 error_prone_annotations = "2.15.0"
-cwms-ratings = "2.0.2"
+cwms-ratings = "4.2.3"
 javalin = "4.6.8"
 tomcat = "9.0.112"
 swagger-core = "2.2.23"
@@ -36,6 +36,8 @@ freemarker = "2.3.32"
 auto-service = "1.1.1"
 openapi-validation = "2.44.9"
 javaparser = "3.26.2"
+togglz = "3.3.3"
+minio = "8.6.0"
 
 #Overrides
 classgraph = { strictly = '4.8.176' }
@@ -79,7 +81,9 @@ jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-dat
 jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml", version.ref = "jackson" }
 jackson-datatype-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jdk8", version.ref = "jackson" }
 
+togglz-core = { module = "org.togglz:togglz-core", version.ref = "togglz" }
 
+minio = { module = "io.minio:minio", version.ref = "minio"}
 
 #compile compileOnly
 javaee-web-api = { module = "javax:javaee-web-api", version.ref = "java-ee" }
@@ -106,6 +110,8 @@ testcontainers-database-commons = { module = "org.testcontainers:testcontainers-
 testcontainers-jdbc = { module = "org.testcontainers:testcontainers-jdbc", version.ref = "testcontainers"}
 testcontainers-junit-jupiter = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers"}
 testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "cwms-testcontainers"}
+testcontainers-minio = { module = "org.testcontainers:testcontainers-minio", version.ref = "testcontainers" }
+
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 oracle-jdbc-driver = { module ="com.oracle.database.jdbc:ojdbc8", version.ref = "oracle-jdbc" }
 rest-assured = { module = "io.rest-assured:rest-assured", version.ref = "rest-assured" }
@@ -137,7 +143,7 @@ junit = ["junit-jupiter-api", "junit-jupiter-params", "junit-jupiter-engine", "j
 tomcat-embedded = [ "tomcat-embedded-core", "tomcat-embedded-jasper" ]
 tomcat-support = [ "tomcat-juli", "tomcat-jdbc" ]
 testcontainers = [ "testcontainers-base", "testcontainers-database-commons", "testcontainers-jdbc",
-                   "testcontainers-junit-jupiter", "testcontainers-cwms"]
+                   "testcontainers-junit-jupiter", "testcontainers-cwms", "testcontainers-minio" ]
 metrics = ["metrics-core", "metrics-servlets", "metrics-prometheus-client", "metrics-prometheus-servlets" ]
 jackson = ["jackson-core", "jackson-dataformat-csv", "jackson-dataformat-xml", "jackson-datatype-jsr310" ]
 overrides = ["io-github.classgraph", "io-swagger-parser"]
