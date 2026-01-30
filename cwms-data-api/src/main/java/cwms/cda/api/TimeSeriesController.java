@@ -412,6 +412,11 @@ public class TimeSeriesController implements CrudHandler {
                         + "of data as a series of pages. This parameter is used to describes the "
                         + "current location in the response stream.  This is an opaque "
                         + "value, and can be obtained from the 'next-page' value in the response."),
+                @OpenApiParam(name = CURSOR, deprecated = true,
+                        description = "This end point can return a lot of data, this "
+                        + "identifies where in the request you are. This is an opaque"
+                        + " value, and can be obtained from the 'next-page' value in "
+                        + "the response. Deprecated, use " + PAGE + " instead."),
                 @OpenApiParam(name = PAGE_SIZE,
                         type = Integer.class,
                         description = "How many entries per page returned. "

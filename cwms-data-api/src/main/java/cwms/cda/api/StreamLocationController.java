@@ -220,7 +220,7 @@ public final class StreamLocationController extends BaseCrudHandler {
             }
     )
     @Override
-    public void update(Context ctx, @NotNull String locationId) {
+    public void update(Context ctx, @NotNull String name) {
         logUnusedPathParameter(ctx, NAME, "Body contains required information");
         try (Timer.Context ignored = markAndTime(METHOD + "update")) {
             String formatHeader = ctx.req.getContentType();

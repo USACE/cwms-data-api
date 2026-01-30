@@ -81,7 +81,12 @@ public final class RssHandler extends BaseHandler {
             @OpenApiParam(name = PAGE, description = "This end point can return a lot of data, this "
                 + "identifies where in the request you are. This is an opaque"
                 + " value, and can be obtained from the 'next-page' value in "
-                + "the response.")
+                + "the response."),
+            @OpenApiParam(name = CURSOR, deprecated = true,
+                    description = "This end point can return a lot of data, this "
+                            + "identifies where in the request you are. This is an opaque"
+                            + " value, and can be obtained from the 'next-page' value in "
+                            + "the response. Deprecated, use " + PAGE + " instead."),
         },
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
