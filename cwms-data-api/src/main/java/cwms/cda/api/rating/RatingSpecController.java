@@ -30,15 +30,18 @@ import static cwms.cda.api.Controllers.*;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingSpecDao;
 import cwms.cda.data.dto.rating.RatingSpec;
 import cwms.cda.data.dto.rating.RatingSpecs;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv2;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -48,11 +51,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.IOException;
+
 import java.util.Optional;
+
 import com.google.common.flogger.FluentLogger;
+
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.transform.TransformerException;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -100,7 +105,7 @@ public class RatingSpecController implements CrudHandler {
                     ),
                     @OpenApiParam(name = PAGE_SIZE, type = Integer.class,
                             description = "How many entries per page returned. "
-                            + "Default " + DEFAULT_PAGE_SIZE + "."
+                                    + "Default " + DEFAULT_PAGE_SIZE + "."
                     ),
             },
             responses = {
@@ -122,7 +127,7 @@ public class RatingSpecController implements CrudHandler {
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeader(formatHeader, RatingSpecs.class);
-        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             RatingSpecDao ratingSpecDao = getRatingSpecDao(dsl);
@@ -171,7 +176,7 @@ public class RatingSpecController implements CrudHandler {
 
         String office = ctx.queryParam(OFFICE);
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
             RatingSpecDao ratingSpecDao = getRatingSpecDao(dsl);
@@ -201,58 +206,62 @@ public class RatingSpecController implements CrudHandler {
 
 
     @OpenApi(
-        description = "Create new Rating Specification",
-        requestBody = @OpenApiRequestBody(
-            content = {
-                @OpenApiContent(from = RatingSpec.class, type = Formats.XMLV2)
+            description = "Create new Rating Specification",
+            requestBody = @OpenApiRequestBody(
+                    content = {
+                            @OpenApiContent(from = RatingSpec.class, type = Formats.JSON),
+                            @OpenApiContent(from = RatingSpec.class, type = Formats.XMLV2)
+                    },
+                    required = true),
+            queryParams = {
+                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                            description = "Create will fail if provided ID already exists. Default: true")
             },
-            required = true),
-        queryParams = {
-            @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                description = "Create will fail if provided ID already exists. Default: true")
-        },
-        method = HttpMethod.POST,
-        tags = {TAG}
+            method = HttpMethod.POST,
+            tags = {TAG}
     )
     @Override
     public void create(Context ctx) {
-        try (final Timer.Context ignored = markAndTime(CREATE)){
+        try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.XMLV2;
-            String body = ctx.body();
-            String xml = translateToXml(body, formatHeader);
-            RatingSpecDao dao = new RatingSpecDao(dsl);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(false);
-            dao.create(xml, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED);
+            String body = ctx.body();
+            RatingSpecDao dao = new RatingSpecDao(dsl);
+
+            // First we are going to try and build a CDA RatingSpec from whatever the user gave us.
+            RatingSpec spec = null;
+            try {
+                if (formatHeader.contains(Formats.XMLV2)) {
+                    XMLv2 xmlv2 = new XMLv2();
+                    spec = xmlv2.parseContent(body, RatingSpec.class);
+                } else if (formatHeader.contains(Formats.JSONV2)) {
+                    ObjectMapper jsonMapper = JsonV2.buildObjectMapper();
+                    spec = jsonMapper.readValue(body, RatingSpec.class);
+                }
+            } catch (JacksonException e) {
+                logger.atInfo().withCause(e).log("Unable to parse Rating Spec from request body");
+            }
+
+            if (spec != null) {
+                // If we were able to parse the RatingSpec from the request body, then we
+                // should call the dao method that takes a CDA object and the dao will sort it out.
+                dao.create(spec, failIfExists);
+                ctx.status(HttpServletResponse.SC_CREATED);
+            } else if (formatHeader.contains(Formats.XMLV2)) {
+                // This branch is if the user said its xml and it doesn't parse into the CDA RatingSpec
+                // object.   We'll let the dao try passing it thru to the pl/sql.
+                dao.create(body, failIfExists);
+                ctx.status(HttpServletResponse.SC_CREATED);
+            } else {
+                throw new IllegalArgumentException("Could not parse body with format:" + formatHeader);
+            }
+
         }
     }
 
-    private static String translateToXml(String body, String contentType) {
-        String retval;
-
-        if (contentType.contains(Formats.XMLV2)) {
-            retval = body;
-        } else if (contentType.contains(Formats.JSONV2)) {
-            retval = translateJsonToXml(body);
-        } else {
-            throw new IllegalArgumentException("Unexpected contentType format:" + contentType);
-        }
-
-        return retval;
-    }
-
-    private static String translateJsonToXml(String body) {
-        String retval;
-        try {
-            retval = JsonRatingUtils.jsonToXml(body);
-        } catch (IOException | TransformerException ex) {
-            throw new IllegalArgumentException("Failed to translate request into rating spec XML", ex);
-        }
-        return retval;
-    }
 
     @OpenApi(ignore = true)
     @Override
@@ -261,22 +270,22 @@ public class RatingSpecController implements CrudHandler {
     }
 
     @OpenApi(
-        pathParams = {
-            @OpenApiParam(name = RATING_ID, required = true, description = "The rating-spec-id of the ratings data to be deleted."),
-        },
-        queryParams = {
-            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                + "owning office of the ratings to be deleted."),
-            @OpenApiParam(name = METHOD,  required = true, description = "Specifies the delete method used.",
-                type = JooqDao.DeleteMethod.class)
-        },
-        description = "Deletes requested rating specification",
-        method = HttpMethod.DELETE,
-        tags = {TAG}
+            pathParams = {
+                    @OpenApiParam(name = RATING_ID, required = true, description = "The rating-spec-id of the ratings data to be deleted."),
+            },
+            queryParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                            + "owning office of the ratings to be deleted."),
+                    @OpenApiParam(name = METHOD, required = true, description = "Specifies the delete method used.",
+                            type = JooqDao.DeleteMethod.class)
+            },
+            description = "Deletes requested rating specification",
+            method = HttpMethod.DELETE,
+            tags = {TAG}
     )
     @Override
     public void delete(Context ctx, @NotNull String ratingSpecId) {
-        try (final Timer.Context ignored = markAndTime(DELETE)){
+        try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String office = ctx.queryParam(OFFICE);
