@@ -1,25 +1,30 @@
 package cwms.cda.data.dto.rating;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasXPath;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.formatters.xml.XMLv2;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.io.IOUtils;
-import org.jooq.XML;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 class RatingSpecsTest {
 
@@ -38,6 +43,27 @@ class RatingSpecsTest {
 
         assertNotNull(specs);
         assertEquals(2, specs.getSpecs().size());
+    }
+    
+    @Test
+    void testXmlSerialize() throws ParserConfigurationException, SAXException, IOException {
+        RatingSpecs specs = buildRatingSpecs();
+        String xml = Formats.format(Formats.parseHeader(Formats.XMLV2, RatingSpecs.class), specs);
+        assertNotNull(xml);
+        System.out.println("[DEBUG_LOG] xml: " + xml);
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document doc = builder.parse(new InputSource(new StringReader(xml)));
+
+        assertThat(doc, hasXPath("/rating-specs/page-size", is("10")));
+        assertThat(doc, hasXPath("/rating-specs/total", is("2")));
+
+        assertThat(doc, hasXPath("/rating-specs/specs/rating-spec[1]/office-id", is("SWT")));
+        assertThat(doc, hasXPath("/rating-specs/specs/rating-spec[1]/rating-id", is("ARBU.Elev;Stor.Linear.Production")));
+
+        assertThat(doc, hasXPath("/rating-specs/specs/rating-spec[2]/office-id", is("SWT")));
+        assertThat(doc, hasXPath("/rating-specs/specs/rating-spec[2]/rating-id", is("OBRK.Elev;Stor.Linear.Production")));
     }
 
 

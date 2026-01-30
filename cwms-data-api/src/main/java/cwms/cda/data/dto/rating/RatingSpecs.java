@@ -1,10 +1,13 @@
 package cwms.cda.data.dto.rating;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -15,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@JsonRootName("rating-specs")
 @JsonDeserialize(builder = RatingSpecs.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -32,6 +36,8 @@ public class RatingSpecs extends CwmsDTOPaginated {
         specs = new ArrayList<>(specsList);
     }
 
+    @JacksonXmlElementWrapper(localName = "specs")
+    @JacksonXmlProperty(localName = "rating-spec")
     public List<RatingSpec> getSpecs() {
         return Collections.unmodifiableList(specs);
     }
@@ -72,7 +78,6 @@ public class RatingSpecs extends CwmsDTOPaginated {
         public Builder() {
         }
 
-
         public Builder withPage(String page) {
             String[] parts = decodeCursor(page);
             if (parts.length > 0) {
@@ -85,18 +90,15 @@ public class RatingSpecs extends CwmsDTOPaginated {
             return this;
         }
 
-
         public Builder withOffset(int offset) {
             this.offset = offset;
             return this;
         }
 
-
         public Builder withPageSize(int pageSize) {
             this.pageSize = pageSize;
             return this;
         }
-
 
         public Builder withTotal(Integer total) {
             this.total = total;
@@ -108,7 +110,6 @@ public class RatingSpecs extends CwmsDTOPaginated {
             this.pageSize = pageSize;
             this.total = total;
         }
-
 
         public Builder withSpecs(List<RatingSpec> specList) {
             this.specs = specList;
