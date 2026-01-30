@@ -325,6 +325,7 @@ public class RatingSpec extends CwmsDTO {
             return this;
         }
 
+
         public static IndependentRoundingSpec[] buildIndependentRoundingSpecs(
                 String indRoundingSpecsStr) {
             IndependentRoundingSpec[] retval = null;
@@ -336,7 +337,7 @@ public class RatingSpec extends CwmsDTO {
         }
 
         @NotNull
-        private static IndependentRoundingSpec[] buildIndependentRoundingSpecs(
+        public static IndependentRoundingSpec[] buildIndependentRoundingSpecs(
                 String[] indRoundingSpecsStrArr) {
             IndependentRoundingSpec[] retval;
             retval = new IndependentRoundingSpec[indRoundingSpecsStrArr.length];

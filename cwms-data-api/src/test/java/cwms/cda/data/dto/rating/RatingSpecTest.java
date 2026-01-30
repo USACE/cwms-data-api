@@ -9,9 +9,38 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
 public class RatingSpecTest {
+
+    @Test
+    void testDeserializeJSON() throws IOException {
+        InputStream resource = getClass().getResourceAsStream("/cwms/cda/data/dto/rating/rating_spec.json");
+        assertNotNull(resource);
+        String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        RatingSpec spec = om.readValue(json, RatingSpec.class);
+
+        assertNotNull(spec);
+    }
+
+    @Test
+    void testDeserializeXml() throws IOException {
+        InputStream resource = getClass().getResourceAsStream("/cwms/cda/data/dto/rating/rating_spec.xml");
+        assertNotNull(resource);
+        String xml = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        XMLv2 xmlv2 = new XMLv2();
+        RatingSpec spec = xmlv2.parseContent(xml, RatingSpec.class);
+
+        assertNotNull(spec);
+    }
 
     @Test
     void testSerialize() throws JsonProcessingException {
