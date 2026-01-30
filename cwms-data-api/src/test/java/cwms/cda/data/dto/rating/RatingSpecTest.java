@@ -1,9 +1,7 @@
 package cwms.cda.data.dto.rating;
 
 import static cwms.cda.data.dto.rating.RatingSpec.Builder.buildIndependentRoundingSpecs;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,8 +48,8 @@ public class RatingSpecTest {
         RatingSpec spec = buildRatingSpec(officeId, ratingId);
 
         ObjectMapper om = JsonV2.buildObjectMapper();
-        String serializedLocation = om.writeValueAsString(spec);
-        assertNotNull(serializedLocation);
+        String serializedSpec = om.writeValueAsString(spec);
+        assertNotNull(serializedSpec);
 
     }
 
@@ -82,8 +80,11 @@ public class RatingSpecTest {
 
         String xml = xmlv2.format(spec);
         assertNotNull(xml);
-        System.out.println(xml);
+
         assertTrue(xml.contains("ARBU.Elev;Stor.Linear.Production"));
+        assertTrue(xml.contains("</rating-spec>"));
+        assertFalse(xml.contains("</Rating-Spec>"));
+        assertFalse(xml.contains("</RatingSpec>"));
 
         RatingSpec spec2 = xmlv2.parseContent(xml, RatingSpec.class);
         assertNotNull(spec2);

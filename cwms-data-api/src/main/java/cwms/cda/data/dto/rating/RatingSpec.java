@@ -2,6 +2,7 @@ package cwms.cda.data.dto.rating;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -20,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
+@JsonRootName("rating-spec")
 @JsonDeserialize(builder = RatingSpec.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
@@ -40,8 +42,6 @@ public class RatingSpec extends CwmsDTO {
     private final boolean autoActivate;
     private final boolean autoMigrateExtension;
 
-    @JacksonXmlElementWrapper(localName = "independent-rounding-specs")
-    @JacksonXmlProperty(localName = "independent-rounding-spec")
     private final IndependentRoundingSpec[] independentRoundingSpecs;
     private final String dependentRoundingSpec;
     private final String description;
@@ -118,6 +118,8 @@ public class RatingSpec extends CwmsDTO {
         return autoMigrateExtension;
     }
 
+    @JacksonXmlElementWrapper(localName = "independent-rounding-specs")
+    @JacksonXmlProperty(localName = "independent-rounding-spec")
     public IndependentRoundingSpec[] getIndependentRoundingSpecs() {
         return independentRoundingSpecs;
     }

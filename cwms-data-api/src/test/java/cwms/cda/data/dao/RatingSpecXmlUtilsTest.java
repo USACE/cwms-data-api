@@ -13,7 +13,7 @@ public class RatingSpecXmlUtilsTest {
     void testToPlSqlXml() {
         RatingSpec spec = RatingSpecTest.buildRatingSpec("SWT", "ARBU.Elev;Stor.Linear.Production");
         String xml = RatingSpecXmlUtils.toPlSqlXml(spec);
-        System.out.println("Debug:" + xml);
+//        System.out.println("Debug:" + xml);
 
         assertTrue(xml.contains("version='1.0'") || xml.contains("version=\"1.0\""));
         assertTrue(xml.contains("encoding='UTF-8'") || xml.contains("encoding=\"UTF-8\""));
