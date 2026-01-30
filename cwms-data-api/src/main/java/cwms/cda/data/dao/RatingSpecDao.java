@@ -197,7 +197,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         Set<RatingSpec> retval = getRatingSpecs(office, specIdMask, offset, pageSize);
 
         RatingSpecs.Builder builder = new RatingSpecs.Builder(offset, pageSize, total);
-        builder.specs(new ArrayList<>(retval));
+        builder.withSpecs(new ArrayList<>(retval));
         return builder.build();
     }
 
