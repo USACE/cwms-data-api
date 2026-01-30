@@ -183,7 +183,6 @@ public class RatingSpec extends CwmsDTO {
                 that.getSourceAgency()) : that.getSourceAgency() != null) {
             return false;
         }
-        // Probably incorrect - comparing Object[] arrays with Arrays.equals
         if (!Arrays.equals(getIndependentRoundingSpecs(), that.getIndependentRoundingSpecs())) {
             return false;
         }
