@@ -56,7 +56,7 @@ import org.jooq.DSLContext;
 
 
 
-public class TextTimeSeriesController implements CrudHandler {
+public class TextTimeSeriesController extends BaseCrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     static final String TAG = "Text-TimeSeries";
 
@@ -65,22 +65,14 @@ public class TextTimeSeriesController implements CrudHandler {
     public static final boolean DEFAULT_CREATE_REPLACE_ALL = false;
     public static final boolean DEFAULT_UPDATE_REPLACE_ALL = true;
 
-    private final MetricRegistry metrics;
-
     public TextTimeSeriesController(MetricRegistry metrics) {
-        this.metrics = metrics;
+        super(metrics);
     }
 
     @NotNull
     protected TimeSeriesTextDao getDao(DSLContext dsl) {
         return new TimeSeriesTextDao(dsl);
     }
-
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
-
 
     @OpenApi(
             summary = "Retrieve text time series values for a provided time window and date version."
@@ -219,7 +211,7 @@ public class TextTimeSeriesController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
-
+        logUnusedPathParameter(ctx, NAME, "Body contains required information");
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class)
                 .getOrDefault(DEFAULT_UPDATE_REPLACE_ALL);

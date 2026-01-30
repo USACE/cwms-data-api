@@ -263,6 +263,10 @@ public class LocationGroupController implements CrudHandler {
                 @OpenApiContent(from = LocationGroup.class, type = Formats.JSON)
             },
             required = true),
+        pathParams = {
+            @OpenApiParam(name = GROUP_ID, required = true, description = "Specifies "
+                + "the location_group to be renamed.")
+        },
         queryParams = {
             @OpenApiParam(name = REPLACE_ASSIGNED_LOCS, type = Boolean.class, description = "Specifies whether to "
                 + "unassign all existing locations before assigning new locations specified in the content body "
@@ -276,7 +280,7 @@ public class LocationGroupController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String oldGroupId) {
+    public void update(@NotNull Context ctx, @NotNull String groupId) {
 
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
@@ -288,8 +292,8 @@ public class LocationGroupController implements CrudHandler {
             boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS,
                     Boolean.class).getOrDefault(false);
             LocationGroupDao locationGroupDao = new LocationGroupDao(dsl);
-            if (!office.equalsIgnoreCase(CWMS_OFFICE) && !oldGroupId.equals(deserialize.getId())) {
-                locationGroupDao.renameLocationGroup(oldGroupId, deserialize);
+            if (!office.equalsIgnoreCase(CWMS_OFFICE) && !groupId.equals(deserialize.getId())) {
+                locationGroupDao.renameLocationGroup(groupId, deserialize);
             }
             if (replaceAssignedLocs) {
                 locationGroupDao.unassignAllLocs(deserialize, office);

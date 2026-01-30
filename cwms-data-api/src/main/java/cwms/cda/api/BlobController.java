@@ -38,24 +38,12 @@ import org.jooq.DSLContext;
 /**
  *
  */
-public class BlobController implements CrudHandler {
+public class BlobController extends BaseCrudHandler {
     private static final int DEFAULT_PAGE_SIZE = 20;
     public static final String TAG = "Blob";
 
-    private final MetricRegistry metrics;
-
-
-    private final Histogram requestResultSize;
-
     public BlobController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        String className = BlobController.class.getName();
-
-        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     protected DSLContext getDslContext(Context ctx) {
@@ -98,7 +86,7 @@ public class BlobController implements CrudHandler {
             String office = ctx.queryParam(OFFICE);
 
             String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
-                    String.class, "", metrics, name(BlobController.class.getName(), GET_ALL));
+                    String.class, "", getMetrics(), name(BlobController.class.getName(), GET_ALL));
 
             if (!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new CdaError("cursor or page passed in but failed validation"))
@@ -107,7 +95,7 @@ public class BlobController implements CrudHandler {
             }
 
             int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE},
-                    Integer.class, DEFAULT_PAGE_SIZE, metrics,
+                    Integer.class, DEFAULT_PAGE_SIZE, getMetrics(),
                     name(BlobController.class.getName(), GET_ALL));
 
             String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
@@ -122,13 +110,21 @@ public class BlobController implements CrudHandler {
 
             ctx.result(result);
             ctx.contentType(contentType.toString());
-            requestResultSize.update(result.length());
+            updateResultSize(result.length());
         }
     }
 
     @OpenApi(
             description = "Returns the binary value of the requested blob as a seekable stream with the "
                     + "appropriate media type.",
+            pathParams = {
+                    @OpenApiParam(name = BLOB_ID, description = "If the _query_ parameter is provided this _path_ parameter "
+                            + "is ignored and the value of the query parameter is used.   "
+                            + "Note: the _query_ parameter is necessary for id's that contain '/' or other special "
+                            + "characters. This is due to limitations in path pattern matching. "
+                            + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                            + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+            },
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
                 @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
@@ -167,7 +163,7 @@ public class BlobController implements CrudHandler {
                             + "blob based on given parameters"));
                 } else {
                     long size = blob.length();
-                    requestResultSize.update(size);
+                    updateResultSize(size);
                     try (InputStream is = blob.getBinaryStream()) { // is  OracleBlobInputStream
                         RangeRequestUtil.seekableStream(ctx, is, mediaType, size);
                     }
@@ -234,6 +230,8 @@ public class BlobController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
+        logUnusedPathParameter(ctx, BLOB_ID, "Body contains information");
+
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             String idQueryParam = ctx.queryParam(BLOB_ID);
             if (idQueryParam != null) {

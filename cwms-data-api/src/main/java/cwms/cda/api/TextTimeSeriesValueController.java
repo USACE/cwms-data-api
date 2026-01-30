@@ -45,18 +45,11 @@ import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
-public class TextTimeSeriesValueController implements Handler {
+public class TextTimeSeriesValueController extends BaseHandler {
     public static final String TEXT_PLAIN = "text/plain";
-    private final MetricRegistry metrics;
-    private final Histogram requestResultSize;
 
     public TextTimeSeriesValueController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        requestResultSize = this.metrics.histogram((name(TextTimeSeriesValueController.class, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
@@ -81,6 +74,7 @@ public class TextTimeSeriesValueController implements Handler {
     public void handle(Context ctx) {
         //Implementation will change with new CWMS schema
         //https://www.hec.usace.army.mil/confluence/spaces/CWMS/pages/183110112/2024-02-29+Developer+Meeting+Task2A+Text-ts+and+Binary-ts+Design
+        logUnusedPathParameter(ctx, NAME, "Handled as " + CLOB_ID + " in query parameter.  May change with schema.");
         String textId = requiredParam(ctx, CLOB_ID);
         String officeId = requiredParam(ctx, OFFICE);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
@@ -92,7 +86,7 @@ public class TextTimeSeriesValueController implements Handler {
                             + "clob based on given parameters"));
                 } else {
                     long size = clob.length();
-                    requestResultSize.update(size);
+                    updateResultSize(size);
                     try(InputStream is = clob.getAsciiStream()){
                         RangeRequestUtil.seekableStream(ctx, is, TEXT_PLAIN, size);
                     }

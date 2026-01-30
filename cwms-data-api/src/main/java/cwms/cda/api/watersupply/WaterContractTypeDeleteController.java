@@ -47,12 +47,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class WaterContractTypeDeleteController extends WaterSupplyControllerBase implements Handler {
+public final class WaterContractTypeDeleteController extends WaterSupplyControllerBase {
 
     private static final String DISPLAY_VALUE = "display-value";
 
     public WaterContractTypeDeleteController(MetricRegistry metrics) {
-        waterMetrics(metrics);
+        super(metrics);
     }
 
     @OpenApi(

@@ -27,6 +27,7 @@ package cwms.cda.api;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.BlobDao;
 import io.javalin.http.Context;
@@ -45,18 +46,11 @@ import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
-public class BinaryTimeSeriesValueController implements Handler {
-    private final MetricRegistry metrics;
-    private final Histogram requestResultSize;
-
+public class BinaryTimeSeriesValueController extends BaseHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     public BinaryTimeSeriesValueController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        requestResultSize = this.metrics.histogram((name(BinaryTimeSeriesValueController.class, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
@@ -81,6 +75,8 @@ public class BinaryTimeSeriesValueController implements Handler {
     public void handle(Context ctx) {
         //Implementation will change with new CWMS schema
         //https://www.hec.usace.army.mil/confluence/display/CWMS/2024-02-29+Task2A+Text-ts+and+Binary-ts+Design
+        logUnusedPathParameter(ctx, NAME, "Handled as " + BLOB_ID + " in query parameter.  May change with schema.");
+
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String binaryId = requiredParam(ctx, BLOB_ID);
             String officeId = requiredParam(ctx, OFFICE);
@@ -92,7 +88,7 @@ public class BinaryTimeSeriesValueController implements Handler {
                             + "blob based on given parameters"));
                 } else {
                     long size = blob.length();
-                    requestResultSize.update(size);
+                    updateResultSize(size);
                     try (InputStream is = blob.getBinaryStream()) {
                         RangeRequestUtil.seekableStream(ctx, is, mediaType, size);
                     }

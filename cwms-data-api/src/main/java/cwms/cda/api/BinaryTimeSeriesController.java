@@ -70,29 +70,23 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class BinaryTimeSeriesController implements CrudHandler {
+public class BinaryTimeSeriesController extends BaseCrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     static final String TAG = "Binary-TimeSeries";
 
     public static final String REPLACE_ALL = "replace-all";
     private static final String DEFAULT_BIN_TYPE_MASK = "*";
     public static final String BINARY_TYPE_MASK = "binary-type-mask";
-    private final MetricRegistry metrics;
 
 
 
     public BinaryTimeSeriesController(MetricRegistry metrics) {
-        this.metrics = metrics;
+        super(metrics);
     }
 
     @NotNull
     protected TimeSeriesBinaryDao getDao(DSLContext dsl) {
         return new TimeSeriesBinaryDao(dsl);
-    }
-
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
 
@@ -233,7 +227,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
-
+        logUnusedPathParameter(ctx, NAME, "Body contains information");
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             boolean maxVersion = true;
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(false);

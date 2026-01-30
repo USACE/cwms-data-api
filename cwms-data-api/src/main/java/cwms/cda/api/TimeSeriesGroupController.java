@@ -278,6 +278,10 @@ public class TimeSeriesGroupController implements CrudHandler {
                 @OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON)
             },
             required = true),
+        pathParams = {
+            @OpenApiParam(name = GROUP_ID, required = true, description = "Specifies "
+                + "the original timeseries group to rename.")
+            },
         queryParams = {
             @OpenApiParam(name = REPLACE_ASSIGNED_TS, type = Boolean.class, description = "Specifies whether to "
                 + "unassign all existing time series before assigning new time series specified in the content body "

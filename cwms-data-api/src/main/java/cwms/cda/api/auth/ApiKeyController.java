@@ -98,6 +98,10 @@ public class ApiKeyController implements CrudHandler {
     }
 
     @OpenApi(
+        pathParams = {
+                @OpenApiParam(name = "key-name", required = true,
+                        description = "Name of the specific key to get more information for. NOTE: Case-sensitive.")
+        },
         responses = @OpenApiResponse(
                     content = {
                         @OpenApiContent(from = ApiKey.class, type = Formats.JSON)

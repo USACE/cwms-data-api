@@ -71,21 +71,12 @@ import java.util.List;
 
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-public final class StreamLocationController implements CrudHandler {
+public final class StreamLocationController extends BaseCrudHandler {
 
     static final String TAG = "StreamLocations";
 
-    private final MetricRegistry metrics;
-    private final Histogram requestResultSize;
-
     public StreamLocationController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        String className = this.getClass().getName();
-        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
@@ -128,7 +119,7 @@ public final class StreamLocationController implements CrudHandler {
             String serialized = Formats.format(contentType, streamLocations, StreamLocation.class);
             ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
-            requestResultSize.update(serialized.length());
+            updateResultSize(serialized.length());
         }
     }
 
@@ -174,7 +165,7 @@ public final class StreamLocationController implements CrudHandler {
             String serialized = Formats.format(contentType, streamLocation);
             ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
-            requestResultSize.update(serialized.length());
+            updateResultSize(serialized.length());
         }
     }
 
@@ -212,6 +203,10 @@ public final class StreamLocationController implements CrudHandler {
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the location-id of "
+                            + "the stream location to be renamed."),
+            },
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(from = StreamLocation.class, type = Formats.JSONV1)
@@ -226,6 +221,7 @@ public final class StreamLocationController implements CrudHandler {
     )
     @Override
     public void update(Context ctx, @NotNull String locationId) {
+        logUnusedPathParameter(ctx, NAME, "Body contains required information");
         try (Timer.Context ignored = markAndTime(METHOD + "update")) {
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);

@@ -205,6 +205,9 @@ public class LocationController implements CrudHandler {
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to get")
+            },
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "owning office of the location level(s) whose data is to be "
@@ -232,7 +235,7 @@ public class LocationController implements CrudHandler {
             tags = {"Locations"}
     )
     @Override
-    public void getOne(@NotNull Context ctx, @NotNull String name) {
+    public void getOne(@NotNull Context ctx, @NotNull String locationId) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
@@ -246,12 +249,12 @@ public class LocationController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             ctx.contentType(contentType.toString());
             LocationsDao locationDao = getLocationsDao(dsl);
-            Location location = locationDao.getLocation(name, units, office, includeAliases);
+            Location location = locationDao.getLocation(locationId, units, office, includeAliases);
             String serializedLocation = Formats.format(contentType, location);
             ctx.result(serializedLocation);
             addDeprecatedContentTypeWarning(ctx, contentType);
         } catch (IOException ex) {
-            String errorMsg = "Error retrieving " + name;
+            String errorMsg = "Error retrieving " + locationId;
             CdaError re = new CdaError(errorMsg);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
             logger.atSevere().withCause(ex).log("%s", errorMsg);
@@ -301,6 +304,9 @@ public class LocationController implements CrudHandler {
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to update")
+            },
             requestBody = @OpenApiRequestBody(
                     content = {
                         @OpenApiContent(from = Location.class, type = Formats.XML),
@@ -354,6 +360,9 @@ public class LocationController implements CrudHandler {
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to delete")
+            },
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
                         + "the location whose data is to be deleted. If this field is not "

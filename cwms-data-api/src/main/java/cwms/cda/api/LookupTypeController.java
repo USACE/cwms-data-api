@@ -52,23 +52,12 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-public final class LookupTypeController implements CrudHandler {
+public final class LookupTypeController extends BaseCrudHandler {
 
     static final String TAG = "LookupTypes";
-    private final MetricRegistry metrics;
-
-    private final Histogram requestResultSize;
-
 
     public LookupTypeController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        String className = this.getClass().getName();
-
-        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
@@ -100,7 +89,7 @@ public final class LookupTypeController implements CrudHandler {
             String serialized = Formats.format(contentType, lookupTypes, LookupType.class);
             ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
-            requestResultSize.update(serialized.length());
+            updateResultSize(serialized.length());
         }
     }
 
@@ -145,6 +134,9 @@ public final class LookupTypeController implements CrudHandler {
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the location type to update.")
+            },
             queryParams = {
                     @OpenApiParam(name = CATEGORY, required = true, description = "Specifies the category id of the lookup type to be updated."),
                     @OpenApiParam(name = PREFIX, required = true, description = "Specifies the prefix of the lookup type to be updated."),
@@ -163,6 +155,7 @@ public final class LookupTypeController implements CrudHandler {
     )
     @Override
     public void update(Context ctx, String name) {
+        logUnusedPathParameter(ctx, NAME, "Body has required information");
         String category = requiredParam(ctx, CATEGORY);
         String prefix = requiredParam(ctx, PREFIX);
         try (Timer.Context ignored = markAndTime(UPDATE)) {
@@ -179,6 +172,9 @@ public final class LookupTypeController implements CrudHandler {
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the location type to delete.")
+            },
             queryParams = {
                     @OpenApiParam(name = CATEGORY, required = true, description = "Specifies the category id of the lookup type to be deleted."),
                     @OpenApiParam(name = PREFIX, required = true, description = "Specifies the prefix of the lookup type to be deleted."),

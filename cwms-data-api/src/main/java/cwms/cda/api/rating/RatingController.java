@@ -57,6 +57,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.BaseCrudHandler;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JsonRatingUtils;
@@ -95,13 +96,9 @@ import org.jooq.DSLContext;
 
 
 
-public class RatingController implements CrudHandler {
+public class RatingController extends BaseCrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     static final String TAG = "Ratings";
-
-    private final MetricRegistry metrics;
-
-    private final Histogram requestResultSize;
 
     static {
         JavalinValidation.register(RatingSet.DatabaseLoadMethod.class,
@@ -109,9 +106,7 @@ public class RatingController implements CrudHandler {
     }
 
     public RatingController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        String className = this.getClass().getName();
-        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
+        super(metrics);
     }
 
     private static RatingSet.DatabaseLoadMethod getDatabaseLoadMethod(String input) {
@@ -161,10 +156,6 @@ public class RatingController implements CrudHandler {
             logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     private String deserializeRatingSet(Context ctx, boolean storeTemplate) throws IOException, RatingException {
@@ -336,7 +327,7 @@ public class RatingController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_OK);
             ctx.result(results);
             addDeprecatedContentTypeWarning(ctx, contentType);
-            requestResultSize.update(results.length());
+            updateResultSize(results.length());
         }
     }
 
@@ -487,7 +478,7 @@ public class RatingController implements CrudHandler {
             },
             method = HttpMethod.PATCH, path = "/ratings", tags = {TAG})
     public void update(@NotNull Context ctx, @NotNull String ratingId) {
-
+        logUnusedPathParameter(ctx, RATING_ID, "Body contains required information");
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 

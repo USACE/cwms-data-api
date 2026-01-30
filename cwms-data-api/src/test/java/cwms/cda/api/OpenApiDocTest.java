@@ -40,6 +40,7 @@ import helpers.OpenApiParamUsageInfo;
 import helpers.OpenApiTestHelper;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Handler;
+import io.javalin.plugin.openapi.annotations.OpenApi;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -150,7 +151,7 @@ class OpenApiDocTest {
         Set<OpenApiParamUsageInfo> receivedPathParameters = parsedParamInfo.getPathParams();
         OpenApiParamUsageInfo receivedResourceId = parsedParamInfo.getResourceId();
         return () -> assertAll("Testing " + testInfo.getMethod().getName(),
-//                               () -> testQueryParameters(expectedQueryParameters, receivedQueryParameters),
+                               () -> testQueryParameters(expectedQueryParameters, receivedQueryParameters),
                                () -> testPathParameters(expectedPathParameters, receivedPathParameters, receivedResourceId));
     }
 
@@ -195,9 +196,9 @@ class OpenApiDocTest {
                                          .map(OpenApiParamInfo::getName)
                                          .collect(Collectors.joining(", "));
         assertAll(
-//                  () -> assertTrue(receivedItems.isEmpty(), "Found used undocumented path parameter: " + extraInfo),
-                  () -> assertTrue(missingItems.isEmpty(), "Found documented path parameter that is not used: " + missingInfo)
-//                  () -> assertAll(expectedParams.stream().map(expectedParam -> testParamInfo(expectedParam, verifiedUsages)))
+                  () -> assertTrue(receivedItems.isEmpty(), "Found used undocumented path parameter: " + extraInfo),
+                  () -> assertTrue(missingItems.isEmpty(), "Found documented path parameter that is not used: " + missingInfo),
+                  () -> assertAll(expectedParams.stream().map(expectedParam -> testParamInfo(expectedParam, verifiedUsages)))
         );
     }
 
@@ -260,6 +261,7 @@ class OpenApiDocTest {
         List<MethodCallExpr> methodCalls = methodDeclaration.findAll(MethodCallExpr.class);
         Set<OpenApiParamUsageInfo> optionalTypedQueryParams = readParamUsagesFromCall(methodCalls, call -> readQueryParamAsClassFromCall(unit, context, clazz, call), "queryParamAsClass");
         Set<OpenApiParamUsageInfo> optionalDoubleQueryParams = readParamUsagesFromCall(methodCalls, call -> readUsageFromCall(unit, clazz, call, false), "queryParamAsDouble");
+        Set<OpenApiParamUsageInfo> ignoredPathParams = readParamUsagesFromCall(methodCalls, this::readIgnoredPathParameter, "logUnusedPathParameter");
 
         Set<OpenApiParamUsageInfo> optionalStringQueryParams = methodCalls.stream()
                                                                            .filter(call -> call.getNameAsString().equals("queryParam"))
@@ -298,6 +300,7 @@ class OpenApiDocTest {
                                                      .filter(call -> call.getNameAsString().equals("pathParam"))
                                                      .map(call -> readUsageFromCall(unit, clazz, call, true))
                                                      .collect(Collectors.toSet());
+        pathParams.addAll(ignoredPathParams);
 
         OpenApiParamUsageInfo resourceId = null;
 
@@ -378,6 +381,12 @@ class OpenApiDocTest {
         boolean nullHandled = true;
         return Set.of(new OpenApiParamUsageInfo(new OpenApiParamInfo(paramName, required, type), used, nullHandled),
                       new OpenApiParamUsageInfo(new OpenApiParamInfo(Controllers.TIMEZONE, required, type), used, nullHandled));
+    }
+
+    private OpenApiParamUsageInfo readIgnoredPathParameter(MethodCallExpr call) {
+        //Should never have scope, formatted as logUnusedPathParameter(Context ctx, String pathParam, String reason)
+        String param = parseParameterName(call.getArgument(1));
+        return new OpenApiParamUsageInfo(new OpenApiParamInfo(param, true, String.class), true, true);
     }
 
     private OpenApiParamUsageInfo readUsageFromCall(CompilationUnit unit, Class<?> clazz, MethodCallExpr call, boolean required) {

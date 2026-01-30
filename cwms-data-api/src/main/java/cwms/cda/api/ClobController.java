@@ -151,6 +151,14 @@ public class ClobController implements CrudHandler {
                 + "When the accept header is set to " + Formats.JSONV2 + " the clob will be returned as a serialized Clob "
                 + "object with fields for office-id, id, description and value. "
                 + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
+            pathParams = {
+                    @OpenApiParam(name = CLOB_ID, description = "If the _query_ parameter is provided this _path_ parameter "
+                            + "is ignored and the value of the query parameter is used.   "
+                            + "Note: the query parameter is necessary for id's that contain '/' or other special "
+                            + "characters. This is due to limitations in path pattern matching. "
+                            + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                            + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+            },
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
                 @OpenApiParam(name = CLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
