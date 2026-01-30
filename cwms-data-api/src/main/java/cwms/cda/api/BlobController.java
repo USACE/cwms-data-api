@@ -194,7 +194,7 @@ public class BlobController extends BaseCrudHandler {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                             + "blob based on given parameters"));
                 } else {
-                    requestResultSize.update(totalLength);
+                    updateResultSize(totalLength);
                     // is  OracleBlobInputStream or something from MinIO
                     RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
                 }

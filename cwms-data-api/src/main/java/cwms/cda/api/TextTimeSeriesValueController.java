@@ -80,7 +80,7 @@ public class TextTimeSeriesValueController extends BaseHandler {
             ClobDao clobDao = new ClobDao(dsl);
 
             StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
-                updateResultSize(size);
+                updateResultSize(totalLength);
                 ctx.header(Header.ACCEPT_RANGES, "bytes");
                 RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
             };

@@ -103,7 +103,7 @@ public class BinaryTimeSeriesValueController extends BaseHandler {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                             + "blob based on given parameters"));
                 } else {
-                    requestResultSize.update(totalLength);
+                    updateResultSize(totalLength);
                     RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
                 }
             };
