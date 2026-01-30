@@ -21,22 +21,19 @@ When to use
     :header: "Parameter", "Description", "Required", "When to Use"
     :widths: 30, 60, 20, 60
 
-    begin, ":ref:`def-start`", "", "To limit the results to be after a specified date and time."
+    begin, ":ref:`def-start`", "", ":ref:`when_start`"
     datum, "The standardized reference system used for either vertical measurements. \
     Examples: NAVD88, NGVD29, LOCAL, etc.", "", "To retrieve measurements in a specified system."
-    end, ":ref:`def-end`", "", "To limit the results to be before a specified date and time."
+    end, ":ref:`def-end`", "", ":ref:`when_end`"
     format, "The desired response format. Usage differs between endpoints. See note below.", "", "Use this \
     to force the format provided in the response."
     include-entry-date, "Include timestamps for when each data point was added to the CWMS database (true/false).", "\
     ", "To determine when each time series data point was stored."
     name, "The text representation of the unique time series identifier.", "Yes", "To \
     differentiate the specific time series data you desire to retrieve."
-    office, "see :ref:`def-office`", "", "To limit your results to a specific office if there \
-    are multiple time series with the same identifier across multiple offices, for example with a daily forecast that \
-    more than one office may generate."
-    page, ":ref:`def-page`", "", "To get results that were not able to fit in the previous page of results."
-    page-size, ":ref:`def-page-size`", "", "To specify the number of results you wish to receive \
-    from a single query. Further results may be available on a subsequent page of the same length."
+    office, ":ref:`def-office`", "", ":ref:`when_office`"
+    page, ":ref:`def-page`", "", ":ref:`when_page`"
+    page-size, ":ref:`def-page-size`", "", ":ref:`when_page_size`"
     timezone, ":ref:`def-timezone`", "", "To retrieve data points in a timezone that works best with \
     your use case, such as your local timezone."
     trim, "Trim missing values from the beginning and end of the retrieved values (true/false).", "", "To leave out \
@@ -57,77 +54,77 @@ When to use
 Examples
 ----------
 
-- | The user wants to retrieve flow data for `STATION1` at 15-minute intervals from the time series:
-  | (**name**)  :code:`STATION1.Flow.Inst.15Minutes.0.CWMS`
-  |
-  | from October 12, 2025 at 12:35 PM UTC onward:
-  | (**begin**)  :code:`2025-10-12T12:35:00Z`
-  |
-  | with the values converted to cubic meters per second:
-  | (**units**)  :code:`m3/s`.
+1. | The user wants to retrieve flow data for `STATION1` at 15-minute intervals from the time series:
+   | (**name**)  :code:`STATION1.Flow.Inst.15Minutes.0.CWMS`
+   |
+   | from October 12, 2025 at 12:35 PM UTC onward:
+   | (**begin**)  :code:`2025-10-12T12:35:00Z`
+   |
+   | with the values converted to cubic meters per second:
+   | (**units**)  :code:`m3/s`.
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-     GET /timeseries?name=STATION1.Flow.Inst.15Minutes.0.CWMS&begin=2025-10-12T12:35:00.000Z&units=m3/s
+        GET /timeseries?name=STATION1.Flow.Inst.15Minutes.0.CWMS&begin=2025-10-12T12:35:00.000Z&units=m3/s
 
-- | The user wants to retrieve elevation data for `STATION2` at 15-minute intervals from the time series:
-  | (**name**) :code:`STATION2.Elev.Avg.15Minutes.1Day.CWMS`
-  |
-  | with the values converted to feet:
-  | (**units**) :code:`ft`
-  |
-  | and using the NAVD88 datum:
-  | (**datum**) :code:`NAVD88`
+2. | The user wants to retrieve elevation data for `STATION2` at 15-minute intervals from the time series:
+   | (**name**) :code:`STATION2.Elev.Avg.15Minutes.1Day.CWMS`
+   |
+   | with the values converted to feet:
+   | (**units**) :code:`ft`
+   |
+   | and using the NAVD88 datum:
+   | (**datum**) :code:`NAVD88`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-    GET /timeseries?name=STATION2.Elev.Avg.15Minutes.1Day.CWMS&datum=NAVD88&units=ft
+       GET /timeseries?name=STATION2.Elev.Avg.15Minutes.1Day.CWMS&datum=NAVD88&units=ft
 
-- | The user wants to retrieve temperature data for `STATION3` at 12-hour intervals from the time series:
-  | (**name**) :code:`STATION3.Temp.Inst.12Hour.1Month.CWMS`
-  |
-  | using the version date of October 1, 2025 at 12:00 PM UTC:
-  | (**version-date**) :code:`2025-10-01T12:00:00Z`
-  |
-  | and limiting results to the office `NWDP`:
-  | (**office**) :code:`NWDP`
+3. | The user wants to retrieve temperature data for `STATION3` at 12-hour intervals from the time series:
+   | (**name**) :code:`STATION3.Temp.Inst.12Hour.1Month.CWMS`
+   |
+   | using the version date of October 1, 2025 at 12:00 PM UTC:
+   | (**version-date**) :code:`2025-10-01T12:00:00Z`
+   |
+   | and limiting results to the office `NWDP`:
+   | (**office**) :code:`NWDP`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-    GET /timeseries?name=STATION3.Temp.Inst.12Hour.1Month.CWMS&version-date=2025-10-01T12:00:00Z&office=NWDP
+       GET /timeseries?name=STATION3.Temp.Inst.12Hour.1Month.CWMS&version-date=2025-10-01T12:00:00Z&office=NWDP
 
-- | The user wants to retrieve area data for `STATION4` at 1-day intervals from the time series:
-  | (**name**) :code:`STATION4.Area.Total.1Day.1Week.Surface-CWMS`
-  |
-  | with 25 results per response:
-  | (**page-size**) :code:`25`
-  |
-  | in the Pacific timezone (Los Angeles):
-  | (**timezone**) :code:`America/Los_Angeles`
-  |
-  | and including the entry dates of each data point:
-  | (**include-entry-date**) :code:`True`
+4. | The user wants to retrieve area data for `STATION4` at 1-day intervals from the time series:
+   | (**name**) :code:`STATION4.Area.Total.1Day.1Week.Surface-CWMS`
+   |
+   | with 25 results per response:
+   | (**page-size**) :code:`25`
+   |
+   | in the Pacific timezone (Los Angeles):
+   | (**timezone**) :code:`America/Los_Angeles`
+   |
+   | and including the entry dates of each data point:
+   | (**include-entry-date**) :code:`True`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-    GET /timeseries?name=STATION4.Area.Total.1Day.1Week.Surface-CWMS&page-size=25&timezone=America/Los_Angeles&include-entry-date=True
+        GET /timeseries?name=STATION4.Area.Total.1Day.1Week.Surface-CWMS&page-size=25&timezone=America/Los_Angeles&include-entry-date=True
 
-- The user wants to retrieve the following page of results for the above query with a page value of `rGfes*720SJK`
-  provided by the response from the previous query (`next-page`):
+5. The user wants to retrieve the following page of results for the above query with a page value of `rGfes*720SJK`
+   provided by the response from the previous query (`next-page`):
 
-  | (**page**) :code:`rGfes*720SJK`
-  |
-  | (**name**) :code:`STATION4.Area.Total.1Day.1Week.Surface-CWMS`
-  |
-  | (**page-size**) :code:`25`
-  |
-  | (**timezone**) :code:`America/Los_Angeles`
-  |
-  | (**include-entry-date**) :code:`True`
+   | (**page**) :code:`rGfes*720SJK`
+   |
+   | (**name**) :code:`STATION4.Area.Total.1Day.1Week.Surface-CWMS`
+   |
+   | (**page-size**) :code:`25`
+   |
+   | (**timezone**) :code:`America/Los_Angeles`
+   |
+   | (**include-entry-date**) :code:`True`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-    GET /timeseries?name=STATION4.Area.Total.1Day.1Week.Surface-CWMS&page-size=25&timezone=America/Los_Angeles&include-entry-date=True&page=rGfes*720SJK
+       GET /timeseries?name=STATION4.Area.Total.1Day.1Week.Surface-CWMS&page-size=25&timezone=America/Los_Angeles&include-entry-date=True&page=rGfes*720SJK
 
 
 See the consolidated API documentation: :doc:`/api-references`.

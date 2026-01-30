@@ -18,6 +18,7 @@ Browse Time Series GET Endpoints:
 
     TimeSeries Basic Information <../../data/timeseries.rst>
     Common Parameter Definitions <./shared_definitions.rst>
+    Common Reasons for Parameter Usage <./shared_when_to_use.rst>
     /timeseries <timeSeries>
     /timeseries/recent <timeSeries-recent>
     /timeseries/profile <timeSeries-profile>

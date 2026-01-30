@@ -41,48 +41,46 @@ When to use
     :header: "Parameter", "Description", "Required", "When to Use"
     :widths: 30, 40, 20, 65
 
-    location-id,":ref:`def-location-id`","Yes", "To identify the specific location name associated with \
-    the desired profile, e.g. `STATION1`."
-    parameter-id,":ref:`def-parameter-id`","Yes", "To identify the specific parameter combination \
-    associated with the desired profile, e.g. `Flow-Evap`."
-    office,":ref:`def-office`","", "To limit results to a specific office, such as `SRL`."
+    location-id,":ref:`def-location-id`","Yes", ":ref:`when_location_id`"
+    parameter-id,":ref:`def-parameter-id`","Yes", ":ref:`when_parameter_id`"
+    office,":ref:`def-office`","", ":ref:`when_office`"
 
 Examples
 --------
 
-- | The user wants to retrieve the temperature profile at various depths:
-  | (**parameter-id**) :code:`Depth-Temperature`
-  |
-  | for the RIVER-STATION1 location:
-  | (**location-id**) :code:`RIVER-STATION1`
-  |
-  | but is unsure of which office to use. Query includes required path parameters, `location-id` and `parameter-id`.
+1. | The user wants to retrieve the temperature profile at various depths:
+   | (**parameter-id**) :code:`Depth-Temperature`
+   |
+   | for the RIVER-STATION1 location:
+   | (**location-id**) :code:`RIVER-STATION1`
+   |
+   | but is unsure of which office to use. Query includes required path parameters, `location-id` and `parameter-id`.
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    GET /timeseries/profile/[location-id]/[parameter-id]
+       GET /timeseries/profile/[location-id]/[parameter-id]
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    GET /timeseries/profile/RIVER-STATION1/Depth-Temperature
+       GET /timeseries/profile/RIVER-STATION1/Depth-Temperature
 
-- The user reviews the results from the previous example query and decides to to narrow the search to the `HQ` office.
-  Query remains the same:
+2. The user reviews the results from the previous example query and decides to to narrow the search to the `HQ` office.
+   Query remains the same:
 
-  | (**parameter-id**) :code:`Depth-Temperature`
-  |
-  | (**location-id**) :code:`RIVER-STATION1`
-  |
-  | but adds the optional query parameter, `office`:
-  | (**office**) :code:`HQ`
+   | (**parameter-id**) :code:`Depth-Temperature`
+   |
+   | (**location-id**) :code:`RIVER-STATION1`
+   |
+   | but adds the optional query parameter, `office`:
+   | (**office**) :code:`HQ`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-    GET /timeseries/profile/[location-id]/[parameter-id]?office=[office]
+       GET /timeseries/profile/[location-id]/[parameter-id]?office=[office]
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-    GET /timeseries/profile/LOC123/Depth-Temperature?office=HQ
+       GET /timeseries/profile/LOC123/Depth-Temperature?office=HQ
 
 
 See the consolidated API documentation: :doc:`/api-references`.

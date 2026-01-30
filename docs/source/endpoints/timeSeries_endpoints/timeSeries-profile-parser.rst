@@ -23,37 +23,35 @@ When to use
     :header: "Parameter", "Description", "Required", "When to Use"
     :widths: 30, 40, 20, 60
 
-    office-mask,":ref:`def-office-mask`","", "To limit results to a specific office or pattern, such as `LRL` or `MV*`."
-    location-mask,":ref:`def-location-mask`","", "To limit results to a specific location or pattern, such as `BASIN1`\
-    or `STATION*`."
-    parameter-id-mask,":ref:`def-parameter-id-mask`","", "To limit results to a specific parameter or pattern, such \
-    as `Depth-Temperature` or `*-Temperature`."
+    office-mask,":ref:`def-office-mask`","", ":ref:`when_office_mask`"
+    location-mask,":ref:`def-location-mask`","", ":ref:`when_location_mask`"
+    parameter-id-mask,":ref:`def-parameter-id-mask`","", ":ref:`when_parameter_id_mask`"
 
 
 Examples
 --------
-- The user wants to see all available profile parsers in the system.
+1. The user wants to see all available profile parsers in the system.
 
-.. code-block::
+   .. code-block::
 
-     GET /timeseries/profile-parser
+        GET /timeseries/profile-parser
 
-- | The user wants to see all available profile parsers in the HQ office:
-  | (**office-mask**) :code:`HQ`
+2. | The user wants to see all available profile parsers in the HQ office:
+   | (**office-mask**) :code:`HQ`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-     GET /timeseries/profile-parser?office-mask=HQ
+        GET /timeseries/profile-parser?office-mask=HQ
 
-- | The user wants to see all available profile parsers for the Area-Evaporation parameter:
-  | (**parameter-id-mask**) :code:`Area-Evap`
-  |
-  | at location names ending with "BASIN":
-  | (**location-mask**) :code:`*BASIN`
+3. | The user wants to see all available profile parsers for the Area-Evaporation parameter:
+   | (**parameter-id-mask**) :code:`Area-Evap`
+   |
+   | at location names ending with "BASIN":
+   | (**location-mask**) :code:`*BASIN`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-     GET /timeseries/profile-parser?parameter-id-mask=Area-Evap&location-mask=*BASIN
+        GET /timeseries/profile-parser?parameter-id-mask=Area-Evap&location-mask=*BASIN
 
 
 See the consolidated API documentation: :doc:`/api-references`.

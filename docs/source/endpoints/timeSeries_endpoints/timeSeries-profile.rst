@@ -30,65 +30,59 @@ When to use
     :header: "Parameter", "Description", "Required", "When to Use"
     :widths: 30, 40, 20, 65
 
-    location-mask,":ref:`def-location-mask`","", "To limit results to a specific location or pattern, \
-    for example limiting results to locations containing `River`."
-    office-mask,":ref:`def-office-mask`","", "To limit results to a specific office, such as `SPK`, or to offices \
-    starting with `S` using `S*`."
-    page,":ref:`def-page`","", "To reach a specific page in the set of results to get results beyond the previous \
-    page"
-    page-size,":ref:`def-page-size`","", "To set the limit of results in one response, such as for the purpose of \
-    receiving a small set of results out of many, e.g. using `50` to get 50 out of 5000 total results."
-    parameter-id-mask,":ref:`def-parameter-id-mask`","", "To limit results to a specific parameter or pattern, \
-    such as limiting results to those associated with `Elev`"
+    location-mask,":ref:`def-location-mask`","", ":ref:`when_location_mask`"
+    office-mask,":ref:`def-office-mask`","", ":ref:`when_office_mask`"
+    page,":ref:`def-page`","", ":ref:`when_page`"
+    page-size,":ref:`def-page-size`","", ":ref:`when_page_size`"
+    parameter-id-mask,":ref:`def-parameter-id-mask`","", ":ref:`when_parameter_id_mask`"
 
 
 Examples
 --------
-- | The user wants to retrieve the profiles of all parameters from the `HQ` office:
-  | (**office**) :code:`HQ`
+1. | The user wants to retrieve the profiles of all parameters from the `HQ` office:
+   | (**office**) :code:`HQ`
 
-  but is unsure of the location name. They know the location name starts with `ABC`, so they use a wildcard search:
+   but is unsure of the location name. They know the location name starts with `ABC`, so they use a wildcard search:
 
-  | (**location-mask**) :code:`ABC*`
+   | (**location-mask**) :code:`ABC*`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-     GET /timeseries/profile?location-mask=ABC*&office=HQ
+        GET /timeseries/profile?location-mask=ABC*&office=HQ
 
-- | The user wants to retrieve the profiles for the elevation parameter:
-  | (**parameter-id-mask**) :code:`Elev`
-  |
-  | across all offices starting with `S`, such as `SPK`, `SRL`, and `SWT`, so they use a wildcard search for the office:
-  | (**office-mask**) :code:`S*`
+2. | The user wants to retrieve the profiles for the elevation parameter:
+   | (**parameter-id-mask**) :code:`Elev`
+   |
+   | across all offices starting with `S`, such as `SPK`, `SRL`, and `SWT`, so they use a wildcard search for the office:
+   | (**office-mask**) :code:`S*`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-    GET /timeseries/profile?office-mask=S*&parameter-id-mask=Elev
+       GET /timeseries/profile?office-mask=S*&parameter-id-mask=Elev
 
-- | The user wants to list the profiles of all parameters at the `SPK` office:
-  | (**office-mask**) :code:`SPK`
-  |
-  | but only wants to see 100 results at a time.
-  | (**page-size**) :code:`100`
+3. | The user wants to list the profiles of all parameters at the `SPK` office:
+   | (**office-mask**) :code:`SPK`
+   |
+   | but only wants to see 100 results at a time.
+   | (**page-size**) :code:`100`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-    GET /timeseries/profile?office-mask=SPK&page-size=100
+       GET /timeseries/profile?office-mask=SPK&page-size=100
 
-- The user wants to list the following page of results from the previous query, using the `next-page` value
-  of `t!qqoLun283` returned in the prior response. The query remains the same:
+4. The user wants to list the following page of results from the previous query, using the `next-page` value
+   of `t!qqoLun283` returned in the prior response. The query remains the same:
 
-  | (**office-mask**) :code:`SPK`
-  |
-  | (**page-size**) :code:`100`
-  |
-  | but adds the `page` parameter:
-  | (**page**) :code:`t!qqoLun283`
+   | (**office-mask**) :code:`SPK`
+   |
+   | (**page-size**) :code:`100`
+   |
+   | but adds the `page` parameter:
+   | (**page**) :code:`t!qqoLun283`
 
+   .. code-block:: urlencoded
 
-.. code-block:: urlencoded
-
-    GET /timeseries/profile?office-mask=SPK&page-size=100&page=t!qqoLun283
+       GET /timeseries/profile?office-mask=SPK&page-size=100&page=t!qqoLun283
 
 
 See the consolidated API documentation: :doc:`/api-references`.

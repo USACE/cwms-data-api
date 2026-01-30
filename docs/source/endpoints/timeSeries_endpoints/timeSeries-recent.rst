@@ -24,42 +24,41 @@ When to use
     ts-ids, "`CWMS database - time series <https://cwms-database.readthedocs.io/en/latest/naming.html#time-series>`_","\
     Only if group-id is NOT provided", "To get the recent data for the specified time series."
     unit-system, "SI or EN, default: EN","", "To convert response data to a particular unit system."
-    office, ":ref:`def-office`","", "To limit results to a specific office, such as `SPK`, perhaps for the purpose \
-    of improving query response time."
+    office, ":ref:`def-office`","", ":ref:`when_office`"
 
 
 Examples
 --------
-- | The user wants to retrieve the recent time series data for the specified time series IDs of
-  | `STATION1.Flow.Inst.15Minutes.0.CWMS` and `STATION2.Stage.Inst.15Minutes.0.CWMS`:
-  | (**ts-ids**) :code:`STATION1.Flow.Inst.15Minutes.0.CWMS,STATION2.Stage.Inst.15Minutes.0.CWMS`
-  |
-  | and they want the data to be in the Imperial unit system:
-  | (**unit-system**) :code:`EN`
+1. | The user wants to retrieve the recent time series data for the specified time series IDs of
+   | `STATION1.Flow.Inst.15Minutes.0.CWMS` and `STATION2.Stage.Inst.15Minutes.0.CWMS`:
+   | (**ts-ids**) :code:`STATION1.Flow.Inst.15Minutes.0.CWMS,STATION2.Stage.Inst.15Minutes.0.CWMS`
+   |
+   | and they want the data to be in the Imperial unit system:
+   | (**unit-system**) :code:`EN`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-     GET /timeseries/recent?ts-ids=STATION1.Flow.Inst.15Minutes.0.CWMS,STATION2.Stage.Inst.15Minutes.0.CWMS&unit-system=EN
+        GET /timeseries/recent?ts-ids=STATION1.Flow.Inst.15Minutes.0.CWMS,STATION2.Stage.Inst.15Minutes.0.CWMS&unit-system=EN
 
-- | The user wants to retrieve the recent time series data for all time series in the `CALC3` time series group:
-  | (**group-id**) :code:`CALC3`
+2. | The user wants to retrieve the recent time series data for all time series in the `CALC3` time series group:
+   | (**group-id**) :code:`CALC3`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-     GET /timeseries/recent?group-id=CALC3
+        GET /timeseries/recent?group-id=CALC3
 
-- | The user wants to retrieve the recent time series data for all time series in the `CALC3` time series group:
-  | (**group-id**) :code:`CALC3`
-  |
-  | and in the `COMPUTE` time series category:
-  | (**category-id**) :code:`COMPUTE`
-  |
-  | for the `HQ` office:
-  | (**office**) :code:`HQ`
+3. | The user wants to retrieve the recent time series data for all time series in the `CALC3` time series group:
+   | (**group-id**) :code:`CALC3`
+   |
+   | and in the `COMPUTE` time series category:
+   | (**category-id**) :code:`COMPUTE`
+   |
+   | for the `HQ` office:
+   | (**office**) :code:`HQ`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-     GET /timeseries/recent?group-ide=CALC3&category-id=COMPUTE&office=HQ
+        GET /timeseries/recent?group-ide=CALC3&category-id=COMPUTE&office=HQ
 
 See the consolidated API documentation: :doc:`/api-references`.
 

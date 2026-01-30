@@ -95,7 +95,7 @@ parameter-id-mask
 
 .. _def-start:
 
-start (also referred to as begin)
+start/begin
   The date and time marking the beginning of the time window for data included in the response.
   The format for this field is ISO 8601 extended with optional offset and timezone.
 

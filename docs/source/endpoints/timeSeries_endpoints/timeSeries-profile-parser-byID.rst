@@ -18,26 +18,24 @@ When to use
     :header: "Parameter", "Description", "Required", "When to Use"
     :widths: 30, 40, 20, 60
 
-    location-id,":ref:`def-location-id`","Yes", "To specify the location name associated with the desired profile \
-    parser."
-    office,":ref:`def-office`","Yes", "To specify the office associated with the desired parser, e.g. `SPK`."
-    parameter-id,":ref:`def-parameter-id`","Yes", "To specify the parameter described by the profile parser, e.g. \
-    `Depth-Temperature`."
+    location-id,":ref:`def-location-id`","Yes", ":ref:`when_location_id`"
+    office,":ref:`def-office`","Yes", ":ref:`when_office`"
+    parameter-id,":ref:`def-parameter-id`","Yes", ":ref:`when_parameter_id`"
 
 Examples
 --------
-- | The user wants to retrieve the profile parser for Flow-Evaporation data:
-  | (**parameter-id**) :code:`Flow-Evap`
-  |
-  | at the STREAM12 location:
-  | (**location-id**) :code:`STREAM12`
-  |
-  | for the LRL office:
-  | (**office**) :code:`LRL`
+1. | The user wants to retrieve the profile parser for Flow-Evaporation data:
+   | (**parameter-id**) :code:`Flow-Evap`
+   |
+   | at the STREAM12 location:
+   | (**location-id**) :code:`STREAM12`
+   |
+   | for the LRL office:
+   | (**office**) :code:`LRL`
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-     GET /timeseries/profile-parser/STREAM12/Flow-Evap?office=LRL
+        GET /timeseries/profile-parser/STREAM12/Flow-Evap?office=LRL
 
 
 See the consolidated API documentation: :doc:`/api-references`.

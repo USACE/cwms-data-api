@@ -16,14 +16,12 @@ When to use
     :header: "Parameter", "Description", "Required", "When to Use"
     :widths: 30, 50, 20, 60
 
-    location-id,":ref:`def-location-id`","Yes", "To specify the name of the location associated with \
-    the profile instance."
-    parameter-id,":ref:`def-parameter-id`","Yes", "To specify the parameter relationship described \
-    by the desired profile instance."
+    location-id,":ref:`def-location-id`","Yes", ":ref:`when_location_id`"
+    parameter-id,":ref:`def-parameter-id`","Yes", ":ref:`when_parameter_id`"
     version,"`CWMS database - version <https://cwms-database.readthedocs.io/en/latest/naming.html#versions>`_
     This is a text value that is independent of the version date.","Yes", "To specify the desired version of the \
     profile instance provided when storing the instance."
-    office,":ref:`def-office`","Yes", "To specify the office associated with the profile instance."
+    office,":ref:`def-office`","Yes", ":ref:`when_office`"
     timezone,":ref:`def-timezone`","", "Use to convert the resulting data into a specific timezone, such as \
     `America/Los_Angeles`."
     version-date,":ref:`def-version-date`","", "To specify a desired version date associated with the profile \
@@ -46,183 +44,181 @@ When to use
     max-version,"Use the most recent version date (true/false). Only for time series utilizing dates in the version.","\
     ", "To retrieve the instance with the latest version date (true), or to use in combination with a specific \
     version date (false) by providing a date using the version-date parameter."
-    start,":ref:`def-start`","Yes", "To define the beginning of the time window for the desired results."
-    end, ":ref:`def-end`", "Yes", "To define the end of the time window for the desired results."
-    page,":ref:`def-page`","", "To specify a page of the results for queries that return more results that can \
-    fit in one page."
-    page-size,":ref:`def-page-size`","", "To limit the number of results provided in a single response, \
-    for the purpose of quicker or more manageable responses."
+    start,":ref:`def-start`","Yes", ":ref:`when_start`"
+    end, ":ref:`def-end`", "Yes", ":ref:`when_end`"
+    page,":ref:`def-page`","", ":ref:`when_page`"
+    page-size,":ref:`def-page-size`","", ":ref:`when_page_size`"
 
 
 Examples
 --------
-- The user wants to retrieve the latest profile instance data for a specific location and parameter within a defined
-  time range. They specify the location ID as LOC123:
+1. The user wants to retrieve the latest profile instance data for a specific location and parameter within a defined
+   time range. They specify the location ID as LOC123:
 
-  | (**location-id**) :code:`LOC123`
-  |
-  | the parameter ID as Depth-Temperature:
-  | (**parameter-id**) :code:`Depth-Temperature`
-  |
-  | and the version as CWMS:
-  | (**version**) :code:`CWMS`
-  |
-  | They also set the office to HQ:
-  | (**office**) :code:`HQ`
-  |
-  | and define the time window from October 1, 2025, at 06:00 UTC:
-  | (**start**) :code:`2025-10-01T06:00:00Z`
-  |
-  | to January 21, 2026, at 18:00 UTC:
-  | (**end**) :code:`2026-01-21T18:00:00Z`
-  |
-  | They choose units of meters (m) and Fahrenheit (F) for the response:
-  | (**unit**) :code:`m,F`
+   | (**location-id**) :code:`LOC123`
+   |
+   | the parameter ID as Depth-Temperature:
+   | (**parameter-id**) :code:`Depth-Temperature`
+   |
+   | and the version as CWMS:
+   | (**version**) :code:`CWMS`
+   |
+   | They also set the office to HQ:
+   | (**office**) :code:`HQ`
+   |
+   | and define the time window from October 1, 2025, at 06:00 UTC:
+   | (**start**) :code:`2025-10-01T06:00:00Z`
+   |
+   | to January 21, 2026, at 18:00 UTC:
+   | (**end**) :code:`2026-01-21T18:00:00Z`
+   |
+   | They choose units of meters (m) and Fahrenheit (F) for the response:
+   | (**unit**) :code:`m,F`
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]
+       GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-    GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&unit=m,F
+       GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&unit=m,F
 
-- The user wants to retrieve a specific version of the profile instance by providing a version date.
-  They specify the same location ID, parameter ID, version, office, units, and time window as before:
+2. The user wants to retrieve a specific version of the profile instance by providing a version date.
+   They specify the same location ID, parameter ID, version, office, units, and time window as before:
 
-  | (**location-id**) :code:`LOC123`
-  |
-  | (**parameter-id**) :code:`Depth-Temperature`
-  |
-  | (**version**) :code:`CWMS`
-  |
-  | (**office**) :code:`HQ`
-  |
-  | (**start**) :code:`2025-10-01T06:00:00Z`
-  |
-  | (**end**) :code:`2026-01-21T18:00:00Z`
-  |
-  | (**unit**) :code:`m,F`
-  |
-  | but this time they include the version-date parameter set to January 1, 2026, at 12:00 UTC:
-  | (**version-date**) :code:`2026-01-01T12:00:00Z`
-  |
-  | and the max-version parameter set to False:
-  | (**max-version**) :code:`False`
+   | (**location-id**) :code:`LOC123`
+   |
+   | (**parameter-id**) :code:`Depth-Temperature`
+   |
+   | (**version**) :code:`CWMS`
+   |
+   | (**office**) :code:`HQ`
+   |
+   | (**start**) :code:`2025-10-01T06:00:00Z`
+   |
+   | (**end**) :code:`2026-01-21T18:00:00Z`
+   |
+   | (**unit**) :code:`m,F`
+   |
+   | but this time they include the version-date parameter set to January 1, 2026, at 12:00 UTC:
+   | (**version-date**) :code:`2026-01-01T12:00:00Z`
+   |
+   | and the max-version parameter set to False:
+   | (**max-version**) :code:`False`
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]&version-date=[version-date]&max-version=[True/False]
+       GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]&version-date=[version-date]&max-version=[True/False]
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-    GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&unit=m,F&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&version-date=2026-01-01T12:00:00Z&max-version=False
+       GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&unit=m,F&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&version-date=2026-01-01T12:00:00Z&max-version=False
 
-- The user wants to retrieve the most recent version of the profile instance.
-  They specify the same location ID, parameter ID, version, office, units, and time window as before:
+3. The user wants to retrieve the most recent version of the profile instance.
+   They specify the same location ID, parameter ID, version, office, units, and time window as before:
 
-  | (**location-id**) :code:`LOC123`
-  |
-  | (**parameter-id**) :code:`Depth-Temperature`
-  |
-  | (**version**) :code:`CWMS`
-  |
-  | (**office**) :code:`HQ`
-  |
-  | (**start**) :code:`2025-10-01T06:00:00Z`
-  |
-  | (**end**) :code:`2026-01-21T18:00:00Z`
-  |
-  | (**unit**) :code:`m,F`
-  |
-  | but this time they set the max-version parameter to True and do not include a version-date parameter:
-  | (**max-version**) :code:`True`
+   | (**location-id**) :code:`LOC123`
+   |
+   | (**parameter-id**) :code:`Depth-Temperature`
+   |
+   | (**version**) :code:`CWMS`
+   |
+   | (**office**) :code:`HQ`
+   |
+   | (**start**) :code:`2025-10-01T06:00:00Z`
+   |
+   | (**end**) :code:`2026-01-21T18:00:00Z`
+   |
+   | (**unit**) :code:`m,F`
+   |
+   | but this time they set the max-version parameter to True and do not include a version-date parameter:
+   | (**max-version**) :code:`True`
 
-.. code-block:: bash
+   .. code-block:: bash
 
-    GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]&max-version=[True/False]
-
-
-.. code-block:: urlencoded
-
-     GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&unit=m,F&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&max-version=True
-
-- The user wants to retrieve the most recent version of the profile instance with a specific time zone and
-  inclusivity settings for the time window. They want to include data points that occur at the beginning and end of
-  the provided time window. They specify the same location ID, parameter ID, version, office, units,
-  and time window as before:
-
-  | (**location-id**) :code:`LOC123`
-  |
-  | (**parameter-id**) :code:`Depth-Temperature`
-  |
-  | (**version**) :code:`CWMS`
-  |
-  | (**office**) :code:`HQ`
-  |
-  | (**start**) :code:`2025-10-01T06:00:00Z`
-  |
-  | (**end**) :code:`2026-01-21T18:00:00Z`
-  |
-  | (**unit**) :code:`m,F`
-  |
-  | but this time they set the timezone parameter to Pacific (Los Angeles):
-  | (**timezone**) :code:`America/Los_Angeles`
-  |
-  | and set both the start-time-inclusive and end-time-inclusive parameters to True:
-  | (**start-time-inclusive**) :code:`True`
-  |
-  | (**end-time-inclusive**) :code:`True`
-  |
-  | They want to limit the result size to 15 entries, so they include the page-size parameter:
-  | (**page-size**) :code:`15`
-
-.. code-block:: bash
-
-     GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]&page-size=[page-size]&timezone=[timezone]&start-time-inclusive=[True/False]&end-time-inclusive=[True/False]
+       GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]&max-version=[True/False]
 
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-     GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&unit=m,F&page-size=15&timezone=America/Los_Angeles&start-time-inclusive=True&end-time-inclusive=True
+        GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&unit=m,F&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&max-version=True
 
-- The user wants to retrieve the most recent version of the profile instance with a specific time zone and
-  inclusivity settings for the time window. They specify the same location ID, parameter ID, version, office, units,
-  and time window as before:
+4. The user wants to retrieve the most recent version of the profile instance with a specific time zone and
+   inclusivity settings for the time window. They want to include data points that occur at the beginning and end of
+   the provided time window. They specify the same location ID, parameter ID, version, office, units,
+   and time window as before:
 
-  | (**location-id**) :code:`LOC123`
-  |
-  | (**parameter-id**) :code:`Depth-Temperature`
-  |
-  | (**version**) :code:`CWMS`
-  |
-  | (**office**) :code:`HQ`
-  |
-  | (**start**) :code:`2025-10-01T06:00:00Z`
-  |
-  | (**end**) :code:`2026-01-21T18:00:00Z`
-  |
-  | (**unit**) :code:`m,F`
-  |
-  | but this time they set the timezone parameter to UTC:
-  | (**timezone**) :code:`UTC`
+   | (**location-id**) :code:`LOC123`
+   |
+   | (**parameter-id**) :code:`Depth-Temperature`
+   |
+   | (**version**) :code:`CWMS`
+   |
+   | (**office**) :code:`HQ`
+   |
+   | (**start**) :code:`2025-10-01T06:00:00Z`
+   |
+   | (**end**) :code:`2026-01-21T18:00:00Z`
+   |
+   | (**unit**) :code:`m,F`
+   |
+   | but this time they set the timezone parameter to Pacific (Los Angeles):
+   | (**timezone**) :code:`America/Los_Angeles`
+   |
+   | and set both the start-time-inclusive and end-time-inclusive parameters to True:
+   | (**start-time-inclusive**) :code:`True`
+   |
+   | (**end-time-inclusive**) :code:`True`
+   |
+   | They want to limit the result size to 15 entries, so they include the page-size parameter:
+   | (**page-size**) :code:`15`
 
-  and include the next parameter set to True to include the single time step of data after the end
-  date of the specified time window:
+   .. code-block:: bash
 
-  | (**next**) :code:`True`
-  |
-  | They want to limit the result size to 15 entries, so they include the page-size parameter:
-  | (**page-size**) :code:`15`
-
-.. code-block:: bash
-
-     GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]&page-size=[page-size]&timezone=[timezone]&next=[True/False]
+        GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]&page-size=[page-size]&timezone=[timezone]&start-time-inclusive=[True/False]&end-time-inclusive=[True/False]
 
 
-.. code-block:: urlencoded
+   .. code-block:: urlencoded
 
-     GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&unit=m,F&page-size=15&timezone=UTC&next=True
+        GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&unit=m,F&page-size=15&timezone=America/Los_Angeles&start-time-inclusive=True&end-time-inclusive=True
+
+5. The user wants to retrieve the most recent version of the profile instance with a specific time zone and
+   inclusivity settings for the time window. They specify the same location ID, parameter ID, version, office, units,
+   and time window as before:
+
+   | (**location-id**) :code:`LOC123`
+   |
+   | (**parameter-id**) :code:`Depth-Temperature`
+   |
+   | (**version**) :code:`CWMS`
+   |
+   | (**office**) :code:`HQ`
+   |
+   | (**start**) :code:`2025-10-01T06:00:00Z`
+   |
+   | (**end**) :code:`2026-01-21T18:00:00Z`
+   |
+   | (**unit**) :code:`m,F`
+   |
+   | but this time they set the timezone parameter to UTC:
+   | (**timezone**) :code:`UTC`
+
+   and include the next parameter set to True to include the single time step of data after the end
+   date of the specified time window:
+
+   | (**next**) :code:`True`
+   |
+   | They want to limit the result size to 15 entries, so they include the page-size parameter:
+   | (**page-size**) :code:`15`
+
+   .. code-block:: bash
+
+        GET /timeseries/profile-instance/[location-id]/[parameter-id]/[version]?office=[office]&start=[start]&end=[end]&unit=[unit]&page-size=[page-size]&timezone=[timezone]&next=[True/False]
+
+
+   .. code-block:: urlencoded
+
+        GET /timeseries/profile-instance/LOC123/Depth-Temperature/CWMS?office=HQ&start=2025-10-01T06:00:00Z&end=2026-01-21T18:00:00Z&unit=m,F&page-size=15&timezone=UTC&next=True
 
 
 See the consolidated API documentation: :doc:`/api-references`.
