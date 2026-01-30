@@ -27,8 +27,9 @@ package cwms.cda.api;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.ClobDao;
+import cwms.cda.data.dao.StreamConsumer;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -36,9 +37,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.jooq.DSLContext;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.InputStream;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
@@ -92,18 +90,14 @@ public class TextTimeSeriesValueController implements Handler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             ClobDao clobDao = new ClobDao(dsl);
-            clobDao.getClob(textId, officeId, clob -> {
-                if (clob == null) {
-                    ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
-                            + "clob based on given parameters"));
-                } else {
-                    long size = clob.length();
-                    requestResultSize.update(size);
-                    try(InputStream is = clob.getAsciiStream()){
-                        RangeRequestUtil.seekableStream(ctx, is, TEXT_PLAIN, size);
-                    }
-                }
-            });
+
+            StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
+                requestResultSize.update(totalLength);
+                ctx.header(Header.ACCEPT_RANGES, "bytes");
+                RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
+            };
+            clobDao.getClob(textId, officeId, consumer);
+
         }
     }
 }

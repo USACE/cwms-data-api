@@ -6,13 +6,10 @@ import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.helpers.DatabaseHelpers;
 import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
-import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ResponseBody;
-import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
@@ -790,7 +787,6 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
                                 .log().ifValidationFails(LogDetail.ALL, true)
                             .assertThat()
                                 .statusCode(is(HttpServletResponse.SC_OK))
-                                .header("Transfer-Encoding", equalTo("chunked"))
                                 .contentType(equalTo("application/octet-stream"))
                                 .extract()
                                 .response()
