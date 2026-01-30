@@ -344,4 +344,175 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
+
+    @Test
+    void test_getOne_xml() throws Exception {
+        String locationId = "RatingSpecTestXml";
+        String officeId = "SPK";
+        createLocation(locationId, true, officeId);
+        String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
+        RatingSpecContainer specContainer = RatingSpecXmlFactory.ratingSpecContainer(ratingXml);
+        specContainer.officeId = officeId;
+        specContainer.specOfficeId = officeId;
+        specContainer.locationId = locationId;
+        specContainer.specId = specContainer.specId.replace("Zanesville", locationId);
+        String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
+        String templateXml = RatingSpecXmlFactory.toXml(specContainer, "", 0);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Create Template
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.XMLV2)
+            .body(templateXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/ratings/template")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Create Spec
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.XMLV2)
+            .body(specXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/ratings/spec")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Read XML
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.XMLV2)
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/ratings/spec/" + specContainer.specId)
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .contentType(Formats.XMLV2)
+            .body("rating-spec.rating-id", equalTo(specContainer.specId))
+            .body("rating-spec.office-id", equalTo(specContainer.officeId))
+            .body("rating-spec.template-id", equalTo(specContainer.templateId));
+
+        // Delete
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/ratings/spec/" + specContainer.specId)
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    }
+
+    @Test
+    void test_getAll_xml() throws Exception {
+        String locationId = "RatingSpecGetAllXml";
+        String officeId = "SPK";
+        createLocation(locationId, true, officeId);
+        String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
+        RatingSpecContainer specContainer = RatingSpecXmlFactory.ratingSpecContainer(ratingXml);
+        specContainer.officeId = officeId;
+        specContainer.specOfficeId = officeId;
+        specContainer.locationId = locationId;
+        specContainer.specId = specContainer.specId.replace("Zanesville", locationId);
+        String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
+        String templateXml = RatingSpecXmlFactory.toXml(specContainer, "", 0);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Create Template
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.XMLV2)
+            .body(templateXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/ratings/template")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Create Spec
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.XMLV2)
+            .body(specXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/ratings/spec")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Read XML via getAll
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.XMLV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam("rating-id-mask", specContainer.specId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/ratings/spec")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .contentType(Formats.XMLV2)
+            .body("rating-specs.specs.rating-spec.rating-id", equalTo(specContainer.specId))
+            .body("rating-specs.specs.rating-spec.office-id", equalTo(specContainer.officeId))
+            .body("rating-specs.specs.rating-spec.template-id", equalTo(specContainer.templateId));
+
+        // Delete
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/ratings/spec/" + specContainer.specId)
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    }
 }

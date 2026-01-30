@@ -30,8 +30,6 @@ import static cwms.cda.api.Controllers.*;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JacksonException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
@@ -40,8 +38,7 @@ import cwms.cda.data.dto.rating.RatingSpec;
 import cwms.cda.data.dto.rating.RatingSpecs;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.formatters.xml.XMLv2;
+import cwms.cda.formatters.FormattingException;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -111,7 +108,8 @@ public class RatingSpecController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_200,
                             content = {
-                                    @OpenApiContent(type = Formats.JSONV2, from = RatingSpecs.class)
+                                    @OpenApiContent(type = Formats.JSONV2, from = RatingSpecs.class),
+                                    @OpenApiContent(type = Formats.XMLV2, from = RatingSpecs.class)
                             }
                     )},
             tags = {TAG}
@@ -164,6 +162,7 @@ public class RatingSpecController implements CrudHandler {
                     @OpenApiResponse(status = STATUS_200,
                             content = {
                                     @OpenApiContent(from = RatingSpec.class, type = Formats.JSONV2),
+                                    @OpenApiContent(from = RatingSpec.class, type = Formats.XMLV2)
                             }
                     )
             },
@@ -225,40 +224,28 @@ public class RatingSpecController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
-            String formatHeader = reqContentType != null ? reqContentType : Formats.XMLV2;
-            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(false);
+            String contentTypeHeader = ctx.req.getContentType();
             String body = ctx.body();
+            ContentType contentType = Formats.parseHeader(contentTypeHeader, RatingSpec.class);
+
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(false);
             RatingSpecDao dao = new RatingSpecDao(dsl);
 
-            // First we are going to try and build a CDA RatingSpec from whatever the user gave us.
-            RatingSpec spec = null;
             try {
-                if (formatHeader.contains(Formats.XMLV2)) {
-                    XMLv2 xmlv2 = new XMLv2();
-                    spec = xmlv2.parseContent(body, RatingSpec.class);
-                } else if (formatHeader.contains(Formats.JSONV2)) {
-                    ObjectMapper jsonMapper = JsonV2.buildObjectMapper();
-                    spec = jsonMapper.readValue(body, RatingSpec.class);
-                }
-            } catch (JacksonException e) {
-                logger.atInfo().withCause(e).log("Unable to parse Rating Spec from request body");
-            }
-
-            if (spec != null) {
-                // If we were able to parse the RatingSpec from the request body, then we
-                // should call the dao method that takes a CDA object and the dao will sort it out.
+                RatingSpec spec = Formats.parseContent(contentType, body, RatingSpec.class);
+                // If we can parse it into our CDA RatingSpec object have the DAO use it.
                 dao.create(spec, failIfExists);
                 ctx.status(HttpServletResponse.SC_CREATED);
-            } else if (formatHeader.contains(Formats.XMLV2)) {
-                // This branch is if the user said its xml and it doesn't parse into the CDA RatingSpec
-                // object.   We'll let the dao try passing it thru to the pl/sql.
-                dao.create(body, failIfExists);
-                ctx.status(HttpServletResponse.SC_CREATED);
-            } else {
-                throw new IllegalArgumentException("Could not parse body with format:" + formatHeader);
+            } catch (FormattingException e) {
+                if (contentType.getType().contains(Formats.XML)) {
+                    // The user said its xml but it doesn't parse into our CDA RatingSpec object.
+                    // We'll let the dao try doing a string pass-thru to the pl/sql.
+                    dao.create(body, failIfExists);
+                    ctx.status(HttpServletResponse.SC_CREATED);
+                    return;
+                }
+                throw e;
             }
-
         }
     }
 
