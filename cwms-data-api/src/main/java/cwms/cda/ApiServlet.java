@@ -194,6 +194,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -212,6 +213,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
+import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
@@ -380,6 +382,15 @@ public class ApiServlet extends HttpServlet {
                     CdaError re = new CdaError(e.getMessage());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
+                .exception(DataAccessException.class, (e, ctx) -> {
+                    String message = getSanitizedDataAccessException(e);
+                    CdaError errResponse = new CdaError("System Error", Map.of("Error message", message));
+                    logger.atWarning().withCause(e).log("error on request[%s]: %s",
+                                                        errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
+                    ctx.status(500);
+                    ctx.contentType(ContentType.APPLICATION_JSON.toString());
+                    ctx.json(errResponse);
+                })
                 .exception(Exception.class, (e, ctx) -> {
                     CdaError errResponse = new CdaError("System Error", Map.of("Error message", e.getMessage()));
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
@@ -398,6 +409,21 @@ public class ApiServlet extends HttpServlet {
                 .javalinServlet();
         QueueManager.ensureRssSubscribers(cwms);
         logger.atInfo().log("Javalin initialized.");
+    }
+
+    private static String getSanitizedDataAccessException(DataAccessException e) {
+        Throwable cause = e.getCause();
+        String message = "";
+        if (cause instanceof SQLException) {
+            String localizedMessage = cause.getLocalizedMessage();
+            String[] parts = localizedMessage.split("\n");
+            message = parts[0];
+            int index = message.indexOf(":");
+            if (index >= 0) {
+                message = message.substring(index + 1);
+            }
+        }
+        return message;
     }
 
     private String obtainFullVersion(ServletConfig servletConfig) throws ServletException {
