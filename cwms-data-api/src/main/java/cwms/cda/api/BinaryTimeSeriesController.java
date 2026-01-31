@@ -70,29 +70,23 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class BinaryTimeSeriesController implements CrudHandler {
+public class BinaryTimeSeriesController extends BaseCrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     static final String TAG = "Binary-TimeSeries";
 
     public static final String REPLACE_ALL = "replace-all";
     private static final String DEFAULT_BIN_TYPE_MASK = "*";
     public static final String BINARY_TYPE_MASK = "binary-type-mask";
-    private final MetricRegistry metrics;
 
 
 
     public BinaryTimeSeriesController(MetricRegistry metrics) {
-        this.metrics = metrics;
+        super(metrics);
     }
 
     @NotNull
     protected TimeSeriesBinaryDao getDao(DSLContext dsl) {
         return new TimeSeriesBinaryDao(dsl);
-    }
-
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
 
@@ -179,7 +173,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String templateId) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -232,8 +226,8 @@ public class BinaryTimeSeriesController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String oldBinaryTimeSeriesId) {
-
+    public void update(@NotNull Context ctx, @NotNull String name) {
+        logUnusedPathParameter(ctx, NAME, "Body contains information");
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             boolean maxVersion = true;
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(false);
@@ -276,7 +270,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void delete(@NotNull Context ctx, @NotNull String binaryTimeSeriesId) {
+    public void delete(@NotNull Context ctx, @NotNull String name) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             String office = requiredParam(ctx, OFFICE);
@@ -289,7 +283,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
 
             TimeSeriesBinaryDao dao = getDao(dsl);
 
-            dao.delete(office, binaryTimeSeriesId, mask, begin, end, version);
+            dao.delete(office, name, mask, begin, end, version);
 
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }

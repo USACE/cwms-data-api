@@ -24,23 +24,13 @@
 
 package cwms.cda.api.project;
 
-import static cwms.cda.api.Controllers.APPLICATION_ID;
-import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.SOURCE_ID;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.TIMESERIES_ID;
-import static cwms.cda.api.Controllers.queryParamAsInstant;
-import static cwms.cda.api.Controllers.requiredParam;
-
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.ProjectController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectDao;
+import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -50,6 +40,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
+import static cwms.cda.api.Controllers.*;
 
 
 public class ProjectPublishStatusUpdate implements Handler {
@@ -80,6 +71,13 @@ public class ProjectPublishStatusUpdate implements Handler {
                 @OpenApiParam(name = TIMESERIES_ID, description = "A time series identifier of "
                         + "the time series associated with the update. If NULL or not "
                         + "specified, the generated message will not include this item."),
+                @OpenApiParam(name = TIMEZONE,  description = "Specifies "
+                        + "the time zone of the values of the begin and end fields (unless "
+                        + "otherwise specified).  For other formats this parameter "
+                        + "affects the time zone of times in the "
+                        + "response. If this field is not specified, the default time zone "
+                        + "of UTC shall be used.\r\nIgnored if begin was specified with "
+                        + "offset and timezone."),
                 @OpenApiParam(name = BEGIN, description = "The start time of the updates to "
                         + "the time series. If NULL or not specified, the generated message "
                         + "will not include this item."),

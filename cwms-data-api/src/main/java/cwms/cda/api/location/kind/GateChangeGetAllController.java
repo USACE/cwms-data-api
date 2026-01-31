@@ -59,6 +59,10 @@ public class GateChangeGetAllController extends BaseHandler {
                             "Gate Changes whose data is to be included in the response."),
             },
             queryParams = {
+                    @OpenApiParam(name = TIMEZONE, description = "This field specifies a default "
+                            + "timezone to be used if the format of the "
+                            + BEGIN + " and " + END + " parameters do not include "
+                            + "offset or time zone information. Defaults to UTC."),
                     @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
                     @OpenApiParam(name = END, required = true, description = "The end of the time window."),
                     @OpenApiParam(name = START_TIME_INCLUSIVE, type = Boolean.class, description = "A flag "

@@ -26,6 +26,7 @@ package cwms.cda.api;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.texttimeseries.StandardTextDao;
@@ -76,7 +77,9 @@ public class StandardTextController implements CrudHandler {
                     @OpenApiParam(name = OFFICE_MASK, description = "Specifies the office filter of the"
                             + "standard text."),
                     @OpenApiParam(name = STANDARD_TEXT_ID_MASK, description = "Specifies the text id filter of the "
-                            + "standard text")
+                            + "standard text"),
+                    @OpenApiParam(name = NAME_MASK, deprecated = true, description = "Specifies the text id filter of the "
+                            + "standard text.  Deprecated, use " + STANDARD_TEXT_ID_MASK)
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -94,10 +97,7 @@ public class StandardTextController implements CrudHandler {
             if (officeMask == null) {
                 officeMask = "*";
             }
-            String idMask = ctx.queryParam(NAME_MASK);
-            if (idMask == null) {
-                idMask = "*";
-            }
+            String idMask = queryParamAsClass(ctx, new String[]{STANDARD_TEXT_ID_MASK, NAME_MASK}, String.class, "*");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, StandardTextCatalog.class);
             DSLContext dsl = getDslContext(ctx);
@@ -182,7 +182,7 @@ public class StandardTextController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
 

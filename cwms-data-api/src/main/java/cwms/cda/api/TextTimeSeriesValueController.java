@@ -43,18 +43,11 @@ import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
-public class TextTimeSeriesValueController implements Handler {
+public class TextTimeSeriesValueController extends BaseHandler {
     public static final String TEXT_PLAIN = "text/plain";
-    private final MetricRegistry metrics;
-    private final Histogram requestResultSize;
 
     public TextTimeSeriesValueController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        requestResultSize = this.metrics.histogram((name(TextTimeSeriesValueController.class, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
@@ -65,12 +58,6 @@ public class TextTimeSeriesValueController implements Handler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the Text TimeSeries whose data is to be included in the response."),
-                    @OpenApiParam(name = TIMEZONE,  description = "Specifies "
-                            + "the time zone of the values of the begin and end fields (unless "
-                            + "otherwise specified). If this field is not specified, "
-                            + "the default time zone of UTC shall be used."),
-                    @OpenApiParam(name = DATE, required = true, description = "The date of the text value to retrieve"),
-                    @OpenApiParam(name = VERSION_DATE, description = "The version date for the value to retrieve."),
                     @OpenApiParam(name = CLOB_ID, description = "Will be removed in a schema update. " +
                             "This is a placeholder for integration testing with schema 23.3.16", deprecated = true)
             },
@@ -84,7 +71,8 @@ public class TextTimeSeriesValueController implements Handler {
     )
     public void handle(Context ctx) {
         //Implementation will change with new CWMS schema
-        //https://www.hec.usace.army.mil/confluence/display/CWMS/2024-02-29+Task2A+Text-ts+and+Binary-ts+Design
+        //https://www.hec.usace.army.mil/confluence/spaces/CWMS/pages/183110112/2024-02-29+Developer+Meeting+Task2A+Text-ts+and+Binary-ts+Design
+        logUnusedPathParameter(ctx, NAME, "Handled as " + CLOB_ID + " in query parameter.  May change with schema.");
         String textId = requiredParam(ctx, CLOB_ID);
         String officeId = requiredParam(ctx, OFFICE);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
@@ -92,7 +80,7 @@ public class TextTimeSeriesValueController implements Handler {
             ClobDao clobDao = new ClobDao(dsl);
 
             StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
-                requestResultSize.update(totalLength);
+                updateResultSize(totalLength);
                 ctx.header(Header.ACCEPT_RANGES, "bytes");
                 RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
             };

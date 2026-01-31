@@ -122,8 +122,7 @@ public class SpecifiedLevelController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String templateId) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of
-        // generated methods, choose Tools | Specs.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(

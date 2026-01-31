@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import com.google.common.flogger.FluentLogger;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.owasp.html.PolicyFactory;
@@ -63,19 +64,19 @@ public class CatalogController implements CrudHandler {
     @OpenApi(tags = {TAG}, ignore = true)
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpCode.NOT_IMPLEMENTED).result("cannot perform this action");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(tags = {"Catalog"}, ignore = true)
     @Override
     public void delete(Context ctx, @NotNull String entry) {
-        ctx.status(HttpCode.NOT_IMPLEMENTED).result("cannot perform this action");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(tags = {"Catalog"}, ignore = true)
     @Override
     public void getAll(Context ctx) {
-        ctx.status(HttpCode.NOT_IMPLEMENTED).result("cannot perform this action");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -84,7 +85,11 @@ public class CatalogController implements CrudHandler {
                     description = "This end point can return a lot of data, this "
                             + "identifies where in the request you are."
             ),
-
+            @OpenApiParam(name = CURSOR, deprecated = true,
+                    description = "This end point can return a lot of data, this "
+                            + "identifies where in the request you are. This is an opaque"
+                            + " value, and can be obtained from the 'next-page' value in "
+                            + "the response. Deprecated, use " + PAGE + " instead."),
             @OpenApiParam(name = PAGE_SIZE,
                     type = Integer.class,
                     description = "How many entries per page returned. Default 500."
@@ -311,7 +316,7 @@ public class CatalogController implements CrudHandler {
     @OpenApi(tags = {"Catalog"}, ignore = true)
     @Override
     public void update(Context ctx, @NotNull String entry) {
-        ctx.status(HttpCode.NOT_IMPLEMENTED).json(CdaError.notImplemented());
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
 }

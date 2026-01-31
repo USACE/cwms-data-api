@@ -56,10 +56,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class WaterContractCreateController extends WaterSupplyControllerBase implements Handler {
+public final class WaterContractCreateController extends WaterSupplyControllerBase {
 
     public WaterContractCreateController(MetricRegistry metrics) {
-        waterMetrics(metrics);
+        super(metrics);
     }
 
     @OpenApi(
@@ -94,6 +94,8 @@ public final class WaterContractCreateController extends WaterSupplyControllerBa
 
     @Override
     public void handle(@NotNull Context ctx) {
+        logUnusedPathParameter(ctx, PROJECT_ID, "Body contains required information.");
+        logUnusedPathParameter(ctx, OFFICE, "Body contains required information.");
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
             String formatHeader = ctx.req.getContentType();

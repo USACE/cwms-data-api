@@ -1,21 +1,12 @@
 package cwms.cda.api.auth.users;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.CURSOR;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.INCLUDE_VALUES;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_201;
-import static cwms.cda.api.Controllers.STATUS_204;
-import static cwms.cda.api.Controllers.markAndTime;
-import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import java.util.List;
 
+import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -63,14 +54,13 @@ public class UsersController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        throw new UnsupportedOperationException("Unimplemented method 'create'");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String username) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'delete'");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
 
@@ -84,10 +74,19 @@ public class UsersController implements CrudHandler {
                             + "identifies where in the request you are. This is an opaque"
                             + " value, and can be obtained from the 'next-page' value in "
                             + "the response."),
+            @OpenApiParam(name = CURSOR, deprecated = true,
+                    description = "This end point can return a lot of data, this "
+                            + "identifies where in the request you are. This is an opaque"
+                            + " value, and can be obtained from the 'next-page' value in "
+                            + "the response. Deprecated, use " + PAGE + " instead."),
             @OpenApiParam(name = PAGE_SIZE,
                     type = Integer.class,
                     description = "How many entries per page returned. Default "
-                            + DEFAULT_PAGE_SIZE + ".")
+                            + DEFAULT_PAGE_SIZE + "."),
+            @OpenApiParam(name = INCLUDE_ROLES,
+                    type = Boolean.class,
+                    allowEmptyValue = true,
+                    description = "Include roles in the response. Default false.")
         },
         responses = @OpenApiResponse(
                     content = {
@@ -122,7 +121,7 @@ public class UsersController implements CrudHandler {
             int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE}, Integer.class, DEFAULT_PAGE_SIZE, metrics,
                     name(UsersController.class.getName(), GET_ALL));
 
-            boolean includeRoles = queryParamAsClass(ctx, new String[]{"include-roles"},
+            boolean includeRoles = queryParamAsClass(ctx, new String[]{INCLUDE_ROLES},
                     Boolean.class, false, metrics,
                     name(UsersController.class.getName(), GET_ALL));
             UserDao dao = new UserDao(dsl);
@@ -170,9 +169,6 @@ public class UsersController implements CrudHandler {
     )
     @Override
     public void update(Context ctx, String arg1) {
-        throw new UnsupportedOperationException("Unimplemented method 'update'");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
-
-    
-    
 }
