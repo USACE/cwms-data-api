@@ -20,21 +20,38 @@ When to use
 
 
 .. csv-table:: GET /timeseries/profile - Endpoint Parameters
-    :header: "Parameter", "Description", "Required"
-    :widths: 20, 60, 15
+    :header: "Parameter", "Description", "Required", "When to Use"
+    :widths: 30, 40, 20, 60
 
-    office-mask,":ref:`def-office-mask`",""
-    location-mask,":ref:`def-location-mask`",""
-    parameter-id-mask,":ref:`def-parameter-id-mask`",""
+    office-mask,":ref:`def-office-mask`","", ":ref:`when_office_mask`"
+    location-mask,":ref:`def-location-mask`","", ":ref:`when_location_mask`"
+    parameter-id-mask,":ref:`def-parameter-id-mask`","", ":ref:`when_parameter_id_mask`"
 
 
 Examples
 --------
-- List available parsers for your office:
+1. The user wants to see all available profile parsers in the system.
 
-.. code-block:: sql
+   .. code-block::
 
-     GET /timeseries/profile-parser?office=HQ
+        GET /timeseries/profile-parser
+
+2. | The user wants to see all available profile parsers in the HQ office:
+   | (**office-mask**) :code:`HQ`
+
+   .. code-block:: urlencoded
+
+        GET /timeseries/profile-parser?office-mask=HQ
+
+3. | The user wants to see all available profile parsers for the Area-Evaporation parameter:
+   | (**parameter-id-mask**) :code:`Area-Evap`
+   |
+   | at location names ending with "BASIN":
+   | (**location-mask**) :code:`*BASIN`
+
+   .. code-block:: urlencoded
+
+        GET /timeseries/profile-parser?parameter-id-mask=Area-Evap&location-mask=*BASIN
 
 
 See the consolidated API documentation: :doc:`/api-references`.
