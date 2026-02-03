@@ -82,7 +82,7 @@ public class XMLv2 implements OutputFormatter {
         }
     }
 
-    private static @NotNull XmlMapper buildXmlMapper() {
+    public static @NotNull XmlMapper buildXmlMapper() {
         XmlMapper retval = new XmlMapper();
         retval.findAndRegisterModules();
         // Without these two disables an Instant gets written as 3333333.335000000
