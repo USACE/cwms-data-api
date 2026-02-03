@@ -29,6 +29,7 @@ import static com.google.common.flogger.LazyArgs.lazy;
 import static cwms.cda.data.dto.rating.RatingSpec.Builder.buildIndependentRoundingSpecs;
 import static java.util.stream.Collectors.toList;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
 import cwms.cda.data.dto.rating.RatingSpec;
@@ -67,6 +68,7 @@ import java.util.stream.Stream;
 import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.RowSetProvider;
 
+import cwms.cda.formatters.FormattingException;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -416,8 +418,18 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
     }
 
     public void create(RatingSpec spec, boolean failIfExists) {
-        String xml = RatingSpecXmlUtils.toPlSqlXml(spec);
-        create(xml, failIfExists);
+        String xml = null;
+        try {
+            xml = RatingSpecXmlUtils.toPlSqlXml(spec);
+            create(xml, failIfExists);
+        } catch (JsonProcessingException ex) {
+            String msg = spec != null ?
+                    "Error rendering '" + spec + "' to XML"
+                    :
+                    "Null element passed to formatter";
+            logger.atWarning().withCause(ex).log(msg);
+            throw new FormattingException(msg, ex);
+        }
     }
 
     // In my tests this method wouldn't fail if the input was

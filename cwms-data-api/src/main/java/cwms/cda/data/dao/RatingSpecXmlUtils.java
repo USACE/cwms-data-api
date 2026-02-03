@@ -1,11 +1,14 @@
 package cwms.cda.data.dao;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.rating.IndependentRoundingSpec;
 import cwms.cda.data.dto.rating.RatingSpec;
 import cwms.cda.formatters.xml.XMLv2;
@@ -33,7 +36,29 @@ abstract class RatingSpecPlSqlMixin {
 }
 
 
+@JacksonXmlRootElement(localName = "ratings")
+class RatingSpecWrapper {
+    @JacksonXmlProperty(isAttribute = true, localName = "xmlns:xsi")
+    final String xsi = "http://www.w3.org/2001/XMLSchema-instance";
+
+    @JacksonXmlProperty(isAttribute = true, localName = "xsi:noNamespaceSchemaLocation")
+    final String schemaLocation = "http://www.hec.usace.army.mil/xmlSchema/cwms/Ratings.xsd";
+
+    @JacksonXmlProperty(localName = "rating-spec")
+    private final RatingSpec ratingSpec;
+
+    public RatingSpecWrapper(RatingSpec ratingSpec) {
+        this.ratingSpec = ratingSpec;
+    }
+
+    public RatingSpec getRatingSpec() {
+        return ratingSpec;
+    }
+}
+
+
 class RatingSpecXmlUtils {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final XmlMapper mapper = buildMapper();
 
     private static XmlMapper buildMapper() {
@@ -57,28 +82,7 @@ class RatingSpecXmlUtils {
      * @param spec The CDA RatingSpec object.
      * @return xml String in the format expected by the pl/sql create call.
      */
-    public static String toPlSqlXml(RatingSpec spec) {
-        try {
-            String xml = mapper.writer()
-                    .withRootName("rating-spec")
-                    .writeValueAsString(spec);
-            
-            String namespaces = " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"http://www.hec.usace.army.mil/xmlSchema/cwms/Ratings.xsd\"";
-
-            // We want to wrap the rating-spec in a ratings element.
-            // xml currently starts with <?xml version='1.0' encoding='UTF-8'?>
-            // then <rating-spec office-id="...">
-            
-            int rootStart = xml.indexOf("<rating-spec");
-            if (rootStart != -1) {
-                String header = xml.substring(0, rootStart);
-                String body = xml.substring(rootStart);
-                xml = header + "<ratings" + namespaces + ">" + body + "</ratings>";
-            }
-            
-            return xml;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public static String toPlSqlXml(RatingSpec spec) throws JsonProcessingException {
+            return mapper.writeValueAsString(new RatingSpecWrapper(spec));
     }
 }
