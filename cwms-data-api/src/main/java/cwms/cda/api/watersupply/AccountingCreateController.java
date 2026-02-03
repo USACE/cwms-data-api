@@ -36,6 +36,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.BaseHandler;
 import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.watersupply.WaterSupplyAccountingDao;
@@ -64,16 +65,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class AccountingCreateController implements Handler {
+public class AccountingCreateController extends BaseHandler {
     private static final String TAG = "Pump Accounting";
-    private final MetricRegistry metrics;
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
 
     public AccountingCreateController(MetricRegistry metrics) {
-        this.metrics = metrics;
+        super(metrics);
     }
 
     @NotNull
@@ -107,6 +103,8 @@ public class AccountingCreateController implements Handler {
 
     @Override
     public void handle(@NotNull Context ctx) {
+        logUnusedPathParameter(ctx, WATER_USER, "Body contains required information.");
+
         try (Timer.Context ignored = markAndTime(CREATE)) {
             final String contractId = ctx.pathParam(CONTRACT_NAME);
             final String office = ctx.pathParam(OFFICE);

@@ -103,9 +103,8 @@ public class LocationKindController implements Handler {
         String kindRegexMask = ctx.queryParam(LOCATION_KIND_LIKE);
         String office = ctx.queryParam(OFFICE);
 
-        String formatParm = ctx.queryParamAsClass(Formats.JSONV1, String.class).getOrDefault("");
         String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm, CwmsIdLocationKind.class);
+        ContentType contentType = Formats.parseHeader(formatHeader, CwmsIdLocationKind.class);
 
         String results;
 

@@ -1,9 +1,5 @@
 package cwms.cda.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
-
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.DeleteRule;
@@ -12,7 +8,6 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastSpec;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -21,27 +16,18 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+import static cwms.cda.api.Controllers.*;
 
-public final class ForecastSpecController implements CrudHandler {
+public final class ForecastSpecController extends BaseCrudHandler {
 
     public static final String TAG = "Forecast";
-    private final MetricRegistry metrics;
-
-    private final Histogram requestResultSize;
 
     public ForecastSpecController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        String className = this.getClass().getName();
-        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     protected DSLContext getDslContext(Context ctx) {
@@ -173,7 +159,7 @@ public final class ForecastSpecController implements CrudHandler {
             String result = Formats.format(contentType, specs, ForecastSpec.class);
 
             ctx.result(result).contentType(contentType.toString());
-            requestResultSize.update(result.length());
+            updateResultSize(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
         }
@@ -222,7 +208,7 @@ public final class ForecastSpecController implements CrudHandler {
             String result = Formats.format(contentType, spec);
 
             ctx.result(result).contentType(contentType.toString());
-            requestResultSize.update(result.length());
+            updateResultSize(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
         }
@@ -247,6 +233,7 @@ public final class ForecastSpecController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
+        logUnusedPathParameter(ctx, NAME, "Body contains information");
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             ForecastSpec forecastSpec = deserializeForecastSpec(ctx);
             DSLContext dsl = getDslContext(ctx);

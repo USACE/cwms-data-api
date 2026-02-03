@@ -97,6 +97,8 @@ public class TimeSeriesGroupController implements CrudHandler {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
                         + "timeseries assigned to the group(s) whose data is to be included in the response. If this "
                         + "field is not specified, group information for all assigned TS offices shall be returned."),
+                @OpenApiParam(name = GROUP_OFFICE_ID, description = "Specifies the owning office of the "
+                            + "timeseries group", required = true),
                 @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
                         + " the assigned timeseries in the returned timeseries groups. (default: true)"),
                 @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
@@ -276,6 +278,10 @@ public class TimeSeriesGroupController implements CrudHandler {
                 @OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON)
             },
             required = true),
+        pathParams = {
+            @OpenApiParam(name = GROUP_ID, required = true, description = "Specifies "
+                + "the original timeseries group to rename.")
+            },
         queryParams = {
             @OpenApiParam(name = REPLACE_ASSIGNED_TS, type = Boolean.class, description = "Specifies whether to "
                 + "unassign all existing time series before assigning new time series specified in the content body "

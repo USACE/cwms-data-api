@@ -27,6 +27,7 @@ package cwms.cda.api;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.BlobDao;
 import cwms.cda.data.dao.StreamConsumer;
@@ -47,18 +48,11 @@ import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
-public class BinaryTimeSeriesValueController implements Handler {
-    private final MetricRegistry metrics;
-    private final Histogram requestResultSize;
-
+public class BinaryTimeSeriesValueController extends BaseHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     public BinaryTimeSeriesValueController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        requestResultSize = this.metrics.histogram((name(BinaryTimeSeriesValueController.class, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
@@ -69,12 +63,6 @@ public class BinaryTimeSeriesValueController implements Handler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the Binary TimeSeries whose data is to be included in the response."),
-                    @OpenApiParam(name = TIMEZONE,  description = "Specifies "
-                            + "the time zone of the values of the begin and end fields (unless "
-                            + "otherwise specified). If this field is not specified, "
-                            + "the default time zone of UTC shall be used."),
-                    @OpenApiParam(name = DATE, required = true, description = "The date of the binary value to retrieve"),
-                    @OpenApiParam(name = VERSION_DATE, description = "The version date for the value to retrieve."),
                     @OpenApiParam(name = BLOB_ID, description = "Will be removed in a schema update. " +
                             "This is a placeholder for integration testing with schema 23.3.16", deprecated = true)
             },
@@ -89,6 +77,8 @@ public class BinaryTimeSeriesValueController implements Handler {
     public void handle(@NotNull Context ctx) {
         //Implementation will change with new CWMS schema
         //https://www.hec.usace.army.mil/confluence/display/CWMS/2024-02-29+Task2A+Text-ts+and+Binary-ts+Design
+        logUnusedPathParameter(ctx, NAME, "Handled as " + BLOB_ID + " in query parameter.  May change with schema.");
+
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String binaryId = requiredParam(ctx, BLOB_ID);
             String officeId = requiredParam(ctx, OFFICE);
@@ -113,7 +103,7 @@ public class BinaryTimeSeriesValueController implements Handler {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                             + "blob based on given parameters"));
                 } else {
-                    requestResultSize.update(totalLength);
+                    updateResultSize(totalLength);
                     RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
                 }
             };

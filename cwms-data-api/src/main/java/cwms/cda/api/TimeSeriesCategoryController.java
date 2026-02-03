@@ -193,7 +193,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void update(@NotNull Context ctx, @NotNull String locationCode) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(

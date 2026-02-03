@@ -56,7 +56,7 @@ import org.jooq.DSLContext;
 
 
 
-public class TextTimeSeriesController implements CrudHandler {
+public class TextTimeSeriesController extends BaseCrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     static final String TAG = "Text-TimeSeries";
 
@@ -65,22 +65,14 @@ public class TextTimeSeriesController implements CrudHandler {
     public static final boolean DEFAULT_CREATE_REPLACE_ALL = false;
     public static final boolean DEFAULT_UPDATE_REPLACE_ALL = true;
 
-    private final MetricRegistry metrics;
-
     public TextTimeSeriesController(MetricRegistry metrics) {
-        this.metrics = metrics;
+        super(metrics);
     }
 
     @NotNull
     protected TimeSeriesTextDao getDao(DSLContext dsl) {
         return new TimeSeriesTextDao(dsl);
     }
-
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
-
 
     @OpenApi(
             summary = "Retrieve text time series values for a provided time window and date version."
@@ -95,6 +87,8 @@ public class TextTimeSeriesController implements CrudHandler {
                         + "the time zone of the values of the begin and end fields (unless "
                         + "otherwise specified). If this field is not specified, "
                         + "the default time zone of UTC shall be used."),
+                @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date of the "
+                        + "text timeseries. If not specified, the latest version will be used."),
                 @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
                 @OpenApiParam(name = END, required = true, description = "The end of the time window.")
             },
@@ -162,7 +156,7 @@ public class TextTimeSeriesController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String templateId) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -217,7 +211,7 @@ public class TextTimeSeriesController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
-
+        logUnusedPathParameter(ctx, NAME, "Body contains required information");
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class)
                 .getOrDefault(DEFAULT_UPDATE_REPLACE_ALL);

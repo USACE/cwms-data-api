@@ -25,26 +25,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.END_TIME_INCLUSIVE;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.PROJECT_ID;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_204;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.UNIT_SYSTEM;
-import static cwms.cda.api.Controllers.requiredInstant;
-import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -100,6 +81,11 @@ public final class TurbineChangesGetController implements Handler {
                 "Turbine changes whose data is to be included in the response."),
         },
         queryParams = {
+            @OpenApiParam(name = TIMEZONE,  description = "Specifies "
+                + "the time zone of the values of " + BEGIN + ", " + END + " fields (unless "
+                + "otherwise specified).  If this field is not specified, the default time zone "
+                + "of UTC shall be used.\r\nIgnored if " + BEGIN + " was specified with "
+                + "offset and timezone."),
             @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
             @OpenApiParam(name = END, required = true, description = "The end of the time window."),
             @OpenApiParam(name = START_TIME_INCLUSIVE, type = Boolean.class, description = "A flag "

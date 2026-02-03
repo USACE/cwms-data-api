@@ -257,8 +257,7 @@ public class RatingSpecController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String locationCode) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of
-        // generated methods, choose Tools | Specs.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(

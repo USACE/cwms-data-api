@@ -52,13 +52,13 @@ public class ParametersController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
 
     }
 
@@ -131,16 +131,13 @@ public class ParametersController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String id) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
-            ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
-        }
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String id) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
-
     }
 
 }
