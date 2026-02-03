@@ -1,5 +1,6 @@
 package cwms.cda.data.dao;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import cwms.cda.data.dto.rating.RatingSpec;
 import cwms.cda.data.dto.rating.RatingSpecTest;
 import org.junit.jupiter.api.Test;
@@ -10,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class RatingSpecXmlUtilsTest {
 
     @Test
-    void testToPlSqlXml() {
+    void testToPlSqlXml() throws JsonProcessingException {
         RatingSpec spec = RatingSpecTest.buildRatingSpec("SWT", "ARBU.Elev;Stor.Linear.Production");
         String xml = RatingSpecXmlUtils.toPlSqlXml(spec);
 //        System.out.println("Debug:" + xml);
