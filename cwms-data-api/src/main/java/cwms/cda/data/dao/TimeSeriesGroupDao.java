@@ -196,17 +196,11 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         AssignedTimeSeries retval = null;
 
         if (multisetRecord != null) {
-            var tsId = multisetRecord.get(0);
-            var officeIdRec = multisetRecord.get(1);
-            var attribute = multisetRecord.get(2);
-            var aliasIdRec = multisetRecord.get(3);
-            var refTsIdRec = multisetRecord.get(4);
-
-            String timeseriesId = tsId == null ? null : String.valueOf(tsId);
-            String officeId = officeIdRec == null ? null : String.valueOf(officeIdRec);
-            BigDecimal attrBD = attribute == null ? null : (BigDecimal) attribute;
-            String aliasId = aliasIdRec == null ? null : String.valueOf(aliasIdRec);
-            String refTsId = refTsIdRec == null ? null : String.valueOf(refTsIdRec);
+            String timeseriesId = multisetRecord.get(0, String.class);
+            String officeId = multisetRecord.get(1, String.class);
+            BigDecimal attrBD = multisetRecord.get(2, BigDecimal.class);
+            String aliasId = multisetRecord.get(3, String.class);
+            String refTsId = multisetRecord.get(4, String.class);
 
             Integer attr = null;
             if (attrBD != null) {
