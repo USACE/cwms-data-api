@@ -25,17 +25,24 @@
 package cwms.cda.data.dao;
 
 import static com.google.common.flogger.LazyArgs.lazy;
-
 import static java.util.stream.Collectors.toList;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.TimeSeriesGroup;
 import java.math.BigDecimal;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
 import org.jetbrains.annotations.NotNull;
-import org.jooq.*;
+import org.jooq.Condition;
+import org.jooq.Configuration;
+import org.jooq.DSLContext;
+import org.jooq.Record5;
+import org.jooq.Record8;
+import org.jooq.Record9;
+import org.jooq.RecordMapper;
+import org.jooq.SelectConditionStep;
+import org.jooq.SelectSeekStep4;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
@@ -189,11 +196,17 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         AssignedTimeSeries retval = null;
 
         if (multisetRecord != null) {
-            String timeseriesId = String.valueOf(multisetRecord.get(0));
-            String officeId = String.valueOf(multisetRecord.get(1));
-            BigDecimal attrBD = (BigDecimal) multisetRecord.get(2);
-            String aliasId = String.valueOf(multisetRecord.get(3));
-            String refTsId = String.valueOf(multisetRecord.get(4));
+            var tsId = multisetRecord.get(0);
+            var officeIdRec = multisetRecord.get(1);
+            var attribute = multisetRecord.get(2);
+            var aliasIdRec = multisetRecord.get(3);
+            var refTsIdRec = multisetRecord.get(4);
+
+            String timeseriesId = tsId == null ? null : String.valueOf(tsId);
+            String officeId = officeIdRec == null ? null : String.valueOf(officeIdRec);
+            BigDecimal attrBD = attribute == null ? null : (BigDecimal) attribute;
+            String aliasId = aliasIdRec == null ? null : String.valueOf(aliasIdRec);
+            String refTsId = refTsIdRec == null ? null : String.valueOf(refTsIdRec);
 
             Integer attr = null;
             if (attrBD != null) {
