@@ -2277,6 +2277,19 @@
       ]
     },
     {
+      "username": "l2hectest",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "l2hectest"
+        }
+      ],
+      "realmRoles": [
+        "cwms_user"
+      ]
+    },
+    {
       "username": "l1hectest",
       "enabled": true,
       "credentials": [
