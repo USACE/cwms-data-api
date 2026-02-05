@@ -4,6 +4,11 @@ volumes:
 services:
   db:
     image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev
+    deploy:
+      resources:
+        limits:
+          cpus: 6
+          memory: 6g
     environment:
       #- ORACLE_DATABASE=FREEPDB1
       - ORACLE_PASSWORD=badSYSpassword
@@ -55,7 +60,11 @@ services:
       target: api
       context: .
       dockerfile: Dockerfile
-    #command: bash -c "/conf/installcerts.sh && /usr/local/tomcat/bin/catalina.sh run"
+    deploy:
+      resources:
+        limits:
+          cpus: 2
+          memory: 1024m
     restart: unless-stopped
     volumes:
       - ./compose_files/pki/certs:/conf/
@@ -94,6 +103,11 @@ services:
 
   auth:
     image: quay.io/keycloak/keycloak:19.0.1
+    deploy:
+      resources:
+        limits:
+          cpus: .5
+          memory: 1024m
     command: ["start-dev", "--features-disabled=admin2","--import-realm"]
     healthcheck:
       test: "/usr/bin/curl -If localhost:${APP_PORT:-8081}/auth/health/ready || exit 1"
@@ -128,6 +142,11 @@ services:
   # Proxy for HTTPS for OpenID
   traefik:
     image: "traefik:v3.6.2"
+    deploy:
+      resources:
+        limits:
+          cpus: .5
+          memory: 500m
     ports:
       - "${APP_PORT:-8081}:80"
     expose:
