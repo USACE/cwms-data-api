@@ -77,6 +77,8 @@ import java.util.Optional;
 import java.util.Set;
 import com.google.common.flogger.FluentLogger;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
 import mil.army.usace.hec.metadata.Interval;
 import mil.army.usace.hec.metadata.IntervalFactory;
 import mil.army.usace.hec.metadata.constants.NumericalConstants;
@@ -275,7 +277,16 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             result.forEach(row -> addToAliasMaps(aliasMap, row));
             result.forEach(row -> parseLevels(row, builderMap, unit, aliasMap, includeAliases));
         } else {
-            query.stream().forEach(r -> parseLevels(r, builderMap, unit, new LinkedHashMap<>(), includeAliases));
+            final int[] count = {0};
+            try (Stream<Record> recordStream = query.stream()) {
+                recordStream.forEach(r -> {
+                            parseLevels(r, builderMap, unit, Collections.emptyMap(), false);
+                            count[0]++;
+                        }
+                );
+            }
+
+            logger.atFine().log("Fetched %d levels", count[0]);
         }
 
         List<LocationLevel> levels = new java.util.ArrayList<>();
