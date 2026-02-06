@@ -71,7 +71,7 @@ services:
       - ./compose_files/pki/certs:/conf/
       - ./compose_files/tomcat/logging.properties:/usr/local/tomcat/conf/logging.properties:ro
     environment:
-      - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005
+      - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -XX:MaxRAMPercentage=75 -XX:MinRAMPercentage=75 -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9010 -Dcom.sun.management.jmxremote.local.only=false -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false
       - CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
       - CDA_JDBC_URL=jdbc:oracle:thin:@db/FREEPDB1
       - CDA_JDBC_USERNAME=s0webtest
@@ -95,6 +95,10 @@ services:
     expose:
       - 7000
       - 5005
+      - 9010
+    ports:
+      - 5005
+      - 9010
     healthcheck:
       test: ["CMD","/usr/bin/curl", "-I","localhost:7000/cwms-data/offices/HEC"]
       interval: 5s
@@ -170,9 +174,9 @@ services:
       - minio_data:/data
       - minio_config:/root/.minio
     ports:
-      - '${FORWARD_MINIO_API_PORT0:-9000}:9000'
-      - '${FORWARD_MINIO_PORT:-9001}:9001'
-      - '${FORWARD_MINIO_API_PORT2:-9002}:9002'
+      - 9000
+      - 9001
+      - 9002
     environment:
       MINIO_ROOT_USER: minio_admin
       MINIO_ROOT_PASSWORD: saersdbewadfqewrbwreq12rfgweqrffw52354ec@%fwewEFFWSE
