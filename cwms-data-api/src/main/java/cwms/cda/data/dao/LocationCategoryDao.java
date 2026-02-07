@@ -57,7 +57,7 @@ public final class LocationCategoryDao extends JooqDao<LocationCategory> {
         return dsl.selectDistinct(table.CAT_DB_OFFICE_ID,
                 table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
                 .from(table)
-                .where(table.CAT_DB_OFFICE_ID.eq(officeId))
+                .where(table.CAT_DB_OFFICE_ID.eq(officeId.toUpperCase()))
                 .fetch().into(LocationCategory.class);
     }
 
@@ -67,7 +67,7 @@ public final class LocationCategoryDao extends JooqDao<LocationCategory> {
          Record3<String, String, String> fetchOne = dsl.selectDistinct(table.CAT_DB_OFFICE_ID,
                 table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
                 .from(table)
-                .where(table.CAT_DB_OFFICE_ID.eq(officeId)
+                .where(table.CAT_DB_OFFICE_ID.eq(officeId.toUpperCase())
                         .and(table.LOC_CATEGORY_ID.eq(categoryId)))
                 .fetchOne();
         return fetchOne != null ?
