@@ -27,10 +27,9 @@ package cwms.cda.data.dao;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import java.util.List;
 import java.util.Optional;
-import org.jooq.DSLContext;
-import org.jooq.Record3;
-import org.jooq.Select;
-import org.jooq.SelectWhereStep;
+
+import cwms.cda.data.dto.TimeSeriesGroup;
+import org.jooq.*;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 
@@ -76,13 +75,43 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
     }
 
     public void delete(String categoryId, boolean cascadeDelete, String office) {
+
+        if(cascadeDelete){
+            cascadeDelete(categoryId, office);
+        } else {
+            connection(dsl, conn -> {
+                DSLContext dslContext = getDslContext(conn, office);
+                CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(dslContext.configuration(), categoryId, formatBool(false), office);
+            });
+        }
+    }
+
+    private void cascadeDelete(String categoryId, String office) {
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
-            CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(
-                    dslContext.configuration(), categoryId,
-                    formatBool(cascadeDelete), office);
-        });
 
+            if (getDbVersion() > Dao.CWMS_25_07_01) {
+                // With newer schema it should just work, don't need transaction
+                Configuration config = dslContext.configuration();
+                CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(config, categoryId, formatBool(true), office);
+            } else {
+                // Before 2/3/2026 DELETE_TS_CATEGORY wasn't removing assignments from groups so we start a transaction and do the deletes
+
+                dslContext.transaction((Configuration trx) -> {
+                    Configuration config = trx.dsl().configuration();
+
+                    TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dslContext);
+                    List<TimeSeriesGroup> timeSeriesGroups = dao.getTimeSeriesGroups(null, null, office, false, categoryId, null);
+                    for (TimeSeriesGroup group : timeSeriesGroups) {
+                        dao.delete(categoryId, group.getId(), office, true);
+                    }
+
+                    // Before 2/3/2026 DELETE_TS_CATEGORY wasn't removing assignments from groups
+                    CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(config, categoryId, formatBool(true), office);
+                });
+            }
+
+        });
     }
 
     public void create(TimeSeriesCategory category, boolean failIfExists) {
@@ -93,6 +122,15 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
             CWMS_TS_PACKAGE.call_STORE_TS_CATEGORY(
                 dslContext.configuration(), category.getId(), category.getDescription(),
                 formatBool(failIfExists), "T", office);
+        });
+    }
+
+    public void update(String oldCategoryId, TimeSeriesCategory category) {
+        String office = category.getOfficeId();
+        connection(dsl, conn -> {
+            DSLContext dslContext = getDslContext(conn, office);
+            CWMS_TS_PACKAGE.call_RENAME_TS_CATEGORY(dslContext.configuration(), oldCategoryId, category.getId(), office);
+            CWMS_TS_PACKAGE.call_STORE_TS_CATEGORY(dslContext.configuration(), category.getId(), category.getDescription(), "F", "T", office);
         });
     }
 }

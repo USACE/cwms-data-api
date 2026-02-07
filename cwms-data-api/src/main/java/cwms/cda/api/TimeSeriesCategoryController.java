@@ -190,10 +190,35 @@ public class TimeSeriesCategoryController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+        description = "Update existing TimeSeriesCategory. Allows for renaming of the category.",
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = TimeSeriesCategory.class, type = Formats.JSON)
+            },
+            required = true),
+        pathParams = {
+            @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies "
+                + "the original timeseries category to rename.")
+        },
+        method = HttpMethod.PATCH,
+        tags = {TAG}
+    )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String locationCode) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
+    public void update(@NotNull Context ctx, @NotNull String categoryId) {
+        try (Timer.Context ignored = markAndTime(UPDATE)) {
+            DSLContext dsl = getDslContext(ctx);
+
+            String formatHeader = ctx.req.getContentType();
+            String body = ctx.body();
+
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesCategory.class);
+            TimeSeriesCategory deserialize = Formats.parseContent(contentType, body, TimeSeriesCategory.class);
+
+            TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
+            dao.update(categoryId, deserialize);
+            ctx.status(HttpServletResponse.SC_OK);
+        }
     }
 
     @OpenApi(

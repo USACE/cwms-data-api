@@ -53,6 +53,81 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_update_delete(String format) {
+        String officeId = user.getOperatingOffice();
+        String originalId = "test_create_update_delete";
+        String updatedId = "test_updated_id";
+        TimeSeriesCategory cat = new TimeSeriesCategory(officeId, originalId, "IntegrationTesting");
+        ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
+        String json = Formats.format(contentType, cat);
+
+        // Create Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(json)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .post("/timeseries/category")
+        .then()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Update Category (Rename and change description)
+        TimeSeriesCategory updatedCat = new TimeSeriesCategory(officeId, updatedId, "UpdatedDescription");
+        String updatedJson = Formats.format(contentType, updatedCat);
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(updatedJson)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .patch("/timeseries/category/" + originalId)
+        .then()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // Read and verify update
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+        .when()
+            .get("/timeseries/category/" + updatedId)
+        .then()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("office-id", equalTo(updatedCat.getOfficeId()))
+            .body("id", equalTo(updatedCat.getId()))
+            .body("description", equalTo(updatedCat.getDescription()));
+
+        // Verify old ID is gone
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+        .when()
+            .get("/timeseries/category/" + originalId)
+        .then()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
+        // Delete Updated Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, "true")
+        .when()
+            .delete("/timeseries/category/" + updatedId)
+        .then()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void test_create_read_delete(String format) {
         String officeId = user.getOperatingOffice();
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_create_read_delete", "IntegrationTesting");

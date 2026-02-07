@@ -25,6 +25,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.CASCADE_DELETE;
 import static cwms.cda.api.Controllers.CATEGORY_ID;
 import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
 import static cwms.cda.api.Controllers.CREATE;
@@ -197,22 +198,8 @@ public class TimeSeriesGroupController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
 
-            TimeSeriesGroup group = null;
-            List<TimeSeriesGroup> timeSeriesGroups = dao.getTimeSeriesGroups(tsOffice, groupOffice, categoryOffice,
-                    categoryId, groupId);
-            if (timeSeriesGroups != null && !timeSeriesGroups.isEmpty()) {
-                if (timeSeriesGroups.size() == 1) {
-                    group = timeSeriesGroups.get(0);
-                } else {
-                    // An error. [office, categoryId, groupId] should have, at most, one match
-                    String message = String.format(
-                            "Multiple TimeSeriesGroups returned from getTimeSeriesGroups "
-                                    + "for:%s category:%s groupId:%s At most one match was "
-                                    + "expected. Found:%s",
-                            groupOffice, categoryId, groupId, timeSeriesGroups);
-                    throw new IllegalArgumentException(message);
-                }
-            }
+            TimeSeriesGroup group = dao.getTimeSeriesGroup(tsOffice, groupOffice, categoryOffice, categoryId, groupId);
+
             if (group != null) {
                 String result = Formats.format(contentType, group);
 
@@ -327,6 +314,8 @@ public class TimeSeriesGroupController implements CrudHandler {
                 + "time series category of the time series group to be deleted"),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "owning office of the time series group to be deleted"),
+            @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
+                        description = "Specifies whether to unassign time series in this group before deleting. Default: false"),
         },
         method = HttpMethod.DELETE,
         tags = {TAG}
@@ -337,9 +326,10 @@ public class TimeSeriesGroupController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
+            boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);
             String office = ctx.queryParam(OFFICE);
             String categoryId = ctx.queryParam(CATEGORY_ID);
-            dao.delete(categoryId, groupId, office);
+            dao.delete(categoryId, groupId, office, cascadeDelete);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
