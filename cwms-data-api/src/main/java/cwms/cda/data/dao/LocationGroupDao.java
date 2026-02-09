@@ -38,6 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
+
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
@@ -442,10 +444,12 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                                 .and(al.UNIT_SYSTEM.eq(units))))
                 .orderBy(groupAssignView.ATTRIBUTE);
 
-        List<Feature> features =
-                select.stream()
-                        .map(this::buildFeatureFromAvLocRecordWithLocGroup)
-                        .collect(toList());
+        List<Feature> features;
+        try (Stream<Record> recordStream = select.stream()) {
+            features = recordStream
+                    .map(this::buildFeatureFromAvLocRecordWithLocGroup)
+                    .collect(toList());
+        }
         FeatureCollection collection = new FeatureCollection();
         collection.setFeatures(features);
 

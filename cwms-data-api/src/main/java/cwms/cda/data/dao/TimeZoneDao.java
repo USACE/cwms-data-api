@@ -8,6 +8,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_CAT_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.MV_TIME_ZONE;
 
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TimeZoneDao extends JooqDao<String> {
 
@@ -21,11 +22,13 @@ public class TimeZoneDao extends JooqDao<String> {
 
     public TimeZoneIds getTimeZones()
     {
-        return new TimeZoneIds(dsl.select(MV_TIME_ZONE.MV_TIME_ZONE.TIME_ZONE_NAME)
-                                .from(MV_TIME_ZONE.MV_TIME_ZONE)
-                                .stream()
-                                .map(Record1::component1)
-                                .map(TimeZoneId::new)
-                                .collect(Collectors.toList()));
+        try (Stream<Record1<String>> record1Stream = dsl.select(MV_TIME_ZONE.MV_TIME_ZONE.TIME_ZONE_NAME)
+                .from(MV_TIME_ZONE.MV_TIME_ZONE)
+                .stream()) {
+            return new TimeZoneIds(record1Stream
+                    .map(Record1::component1)
+                    .map(TimeZoneId::new)
+                    .collect(Collectors.toList()));
+        }
     }
 }
