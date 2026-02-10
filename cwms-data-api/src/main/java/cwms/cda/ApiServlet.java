@@ -271,7 +271,7 @@ public class ApiServlet extends HttpServlet {
     public static final String OFFICE_ID = "office_id";
     public static final String DATA_SOURCE = "data_source";
     public static final String RAW_DATA_SOURCE = "data_source";
-
+    public static final String DATABASE = "database";
     public static final String IS_NEW_LRTS = "X-CWMS-LRTS-Formatting";
 
     // The VERSION should match the gradle version but not contain the patch version.
