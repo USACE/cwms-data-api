@@ -61,22 +61,22 @@ public class RateDao extends JooqDao<RatingSet> {
     }
 
     public RatedOutput rate(String officeId, String ratingId, RateInputValues input) {
-            DOUBLE_TAB_T outputValues = connectionResult(c -> {
-                DSLContext context = getDslContext(c, officeId);
-                DATE_TABLE_TYPE ratingDates = null;
-                if (!input.getValueTimes().isEmpty()) {
+        DOUBLE_TAB_T outputValues = connectionResult(c -> {
+            DSLContext context = getDslContext(c, officeId);
+            DATE_TABLE_TYPE ratingDates = null;
+            if (!input.getValueTimes().isEmpty()) {
 
-                    ratingDates = new DATE_TABLE_TYPE();
-                    input.getValueTimes().stream().map(Timestamp::new).forEach(ratingDates::add);
-                }
-                DOUBLE_TAB_TAB_T inputValues = new DOUBLE_TAB_TAB_T();
-                input.getValues().stream().map(DOUBLE_TAB_T::new).forEach(inputValues::add);
-                STR_TAB_T unitsTab = new STR_TAB_T(input.getInputUnits());
-                unitsTab.add(input.getOutputUnit());
-                return CWMS_RATING_PACKAGE.call_RATE(context.configuration(), ratingId,
-                        inputValues, unitsTab, formatBool(input.getRound()), ratingDates, null, "UTC", officeId);
-            });
-            return new RatedOutputValues(CwmsId.buildCwmsId(officeId, ratingId), outputValues, input.getOutputUnit());
+                ratingDates = new DATE_TABLE_TYPE();
+                input.getValueTimes().stream().map(Timestamp::new).forEach(ratingDates::add);
+            }
+            DOUBLE_TAB_TAB_T inputValues = new DOUBLE_TAB_TAB_T();
+            input.getValues().stream().map(DOUBLE_TAB_T::new).forEach(inputValues::add);
+            STR_TAB_T unitsTab = new STR_TAB_T(input.getInputUnits());
+            unitsTab.add(input.getOutputUnit());
+            return CWMS_RATING_PACKAGE.call_RATE(context.configuration(), ratingId,
+                    inputValues, unitsTab, formatBool(input.getRound()), ratingDates, null, "UTC", officeId);
+        });
+        return new RatedOutputValues(CwmsId.buildCwmsId(officeId, ratingId), outputValues, input.getOutputUnit());
     }
 
     private void validateReverseRateInput(RateInput input) {
