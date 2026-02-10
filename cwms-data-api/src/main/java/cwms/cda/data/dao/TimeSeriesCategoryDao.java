@@ -114,23 +114,23 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
         });
     }
 
-    public void create(TimeSeriesCategory category, boolean failIfExists) {
+    public void create(TimeSeriesCategory category, boolean failIfExists, boolean ignoreNulls) {
         String office = category.getOfficeId();
 
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
             CWMS_TS_PACKAGE.call_STORE_TS_CATEGORY(
-                dslContext.configuration(), category.getId(), category.getDescription(),
-                formatBool(failIfExists), "T", office);
+                    dslContext.configuration(), category.getId(), category.getDescription(),
+                    formatBool(failIfExists), formatBool(ignoreNulls), office);
         });
     }
 
-    public void update(String oldCategoryId, TimeSeriesCategory category) {
+    public void update(String oldCategoryId, TimeSeriesCategory category, boolean ignoreNulls) {
         String office = category.getOfficeId();
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
             CWMS_TS_PACKAGE.call_RENAME_TS_CATEGORY(dslContext.configuration(), oldCategoryId, category.getId(), office);
-            CWMS_TS_PACKAGE.call_STORE_TS_CATEGORY(dslContext.configuration(), category.getId(), category.getDescription(), "F", "T", office);
+            CWMS_TS_PACKAGE.call_STORE_TS_CATEGORY(dslContext.configuration(), category.getId(), category.getDescription(), "F", formatBool(ignoreNulls), office);
         });
     }
 }

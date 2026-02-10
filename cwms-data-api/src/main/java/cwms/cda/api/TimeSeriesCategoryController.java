@@ -154,9 +154,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
                 logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
-
         }
-
     }
 
     @OpenApi(
@@ -169,6 +167,8 @@ public class TimeSeriesCategoryController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                 description = "Create will fail if provided ID already exists. Default: true"),
+            @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class,
+                description = "Ignore null values in the request body. Default: true")
         },
         method = HttpMethod.POST,
         tags = {TAG}
@@ -184,8 +184,9 @@ public class TimeSeriesCategoryController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesCategory.class);
             TimeSeriesCategory deserialize = Formats.parseContent(contentType, body, TimeSeriesCategory.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
-            dao.create(deserialize, failIfExists);
+            dao.create(deserialize, failIfExists, ignoreNulls);
             ctx.status(HttpServletResponse.SC_CREATED);
         }
     }
@@ -199,7 +200,9 @@ public class TimeSeriesCategoryController implements CrudHandler {
             required = true),
         pathParams = {
             @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies "
-                + "the original timeseries category to rename.")
+                + "the original timeseries category to rename."),
+            @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class,
+                    description = "Ignore null values in the request body. Default: true")
         },
         method = HttpMethod.PATCH,
         tags = {TAG}
@@ -212,11 +215,12 @@ public class TimeSeriesCategoryController implements CrudHandler {
             String formatHeader = ctx.req.getContentType();
             String body = ctx.body();
 
+            boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesCategory.class);
             TimeSeriesCategory deserialize = Formats.parseContent(contentType, body, TimeSeriesCategory.class);
 
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
-            dao.update(categoryId, deserialize);
+            dao.update(categoryId, deserialize, ignoreNulls );
             ctx.status(HttpServletResponse.SC_OK);
         }
     }

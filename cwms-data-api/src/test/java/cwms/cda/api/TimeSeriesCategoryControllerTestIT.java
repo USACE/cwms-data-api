@@ -40,6 +40,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.IGNORE_NULLS;
 import static cwms.cda.api.Controllers.OFFICE;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -447,5 +448,94 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_update_ignore_nulls(String format) {
+        String officeId = user.getOperatingOffice();
+        String catId = "test_ignore_nulls";
+        TimeSeriesCategory cat = new TimeSeriesCategory(officeId, catId, "InitialDescription");
+        ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
+        String json = Formats.format(contentType, cat);
+
+        // Create Category with ignore-nulls=false
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(IGNORE_NULLS, "false")
+            .body(json)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .post("/timeseries/category")
+        .then()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Update Category with ignore-nulls=true (default) and partial data
+        // We use a JSON string to send nulls directly
+
+        String partialUpdateJson = "{\"office-id\":\"" + officeId + "\", \"id\":\"" + catId + "\", \"description\":null}";
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(IGNORE_NULLS, "true")
+            .body(partialUpdateJson)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .patch("/timeseries/category/" + catId)
+        .then()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // Verify description was NOT updated to null because ignore-nulls=true
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+        .when()
+            .get("/timeseries/category/" + catId)
+        .then()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("description", equalTo("InitialDescription"));
+
+        // Update Category with ignore-nulls=false and null description
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(IGNORE_NULLS, "false")
+            .body(partialUpdateJson)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .patch("/timeseries/category/" + catId)
+        .then()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // Verify description WAS updated to null
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+        .when()
+            .get("/timeseries/category/" + catId)
+        .then()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("description", is(org.hamcrest.Matchers.anyOf(equalTo(""), org.hamcrest.Matchers.nullValue())));
+
+        // Delete Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, "true")
+        .when()
+            .delete("/timeseries/category/" + catId)
+        .then()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 }
