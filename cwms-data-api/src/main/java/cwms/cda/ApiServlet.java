@@ -194,7 +194,6 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.SQLException;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -272,7 +271,7 @@ public class ApiServlet extends HttpServlet {
     public static final String OFFICE_ID = "office_id";
     public static final String DATA_SOURCE = "data_source";
     public static final String RAW_DATA_SOURCE = "data_source";
-    public static final String DATABASE = "database";
+
     public static final String IS_NEW_LRTS = "X-CWMS-LRTS-Formatting";
 
     // The VERSION should match the gradle version but not contain the patch version.
@@ -383,8 +382,17 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(DataAccessException.class, (e, ctx) -> {
-                    String message = getSanitizedDataAccessException(e);
-                    CdaError errResponse = new CdaError("System Error", Map.of("Error message", message));
+                    // Whatever Dao is causing this exception to be thrown should be modified.
+                    // The preferred pattern is for the Dao to catch DataAccessExceptions exceptions
+                    // and for the dao to inspect the Oracle error code or error message as necessary
+                    // to transform DataAccessExceptions (and their SQLException causes)
+                    // into specific and appropriate exceptions with
+                    // messages that are helpful and meaningful to end-users.
+
+                    // CdaError does not include the Oracle exception message b/c this block catches
+                    // all unhandled DataAccessExceptions and we don't know what is in the message
+                    // it is unknown if the message would be safe/appropriate for users to see.
+                    CdaError errResponse = new CdaError("Database Error");
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
                                                         errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
                     ctx.status(500);
@@ -392,7 +400,7 @@ public class ApiServlet extends HttpServlet {
                     ctx.json(errResponse);
                 })
                 .exception(Exception.class, (e, ctx) -> {
-                    CdaError errResponse = new CdaError("System Error", Map.of("Error message", e.getMessage()));
+                    CdaError errResponse = new CdaError("System Error");
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
                             errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
                     ctx.status(500);
@@ -409,21 +417,6 @@ public class ApiServlet extends HttpServlet {
                 .javalinServlet();
         QueueManager.ensureRssSubscribers(cwms);
         logger.atInfo().log("Javalin initialized.");
-    }
-
-    private static String getSanitizedDataAccessException(DataAccessException e) {
-        Throwable cause = e.getCause();
-        String message = "";
-        if (cause instanceof SQLException) {
-            String localizedMessage = cause.getLocalizedMessage();
-            String[] parts = localizedMessage.split("\n");
-            message = parts[0];
-            int index = message.indexOf(":");
-            if (index >= 0) {
-                message = message.substring(index + 1);
-            }
-        }
-        return message;
     }
 
     private String obtainFullVersion(ServletConfig servletConfig) throws ServletException {

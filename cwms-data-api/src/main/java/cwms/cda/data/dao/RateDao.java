@@ -26,6 +26,7 @@ package cwms.cda.data.dao;
 
 import static java.util.stream.Collectors.toList;
 
+import cwms.cda.api.errors.NoDataRateException;
 import cwms.cda.api.errors.RateException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.TimeSeries;
@@ -44,6 +45,7 @@ import java.util.List;
 import org.jooq.ConnectionCallable;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
+import org.jspecify.annotations.Nullable;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.DATE_TABLE_TYPE;
 import usace.cwms.db.jooq.codegen.udt.records.DOUBLE_TAB_T;
@@ -59,22 +61,22 @@ public class RateDao extends JooqDao<RatingSet> {
     }
 
     public RatedOutput rate(String officeId, String ratingId, RateInputValues input) {
-        DOUBLE_TAB_T outputValues = connectionResult(c -> {
-            DSLContext context = getDslContext(c, officeId);
-            DATE_TABLE_TYPE ratingDates = null;
-            if (!input.getValueTimes().isEmpty()) {
+            DOUBLE_TAB_T outputValues = connectionResult(c -> {
+                DSLContext context = getDslContext(c, officeId);
+                DATE_TABLE_TYPE ratingDates = null;
+                if (!input.getValueTimes().isEmpty()) {
 
-                ratingDates = new DATE_TABLE_TYPE();
-                input.getValueTimes().stream().map(Timestamp::new).forEach(ratingDates::add);
-            }
-            DOUBLE_TAB_TAB_T inputValues = new DOUBLE_TAB_TAB_T();
-            input.getValues().stream().map(DOUBLE_TAB_T::new).forEach(inputValues::add);
-            STR_TAB_T unitsTab = new STR_TAB_T(input.getInputUnits());
-            unitsTab.add(input.getOutputUnit());
-            return CWMS_RATING_PACKAGE.call_RATE(context.configuration(), ratingId,
-                inputValues, unitsTab, formatBool(input.getRound()), ratingDates, null, "UTC", officeId);
-        });
-        return new RatedOutputValues(CwmsId.buildCwmsId(officeId, ratingId), outputValues, input.getOutputUnit());
+                    ratingDates = new DATE_TABLE_TYPE();
+                    input.getValueTimes().stream().map(Timestamp::new).forEach(ratingDates::add);
+                }
+                DOUBLE_TAB_TAB_T inputValues = new DOUBLE_TAB_TAB_T();
+                input.getValues().stream().map(DOUBLE_TAB_T::new).forEach(inputValues::add);
+                STR_TAB_T unitsTab = new STR_TAB_T(input.getInputUnits());
+                unitsTab.add(input.getOutputUnit());
+                return CWMS_RATING_PACKAGE.call_RATE(context.configuration(), ratingId,
+                        inputValues, unitsTab, formatBool(input.getRound()), ratingDates, null, "UTC", officeId);
+            });
+            return new RatedOutputValues(CwmsId.buildCwmsId(officeId, ratingId), outputValues, input.getOutputUnit());
     }
 
     private void validateReverseRateInput(RateInput input) {
@@ -172,15 +174,31 @@ public class RateDao extends JooqDao<RatingSet> {
         if (cause instanceof SQLException) {
             int errorCode = ((SQLException) cause).getErrorCode();
             if (errorCode == 20019 || errorCode == 20998) {
-                String localizedMessage = cause.getLocalizedMessage();
-                String[] parts = localizedMessage.split("\n");
-                String message = parts[0];
-                int index = message.indexOf(":");
-                if (index >= 0) {
-                    retval = new RateException(message.substring(index + 1), (SQLException) cause);
+                String message = getMessage(cause);
+                if( message != null ) {
+                    retval = new RateException(message, (SQLException) cause);
+                }
+            } else if (errorCode == 1403){
+                String message = getMessage(cause);
+                if( message != null ) {
+                    // firstMessage may be like "no data found"
+                    // or "Table rating has no rating points"
+                    retval = new NoDataRateException(message, (SQLException) cause);
                 }
             }
         }
         return retval;
+    }
+
+    private static @Nullable String getMessage(Throwable cause) {
+        String firstMessage = null;
+        String localizedMessage = cause.getLocalizedMessage();
+        String[] parts = localizedMessage.split("\n");
+        String message = parts[0];
+        int index = message.indexOf(":");
+        if (index >= 0) {
+            firstMessage = message.substring(index + 1);
+        }
+        return firstMessage;
     }
 }
