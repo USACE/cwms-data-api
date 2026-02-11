@@ -175,7 +175,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("time-series.values[0][0]", equalTo(1673442000000L))
+                .body("time-series.values[0][0]", equalTo(1673449200000L))
                 .body("time-series.values[0][1]", closeTo(600.0,0.0001))
                 .body("time-series.values.size()", equalTo(1))
             ;
