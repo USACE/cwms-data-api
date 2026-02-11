@@ -397,9 +397,12 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             selectQuery = selectQuery.and(AV_LOC.LOCATION_ID.in(identifiers));
         }
 
-        List<Feature> features = selectQuery.fetchSize(DEFAULT_SMALL_FETCH_SIZE).stream()
-                .map(LocationsDaoImpl::buildFeatureFromAvLocRecord)
-                .collect(toList());
+        List<Feature> features;
+        try (Stream<Record> recordStream = selectQuery.fetchSize(DEFAULT_SMALL_FETCH_SIZE).stream()) {
+            features = recordStream
+                    .map(LocationsDaoImpl::buildFeatureFromAvLocRecord)
+                    .collect(toList());
+        }
         FeatureCollection collection = new FeatureCollection();
         collection.setFeatures(features);
 

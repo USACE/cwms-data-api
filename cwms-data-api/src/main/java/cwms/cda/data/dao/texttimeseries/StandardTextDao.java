@@ -30,10 +30,12 @@ import cwms.cda.data.dto.texttimeseries.StandardTextId;
 import cwms.cda.data.dto.texttimeseries.StandardTextValue;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
+import org.jooq.Record3;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_STD_TEXT;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
@@ -44,19 +46,22 @@ public final class StandardTextDao extends JooqDao<StandardTextId> {
 
     public StandardTextCatalog retreiveStandardTextCatalog(String standardTextIdMask, String officeIdMask) {
         AV_STD_TEXT view = AV_STD_TEXT.AV_STD_TEXT;
-        List<StandardTextValue> textValues = dsl.select(view.OFFICE_ID, view.STD_TEXT_ID, view.LONG_TEXT)
+        List<StandardTextValue> textValues;
+        try (Stream<Record3<String, String, String>> record3Stream = dsl.select(view.OFFICE_ID, view.STD_TEXT_ID, view.LONG_TEXT)
                 .from(view)
                 .where(JooqDao.caseInsensitiveLikeRegexNullTrue(view.OFFICE_ID, officeIdMask))
                 .and(JooqDao.caseInsensitiveLikeRegexNullTrue(view.STD_TEXT_ID, standardTextIdMask))
-                .stream()
-                .map(r -> new StandardTextValue.Builder()
-                        .withStandardText(r.get(view.LONG_TEXT))
-                        .withId(new StandardTextId.Builder()
-                                .withId(r.get(view.STD_TEXT_ID))
-                                .withOfficeId(r.get(view.OFFICE_ID))
-                                .build())
-                        .build())
-                .collect(toList());
+                .stream()) {
+            textValues = record3Stream
+                    .map(r -> new StandardTextValue.Builder()
+                            .withStandardText(r.get(view.LONG_TEXT))
+                            .withId(new StandardTextId.Builder()
+                                    .withId(r.get(view.STD_TEXT_ID))
+                                    .withOfficeId(r.get(view.OFFICE_ID))
+                                    .build())
+                            .build())
+                    .collect(toList());
+        }
         return new StandardTextCatalog.Builder()
                 .withValues(textValues)
                 .build();

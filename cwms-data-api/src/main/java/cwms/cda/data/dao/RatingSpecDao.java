@@ -29,11 +29,13 @@ import static com.google.common.flogger.LazyArgs.lazy;
 import static cwms.cda.data.dto.rating.RatingSpec.Builder.buildIndependentRoundingSpecs;
 import static java.util.stream.Collectors.toList;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
 import cwms.cda.data.dto.rating.RatingSpec;
 import cwms.cda.data.dto.rating.RatingSpecEffectiveDates;
 import cwms.cda.data.dto.rating.RatingSpecs;
+
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -58,11 +60,15 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
 import com.google.common.flogger.FluentLogger;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.RowSetProvider;
+
+import cwms.cda.formatters.FormattingException;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -193,7 +199,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         Set<RatingSpec> retval = getRatingSpecs(office, specIdMask, offset, pageSize);
 
         RatingSpecs.Builder builder = new RatingSpecs.Builder(offset, pageSize, total);
-        builder.specs(new ArrayList<>(retval));
+        builder.withSpecs(new ArrayList<>(retval));
         return builder.build();
     }
 
@@ -388,7 +394,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
 
     public void delete(String office, DeleteMethod deleteMethod, String ratingSpecId) {
         String deleteAction;
-        switch(deleteMethod) {
+        switch (deleteMethod) {
             case DELETE_ALL:
                 deleteAction = DeleteRule.DELETE_ALL.getRule();
                 break;
@@ -400,24 +406,41 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 break;
             default:
                 throw new IllegalArgumentException("Delete Method provided does not match accepted rule constants: "
-                    + deleteMethod);
+                        + deleteMethod);
         }
         dsl.connection(c ->
-            CWMS_RATING_PACKAGE.call_DELETE_SPECS(
-                getDslContext(c,office).configuration(),
-                ratingSpecId,
-                deleteAction,
-                office)
+                CWMS_RATING_PACKAGE.call_DELETE_SPECS(
+                        getDslContext(c, office).configuration(),
+                        ratingSpecId,
+                        deleteAction,
+                        office)
         );
     }
 
+    public void create(RatingSpec spec, boolean failIfExists) {
+        String xml = null;
+        try {
+            xml = RatingSpecXmlUtils.toPlSqlXml(spec);
+            create(xml, failIfExists);
+        } catch (JsonProcessingException ex) {
+            String msg = spec != null ?
+                    "Error rendering '" + spec + "' to XML"
+                    :
+                    "Null element passed to formatter";
+            logger.atWarning().withCause(ex).log(msg);
+            throw new FormattingException(msg, ex);
+        }
+    }
+
+    // In my tests this method wouldn't fail if the input was
+    // mostly right, it just wouldn't create anything.
     public void create(String xml, boolean failIfExists) {
         final String office = RatingDao.extractOfficeFromXml(xml);
         dsl.connection(c ->
-            CWMS_RATING_PACKAGE.call_STORE_SPECS__3(
-                getDslContext(c,office).configuration(),
-                xml,
-                formatBool(failIfExists))
+                CWMS_RATING_PACKAGE.call_STORE_SPECS__3(
+                        getDslContext(c, office).configuration(),
+                        xml,
+                        formatBool(failIfExists))
         );
     }
 
@@ -432,21 +455,21 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
             //office->spec->dates
             NavigableMap<String, NavigableMap<String, NavigableSet<Instant>>> specDateMap = new TreeMap<>();
             //instantiate empty Instant list for each office/spec combination so that specs with no effective dates are included in the final result
-            for(Map.Entry<String, List<String>> entry : officeToRatingIdsNoAliasesMap.entrySet()) {
+            for (Map.Entry<String, List<String>> entry : officeToRatingIdsNoAliasesMap.entrySet()) {
                 String officeId = entry.getKey();
                 List<String> specIds = entry.getValue();
                 NavigableMap<String, NavigableSet<Instant>> specMap = specDateMap.computeIfAbsent(officeId, k -> new TreeMap<>());
-                for(String specId : specIds) {
+                for (String specId : specIds) {
                     specMap.put(specId, new TreeSet<>());
                 }
             }
-            try(ResultSet rs = catRatings(conn, officeIdMask, specIdMask, begin, end)) {
+            try (ResultSet rs = catRatings(conn, officeIdMask, specIdMask, begin, end)) {
                 checkMetaData(rs.getMetaData(), RATINGS_COLUMN_LIST, "Ratings");
-                while(rs.next()) {
+                while (rs.next()) {
                     String officeId = rs.getString(OFFICE_ID);
                     String specId = rs.getString(SPECIFICATION_ID);
                     List<String> ratingIdsNoAliases = officeToRatingIdsNoAliasesMap.get(officeId);
-                    if(ratingIdsNoAliases != null && !ratingIdsNoAliases.contains(specId)) { // skip aliased specs based on queried list of rating ids not including aliases
+                    if (ratingIdsNoAliases != null && !ratingIdsNoAliases.contains(specId)) { // skip aliased specs based on queried list of rating ids not including aliases
                         continue;
                     }
                     Timestamp timestamp = rs.getTimestamp(EFFECTIVE_DATE, GMT_CALENDAR);
@@ -463,11 +486,11 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
     //package scoped for unit testing
     static RatingEffectiveDatesMap buildRatingEffectiveDatesMap(NavigableMap<String, NavigableMap<String, NavigableSet<Instant>>> specDateMap) {
         Map<String, List<RatingSpecEffectiveDates>> officeToSpecDatesMap = new LinkedHashMap<>(specDateMap.size());
-        for(Map.Entry<String, NavigableMap<String, NavigableSet<Instant>>> entry : specDateMap.entrySet()) {
+        for (Map.Entry<String, NavigableMap<String, NavigableSet<Instant>>> entry : specDateMap.entrySet()) {
             String officeId = entry.getKey();
             List<RatingSpecEffectiveDates> specEffectiveDatesForOffice = new ArrayList<>();
             NavigableMap<String, NavigableSet<Instant>> specMap = entry.getValue();
-            for(Map.Entry<String, NavigableSet<Instant>> specEntry : specMap.entrySet()) {
+            for (Map.Entry<String, NavigableSet<Instant>> specEntry : specMap.entrySet()) {
                 String specId = specEntry.getKey();
                 NavigableSet<Instant> dateList = specEntry.getValue();
                 if (dateList.isEmpty()) {
@@ -495,8 +518,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         CachedRowSet output = RowSetProvider.newFactory()
                 .createCachedRowSet();
 
-        try (CallableStatement statement = conn.prepareCall("{CALL CWMS_20.CWMS_RATING.CAT_RATINGS(?, ?, ?, ?, ?, ?)}"))
-        {
+        try (CallableStatement statement = conn.prepareCall("{CALL CWMS_20.CWMS_RATING.CAT_RATINGS(?, ?, ?, ?, ?, ?)}")) {
             statement.registerOutParameter(1, Types.REF_CURSOR);
             statement.setString(2, specIdMask);
             statement.setTimestamp(3, pEffectiveDateStart, GMT_CALENDAR);
@@ -527,7 +549,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 condition = condition.and(ratingIdLike);
             }
 
-            if(!includeAliases) {
+            if (!includeAliases) {
                 condition = condition.and(specView.ALIASED_ITEM.isNull());
             }
 

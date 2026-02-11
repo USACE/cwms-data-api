@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.List;
 import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -36,14 +38,16 @@ public class PoolDao extends JooqDao<Pool> {
 		List<String> types = getTypes(includeExplicit, includeImplicit);
 		Condition condition = getCondition(projectIdMask, poolNameMask, bottomLevelMask, topLevelMask, officeIdMask, types);
 
-		return dsl.select(DSL.asterisk()).from(view)
-				.where(condition)
-				.orderBy(view.DEFINITION_TYPE,
-						DSL.upper(view.OFFICE_ID), DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
-				.stream()
-				.map(r -> toPool(r, true))
-				.collect(toList());
-	}
+        try (Stream<Record> recordStream = dsl.select(DSL.asterisk()).from(view)
+                .where(condition)
+                .orderBy(view.DEFINITION_TYPE,
+                        DSL.upper(view.OFFICE_ID), DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
+                .stream()) {
+            return recordStream
+                    .map(r -> toPool(r, true))
+                    .collect(toList());
+        }
+    }
 
 	@NotNull
 	private List<String> getTypes(boolean includeExplicit, boolean includeImplicit) {
@@ -197,15 +201,18 @@ public class PoolDao extends JooqDao<Pool> {
 		List<String> types = getTypes(includeExplicit, includeImplicit);
 		Condition condition = getCondition(projectIdMask, poolNameMask, bottomLevelMask, topLevelMask, officeIdMask, types);
 
-		List<Pool> pools = dsl.select(DSL.asterisk()).from(view)
-				.where(condition)
-				.orderBy(view.DEFINITION_TYPE,
-						DSL.upper(view.OFFICE_ID), DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
-				.offset(offset)
-				.limit(pageSize)
-				.stream().map(r -> toPool(r, true)).collect(toList());
+		List<Pool> pools;
+        try (Stream<Record> recordStream = dsl.select(DSL.asterisk()).from(view)
+                .where(condition)
+                .orderBy(view.DEFINITION_TYPE,
+                        DSL.upper(view.OFFICE_ID), DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
+                .offset(offset)
+                .limit(pageSize)
+                .stream()) {
+            pools = recordStream.map(r -> toPool(r, true)).collect(toList());
+        }
 
-		Pools.Builder builder = new Pools.Builder(offset, pageSize, total);
+        Pools.Builder builder = new Pools.Builder(offset, pageSize, total);
 		builder.addAll(pools);
 		return builder.build();
 	}

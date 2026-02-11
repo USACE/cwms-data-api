@@ -1,0 +1,18 @@
+<rating-spec>
+    <office-id>SWT</office-id>
+    <rating-id>ARBU.Elev;Stor.Linear.Production</rating-id>
+    <template-id>Elev;Stor.Linear</template-id>
+    <location-id>ARBU</location-id>
+    <version>Production</version>
+    <in-range-method>NEAREST</in-range-method>
+    <out-range-low-method>LINEAR</out-range-low-method>
+    <out-range-high-method>LOWER</out-range-high-method>
+    <active>true</active>
+    <auto-update>false</auto-update>
+    <auto-activate>false</auto-activate>
+    <auto-migrate-extension>false</auto-migrate-extension>
+    <dependent-rounding-spec>2222233332</dependent-rounding-spec>
+    <independent-rounding-specs>
+        <independent-rounding-spec>2222233332</independent-rounding-spec>
+    </independent-rounding-specs>
+</rating-spec>
