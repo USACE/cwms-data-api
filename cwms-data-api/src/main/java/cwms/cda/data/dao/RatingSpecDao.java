@@ -188,7 +188,6 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
 
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
-        // Preserve stable ordering
         Map<Long, RatingSpec.Builder> specBuilders = new HashMap<>();
         Map<Long, List<ZonedDateTime>> effectiveDatesBySpec = new HashMap<>();
 
