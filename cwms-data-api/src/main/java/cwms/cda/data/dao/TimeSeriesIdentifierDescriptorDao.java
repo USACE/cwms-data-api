@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+
 import org.jooq.Condition;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
@@ -103,23 +104,25 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
         Collection<TimeSeriesIdentifierDescriptor> retval;
 
         if (!includeAliases) {
-            retval = dsl
+            try (var record5Stream = dsl
                     .selectDistinct(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID,
-                        AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
-                        AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
-                        AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
-                        AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
+                            AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
+                            AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
+                            AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
+                            AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
                     .from(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2)
                     .where(whereCondition)
                     .orderBy(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID, AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.CWMS_TS_ID,
-                        AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
-                        AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
-                        AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
+                            AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET,
+                            AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TS_ACTIVE_FLAG,
+                            AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.TIME_ZONE_ID)
                     .limit(pageSize)
                     .offset(offset)
-                    .stream()
-                    .map(this::toDescriptor)
-                    .collect(Collectors.toList());
+                    .stream()) {
+                retval = record5Stream
+                        .map(this::toDescriptor)
+                        .collect(Collectors.toList());
+            }
         } else {
             Table<?> innerTable = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.as("alias_table");
             Field<String> tsId = innerTable.field("CWMS_TS_ID", String.class);

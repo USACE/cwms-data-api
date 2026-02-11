@@ -1,12 +1,12 @@
 # Authorization Middleware Implementation
 
-| Status         | Proposed                                                                                                                   |
+| Status         | Implemented                                                                                                                |
 | :------------- | :------------------------------------------------------------------------------------------------------------------------- |
-| **RFC #**      | 0001                                                                                                                       |
+| **ADR #**      | 0005                                                                                                                       |
 | **Author(s)**  | Solid Logix Team<br/>•  [J. Hassan](https://github.com/jolitinh)<br/>• [R. Cunningham](https://github.com/cunningryan)<br/>• [V. Laxman](https://github.com/vairav)<br/>• [M. Valenzuela](https://github.com/milver)<br/>• [T. Boss](https://github.com/toddeboss)<br/>• [C. Whitehead](https://github.com/ChristinaWhitehead) |
 | **Sponsor**    | HEC/USACE                                                                                                                  |
 | **Date**       | 7/6/2025                                                                                                                   |
-| **Supersedes** | Initial RFC draft                                                                                                          |
+| **Supersedes** | Initial ADR draft                                                                                                          |
 
 ## Objective
 
@@ -591,7 +591,7 @@ _Detailed implementation patterns documented in separate design document._
 
 ## Conclusion
 
-This RFC addresses HEC's need for enterprise-scale authorization, demonstrated through a focused implementation for timeseries endpoints. The transparent proxy approach with Authorization Helper Library provides:
+This ADR addresses HEC's need for enterprise-scale authorization, demonstrated through a focused implementation for timeseries endpoints. The transparent proxy approach with Authorization Helper Library provides:
 
 ### **Immediate Benefits**
 
@@ -626,3 +626,123 @@ By proving the authorization model with timeseries - the most complex and high-v
 - **Local Development**: Docker/Podman based development workflow
 
 This focused implementation on timeseries endpoints provides a solid foundation for validating the authorization approach while maintaining scope constraints for local development and testing. Once proven with timeseries, this exact same infrastructure and pattern can be systematically applied to authorize all 279 endpoints across the entire CWMS Data API, delivering comprehensive authorization coverage with minimal incremental effort.
+
+## Implementation Status
+
+This section documents the current state of the implementation as of January 2026.
+
+### Repository and Technology Stack
+
+The authorization middleware has been implemented in the `cwms-access-management` repository as an Nx monorepo with pnpm workspaces. The core technology choices align with the ADR proposal:
+
+- **Runtime**: Node.js 24.x with TypeScript 5.x
+- **Framework**: Fastify with `@fastify/http-proxy` for transparent proxying
+- **Logging**: Pino for high-performance structured logging
+- **Cache**: Redis for distributed caching of user context and policy decisions
+
+### Transparent Proxy Implementation
+
+The authorization proxy service (`apps/services/authorizer-proxy/`) implements the transparent proxy pattern as specified:
+
+- Intercepts requests to `/cwms-data/*` endpoints
+- Preserves original JWT in Authorization header
+- Forwards requests to the internal CWMS Data API
+- Adds authorization context via `x-cwms-auth-context` header
+
+### OPA Integration
+
+Open Policy Agent integration has been implemented with Rego policies supporting the 8 user personas defined in PWS Exhibit 3:
+
+- Anonymous/Public User
+- Dam Operator
+- Water Manager
+- Data Manager
+- Automated Collection System
+- Automated Processing System
+- External Cooperator
+- System Administrator (added for administrative operations)
+
+The `/authorize` endpoint provides policy decisions for authorization requests, evaluating user context against OPA policies.
+
+### Whitelist Pattern for Selective Enforcement
+
+A whitelist-based approach controls which endpoints undergo OPA policy evaluation:
+
+- Configurable via `OPA_WHITELIST_ENDPOINTS` environment variable (JSON array)
+- Default whitelist: `["/cwms-data/timeseries", "/cwms-data/offices"]`
+- Non-whitelisted endpoints bypass OPA and are proxied directly
+- Whitelist updates require container restart to take effect
+
+### Redis Caching Implementation
+
+User context caching has been implemented with Redis:
+
+- **Key Format**: `user:context:${username.toLowerCase()}`
+- **TTL**: 30 minutes (1800 seconds)
+- **Performance**: Approximately 10x improvement for repeated requests
+- Cache stores user profile, roles, offices, and associated constraints
+
+### Authorization Context Header Format
+
+The `x-cwms-auth-context` header is implemented as a JSON structure:
+
+```json
+{
+  "policy": {
+    "allow": true,
+    "decision_id": "proxy-xxx"
+  },
+  "user": {
+    "id": "m5hectest",
+    "username": "m5hectest",
+    "roles": ["cwms_user"],
+    "offices": ["SWT"],
+    "primary_office": "SWT"
+  },
+  "constraints": {
+    "allowed_offices": ["SWT", "SPK"],
+    "embargo_rules": {
+      "SPK": 168,
+      "SWT": 72,
+      "default": 168
+    },
+    "embargo_exempt": false,
+    "time_window": {
+      "restrict_hours": 8
+    },
+    "data_classification": ["public", "internal"]
+  }
+}
+```
+
+### Local Development Environment
+
+The implementation includes a complete local development setup using Podman:
+
+- **Authorization Proxy**: Port 3001
+- **OPA**: Port 8181
+- **Redis**: Port 6379
+- **Management UI**: Port 4200 (React-based administration interface)
+- **CWMS Data API**: Port 7001
+- **Keycloak**: Port 8080
+
+### Management Applications
+
+Two management applications have been implemented:
+
+- **Management UI** (`apps/web/management-ui/`): React 18, Vite 6, TanStack Query v5, Tailwind CSS 4
+- **Management CLI** (`apps/cli/management-cli/`): Node.js with Commander and Ink for terminal interface
+
+### Known Limitations
+
+- OPA policy updates require container rebuild (policy copied at build time)
+- Full JWT validation not yet implemented in pass-through mode
+- Java API helper library (`AuthorizationFilterHelper.java`) integration is prepared but not yet fully connected
+
+### Next Steps
+
+1. Create API key in CWMS Data API for authorization proxy authentication
+2. Implement JWT token parsing with full validation in proxy
+3. Connect Management CLI/UI to live API endpoints
+4. Implement filtering constraints in Java API controllers
+5. Configure OPA policy as volume mount for dynamic updates
