@@ -240,6 +240,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     @Override
+    public TimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters,
+                                    AuthorizationFilterHelper authFilter) {
+        return getRequestedTimeSeries(page, pageSize, requestParameters, null, authFilter);
+    }
+
+    @Override
     public FilteredTimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters, FilteredTimeSeriesParameters filterParams){
         TimeSeries ts =  getRequestedTimeSeries(page, pageSize, requestParameters, filterParams);
         FilteredTimeSeries fts = new FilteredTimeSeries(ts, filterParams);
@@ -390,12 +396,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             Condition embargoFilter = authFilter.getEmbargoFilter(dataEntryDate, officeField, office);
             filterConditions = filterConditions.and(embargoFilter);
-            logger.log(Level.FINE, "Applied embargo filter to timeseries query");
+            logger.atFine().log("Applied embargo filter to timeseries query");
 
             Condition timeWindowFilter = authFilter.getTimeWindowFilter(dataEntryDate,
                 Timestamp.from(beginTime.toInstant()));
             filterConditions = filterConditions.and(timeWindowFilter);
-            logger.log(Level.FINE, "Applied time window filter to timeseries query");
+            logger.atFine().log("Applied time window filter to timeseries query");
         }
 
         Field<Integer> totalField;

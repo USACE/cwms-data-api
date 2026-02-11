@@ -453,8 +453,8 @@ public class TimeSeriesController implements CrudHandler {
             AuthorizationFilterHelper authFilter = new AuthorizationFilterHelper(ctx);
 
             if (authHelper.isAuthorizationHeaderPresent()) {
-                logger.log(Level.INFO, "Authorization context - User: {0}, Offices: {1}, Roles: {2}",
-                    new Object[]{authHelper.getUsername(), authHelper.getOffices(), authHelper.getRoles()});
+                logger.atInfo().log("Authorization context - User: %s, Offices: %s, Roles: %s",
+                    authHelper.getUsername(), authHelper.getOffices(), authHelper.getRoles());
             }
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
@@ -507,7 +507,7 @@ public class TimeSeriesController implements CrudHandler {
                 if (authHelper.isAuthorizationHeaderPresent() && !authHelper.hasOfficeAccess(office)) {
                     String errorMsg = String.format("User %s does not have access to office %s. Allowed offices: %s",
                         authHelper.getUsername(), office, authHelper.getOffices());
-                    logger.log(Level.WARNING, errorMsg);
+                    logger.atWarning().log("%s", errorMsg);
                     throw new IllegalArgumentException(errorMsg);
                 }
 
@@ -522,12 +522,9 @@ public class TimeSeriesController implements CrudHandler {
                         .withIncludeEntryDate(includeEntryDate)
                         .build();
 
-                TimeSeries ts;
-                if (dao instanceof TimeSeriesDaoImpl && authFilter.hasAuthorizationContext()) {
-                    ts = ((TimeSeriesDaoImpl) dao).getRequestedTimeSeries(cursor, pageSize, requestParameters, null, authFilter);
-                    logger.log(Level.FINE, "Applied authorization filtering at DAO level");
-                } else {
-                    ts = dao.getTimeseries(cursor, pageSize, requestParameters);
+                TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters, authFilter);
+                if (authFilter.hasAuthorizationContext()) {
+                    logger.atInfo().log("Authorization context present - embargo and time window filters applied");
                 }
 
                 if(datum != null) { //this will be null for non-elevation ts
@@ -563,11 +560,11 @@ public class TimeSeriesController implements CrudHandler {
                 if (authHelper.isAuthorizationHeaderPresent()) {
                     if (office == null || office.isEmpty()) {
                         office = authHelper.buildOfficeFilter();
-                        logger.log(Level.INFO, "No office specified, applying user office filter: {0}", office);
+                        logger.atInfo().log("No office specified, applying user office filter: %s", office);
                     } else if (!authHelper.hasOfficeAccess(office)) {
                         String errorMsg = String.format("User %s does not have access to office %s. Allowed offices: %s",
                             authHelper.getUsername(), office, authHelper.getOffices());
-                        logger.log(Level.WARNING, errorMsg);
+                        logger.atWarning().log("%s", errorMsg);
                         throw new IllegalArgumentException(errorMsg);
                     }
                 }
