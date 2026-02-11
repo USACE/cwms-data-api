@@ -93,7 +93,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
 
         Condition whereCondition = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.ALIASED_ITEM.isNull();
         if (office != null && !office.isEmpty()) {
-            whereCondition = whereCondition.and(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID.equalIgnoreCase(office));
+            whereCondition = whereCondition.and(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.toUpperCase()));
         }
         if (idRegex != null && !idRegex.isEmpty()) {
             whereCondition = whereCondition.and(

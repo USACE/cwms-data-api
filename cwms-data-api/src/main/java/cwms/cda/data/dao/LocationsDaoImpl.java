@@ -36,11 +36,7 @@ import static cwms.cda.data.dao.DeleteRule.DELETE_LOC_CASCADE;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
-import static org.jooq.impl.DSL.asterisk;
-import static org.jooq.impl.DSL.count;
-import static org.jooq.impl.DSL.field;
-import static org.jooq.impl.DSL.name;
-import static org.jooq.impl.DSL.select;
+import static org.jooq.impl.DSL.*;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
 
@@ -118,7 +114,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
 
         if (officeId != null) {
-            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
+            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase()));
         }
 
         if (unitSystem != null) {
@@ -144,7 +140,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             .and(JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_KIND_ID, kindRegexMask));
 
         if (officeId != null) {
-            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
+            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase()));
         }
 
         return dsl.selectDistinct(AV_LOC.LOCATION_ID, AV_LOC.DB_OFFICE_ID, AV_LOC.LOCATION_KIND_ID)
@@ -160,14 +156,16 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     @Override
-    public Location getLocation(String locationName, String unitSystem, String officeId, boolean includeAliases) {
+    public Location getLocation(String locationName, String unitSystem, @NotNull String officeId, boolean includeAliases) {
+        officeId = officeId.toUpperCase();
+
         if (includeAliases) {
             List<Record> locs = dsl.select(asterisk())
                 .from(AV_LOC2.AV_LOC2)
                 .leftJoin(AV_LOC_ALIAS)
                 .on(AV_LOC2.AV_LOC2.BASE_LOCATION_ID.eq(AV_LOC_ALIAS.BASE_LOCATION_ID).and(
                     AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_LOC_ALIAS.LOCATION_CODE.cast(Long.class))))
-                .where(AV_LOC2.AV_LOC2.DB_OFFICE_ID.equalIgnoreCase(officeId)
+                .where(AV_LOC2.AV_LOC2.DB_OFFICE_ID.eq(officeId)
                     .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
                         .and(AV_LOC2.AV_LOC2.LOCATION_ID.equalIgnoreCase(locationName))))
                 .fetch();
@@ -179,7 +177,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         } else {
             Record loc = dsl.select(AV_LOC.asterisk())
                 .from(AV_LOC)
-                .where(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId)
+                .where(AV_LOC.DB_OFFICE_ID.eq(officeId)
                     .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
                         .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))))
                 .fetchOne();
@@ -380,9 +378,16 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             units = "SI";
         }
 
+        Condition whereCondition;
+        if (officeId != null) {
+            whereCondition = AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase());
+        } else {
+            whereCondition = noCondition();
+        }
+
         SelectConditionStep<Record> selectQuery = dsl.select(asterisk())
                 .from(AV_LOC)
-                .where(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase()))
+                .where(whereCondition)
                 .and(AV_LOC.UNIT_SYSTEM.eq(units));
 
         if (names != null && !names.isEmpty()) {
