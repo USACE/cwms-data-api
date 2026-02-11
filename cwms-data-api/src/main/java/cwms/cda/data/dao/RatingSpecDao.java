@@ -55,8 +55,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -130,8 +130,8 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                     } catch (NumberFormatException e) {
                         logger.atInfo().log("Could not parse %s", parts[1]);
                     }
-                    pageSize = Integer.parseInt(parts[2]);
                 }
+                pageSize = Integer.parseInt(parts[2]);
             }
         }
 
@@ -152,14 +152,20 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
             specCondition = specCondition.and(maskRegex);
         }
 
-        // Total number of specs (not joined rows)
         if (total == null) {
             total = dsl.fetchCount(specView, specCondition);
         }
 
-        // Page the specs first in a derived table (avoids IN(...) limits entirely)
         var specPage = dsl
-            .select(specView.RATING_SPEC_CODE)
+            .select(
+                specView.RATING_SPEC_CODE,
+                specView.OFFICE_ID, specView.RATING_ID, specView.DATE_METHODS,
+                specView.TEMPLATE_ID, specView.LOCATION_ID, specView.VERSION,
+                specView.SOURCE_AGENCY, specView.ACTIVE_FLAG, specView.AUTO_UPDATE_FLAG,
+                specView.AUTO_ACTIVATE_FLAG, specView.AUTO_MIGRATE_EXT_FLAG,
+                specView.IND_ROUNDING_SPECS, specView.DEP_ROUNDING_SPEC,
+                specView.DESCRIPTION, specView.ALIASED_ITEM
+            )
             .from(specView)
             .where(specCondition)
             .orderBy(specView.OFFICE_ID, specView.RATING_ID)
@@ -167,53 +173,64 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
             .offset(offset)
             .asTable("spec_page");
 
-        Field<Long> pageSpecCode = DSL.field(DSL.name("spec_page", "RATING_SPEC_CODE"), Long.class);
+        Field<Long> spSpecCode = specPage.field(specView.RATING_SPEC_CODE);
+        Field<String> spOfficeId = specPage.field(specView.OFFICE_ID);
+        Field<String> spRatingId = specPage.field(specView.RATING_ID);
+
+        Field<List<ZonedDateTime>> effectiveDates =
+            DSL.multiset(
+                    dsl.select(ratView.EFFECTIVE_DATE)
+                       .from(ratView)
+                       .where(ratView.RATING_SPEC_CODE.eq(spSpecCode))
+                       .and(ratView.ALIASED_ITEM.isNull())
+                       .and(ratView.EFFECTIVE_DATE.isNotNull())
+                       .orderBy(ratView.EFFECTIVE_DATE)
+                )
+               .convertFrom(r ->
+                   r.getValues(ratView.EFFECTIVE_DATE).stream()
+                    .map(RatingSpecDao::toZdt)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList())
+               )
+               .as("effective_dates");
 
         ResultQuery<? extends Record> query = dsl.select(
-                specView.RATING_SPEC_CODE,
-                specView.OFFICE_ID, specView.RATING_ID, specView.DATE_METHODS,
-                specView.TEMPLATE_ID, specView.LOCATION_ID, specView.VERSION,
-                specView.SOURCE_AGENCY, specView.ACTIVE_FLAG, specView.AUTO_UPDATE_FLAG,
-                specView.AUTO_ACTIVATE_FLAG, specView.AUTO_MIGRATE_EXT_FLAG,
-                specView.IND_ROUNDING_SPECS, specView.DEP_ROUNDING_SPEC,
-                specView.DESCRIPTION, specView.ALIASED_ITEM,
-                ratView.RATING_SPEC_CODE, ratView.EFFECTIVE_DATE)
-            .from(specView)
-            .join(specPage)
-            .on(specView.RATING_SPEC_CODE.eq(pageSpecCode))
-            .leftOuterJoin(ratView)
-            .on(specView.RATING_SPEC_CODE.eq(ratView.RATING_SPEC_CODE))
-            .where(specView.ALIASED_ITEM.isNull())
+                spSpecCode,
+                spOfficeId,
+                spRatingId,
+                specPage.field(specView.DATE_METHODS),
+                specPage.field(specView.TEMPLATE_ID),
+                specPage.field(specView.LOCATION_ID),
+                specPage.field(specView.VERSION),
+                specPage.field(specView.SOURCE_AGENCY),
+                specPage.field(specView.ACTIVE_FLAG),
+                specPage.field(specView.AUTO_UPDATE_FLAG),
+                specPage.field(specView.AUTO_ACTIVATE_FLAG),
+                specPage.field(specView.AUTO_MIGRATE_EXT_FLAG),
+                specPage.field(specView.IND_ROUNDING_SPECS),
+                specPage.field(specView.DEP_ROUNDING_SPEC),
+                specPage.field(specView.DESCRIPTION),
+                specPage.field(specView.ALIASED_ITEM),
+                effectiveDates
+            )
+            .from(specPage)
+            .orderBy(spOfficeId, spRatingId)
             .fetchSize(DEFAULT_FETCH_SIZE);
 
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
-        Map<Long, RatingSpec.Builder> specBuilders = new HashMap<>();
-        Map<Long, List<ZonedDateTime>> effectiveDatesBySpec = new HashMap<>();
-
-        query.fetch()
-            .forEach(rec -> {
-                Long specCode = rec.get(specView.RATING_SPEC_CODE);
-                // create builder only once per specCode
-                specBuilders.computeIfAbsent(specCode, sc -> {
-                    RatingSpec template = buildRatingSpec(rec); // still uses the row, but only once per spec
-                    return new RatingSpec.Builder().fromRatingSpec(template);
-                });
-                ZonedDateTime effective = toZdt(rec.get(ratView.EFFECTIVE_DATE));
-                if (effective != null) {
-                    effectiveDatesBySpec.computeIfAbsent(specCode, k -> new ArrayList<>())
-                        .add(effective);
-                }
-            });
-        List<RatingSpec> specs = specBuilders.entrySet().stream()
-            .map(e -> {
-                List<ZonedDateTime> dates = effectiveDatesBySpec.get(e.getKey());
-                return e.getValue()
+        List<RatingSpec> specs = query.fetch()
+            .stream()
+            .map(rec -> {
+                RatingSpec template = buildRatingSpec(rec);
+                List<ZonedDateTime> dates = rec.get(effectiveDates);
+                return new RatingSpec.Builder()
+                    .fromRatingSpec(template)
                     .withEffectiveDates(dates == null ? List.of() : dates)
                     .build();
             })
-            .sorted(comparing(RatingSpec::getOfficeId).thenComparing(RatingSpec::getRatingId))
-            .collect(Collectors.toList());
+            .collect(toList());
+
         RatingSpecs.Builder builder = new RatingSpecs.Builder(offset, pageSize, total);
         builder.withSpecs(specs);
         return builder.build();
