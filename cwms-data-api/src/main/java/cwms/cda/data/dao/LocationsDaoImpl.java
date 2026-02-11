@@ -382,7 +382,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         SelectConditionStep<Record> selectQuery = dsl.select(asterisk())
                 .from(AV_LOC)
-                .where(AV_LOC.DB_OFFICE_ID.eq(officeId))
+                .where(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase()))
                 .and(AV_LOC.UNIT_SYSTEM.eq(units));
 
         if (names != null && !names.isEmpty()) {

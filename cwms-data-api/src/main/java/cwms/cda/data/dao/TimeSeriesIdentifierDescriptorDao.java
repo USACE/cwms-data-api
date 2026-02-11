@@ -226,7 +226,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
                 result = dsl.select(view.CWMS_TS_ID, view.DB_OFFICE_ID, view.INTERVAL,
                                     view.TIME_ZONE_ID, view.TS_ACTIVE_FLAG)
                 .from(view)
-                .where(view.CWMS_TS_ID.eq(timeseriesId).and(view.DB_OFFICE_ID.eq(office))).fetchOne();
+                .where(view.CWMS_TS_ID.eq(timeseriesId).and(view.DB_OFFICE_ID.eq(office.toUpperCase()))).fetchOne();
             Optional<TimeSeriesIdentifierDescriptor> retval = Optional.empty();
             if (result != null) {
                 retval = Optional.of(toDto(result));

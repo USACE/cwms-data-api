@@ -127,7 +127,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         Condition condition = ratView.ALIASED_ITEM.isNull();
 
         if (office != null) {
-            condition = condition.and(specView.OFFICE_ID.eq(office));
+            condition = condition.and(specView.OFFICE_ID.eq(office.toUpperCase()));
         }
 
         if (specIdMask != null) {
@@ -218,7 +218,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         Condition condition = ratView.ALIASED_ITEM.isNull();
 
         if (office != null) {
-            condition = condition.and(specView.OFFICE_ID.eq(office));
+            condition = condition.and(specView.OFFICE_ID.eq(office.toUpperCase()));
         }
 
         if (specIdMask != null) {
@@ -283,7 +283,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         }
 
         if (office != null) {
-            condition = condition.and(specView.OFFICE_ID.eq(office));
+            condition = condition.and(specView.OFFICE_ID.eq(office.toUpperCase()));
         }
 
         ResultQuery<? extends Record> query = dsl.select(
@@ -540,7 +540,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
             Condition condition = DSL.noCondition();
 
             if (office != null && !office.isEmpty() && !office.equals("*")) {
-                condition = condition.and(specView.OFFICE_ID.eq(office));
+                condition = condition.and(specView.OFFICE_ID.eq(office.toUpperCase()));
             }
 
             if (templateIdMask != null) {
