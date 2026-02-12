@@ -73,7 +73,7 @@ public class RatingSpecs extends CwmsDTOPaginated {
         private int offset;
         private int pageSize;
         private Integer total;
-        private List<RatingSpec> specs;
+        private List<RatingSpec> specs = new ArrayList<>();
 
         public Builder() {
         }

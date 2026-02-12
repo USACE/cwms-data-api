@@ -15,9 +15,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
@@ -29,7 +27,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
-import org.junit.jupiter.api.Test;
+
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -56,6 +54,28 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         LARGE_BYTES = new byte[1024 * 100];
         Random random = new Random();
         random.nextBytes(LARGE_BYTES);
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.BEGIN, BEGIN_STR)
+                .queryParam(Controllers.END, END_STR)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .delete("/timeseries/binary/" + tsId)
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
     @BeforeEach
@@ -138,6 +158,24 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .body("binary-values.size()", equalTo(3))
         ;
 
+        // Delete the binary time series
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(Controllers.OFFICE, OFFICE)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.BEGIN, BEGIN_STR)
+                .queryParam(Controllers.END, END_STR)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .delete("/timeseries/binary/" + tsId)
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 
     }
 
@@ -545,7 +583,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // 2)Create the binary time series
         // 3)Retrieve the binary time series and assert that it exists
         // 4)Update the binary time series
-        // 5)Retrieve the binary time series and assert that it does not exist
+        // 5)Retrieve the binary time series and assert that value has updated
 
 
         // Step 1)
@@ -637,7 +675,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         String newValue = "bmV3VmFsdWU=";
         // Step 5)
-        // Retrieve the binary time series and assert that it does not exist
+        // Retrieve the binary time series and assert that it has new value
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
@@ -656,6 +694,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .body("binary-values.size()", equalTo(3))
             .body("binary-values[1].binary-value", equalTo(newValue))
         ;
+
     }
 
     @NotNull
