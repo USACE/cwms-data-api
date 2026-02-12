@@ -183,7 +183,6 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                        .from(ratView)
                        .where(ratView.RATING_SPEC_CODE.eq(spSpecCode))
                        .and(ratView.ALIASED_ITEM.isNull())
-                       .and(ratView.EFFECTIVE_DATE.isNotNull())
                        .orderBy(ratView.EFFECTIVE_DATE)
                 )
                .convertFrom(r ->
