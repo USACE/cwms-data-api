@@ -65,7 +65,7 @@ public class RatingSpecController implements CrudHandler {
 
     private final MetricRegistry metrics;
 
-    private static final int DEFAULT_PAGE_SIZE = 100;
+    static final int DEFAULT_PAGE_SIZE = 100;
 
     private final Histogram requestResultSize;
 

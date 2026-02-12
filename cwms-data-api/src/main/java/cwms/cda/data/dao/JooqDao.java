@@ -251,6 +251,9 @@ public abstract class JooqDao<T> extends Dao<T> {
      * an easy to read manner without having to worry about the syntax.
      */
     public static Condition caseInsensitiveLikeRegex(Field<String> field, String regex) {
+        if("*".equals(regex) || ".*".equals(regex)) {
+            return DSL.noCondition();
+        }
         return new CustomCondition() {
             @Override
             public void accept(org.jooq.Context<?> ctx) {
