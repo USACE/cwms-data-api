@@ -1,5 +1,6 @@
 package cwms.cda.data.dto.auth;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,7 +28,12 @@ public class TsGroupPrivilege {
     @Schema(description = "Number of hours data in this group is embargoed. 0 means no embargo.")
     private final Integer embargoHours;
 
-    public TsGroupPrivilege(Integer tsGroupCode, String tsGroupId, String privilege, Integer embargoHours) {
+    @JsonCreator
+    public TsGroupPrivilege(
+            @JsonProperty("ts-group-code") Integer tsGroupCode,
+            @JsonProperty("ts-group-id") String tsGroupId,
+            @JsonProperty("privilege") String privilege,
+            @JsonProperty("embargo-hours") Integer embargoHours) {
         this.tsGroupCode = tsGroupCode;
         this.tsGroupId = tsGroupId;
         this.privilege = privilege;

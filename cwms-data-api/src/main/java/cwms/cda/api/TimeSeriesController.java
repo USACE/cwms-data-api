@@ -522,9 +522,9 @@ public class TimeSeriesController implements CrudHandler {
                         .withIncludeEntryDate(includeEntryDate)
                         .build();
 
-                TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters);
+                TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters, authFilter);
                 if (authFilter.hasAuthorizationContext()) {
-                    logger.atFine().log("Authorization context present - filtering will be applied");
+                    logger.atFine().log("Authorization context present - embargo filtering applied");
                 }
 
                 if(datum != null) { //this will be null for non-elevation ts
