@@ -1,0 +1,149 @@
+volumes:
+  oracle_data_1:
+  auth_data:
+
+networks:
+  cwmsdb_net:
+    external: true
+
+services:
+  # Database is running externally as cwmsdb container
+  # Run with: podman run -d --name cwmsdb -e ORACLE_PASSWORD="badSYSpassword" -p 1521:1521 --network cwmsdb_net -v cwmsdb_volume:/opt/oracle/oradata:rw --privileged gvenzl/oracle-free:23.6-full
+
+  db_webuser_permissions:
+    image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry-public.hecdev.net/cwms/schema_installer:latest-dev}
+    restart: "no"
+    environment:
+      - DB_HOST_PORT=cwmsdb:1521
+      - DB_NAME=/FREEPDB1
+      - CWMS_PASSWORD=simplecwmspasswD1
+      - SYS_PASSWORD=badSYSpassword
+      - OFFICE_ID=HQ
+      - OFFICE_EROC=s0
+      - INSTALLONCE=1
+      - QUIET=1
+      - API_KEY=testkey12345677
+    command: >
+      sh -xc "sqlplus CWMS_20/$$CWMS_PASSWORD@$$DB_HOST_PORT$$DB_NAME @/setup_sql/users $$OFFICE_EROC $$API_KEY"
+    volumes:
+      - ./compose_files/sql:/setup_sql:ro
+    networks:
+      - cwmsdb_net
+
+  data-api:
+    container_name: data-api
+    depends_on:
+      auth:
+        condition: service_healthy
+      db_webuser_permissions:
+        condition: service_completed_successfully
+      traefik:
+        condition: service_healthy
+    image: cwms-rest-api:local-dev
+    build:
+      target: api
+      context: .
+      dockerfile: Dockerfile
+    command: bash -c "/conf/installcerts.sh && /usr/local/tomcat/bin/catalina.sh run"
+    restart: unless-stopped
+    ports:
+      - "7001:7000"
+    expose:
+      - 7000
+    volumes:
+      - ./compose_files/pki/certs:/conf/
+      - ./compose_files/tomcat/logging.properties:/usr/local/tomcat/conf/logging.properties:ro
+    environment:
+      - CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
+      - CDA_JDBC_URL=jdbc:oracle:thin:@cwmsdb/FREEPDB1
+      - CDA_JDBC_USERNAME=s0webtest
+      - CDA_JDBC_PASSWORD=simplecwmspasswD1
+      - CDA_POOL_INIT_SIZE=5
+      - CDA_POOL_MAX_ACTIVE=10
+      - CDA_POOL_MAX_IDLE=5
+      - CDA_POOL_MIN_IDLE=2
+      - cwms.dataapi.access.provider=MultipleAccessManager
+      - cwms.dataapi.access.providers=KeyAccessManager,OpenID
+      - cwms.dataapi.access.openid.create_users=true
+      - cwms.dataapi.access.openid.wellKnownUrl=http://auth:8080/auth/realms/cwms/.well-known/openid-configuration
+      - cwms.dataapi.access.openid.altAuthUrl=http://localhost:8080
+      - cwms.dataapi.access.openid.useAltWellKnown=true
+      - cwms.dataapi.access.openid.issuer=http://localhost:8080/auth/realms/cwms
+      # Access management toggle - set to true when using authorization proxy
+      - cwms.dataapi.access.management.enabled=${CWMS_ACCESS_MGMT_ENABLED:-false}
+    healthcheck:
+      test: ["CMD","/usr/bin/curl", "-f","localhost:7000/cwms-data/"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.data-api.rule=PathPrefix(`/cwms-data`)"
+      - "traefik.http.routers.data-api.entryPoints=web"
+    networks:
+      - cwmsdb_net
+
+  auth:
+    container_name: auth
+    image: quay.io/keycloak/keycloak:19.0.1
+    command: ["start-dev", "--features-disabled=admin2","--import-realm"]
+    depends_on:
+      traefik:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: "/usr/bin/curl -If localhost:8080/auth/health/ready || exit 1"
+      interval: 5s
+      timeout: 1s
+      retries: 100
+      start_period: 2s
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_HEALTH_ENABLED=true
+      - KC_FEATURES=admin-fine-grained-authz
+      - KC_HTTP_PORT=8080
+      - KEYCLOAK_FRONTEND_URL=http://localhost:8080
+      - KC_HOSTNAME_STRICT=false
+      - KC_PROXY=none
+      - KC_HTTP_ENABLED=true
+      - KC_HTTP_RELATIVE_PATH=/auth
+    volumes:
+      - ./compose_files/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=PathPrefix(`/auth`)"
+      - "traefik.http.routers.auth.entryPoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=8080"
+    networks:
+      - cwmsdb_net
+
+  traefik:
+    container_name: traefik
+    image: "traefik:v3.3.3"
+    ports:
+      - "${APP_PORT:-8081}:80"
+    expose:
+      - "8080"
+    healthcheck:
+      test: traefik healthcheck --ping
+      interval: 5s
+      timeout: 1s
+      retries: 20
+      start_period: 10s
+    command:
+      - "--entrypoints.web.address=:80"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--ping"
+      - "--log.level=DEBUG"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=PathPrefix(`/traefik`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - cwmsdb_net

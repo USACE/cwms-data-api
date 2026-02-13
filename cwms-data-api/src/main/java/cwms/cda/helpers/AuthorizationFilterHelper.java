@@ -2,6 +2,7 @@ package cwms.cda.helpers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.flogger.FluentLogger;
 import org.jooq.Condition;
 import org.jooq.Field;
 import org.jooq.impl.DSL;
@@ -11,8 +12,6 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Applies authorization filtering constraints from x-cwms-auth-context header to database queries.
@@ -20,11 +19,12 @@ import java.util.logging.Logger;
  */
 public class AuthorizationFilterHelper {
 
-    private static final Logger logger = Logger.getLogger(AuthorizationFilterHelper.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final ObjectMapper mapper = new ObjectMapper();
 
     private final JsonNode constraints;
     private final boolean hasAuthContext;
+    private final boolean shouldEnforce;
 
     public AuthorizationFilterHelper(io.javalin.http.Context ctx) {
         JsonNode constraintsNode = null;
@@ -37,27 +37,40 @@ public class AuthorizationFilterHelper {
                 constraintsNode = authContext.get("constraints");
                 hasContext = true;
 
-                logger.log(Level.FINE, "Authorization context loaded with constraints: {0}",
+                logger.atFine().log("Authorization context loaded with constraints: %s",
                     constraintsNode != null ? constraintsNode.toString() : "none");
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed to parse authorization context", e);
+            logger.atWarning().withCause(e).log("Failed to parse authorization context");
         }
 
         this.constraints = constraintsNode;
         this.hasAuthContext = hasContext;
+        this.shouldEnforce = AuthorizationContextHelper.isEnabled() && hasContext;
+
+        if (!AuthorizationContextHelper.isEnabled()) {
+            logger.atFine().log("Access management is disabled - filters will be bypassed");
+        }
     }
 
     public AuthorizationFilterHelper(JsonNode constraints) {
         this.constraints = constraints;
         this.hasAuthContext = constraints != null;
+        this.shouldEnforce = AuthorizationContextHelper.isEnabled() && this.hasAuthContext;
     }
 
     public boolean hasAuthorizationContext() {
         return hasAuthContext;
     }
 
+    public boolean shouldEnforceAuthorization() {
+        return shouldEnforce;
+    }
+
     public Condition getOfficeFilter(Field<String> officeField, String requestedOffice) {
+        if (!shouldEnforce) {
+            return DSL.noCondition();
+        }
         if (constraints == null || !constraints.has("allowed_offices")) {
             return DSL.noCondition();
         }
@@ -72,31 +85,31 @@ public class AuthorizationFilterHelper {
         }
 
         if (allowedOffices.contains("*")) {
-            logger.log(Level.FINE, "User has access to all offices");
+            logger.atFine().log("User has access to all offices");
             return DSL.noCondition();
         }
 
         if (allowedOffices.isEmpty()) {
-            logger.log(Level.WARNING, "User has no allowed offices - denying all access");
+            logger.atWarning().log("User has no allowed offices - denying all access");
             return DSL.falseCondition();
         }
 
         // User requested a specific office
         if (requestedOffice != null && !requestedOffice.isEmpty()) {
             if (!allowedOffices.contains(requestedOffice)) {
-                logger.log(Level.WARNING, "User not authorized for office: {0}", requestedOffice);
+                logger.atWarning().log("User not authorized for office: %s", requestedOffice);
                 return DSL.falseCondition();
             }
             return officeField.eq(requestedOffice);
         }
 
         // Filter to user's allowed offices
-        logger.log(Level.FINE, "Filtering to allowed offices: {0}", allowedOffices);
+        logger.atFine().log("Filtering to allowed offices: %s", allowedOffices);
         return officeField.in(allowedOffices);
     }
 
     public Condition getEmbargoFilter(Field<Timestamp> timestampField, Field<String> officeField, String requestedOffice) {
-        if (constraints == null) {
+        if (!shouldEnforce || constraints == null) {
             return DSL.noCondition();
         }
 
@@ -104,37 +117,99 @@ public class AuthorizationFilterHelper {
                                 constraints.get("embargo_exempt").asBoolean();
 
         if (embargoExempt) {
-            logger.log(Level.FINE, "User is exempt from embargo rules");
+            logger.atFine().log("User is exempt from embargo rules");
             return DSL.noCondition();
         }
 
         JsonNode embargoRulesNode = constraints.get("embargo_rules");
         if (embargoRulesNode == null || embargoRulesNode.isNull()) {
-            logger.log(Level.FINE, "No embargo rules present");
+            logger.atFine().log("No embargo rules present");
             return DSL.noCondition();
         }
 
         if (requestedOffice != null && embargoRulesNode.has(requestedOffice)) {
             int embargoHours = embargoRulesNode.get(requestedOffice).asInt();
             Timestamp cutoff = Timestamp.from(Instant.now().minus(embargoHours, ChronoUnit.HOURS));
-            logger.log(Level.FINE, "Applying {0} embargo: {1} hours (data before {2})",
-                new Object[]{requestedOffice, embargoHours, cutoff});
+            logger.atFine().log("Applying %s embargo: %d hours (data before %s)",
+                requestedOffice, embargoHours, cutoff);
             return timestampField.lessThan(cutoff);
         }
 
         if (embargoRulesNode.has("default")) {
             int defaultHours = embargoRulesNode.get("default").asInt();
             Timestamp defaultCutoff = Timestamp.from(Instant.now().minus(defaultHours, ChronoUnit.HOURS));
-            logger.log(Level.FINE, "Applying default embargo: {0} hours (data before {1})",
-                new Object[]{defaultHours, defaultCutoff});
+            logger.atFine().log("Applying default embargo: %d hours (data before %s)",
+                defaultHours, defaultCutoff);
             return timestampField.lessThan(defaultCutoff);
         }
 
         return DSL.noCondition();
     }
 
+    public Condition getTsGroupEmbargoFilter(Field<Timestamp> timestampField, String tsGroupId) {
+        if (!shouldEnforce || constraints == null) {
+            return DSL.noCondition();
+        }
+
+        boolean embargoExempt = constraints.has("embargo_exempt") &&
+                                constraints.get("embargo_exempt").asBoolean();
+
+        if (embargoExempt) {
+            logger.atFine().log("User is exempt from TS group embargo rules");
+            return DSL.noCondition();
+        }
+
+        JsonNode tsGroupEmbargoNode = constraints.get("ts_group_embargo");
+        if (tsGroupEmbargoNode == null || tsGroupEmbargoNode.isNull()) {
+            logger.atFine().log("No ts_group embargo rules present");
+            return DSL.noCondition();
+        }
+
+        if (tsGroupId != null && tsGroupEmbargoNode.has(tsGroupId)) {
+            int embargoHours = tsGroupEmbargoNode.get(tsGroupId).asInt();
+            if (embargoHours == 0) {
+                logger.atFine().log("TS group %s has no embargo", tsGroupId);
+                return DSL.noCondition();
+            }
+            Timestamp cutoff = Timestamp.from(Instant.now().minus(embargoHours, ChronoUnit.HOURS));
+            logger.atFine().log("Applying TS group embargo for %s: %d hours (data before %s)",
+                tsGroupId, embargoHours, cutoff);
+            return timestampField.lessThan(cutoff);
+        }
+
+        logger.atFine().log("TS group not found in user privileges - no embargo enforced");
+        return DSL.noCondition();
+    }
+
+    public int getTsGroupEmbargoHours(String tsGroupId) {
+        if (!shouldEnforce) {
+            return 0;
+        }
+        if (constraints == null) {
+            return 0;
+        }
+
+        boolean embargoExempt = constraints.has("embargo_exempt") &&
+                                constraints.get("embargo_exempt").asBoolean();
+
+        if (embargoExempt) {
+            return 0;
+        }
+
+        JsonNode tsGroupEmbargoNode = constraints.get("ts_group_embargo");
+        if (tsGroupEmbargoNode == null || tsGroupEmbargoNode.isNull()) {
+            return 0;
+        }
+
+        if (tsGroupId != null && tsGroupEmbargoNode.has(tsGroupId)) {
+            return tsGroupEmbargoNode.get(tsGroupId).asInt();
+        }
+
+        return 0;
+    }
+
     public Condition getTimeWindowFilter(Field<Timestamp> timestampField, Timestamp userRequestedBeginTime) {
-        if (constraints == null || !constraints.has("time_window")) {
+        if (!shouldEnforce || constraints == null || !constraints.has("time_window")) {
             return DSL.noCondition();
         }
 
@@ -146,8 +221,8 @@ public class AuthorizationFilterHelper {
         int restrictHours = timeWindowNode.get("restrict_hours").asInt();
         Timestamp cutoffTime = Timestamp.from(Instant.now().minus(restrictHours, ChronoUnit.HOURS));
 
-        logger.log(Level.INFO, "Applying time window restriction: {0} hours (data after {1})",
-            new Object[]{restrictHours, cutoffTime});
+        logger.atInfo().log("Applying time window restriction: %d hours (data after %s)",
+            restrictHours, cutoffTime);
 
         // Override user's requested time if it's outside the allowed window
         if (userRequestedBeginTime == null || userRequestedBeginTime.before(cutoffTime)) {
@@ -173,11 +248,11 @@ public class AuthorizationFilterHelper {
         }
 
         if (allowedClassifications.isEmpty()) {
-            logger.log(Level.WARNING, "No allowed classifications - denying all access");
+            logger.atWarning().log("No allowed classifications - denying all access");
             return DSL.falseCondition();
         }
 
-        logger.log(Level.FINE, "Filtering to allowed classifications: {0}", allowedClassifications);
+        logger.atFine().log("Filtering to allowed classifications: %s", allowedClassifications);
         return DSL.or(
             classificationField.in(allowedClassifications),
             classificationField.isNull()  // Allow data with no classification set

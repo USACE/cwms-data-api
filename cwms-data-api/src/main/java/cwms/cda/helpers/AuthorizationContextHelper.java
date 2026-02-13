@@ -1,17 +1,28 @@
 package cwms.cda.helpers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.flogger.FluentLogger;
 import io.javalin.http.Context;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class AuthorizationContextHelper {
-    private static final Logger LOGGER = Logger.getLogger(AuthorizationContextHelper.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final String AUTH_CONTEXT_HEADER = "x-cwms-auth-context";
+
+    private static final String ACCESS_MGMT_ENABLED_KEY = "cwms.dataapi.access.management.enabled";
+    private static final boolean ACCESS_MGMT_ENABLED;
+
+    static {
+        String envValue = System.getenv(ACCESS_MGMT_ENABLED_KEY);
+        String propValue = System.getProperty(ACCESS_MGMT_ENABLED_KEY);
+        String effectiveValue = propValue != null ? propValue : (envValue != null ? envValue : "false");
+        ACCESS_MGMT_ENABLED = Boolean.parseBoolean(effectiveValue);
+        logger.atInfo().log("Access management enabled: %s (property=%s, env=%s)",
+            ACCESS_MGMT_ENABLED, propValue, envValue);
+    }
 
     private final Map<String, Object> authContext;
     private final Map<String, Object> userContext;
@@ -26,14 +37,14 @@ public class AuthorizationContextHelper {
     private Map<String, Object> parseAuthContextHeader(Context ctx) {
         String headerValue = ctx.header(AUTH_CONTEXT_HEADER);
         if (headerValue == null || headerValue.isEmpty()) {
-            LOGGER.log(Level.FINE, "No authorization context header found");
+            logger.atFine().log("No authorization context header found");
             return Collections.emptyMap();
         }
 
         try {
             return OBJECT_MAPPER.readValue(headerValue, Map.class);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Failed to parse authorization context header", e);
+            logger.atWarning().withCause(e).log("Failed to parse authorization context header");
             return Collections.emptyMap();
         }
     }
@@ -114,6 +125,12 @@ public class AuthorizationContextHelper {
     }
 
     public boolean hasOfficeAccess(String office) {
+        if (!ACCESS_MGMT_ENABLED) {
+            return true;
+        }
+        if (!isAuthorizationHeaderPresent()) {
+            return true;
+        }
         if (office == null) {
             return false;
         }
@@ -122,6 +139,10 @@ public class AuthorizationContextHelper {
     }
 
     public String buildOfficeFilter() {
+        if (!ACCESS_MGMT_ENABLED || !isAuthorizationHeaderPresent()) {
+            return null;
+        }
+
         String allowedOffices = getAllowedOfficesConstraint();
         if (allowedOffices != null && !allowedOffices.isEmpty()) {
             if ("*".equals(allowedOffices)) {
@@ -140,6 +161,14 @@ public class AuthorizationContextHelper {
 
     public boolean isAuthorizationHeaderPresent() {
         return !authContext.isEmpty();
+    }
+
+    public static boolean isEnabled() {
+        return ACCESS_MGMT_ENABLED;
+    }
+
+    public boolean shouldEnforceAuthorization() {
+        return ACCESS_MGMT_ENABLED && isAuthorizationHeaderPresent();
     }
 
     public Map<String, Object> getFullContext() {

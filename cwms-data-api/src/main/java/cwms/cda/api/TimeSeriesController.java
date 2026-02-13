@@ -180,6 +180,11 @@ public class TimeSeriesController implements CrudHandler {
                     required = true
             ),
             queryParams = {
+                @OpenApiParam(name = TIMEZONE, description = "Specifies "
+                        + "the time zone of the version-date field (unless "
+                        + "otherwise specified). If this field is not specified, the default time zone "
+                        + "of UTC shall be used.\r\nIgnored if version-date was specified with "
+                        + "offset and timezone."),
                 @OpenApiParam(name = CREATE_AS_LRTS,  type = Boolean.class, description = "Flag indicating if "
                         + "timeseries should be created as Local Regular Time Series. "
                         + "'True' or 'False', default is 'False'"),
@@ -225,7 +230,7 @@ public class TimeSeriesController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
             CdaError re = new CdaError("Internal Error");
-            logger.atSevere().withCause(ex).log("%s", re.toString());
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
@@ -414,11 +419,6 @@ public class TimeSeriesController implements CrudHandler {
                         + "of data as a series of pages. This parameter is used to describes the "
                         + "current location in the response stream.  This is an opaque "
                         + "value, and can be obtained from the 'next-page' value in the response."),
-                @OpenApiParam(name = CURSOR, deprecated = true,
-                        description = "This end point can return a lot of data, this "
-                        + "identifies where in the request you are. This is an opaque"
-                        + " value, and can be obtained from the 'next-page' value in "
-                        + "the response. Deprecated, use " + PAGE + " instead."),
                 @OpenApiParam(name = PAGE_SIZE,
                         type = Integer.class,
                         description = "How many entries per page returned. "
@@ -522,9 +522,9 @@ public class TimeSeriesController implements CrudHandler {
                         .withIncludeEntryDate(includeEntryDate)
                         .build();
 
-                TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters, authFilter);
+                TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters);
                 if (authFilter.hasAuthorizationContext()) {
-                    logger.atInfo().log("Authorization context present - embargo and time window filters applied");
+                    logger.atFine().log("Authorization context present - filtering will be applied");
                 }
 
                 if(datum != null) { //this will be null for non-elevation ts
@@ -577,12 +577,12 @@ public class TimeSeriesController implements CrudHandler {
             requestResultSize.update(results.length());
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
-            logger.atSevere().withCause(e).log("%s", re.toString());
+            logger.atWarning().withCause(e).log("%s", re);
             ctx.status(HttpServletResponse.SC_NOT_FOUND);
             ctx.json(re);
         } catch (IllegalArgumentException ex) {
             CdaError re = new CdaError("Invalid arguments supplied");
-            logger.atSevere().withCause(ex).log("%s", re.toString());
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.json(re);
         }
@@ -606,7 +606,7 @@ public class TimeSeriesController implements CrudHandler {
 
             ctx.header("Link", linkValue.toString());
         } catch (URISyntaxException ex) {
-            logger.atWarning().withCause(ex).log("Failed to build Link header");
+            logger.atWarning().withCause(ex).log("Failed to build link header");
         }
     }
 
@@ -615,7 +615,7 @@ public class TimeSeriesController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String id) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
+            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
         }
 
     }
@@ -632,6 +632,11 @@ public class TimeSeriesController implements CrudHandler {
                     },
                     required = true),
             queryParams = {
+                @OpenApiParam(name = TIMEZONE, description = "Specifies "
+                        + "the time zone of the version-date field (unless "
+                        + "otherwise specified). If this field is not specified, the default time zone "
+                        + "of UTC shall be used.\r\nIgnored if version-date was specified with "
+                        + "offset and timezone."),
                 @OpenApiParam(name = CREATE_AS_LRTS, type = Boolean.class, description = ""),
                 @OpenApiParam(name = STORE_RULE,  type = StoreRule.class, description = STORE_RULE_DESC),
                 @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description =
@@ -674,7 +679,7 @@ public class TimeSeriesController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
             CdaError re = new CdaError("Internal Error");
-            logger.atSevere().withCause(ex).log("%s", re.toString());
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }

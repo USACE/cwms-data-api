@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import cwms.cda.data.dto.auth.TsGroupPrivilege;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.Formats;
@@ -61,6 +62,10 @@ public class User extends CwmsDTOBase {
         return this.roles;
     }
 
+    public List<TsGroupPrivilege> getTsGroupPrivileges() {
+        return this.tsGroupPrivileges;
+    }
+
 
     @JsonProperty(required = true)
     @Schema(format = "email")
@@ -70,12 +75,17 @@ public class User extends CwmsDTOBase {
     @Schema(description = "Assigned user roles per office.")
     private final Map<String,List<String>> roles;
 
-    public User(String userName, String principal, String email, Boolean cac_auth, Map<String, List<String>> roles) {
+    @Schema(description = "Timeseries group privileges with embargo information.")
+    private final List<TsGroupPrivilege> tsGroupPrivileges;
+
+    public User(String userName, String principal, String email, Boolean cac_auth,
+                Map<String, List<String>> roles, List<TsGroupPrivilege> tsGroupPrivileges) {
         this.userName = userName;
         this.principal = principal;
         this.email = email;
         this.roles = roles;
         this.cacAuth = cac_auth;
+        this.tsGroupPrivileges = tsGroupPrivileges;
     }
 
     @Override
@@ -86,6 +96,7 @@ public class User extends CwmsDTOBase {
             ", email='" + getEmail() + "'" +
             ", usedCac='" + getCacAuth() + "'" +
             ", roles='" + getRoles() + "'" +
+            ", tsGroupPrivileges='" + getTsGroupPrivileges() + "'" +
             "}";
     }
 
@@ -98,18 +109,30 @@ public class User extends CwmsDTOBase {
                        @JsonProperty("principal") String principal,
                        @JsonProperty("email") String email,
                        @JsonProperty("cac-auth") Boolean cac_auth) {
-            tmp = new User(userName, principal, email, cac_auth, new HashMap<>());
+            tmp = new User(userName, principal, email, cac_auth, new HashMap<>(), new ArrayList<>());
         }
 
         public Builder addRole(String office, String role) {
             tmp.roles.computeIfAbsent(office, (key) -> new ArrayList<>()).add(role);
-
             return this;
         }
 
         @JsonSetter("roles")
         public Builder addRoles(Map<String, List<String>> roles) {
             tmp.roles.putAll(roles);
+            return this;
+        }
+
+        public Builder addTsGroupPrivilege(TsGroupPrivilege privilege) {
+            tmp.tsGroupPrivileges.add(privilege);
+            return this;
+        }
+
+        @JsonSetter("ts-group-privileges")
+        public Builder addTsGroupPrivileges(List<TsGroupPrivilege> privileges) {
+            if (privileges != null) {
+                tmp.tsGroupPrivileges.addAll(privileges);
+            }
             return this;
         }
 

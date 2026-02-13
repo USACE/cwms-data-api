@@ -87,6 +87,8 @@ services:
       - cwms.dataapi.access.openid.altAuthUrl=http://localhost:${APP_PORT:-8081}
       - cwms.dataapi.access.openid.useAltWellKnown=true
       - cwms.dataapi.access.openid.issuer=http://localhost:${APP_PORT:-8081}/auth/realms/cwms
+      # Access management toggle - set to true when using authorization proxy
+      - cwms.dataapi.access.management.enabled=${CWMS_ACCESS_MGMT_ENABLED:-false}
       - blob.store.endpoint=http://minio:9000
       - blob.store.region=docker
       - blob.store.bucket=cwms-test
