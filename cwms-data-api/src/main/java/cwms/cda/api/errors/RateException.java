@@ -24,16 +24,23 @@
 
 package cwms.cda.api.errors;
 
+import java.io.Serializable;
 import java.sql.SQLException;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import javax.servlet.http.HttpServletResponse;
 
-public final class RateException extends ApplicationException {
+public class RateException extends ApplicationException {
     private static final Level LOG_LEVEL = Level.INFO;
+
+    public RateException(String message, String source, String cdaErrorMessage, int cdaHttpErrorCode,
+                         Level logLevel, Map<String, Serializable> details, Throwable cause) {
+        super(message, source, cdaErrorMessage, cdaHttpErrorCode, logLevel, details, cause);
+    }
 
     public RateException(String message, SQLException cause) {
         super(message, DATABASE_SOURCE, "Error performing rate function: " + message,
-            HttpServletResponse.SC_INTERNAL_SERVER_ERROR, LOG_LEVEL, new HashMap<>(), cause);
+            HttpServletResponse.SC_INTERNAL_SERVER_ERROR, LOG_LEVEL, new LinkedHashMap<>(), cause);
     }
 }
