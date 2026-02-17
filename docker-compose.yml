@@ -110,8 +110,8 @@ services:
       - "traefik.http.services.data-api.loadbalancer.server.port=7000"
 
   auth:
-    image: quay.io/keycloak/keycloak:19.0.1
-    command: ["start-dev", "--features-disabled=admin2","--import-realm"]
+    image: quay.io/keycloak/keycloak:26.5
+    command: ["start-dev", "--import-realm"]
     healthcheck:
       test: "/usr/bin/curl -If localhost:${APP_PORT:-8081}/auth/health/ready || exit 1"
       interval: 5s
