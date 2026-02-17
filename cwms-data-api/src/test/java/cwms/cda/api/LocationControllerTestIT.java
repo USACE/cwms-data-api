@@ -363,61 +363,55 @@ class LocationControllerTestIT extends DataApiTestIT {
             // 200.0 native NAVD-88 + (1.2) offset to NGVD-29 = 201.2
             .body("elevation.doubleValue()", closeTo(12.2, 1e-6));
 
-        // Cleanup created VDIs and locations
-        try {
-            given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSON)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam(OFFICE, officeId)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/location/" + locNgvd + "/vertical-datum")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true);
-        } catch (Exception ignore) {}
-        try {
-            given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSON)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam(OFFICE, officeId)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/location/" + locNavd + "/vertical-datum")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true);
-        } catch (Exception ignore) {}
-        try {
-            given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSON)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam(OFFICE, officeId)
-                .queryParam(CASCADE_DELETE, true)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/locations/" + locNgvd)
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true);
-        } catch (Exception ignore) {}
-        try {
-            given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSON)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam(OFFICE, officeId)
-                .queryParam(CASCADE_DELETE, true)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/locations/" + locNavd)
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true);
-        } catch (Exception ignore) {}
+        // clean up VDI and locations
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/location/" + locNgvd + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true);
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/location/" + locNavd + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + locNgvd)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + locNavd)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true);
     }
 
     @Test
