@@ -210,7 +210,7 @@ class OpenApiDocTest {
         assertAll(
                   () -> assertTrue(receivedItems.isEmpty(), "Found used undocumented path parameter: " + extraInfo),
                   () -> assertTrue(missingItems.isEmpty(), "Found documented path parameter that is not used: " + missingInfo),
-                  () -> assertAll(expectedParams.stream().map(expectedParam -> testParamInfo(expectedParam, verifiedUsages)))
+                  () -> assertAll(expectedParams.stream().map(expectedParam -> testParamInfo(expectedParam, verifiedUsages, true)))
         );
     }
 
@@ -246,11 +246,11 @@ class OpenApiDocTest {
                                          .collect(Collectors.joining(", "));
         assertAll(() -> assertTrue(receivedItems.isEmpty(), "Found used undocumented query parameter: " + extraInfo),
                   () -> assertTrue(missingItems.isEmpty(), "Found documented query parameter that is not used: " + missingInfo),
-                  () -> assertAll(expectedParams.stream().map(expectedParam -> testParamInfo(expectedParam, verifiedUsages))));
+                  () -> assertAll(expectedParams.stream().map(expectedParam -> testParamInfo(expectedParam, verifiedUsages, false))));
     }
 
     private Executable testParamInfo(OpenApiParamInfo expectedParam,
-                                     Set<OpenApiParamUsageInfo> receivedQueryParameters) {
+                                     Set<OpenApiParamUsageInfo> receivedQueryParameters, boolean pathParam) {
         OpenApiParamUsageInfo receivedInfo = receivedQueryParameters.stream()
                                                                     .filter(receivedUsageInfo -> receivedUsageInfo.getParamInfo()
                                                                                                                                        .getName()
@@ -263,7 +263,15 @@ class OpenApiDocTest {
 
         //Real tests
         return () -> assertAll(() -> assertTrue(receivedInfo.isUsed(), "Unable to find a usage of documented parameter: " + expectedParam.getName()),
-                               () -> assertTrue(receivedInfo.isNullHandled(), "Unable to find a null handled usage of documented parameter: " + expectedParam.getName()));
+                               () -> assertTrue(receivedInfo.isNullHandled(), "Unable to find a null handled usage of documented parameter: " + expectedParam.getName()),
+                               () -> assertEquals(receivedInfo.getParamInfo().getType(), expectedParam.getType(), "Incorrect type for parameter: " + expectedParam.getName()),
+                               () -> assertEquals(receivedInfo.getParamInfo().getName(), expectedParam.getName(), "Incorrect name for parameter: " + expectedParam.getName()),
+                               () -> {
+                                    if (!pathParam) // Path parameters are always required, so we don't need to check that.
+                                    {
+                                        assertEquals(receivedInfo.getParamInfo().isRequired(), expectedParam.isRequired(), "Incorrect required status for parameter: " + expectedParam.getName());
+                                    }
+                               });
     }
 
     private OpenApiParamUsage parseParamInfo(CompilationUnit unit, Class<?> clazz, Method method) {
