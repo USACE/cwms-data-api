@@ -43,7 +43,7 @@ public final class KeyCloakExtension implements BeforeAllCallback {
                                                     .withEnv("KC_HOSTNAME_STRICT", "false")
                                                     .withEnv("KEYCLOAK_ADMIN","admin")
                                                     .withEnv("KEYCLOAK_ADMIN_PASSWORD","admin")
-                                                    .withCommand("start-dev --features-disabled=admin2 --import-realm")
+                                                    .withCommand("start-dev --features-disabled=admin2 --import-realm --verbose")
                                                     .withExposedPorts(8080)
                                                     .withReuse(false)
                                                     .withLogConsumer(frame -> 
