@@ -86,8 +86,8 @@ services:
 
   auth:
     container_name: auth
-    image: quay.io/keycloak/keycloak:19.0.1
-    command: ["start-dev", "--features-disabled=admin2","--import-realm"]
+    image: quay.io/keycloak/keycloak:26.5
+    command: ["start-dev", "--import-realm"]
     depends_on:
       traefik:
         condition: service_healthy
