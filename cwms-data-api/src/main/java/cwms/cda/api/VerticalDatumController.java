@@ -40,6 +40,7 @@ import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
+import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.VerticalDatumDao;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.VerticalDatumInfo;
@@ -77,7 +78,7 @@ public final class VerticalDatumController implements CrudHandler {
 
     @Override
     public void getAll(@NotNull Context ctx) {
-        throw new BadRequestResponse("location-id is required in path");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
