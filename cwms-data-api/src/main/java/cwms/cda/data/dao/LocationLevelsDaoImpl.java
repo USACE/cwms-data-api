@@ -76,6 +76,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import com.google.common.flogger.FluentLogger;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -804,7 +805,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 seasonalBuilder.withSeasonalValue(seasonalValue);
                 seasonalBuilder.withInterpolateString(interp);
                 if (timeInterval != null) {
-                    seasonalBuilder.withIntervalMinutes(timeInterval.getMinutes());
+                    double totalMilli = timeInterval.getTotalMilli();
+                    long minutes = TimeUnit.MILLISECONDS.toMinutes((long) totalMilli);
+                    seasonalBuilder.withIntervalMinutes((int) minutes);
                 }
                 seasonalBuilder.withAttributeParameterId(attrId);
                 seasonalBuilder.withAttributeUnitsId(attrUnit);
@@ -814,7 +817,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 seasonalBuilder = withLocationLevelRef(seasonalBuilder, locationLevelRef);
                 JDomSeasonalIntervalImpl offset = new JDomSeasonalIntervalImpl();
                 offset.setYearMonthString(calendarInterval);
-                seasonalBuilder.withIntervalMonths(offset.getMonths());
+                seasonalBuilder.withIntervalMonths(offset.getTotalMonths());
                 seasonalBuilder.withIntervalOrigin(intervalOrigin, levelZdt);
                 seasonalBuilder.withAliases(aliases);
                 seasonalBuilder.withExpirationDate(expireDate);
