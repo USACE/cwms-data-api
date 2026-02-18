@@ -9,6 +9,27 @@ networks:
 services:
   # Database is running externally as cwmsdb container
   # Run with: podman run -d --name cwmsdb -e ORACLE_PASSWORD="badSYSpassword" -p 1521:1521 --network cwmsdb_net -v cwmsdb_volume:/opt/oracle/oradata:rw --privileged gvenzl/oracle-free:23.6-full
+  db:
+    image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev
+    environment:
+      #- ORACLE_DATABASE=FREEPDB1
+      - ORACLE_PASSWORD=badSYSpassword
+      - CWMS_PASSWORD=simplecwmspasswD1
+      - OFFICE_ID=HQ
+      - OFFICE_EROC=s0
+    ports:
+      - "1525:1521"
+    healthcheck:
+      test: ["CMD-SHELL","sqlplus -s -L sys/badSYSpassword@localhost:1521/FREEPDB1 as sysdba <<< 'exit;'"]
+      interval: 30s
+      timeout: 50s
+      retries: 50
+      start_period: 40m
+    networks:
+       cwmsdb_net:
+        aliases:
+          - cwmsdb
+
 
   db_webuser_permissions:
     image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry-public.hecdev.net/cwms/schema_installer:latest-dev}
@@ -29,10 +50,15 @@ services:
       - ./compose_files/sql:/setup_sql:ro
     networks:
       - cwmsdb_net
+    depends_on:
+      db:
+        condition: service_healthy
 
   data-api:
     container_name: data-api
     depends_on:
+      db:
+        condition: service_healthy
       auth:
         condition: service_healthy
       db_webuser_permissions:
@@ -91,10 +117,10 @@ services:
     depends_on:
       traefik:
         condition: service_healthy
-    ports:
-      - "8080:8080"
+    #ports:
+    #  - "8080:8080"
     healthcheck:
-      test: "/usr/bin/curl -If localhost:8080/auth/health/ready || exit 1"
+      test: "/healthcheck.sh"
       interval: 5s
       timeout: 1s
       retries: 100
@@ -105,7 +131,7 @@ services:
       - KC_HEALTH_ENABLED=true
       - KC_FEATURES=admin-fine-grained-authz
       - KC_HTTP_PORT=8080
-      - KEYCLOAK_FRONTEND_URL=http://localhost:8080
+      - KEYCLOAK_FRONTEND_URL=http://localhost:${APP_PORT:-8081}
       - KC_HOSTNAME=localhost
       - KC_HOSTNAME_PORT=8080
       - KC_HOSTNAME_STRICT=false
@@ -114,6 +140,7 @@ services:
       - KC_HTTP_RELATIVE_PATH=/auth
     volumes:
       - ./compose_files/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
+      - ./compose_files/keycloak/healthcheck.sh:/healthcheck.sh:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=PathPrefix(`/auth`)"
@@ -124,7 +151,7 @@ services:
 
   traefik:
     container_name: traefik
-    image: "traefik:v3.3.3"
+    image: "traefik:v3.6.2"
     ports:
       - "${APP_PORT:-8081}:80"
     expose:
