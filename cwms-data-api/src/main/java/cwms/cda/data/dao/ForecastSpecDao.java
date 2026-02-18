@@ -2,8 +2,8 @@ package cwms.cda.data.dao;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.forecast.ForecastSpec;
-import cwms.cda.formatters.UnsupportedFormatException;
 
+import org.jetbrains.annotations.NotNull;
 import org.jooq.SelectConditionStep;
 import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_FCST_LOCATION;
@@ -111,11 +111,11 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
                 .build();
     }
 
-    public ForecastSpec getForecastSpec(String office, String name, String designator) {
+    public ForecastSpec getForecastSpec(@NotNull String office, String name, String designator) {
         AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
         SelectConditionStep<Record7<String, String, String, String, String, String, String>> query =
             forecastSpecQuery(dsl)
-                .where(spec.OFFICE_ID.eq(office))
+                .where(spec.OFFICE_ID.eq(office.toUpperCase()))
                 .and(spec.FCST_SPEC_ID.eq(name));
         if(designator != null) {
             query = query.and(spec.FCST_DESIGNATOR.eq(designator));

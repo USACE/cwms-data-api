@@ -67,7 +67,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     public List<TimeSeriesGroup> getTimeSeriesGroups(String tsOfficeId, String groupOfficeId, String categoryOfficeId) {
         Condition whereCond = DSL.noCondition();
         if (tsOfficeId != null) {
-            whereCond = AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(tsOfficeId);
+            whereCond = AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(tsOfficeId.toUpperCase());
         }
 
         return getTimeSeriesGroupsWhere(whereCond, tsOfficeId, groupOfficeId, categoryOfficeId);
@@ -122,7 +122,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         Condition joinCond = catGrp.TS_CATEGORY_ID.eq(grpAssgn.CATEGORY_ID)
                 .and(catGrp.TS_GROUP_ID.eq(grpAssgn.GROUP_ID));
         if (tsOfficeId != null) {
-            joinCond = joinCond.and(grpAssgn.DB_OFFICE_ID.eq(tsOfficeId));
+            joinCond = joinCond.and(grpAssgn.DB_OFFICE_ID.eq(tsOfficeId.toUpperCase()));
         }
 
         SelectSeekStep4<Record9<String, String, String, String, String, String, String, String,

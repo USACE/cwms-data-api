@@ -155,7 +155,7 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
             Condition condition = specView.ALIASED_ITEM.isNull();
 
             if (office != null) {
-                condition = condition.and(specView.OFFICE_ID.eq(office));
+                condition = condition.and(specView.OFFICE_ID.eq(office.toUpperCase()));
             }
 
             if (templateIdMask != null) {
