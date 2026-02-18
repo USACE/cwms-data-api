@@ -112,8 +112,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
     public List<Location> getLocations(String nameRegex, String unitSystem, String datum, String officeId) {
         return connectionResult(dsl, c -> {
-            Configuration configuration = getDslContext(c, officeId).configuration();
-            setOffice(c, officeId);
+            DSLContext dslContext = getDslContext(c, officeId);
+
             Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
 
             if (officeId != null) {
@@ -124,7 +124,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 whereCondition = whereCondition.and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
             }
 
-            List<Location> results = dsl.select(AV_LOC.asterisk())
+            List<Location> results = dslContext.select(AV_LOC.asterisk())
                     .from(AV_LOC)
                     .where(whereCondition)
                     .fetchSize(DEFAULT_SMALL_FETCH_SIZE)
@@ -133,7 +133,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             List<Location> finalizedResults = new ArrayList<>();
             if (datum != null && !datum.isBlank()) {
                 for(Location loc : results) {
-                    loc = convertLocationToVerticalDatum(configuration, loc, datum, officeId);
+                    loc = convertLocationToVerticalDatum(dslContext.configuration(), loc, datum, officeId);
                     finalizedResults.add(loc);
                 }
             }
@@ -179,16 +179,16 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     @Override
     public Location getLocation(String locationName, String unitSystem, String officeId, boolean includeAliases, String datum) {
         return connectionResult(dsl, c -> {
-            Configuration configuration = getDslContext(c, officeId).configuration();
-            setOffice(c, officeId);
+            DSLContext dslContext = getDslContext(c, officeId);
+
             Location retVal;
             if (includeAliases) {
-                List<Record> locs = dsl.select(asterisk())
+                List<Record> locs = dslContext.select(asterisk())
                         .from(AV_LOC2.AV_LOC2)
                         .leftJoin(AV_LOC_ALIAS)
                         .on(AV_LOC2.AV_LOC2.BASE_LOCATION_ID.eq(AV_LOC_ALIAS.BASE_LOCATION_ID).and(
                                 AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_LOC_ALIAS.LOCATION_CODE.cast(Long.class))))
-                        .where(AV_LOC2.AV_LOC2.DB_OFFICE_ID.equalIgnoreCase(officeId)
+                        .where(AV_LOC2.AV_LOC2.DB_OFFICE_ID.eq(officeId.toUpperCase())
                                 .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
                                         .and(AV_LOC2.AV_LOC2.LOCATION_ID.equalIgnoreCase(locationName))))
                         .fetch();
@@ -198,9 +198,9 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 }
                 retVal = buildLocation(null, locs, true);
             } else {
-                Record loc = dsl.select(AV_LOC.asterisk())
+                Record loc = dslContext.select(AV_LOC.asterisk())
                         .from(AV_LOC)
-                        .where(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId)
+                        .where(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase())
                                 .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
                                         .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))))
                         .fetchOne();
@@ -211,7 +211,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 retVal = buildLocation(loc);
             }
             if(retVal != null && datum != null && !datum.isBlank()) {
-                retVal = convertLocationToVerticalDatum(configuration, retVal, datum, officeId);
+                retVal = convertLocationToVerticalDatum(dslContext.configuration(), retVal, datum, officeId);
             }
             return retVal;
         });
