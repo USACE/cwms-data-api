@@ -14,7 +14,7 @@ services:
       - ORACLE_PASSWORD=badSYSpassword
       - CWMS_PASSWORD=simplecwmspasswD1
       - OFFICE_ID=HQ
-      - OFFICE_EROC=s0
+      - OFFICE_EROC=q0
     ports:
       - "1525:1521"
     healthcheck:
@@ -33,7 +33,7 @@ services:
       - SYS_PASSWORD=badSYSpassword
       # set to HQ/q0 for any national system work
       - OFFICE_ID=HQ
-      - OFFICE_EROC=s0
+      - OFFICE_EROC=q0
       - INSTALLONCE=1
       - QUIET=1
       - API_KEY=testkey12345677
@@ -74,7 +74,7 @@ services:
       - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true
       - CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
       - CDA_JDBC_URL=jdbc:oracle:thin:@db/FREEPDB1
-      - CDA_JDBC_USERNAME=s0webtest
+      - CDA_JDBC_USERNAME=q0webtest
       - CDA_JDBC_PASSWORD=simplecwmspasswD1
       - CDA_POOL_INIT_SIZE=5
       - CDA_POOL_MAX_ACTIVE=10
@@ -108,8 +108,8 @@ services:
       - "traefik.http.services.data-api.loadbalancer.server.port=7000"
 
   auth:
-    image: quay.io/keycloak/keycloak:19.0.1
-    command: ["start-dev", "--features-disabled=admin2","--import-realm"]
+    image: quay.io/keycloak/keycloak:26.5
+    command: ["start-dev","--import-realm"]
     healthcheck:
       test: "/usr/bin/curl -If localhost:${APP_PORT:-8081}/auth/health/ready || exit 1"
       interval: 5s

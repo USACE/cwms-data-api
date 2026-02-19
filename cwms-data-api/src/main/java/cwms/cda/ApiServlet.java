@@ -81,6 +81,7 @@ import cwms.cda.api.StateController;
 import cwms.cda.api.StreamController;
 import cwms.cda.api.StreamLocationController;
 import cwms.cda.api.StreamReachController;
+import cwms.cda.api.VerticalDatumController;
 import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
@@ -212,6 +213,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
+import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
@@ -380,6 +382,24 @@ public class ApiServlet extends HttpServlet {
                     CdaError re = new CdaError(e.getMessage());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
+                .exception(DataAccessException.class, (e, ctx) -> {
+                    // Whatever Dao is causing this exception to be thrown should be modified.
+                    // The preferred pattern is for the Dao to catch DataAccessExceptions exceptions
+                    // and for the dao to inspect the Oracle error code or error message as necessary
+                    // to transform DataAccessExceptions (and their SQLException causes)
+                    // into specific and appropriate exceptions with
+                    // messages that are helpful and meaningful to end-users.
+
+                    // CdaError does not include the Oracle exception message b/c this block catches
+                    // all unhandled DataAccessExceptions and we don't know what is in the message
+                    // it is unknown if the message would be safe/appropriate for users to see.
+                    CdaError errResponse = new CdaError("Database Error");
+                    logger.atWarning().withCause(e).log("error on request[%s]: %s",
+                                                        errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
+                    ctx.status(500);
+                    ctx.contentType(ContentType.APPLICATION_JSON.toString());
+                    ctx.json(errResponse);
+                })
                 .exception(Exception.class, (e, ctx) -> {
                     CdaError errResponse = new CdaError("System Error");
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
@@ -429,6 +449,14 @@ public class ApiServlet extends HttpServlet {
         get("/locations/with-kinds/", new LocationKindController(metrics));
         cdaCrudCache("/locations/{location-id}",
                 new LocationController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+
+        VerticalDatumController vdiController = new VerticalDatumController(metrics);
+        String vdiPath = format("/location/{%s}/vertical-datum", Controllers.LOCATION_ID);
+        get(vdiPath, ctx -> vdiController.getOne(ctx, ctx.pathParam(Controllers.LOCATION_ID)));
+        addCacheControl(vdiPath, 5, TimeUnit.MINUTES);
+        post(vdiPath, vdiController::create, requiredRoles);
+        patch(vdiPath, ctx -> vdiController.update(ctx, ctx.pathParam(Controllers.LOCATION_ID)), requiredRoles);
+        delete(vdiPath, ctx -> vdiController.delete(ctx, ctx.pathParam(Controllers.LOCATION_ID)), requiredRoles);
         cdaCrudCache("/entity/{entity-id}",
                 new EntityController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
         cdaCrudCache("/states/{state}",

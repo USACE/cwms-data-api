@@ -36,11 +36,7 @@ import static cwms.cda.data.dao.DeleteRule.DELETE_LOC_CASCADE;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
-import static org.jooq.impl.DSL.asterisk;
-import static org.jooq.impl.DSL.count;
-import static org.jooq.impl.DSL.field;
-import static org.jooq.impl.DSL.name;
-import static org.jooq.impl.DSL.select;
+import static org.jooq.impl.DSL.*;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
 
@@ -53,6 +49,7 @@ import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.CwmsIdLocationKind;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.catalog.LocationCatalogEntry;
@@ -114,26 +111,46 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     public List<Location> getLocations(String nameRegex, String unitSystem, String datum, String officeId) {
+        return connectionResult(dsl, c -> {
+            DSLContext dslContext = getDslContext(c, officeId);
 
-        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
+            Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
 
-        if (officeId != null) {
-            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
-        }
+            if (officeId != null) {
+              whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase()));
+            }        
 
-        if (unitSystem != null) {
-            whereCondition = whereCondition.and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
-        }
+            if (unitSystem != null) {
+                whereCondition = whereCondition.and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
+            }
 
-        if (datum != null) {
-            whereCondition = whereCondition.and(AV_LOC.VERTICAL_DATUM.equalIgnoreCase(datum));
-        }
-
-        return dsl.select(AV_LOC.asterisk())
+            List<Location> results = dslContext.select(AV_LOC.asterisk())
                     .from(AV_LOC)
                     .where(whereCondition)
                     .fetchSize(DEFAULT_SMALL_FETCH_SIZE)
                     .fetch(this::buildLocation);
+
+            List<Location> finalizedResults = new ArrayList<>();
+            if (datum != null && !datum.isBlank()) {
+                for(Location loc : results) {
+                    loc = convertLocationToVerticalDatum(dslContext.configuration(), loc, datum, officeId);
+                    finalizedResults.add(loc);
+                }
+            }
+            return finalizedResults;
+        });
+    }
+
+    public static Location convertLocationToVerticalDatum(Configuration configuration, Location loc, String datum, String officeId) {
+        String dbVdiXml = CWMS_LOC_PACKAGE.call_GET_VERTICAL_DATUM_INFO_F__2(configuration, loc.getName(), loc.getElevationUnits(), officeId);
+        if (dbVdiXml != null && !dbVdiXml.isBlank()) {
+            VerticalDatumInfo dbVdi = TimeSeriesDaoImpl.parseVerticalDatumInfo(dbVdiXml);
+            VerticalDatum target = VerticalDatum.getVerticalDatum(datum);
+            if (target != null) {
+                loc = LocationVerticalDatumConverter.convertToVerticalDatum(loc, target, dbVdi);
+            }
+        }
+        return loc;
     }
 
     @Override
@@ -144,7 +161,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             .and(JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_KIND_ID, kindRegexMask));
 
         if (officeId != null) {
-            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
+            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase()));
         }
 
         return dsl.selectDistinct(AV_LOC.LOCATION_ID, AV_LOC.DB_OFFICE_ID, AV_LOC.LOCATION_KIND_ID)
@@ -156,39 +173,48 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
     @Override
     public Location getLocation(String locationName, String unitSystem, String officeId) {
-        return getLocation(locationName, unitSystem, officeId, false);
+        return getLocation(locationName, unitSystem, officeId, false, null);
     }
 
     @Override
-    public Location getLocation(String locationName, String unitSystem, String officeId, boolean includeAliases) {
-        if (includeAliases) {
-            List<Record> locs = dsl.select(asterisk())
-                .from(AV_LOC2.AV_LOC2)
-                .leftJoin(AV_LOC_ALIAS)
-                .on(AV_LOC2.AV_LOC2.BASE_LOCATION_ID.eq(AV_LOC_ALIAS.BASE_LOCATION_ID).and(
-                    AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_LOC_ALIAS.LOCATION_CODE.cast(Long.class))))
-                .where(AV_LOC2.AV_LOC2.DB_OFFICE_ID.equalIgnoreCase(officeId)
-                    .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
-                        .and(AV_LOC2.AV_LOC2.LOCATION_ID.equalIgnoreCase(locationName))))
-                .fetch();
-            if (locs.isEmpty()) {
-                throw new NotFoundException("Location not found for office:" + officeId + " and unit "
-                    + "system:" + unitSystem + " and id:" + locationName);
+    public Location getLocation(String locationName, String unitSystem, String officeId, boolean includeAliases, String datum) {
+        return connectionResult(dsl, c -> {
+            DSLContext dslContext = getDslContext(c, officeId);
+
+            Location retVal;
+            if (includeAliases) {
+                List<Record> locs = dslContext.select(asterisk())
+                        .from(AV_LOC2.AV_LOC2)
+                        .leftJoin(AV_LOC_ALIAS)
+                        .on(AV_LOC2.AV_LOC2.BASE_LOCATION_ID.eq(AV_LOC_ALIAS.BASE_LOCATION_ID).and(
+                                AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_LOC_ALIAS.LOCATION_CODE.cast(Long.class))))
+                        .where(AV_LOC2.AV_LOC2.DB_OFFICE_ID.eq(officeId.toUpperCase())
+                                .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
+                                        .and(AV_LOC2.AV_LOC2.LOCATION_ID.equalIgnoreCase(locationName))))
+                        .fetch();
+                if (locs.isEmpty()) {
+                    throw new NotFoundException("Location not found for office:" + officeId + " and unit "
+                            + "system:" + unitSystem + " and id:" + locationName);
+                }
+                retVal = buildLocation(null, locs, true);
+            } else {
+                Record loc = dslContext.select(AV_LOC.asterisk())
+                        .from(AV_LOC)
+                        .where(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase())
+                                .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
+                                        .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))))
+                        .fetchOne();
+                if (loc == null) {
+                    throw new NotFoundException("Location not found for office:" + officeId + " and unit "
+                            + "system:" + unitSystem + " and id:" + locationName);
+                }
+                retVal = buildLocation(loc);
             }
-            return buildLocation(null, locs, true);
-        } else {
-            Record loc = dsl.select(AV_LOC.asterisk())
-                .from(AV_LOC)
-                .where(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId)
-                    .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
-                        .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))))
-                .fetchOne();
-            if (loc == null) {
-                throw new NotFoundException("Location not found for office:" + officeId + " and unit "
-                    + "system:" + unitSystem + " and id:" + locationName);
+            if(retVal != null && datum != null && !datum.isBlank()) {
+                retVal = convertLocationToVerticalDatum(dslContext.configuration(), retVal, datum, officeId);
             }
-            return buildLocation(loc);
-        }
+            return retVal;
+        });
     }
 
     private CwmsIdLocationKind buildLocationKind(Record loc) {
@@ -301,9 +327,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         });
     }
 
-    /**
-     * @deprecated Use {@link #storeLocation(Location, boolean)} instead.
-     */
     @Deprecated
     @Override
     public void storeLocation(Location location) throws IOException {
@@ -380,9 +403,16 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             units = "SI";
         }
 
+        Condition whereCondition;
+        if (officeId != null) {
+            whereCondition = AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase());
+        } else {
+            whereCondition = noCondition();
+        }
+
         SelectConditionStep<Record> selectQuery = dsl.select(asterisk())
                 .from(AV_LOC)
-                .where(AV_LOC.DB_OFFICE_ID.eq(officeId))
+                .where(whereCondition)
                 .and(AV_LOC.UNIT_SYSTEM.eq(units));
 
         if (names != null && !names.isEmpty()) {

@@ -38,12 +38,13 @@ public final class KeyCloakExtension implements BeforeAllCallback {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final String WELL_KNOWN = "realms/cwms/.well-known/openid-configuration";
     private static final ObjectMapper mapper = new ObjectMapper();
-    private static final GenericContainer<?> kcc = new GenericContainer<>("quay.io/keycloak/keycloak:19.0.1")
+    private static final GenericContainer<?> kcc = new GenericContainer<>("quay.io/keycloak/keycloak:26.5")
                                                     .withEnv("KC_HTTP_ENABLED", "true")
                                                     .withEnv("KC_HOSTNAME_STRICT", "false")
+                                                    .withEnv("KC_LOG_LEVEL", "info")
                                                     .withEnv("KEYCLOAK_ADMIN","admin")
                                                     .withEnv("KEYCLOAK_ADMIN_PASSWORD","admin")
-                                                    .withCommand("start-dev --features-disabled=admin2 --import-realm")
+                                                    .withCommand("start-dev --import-realm")
                                                     .withExposedPorts(8080)
                                                     .withReuse(false)
                                                     .withLogConsumer(frame -> 
