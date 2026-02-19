@@ -85,6 +85,7 @@ import org.jooq.Field;
 import org.jooq.OrderField;
 import org.jooq.Record;
 import org.jooq.Record1;
+import org.jooq.RecordMapper;
 import org.jooq.Record4;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectSeekStepN;
@@ -144,7 +145,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             List<Location> finalizedResults = new ArrayList<>();
             if (datum != null && !datum.isBlank()) {
                 for(Location loc : results) {
-                    loc = convertLocationToVerticalDatum(dslContext.configuration(), loc, datum, officeId);
+                    loc = convertLocationToVerticalDatum(dslContext, loc, datum, officeId);
                     finalizedResults.add(loc);
                 }
             }
@@ -152,7 +153,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         });
     }
 
-    public static Location convertLocationToVerticalDatum(Configuration configuration, Location loc, String datum, String officeId) {
+    public static Location convertLocationToVerticalDatum(DSLContext ctx, Location loc, String datum, String officeId) {
         if (loc == null || datum == null || datum.isBlank()) {
             return loc;
         }
@@ -163,10 +164,9 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             return loc; // nothing to convert from
         }
 
-        // Query offsets from the materialized view for this location/office
-        DSLContext ctx = DSL.using(configuration);
-        List<VerticalDatumInfo.Offset> offsets = new ArrayList<>();
-        var rows = ctx.select(
+        // Query offsets from the materialized view for this location/office using a jOOQ mapper
+        String nativeDatumNormalized = nativeDatum.replace("-", "").toUpperCase();
+        List<VerticalDatumInfo.Offset> offsets = ctx.select(
                         AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_1,
                         AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_2,
                         AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.OFFSET,
@@ -174,23 +174,11 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 .from(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET)
                 .where(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.OFFICE_ID.eq(officeId))
                 .and(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.LOCATION_ID.eq(loc.getName()))
-                .fetch();
-
-        for (Record4<String, String, Double, String> r : rows) {
-            String id1 = r.get(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_1);
-            if (id1 == null) {
-                continue;
-            }
-            String id1Normalized = id1.replace("-", "");
-            String nativeDatumNormalized = nativeDatum.replace("-", "");
-            if (id1Normalized.equalsIgnoreCase(nativeDatumNormalized)) {
-                String toDatum = r.get(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_2);
-                Double value = r.get(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.OFFSET);
-                String desc = r.get(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.DESCRIPTION);
-                boolean estimate = desc != null && desc.toLowerCase().contains("estimate");
-                offsets.add(new VerticalDatumInfo.Offset(estimate, toDatum, value));
-            }
-        }
+                // Filter rows so that VERTICAL_DATUM_ID_1 matches the native datum (ignoring dashes/case)
+                .and(DSL.upper(
+                        DSL.replace(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_1, "-", ""))
+                        .eq(nativeDatumNormalized))
+                .fetch(verticalDatumOffsetMapper());
 
         if (offsets.isEmpty()) {
             return loc; // no offsets available -> no conversion
@@ -210,6 +198,17 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             loc = LocationVerticalDatumConverter.convertToVerticalDatum(loc, target, vdi);
         }
         return loc;
+    }
+
+
+    private static RecordMapper<Record4<String, String, Double, String>, VerticalDatumInfo.Offset> verticalDatumOffsetMapper() {
+        return r -> {
+            String toDatum = r.get(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_2);
+            Double value = r.get(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.OFFSET);
+            String desc = r.get(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.DESCRIPTION);
+            boolean estimate = desc != null && desc.toLowerCase().contains("estimate");
+            return new VerticalDatumInfo.Offset(estimate, toDatum, value);
+        };
     }
 
     @Override
@@ -270,7 +269,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 retVal = buildLocation(loc);
             }
             if(retVal != null && datum != null && !datum.isBlank()) {
-                retVal = convertLocationToVerticalDatum(dslContext.configuration(), retVal, datum, officeId);
+                retVal = convertLocationToVerticalDatum(dslContext, retVal, datum, officeId);
             }
             return retVal;
         });

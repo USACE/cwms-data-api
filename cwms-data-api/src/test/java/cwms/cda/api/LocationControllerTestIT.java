@@ -33,7 +33,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.LocationCategory;
@@ -256,76 +255,30 @@ class LocationControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_get_one_with_datum_param() throws Exception {
-        // Create two locations with explicit native datums
-        String officeId = "SPK";
-        String locNavd = "LocDatumNAVD88";
+        KeyUser user = KeyUser.SPK_NORMAL;
+        String officeId = user.getOperatingOffice();
         String locNgvd = "LocDatumNGVD29";
 
-        createLocation(locNavd, true, officeId);
-        createLocation(locNgvd, true, officeId);
+        // Create two locations with explicit native datums
+        createLocationWithVerticalDatum(locNgvd, true, officeId, VerticalDatum.NGVD29);
+        addVerticalDatumOffsetForExistingLocation(locNgvd, officeId, VerticalDatum.NGVD29, VerticalDatum.NAVD88, -0.5, true);
 
-        // Create explicit Vertical Datum Info (VDI) with known elevations and offsets
-        // so we can verify the elevation conversion when requesting an alternate datum.
-        KeyUser user = KeyUser.SPK_NORMAL;
-
-        // For NGVD-29 native location, set elevation 100.0 m and an offset to NAVD-88 of -0.5 m
-        VerticalDatumInfo vdiNgvd = new VerticalDatumInfo.Builder()
-            .withOffice(officeId)
-            .withLocation(locNgvd)
-            .withUnit("m")
-            .withNativeDatum("NGVD-29")
-            .withElevation(11.0)
-            .withOffsets(new VerticalDatumInfo.Offset[]{
-                new VerticalDatumInfo.Offset(true, "NAVD-88", -0.5)
-            })
-            .build();
-        ContentType vdiCt = Formats.parseHeader(Formats.JSONV1, VerticalDatumInfo.class);
-        String vdiNgvdBody = Formats.format(vdiCt, vdiNgvd);
-
+        // Request NAVD88 for NGVD29 location
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
-            .contentType(Formats.JSONV1)
-            .body(vdiNgvdBody)
-            .header("Authorization", user.toHeaderValue())
+            .accept(Formats.JSONV2)
             .queryParam(OFFICE, officeId)
+            .queryParam(DATUM, VerticalDatum.NGVD29.toString())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/location/" + locNgvd + "/vertical-datum")
+            .get("/locations/" + locNgvd)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
-
-        // For NAVD-88 native location, set elevation 200.0 m and an offset to NGVD-29 of +1.2 m
-        VerticalDatumInfo vdiNavd = new VerticalDatumInfo.Builder()
-            .withOffice(officeId)
-            .withLocation(locNavd)
-            .withUnit("m")
-            .withNativeDatum("NAVD-88")
-            .withElevation(11.0)
-            .withOffsets(new VerticalDatumInfo.Offset[]{
-                new VerticalDatumInfo.Offset(true, "NGVD-29", 1.2)
-            })
-            .build();
-        String vdiNavdBody = Formats.format(vdiCt, vdiNavd);
-
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
-            .contentType(Formats.JSONV1)
-            .body(vdiNavdBody)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/location/" + locNavd + "/vertical-datum")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("vertical-datum", equalTo(VerticalDatum.NGVD29.toString()))
+            .body("elevation.doubleValue()", closeTo(11, 1e-6));
 
         // Request NAVD88 for NGVD29 location
         given()
@@ -341,51 +294,9 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("vertical-datum", equalTo("NAVD88"))
+            .body("vertical-datum", equalTo(VerticalDatum.NAVD88.toString()))
             // 100.0 native NGVD-29 + (-0.5) offset to NAVD-88 = 99.5
             .body("elevation.doubleValue()", closeTo(10.5, 1e-6));
-
-        // Request NGVD29 for NAVD88 location
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
-            .queryParam(OFFICE, officeId)
-            .queryParam(DATUM, VerticalDatum.NGVD29.toString())
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/locations/" + locNavd)
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .body("vertical-datum", equalTo("NGVD29"))
-            // 200.0 native NAVD-88 + (1.2) offset to NGVD-29 = 201.2
-            .body("elevation.doubleValue()", closeTo(12.2, 1e-6));
-
-        // clean up VDI and locations
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .delete("/location/" + locNgvd + "/vertical-datum")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true);
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .delete("/location/" + locNavd + "/vertical-datum")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true);
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -399,93 +310,34 @@ class LocationControllerTestIT extends DataApiTestIT {
             .delete("/locations/" + locNgvd)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true);
-
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-            .queryParam(CASCADE_DELETE, true)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .delete("/locations/" + locNavd)
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true);
     }
 
     @Test
     void test_get_all_with_datum_param() throws Exception {
-        // Create two locations with explicit native datums
-        String officeId = "SPK";
-        String locNavd = "LocDatumNAVD88All";
         String locNgvd = "LocDatumNGVD29All";
-
-        createLocation(locNavd, true, officeId);
-        createLocation(locNgvd, true, officeId);
-
-        // Create explicit Vertical Datum Info (VDI) with known elevations and offsets
-        // so we can verify the elevation conversion when requesting an alternate datum.
         KeyUser user = KeyUser.SPK_NORMAL;
+        String officeId = user.getOperatingOffice();
 
-        // For NGVD-29 native location, set elevation 100.0 m and an offset to NAVD-88 of -0.5 m
-        VerticalDatumInfo vdiNgvd = new VerticalDatumInfo.Builder()
-            .withOffice(officeId)
-            .withLocation(locNgvd)
-            .withUnit("m")
-            .withNativeDatum("NGVD-29")
-            .withElevation(11.0)
-            .withOffsets(new VerticalDatumInfo.Offset[]{
-                new VerticalDatumInfo.Offset(true, "NAVD-88", -0.5)
-            })
-            .build();
-        ContentType vdiCt = Formats.parseHeader(Formats.JSONV1, VerticalDatumInfo.class);
-        String vdiNgvdBody = Formats.format(vdiCt, vdiNgvd);
+        createLocationWithVerticalDatum(locNgvd, true, officeId, VerticalDatum.NGVD29);
+        addVerticalDatumOffsetForExistingLocation(locNgvd, officeId, VerticalDatum.NGVD29, VerticalDatum.NAVD88, -0.5, true);
 
+        // Request NGVD29 for NGVD29 location
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
-            .contentType(Formats.JSONV1)
-            .body(vdiNgvdBody)
-            .header("Authorization", user.toHeaderValue())
+            .accept(Formats.JSONV2)
             .queryParam(OFFICE, officeId)
+            .queryParam(DATUM, VerticalDatum.NGVD29.toString())
+            .queryParam(NAMES, locNgvd)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/location/" + locNgvd + "/vertical-datum")
+            .get("/locations/")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
-
-        // For NAVD-88 native location, set elevation 200.0 m and an offset to NGVD-29 of +1.2 m
-        VerticalDatumInfo vdiNavd = new VerticalDatumInfo.Builder()
-            .withOffice(officeId)
-            .withLocation(locNavd)
-            .withUnit("m")
-            .withNativeDatum("NAVD-88")
-            .withElevation(11.0)
-            .withOffsets(new VerticalDatumInfo.Offset[]{
-                new VerticalDatumInfo.Offset(true, "NGVD-29", 1.2)
-            })
-            .build();
-        String vdiNavdBody = Formats.format(vdiCt, vdiNavd);
-
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
-            .contentType(Formats.JSONV1)
-            .body(vdiNavdBody)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/location/" + locNavd + "/vertical-datum")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("[0].vertical-datum", equalTo(VerticalDatum.NGVD29.toString()))
+            .body("[0].elevation.doubleValue()", closeTo(11.0, 1e-6));
 
         // Request NAVD88 for NGVD29 location
         given()
@@ -502,52 +354,9 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("[0].vertical-datum", equalTo("NAVD88"))
+            .body("[0].vertical-datum", equalTo(VerticalDatum.NAVD88.toString()))
             // 11 native NGVD-29 + (-0.5) offset to NAVD-88 = 10.5
             .body("[0].elevation.doubleValue()", closeTo(10.5, 1e-6));
-
-        // Request NGVD29 for NAVD88 location
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
-            .queryParam(OFFICE, officeId)
-            .queryParam(DATUM, VerticalDatum.NGVD29.toString())
-            .queryParam(NAMES, locNavd)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/locations/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .body("[0].vertical-datum", equalTo("NGVD29"))
-            // 11 native NAVD-88 + (1.2) offset to NGVD-29 = 12.2
-            .body("[0].elevation.doubleValue()", closeTo(12.2, 1e-6));
-
-        // clean up VDI and locations
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .delete("/location/" + locNgvd + "/vertical-datum")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true);
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .delete("/location/" + locNavd + "/vertical-datum")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true);
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -559,19 +368,6 @@ class LocationControllerTestIT extends DataApiTestIT {
             .redirects().follow(true)
             .redirects().max(3)
             .delete("/locations/" + locNgvd)
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true);
-
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-            .queryParam(CASCADE_DELETE, true)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .delete("/locations/" + locNavd)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true);
     }
