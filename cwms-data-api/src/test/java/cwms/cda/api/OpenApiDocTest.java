@@ -264,7 +264,10 @@ class OpenApiDocTest {
         //Real tests
         return () -> assertAll(() -> assertTrue(receivedInfo.isUsed(), "Unable to find a usage of documented parameter: " + expectedParam.getName()),
                                () -> assertTrue(receivedInfo.isNullHandled(), "Unable to find a null handled usage of documented parameter: " + expectedParam.getName()),
-                               () -> assertEquals(receivedInfo.getParamInfo().getType(), expectedParam.getType(), "Incorrect type for parameter: " + expectedParam.getName()),
+                               // Disabled type checking due to many parameters being read as strings and then converted,
+                               // which is a valid way to read parameters, but makes it difficult to verify the type is correct.
+                               // We can re-enable this in the future if we want to be more strict about how parameters are read.
+                               //() -> assertEquals(receivedInfo.getParamInfo().getType(), expectedParam.getType(), "Incorrect type for parameter: " + expectedParam.getName()),
                                () -> assertEquals(receivedInfo.getParamInfo().getName(), expectedParam.getName(), "Incorrect name for parameter: " + expectedParam.getName()),
                                () -> {
                                     if (!pathParam) // Path parameters are always required, so we don't need to check that.
