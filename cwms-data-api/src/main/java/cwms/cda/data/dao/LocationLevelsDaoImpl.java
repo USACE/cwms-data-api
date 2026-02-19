@@ -551,10 +551,10 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 units = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(configuration,
                         parameter, units);
             } else if (units == null) {
-                logger.atInfo().log("Getting default units for %s", parameter);
+                logger.atFine().log("Getting default units for %s", parameter);
                 String defaultUnits = CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
                         configuration, parameter, UnitSystem.SI.getValue());
-                logger.atInfo().log("Default units are %s", defaultUnits);
+                logger.atFine().log("Default units are %s", defaultUnits);
                 units = defaultUnits;
             }
             LOCATION_LEVEL_T level = CWMS_LEVEL_PACKAGE.call_RETRIEVE_LOCATION_LEVEL__2(
