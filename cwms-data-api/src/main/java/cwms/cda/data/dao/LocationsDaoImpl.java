@@ -36,7 +36,12 @@ import static cwms.cda.data.dao.DeleteRule.DELETE_LOC_CASCADE;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
-import static org.jooq.impl.DSL.*;
+import static org.jooq.impl.DSL.asterisk;
+import static org.jooq.impl.DSL.count;
+import static org.jooq.impl.DSL.field;
+import static org.jooq.impl.DSL.name;
+import static org.jooq.impl.DSL.noCondition;
+import static org.jooq.impl.DSL.select;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
 
@@ -80,6 +85,8 @@ import org.jooq.Field;
 import org.jooq.OrderField;
 import org.jooq.Record;
 import org.jooq.Record1;
+import org.jooq.RecordMapper;
+import org.jooq.Record4;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectSeekStepN;
 import org.jooq.Table;
@@ -87,6 +94,7 @@ import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.AV_VERT_DATUM_OFFSET;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 
@@ -112,13 +120,17 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
     public List<Location> getLocations(String nameRegex, String unitSystem, String datum, String officeId) {
         return connectionResult(dsl, c -> {
-            DSLContext dslContext = getDslContext(c, officeId);
+            /**
+             * BEG NOTE: Do not Set the session context here, if it's not null it's for the query itself,
+             * not related to the users's session.
+             */
+            DSLContext dslContext = getDslContext(c, null);
 
             Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
 
             if (officeId != null) {
               whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase()));
-            }        
+            }
 
             if (unitSystem != null) {
                 whereCondition = whereCondition.and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
@@ -133,7 +145,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             List<Location> finalizedResults = new ArrayList<>();
             if (datum != null && !datum.isBlank()) {
                 for(Location loc : results) {
-                    loc = convertLocationToVerticalDatum(dslContext.configuration(), loc, datum, officeId);
+                    loc = convertLocationToVerticalDatum(dslContext, loc, datum, officeId);
                     finalizedResults.add(loc);
                 }
             }
@@ -141,16 +153,62 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         });
     }
 
-    public static Location convertLocationToVerticalDatum(Configuration configuration, Location loc, String datum, String officeId) {
-        String dbVdiXml = CWMS_LOC_PACKAGE.call_GET_VERTICAL_DATUM_INFO_F__2(configuration, loc.getName(), loc.getElevationUnits(), officeId);
-        if (dbVdiXml != null && !dbVdiXml.isBlank()) {
-            VerticalDatumInfo dbVdi = TimeSeriesDaoImpl.parseVerticalDatumInfo(dbVdiXml);
-            VerticalDatum target = VerticalDatum.getVerticalDatum(datum);
-            if (target != null) {
-                loc = LocationVerticalDatumConverter.convertToVerticalDatum(loc, target, dbVdi);
-            }
+    public static Location convertLocationToVerticalDatum(DSLContext ctx, Location loc, String datum, String officeId) {
+        if (loc == null || datum == null || datum.isBlank()) {
+            return loc;
+        }
+
+        // Determine the location's native vertical datum (stored on the Location)
+        String nativeDatum = loc.getVerticalDatum();
+        if (nativeDatum == null || nativeDatum.isBlank()) {
+            return loc; // nothing to convert from
+        }
+
+        // Query offsets from the materialized view for this location/office using a jOOQ mapper
+        String nativeDatumNormalized = nativeDatum.replace("-", "").toUpperCase();
+        List<VerticalDatumInfo.Offset> offsets = ctx.select(
+                        AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_1,
+                        AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_2,
+                        AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.OFFSET,
+                        AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.DESCRIPTION)
+                .from(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET)
+                .where(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.OFFICE_ID.eq(officeId))
+                .and(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.LOCATION_ID.eq(loc.getName()))
+                // Filter rows so that VERTICAL_DATUM_ID_1 matches the native datum (ignoring dashes/case)
+                .and(DSL.upper(
+                        DSL.replace(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_1, "-", ""))
+                        .eq(nativeDatumNormalized))
+                .fetch(verticalDatumOffsetMapper());
+
+        if (offsets.isEmpty()) {
+            return loc; // no offsets available -> no conversion
+        }
+
+        VerticalDatumInfo vdi = new VerticalDatumInfo.Builder()
+                .withOffice(officeId)
+                .withLocation(loc.getName())
+                .withUnit(loc.getElevationUnits())
+                .withNativeDatum(nativeDatum)
+                .withElevation(loc.getElevation())
+                .withOffsets(offsets.toArray(new VerticalDatumInfo.Offset[0]))
+                .build();
+
+        VerticalDatum target = VerticalDatum.getVerticalDatum(datum);
+        if (target != null) {
+            loc = LocationVerticalDatumConverter.convertToVerticalDatum(loc, target, vdi);
         }
         return loc;
+    }
+
+
+    private static RecordMapper<Record4<String, String, Double, String>, VerticalDatumInfo.Offset> verticalDatumOffsetMapper() {
+        return r -> {
+            String toDatum = r.get(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_2);
+            Double value = r.get(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.OFFSET);
+            String desc = r.get(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.DESCRIPTION);
+            boolean estimate = desc != null && desc.toLowerCase().contains("estimate");
+            return new VerticalDatumInfo.Offset(estimate, toDatum, value);
+        };
     }
 
     @Override
@@ -211,7 +269,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 retVal = buildLocation(loc);
             }
             if(retVal != null && datum != null && !datum.isBlank()) {
-                retVal = convertLocationToVerticalDatum(dslContext.configuration(), retVal, datum, officeId);
+                retVal = convertLocationToVerticalDatum(dslContext, retVal, datum, officeId);
             }
             return retVal;
         });

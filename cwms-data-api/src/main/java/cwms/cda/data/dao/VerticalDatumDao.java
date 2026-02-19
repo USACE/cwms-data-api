@@ -45,7 +45,7 @@ public final class VerticalDatumDao extends JooqDao<VerticalDatumInfo> {
         return connectionResult(dsl, conn -> {
             DSLContext ctx = getDslContext(conn, officeId);
             //using jooq to check if exists, because the package get was adding to view if it didn't exist
-            verifyVerticalDatumInfoExists(officeId, locationId);
+            verifyVerticalDatumInfoExists(ctx, officeId, locationId);
             String xml = CWMS_LOC_PACKAGE.call_GET_VERTICAL_DATUM_INFO_F__2(ctx.configuration(), locationId, unit, officeId);
             return TimeSeriesDaoImpl.parseVerticalDatumInfo(xml);
         });
@@ -54,7 +54,7 @@ public final class VerticalDatumDao extends JooqDao<VerticalDatumInfo> {
     public void createVerticalDatumInfo(String officeId, String locationId, VerticalDatumInfo vdi) {
         connection(dsl, conn -> {
             DSLContext ctx = getDslContext(conn, officeId);
-            verifyVerticalDatumInfoDoesNotExist(officeId, locationId);
+            verifyVerticalDatumInfoDoesNotExist(ctx, officeId, locationId);
             store(ctx, officeId, locationId, vdi);
         });
     }
@@ -62,7 +62,7 @@ public final class VerticalDatumDao extends JooqDao<VerticalDatumInfo> {
     public void updateVerticalDatumInfo(String officeId, String locationId, VerticalDatumInfo vdi) {
         connection(dsl, conn -> {
             DSLContext ctx = getDslContext(conn, officeId);
-            verifyVerticalDatumInfoExists(officeId, locationId);
+            verifyVerticalDatumInfoExists(ctx, officeId, locationId);
             store(ctx, officeId, locationId, vdi);
         });
     }
@@ -81,7 +81,7 @@ public final class VerticalDatumDao extends JooqDao<VerticalDatumInfo> {
     public void deleteVerticalDatumInfo(String officeId, String locationId) {
         connection(dsl, conn -> {
             DSLContext ctx = getDslContext(conn, officeId);
-            verifyVerticalDatumInfoExists(officeId, locationId);
+            verifyVerticalDatumInfoExists(ctx, officeId, locationId);
             VerticalDatumInfo emptyVdi = new VerticalDatumInfo.Builder()
                     .withLocation(locationId)
                     .withOffice(officeId)
@@ -93,8 +93,8 @@ public final class VerticalDatumDao extends JooqDao<VerticalDatumInfo> {
         });
     }
 
-    private void verifyVerticalDatumInfoExists(String officeId, String locationId) {
-        Record1<usace.cwms.db.jooq.codegen.tables.records.AV_VERT_DATUM_OFFSET> result = dsl.select(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET).from(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET)
+    private void verifyVerticalDatumInfoExists(DSLContext ctx, String officeId, String locationId) {
+        Record1<usace.cwms.db.jooq.codegen.tables.records.AV_VERT_DATUM_OFFSET> result = ctx.select(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET).from(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET)
                 .where(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.LOCATION_ID.eq(locationId))
                 .and(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.OFFICE_ID.eq(officeId))
                 .fetchOne();
@@ -103,9 +103,9 @@ public final class VerticalDatumDao extends JooqDao<VerticalDatumInfo> {
         }
     }
 
-    private void verifyVerticalDatumInfoDoesNotExist(String officeId, String locationId) {
+    private void verifyVerticalDatumInfoDoesNotExist(DSLContext ctx, String officeId, String locationId) {
         try {
-            verifyVerticalDatumInfoExists(officeId, locationId);
+            verifyVerticalDatumInfoExists(ctx, officeId, locationId);
         } catch (NotFoundException e) {
             return;
         }

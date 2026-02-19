@@ -50,7 +50,9 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -81,6 +83,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.AV_VERT_DATUM_OFFSET;
 
 /**
  * Helper class to manage cycling tests multiple times against a database.
@@ -281,6 +284,45 @@ public class DataApiTestIT {
                 if (!ex.getMessage().contains("unique constraint")) {
                     throw new RuntimeException("Unable to insert user: " + username, ex);
                 }
+            }
+        }, "cwms_20");
+    }
+
+    protected static void addVerticalDatumOffsetForExistingLocation(String location, String officeId, VerticalDatum from, VerticalDatum to, double offset, boolean isEstimate) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        String desc = isEstimate ? "ESTIMATE" : "";
+        final String insertSql =
+                "INSERT INTO AT_VERT_DATUM_OFFSET " +
+                        " (LOCATION_CODE, VERTICAL_DATUM_ID_1, VERTICAL_DATUM_ID_2, EFFECTIVE_DATE, OFFSET, DESCRIPTION) " +
+                        " VALUES (?, ?, ?, ?, ?, ?)";
+
+        db.connection(c -> {
+            String sql = "SELECT LOCATION_CODE FROM AV_LOC2 WHERE DB_OFFICE_ID = ? AND LOCATION_ID = ?";
+            Long locationCode = null;
+            try (PreparedStatement ps = c.prepareStatement(sql)) {
+                ps.setString(1, officeId);
+                ps.setString(2, location);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        locationCode = rs.getLong(1);
+                    }
+                }
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to verify location exists for offset insert", ex);
+            }
+            if (locationCode == null) {
+                throw new IllegalArgumentException("Location not found for office=" + officeId + ", id=" + location);
+            }
+            try (PreparedStatement ps = c.prepareStatement(insertSql)) {
+                ps.setLong(1, locationCode);              // LOCATION_CODE
+                ps.setString(2, from.toString());       // VERTICAL_DATUM_ID_1
+                ps.setString(3, to.toString());         // VERTICAL_DATUM_ID_2
+                ps.setDate(4, Date.valueOf("1000-01-01")); //EFFECTIVE_DATE
+                ps.setDouble(5, offset);                // OFFSET
+                ps.setString(6, desc);                  // DESCRIPTION ("" if not estimate)
+                ps.executeUpdate();
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to insert vertical datum offset", ex);
             }
         }, "cwms_20");
     }
