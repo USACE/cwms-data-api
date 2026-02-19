@@ -259,11 +259,11 @@ class LocationControllerTestIT extends DataApiTestIT {
         String officeId = user.getOperatingOffice();
         String locNgvd = "LocDatumNGVD29";
 
-        // Create two locations with explicit native datums
+        // Create location with explicit offset
         createLocationWithVerticalDatum(locNgvd, true, officeId, VerticalDatum.NGVD29);
         addVerticalDatumOffsetForExistingLocation(locNgvd, officeId, VerticalDatum.NGVD29, VerticalDatum.NAVD88, -0.5, true);
 
-        // Request NAVD88 for NGVD29 location
+        // Request NGVD29 for NGVD29 location
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
@@ -295,7 +295,7 @@ class LocationControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("vertical-datum", equalTo(VerticalDatum.NAVD88.toString()))
-            // 100.0 native NGVD-29 + (-0.5) offset to NAVD-88 = 99.5
+            // 11 native NGVD-29 + (-0.5) offset to NAVD-88 = 10.5
             .body("elevation.doubleValue()", closeTo(10.5, 1e-6));
 
         given()
