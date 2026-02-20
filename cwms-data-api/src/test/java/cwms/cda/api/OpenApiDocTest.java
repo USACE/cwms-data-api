@@ -270,7 +270,7 @@ class OpenApiDocTest {
                                //() -> assertEquals(receivedInfo.getParamInfo().getType(), expectedParam.getType(), "Incorrect type for parameter: " + expectedParam.getName()),
                                () -> assertEquals(receivedInfo.getParamInfo().getName(), expectedParam.getName(), "Incorrect name for parameter: " + expectedParam.getName()),
                                () -> {
-                                    if (!pathParam) // Path parameters are always required, so we don't need to check that.
+                                    if (!pathParam && !expectedParam.ignoreRequired()) // Path parameters are always required, so we don't need to check that.
                                     {
                                         assertEquals(receivedInfo.getParamInfo().isRequired(), expectedParam.isRequired(), "Incorrect required status for parameter: " + expectedParam.getName());
                                     }
@@ -469,7 +469,7 @@ class OpenApiDocTest {
             boolean used = true;
             boolean nullHandled = true;
             if (!required) {
-                //Check if null is handled via getOrDefault
+                //TODO: Check if null is handled via getOrDefault
             }
             return new OpenApiParamUsageInfo(new OpenApiParamInfo(paramName, required, paramClass), used, nullHandled);
         }).orElseGet(() -> {

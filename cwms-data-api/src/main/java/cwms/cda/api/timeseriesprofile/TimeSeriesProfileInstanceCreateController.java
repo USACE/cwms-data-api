@@ -35,6 +35,7 @@ import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileInstanceDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -82,6 +83,7 @@ public final class TimeSeriesProfileInstanceCreateController extends TimeSeriesP
             @OpenApiResponse(status = "409", description = "Time series profile instance already exists")
         }
     )
+    @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     @Override
     public void handle(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {

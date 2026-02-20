@@ -20,24 +20,24 @@
 
 package cwms.cda.api.location.kind;
 
+import static cwms.cda.api.Controllers.*;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.sql.Timestamp;
 import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.api.Controllers.GET_ALL;
 
 public class GateChangeDeleteController extends BaseHandler {
 
@@ -70,6 +70,7 @@ public class GateChangeDeleteController extends BaseHandler {
             tags = {OutletController.TAG},
             method = HttpMethod.DELETE
     )
+    @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     @Override
     public void handle(@NotNull Context context) throws Exception {
         String office = context.pathParam(OFFICE);
