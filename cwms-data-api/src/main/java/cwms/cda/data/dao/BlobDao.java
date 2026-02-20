@@ -1,11 +1,27 @@
 package cwms.cda.data.dao;
 
+import static com.google.common.flogger.LazyArgs.lazy;
+import static org.jooq.impl.DSL.field;
+import static org.jooq.impl.DSL.name;
+import static org.jooq.impl.DSL.noCondition;
+import static org.jooq.impl.DSL.table;
+import static org.jooq.impl.DSL.upper;
+
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.RangeParser;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.Blobs;
 import cwms.cda.data.dto.CwmsDTOPaginated;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.Condition;
@@ -16,26 +32,10 @@ import org.jooq.Record4;
 import org.jooq.ResultQuery;
 import org.jooq.SelectLimitPercentStep;
 import org.jooq.Table;
-
+import org.jooq.conf.ParamType;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_MEDIA_TYPE;
 import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Stream;
-
-import static org.jooq.impl.DSL.field;
-import static org.jooq.impl.DSL.name;
-import static org.jooq.impl.DSL.noCondition;
-import static org.jooq.impl.DSL.table;
-import static org.jooq.impl.DSL.upper;
 
 public class BlobDao extends JooqDao<Blob> implements BlobAccess {
     static FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -63,7 +63,8 @@ public class BlobDao extends JooqDao<Blob> implements BlobAccess {
 
     @Override
     public Optional<Blob> getByUniqueName(String id, String limitToOffice) {
-        String queryStr = "SELECT AT_BLOB.ID, AT_BLOB.DESCRIPTION, CWMS_MEDIA_TYPE.MEDIA_TYPE_ID, CWMS_OFFICE.OFFICE_ID, AT_BLOB.VALUE \n"
+        String queryStr = "SELECT AT_BLOB.ID, AT_BLOB.DESCRIPTION, "
+                + "CWMS_MEDIA_TYPE.MEDIA_TYPE_ID, CWMS_OFFICE.OFFICE_ID, AT_BLOB.VALUE \n"
                 + "FROM CWMS_20.AT_BLOB \n"
                 + "join CWMS_20.CWMS_MEDIA_TYPE on AT_BLOB.MEDIA_TYPE_CODE = CWMS_MEDIA_TYPE.MEDIA_TYPE_CODE \n"
                 + "join CWMS_20.CWMS_OFFICE on AT_BLOB.OFFICE_CODE=CWMS_OFFICE.OFFICE_CODE \n"
@@ -77,12 +78,12 @@ public class BlobDao extends JooqDao<Blob> implements BlobAccess {
         }
 
         Blob retVal = query.fetchOne(r -> {
-            String rId = r.get(ID, String.class);
-            String rOffice = r.get(OFFICE_ID, String.class);
-            String rDesc = r.get(DESCRIPTION, String.class);
-            String rMedia = r.get(MEDIA_TYPE_ID, String.class);
-            byte[] value = r.get(VALUE, byte[].class);
-            return new Blob(rOffice, rId, rDesc, rMedia, value);
+            String recId = r.get(ID, String.class);
+            String recOffice = r.get(OFFICE_ID, String.class);
+            String recDesc = r.get(DESCRIPTION, String.class);
+            String recMedia = r.get(MEDIA_TYPE_ID, String.class);
+            byte[] recValue = r.get(VALUE, byte[].class);
+            return new Blob(recOffice, recId, recDesc, recMedia, recValue);
         });
 
         return Optional.ofNullable(retVal);
@@ -103,7 +104,7 @@ public class BlobDao extends JooqDao<Blob> implements BlobAccess {
 
         connection(dsl, connection -> {
 
-            if(office == null ){
+            if (office == null) {
                 try (PreparedStatement preparedStatement = connection.prepareStatement(BLOB_QUERY)) {
                     preparedStatement.setString(1, id);
                     executeAndHandle(consumer, offset, end, preparedStatement, "Unable to find blob with id " + id);
@@ -131,9 +132,9 @@ public class BlobDao extends JooqDao<Blob> implements BlobAccess {
 
     /**
      *
-     * @param consumer
-     * @param offset where to start reading.  0 is first byte
-     * @param end position of last byte to include. inclusive.  0 would mean only return the first byte.
+     * @param consumer  the consumer to call
+     * @param offset    where to start reading.  0 is first byte
+     * @param end       position of last byte to include. inclusive.  0 would mean only return the first byte.
      * @param resultSet
      * @throws SQLException
      * @throws IOException
@@ -166,19 +167,18 @@ public class BlobDao extends JooqDao<Blob> implements BlobAccess {
 
     /**
      *
-     * @param offset the index of the first byte to read. Like http range-requests 0 is first byte. -1 is last byte.
-     * @param end the index of the last byte to read, inclusive. null reads until the end of the blob. -1 is also last byte.
-     *
+     * @param offset      the index of the first byte to read. Like http range-requests 0 is first byte. -1 is last byte.
+     * @param end         the index of the last byte to read, inclusive. null reads until the end of the blob. -1 is also last byte.
      * @param totalLength the total length of the blob
      * @return the length of the range to read
      */
     static long getLength(@NotNull Long offset, @Nullable Long end, long totalLength) {
 
         long length;
-        if(end != null){
+        if (end != null) {
             // The length we are getting passed in is from range-request and could be negative to indicate suffix
             long[] startEnd = RangeParser.interpret(new long[]{offset, end}, totalLength);
-            if(startEnd != null){
+            if (startEnd != null) {
                 offset = startEnd[0];
                 end = startEnd[1];
             }
@@ -257,9 +257,9 @@ public class BlobDao extends JooqDao<Blob> implements BlobAccess {
 
             Condition moreInSameOffice = cursorId == null || cursorOffice == null ? noCondition() :
                     vOffice.OFFICE_ID.eq(cursorOffice.toUpperCase())
-                            .and(upper(blobIdFld).greaterThan(cursorId.toUpperCase()));
-            Condition nextOffices = cursorOffice == null ? noCondition():
-                    upper(vOffice.OFFICE_ID).greaterThan(cursorOffice.toUpperCase());
+                            .and(upper(blobIdFld).greaterThan(cursorId));
+            Condition nextOffices = cursorOffice == null ? noCondition() :
+                    vOffice.OFFICE_ID.greaterThan(cursorOffice.toUpperCase());
             pagingCondition = moreInSameOffice.or(nextOffices);
         }
 
@@ -268,29 +268,30 @@ public class BlobDao extends JooqDao<Blob> implements BlobAccess {
         if (like != null && !like.isEmpty()) {
             whereCondition = whereCondition.and(caseInsensitiveLikeRegex(blobIdFld, like));
         }
-        if(officeId != null && !officeId.isEmpty()) {
-            whereCondition = whereCondition.and(upper(vOffice.OFFICE_ID).eq(upper(officeId)));
+        if (officeId != null && !officeId.isEmpty()) {
+            whereCondition = whereCondition.and(vOffice.OFFICE_ID.eq(upper(officeId)));
         }
 
-        SelectLimitPercentStep<Record4<String, String, String, String>> query = dsl.select(blobIdFld, descFld, cwmsMediaType.MEDIA_TYPE_ID, vOffice.OFFICE_ID)
-                .from(atBlob)
-                .join(cwmsMediaType).on(mediaCodeFld.eq(cwmsMediaType.MEDIA_TYPE_CODE.cast(Long.class)))
-                .join(vOffice).on(vOffice.OFFICE_CODE.eq(officeCodeFld))
-                .where(whereCondition)
-                .and(pagingCondition)
-                .orderBy(vOffice.OFFICE_ID, blobIdFld)
-                .limit(pageSize);
-
+        SelectLimitPercentStep<Record4<String, String, String, String>> query =
+                dsl.select(blobIdFld, descFld, cwmsMediaType.MEDIA_TYPE_ID, vOffice.OFFICE_ID)
+                        .from(atBlob)
+                        .join(cwmsMediaType).on(mediaCodeFld.eq(cwmsMediaType.MEDIA_TYPE_CODE.cast(Long.class)))
+                        .join(vOffice).on(vOffice.OFFICE_CODE.eq(officeCodeFld))
+                        .where(whereCondition)
+                        .and(pagingCondition)
+                        .orderBy(vOffice.OFFICE_ID, upper(blobIdFld))
+                        .limit(pageSize);
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
         Blobs.Builder builder = new Blobs.Builder(cursor, pageSize, 0);
 
-        try (Stream<Record4<String, String, String, String>> stream = query.stream()){
+        try (Stream<Record4<String, String, String, String>> stream = query.stream()) {
             stream.forEach(r -> {
-                String rId = r.value1();
-                String rDesc = r.value2();
-                String rMedia = r.value3();
-                String rOffice = r.value4();
+                String recId = r.value1();
+                String recDesc = r.value2();
+                String recMedia = r.value3();
+                String recOffice = r.value4();
 
-                Blob blob = new Blob(rOffice, rId, rDesc, rMedia, null);
+                Blob blob = new Blob(recOffice, recId, recDesc, recMedia, null);
                 builder.addBlob(blob);
             });
         }
@@ -304,15 +305,9 @@ public class BlobDao extends JooqDao<Blob> implements BlobAccess {
         String pIgnoreNulls = formatBool(ignoreNulls);
 
         connection(dsl, c ->
-                CWMS_TEXT_PACKAGE.call_STORE_BINARY(
-                        getDslContext(c, blob.getOfficeId()).configuration(),
-                        blob.getValue(),
-                        blob.getId(),
-                        blob.getMediaTypeId(),
-                        blob.getDescription(),
-                        pFailIfExists,
-                        pIgnoreNulls,
-                        blob.getOfficeId()));
+                CWMS_TEXT_PACKAGE.call_STORE_BINARY(getDslContext(c, blob.getOfficeId()).configuration(),
+                        blob.getValue(), blob.getId(), blob.getMediaTypeId(), blob.getDescription(),
+                        pFailIfExists, pIgnoreNulls, blob.getOfficeId()));
     }
 
     @Override
@@ -352,6 +347,7 @@ public class BlobDao extends JooqDao<Blob> implements BlobAccess {
 
     /**
      * Checks whether a blob exists for the given office and ID.
+     *
      * <p>
      * The ID is converted to uppercase during the comparison to ensure
      * case-insensitive matching.
