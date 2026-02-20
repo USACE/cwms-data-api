@@ -47,7 +47,6 @@ import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.ResultQuery;
 import org.jooq.SelectForUpdateStep;
-import org.jooq.TableField;
 import org.jooq.conf.ParamType;
 
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
@@ -69,7 +68,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
         AV_RATING_TEMPLATE tempView = AV_RATING_TEMPLATE.AV_RATING_TEMPLATE;
 
         if (office != null) {
-            condition = condition.and(tempView.OFFICE_ID.eq(office));
+            condition = condition.and(tempView.OFFICE_ID.eq(office.toUpperCase()));
         }
 
         if (templateIdMask != null) {
@@ -119,7 +118,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
                 .and(specView.ALIASED_ITEM.isNull());
 
         if (office != null) {
-            condition = condition.and(tempView.OFFICE_ID.eq(office));
+            condition = condition.and(tempView.OFFICE_ID.eq(office.toUpperCase()));
         }
 
         ResultQuery<? extends Record> query = dsl.select(
@@ -253,7 +252,7 @@ public class RatingTemplateDao extends JooqDao<RatingTemplate> {
         Condition condition = specView.ALIASED_ITEM.isNull();
 
         if (office != null) {
-            condition = condition.and(tempView.OFFICE_ID.eq(office));
+            condition = condition.and(tempView.OFFICE_ID.eq(office.toUpperCase()));
         }
 
         if (templateIdMask != null) {

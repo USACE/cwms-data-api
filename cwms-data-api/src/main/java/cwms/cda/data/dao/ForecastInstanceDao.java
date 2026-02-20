@@ -157,7 +157,12 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     }
 
     public List<ForecastInstance> getForecastInstances(int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder,
-            String office, String name, String designator) {
+            String officeArg, String name, String designator) {
+
+        if(officeArg != null){
+            officeArg = officeArg.toUpperCase();
+        }
+        String office = officeArg;
 
         String query = INSTANCE_QUERY + GET_ALL_CONDITIONS;
         return connectionResult(dsl, (Connection c) -> {
@@ -264,8 +269,13 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     }
 
     public ForecastInstance getForecastInstance(int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder,
-            String office, String name, String designator,
+            String officeArg, String name, String designator,
             Instant forecastDate, Instant issueDate) {
+        if(officeArg != null){
+            officeArg = officeArg.toUpperCase();
+        }
+        String office = officeArg;
+
         String query = INSTANCE_QUERY + GET_ONE_CONDITIONS;
         return connectionResult(dsl, c -> {
             try (PreparedStatement preparedStatement = c.prepareStatement(query)) {

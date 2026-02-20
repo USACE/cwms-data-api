@@ -90,6 +90,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      */
     public Optional<LocationGroup> getLocationGroup(@NotNull String officeId, @NotNull String categoryId,
                                                     @NotNull String groupId) {
+        officeId = officeId.toUpperCase();
 
         Condition joinCondition;
         if (CWMS.equalsIgnoreCase(officeId)) {
@@ -344,6 +345,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         Condition joinCondition = noCondition();
 
         if (locationOfficeId != null) {
+            locationOfficeId = locationOfficeId.toUpperCase();
             if (CWMS.equalsIgnoreCase(locationOfficeId)) {
                 whereCondition = whereCondition.and(catGroupView.CAT_DB_OFFICE_ID.eq(CWMS)
                         .and(catGroupView.GRP_DB_OFFICE_ID.eq(CWMS))
@@ -382,11 +384,11 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
 
         Condition condition = catGroupView.LOC_GROUP_ID.isNotNull();
         if (groupOfficeId != null && !groupOfficeId.isEmpty()) {
-            condition = condition.and(catGroupView.GRP_DB_OFFICE_ID.eq(groupOfficeId));
+            condition = condition.and(catGroupView.GRP_DB_OFFICE_ID.eq(groupOfficeId.toUpperCase()));
         }
 
         if (categoryOfficeId != null && !categoryOfficeId.isEmpty()) {
-            condition = condition.and(catGroupView.CAT_DB_OFFICE_ID.eq(categoryOfficeId));
+            condition = condition.and(catGroupView.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
         }
 
         if (locCategoryLike != null && !locCategoryLike.isEmpty()) {
@@ -436,9 +438,9 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                         groupAssignView.GROUP_ID, groupAssignView.ATTRIBUTE, groupAssignView.ALIAS_ID,
                         groupAssignView.SHARED_REF_LOCATION_ID, groupAssignView.SHARED_ALIAS_ID)
                 .from(al).join(groupAssignView).on(al.LOCATION_ID.eq(groupAssignView.LOCATION_ID))
-                .where(groupAssignView.DB_OFFICE_ID.eq(locationOfficeId)
-                        .and(groupAssignView.CATEGORY_OFFICE_ID.eq(categoryOfficeId))
-                        .and(groupAssignView.GROUP_OFFICE_ID.eq(groupOfficeId))
+                .where(groupAssignView.DB_OFFICE_ID.eq(locationOfficeId.toUpperCase())
+                        .and(groupAssignView.CATEGORY_OFFICE_ID.eq(categoryOfficeId.toUpperCase()))
+                        .and(groupAssignView.GROUP_OFFICE_ID.eq(groupOfficeId.toUpperCase()))
                         .and(groupAssignView.CATEGORY_ID.eq(categoryId)
                                 .and(groupAssignView.GROUP_ID.eq(groupId))
                                 .and(al.UNIT_SYSTEM.eq(units))))
