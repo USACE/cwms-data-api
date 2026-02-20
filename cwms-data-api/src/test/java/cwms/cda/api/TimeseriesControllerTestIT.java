@@ -709,7 +709,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsDataPsuedoOff)
                 .header("Authorization",user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, false)// explicitly turning this off in case it was left on by a different test.
+                .header(ApiServlet.IS_NEW_LRTS, false)
                 .queryParam("office",officeId)
             .when()
                 .redirects().follow(true)
