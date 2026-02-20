@@ -193,7 +193,7 @@ public class BasinController implements CrudHandler {
 
             String units =
                     ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Basin.class);
             ctx.contentType(contentType.toString());
@@ -303,7 +303,7 @@ public class BasinController implements CrudHandler {
         cwms.cda.data.dao.basin.BasinDao basinDao = new cwms.cda.data.dao.basin.BasinDao(dsl);
         CwmsId basinId = new CwmsId.Builder()
                 .withName(name)
-                .withOfficeId(ctx.queryParam(OFFICE))
+                .withOfficeId(requiredParam(ctx, OFFICE))
                 .build();
         basinDao.deleteBasin(basinId, deleteMethod.getRule());
         StatusResponse re = new StatusResponse(basinId.getOfficeId(), "Deleted CWMS Basin", basinId.getName());

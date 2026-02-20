@@ -108,7 +108,7 @@ public final class LockController implements CrudHandler {
     public void getAll(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = requiredParam(ctx, OFFICE);
-            String projectId = ctx.queryParam(PROJECT_ID);
+            String projectId = requiredParam(ctx, PROJECT_ID);
             CwmsId project = CwmsId.buildCwmsId(office, projectId);
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
