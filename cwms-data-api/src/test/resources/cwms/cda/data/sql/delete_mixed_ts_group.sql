@@ -18,18 +18,14 @@ begin
            p_db_office_id=>'SPK');
 
     -- delete a group at CWMS in the mew category
-    cwms_ts.delete_ts_group('Test Category2',
-        'Test Group2',
-        'CWMS');
+    cwms_ts.delete_ts_group(p_ts_category_id => 'Test Category2',
+        p_ts_group_id => 'Test Group2',
+        p_db_office_id => 'CWMS');
 
     -- delete a category at CWMS
-    cwms_ts.delete_ts_category('Test Category2',
-        'T',
-        'CWMS');
-
-
-
-
+    cwms_ts.delete_ts_category(p_ts_category_id => 'Test Category2',
+        p_cascade => 'T',
+        p_db_office_id => 'CWMS');
 
 
 end;
