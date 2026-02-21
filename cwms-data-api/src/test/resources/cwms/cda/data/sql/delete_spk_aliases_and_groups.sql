@@ -5,6 +5,6 @@ begin
                                 p_ts_id=>'Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda',
                                 p_unassign_all=>'T',
                                 p_db_office_id=>'SPK');
-    cwms_ts.delete_ts_group('Test Category','Test Group','SPK');
+    cwms_ts.delete_ts_group(P_TS_CATEGORY_ID => 'Test Category',P_TS_GROUP_ID => 'Test Group',P_DB_OFFICE_ID => 'SPK');
     cwms_ts.delete_ts_category('Test Category', 'T', 'SPK');
 end;
