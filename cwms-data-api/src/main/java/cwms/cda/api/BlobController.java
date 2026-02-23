@@ -161,7 +161,7 @@ public class BlobController extends BaseCrudHandler {
                     @OpenApiResponse(status = STATUS_200,
                             description = "Returns requested blob.",
                             content = {
-                                    @OpenApiContent(type = "application/octet-stream", from = Blob.class)
+                                    @OpenApiContent(type = "application/octet-stream", from = byte[].class)
                             })
             },
             tags = {TAG}
