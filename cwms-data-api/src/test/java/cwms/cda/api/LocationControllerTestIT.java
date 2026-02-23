@@ -27,6 +27,7 @@ package cwms.cda.api;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import cwms.cda.data.dao.LocationCategoryDao;
 import cwms.cda.data.dao.LocationGroupDao;
+import cwms.cda.data.dao.VerticalDatum;
 import fixtures.CwmsDataApiSetupCallback;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.formatters.ContentType;
+import cwms.cda.data.dto.VerticalDatumInfo;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.filter.log.LogDetail;
 import org.jooq.DSLContext;
@@ -58,6 +60,7 @@ import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isOneOf;
@@ -123,6 +126,29 @@ class LocationControllerTestIT extends DataApiTestIT {
                 // ignore
             }
         }
+
+        try {
+            String officeId = "SPK";
+            String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
+            Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class), json, Location.class))
+                    .withOfficeId(officeId)
+                    .build();
+            given()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .accept(Formats.JSON)
+                    .header("Authorization", user.toHeaderValue())
+                    .queryParam(OFFICE, officeId)
+                    .queryParam(CASCADE_DELETE, "true")
+            .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .delete("/locations/" + location.getName())
+            .then()
+                    .log().ifValidationFails(LogDetail.ALL,true);
+        } catch (Exception e) {
+            //ignore
+        }
+
     }
 
     @Test
@@ -225,6 +251,125 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @Test
+    void test_get_one_with_datum_param() throws Exception {
+        KeyUser user = KeyUser.SPK_NORMAL;
+        String officeId = user.getOperatingOffice();
+        String locNgvd = "LocDatumNGVD29";
+
+        // Create location with explicit offset
+        createLocationWithVerticalDatum(locNgvd, true, officeId, VerticalDatum.NGVD29);
+        addVerticalDatumOffsetForExistingLocation(locNgvd, officeId, VerticalDatum.NGVD29, VerticalDatum.NAVD88, -0.5, true);
+
+        // Request NGVD29 for NGVD29 location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(DATUM, VerticalDatum.NGVD29.toString())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + locNgvd)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("vertical-datum", equalTo(VerticalDatum.NGVD29.toString()))
+            .body("elevation.doubleValue()", closeTo(11, 1e-6));
+
+        // Request NAVD88 for NGVD29 location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(DATUM, VerticalDatum.NAVD88.toString())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + locNgvd)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("vertical-datum", equalTo(VerticalDatum.NAVD88.toString()))
+            // 11 native NGVD-29 + (-0.5) offset to NAVD-88 = 10.5
+            .body("elevation.doubleValue()", closeTo(10.5, 1e-6));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + locNgvd)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true);
+    }
+
+    @Test
+    void test_get_all_with_datum_param() throws Exception {
+        String locNgvd = "LocDatumNGVD29All";
+        KeyUser user = KeyUser.SPK_NORMAL;
+        String officeId = user.getOperatingOffice();
+
+        createLocationWithVerticalDatum(locNgvd, true, officeId, VerticalDatum.NGVD29);
+        addVerticalDatumOffsetForExistingLocation(locNgvd, officeId, VerticalDatum.NGVD29, VerticalDatum.NAVD88, -0.5, true);
+
+        // Request NGVD29 for NGVD29 location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(DATUM, VerticalDatum.NGVD29.toString())
+            .queryParam(NAMES, locNgvd)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("[0].vertical-datum", equalTo(VerticalDatum.NGVD29.toString()))
+            .body("[0].elevation.doubleValue()", closeTo(11.0, 1e-6));
+
+        // Request NAVD88 for NGVD29 location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(DATUM, VerticalDatum.NAVD88.toString())
+            .queryParam(NAMES, locNgvd)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("[0].vertical-datum", equalTo(VerticalDatum.NAVD88.toString()))
+            // 11 native NGVD-29 + (-0.5) offset to NAVD-88 = 10.5
+            .body("[0].elevation.doubleValue()", closeTo(10.5, 1e-6));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + locNgvd)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true);
     }
 
     @Test

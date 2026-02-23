@@ -41,6 +41,7 @@ public final class KeyCloakExtension implements BeforeAllCallback {
     private static final GenericContainer<?> kcc = new GenericContainer<>("quay.io/keycloak/keycloak:26.5")
                                                     .withEnv("KC_HTTP_ENABLED", "true")
                                                     .withEnv("KC_HOSTNAME_STRICT", "false")
+                                                    .withEnv("KC_LOG_LEVEL", "info")
                                                     .withEnv("KEYCLOAK_ADMIN","admin")
                                                     .withEnv("KEYCLOAK_ADMIN_PASSWORD","admin")
                                                     .withCommand("start-dev --import-realm")

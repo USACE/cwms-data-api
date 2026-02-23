@@ -94,7 +94,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
 
         Condition whereCondition = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.ALIASED_ITEM.isNull();
         if (office != null && !office.isEmpty()) {
-            whereCondition = whereCondition.and(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID.equalIgnoreCase(office));
+            whereCondition = whereCondition.and(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.toUpperCase()));
         }
         if (idRegex != null && !idRegex.isEmpty()) {
             whereCondition = whereCondition.and(
@@ -229,7 +229,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
                 result = dsl.select(view.CWMS_TS_ID, view.DB_OFFICE_ID, view.INTERVAL,
                                     view.TIME_ZONE_ID, view.TS_ACTIVE_FLAG)
                 .from(view)
-                .where(view.CWMS_TS_ID.eq(timeseriesId).and(view.DB_OFFICE_ID.eq(office))).fetchOne();
+                .where(view.CWMS_TS_ID.eq(timeseriesId).and(view.DB_OFFICE_ID.eq(office.toUpperCase()))).fetchOne();
             Optional<TimeSeriesIdentifierDescriptor> retval = Optional.empty();
             if (result != null) {
                 retval = Optional.of(toDto(result));

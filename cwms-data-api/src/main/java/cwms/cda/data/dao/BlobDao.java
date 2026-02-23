@@ -71,7 +71,7 @@ public class BlobDao extends JooqDao<Blob> implements BlobAccess {
         ResultQuery<Record> query;
         if (limitToOffice != null && !limitToOffice.isEmpty()) {
             queryStr = queryStr + " and CWMS_OFFICE.OFFICE_ID = ?";
-            query = dsl.resultQuery(queryStr, id, limitToOffice);
+            query = dsl.resultQuery(queryStr, id, limitToOffice.toUpperCase());
         } else {
             query = dsl.resultQuery(queryStr, id);
         }
@@ -110,7 +110,7 @@ public class BlobDao extends JooqDao<Blob> implements BlobAccess {
                 }
             } else {
                 try (PreparedStatement preparedStatement = connection.prepareStatement(BLOB_WITH_OFFICE)) {
-                    preparedStatement.setString(1, office);
+                    preparedStatement.setString(1, office.toUpperCase());
                     preparedStatement.setString(2, id);
 
                     executeAndHandle(consumer, offset, end, preparedStatement, "Unable to find blob with id " + id + " in office " + office);

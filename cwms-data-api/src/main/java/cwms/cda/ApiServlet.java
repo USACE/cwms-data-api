@@ -81,6 +81,7 @@ import cwms.cda.api.StateController;
 import cwms.cda.api.StreamController;
 import cwms.cda.api.StreamLocationController;
 import cwms.cda.api.StreamReachController;
+import cwms.cda.api.VerticalDatumController;
 import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
@@ -448,6 +449,14 @@ public class ApiServlet extends HttpServlet {
         get("/locations/with-kinds/", new LocationKindController(metrics));
         cdaCrudCache("/locations/{location-id}",
                 new LocationController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+
+        VerticalDatumController vdiController = new VerticalDatumController(metrics);
+        String vdiPath = format("/location/{%s}/vertical-datum", Controllers.LOCATION_ID);
+        get(vdiPath, ctx -> vdiController.getOne(ctx, ctx.pathParam(Controllers.LOCATION_ID)));
+        addCacheControl(vdiPath, 5, TimeUnit.MINUTES);
+        post(vdiPath, vdiController::create, requiredRoles);
+        patch(vdiPath, ctx -> vdiController.update(ctx, ctx.pathParam(Controllers.LOCATION_ID)), requiredRoles);
+        delete(vdiPath, ctx -> vdiController.delete(ctx, ctx.pathParam(Controllers.LOCATION_ID)), requiredRoles);
         cdaCrudCache("/entity/{entity-id}",
                 new EntityController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
         cdaCrudCache("/states/{state}",
