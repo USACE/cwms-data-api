@@ -101,6 +101,19 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
+        // Read and verify no failure on missing office ID
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/ratings/metadata")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
         //Read
         Response response =
             given()
