@@ -48,8 +48,8 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RATING_ID_MASK;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("integration")
@@ -102,22 +102,25 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
+        RatingSpec ratingSpec = new RatingSpec(new RatingSpec.Builder().fromRatingSpec(new hec.data.cwmsRating.RatingSpec(specContainer)));
+
         // Read and verify no failure on missing office ID
-        given()
+        Response response = given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/ratings/metadata")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .body("rating-metadata.size()", greaterThan(0));
+            .get("/ratings/metadata");
+        JsonPath noOfficePath = new JsonPath(response.asString());
+        assertFalse(noOfficePath.getList("rating-metadata").isEmpty());
+        boolean foundMatching = IntStream.range(0, noOfficePath.getInt("rating-metadata.size()"))
+            .mapToObj(i -> noOfficePath.getObject("rating-metadata[" + i + "].rating-spec", RatingSpec.class))
+            .anyMatch(s -> s.hashCode() == ratingSpec.hashCode());
+        assertTrue(foundMatching);
 
         //Read
-        Response response =
+        response =
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
@@ -129,10 +132,9 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
                 .redirects().max(3)
                 .get("/ratings/metadata");
             // then follows
-        RatingSpec ratingSpec = new RatingSpec(new RatingSpec.Builder().fromRatingSpec(new hec.data.cwmsRating.RatingSpec(specContainer)));
         JsonPath path = new JsonPath(response.asString());
         //get values of JSON array after getting array size
-        boolean foundMatching = IntStream.range(0, path.getInt("rating-metadata.size()"))
+        foundMatching = IntStream.range(0, path.getInt("rating-metadata.size()"))
                 .mapToObj(i -> path.getObject("rating-metadata[" + i + "].rating-spec", RatingSpec.class))
                 .anyMatch(s -> s.hashCode() == ratingSpec.hashCode());
         assertTrue(foundMatching);
