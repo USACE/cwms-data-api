@@ -37,30 +37,31 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.BaseHandler;
-import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.watersupply.WaterSupplyAccountingDao;
+import cwms.cda.data.dao.watersupply.WaterSupplyUtils;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.data.dao.watersupply.WaterSupplyUtils;
-import mil.army.usace.hec.metadata.DataSetIllegalArgumentException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
+import mil.army.usace.hec.metadata.DataSetIllegalArgumentException;
+import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -106,7 +107,8 @@ public class AccountingCreateController extends BaseHandler {
         logUnusedPathParameter(ctx, WATER_USER, "Body contains required information.");
 
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            final String contractId = ctx.pathParam(CONTRACT_NAME);
+            String contractId = Arrays.toString(
+                Base64.decodeBase64(ctx.pathParam(CONTRACT_NAME).getBytes(StandardCharsets.UTF_8)));
             final String office = ctx.pathParam(OFFICE);
             DSLContext dsl = getDslContext(ctx);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;

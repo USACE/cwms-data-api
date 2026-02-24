@@ -47,6 +47,7 @@ import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import org.apache.commons.codec.binary.Base64;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -87,6 +88,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
     private static WaterUserContract contract;
     private static LookupType testTransferType;
     private static LookupType testContractType;
+    private static String encodedContractId;
     private static Location pump1;
     private static Location pump2;
     private static Location pump3;
@@ -101,7 +103,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
                         .getResourceAsStream("/cwms/cda/api/waterusercontract.json")) {
             assert accountStream != null;
             assert contractStream != null;
-            String contractJson = org.apache.commons.io.IOUtils.toString(contractStream, StandardCharsets.UTF_8);
+            String contractJson = IOUtils.toString(contractStream, StandardCharsets.UTF_8);
             contract = Formats.parseContent(new ContentType(Formats.JSONV1), contractJson, WaterUserContract.class);
             String accountingJson = IOUtils.toString(accountStream, StandardCharsets.UTF_8);
             waterSupplyAccounting = Formats.parseContent(new ContentType(Formats.JSONV1),
@@ -120,6 +122,8 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
                     "PUMP");
             pump3 = buildTestLocation(waterSupplyAccounting.getPumpLocations().getPumpBelow().getName(),
                     "PUMP");
+            encodedContractId = Base64.encodeBase64URLSafeString(contract.getContractId().getName()
+                    .getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             LOGGER.atConfig().log("Unable to delete location: %s", e.getMessage());
         }
@@ -293,7 +297,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .redirects().max(3)
             .post("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
                 + contract.getWaterUser().getEntityName() + "/contracts/"
-                + contract.getContractId().getName() + "/accounting")
+                + encodedContractId + "/accounting")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -320,7 +324,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .redirects().max(3)
             .get("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
                 + contract.getWaterUser().getEntityName() + "/contracts/"
-                + contract.getContractId().getName() + "/accounting")
+                + encodedContractId + "/accounting")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -359,7 +363,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .redirects().max(3)
             .post("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
                     + contract.getWaterUser().getEntityName() + "/contracts/"
-                    + contract.getContractId().getName() + "/accounting")
+                    + encodedContractId + "/accounting")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -382,7 +386,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .redirects().max(3)
             .get("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
                     + contract.getWaterUser().getEntityName() + "/contracts/"
-                    + contract.getContractId().getName() + "/accounting")
+                    + encodedContractId + "/accounting")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -408,7 +412,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .redirects().max(3)
             .post("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
                     + contract.getWaterUser().getEntityName() + "/contracts/"
-                    + contract.getContractId().getName() + "/accounting")
+                    + encodedContractId + "/accounting")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -433,7 +437,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .redirects().max(3)
             .get("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
                     + contract.getWaterUser().getEntityName() + "/contracts/"
-                    + contract.getContractId().getName() + "/accounting")
+                    + encodedContractId + "/accounting")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -468,7 +472,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
                 .redirects().max(3)
                 .post("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
                         + contract.getWaterUser().getEntityName() + "/contracts/"
-                        + contract.getContractId().getName() + "/accounting")
+                        + encodedContractId + "/accounting")
                 .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
@@ -493,7 +497,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
                 .redirects().max(3)
                 .get("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
                         + contract.getWaterUser().getEntityName() + "/contracts/"
-                        + contract.getContractId().getName() + "/accounting")
+                        + encodedContractId + "/accounting")
                 .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
@@ -527,7 +531,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .redirects().max(3)
             .post("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
                     + contract.getWaterUser().getEntityName() + "/contracts/"
-                    + contract.getContractId().getName() + "/accounting")
+                    + encodedContractId + "/accounting")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
