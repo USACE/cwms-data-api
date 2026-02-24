@@ -48,6 +48,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RATING_ID_MASK;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -112,7 +113,8 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("rating-metadata.size()", greaterThan(0));
 
         //Read
         Response response =
