@@ -5,69 +5,66 @@ import static org.jooq.SQLDialect.ORACLE18C;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.JooqDao;
-import org.jooq.DSLContext;
-import org.jooq.impl.DSL;
-import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
-import java.sql.SQLException;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
+import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
+
 
 /**
- * Prepares a connection to set the LRTS session flag for the lifetime of the
- * connection and ensures the flag is unset when the connection is closed.
+ * Prepares a connection by setting the LRTS session flag.
  */
 public class LrtsSessionPreparer implements ConnectionPreparer {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private final Boolean isNewLrts;
+    private final boolean clearOnClose;
 
     public LrtsSessionPreparer(Boolean isNewLrts) {
+        this(isNewLrts, false);
+    }
+
+    public LrtsSessionPreparer(Boolean isNewLrts, boolean clear) {
         this.isNewLrts = isNewLrts;
+        clearOnClose = clear;
     }
 
     @Override
-    public Connection prepare(Connection connection) throws SQLException {
+    public Connection prepare(Connection connection) {
         if (isNewLrts == null) {
             return connection;
         }
 
-        try {
-            DSLContext dsl = DSL.using(connection, ORACLE18C);
+        DSLContext dsl = DSL.using(connection, ORACLE18C);
 
-            // Can also get current value and remember it and then reset to that in the close
-            // if setting with null,null doesn't work.
-            //            GET_SESSION_INFO sessionInfo = CWMS_UTIL_PACKAGE.call_GET_SESSION_INFO(dslContext.configuration()
-            //                    , SESSION_USE_LRTS_ID_FORMAT);
+        // Can also get current value and remember it and then reset to that in the close
+        // if setting with null,null doesn't work.
+        //            GET_SESSION_INFO sessionInfo = CWMS_UTIL_PACKAGE.call_GET_SESSION_INFO(dslContext.configuration()
+        //                    , SESSION_USE_LRTS_ID_FORMAT);
 
-            String requireBool = formatBool(isNewLrts);
-            int requireIntValue = isNewLrts ? JooqDao.REQUIRE_NEW_LRTS_ID_FORMAT
-                    : JooqDao.REQUIRE_OLD_LRTS_ID_FORMAT;
-            CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(dsl.configuration(),
-                    JooqDao.SESSION_USE_LRTS_ID_FORMAT, requireBool, requireIntValue);
-            logger.atFine().log("Set LRTS session flag to %s (%d) for connection %s",
-                    requireBool, requireIntValue, connection);
-        } catch (RuntimeException ex) {
-            // Convert to SQLException contract if the call fails
-            SQLException sqlEx = new SQLException("Failed setting LRTS session flag", ex);
-            try {
-                connection.close();
-            } catch (SQLException closeEx) {
-                sqlEx.addSuppressed(closeEx);
-            }
-            throw sqlEx;
+        String requireBool = formatBool(isNewLrts);
+        int requireIntValue = isNewLrts ? JooqDao.REQUIRE_NEW_LRTS_ID_FORMAT
+                : JooqDao.REQUIRE_OLD_LRTS_ID_FORMAT;
+        CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(dsl.configuration(),
+                JooqDao.SESSION_USE_LRTS_ID_FORMAT, requireBool, requireIntValue);
+        logger.atFine().log("Set LRTS session flag to %s (%d) for connection %s",
+                requireBool, requireIntValue, connection);
+
+        if (clearOnClose) {
+            // Return a proxy that will unset the flag on close()
+            return (Connection) Proxy.newProxyInstance(
+                    connection.getClass().getClassLoader(),
+                    new Class<?>[]{Connection.class},
+                    new CloseUnsettingHandler(connection));
+        } else {
+            return connection;
         }
 
-        // Return a proxy that will unset the flag on close()
-        return (Connection) Proxy.newProxyInstance(
-                connection.getClass().getClassLoader(),
-                new Class<?>[]{Connection.class},
-                new CloseUnsettingHandler(connection));
     }
-
 
     private static class CloseUnsettingHandler implements InvocationHandler {
         private final Connection delegate;

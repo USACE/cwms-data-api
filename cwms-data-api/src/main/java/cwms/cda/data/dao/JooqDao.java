@@ -38,25 +38,6 @@ import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jooq.Condition;
-import org.jooq.ConnectionCallable;
-import org.jooq.ConnectionRunnable;
-import org.jooq.DSLContext;
-import org.jooq.ExecuteListener;
-import org.jooq.Field;
-import org.jooq.SQLDialect;
-import org.jooq.exception.DataAccessException;
-import org.jooq.impl.CustomCondition;
-import org.jooq.impl.DSL;
-import org.jooq.impl.DefaultExecuteListenerProvider;
-import org.owasp.html.HtmlPolicyBuilder;
-import org.owasp.html.PolicyFactory;
-import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSetMetaData;
@@ -74,6 +55,24 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jooq.Condition;
+import org.jooq.ConnectionCallable;
+import org.jooq.ConnectionRunnable;
+import org.jooq.DSLContext;
+import org.jooq.ExecuteListener;
+import org.jooq.Field;
+import org.jooq.SQLDialect;
+import org.jooq.exception.DataAccessException;
+import org.jooq.impl.CustomCondition;
+import org.jooq.impl.DSL;
+import org.jooq.impl.DefaultExecuteListenerProvider;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 
 
 public abstract class JooqDao<T> extends Dao<T> {
@@ -136,18 +135,15 @@ public abstract class JooqDao<T> extends Dao<T> {
         DSLContext retVal;
 
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
-        final Boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) == null
-                ? null : Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
+        final boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) != null && Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
 
         DelegatingConnectionPreparer preparer = new DelegatingConnectionPreparer(
                 connection -> setClientInfo(ctx, connection),
-                isNewLRTS != null ? new cwms.cda.datasource.LrtsSessionPreparer(isNewLRTS) : null);
+                new cwms.cda.datasource.LrtsSessionPreparer(isNewLRTS));
         DataSource wrappedDataSource = new ConnectionPreparingDataSource(preparer, dataSource);
         retVal = DSL.using(wrappedDataSource, SQLDialect.ORACLE18C);
 
-
         retVal.configuration().set(new DefaultExecuteListenerProvider(listener));
-
 
         return retVal;
     }
@@ -176,8 +172,8 @@ public abstract class JooqDao<T> extends Dao<T> {
         try {
             final String apiVersion = ApiServlet.getApiVersion();
             connection.setClientInfo("OCSID.ECID",
-                    ApiServlet.APPLICATION_TITLE + " " +
-                            apiVersion.substring(0, Math.min(ORACLE_ECID_MAX_LENGTH, apiVersion.length())));
+                    ApiServlet.APPLICATION_TITLE + " "
+                            + apiVersion.substring(0, Math.min(ORACLE_ECID_MAX_LENGTH, apiVersion.length())));
             if (ctx.handlerType() == HandlerType.BEFORE) {
                 connection.setClientInfo("OCSID.MODULE", "BEFORE-HANDLER");
             } else {
