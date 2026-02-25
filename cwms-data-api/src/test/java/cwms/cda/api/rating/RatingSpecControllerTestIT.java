@@ -45,6 +45,7 @@ import java.util.stream.IntStream;
 
 import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.RATING_ID_MASK;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -108,6 +109,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
         Response response = given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
+            .queryParam(PAGE_SIZE, 500)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
