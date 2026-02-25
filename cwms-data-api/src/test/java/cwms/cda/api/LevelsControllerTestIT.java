@@ -48,6 +48,7 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import java.math.BigInteger;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
@@ -342,6 +343,84 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertEquals("m3", response.path("levels[1].level-units-id"));
         assertEquals("2023-06-01T07:00:00Z", response.path("levels[1].level-date"));
         assertEquals("1Day", response.path("levels[1].duration-id"));
+    }
+
+    @Test
+    void test_level_as_timeseries_intervals() throws Exception {
+        createLocation("level_as_timeseries", true, OFFICE);
+        String levelId = "level_as_timeseries.Flow.Ave.1Day.Regulating";
+        ZonedDateTime time = ZonedDateTime.of(2026, 3, 7, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        int effectiveHourCount = 48;
+        NavigableMap<Instant, LocationLevel> levels = new TreeMap<>();
+        List<SeasonalValueBean> seasonalValues = new ArrayList<>();
+        for (int i = 0; i < effectiveHourCount * 4; i++) {
+           SeasonalValueBean value = new SeasonalValueBean.Builder()
+               .withValue(i * 121.0)
+               .withOffsetMinutes(BigInteger.valueOf(15L * i))
+               .build();
+           seasonalValues.add(value);
+        }
+        LocationLevel level = new SeasonalLocationLevel.Builder(levelId, time)
+            .withIntervalMinutes(effectiveHourCount*60)
+            .withIntervalOrigin(time)
+            .withSeasonalValues(seasonalValues)
+            .withInterpolateString("T")
+            .withLevelUnitsId("cfs")
+            .build();
+        levelList.add(level);
+        levels.put(level.getLevelDate().toInstant(), level);
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level);
+        });
+
+        //Read level timeseries
+        TimeSeries timeSeries =
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .contentType(Formats.JSONV2)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(BEGIN, time.toInstant().toString())
+                .queryParam(END, time.plusHours(effectiveHourCount).toInstant().toString())
+                .queryParam(INTERVAL, "15Minutes")
+                .queryParam(UNIT, "cfs")
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/levels/" + levelId + "/timeseries/")
+            .then()
+            .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .extract()
+                .response()
+                .as(TimeSeries.class);
+        assertEquals("level_as_timeseries.Flow.Ave.15Minutes.1Day.Regulating", timeSeries.getName());
+        assertEquals(OFFICE, timeSeries.getOfficeId());
+        assertEquals(time.toInstant(), timeSeries.getBegin().toInstant());
+        assertEquals(time.plusHours(effectiveHourCount).toInstant(), timeSeries.getEnd().toInstant());
+        assertEquals(4 * effectiveHourCount + 1, timeSeries.getTotal());
+        assertEquals("cfs", timeSeries.getUnits());
+        List<SeasonalValueBean> vals = ((SeasonalLocationLevel) level).getSeasonalValues();
+        List<TimeSeries.Record> values = timeSeries.getValues();
+        assertEquals(vals.size(), values.size() - 1);
+        Map<Long, Double> valuesMap = new TreeMap<>();
+        for (int i = 0; i < values.size(); i++) {
+            Long longTime = values.get(i).getDateTime().toInstant().toEpochMilli();
+            if (valuesMap.get(longTime) != null) {
+                throw new IllegalStateException("Duplicate time found: " + longTime);
+            }
+            valuesMap.put(longTime, values.get(i).getValue());
+        }
+        Map<Long, Double> expectedValuesMap = new TreeMap<>();
+
+        for (int i = 0; i < vals.size(); i++) {
+            Long longTime = time.plusMinutes(vals.get(i).getOffsetMinutes().longValue()).toInstant().toEpochMilli();
+            expectedValuesMap.put(longTime, vals.get(i).getValue());
+        }
+        expectedValuesMap.forEach((k, v) -> assertEquals(v, valuesMap.get(k), 0.0001, "Value check failed at iteration: " + k));
     }
 
     @Test
