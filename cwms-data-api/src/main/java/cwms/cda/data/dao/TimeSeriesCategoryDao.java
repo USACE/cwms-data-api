@@ -45,7 +45,7 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
         Record3<String, String, String> fetchOne = dsl.selectDistinct(view.CAT_DB_OFFICE_ID, view.TS_CATEGORY_ID,
                 view.TS_CATEGORY_DESC)
                 .from(view)
-                .where(view.CAT_DB_OFFICE_ID.eq(officeId))
+                .where(view.CAT_DB_OFFICE_ID.eq(officeId.toUpperCase()))
                 .and(view.TS_CATEGORY_ID.eq(categoryId))
                 .fetchOne();
 
@@ -62,7 +62,7 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
         Select<?> select;
         if ( officeId != null && !officeId.isEmpty())
         {
-            select = step.where(table.CAT_DB_OFFICE_ID.eq(officeId));
+            select = step.where(table.CAT_DB_OFFICE_ID.eq(officeId.toUpperCase()));
         }else {
              select = step;
         }

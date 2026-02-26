@@ -40,6 +40,7 @@ import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.name;
+import static org.jooq.impl.DSL.noCondition;
 import static org.jooq.impl.DSL.select;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
@@ -53,6 +54,7 @@ import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.CwmsIdLocationKind;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.catalog.LocationCatalogEntry;
@@ -83,6 +85,8 @@ import org.jooq.Field;
 import org.jooq.OrderField;
 import org.jooq.Record;
 import org.jooq.Record1;
+import org.jooq.RecordMapper;
+import org.jooq.Record4;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectSeekStepN;
 import org.jooq.Table;
@@ -90,6 +94,7 @@ import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.AV_VERT_DATUM_OFFSET;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC2;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 
@@ -114,26 +119,96 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     }
 
     public List<Location> getLocations(String nameRegex, String unitSystem, String datum, String officeId) {
+        return connectionResult(dsl, c -> {
+            /**
+             * BEG NOTE: Do not Set the session context here, if it's not null it's for the query itself,
+             * not related to the users's session.
+             */
+            DSLContext dslContext = getDslContext(c, null);
 
-        Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
+            Condition whereCondition = JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_ID, nameRegex);
 
-        if (officeId != null) {
-            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
-        }
+            if (officeId != null) {
+              whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase()));
+            }
 
-        if (unitSystem != null) {
-            whereCondition = whereCondition.and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
-        }
+            if (unitSystem != null) {
+                whereCondition = whereCondition.and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem));
+            }
 
-        if (datum != null) {
-            whereCondition = whereCondition.and(AV_LOC.VERTICAL_DATUM.equalIgnoreCase(datum));
-        }
-
-        return dsl.select(AV_LOC.asterisk())
+            List<Location> results = dslContext.select(AV_LOC.asterisk())
                     .from(AV_LOC)
                     .where(whereCondition)
                     .fetchSize(DEFAULT_SMALL_FETCH_SIZE)
                     .fetch(this::buildLocation);
+
+            List<Location> finalizedResults = new ArrayList<>();
+            if (datum != null && !datum.isBlank()) {
+                for(Location loc : results) {
+                    loc = convertLocationToVerticalDatum(dslContext, loc, datum, officeId);
+                    finalizedResults.add(loc);
+                }
+            }
+            return finalizedResults;
+        });
+    }
+
+    public static Location convertLocationToVerticalDatum(DSLContext ctx, Location loc, String datum, String officeId) {
+        if (loc == null || datum == null || datum.isBlank()) {
+            return loc;
+        }
+
+        // Determine the location's native vertical datum (stored on the Location)
+        String nativeDatum = loc.getVerticalDatum();
+        if (nativeDatum == null || nativeDatum.isBlank()) {
+            return loc; // nothing to convert from
+        }
+
+        // Query offsets from the materialized view for this location/office using a jOOQ mapper
+        String nativeDatumNormalized = nativeDatum.replace("-", "").toUpperCase();
+        List<VerticalDatumInfo.Offset> offsets = ctx.select(
+                        AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_1,
+                        AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_2,
+                        AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.OFFSET,
+                        AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.DESCRIPTION)
+                .from(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET)
+                .where(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.OFFICE_ID.eq(officeId))
+                .and(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.LOCATION_ID.eq(loc.getName()))
+                // Filter rows so that VERTICAL_DATUM_ID_1 matches the native datum (ignoring dashes/case)
+                .and(DSL.upper(
+                        DSL.replace(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_1, "-", ""))
+                        .eq(nativeDatumNormalized))
+                .fetch(verticalDatumOffsetMapper());
+
+        if (offsets.isEmpty()) {
+            return loc; // no offsets available -> no conversion
+        }
+
+        VerticalDatumInfo vdi = new VerticalDatumInfo.Builder()
+                .withOffice(officeId)
+                .withLocation(loc.getName())
+                .withUnit(loc.getElevationUnits())
+                .withNativeDatum(nativeDatum)
+                .withElevation(loc.getElevation())
+                .withOffsets(offsets.toArray(new VerticalDatumInfo.Offset[0]))
+                .build();
+
+        VerticalDatum target = VerticalDatum.getVerticalDatum(datum);
+        if (target != null) {
+            loc = LocationVerticalDatumConverter.convertToVerticalDatum(loc, target, vdi);
+        }
+        return loc;
+    }
+
+
+    private static RecordMapper<Record4<String, String, Double, String>, VerticalDatumInfo.Offset> verticalDatumOffsetMapper() {
+        return r -> {
+            String toDatum = r.get(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.VERTICAL_DATUM_ID_2);
+            Double value = r.get(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.OFFSET);
+            String desc = r.get(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.DESCRIPTION);
+            boolean estimate = desc != null && desc.toLowerCase().contains("estimate");
+            return new VerticalDatumInfo.Offset(estimate, toDatum, value);
+        };
     }
 
     @Override
@@ -144,7 +219,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             .and(JooqDao.caseInsensitiveLikeRegexNullTrue(AV_LOC.LOCATION_KIND_ID, kindRegexMask));
 
         if (officeId != null) {
-            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId));
+            whereCondition = whereCondition.and(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase()));
         }
 
         return dsl.selectDistinct(AV_LOC.LOCATION_ID, AV_LOC.DB_OFFICE_ID, AV_LOC.LOCATION_KIND_ID)
@@ -156,39 +231,48 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
     @Override
     public Location getLocation(String locationName, String unitSystem, String officeId) {
-        return getLocation(locationName, unitSystem, officeId, false);
+        return getLocation(locationName, unitSystem, officeId, false, null);
     }
 
     @Override
-    public Location getLocation(String locationName, String unitSystem, String officeId, boolean includeAliases) {
-        if (includeAliases) {
-            List<Record> locs = dsl.select(asterisk())
-                .from(AV_LOC2.AV_LOC2)
-                .leftJoin(AV_LOC_ALIAS)
-                .on(AV_LOC2.AV_LOC2.BASE_LOCATION_ID.eq(AV_LOC_ALIAS.BASE_LOCATION_ID).and(
-                    AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_LOC_ALIAS.LOCATION_CODE.cast(Long.class))))
-                .where(AV_LOC2.AV_LOC2.DB_OFFICE_ID.equalIgnoreCase(officeId)
-                    .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
-                        .and(AV_LOC2.AV_LOC2.LOCATION_ID.equalIgnoreCase(locationName))))
-                .fetch();
-            if (locs.isEmpty()) {
-                throw new NotFoundException("Location not found for office:" + officeId + " and unit "
-                    + "system:" + unitSystem + " and id:" + locationName);
+    public Location getLocation(String locationName, String unitSystem, String officeId, boolean includeAliases, String datum) {
+        return connectionResult(dsl, c -> {
+            DSLContext dslContext = getDslContext(c, officeId);
+
+            Location retVal;
+            if (includeAliases) {
+                List<Record> locs = dslContext.select(asterisk())
+                        .from(AV_LOC2.AV_LOC2)
+                        .leftJoin(AV_LOC_ALIAS)
+                        .on(AV_LOC2.AV_LOC2.BASE_LOCATION_ID.eq(AV_LOC_ALIAS.BASE_LOCATION_ID).and(
+                                AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_LOC_ALIAS.LOCATION_CODE.cast(Long.class))))
+                        .where(AV_LOC2.AV_LOC2.DB_OFFICE_ID.eq(officeId.toUpperCase())
+                                .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
+                                        .and(AV_LOC2.AV_LOC2.LOCATION_ID.equalIgnoreCase(locationName))))
+                        .fetch();
+                if (locs.isEmpty()) {
+                    throw new NotFoundException("Location not found for office:" + officeId + " and unit "
+                            + "system:" + unitSystem + " and id:" + locationName);
+                }
+                retVal = buildLocation(null, locs, true);
+            } else {
+                Record loc = dslContext.select(AV_LOC.asterisk())
+                        .from(AV_LOC)
+                        .where(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase())
+                                .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
+                                        .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))))
+                        .fetchOne();
+                if (loc == null) {
+                    throw new NotFoundException("Location not found for office:" + officeId + " and unit "
+                            + "system:" + unitSystem + " and id:" + locationName);
+                }
+                retVal = buildLocation(loc);
             }
-            return buildLocation(null, locs, true);
-        } else {
-            Record loc = dsl.select(AV_LOC.asterisk())
-                .from(AV_LOC)
-                .where(AV_LOC.DB_OFFICE_ID.equalIgnoreCase(officeId)
-                    .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
-                        .and(AV_LOC.LOCATION_ID.equalIgnoreCase(locationName))))
-                .fetchOne();
-            if (loc == null) {
-                throw new NotFoundException("Location not found for office:" + officeId + " and unit "
-                    + "system:" + unitSystem + " and id:" + locationName);
+            if(retVal != null && datum != null && !datum.isBlank()) {
+                retVal = convertLocationToVerticalDatum(dslContext, retVal, datum, officeId);
             }
-            return buildLocation(loc);
-        }
+            return retVal;
+        });
     }
 
     private CwmsIdLocationKind buildLocationKind(Record loc) {
@@ -301,9 +385,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         });
     }
 
-    /**
-     * @deprecated Use {@link #storeLocation(Location, boolean)} instead.
-     */
     @Deprecated
     @Override
     public void storeLocation(Location location) throws IOException {
@@ -380,9 +461,16 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             units = "SI";
         }
 
+        Condition whereCondition;
+        if (officeId != null) {
+            whereCondition = AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase());
+        } else {
+            whereCondition = noCondition();
+        }
+
         SelectConditionStep<Record> selectQuery = dsl.select(asterisk())
                 .from(AV_LOC)
-                .where(AV_LOC.DB_OFFICE_ID.eq(officeId))
+                .where(whereCondition)
                 .and(AV_LOC.UNIT_SYSTEM.eq(units));
 
         if (names != null && !names.isEmpty()) {

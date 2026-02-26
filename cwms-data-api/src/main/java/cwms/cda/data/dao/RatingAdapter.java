@@ -104,10 +104,14 @@ public class RatingAdapter {
             withAbstractFields(builder, rating);
 
             String[] evaluationStrings = rating.getEvaluationStrings();
-            builder.withEvaluations(Arrays.asList(evaluationStrings));
+            if(evaluationStrings != null) {
+                builder.withEvaluations(Arrays.asList(evaluationStrings));
+            }
 
             String[] conditionStrings = rating.getConditionStrings();
-            builder.withConditions(Arrays.asList(conditionStrings));
+            if(conditionStrings != null) {
+                builder.withConditions(Arrays.asList(conditionStrings));
+            }
 
             List<String> ratingSpecIds = new ArrayList<>();
             SourceRating[] sourceRatings = rating.getSourceRatings();

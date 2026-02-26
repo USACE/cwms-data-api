@@ -1778,6 +1778,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("expiration-date", equalTo(levelDate.plusYears(50).toInstant().toString()))
+            .body("interval-months", equalTo(12))
             .body("seasonal-values.size()", is(numValues));
     }
 

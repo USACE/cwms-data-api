@@ -155,7 +155,7 @@ public class LocationController implements CrudHandler {
             LocationsDao locationsDao = getLocationsDao(dsl);
 
             String names = ctx.queryParam(NAMES);
-            String units = ctx.queryParam(UNIT);
+            String units = ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.SI.value());
             String datum = ctx.queryParam(DATUM);
             String office = ctx.queryParam(OFFICE);
 
@@ -221,6 +221,8 @@ public class LocationController implements CrudHandler {
                         + "default SI units for their parameters."),
                 @OpenApiParam(name = INCLUDE_ALIASES, type = Boolean.class, description = "Specifies whether to "
                         + "include location aliases in the response. Default: false"),
+                @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
+                        + " the response. This field affects only vertical datum. Valid values: NAVD88, NGVD29."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -241,15 +243,16 @@ public class LocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             String units =
-                    ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
+                    ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.SI.value());
             String office = requiredParam(ctx, OFFICE);
             boolean includeAliases =
                     ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class).getOrDefault(false);
+            String datum = ctx.queryParam(DATUM);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             ctx.contentType(contentType.toString());
             LocationsDao locationDao = getLocationsDao(dsl);
-            Location location = locationDao.getLocation(locationId, units, office, includeAliases);
+            Location location = locationDao.getLocation(locationId, units, office, includeAliases, datum);
             String serializedLocation = Formats.format(contentType, location);
             ctx.result(serializedLocation);
             addDeprecatedContentTypeWarning(ctx, contentType);
@@ -335,7 +338,7 @@ public class LocationController implements CrudHandler {
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             //getLocation will throw an error if location does not exist
             Location existingLocation = locationsDao.getLocation(locationId,
-                    UnitSystem.EN.getValue(), locationFromBody.getOfficeId(), false);
+                    UnitSystem.EN.getValue(), locationFromBody.getOfficeId(), false, null);
             existingLocation = updatedClearedFields(ctx.body(), contentType.getType(),
                     existingLocation);
             //only store (update) if location does exist
