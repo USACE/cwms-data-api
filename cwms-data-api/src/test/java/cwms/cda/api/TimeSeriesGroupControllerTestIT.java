@@ -69,7 +69,6 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
-import io.restassured.response.ValidatableResponse;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -135,7 +134,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                 try {
                    groupDao.unassignAllTs(group, "SPK");
                     if (!group.getOfficeId().equalsIgnoreCase(CWMS_OFFICE)) {
-                        groupDao.delete(group.getTimeSeriesCategory().getId(), group.getId(), group.getOfficeId());
+                        groupDao.delete(group.getTimeSeriesCategory().getId(), group.getId(), group.getOfficeId(), false);
                     }
                 } catch (NotFoundException e) {
                     LOGGER.atConfig().withCause(e).log("Group not found");
