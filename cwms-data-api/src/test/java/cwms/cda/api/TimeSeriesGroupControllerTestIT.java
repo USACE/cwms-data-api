@@ -32,6 +32,7 @@ import static cwms.cda.api.Controllers.CWMS_OFFICE;
 import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GROUP_OFFICE_ID;
+import static cwms.cda.api.Controllers.IGNORE_NULLS;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_LOCS;
 import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_TS;
@@ -245,6 +246,9 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                 "sharedTsAliasId", timeSeriesId);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
+        groupsToCleanup.add(group);
+        categoriesToCleanup.add(cat);
+
         assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, "AliasId", timeSeriesId, 1));
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
         String categoryXml = Formats.format(contentType, cat);
@@ -385,6 +389,10 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_lrts", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_lrts", "IntegrationTesting",
                 "sharedTsAliasId", timeSeriesId);
+
+        groupsToCleanup.add(group);
+        categoriesToCleanup.add(cat);
+
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
         assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, "AliasId", timeSeriesId, 1));
@@ -922,8 +930,10 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         createTimeseries(officeId, timeSeriesId);
 
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_rename_group_cat", "IntegrationTesting");
+        categoriesToCleanup.add(cat);
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_rename_group", "IntegrationTesting",
             "sharedTsAliasId", timeSeriesId);
+        groupsToCleanup.add(group);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
         assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, "AliasId", timeSeriesId, 1));
@@ -947,7 +957,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
-        categoriesToCleanup.add(cat);
+
         //Create Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -964,7 +974,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
-        groupsToCleanup.add(group);
+
         TimeSeriesGroup newGroup = new TimeSeriesGroup(cat, officeId, "test_rename_group_new", "IntegrationTesting",
             "sharedTsAliasId2", timeSeriesId);
         String newGroupXml = Formats.format(contentType, newGroup);
@@ -1069,8 +1079,10 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String officeId = user.getOperatingOffice();
         String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_add_assigned_locs", "IntegrationTesting");
+        categoriesToCleanup.add(cat);
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_add_assigned_locs", "IntegrationTesting",
             "sharedTsAliasId", timeSeriesId);
+        groupsToCleanup.add(group);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
         assignedTimeSeries.add(new AssignedTimeSeries(officeId, timeSeriesId, "AliasId", timeSeriesId, 1));
@@ -1253,12 +1265,15 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String tsId = ts.get("name").asText();
         TimeSeriesCategory category = new TimeSeriesCategory(CWMS_OFFICE, categoryName, "Default");
         TimeSeriesGroup group = new TimeSeriesGroup(category, CWMS_OFFICE, groupId, "All Time Series", null, null);
+
+//        createCategory( category, officeId); // I don't think this user can create in CWMS, probably don't want to delete this cat either
+//        createGroup(group); // I don't think this user can create in CWMS, probably don't want to delete this cat either
+
         AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
         TimeSeriesGroup newGroup = new TimeSeriesGroup(group, Collections.singletonList(assignedTimeSeries));
 
         String newGroupJson = Formats.format(new ContentType(Formats.JSONV1), newGroup);
 
-        groupsToCleanup.add(newGroup);
 
         // Retrieve the group and assert it's empty
         given()
@@ -1384,6 +1399,10 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String tsId2 = ts2.get("name").asText();
         TimeSeriesCategory category = new TimeSeriesCategory(CWMS_OFFICE, categoryName, "Default");
         TimeSeriesGroup group = new TimeSeriesGroup(category, CWMS_OFFICE, groupId, "All Time Series", null, null);
+
+        //createCategory( category, officeId);
+        //createGroup(group);
+
         AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
         AssignedTimeSeries assignedTimeSeries2 = new AssignedTimeSeries(officeId, tsId2, null, null, null);
         TimeSeriesGroup newGroup = new TimeSeriesGroup(group, Arrays.asList(assignedTimeSeries2, assignedTimeSeries));
@@ -1430,6 +1449,58 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body("assigned-time-series.size()", equalTo(2));
     }
 
+    private void createGroup(TimeSeriesGroup group) {
+        String format = Formats.JSONV1;
+        //Create Group
+        ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesGroup.class);
+        String groupXml = Formats.format(contentType, group);
+
+        groupsToCleanup.add(group);
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .body(groupXml)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(FAIL_IF_EXISTS, false)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/group")
+                .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+    }
+
+    // This is just a helper to create category - not really what the tests are testing
+    private void createCategory( TimeSeriesCategory category, String officeId) {
+        String format = Formats.JSONV1;
+        ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
+        String categoryJson = Formats.format(contentType, category);
+
+        categoriesToCleanup.add(category);
+
+        //Create Category
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .body(categoryJson)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, officeId)
+                .queryParam(FAIL_IF_EXISTS, false)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/category")
+                .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     void test_patch_district_permission(String format) throws Exception {
@@ -1455,9 +1526,13 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
         TimeSeriesCategory category = new TimeSeriesCategory(CWMS_OFFICE, "Default", "Default");
         TimeSeriesGroup districtGroup = new TimeSeriesGroup(category, CWMS_OFFICE, "Default", "All Time Series", null, null);
+
+//        createCategory(category, CWMS_OFFICE);  // don't think we can create in CWMS
+//        createGroup(districtGroup);
+
         AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
         TimeSeriesGroup newDistrictGroup = new TimeSeriesGroup(districtGroup, Collections.singletonList(assignedTimeSeries));
-        groupsToCleanup.add(newDistrictGroup);
+
 
         String newDistrictGroupJson = Formats.format(new ContentType(Formats.JSONV1), newDistrictGroup);
 
@@ -1545,6 +1620,9 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_create_read_delete", "IntegrationTesting",
                 "sharedTsAliasId", timeSeriesId);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
+
+        groupsToCleanup.add(group);
+//        categoriesToCleanup.add(cat);
 
         assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, "AliasId", timeSeriesId, 1));
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
@@ -1702,6 +1780,9 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
         String categoryXml = Formats.format(contentType, cat);
         String groupXml = Formats.format(contentType, group);
+
+        categoriesToCleanup.add(cat);
+        groupsToCleanup.add(group);
 
         //Create Category
         given()
@@ -2016,6 +2097,272 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_with_ignore_nulls_parameter(String format) throws Exception {
+        String officeId = user.getOperatingOffice();
+        String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
+        createLocation(timeSeriesId.split("\\.")[0], true, officeId);
+
+        String suffix = String.valueOf(System.currentTimeMillis());
+        suffix = suffix.substring(suffix.length() - 6);
+        String catId = "test_ignore_nulls_" + suffix;
+        String groupId = "test_ignore_nulls_" + suffix;
+
+        TimeSeriesCategory cat = new TimeSeriesCategory(officeId, catId, "Initial category description");
+        TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, groupId, "Initial group description",
+                "sharedTsAliasId", timeSeriesId);
+
+        // Let @AfterEach clean up if we fail mid-test
+        categoriesToCleanup.add(cat);
+        groupsToCleanup.add(group);
+
+        group.getAssignedTimeSeries().add(new AssignedTimeSeries(officeId, timeSeriesId, "AliasId", timeSeriesId, 1));
+
+        ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
+        String categoryJson = Formats.format(contentType, cat);
+        String groupJson = Formats.format(contentType, group);
+
+        // Create Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(categoryJson)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/category")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Create Group initially with description and assigned time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(groupJson)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Verify initial state
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+            .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/group/" + groupId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("description", equalTo("Initial group description"))
+            .body("assigned-time-series.size()", equalTo(1))
+            .body("assigned-time-series[0].timeseries-id", equalTo(timeSeriesId));
+
+        // Re-create with ignore-nulls=true (default) and null description
+        // Using JSON string to explicitly send null
+        String nullDescriptionJson = "{\"office-id\":\"" + officeId + "\",\"id\":\"" + groupId
+                + "\",\"description\":null,\"time-series-category\":{\"office-id\":\"" + officeId
+                + "\",\"id\":\"" + catId + "\"}}";
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(nullDescriptionJson)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+            .queryParam(IGNORE_NULLS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Verify description was NOT updated to null because ignore-nulls=true
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+            .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/group/" + groupId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("description", equalTo("Initial group description"))
+            .body("assigned-time-series.size()", equalTo(1));
+
+        // Re-create with ignore-nulls=false and null description
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(nullDescriptionJson)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+            .queryParam(IGNORE_NULLS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Verify description WAS updated to null/empty
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+            .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/group/" + groupId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("description", is(org.hamcrest.Matchers.anyOf(equalTo(""), org.hamcrest.Matchers.nullValue())));
+
+        // Test ignore-nulls=false with empty assigned-time-series list
+        // Re-create with original description to set it back
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(groupJson)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+            .queryParam(IGNORE_NULLS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Re-create with ignore-nulls=false and empty assigned-time-series
+        String emptyAssignedTsJson = "{\"office-id\":\"" + officeId + "\",\"id\":\"" + groupId
+                + "\",\"description\":\"Updated description\",\"time-series-category\":{\"office-id\":\"" + officeId
+                + "\",\"id\":\"" + catId + "\"}" +
+//                ",\"assigned-time-series\":[]" +  // empty is different than null.
+                "}";
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(emptyAssignedTsJson)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+            .queryParam(IGNORE_NULLS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Verify assigned time series list was cleared
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+            .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/group/" + groupId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("description", equalTo("Updated description"))
+            .body("assigned-time-series.size()", equalTo(0));
+
+        // Re-create with ignore-nulls=true (default) and empty assigned-time-series
+        // Should preserve the empty list since it's not a valid DB empty list
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(groupJson)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+            .queryParam(IGNORE_NULLS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Verify assigned time series were added back
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+            .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/group/" + groupId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("assigned-time-series.size()", equalTo(1));
+
+        // delete category and group gets done by afterEach.
     }
 
 }

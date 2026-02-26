@@ -25,29 +25,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.CASCADE_DELETE;
-import static cwms.cda.api.Controllers.CATEGORY_ID;
-import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.CWMS_OFFICE;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.GROUP_ID;
-import static cwms.cda.api.Controllers.GROUP_OFFICE_ID;
-import static cwms.cda.api.Controllers.INCLUDE_ASSIGNED;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_TS;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
-import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.queryParamAsClass;
-import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -229,6 +207,16 @@ public class TimeSeriesGroupController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                 description = "Create will fail if provided ID already exists. Default: true"),
+            @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class,
+                        description = "Ignore null values in the request body.  Caution, if " + FAIL_IF_EXISTS
+                                + " is false and " + IGNORE_NULLS + " is false, then the create will proceed whether "
+                                + "there was an existing group or not.  If there was an existing group with a "
+                                + "description and the provided body does not specify a description (its null) the "
+                                + "combination of flags will cause the database to replace the description with null. "
+                                + "If " + IGNORE_NULLS + " is false and the provided body does not specify the "
+                                + "list of assigned time series this will result in the database replacing the list "
+                                + "with an empty list."
+                                + "Default: true")
         },
         method = HttpMethod.POST,
         tags = {TAG}
@@ -250,9 +238,10 @@ public class TimeSeriesGroupController implements CrudHandler {
                         + "TimeSeries Category office ID");
             }
 
+            boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
-            dao.create(deserialize, failIfExists);
+            dao.create(deserialize, failIfExists, ignoreNulls);
             ctx.status(HttpServletResponse.SC_CREATED);
         }
     }

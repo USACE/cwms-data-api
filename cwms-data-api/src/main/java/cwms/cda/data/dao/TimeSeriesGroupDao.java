@@ -354,32 +354,37 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
 
-    public void create(TimeSeriesGroup group, boolean failIfExists) {
+    public void create(TimeSeriesGroup group, boolean failIfExists, boolean ignoreNulls) {
         connection(dsl, c -> {
             Configuration configuration = getDslContext(c,group.getOfficeId()).configuration();
             String categoryId = group.getTimeSeriesCategory().getId();
             CWMS_TS_PACKAGE.call_STORE_TS_GROUP(configuration, categoryId,
                 group.getId(), group.getDescription(), formatBool(failIfExists),
-                "T", group.getSharedAliasId(),
+                    formatBool(ignoreNulls), group.getSharedAliasId(),
                 group.getSharedRefTsId(), group.getOfficeId());
-            assignTs(configuration,group, group.getOfficeId());
+            assignTs(configuration, group, group.getOfficeId(), ignoreNulls);
         });
     }
 
-    private void assignTs(Configuration configuration,TimeSeriesGroup group, String office) {
+    private void assignTs(Configuration configuration,TimeSeriesGroup group, String office, boolean ignoreNulls) {
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
-        if (assignedTimeSeries != null) {
-            List<TS_ALIAS_T> collect = assignedTimeSeries.stream()
-                .map(TimeSeriesGroupDao::convertToTsAliasType)
-                .collect(toList());
-            TS_ALIAS_TAB_T assignedLocs = new TS_ALIAS_TAB_T(collect);
-            CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS(configuration, group.getTimeSeriesCategory().getId(),
-                group.getId(), assignedLocs, office);
+
+        if (!ignoreNulls && (assignedTimeSeries == null || assignedTimeSeries.isEmpty())) {
+            unassignAllTs(group, office);
+        } else {
+            if (assignedTimeSeries != null) {
+                List<TS_ALIAS_T> collect = assignedTimeSeries.stream()
+                        .map(TimeSeriesGroupDao::convertToTsAliasType)
+                        .collect(toList());
+                TS_ALIAS_TAB_T assignedLocs = new TS_ALIAS_TAB_T(collect);
+                CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS(configuration, group.getTimeSeriesCategory().getId(),
+                        group.getId(), assignedLocs, office);
+            }
         }
     }
 
     public void assignTs(TimeSeriesGroup group, String office) {
-        connection(dsl, c -> assignTs(getDslContext(c, office).configuration(),group, office));
+        connection(dsl, c -> assignTs(getDslContext(c, office).configuration(),group, office, true));
     }
 
     private static TS_ALIAS_T convertToTsAliasType(AssignedTimeSeries assignedTimeSeries) {

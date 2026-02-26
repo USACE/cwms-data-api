@@ -8,7 +8,6 @@ import org.jooq.impl.SQLDataType;
 import usace.cwms.db.jooq.codegen.CWMS_20;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 
-// This is a new procedure that wasn't in the schema when the latest codegen was created.
 public class DELETE_TS_GROUP_CASCADE extends AbstractRoutine<Void> {
     private static final long serialVersionUID = 1L;
     public static final Parameter<String> P_TS_CATEGORY_ID;
