@@ -64,8 +64,6 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     private static volatile DeleteTsGroupCascadeMode deleteTsGroupCascadeMode = DeleteTsGroupCascadeMode.UNKNOWN;
-    private static final Object deleteTsGroupCascadeModeLock = new Object();
-
 
     public TimeSeriesGroupDao(DSLContext dsl) {
         super(dsl);
@@ -296,34 +294,18 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 return;
             }
 
-            // UNKNOWN: probe once, cache result.
-            synchronized (deleteTsGroupCascadeModeLock) {
-                // Re-read in case another thread already decided while we waited.
-                mode = deleteTsGroupCascadeMode;
-
-                if (mode == DeleteTsGroupCascadeMode.USE_CASCADE_ROUTINE) {
-                    call_DELETE_TS_GROUP_CASCADE(getDslContext(conn, office).configuration(), categoryId, groupId, formatBool(true), office);
-                    return;
-                }
-
-                if (mode == DeleteTsGroupCascadeMode.USE_UNASSIGN) {
+            // UNKNOWN: just try it; harmless if multiple threads probe simultaneously.
+            try {
+                call_DELETE_TS_GROUP_CASCADE(getDslContext(conn, office).configuration(), categoryId, groupId, formatBool(true), office);
+                deleteTsGroupCascadeMode = DeleteTsGroupCascadeMode.USE_CASCADE_ROUTINE;
+            } catch (RuntimeException e) {
+                if (isMissingOrBindFailure(e)) {
+                    logger.atWarning().withCause(e).log(
+                            "DELETE_TS_GROUP_CASCADE is not available. Falling back to iterative cascade delete.");
+                    deleteTsGroupCascadeMode = DeleteTsGroupCascadeMode.USE_UNASSIGN;
                     deleteViaUnassign(conn, categoryId, groupId, office, true);
-                    return;
-                }
-
-                try {
-                    call_DELETE_TS_GROUP_CASCADE(getDslContext(conn, office).configuration(), categoryId, groupId, formatBool(true), office);
-                    deleteTsGroupCascadeMode = DeleteTsGroupCascadeMode.USE_CASCADE_ROUTINE;
-                } catch (RuntimeException e) {
-                    if (isMissingOrBindFailure(e)) {
-                        logger.atWarning().withCause(e).log(
-                                "DELETE_TS_GROUP_CASCADE is not available. Falling back to iterative cascade delete.");
-                        deleteTsGroupCascadeMode = DeleteTsGroupCascadeMode.USE_UNASSIGN;
-                        deleteViaUnassign(conn, categoryId, groupId, office, true);
-                    } else {
-                        // Routine exists (or at least binds) but failed for some other reason.
-                        throw e;
-                    }
+                } else {
+                    throw e;
                 }
             }
         });
