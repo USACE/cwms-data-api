@@ -126,7 +126,8 @@ public final class ForecastSpecController extends BaseCrudHandler {
                         + "Default behavior when this parameter is not provided is to search for forecast "
                         + "specifications with a null designator. "),
                 @OpenApiParam(name = SOURCE_ENTITY, description = "Specifies the source identity "
-                        + "of the forecast spec whose data is to be included in the response.")
+                        + "of the forecast spec whose data is to be included in the response. Interpreted as a regular expression."),
+                @OpenApiParam(name = SOURCE_ENTITY_LIKE, description = "Specifies the source entity using LIKE-style matching. If provided, this parameter is used instead of the regular expression parameter 'source-entity'.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -147,12 +148,13 @@ public final class ForecastSpecController extends BaseCrudHandler {
             String names = ctx.queryParamAsClass(ID_MASK, String.class).getOrDefault("*");
             String designator = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).allowNullable().get();
             String sourceEntity = ctx.queryParamAsClass(SOURCE_ENTITY, String.class).getOrDefault("*");
+            String entityLike = ctx.queryParamAsClass(SOURCE_ENTITY_LIKE, String.class).allowNullable().get();
 
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
 
             List<ForecastSpec> specs = dao.getForecastSpecs(office, names, designator,
-                    sourceEntity);
+                    sourceEntity, entityLike);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, ForecastSpec.class);
