@@ -28,6 +28,7 @@ import static com.google.common.flogger.LazyArgs.lazy;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.data.dao.timeseriesgroup.DeleteTsGroupCascadeCaller;
 import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.TimeSeriesGroup;
@@ -55,6 +56,15 @@ import usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_TAB_T;
 public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String CWMS = "CWMS";
+
+    private enum DeleteTsGroupCascadeMode {
+        UNKNOWN,
+        USE_CASCADE_ROUTINE,
+        USE_UNASSIGN
+    }
+    private static volatile DeleteTsGroupCascadeMode deleteTsGroupCascadeMode = DeleteTsGroupCascadeMode.UNKNOWN;
+    private static final Object deleteTsGroupCascadeModeLock = new Object();
+
 
     public TimeSeriesGroupDao(DSLContext dsl) {
         super(dsl);
@@ -247,11 +257,9 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         return new TimeSeriesCategory(catOfficeId, catId, catDesc);
     }
 
-
     private Condition buildWhereCondition(String categoryId, String groupId) {
         AV_TS_CAT_GRP atcg = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
         Condition whereCondition = DSL.noCondition();
-
 
         if (categoryId != null && !categoryId.isEmpty()) {
             whereCondition = whereCondition.and(atcg.TS_CATEGORY_ID.eq(categoryId));
@@ -264,29 +272,72 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public void delete(String categoryId, String groupId, String office, boolean cascade) {
-
-        boolean databaseHasCascadeFlag = getDbVersion() > Dao.CWMS_25_07_01;
-
         connection(dsl, conn -> {
-            if (databaseHasCascadeFlag) {
-                /* Normally we'd just call via jooq's CWMS_TS_PACKAGE.call_DELETE_TS_GROUP but the
-                 * version that takes "cascade" is new and not in the codegen.
-                 */
-                DSLContext dslContext = getDslContext(conn, office);
-                dslContext.query("begin cwms_ts.delete_ts_group(p_category_id => ?, p_group_id => ?, p_cascade => ?, p_office_id => ?); end;", categoryId, groupId, formatBool(cascade), office).execute();
-            } else {
-                DSLContext dslContext = getDslContext(conn, office);
-                dslContext.transaction((Configuration trx) -> {
-                    Configuration config = trx.dsl().configuration();
-                    if (cascade) {
-                        TimeSeriesGroup group = getTimeSeriesGroup(null, office, null, categoryId, groupId);
-                        if (group != null) {
-                            unassignAllTs(group, office);
-                        }
-                    }
-                    CWMS_TS_PACKAGE.call_DELETE_TS_GROUP(config, categoryId, groupId, office);
-                });
+            // If caller didn't ask for cascade behavior, we can always use the legacy routine.
+            if (!cascade) {
+                CWMS_TS_PACKAGE.call_DELETE_TS_GROUP(getDslContext(conn, office).configuration(), categoryId, groupId, office);
+                return;
             }
+
+            // Cascade requested:
+            //  1) Prefer DELETE_TS_GROUP_CASCADE when it exists and binds successfully.
+            //  2) If it does not exist / doesn't bind, fall back to the legacy method (unassign + delete).
+            DeleteTsGroupCascadeMode mode = deleteTsGroupCascadeMode;
+
+            if (mode == DeleteTsGroupCascadeMode.USE_CASCADE_ROUTINE) {
+                DeleteTsGroupCascadeCaller.call_DELETE_TS_GROUP_CASCADE(getDslContext(conn, office).configuration(), categoryId, groupId, formatBool(true), office);
+                return;
+            }
+
+            if (mode == DeleteTsGroupCascadeMode.USE_UNASSIGN) {
+                deleteViaUnassign(conn, categoryId, groupId, office, true);
+                return;
+            }
+
+            // UNKNOWN: probe once, cache result.
+            synchronized (deleteTsGroupCascadeModeLock) {
+                // Re-read in case another thread already decided while we waited.
+                mode = deleteTsGroupCascadeMode;
+
+                if (mode == DeleteTsGroupCascadeMode.USE_CASCADE_ROUTINE) {
+                    DeleteTsGroupCascadeCaller.call_DELETE_TS_GROUP_CASCADE(getDslContext(conn, office).configuration(), categoryId, groupId, formatBool(true), office);
+                    return;
+                }
+
+                if (mode == DeleteTsGroupCascadeMode.USE_UNASSIGN) {
+                    deleteViaUnassign(conn, categoryId, groupId, office, true);
+                    return;
+                }
+
+                try {
+                    DeleteTsGroupCascadeCaller.call_DELETE_TS_GROUP_CASCADE(getDslContext(conn, office).configuration(), categoryId, groupId, formatBool(true), office);
+                    deleteTsGroupCascadeMode = DeleteTsGroupCascadeMode.USE_CASCADE_ROUTINE;
+                } catch (RuntimeException e) {
+                    if (isMissingOrBindFailure(e)) {
+                        logger.atWarning().withCause(e).log(
+                                "DELETE_TS_GROUP_CASCADE is not available. Falling back to iterative cascade delete.");
+                        deleteTsGroupCascadeMode = DeleteTsGroupCascadeMode.USE_UNASSIGN;
+                        deleteViaUnassign(conn, categoryId, groupId, office, true);
+                    } else {
+                        // Routine exists (or at least binds) but failed for some other reason.
+                        throw e;
+                    }
+                }
+            }
+        });
+    }
+
+    private void deleteViaUnassign(java.sql.Connection conn, String categoryId, String groupId, String office, boolean cascade) {
+        DSLContext dslContext = getDslContext(conn, office);
+        dslContext.transaction((Configuration trx) -> {
+            Configuration config = trx.dsl().configuration();
+            if (cascade) {
+                TimeSeriesGroup group = getTimeSeriesGroup(null, office, null, categoryId, groupId);
+                if (group != null) {
+                    unassignAllTs(group, office);
+                }
+            }
+            CWMS_TS_PACKAGE.call_DELETE_TS_GROUP(config, categoryId, groupId, office);
         });
     }
 
@@ -342,7 +393,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(
                 getDslContext(c,officeId).configuration(),
                 group.getTimeSeriesCategory().getId(), group.getId(),
-                null, "T", officeId)
+                null, "T", group.getOfficeId())
         );
     }
 }

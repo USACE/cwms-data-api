@@ -24,8 +24,32 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
+import static cwms.cda.api.Controllers.CWMS_OFFICE;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.GROUP_OFFICE_ID;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_LOCS;
+import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_TS;
+import static cwms.cda.data.dao.Dao.formatBool;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.ApiServlet;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.TimeSeriesCategoryDao;
@@ -45,13 +69,13 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
+import io.restassured.response.ValidatableResponse;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
@@ -66,14 +90,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.Dao.formatBool;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
@@ -227,7 +243,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         createLocation(timeSeriesId.split("\\.")[0],true,officeId);
         TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_create_read_delete", "IntegrationTesting");
         TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_create_read_delete", "IntegrationTesting",
-            "sharedTsAliasId", timeSeriesId);
+                "sharedTsAliasId", timeSeriesId);
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
         assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, "AliasId", timeSeriesId, 1));
@@ -236,129 +252,129 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String groupXml = Formats.format(contentType, group);
         //Create Category
         given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .contentType(Formats.JSON)
-            .body(categoryXml)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-            .queryParam(FAIL_IF_EXISTS, false)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/category")
-        .then()
-            .assertThat()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .body(categoryXml)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, officeId)
+                .queryParam(FAIL_IF_EXISTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/category")
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_CREATED));
         //Create Group
         given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .contentType(Formats.JSON)
-            .body(groupXml)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(FAIL_IF_EXISTS, false)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/group")
-        .then()
-            .assertThat()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .body(groupXml)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(FAIL_IF_EXISTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/group")
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_CREATED));
         //Read
         given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .contentType(Formats.JSON)
-            .queryParam(OFFICE, officeId)
-            .queryParam(CATEGORY_OFFICE_ID, officeId)
-            .queryParam(GROUP_OFFICE_ID, officeId)
-            .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/timeseries/group/" + group.getId())
-        .then()
-            .assertThat()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .body("office-id", equalTo(group.getOfficeId()))
-            .body("id", equalTo(group.getId()))
-            .body("description", equalTo(group.getDescription()))
-            .body("assigned-time-series[0].timeseries-id", equalTo(timeSeriesId))
-            .body("assigned-time-series[0].alias-id", equalTo("AliasId"))
-            .body("assigned-time-series[0].ref-ts-id", equalTo(timeSeriesId))
-            .body("assigned-time-series[0].ts-code", nullValue());
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_OFFICE_ID, officeId)
+                .queryParam(GROUP_OFFICE_ID, officeId)
+                .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/group/" + group.getId())
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("office-id", equalTo(group.getOfficeId()))
+                .body("id", equalTo(group.getId()))
+                .body("description", equalTo(group.getDescription()))
+                .body("assigned-time-series[0].timeseries-id", equalTo(timeSeriesId))
+                .body("assigned-time-series[0].alias-id", equalTo("AliasId"))
+                .body("assigned-time-series[0].ref-ts-id", equalTo(timeSeriesId))
+                .body("assigned-time-series[0].ts-code", nullValue());
         //Clear Assigned TS
         group.getAssignedTimeSeries().clear();
         groupXml = Formats.format(contentType, group);
         given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .contentType(Formats.JSON)
-            .body(groupXml)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
-            .queryParam(REPLACE_ASSIGNED_TS, "true")
-            .queryParam(OFFICE, group.getOfficeId())
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .patch("/timeseries/group/"+ group.getId())
-        .then()
-            .assertThat()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_OK));
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .body(groupXml)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
+                .queryParam(REPLACE_ASSIGNED_TS, "true")
+                .queryParam(OFFICE, group.getOfficeId())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .patch("/timeseries/group/"+ group.getId())
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_OK));
         //Delete Group
         given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .contentType(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-            .queryParam(CATEGORY_ID, cat.getId())
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .delete("/timeseries/group/" + group.getId())
-        .then()
-            .assertThat()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_ID, cat.getId())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/timeseries/group/" + group.getId())
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 
         //Read Empty
         given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .contentType(Formats.JSON)
-            .queryParam(OFFICE, officeId)
-            .queryParam(GROUP_OFFICE_ID, officeId)
-            .queryParam(CATEGORY_OFFICE_ID, officeId)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/timeseries/group/" + group.getId())
-        .then()
-            .assertThat()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .queryParam(OFFICE, officeId)
+                .queryParam(GROUP_OFFICE_ID, officeId)
+                .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/group/" + group.getId())
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
         //Delete Category
         given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .contentType(Formats.JSON)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .delete("/timeseries/category/" + group.getTimeSeriesCategory().getId())
-        .then()
-            .assertThat()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, officeId)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/timeseries/category/" + group.getTimeSeriesCategory().getId())
+            .then()
+                .assertThat()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
     @ParameterizedTest
@@ -1849,4 +1865,158 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_delete_respects_cascade_delete_query_param(String format) throws Exception {
+        String officeId = user.getOperatingOffice();
+        String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
+
+        // Ensure TS exists (load_data usually covers this, but this makes the test resilient)
+        createLocation(timeSeriesId.split("\\.")[0], true, officeId);
+        createTimeseries(officeId, timeSeriesId);
+
+        String suffix = String.valueOf(System.currentTimeMillis());
+        suffix = suffix.substring(suffix.length() - 6);
+        TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_c_d_" + suffix, "IntegrationTesting");
+        TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_c_d_" + suffix, "IntegrationTesting",
+                "sharedTsAliasId", timeSeriesId);
+
+        group.getAssignedTimeSeries().add(new AssignedTimeSeries(officeId, timeSeriesId, "AliasId", timeSeriesId, 1));
+
+        // Let @AfterEach clean up if we fail mid-test
+        categoriesToCleanup.add(cat);
+        groupsToCleanup.add(group);
+
+        ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
+        String categoryBody = Formats.format(contentType, cat);
+        String groupBody = Formats.format(contentType, group);
+
+        // Create Category
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .body(categoryBody)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, officeId)
+                .queryParam(FAIL_IF_EXISTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/category")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Create Group (with an assigned time series)
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .body(groupBody)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(FAIL_IF_EXISTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/group")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Sanity check: group exists and has an assignment
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_OFFICE_ID, officeId)
+                .queryParam(GROUP_OFFICE_ID, officeId)
+                .queryParam(CATEGORY_ID, cat.getId())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/group/" + group.getId())
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("assigned-time-series.size()", greaterThan(0));
+
+        // Delete WITHOUT cascade_delete: should NOT remove the group (assignments still exist)
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_ID, cat.getId())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/timeseries/group/" + group.getId())
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(not(is(HttpServletResponse.SC_NO_CONTENT)));
+
+        // Still exists
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_OFFICE_ID, officeId)
+                .queryParam(GROUP_OFFICE_ID, officeId)
+                .queryParam(CATEGORY_ID, cat.getId())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/group/" + group.getId())
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .body("assigned-time-series.size()", greaterThan(0))
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        // Delete WITH cascade_delete=true: should succeed even with assignments present
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_ID, cat.getId())
+                .queryParam(CASCADE_DELETE, true)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/timeseries/group/" + group.getId())
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        // Now it's gone
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .contentType(Formats.JSON)
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_OFFICE_ID, officeId)
+                .queryParam(GROUP_OFFICE_ID, officeId)
+                .queryParam(CATEGORY_ID, cat.getId())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/group/" + group.getId())
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
 }
