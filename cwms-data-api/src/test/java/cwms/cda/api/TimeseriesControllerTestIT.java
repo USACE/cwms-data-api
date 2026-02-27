@@ -1,11 +1,29 @@
 package cwms.cda.api;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CREATE_AS_LRTS;
+import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.END_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.INCLUDE_ENTRY_DATE;
+import static cwms.cda.api.Controllers.INCLUDE_EXTENTS;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
+import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.TRIM;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.VERSION_DATE;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 import static helpers.FloatCloseTo.floatCloseTo;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -19,23 +37,12 @@ import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
-import cwms.cda.helpers.ZoneIdHelper;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import javax.servlet.http.HttpServletResponse;
-
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
@@ -48,6 +55,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @Tag("integration")
 final class TimeseriesControllerTestIT extends DataApiTestIT {
@@ -692,6 +709,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsDataPsuedoOff)
                 .header("Authorization",user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, false)
                 .queryParam("office",officeId)
             .when()
                 .redirects().follow(true)

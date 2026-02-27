@@ -29,20 +29,25 @@ import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
 
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import com.google.common.flogger.FluentLogger;
-
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
-import cwms.cda.data.dao.basin.BasinDao;
 import cwms.cda.data.dao.VerticalDatum;
+import cwms.cda.data.dao.basin.BasinDao;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.data.dto.basin.Basin;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.helpers.ZoneIdHelper;
-import fixtures.*;
+import fixtures.CwmsDataApiSetupCallback;
+import fixtures.IntegrationTestNameGenerator;
+import fixtures.KeyCloakExtension;
+import fixtures.MinIOExtension;
+import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
-
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -60,17 +65,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.catalina.Manager;
 import org.apache.catalina.SessionEvent;
 import org.apache.catalina.SessionListener;
 import org.apache.catalina.session.StandardSession;
 import org.apache.commons.io.IOUtils;
-import freemarker.template.Configuration;
-import freemarker.template.Template;
-import freemarker.template.TemplateException;
-
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -83,7 +83,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
-import usace.cwms.db.jooq.codegen.tables.AV_VERT_DATUM_OFFSET;
 
 /**
  * Helper class to manage cycling tests multiple times against a database.
@@ -95,7 +94,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_VERT_DATUM_OFFSET;
 @ExtendWith(MinIOExtension.class)
 @ExtendWith(CwmsDataApiSetupCallback.class)
 public class DataApiTestIT {
-    private static FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     protected static String createLocationQuery = null;
     protected static String createTimeseriesQuery = null;
@@ -652,7 +651,7 @@ public class DataApiTestIT {
     @AfterEach
     public void cleanupLocationGroups() throws Exception {
         if (this.groupsCreated.isEmpty()) {
-            logger.atInfo().log("No groups to cleanup.");
+            logger.atFine().log("No groups to cleanup.");
             return;
         }
         logger.atInfo().log("Cleaning up groups that tests did not remove.");
@@ -677,7 +676,7 @@ public class DataApiTestIT {
     @AfterEach
     public void cleanupLocationCategories() throws Exception {
         if (this.categoriesCreated.isEmpty()) {
-            logger.atInfo().log("No location categories to cleanup.");
+            logger.atFine().log("No location categories to cleanup.");
             return;
         }
         logger.atInfo().log("Cleaning up location categories that tests did not remove.");
@@ -707,7 +706,7 @@ public class DataApiTestIT {
      */
     public static void cleanupBasins() throws Exception {
         if (basinsCreated.isEmpty()) {
-            logger.atInfo().log("No basins to cleanup.");
+            logger.atFine().log("No basins to cleanup.");
             return;
         }
         logger.atInfo().log("Cleaning up basins test did not remove.");
