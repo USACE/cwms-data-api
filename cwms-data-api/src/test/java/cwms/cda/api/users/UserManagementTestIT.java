@@ -3,11 +3,13 @@ package cwms.cda.api.users;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 
+import cwms.cda.api.Controllers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -189,6 +191,61 @@ public class UserManagementTestIT extends DataApiTestIT {
         final User m5hectest = users.stream().filter(u -> u.getUserName().equals("M5HECTEST")).findFirst().orElse(null);
         assertNotNull(m5hectest, "Could not retrieve expected user.");
         assertTrue(m5hectest.getRoles().get("SWT").contains("TS ID Creator"));
+    }
+
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
+    void test_list_users_username_regex_filter(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+
+        Users users = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .spec(authSpec)
+                .queryParam(Controllers.USERNAME, "*")
+                .when()
+                .get("/users")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpCode.OK.getStatus()))
+                .extract().as(Users.class);
+
+        assertNotNull(users);
+        assertNotNull(users.getUsers());
+        assertFalse(users.getUsers().isEmpty(), "Expected at least one user returned for regex filter");
+
+
+        users = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+            .queryParam(Controllers.USERNAME, "^M5HECTEST$")
+        .when()
+            .get("/users")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.OK.getStatus()))
+            .extract().as(Users.class);
+
+        assertNotNull(users);
+        assertNotNull(users.getUsers());
+        assertFalse(users.getUsers().isEmpty(), "Expected at least one user returned for regex filter");
+        // Ensure the filtered list contains only the expected username
+        users.getUsers().forEach(u -> assertEquals("M5HECTEST", u.getUserName()));
+
+        users = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+            .queryParam(Controllers.USERNAME, "M3DOESNTEXIST")
+        .when()
+            .get("/users")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.OK.getStatus()))
+            .extract().as(Users.class);
+
+        assertNotNull(users);
+        assertNotNull(users.getUsers());
+        assertTrue(users.getUsers().isEmpty(), "Expected no users returned for regex filter");
     }
 
 

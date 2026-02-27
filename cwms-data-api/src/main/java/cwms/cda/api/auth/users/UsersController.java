@@ -66,9 +66,11 @@ public class UsersController implements CrudHandler {
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(allowEmptyValue = true, name = OFFICE, type = String.class,
+            @OpenApiParam(allowEmptyValue = true, name = OFFICE,
                     description = "Show only users with active privileges in a given office." 
                                 + Controllers.OFFICE_DESCRIPTION ),
+            @OpenApiParam(name = USERNAME,
+                    description = "Filter by username using a regular expression. Case-insensitive. Example: ^JOHN.*$") ,
             @OpenApiParam(name = PAGE,
                     description = "This end point can return a lot of data, this "
                             + "identifies where in the request you are. This is an opaque"
@@ -105,6 +107,7 @@ public class UsersController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
+            String username = ctx.queryParam(USERNAME);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Users.class);
@@ -125,7 +128,7 @@ public class UsersController implements CrudHandler {
                     Boolean.class, false, metrics,
                     name(UsersController.class.getName(), GET_ALL));
             UserDao dao = new UserDao(dsl);
-            Users users = dao.getAll(cursor, pageSize, office, includeRoles);
+            Users users = dao.getAll(cursor, pageSize, office, includeRoles, username);
 
             String result = Formats.format(contentType, users);
 

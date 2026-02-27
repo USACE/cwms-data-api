@@ -133,7 +133,7 @@ public class UserDao extends JooqDao<User> {
         });
     }
 
-    public Users getAll(String cursor, int pageSize, String office, boolean includeRoles) {
+    public Users getAll(String cursor, int pageSize, String office, boolean includeRoles, String usernameRegex) {
         final AV_SEC_USERS vUserGroups = AV_SEC_USERS.AV_SEC_USERS.as("ug");
         final Table<?> vUsers = AT_SEC_CWMS_USERS.as("ut");
         final Field<String> userId = field(name(vUsers.getName(),"USERID"), String.class);
@@ -157,6 +157,11 @@ public class UserDao extends JooqDao<User> {
                  .where(upper(vUserGroups.DB_OFFICE_ID).eq(upper(office)))
                  .and(vUserGroups.IS_MEMBER.eq("T")).asField().gt(1)
             ;
+
+            // Apply username regex filter (case-insensitive) if provided
+            if (usernameRegex != null && !usernameRegex.isEmpty()) {
+                whereClause = whereClause.and(JooqDao.caseInsensitiveLikeRegexNullTrue(userId, usernameRegex));
+            }
 
             if (cursor == null || cursor.isEmpty()) {
                 SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
@@ -189,6 +194,11 @@ public class UserDao extends JooqDao<User> {
                         .from(vUserGroups)
                         .where(upper(vUserGroups.DB_OFFICE_ID).eq(upper(limitOffice)))
                         .and(vUserGroups.IS_MEMBER.eq("T")).asField().gt(1);
+
+                    // Note: usernameRegex is not included in the cursor; apply it if present in current request
+                    if (usernameRegex != null && !usernameRegex.isEmpty()) {
+                        whereClause = whereClause.and(JooqDao.caseInsensitiveLikeRegexNullTrue(userId, usernameRegex));
+                    }
                 }
             }
 
