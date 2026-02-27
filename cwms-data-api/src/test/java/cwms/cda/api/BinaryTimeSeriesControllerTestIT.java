@@ -1,5 +1,18 @@
 package cwms.cda.api;
 
+import static cwms.cda.api.BinaryTimeSeriesController.REPLACE_ALL;
+import static cwms.cda.api.Controllers.BLOB_ID;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static io.restassured.RestAssured.given;
+import static java.util.stream.Collectors.toMap;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
@@ -10,14 +23,6 @@ import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ResponseBody;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URIBuilder;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.*;
-
-import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,17 +32,18 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
-
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import static cwms.cda.api.BinaryTimeSeriesController.REPLACE_ALL;
-import static cwms.cda.api.Controllers.BLOB_ID;
-import static cwms.cda.api.Controllers.VERSION_DATE;
-import static io.restassured.RestAssured.given;
-import static java.util.stream.Collectors.toMap;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("integration")
 final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
@@ -557,6 +563,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsIdentifier)
             .queryParam(Controllers.BEGIN, BEGIN_STR)
