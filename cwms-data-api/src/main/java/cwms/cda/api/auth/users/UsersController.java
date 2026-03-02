@@ -4,36 +4,27 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-import java.util.List;
-
 import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 
-import cwms.cda.ApiServlet;
-import cwms.cda.api.ClobController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.UserDao;
-import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.CwmsDTOPaginated;
-import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.data.dto.auth.users.User;
 import cwms.cda.data.dto.auth.users.Users;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.security.Role;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.security.RouteRole;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
 
@@ -69,8 +60,9 @@ public class UsersController implements CrudHandler {
             @OpenApiParam(allowEmptyValue = true, name = OFFICE,
                     description = "Show only users with active privileges in a given office." 
                                 + Controllers.OFFICE_DESCRIPTION ),
-            @OpenApiParam(name = USERNAME,
-                    description = "Filter by username using a regular expression. Case-insensitive. Example: ^JOHN.*$") ,
+            @OpenApiParam(name = USERNAME_LIKE,
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                            + " matching against the username"),
             @OpenApiParam(name = PAGE,
                     description = "This end point can return a lot of data, this "
                             + "identifies where in the request you are. This is an opaque"
@@ -107,7 +99,7 @@ public class UsersController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
-            String username = ctx.queryParam(USERNAME);
+            String username = ctx.queryParam(USERNAME_LIKE);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Users.class);
