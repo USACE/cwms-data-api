@@ -318,7 +318,9 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             if (cascade) {
                 TimeSeriesGroup group = getTimeSeriesGroup(null, office, null, categoryId, groupId);
                 if (group != null) {
-                    unassignAllTs(group, office);
+                    CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(config,
+                            group.getTimeSeriesCategory().getId(), group.getId(),
+                            null, "T", group.getOfficeId());
                 }
             }
             CWMS_TS_PACKAGE.call_DELETE_TS_GROUP(config, categoryId, groupId, office);
@@ -348,11 +350,14 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         });
     }
 
-    private void assignTs(Configuration configuration,TimeSeriesGroup group, String office, boolean ignoreNulls) {
+    private void assignTs(Configuration configuration, TimeSeriesGroup group, String office, boolean ignoreNulls) {
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
         if (!ignoreNulls && (assignedTimeSeries == null || assignedTimeSeries.isEmpty())) {
-            unassignAllTs(group, office);
+            CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(configuration,
+                    group.getTimeSeriesCategory().getId(), group.getId(),
+                    null, "T", group.getOfficeId());
+
         } else {
             if (assignedTimeSeries != null) {
                 List<TS_ALIAS_T> collect = assignedTimeSeries.stream()
