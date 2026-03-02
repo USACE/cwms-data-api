@@ -81,7 +81,8 @@ public class AccountingCreateController extends BaseHandler {
     @OpenApi(
         requestBody = @OpenApiRequestBody(
             content = {
-                @OpenApiContent(from = WaterSupplyAccounting.class, type = Formats.JSONV1)
+                @OpenApiContent(from = WaterSupplyAccounting.class, type = Formats.JSONV1),
+                @OpenApiContent(from = WaterSupplyAccounting.class, type = Formats.JSONV2)
             },
             required = true),
         pathParams = {
@@ -90,7 +91,8 @@ public class AccountingCreateController extends BaseHandler {
             @OpenApiParam(name = WATER_USER, description = "The water user the accounting is associated with.",
                     required = true),
             @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract associated with the "
-                    + "accounting.", required = true),
+                    + "accounting. For names with special characters (such as '/'), use the JSONV2 accept header "
+                    + "with a name encoded using URL-safe BASE64.", required = true),
         },
         responses = {
             @OpenApiResponse(status = STATUS_201, description = "The pump accounting entry was created."),
@@ -107,11 +109,17 @@ public class AccountingCreateController extends BaseHandler {
         logUnusedPathParameter(ctx, WATER_USER, "Body contains required information.");
 
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String contractId = Arrays.toString(
-                Base64.decodeBase64(ctx.pathParam(CONTRACT_NAME).getBytes(StandardCharsets.UTF_8)));
+            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
+            String contractId;
+            if (formatHeader != null && formatHeader.equals(Formats.JSONV2)) {
+                contractId = Arrays.toString(
+                    Base64.decodeBase64(ctx.pathParam(CONTRACT_NAME).getBytes(StandardCharsets.UTF_8)));
+            } else {
+                contractId = ctx.pathParam(CONTRACT_NAME);
+            }
+
             final String office = ctx.pathParam(OFFICE);
             DSLContext dsl = getDslContext(ctx);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, WaterSupplyAccounting.class);
             ctx.contentType(contentType.toString());
             WaterSupplyAccounting accounting = Formats.parseContent(contentType, ctx.body(),
