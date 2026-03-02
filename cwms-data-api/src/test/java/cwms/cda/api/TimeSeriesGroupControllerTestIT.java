@@ -32,7 +32,6 @@ import static cwms.cda.api.Controllers.CWMS_OFFICE;
 import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GROUP_OFFICE_ID;
-import static cwms.cda.api.Controllers.IGNORE_NULLS;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_LOCS;
 import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_TS;
@@ -43,7 +42,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -495,6 +493,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
             .queryParam(REPLACE_ASSIGNED_TS, "true")
             .queryParam(OFFICE, group.getOfficeId())
@@ -506,11 +505,13 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
+
         //Delete timeseries
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(BEGIN, "2025-05-08T11:00:00+00:00")
             .queryParam(END, "2025-05-19T11:00:00+00:00")
@@ -525,12 +526,14 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
+
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, cat.getId())
         .when()
@@ -546,6 +549,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(GROUP_OFFICE_ID, officeId)
@@ -563,6 +567,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
             .contentType(Formats.JSON)
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
         .when()

@@ -177,6 +177,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT,"F")
             .queryParam(NAME, ts.get(NAME).asText())
