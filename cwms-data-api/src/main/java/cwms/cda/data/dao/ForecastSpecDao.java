@@ -5,12 +5,14 @@ import cwms.cda.data.dto.forecast.ForecastSpec;
 
 import org.jetbrains.annotations.NotNull;
 import org.jooq.SelectConditionStep;
+import org.jooq.TableField;
 import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_FCST_LOCATION;
 import usace.cwms.db.jooq.codegen.tables.AV_FCST_SPEC;
 import usace.cwms.db.jooq.codegen.tables.AV_FCST_TIME_SERIES;
 
 import org.jooq.DSLContext;
+import org.jooq.Condition;
 import org.jooq.Record2;
 import org.jooq.Record7;
 import org.jooq.SelectOnConditionStep;
@@ -56,13 +58,13 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
     }
 
     public List<ForecastSpec> getForecastSpecs(String office, String specIdRegex,
-            String designator, String sourceEntity) {
+            String designator, String sourceEntityRegex, String entityLike) {
        AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
         SelectConditionStep<Record7<String, String, String, String, String, String, String>> query =
             forecastSpecQuery(dsl)
                 .where(JooqDao.caseInsensitiveLikeRegex(spec.OFFICE_ID, office))
                 .and(JooqDao.caseInsensitiveLikeRegex(spec.FCST_SPEC_ID, specIdRegex))
-                .and(JooqDao.caseInsensitiveLikeRegex(spec.ENTITY_ID, sourceEntity));
+                .and(buildEntityCondition(spec, sourceEntityRegex, entityLike));
         //Designator is a nullable column in the database.
         if(designator == null) {
             query = query.and(spec.FCST_DESIGNATOR.isNull());
@@ -71,6 +73,17 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
         }
         return query.fetch()
                .map(ForecastSpecDao::map);
+    }
+
+    private Condition buildEntityCondition(AV_FCST_SPEC spec,
+                                                  String sourceEntityRegex,
+                                                  String entityLike) {
+        // If entityLike is provided, use case-insensitive LIKE
+        if (entityLike != null) {
+            return spec.ENTITY_ID.likeIgnoreCase(entityLike);
+        }
+        // Fallback to regex behavior
+        return JooqDao.caseInsensitiveLikeRegex(spec.ENTITY_ID, sourceEntityRegex);
     }
 
     private static SelectOnConditionStep<Record7<String, String, String, String,
