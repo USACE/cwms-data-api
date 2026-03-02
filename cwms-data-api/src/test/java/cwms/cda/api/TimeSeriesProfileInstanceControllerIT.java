@@ -221,6 +221,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                 .contentType(Formats.JSONV1)
                 .body(tspData3)
                 .header(AUTH_HEADER, user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, true)
                 .queryParam(FAIL_IF_EXISTS, false)
             .when()
                 .redirects().follow(true)
