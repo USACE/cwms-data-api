@@ -10,6 +10,12 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.data.dao.VerticalDatum;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
+import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv1;
+import cwms.cda.formatters.xml.XMLv2;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,11 +27,16 @@ import java.util.stream.Collectors;
 @JsonDeserialize(builder = VerticalDatumInfo.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@FormattableWith(contentType = Formats.XMLV1, formatter = XMLv1.class)
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 public class VerticalDatumInfo extends CwmsDTOBase {
 
-
+    @JacksonXmlProperty(isAttribute = true)
     String office;
 
+    @JacksonXmlProperty(isAttribute = true)
     String unit;
     String location;
 
@@ -132,6 +143,7 @@ public class VerticalDatumInfo extends CwmsDTOBase {
 
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Offset {
+        @JacksonXmlProperty(isAttribute = true)
         boolean estimate;
 
         String toDatum;
@@ -268,13 +280,15 @@ public class VerticalDatumInfo extends CwmsDTOBase {
 
         @JsonIgnore
         public Builder from(VerticalDatumInfo vdi) {
-            this.office = vdi.getOffice();
-            this.unit = vdi.getUnit();
-            this.location = vdi.getLocation();
-            this.nativeDatum = vdi.getNativeDatum();
-            this.elevation = vdi.getElevation();
-            this.offsets = vdi.getOffsets();
-            this.localDatumName = vdi.getLocalDatumName();
+            if(vdi != null) {
+                this.office = vdi.getOffice();
+                this.unit = vdi.getUnit();
+                this.location = vdi.getLocation();
+                this.nativeDatum = vdi.getNativeDatum();
+                this.elevation = vdi.getElevation();
+                this.offsets = vdi.getOffsets();
+                this.localDatumName = vdi.getLocalDatumName();
+            }
             return this;
         }
 

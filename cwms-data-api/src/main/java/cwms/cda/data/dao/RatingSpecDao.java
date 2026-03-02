@@ -453,7 +453,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
             Condition condition = DSL.noCondition();
 
             if (office != null && !office.isEmpty() && !office.equals("*")) {
-                condition = condition.and(specView.OFFICE_ID.eq(office));
+                condition = condition.and(specView.OFFICE_ID.eq(office.toUpperCase()));
             }
 
             if (templateIdMask != null) {

@@ -29,20 +29,25 @@ import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
 
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import com.google.common.flogger.FluentLogger;
-
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
-import cwms.cda.data.dao.basin.BasinDao;
 import cwms.cda.data.dao.VerticalDatum;
+import cwms.cda.data.dao.basin.BasinDao;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.data.dto.basin.Basin;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.helpers.ZoneIdHelper;
-import fixtures.*;
+import fixtures.CwmsDataApiSetupCallback;
+import fixtures.IntegrationTestNameGenerator;
+import fixtures.KeyCloakExtension;
+import fixtures.MinIOExtension;
+import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
-
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -50,7 +55,9 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,17 +65,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.catalina.Manager;
 import org.apache.catalina.SessionEvent;
 import org.apache.catalina.SessionListener;
 import org.apache.catalina.session.StandardSession;
 import org.apache.commons.io.IOUtils;
-import freemarker.template.Configuration;
-import freemarker.template.Template;
-import freemarker.template.TemplateException;
-
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -92,7 +94,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 @ExtendWith(MinIOExtension.class)
 @ExtendWith(CwmsDataApiSetupCallback.class)
 public class DataApiTestIT {
-    private static FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     protected static String createLocationQuery = null;
     protected static String createTimeseriesQuery = null;
@@ -281,6 +283,45 @@ public class DataApiTestIT {
                 if (!ex.getMessage().contains("unique constraint")) {
                     throw new RuntimeException("Unable to insert user: " + username, ex);
                 }
+            }
+        }, "cwms_20");
+    }
+
+    protected static void addVerticalDatumOffsetForExistingLocation(String location, String officeId, VerticalDatum from, VerticalDatum to, double offset, boolean isEstimate) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        String desc = isEstimate ? "ESTIMATE" : "";
+        final String insertSql =
+                "INSERT INTO AT_VERT_DATUM_OFFSET " +
+                        " (LOCATION_CODE, VERTICAL_DATUM_ID_1, VERTICAL_DATUM_ID_2, EFFECTIVE_DATE, OFFSET, DESCRIPTION) " +
+                        " VALUES (?, ?, ?, ?, ?, ?)";
+
+        db.connection(c -> {
+            String sql = "SELECT LOCATION_CODE FROM AV_LOC2 WHERE DB_OFFICE_ID = ? AND LOCATION_ID = ?";
+            Long locationCode = null;
+            try (PreparedStatement ps = c.prepareStatement(sql)) {
+                ps.setString(1, officeId);
+                ps.setString(2, location);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        locationCode = rs.getLong(1);
+                    }
+                }
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to verify location exists for offset insert", ex);
+            }
+            if (locationCode == null) {
+                throw new IllegalArgumentException("Location not found for office=" + officeId + ", id=" + location);
+            }
+            try (PreparedStatement ps = c.prepareStatement(insertSql)) {
+                ps.setLong(1, locationCode);              // LOCATION_CODE
+                ps.setString(2, from.toString());       // VERTICAL_DATUM_ID_1
+                ps.setString(3, to.toString());         // VERTICAL_DATUM_ID_2
+                ps.setDate(4, Date.valueOf("1000-01-01")); //EFFECTIVE_DATE
+                ps.setDouble(5, offset);                // OFFSET
+                ps.setString(6, desc);                  // DESCRIPTION ("" if not estimate)
+                ps.executeUpdate();
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to insert vertical datum offset", ex);
             }
         }, "cwms_20");
     }
@@ -610,7 +651,7 @@ public class DataApiTestIT {
     @AfterEach
     public void cleanupLocationGroups() throws Exception {
         if (this.groupsCreated.isEmpty()) {
-            logger.atInfo().log("No groups to cleanup.");
+            logger.atFine().log("No groups to cleanup.");
             return;
         }
         logger.atInfo().log("Cleaning up groups that tests did not remove.");
@@ -635,7 +676,7 @@ public class DataApiTestIT {
     @AfterEach
     public void cleanupLocationCategories() throws Exception {
         if (this.categoriesCreated.isEmpty()) {
-            logger.atInfo().log("No location categories to cleanup.");
+            logger.atFine().log("No location categories to cleanup.");
             return;
         }
         logger.atInfo().log("Cleaning up location categories that tests did not remove.");
@@ -665,7 +706,7 @@ public class DataApiTestIT {
      */
     public static void cleanupBasins() throws Exception {
         if (basinsCreated.isEmpty()) {
-            logger.atInfo().log("No basins to cleanup.");
+            logger.atFine().log("No basins to cleanup.");
             return;
         }
         logger.atInfo().log("Cleaning up basins test did not remove.");
