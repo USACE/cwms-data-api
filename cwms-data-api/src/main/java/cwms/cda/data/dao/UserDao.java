@@ -194,11 +194,6 @@ public class UserDao extends JooqDao<User> {
                         .from(vUserGroups)
                         .where(upper(vUserGroups.DB_OFFICE_ID).eq(upper(limitOffice)))
                         .and(vUserGroups.IS_MEMBER.eq("T")).asField().gt(1);
-
-                    // Note: usernameRegex is not included in the cursor; apply it if present in current request
-                    if (usernameRegex != null && !usernameRegex.isEmpty()) {
-                        whereClause = whereClause.and(JooqDao.caseInsensitiveLikeRegexNullTrue(userId, usernameRegex));
-                    }
                 }
             }
 

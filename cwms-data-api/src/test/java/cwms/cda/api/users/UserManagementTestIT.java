@@ -193,6 +193,43 @@ public class UserManagementTestIT extends DataApiTestIT {
         assertTrue(m5hectest.getRoles().get("SWT").contains("TS ID Creator"));
     }
 
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
+    void test_list_users_pagination_regex_filter(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+        final ArrayList<User> users = new ArrayList<User>();
+        Users tmp = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .spec(authSpec)
+                .queryParam(Controllers.USERNAME_LIKE, "^M5HECTEST$")
+                .queryParam("page-size", 2)
+        .when()
+                .get("/users")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpCode.OK.getStatus()))
+                .extract().as(Users.class);
+
+        users.addAll(tmp.getUsers());
+        while (tmp.getNextPage() != null) {
+            tmp = given()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .spec(authSpec)
+                    .queryParam("page",tmp.getNextPage())
+            .when()
+                    .get("/users")
+            .then()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .statusCode(is(HttpCode.OK.getStatus()))
+                    .extract().as(Users.class);
+            users.addAll(tmp.getUsers());
+        }
+
+        assertEquals(tmp.getTotal(), users.size(), "Returned user size does not match provided total.");
+        final User m5hectest = users.stream().filter(u -> u.getUserName().equals("M5HECTEST")).findFirst().orElse(null);
+        assertNotNull(m5hectest, "Could not retrieve expected user.");
+        assertTrue(m5hectest.getRoles().get("SWT").contains("TS ID Creator"));
+    }
 
     @ParameterizedTest
     @ArgumentsSource(UserSpecSource.class)
@@ -200,15 +237,15 @@ public class UserManagementTestIT extends DataApiTestIT {
     void test_list_users_username_regex_filter(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
 
         Users users = given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .spec(authSpec)
-                .queryParam(Controllers.USERNAME_LIKE, "*")
-                .when()
-                .get("/users")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpCode.OK.getStatus()))
-                .extract().as(Users.class);
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+            .queryParam(Controllers.USERNAME_LIKE, "*")
+        .when()
+            .get("/users")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.OK.getStatus()))
+            .extract().as(Users.class);
 
         assertNotNull(users);
         assertNotNull(users.getUsers());
