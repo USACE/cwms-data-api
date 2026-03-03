@@ -98,9 +98,10 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
                 // Before 2/3/2026 DELETE_TS_CATEGORY wasn't removing assignments from groups so we start a transaction and do the deletes
 
                 dslContext.transaction((Configuration trx) -> {
-                    Configuration config = trx.dsl().configuration();
+                    DSLContext context = trx.dsl();
+                    Configuration config = context.configuration();
 
-                    TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dslContext);
+                    TimeSeriesGroupDao dao = new TimeSeriesGroupDao(context);
                     List<TimeSeriesGroup> timeSeriesGroups = dao.getTimeSeriesGroups(null, null, office, false, categoryId, null);
                     for (TimeSeriesGroup group : timeSeriesGroups) {
                         dao.delete(categoryId, group.getId(), office, true);

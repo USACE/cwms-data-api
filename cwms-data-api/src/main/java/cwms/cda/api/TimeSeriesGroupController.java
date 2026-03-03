@@ -181,7 +181,6 @@ public class TimeSeriesGroupController implements CrudHandler {
             if (group != null) {
                 String result = Formats.format(contentType, group);
 
-
                 ctx.result(result);
                 ctx.contentType(contentType.toString());
                 requestResultSize.update(result.length());

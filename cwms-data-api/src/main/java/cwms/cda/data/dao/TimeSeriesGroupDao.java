@@ -79,7 +79,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             whereCond = AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID.eq(tsOfficeId.toUpperCase());
         }
 
-        return getTimeSeriesGroupsWhere(whereCond, tsOfficeId, groupOfficeId, categoryOfficeId);
+        return getTimeSeriesGroupsWhere(dsl, whereCond, tsOfficeId, groupOfficeId, categoryOfficeId);
     }
 
     public List<TimeSeriesGroup> getTimeSeriesGroups(String tsOfficeId, String groupOfficeId, String categoryOfficeId,
@@ -100,22 +100,28 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         }
 
         if (includeAssigned) {
-            return getTimeSeriesGroupsWhere(whereCond, tsOfficeId, groupOfficeId, categoryOfficeId);
+            return getTimeSeriesGroupsWhere(dsl, whereCond, tsOfficeId, groupOfficeId, categoryOfficeId);
         } else {
             return getTimeSeriesGroupsWithoutAssigned(whereCond);
         }
 
     }
 
-    public List<TimeSeriesGroup> getTimeSeriesGroups(String tsOfficeId, String groupOfficeId, String categoryOfficeId,
+    public List<TimeSeriesGroup> getTimeSeriesGroups(DSLContext dslContext, String tsOfficeId, String groupOfficeId, String categoryOfficeId,
                                                      String categoryId, String groupId) {
-        return getTimeSeriesGroupsWhere(buildWhereCondition(categoryId, groupId), tsOfficeId, groupOfficeId,
-                categoryOfficeId);
+        return getTimeSeriesGroupsWhere(dslContext, buildWhereCondition(categoryId, groupId), tsOfficeId,
+                groupOfficeId, categoryOfficeId);
     }
+
 
     public TimeSeriesGroup getTimeSeriesGroup(String tsOfficeId, String groupOfficeId, String categoryOfficeId,
                                               String categoryId, String groupId) {
-        List<TimeSeriesGroup> timeSeriesGroups = getTimeSeriesGroups(tsOfficeId, groupOfficeId, categoryOfficeId, categoryId, groupId);
+        return getTimeSeriesGroup(dsl, tsOfficeId, groupOfficeId, categoryOfficeId, categoryId, groupId);
+    }
+
+    public TimeSeriesGroup getTimeSeriesGroup(DSLContext dslContext, String tsOfficeId, String groupOfficeId, String categoryOfficeId,
+                                              String categoryId, String groupId) {
+        List<TimeSeriesGroup> timeSeriesGroups = getTimeSeriesGroups(dslContext, tsOfficeId, groupOfficeId, categoryOfficeId, categoryId, groupId);
         if (timeSeriesGroups != null && !timeSeriesGroups.isEmpty()) {
             if (timeSeriesGroups.size() == 1) {
                 return timeSeriesGroups.get(0);
@@ -130,8 +136,8 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
 
     @NotNull
-    private List<TimeSeriesGroup> getTimeSeriesGroupsWhere(Condition whereCond, String tsOfficeId, String groupOfficeId,
-            String categoryOfficeId) {
+    private List<TimeSeriesGroup> getTimeSeriesGroupsWhere(DSLContext dslContext, Condition whereCond, String tsOfficeId, String groupOfficeId,
+                                                           String categoryOfficeId) {
         AV_TS_CAT_GRP catGrp = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
         AV_TS_GRP_ASSGN grpAssgn = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
 
@@ -150,7 +156,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         }
 
         SelectSeekStep4<Record9<String, String, String, String, String, String, String, String,
-                List<AssignedTimeSeries>>, String, String, String, String> query = dsl
+                List<AssignedTimeSeries>>, String, String, String, String> query = dslContext
             .select(
                 catGrp.CAT_DB_OFFICE_ID,
                 catGrp.TS_CATEGORY_ID,
@@ -161,7 +167,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 catGrp.SHARED_TS_ALIAS_ID,
                 catGrp.SHARED_REF_TS_ID,
                 DSL.multiset(
-                    dsl
+                        dslContext
                         .select(
                             grpAssgn.TS_ID,
                             grpAssgn.DB_OFFICE_ID,
@@ -273,9 +279,10 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
     public void delete(String categoryId, String groupId, String office, boolean cascade) {
         connection(dsl, conn -> {
+            DSLContext dslContext = getDslContext(conn, office);
             // If caller didn't ask for cascade behavior, we can always use the legacy routine.
             if (!cascade) {
-                CWMS_TS_PACKAGE.call_DELETE_TS_GROUP(getDslContext(conn, office).configuration(), categoryId, groupId, office);
+                CWMS_TS_PACKAGE.call_DELETE_TS_GROUP(dslContext.configuration(), categoryId, groupId, office);
                 return;
             }
 
@@ -285,25 +292,25 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             DeleteTsGroupCascadeMode mode = deleteTsGroupCascadeMode;
 
             if (mode == DeleteTsGroupCascadeMode.USE_CASCADE_ROUTINE) {
-                call_DELETE_TS_GROUP_CASCADE(getDslContext(conn, office).configuration(), categoryId, groupId, formatBool(true), office);
+                call_DELETE_TS_GROUP_CASCADE(dslContext.configuration(), categoryId, groupId, formatBool(true), office);
                 return;
             }
 
             if (mode == DeleteTsGroupCascadeMode.USE_UNASSIGN) {
-                deleteViaUnassign(conn, categoryId, groupId, office, true);
+                deleteViaUnassign(dslContext, categoryId, groupId, office, true);
                 return;
             }
 
             // UNKNOWN: just try it; harmless if multiple threads probe simultaneously.
             try {
-                call_DELETE_TS_GROUP_CASCADE(getDslContext(conn, office).configuration(), categoryId, groupId, formatBool(true), office);
+                call_DELETE_TS_GROUP_CASCADE(dslContext.configuration(), categoryId, groupId, formatBool(true), office);
                 deleteTsGroupCascadeMode = DeleteTsGroupCascadeMode.USE_CASCADE_ROUTINE;
             } catch (RuntimeException e) {
                 if (isMissingOrBindFailure(e)) {
                     logger.atWarning().withCause(e).log(
                             "DELETE_TS_GROUP_CASCADE is not available. Falling back to iterative cascade delete.");
                     deleteTsGroupCascadeMode = DeleteTsGroupCascadeMode.USE_UNASSIGN;
-                    deleteViaUnassign(conn, categoryId, groupId, office, true);
+                    deleteViaUnassign(dslContext, categoryId, groupId, office, true);
                 } else {
                     throw e;
                 }
@@ -311,12 +318,13 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         });
     }
 
-    private void deleteViaUnassign(java.sql.Connection conn, String categoryId, String groupId, String office, boolean cascade) {
-        DSLContext dslContext = getDslContext(conn, office);
-        TimeSeriesGroup group = getTimeSeriesGroup(null, office, null, categoryId, groupId);
-        dslContext.transaction((Configuration trx) -> {
-            Configuration config = trx.dsl().configuration();
+    private void deleteViaUnassign(DSLContext dslContext, String categoryId, String groupId, String office, boolean cascade) {
+
+        dslContext.transaction((Configuration config) -> {
+            DSLContext context = config.dsl();
+
             if (cascade) {
+                TimeSeriesGroup group = getTimeSeriesGroup(context,null, office, null, categoryId, groupId);
                 if (group != null) {
                     CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(config,
                             group.getTimeSeriesCategory().getId(), group.getId(),
@@ -328,12 +336,12 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
-    public static void call_DELETE_TS_GROUP_CASCADE(Configuration configuration, String P_TS_CATEGORY_ID, String P_TS_GROUP_ID, String P_CASCADE, String P_DB_OFFICE_ID) {
+    public static void call_DELETE_TS_GROUP_CASCADE(Configuration configuration, String tsCategoryId, String tsGroupId, String cascade, String dbOfficeId) {
         DELETE_TS_GROUP_CASCADE p = new DELETE_TS_GROUP_CASCADE();  // This is our own routine, not codegen.
-        p.setP_TS_CATEGORY_ID(P_TS_CATEGORY_ID);
-        p.setP_TS_GROUP_ID(P_TS_GROUP_ID);
-        p.setP_CASCADE(P_CASCADE);
-        p.setP_DB_OFFICE_ID(P_DB_OFFICE_ID);
+        p.setP_TS_CATEGORY_ID(tsCategoryId);
+        p.setP_TS_GROUP_ID(tsGroupId);
+        p.setP_CASCADE(cascade);
+        p.setP_DB_OFFICE_ID(dbOfficeId);
         p.execute(configuration);
     }
 
@@ -390,7 +398,11 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public void unassignAllTs(TimeSeriesGroup group, String officeId) {
-        connection(dsl, c ->
+        unassignAllTs(dsl, group, officeId);
+    }
+
+    public void unassignAllTs(DSLContext dslContext, TimeSeriesGroup group, String officeId) {
+        connection(dslContext, c ->
             CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(
                 getDslContext(c,officeId).configuration(),
                 group.getTimeSeriesCategory().getId(), group.getId(),
