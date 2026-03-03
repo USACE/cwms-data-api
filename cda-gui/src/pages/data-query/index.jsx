@@ -143,17 +143,34 @@ export default function DataQuery() {
       office !== undefined,
   });
 
+  const seriesMetaByName = useMemo(() => {
+    const entries = timeseriesData?.raw?.map((series, index) => [
+      series?.name,
+      { units: series?.units, responseIndex: index },
+    ]);
+    return Object.fromEntries((entries || []).filter(([name]) => Boolean(name)));
+  }, [timeseriesData]);
+
+  const orderedSelectedTsids = useMemo(() => {
+    const userOrder = visibleTSIDs.filter((tsid) => tsid in seriesMetaByName);
+    if (userOrder.length > 0) return userOrder;
+
+    return (timeseriesData?.raw || [])
+      .map((series) => series?.name)
+      .filter((name) => Boolean(name));
+  }, [visibleTSIDs, seriesMetaByName, timeseriesData]);
+
   const timeseriesParams = useMemo(() => {
-    // Build table params from timeseriesData
     if (!timeseriesData) return [];
-    return timeseriesData.tsids
-      .map((series, index) => ({
-        tsid: tsids[index],
-        header: `${tsids[index].split(".")[1]} (${series.units})`,
-        rounding: getPrecision(series.units),
-      }))
-      .filter((p) => visibleTSIDs.includes(p.tsid));
-  }, [timeseriesData, tsids, visibleTSIDs]);
+    return orderedSelectedTsids.map((tsid) => {
+      const units = seriesMetaByName[tsid]?.units;
+      return {
+        tsid,
+        header: `${tsid.split(".")[1]}${units ? ` (${units})` : ""}`,
+        rounding: getPrecision(units),
+      };
+    });
+  }, [timeseriesData, orderedSelectedTsids, seriesMetaByName]);
 
   const cdaParams = useMemo(
     () => ({
@@ -168,13 +185,19 @@ export default function DataQuery() {
       console.warn("No data to export");
       return;
     }
-    const parameters = visibleTSIDs.map((ts) => ts.split(".")[1]);
+    const exportOrder = orderedSelectedTsids;
+    const parameters = exportOrder.map((ts) => ts.split(".")[1]);
+    const valueMaps = exportOrder.reduce((acc, tsid) => {
+      const values = timeseriesData.raw.find((series) => series.name === tsid)?.values || [];
+      acc[tsid] = Object.fromEntries(values.map((entry) => [entry[0], entry[1]]));
+      return acc;
+    }, {});
+    const dates = [...timeseriesData.dates].sort((a, b) => Number(a) - Number(b));
     const header = ["Date", ...parameters];
-    const rows = timeseriesData.dates.map((date) => {
+    const rows = dates.map((date) => {
       const formattedDate = dayjs(date).format("YYYY-MM-DD HH:mm:ss");
-      const values = timeseriesData.values[date] || [];
-      const paddedValues = visibleTSIDs.map((_, i) => {
-        const val = values[i];
+      const paddedValues = exportOrder.map((tsid) => {
+        const val = valueMaps[tsid]?.[date];
         return val === null || val === undefined ? "" : val;
       });
       return [formattedDate, ...paddedValues];
@@ -360,6 +383,7 @@ export default function DataQuery() {
               isLoading={timeseriesLoading}
               cdaParams={cdaParams}
               timeseriesParams={timeseriesParams}
+              seriesMetaByName={seriesMetaByName}
             />
           )}
         </div>

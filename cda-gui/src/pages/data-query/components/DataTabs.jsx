@@ -11,6 +11,7 @@ export default function DataTabs({
   isLoading,
   cdaParams,
   timeseriesParams,
+  seriesMetaByName,
   begin,
   end,
 }) {
@@ -65,11 +66,11 @@ export default function DataTabs({
                 id: tsid,
                 traceOptions: {
                   name: `${tsid.split(".").join(" ")}${
-                    timeseriesData?.tsids?.[index]?.units
-                      ? " (" + timeseriesData?.tsids?.[index]?.units + ")"
+                    seriesMetaByName?.[tsid]?.units
+                      ? " (" + seriesMetaByName[tsid].units + ")"
                       : ""
                   }`,
-                  units: timeseriesData?.tsids?.[index]?.units,
+                  units: seriesMetaByName?.[tsid]?.units,
                   yaxis: `y${index + 1}`,
                 },
               }))}
@@ -114,6 +115,7 @@ DataTabs.propTypes = {
   isLoading: PropTypes.bool,
   cdaParams: PropTypes.object,
   timeseriesParams: PropTypes.array,
+  seriesMetaByName: PropTypes.object,
   begin: PropTypes.object.isRequired,
   end: PropTypes.object.isRequired,
 };
