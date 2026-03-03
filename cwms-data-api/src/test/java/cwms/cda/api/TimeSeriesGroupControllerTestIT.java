@@ -94,10 +94,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Tag("integration")
 final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private final List<TimeSeriesCategory> categoriesToCleanup = new ArrayList<>();
     private final List<TimeSeriesGroup> groupsToCleanup = new ArrayList<>();
     private final List<TimeSeries> timeSeriesToCleanup = new ArrayList<>();
-    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     TestAccounts.KeyUser user2 = TestAccounts.KeyUser.SWT_NORMAL;
 
@@ -1273,6 +1273,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         TimeSeriesCategory category = new TimeSeriesCategory(CWMS_OFFICE, categoryName, "Default");
         TimeSeriesGroup group = new TimeSeriesGroup(category, CWMS_OFFICE, groupId, "All Time Series", null, null);
 
+        groupsToCleanup.add(group);
 //        createCategory( category, officeId); // I don't think this user can create in CWMS, probably don't want to delete this cat either
 //        createGroup(group); // I don't think this user can create in CWMS, probably don't want to delete this cat either
 
@@ -1406,9 +1407,8 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String tsId2 = ts2.get("name").asText();
         TimeSeriesCategory category = new TimeSeriesCategory(CWMS_OFFICE, categoryName, "Default");
         TimeSeriesGroup group = new TimeSeriesGroup(category, CWMS_OFFICE, groupId, "All Time Series", null, null);
-
-        //createCategory( category, officeId);
-        //createGroup(group);
+        groupsToCleanup.add(group);
+        categoriesToCleanup.add(category);
 
         AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
         AssignedTimeSeries assignedTimeSeries2 = new AssignedTimeSeries(officeId, tsId2, null, null, null);
@@ -1456,57 +1456,6 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body("assigned-time-series.size()", equalTo(2));
     }
 
-    private void createGroup(TimeSeriesGroup group) {
-        String format = Formats.JSONV1;
-        //Create Group
-        ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesGroup.class);
-        String groupXml = Formats.format(contentType, group);
-
-        groupsToCleanup.add(group);
-
-        given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(format)
-                .contentType(Formats.JSON)
-                .body(groupXml)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam(FAIL_IF_EXISTS, false)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/group")
-                .then()
-                .assertThat()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpServletResponse.SC_CREATED));
-    }
-
-    // This is just a helper to create category - not really what the tests are testing
-    private void createCategory( TimeSeriesCategory category, String officeId) {
-        String format = Formats.JSONV1;
-        ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
-        String categoryJson = Formats.format(contentType, category);
-
-        categoriesToCleanup.add(category);
-
-        //Create Category
-        given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(format)
-                .contentType(Formats.JSON)
-                .body(categoryJson)
-                .header("Authorization", user.toHeaderValue())
-                .queryParam(OFFICE, officeId)
-                .queryParam(FAIL_IF_EXISTS, false)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/category")
-                .then()
-                .assertThat()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpServletResponse.SC_CREATED));
-    }
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
@@ -1533,13 +1482,10 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
         TimeSeriesCategory category = new TimeSeriesCategory(CWMS_OFFICE, "Default", "Default");
         TimeSeriesGroup districtGroup = new TimeSeriesGroup(category, CWMS_OFFICE, "Default", "All Time Series", null, null);
-
-//        createCategory(category, CWMS_OFFICE);  // don't think we can create in CWMS
-//        createGroup(districtGroup);
+        groupsToCleanup.add(districtGroup);
 
         AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
         TimeSeriesGroup newDistrictGroup = new TimeSeriesGroup(districtGroup, Collections.singletonList(assignedTimeSeries));
-
 
         String newDistrictGroupJson = Formats.format(new ContentType(Formats.JSONV1), newDistrictGroup);
 
@@ -1629,7 +1575,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
         groupsToCleanup.add(group);
-//        categoriesToCleanup.add(cat);
+
 
         assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, "AliasId", timeSeriesId, 1));
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);

@@ -25,11 +25,15 @@
 package cwms.cda.data.dao;
 
 import cwms.cda.data.dto.TimeSeriesCategory;
-import java.util.List;
-import java.util.Optional;
-
 import cwms.cda.data.dto.TimeSeriesGroup;
-import org.jooq.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import org.jooq.Configuration;
+import org.jooq.DSLContext;
+import org.jooq.Record3;
+import org.jooq.Select;
+import org.jooq.SelectWhereStep;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 
@@ -130,7 +134,11 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
         String office = category.getOfficeId();
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
-            CWMS_TS_PACKAGE.call_RENAME_TS_CATEGORY(dslContext.configuration(), oldCategoryId, category.getId(), office);
+            if(!Objects.equals(oldCategoryId, category.getId()))
+            {
+                // When the old and new are the same RENAME throws
+                CWMS_TS_PACKAGE.call_RENAME_TS_CATEGORY(dslContext.configuration(), oldCategoryId, category.getId(), office);
+            }
             CWMS_TS_PACKAGE.call_STORE_TS_CATEGORY(dslContext.configuration(), category.getId(), category.getDescription(), "F", formatBool(ignoreNulls), office);
         });
     }
