@@ -107,6 +107,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
     }
 
+
     public List<TimeSeriesGroup> getTimeSeriesGroups(DSLContext dslContext, String tsOfficeId, String groupOfficeId, String categoryOfficeId,
                                                      String categoryId, String groupId) {
         return getTimeSeriesGroupsWhere(dslContext, buildWhereCondition(categoryId, groupId), tsOfficeId,
@@ -119,6 +120,16 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         return getTimeSeriesGroup(dsl, tsOfficeId, groupOfficeId, categoryOfficeId, categoryId, groupId);
     }
 
+    /**
+     *
+     * @param dslContext The context to be used to avoid creating a new connection.
+     * @param tsOfficeId The office id.
+     * @param groupOfficeId The group office id.
+     * @param categoryOfficeId The category office id.
+     * @param categoryId The category id.
+     * @param groupId The group id.
+     * @return retrieved TimeSeriesGroup.
+     */
     public TimeSeriesGroup getTimeSeriesGroup(DSLContext dslContext, String tsOfficeId, String groupOfficeId, String categoryOfficeId,
                                               String categoryId, String groupId) {
         List<TimeSeriesGroup> timeSeriesGroups = getTimeSeriesGroups(dslContext, tsOfficeId, groupOfficeId, categoryOfficeId, categoryId, groupId);
@@ -134,7 +145,15 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         return null;
     }
 
-
+    /**
+     *
+     * @param dslContext Jooq Context to be used
+     * @param whereCond Additional whereCondition that will be added to the query.
+     * @param tsOfficeId If provided, the assigned time series that are retrieved will be restricted to this office.
+     * @param groupOfficeId If provided, the retrieved groups must be in this office
+     * @param categoryOfficeId If provided, the retrieve groups must be in categories that are in this office
+     * @return retrieved TimeSeriesGroups.
+     */
     @NotNull
     private List<TimeSeriesGroup> getTimeSeriesGroupsWhere(DSLContext dslContext, Condition whereCond, String tsOfficeId, String groupOfficeId,
                                                            String categoryOfficeId) {
@@ -318,6 +337,14 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         });
     }
 
+    /**
+     *
+     * @param dslContext a jooq context that already has the approriate office set in the session.
+     * @param categoryId
+     * @param groupId
+     * @param office
+     * @param cascade
+     */
     private void deleteViaUnassign(DSLContext dslContext, String categoryId, String groupId, String office, boolean cascade) {
 
         dslContext.transaction((Configuration config) -> {
@@ -398,15 +425,12 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public void unassignAllTs(TimeSeriesGroup group, String officeId) {
-        unassignAllTs(dsl, group, officeId);
-    }
-
-    public void unassignAllTs(DSLContext dslContext, TimeSeriesGroup group, String officeId) {
-        connection(dslContext, c ->
+        connection(dsl, c ->
             CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(
-                getDslContext(c,officeId).configuration(),
+                getDslContext(c, officeId).configuration(),
                 group.getTimeSeriesCategory().getId(), group.getId(),
                 null, "T", group.getOfficeId())
         );
     }
+
 }

@@ -133,9 +133,9 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
             for (TimeSeriesGroup group : groupsToCleanup) {
                 try {
-                   groupDao.unassignAllTs(group, "SPK");
+                    groupDao.unassignAllTs(group, group.getOfficeId());
                     if (!group.getOfficeId().equalsIgnoreCase(CWMS_OFFICE)) {
-                        groupDao.delete(group.getTimeSeriesCategory().getId(), group.getId(), group.getOfficeId(), false);
+                        groupDao.delete(group.getTimeSeriesCategory().getId(), group.getId(), group.getOfficeId(), true);
                     }
                 } catch (NotFoundException e) {
                     LOGGER.atConfig().withCause(e).log("Group not found");
