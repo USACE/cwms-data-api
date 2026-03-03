@@ -14,7 +14,10 @@ import { useDebounce } from "use-debounce";
 // Catalog client
 const catalogApi = new CatalogApi(
   new Configuration({
-    basePath: import.meta.env.CDA_URL,
+    basePath:
+      import.meta.env.VITE_CDA_URL ||
+      (import.meta.env.BASE_URL || "").replace(/\/$/, "") ||
+      "/cwms-data",
     headers: { accept: "application/json;version=2" },
   }),
 );

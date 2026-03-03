@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Configuration, ParametersApi } from "cwmsjs";
 
-const CDA_URL = import.meta.env.CDA_URL;
+const CDA_URL =
+  import.meta.env.VITE_CDA_URL ||
+  (import.meta.env.BASE_URL || "").replace(/\/$/, "") ||
+  "/cwms-data";
 const config = new Configuration({
   basePath: CDA_URL,
 });

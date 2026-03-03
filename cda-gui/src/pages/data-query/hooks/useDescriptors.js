@@ -2,7 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Configuration, CatalogApi } from "cwmsjs";
 
 const config = new Configuration({
-  basePath: import.meta.env.CDA_URL,
+  basePath:
+    import.meta.env.VITE_CDA_URL ||
+    (import.meta.env.BASE_URL || "").replace(/\/$/, "") ||
+    "/cwms-data",
 });
 const cataApi = new CatalogApi(config);
 

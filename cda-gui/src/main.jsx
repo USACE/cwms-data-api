@@ -23,6 +23,8 @@ import Timestamps from "./pages/timestamps";
 import LegacyFormat from "./pages/legacy-format/index.jsx";
 
 const queryClient = new QueryClient();
+// Remove trailing slash if it exists
+const routerBasename = (import.meta.env.BASE_URL || "/").replace(/\/$/, "") || "/";
 
 const router = createBrowserRouter(
   [
@@ -45,7 +47,7 @@ const router = createBrowserRouter(
       ],
     },
   ],
-  { basename: "/cwms-data" },
+  { basename: routerBasename },
 );
 
 ReactDOM.createRoot(document.getElementById("root")).render(
