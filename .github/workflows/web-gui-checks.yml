@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  lint-and-audit:
+  lint-build-and-audit:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,6 +37,9 @@ jobs:
 
       - name: run cda-gui lint
         run: npm run lint
+
+      - name: run cda-gui build
+        run: npm run build
 
       - name: run cda-gui audit for critical CVE
         run: npm audit --audit-level=critical
