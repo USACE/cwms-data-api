@@ -81,23 +81,26 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
     void tearDown() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
-
         for (TimeSeriesIdentifierDescriptor ts : tsDescriptors) {
-            given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
-                .header("Authorization", user.toHeaderValue())
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/timeseries/identifier-descriptor/" + ts.getTimeSeriesId())
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
+            for (boolean lrts : new boolean[]{true, false})
+            {
+                given()
+                        .log().ifValidationFails(LogDetail.ALL,true)
+                        .accept(Formats.JSONV2)
+                        .contentType(Formats.JSONV2)
+                        .queryParam("office", OFFICE)
+                        .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
+                        .header("Authorization", user.toHeaderValue())
+                        .header(ApiServlet.IS_NEW_LRTS, lrts)
+                    .when()
+                        .redirects().follow(true)
+                        .redirects().max(3)
+                        .delete("/timeseries/identifier-descriptor/" + ts.getTimeSeriesId())
+                    .then()
+                        .log().ifValidationFails(LogDetail.ALL,true)
+                    ;  // not asserting anything - this is cleanup, we don't care if it was found or not.
+            }
+
         }
         for (TimeSeriesGroup group : tsGroups) {
             ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
@@ -245,7 +248,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
     void test_create_delete_new_LRTS_identifier(String format) throws JsonProcessingException, SQLException {
 
         createLocation("Alder Springs",true,"SPK");
-        String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.12HoursLocal\\.0\\.DescriptorTEST_LRTS*";
+        String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.12HoursLocal\\.0\\.DescriptorTEST_LRTS.*";
 
         // Check that we don't have any ts like this in the catalog.
         List<String> names = getIdsLike(OFFICE, likePattern);
@@ -257,6 +260,8 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         String tsId = "Alder Springs.Precip-Cumulative.Inst.12HoursLocal.0.DescriptorTEST_LRTS1";
         TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
         String serializedTs = om.writeValueAsString(ts);
+
+        tsDescriptors.add(ts);
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -276,7 +281,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
         // Check that we have the right number of ts like this in the catalog.
-        names = getIdsLike(OFFICE, likePattern);
+        names = getIdsLike(OFFICE, likePattern, true);
         assertFalse(names.isEmpty());
         assertEquals(1, names.size());
         String name = names.get(0);
@@ -290,6 +295,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .queryParam("office", OFFICE)
             .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
             .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -300,7 +306,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .statusCode(is(HttpServletResponse.SC_OK));
 
         // Check that we don't have any ts like this in the catalog.
-        names = getIdsLike(OFFICE, likePattern);
+        names = getIdsLike(OFFICE, likePattern, true);
         Assertions.assertTrue(names.isEmpty());
 
         // Try to store it again, but this time with the new LRTS flag set to false.
@@ -393,6 +399,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
             String serializedTs = om.writeValueAsString(ts);
 
+            tsDescriptors.add(ts);
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
@@ -408,7 +415,6 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
                 .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED));
-            tsDescriptors.add(ts);
         }
 
         // Add TS with differing ID to verify we don't get it back
@@ -416,6 +422,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
         String serializedTs = om.writeValueAsString(ts);
 
+        tsDescriptors.add(ts);
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
@@ -431,7 +438,6 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
-        tsDescriptors.add(ts);
 
         // Check that we have the right number of ts like this in the catalog.
         names = getIdsLike(OFFICE, likePattern);
@@ -551,6 +557,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
             String serializedTs = om.writeValueAsString(ts);
 
+            tsDescriptors.add(ts);
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
@@ -566,7 +573,6 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
                 .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED));
-            tsDescriptors.add(ts);
         }
 
         // Check that we have the right number of ts like this in the catalog.
@@ -691,6 +697,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
             String serializedTs = om.writeValueAsString(ts);
 
+            tsDescriptors.add(ts);
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
@@ -706,7 +713,6 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
                 .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED));
-            tsDescriptors.add(ts);
         }
 
         // Check that we have the right number of ts like this in the catalog.
@@ -831,10 +837,10 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         return builder.build();
     }
 
-
-
-
     private static List<String> getIdsLike( String officeId, String likePattern) {
+        return getIdsLike(officeId, likePattern, false);
+    }
+    private static List<String> getIdsLike( String officeId, String likePattern, boolean lrtsFlag) {
         List<String> retval = new ArrayList<>();
 
         int pageSize = 8000;
@@ -843,6 +849,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
+                .header(ApiServlet.IS_NEW_LRTS, lrtsFlag)
                 .queryParam(Controllers.PAGE_SIZE, pageSize)
                 .queryParam(Controllers.OFFICE, officeId)
                 .queryParam(Controllers.LIKE, likePattern)
