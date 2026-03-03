@@ -15,7 +15,6 @@ export function getYearRange(start_year, end_year, FORMAT = "YYYY") {
 }
 
 export function getMonthRange({
-  selectedProject,
   selectedMonth,
   selectedYear,
   lookback_year = 1994,
