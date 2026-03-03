@@ -34,7 +34,7 @@ const normalizeDataProp = (prop) => {
 const getYAxisId = (timeseriesParam) => {
   const yaxis = timeseriesParam?.traceOptions?.yaxis;
   if (!yaxis) return undefined;
-  if ((yaxis == "y") | (yaxis == "y1")) return "yaxis";
+  if (yaxis == "y" || yaxis == "y1") return "yaxis";
   const re = /^y(\d+)$/;
   const match = yaxis.match(re);
   if (match) {
@@ -75,21 +75,25 @@ function CWMSPlot({
     [locationLevels],
   );
 
-  const config_v2 = new Configuration({
-    basePath: cdaUrl,
-    headers: {
-      accept: "application/json;version=2",
-    },
-  });
-  const ts_api = new TimeSeriesApi(config_v2);
+  const ts_api = useMemo(() => {
+    const config_v2 = new Configuration({
+      basePath: cdaUrl,
+      headers: {
+        accept: "application/json;version=2",
+      },
+    });
+    return new TimeSeriesApi(config_v2);
+  }, [cdaUrl]);
 
-  const config_level = new Configuration({
-    basePath: cdaUrl,
-    headers: {
-      accept: "*/*",
-    },
-  });
-  const level_api = new LevelsApi(config_level);
+  const level_api = useMemo(() => {
+    const config_level = new Configuration({
+      basePath: cdaUrl,
+      headers: {
+        accept: "*/*",
+      },
+    });
+    return new LevelsApi(config_level);
+  }, [cdaUrl]);
 
   const defaultLayout = {
     height: 750,
@@ -234,11 +238,14 @@ function CWMSPlot({
     begin,
     datum,
     end,
+    inputTSValues,
     locationLevelsArray,
     office,
+    level_api,
     timeSeriesArray,
     timezone,
     trim,
+    ts_api,
     unit,
     pageSize,
   ]);

@@ -41,7 +41,7 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
         version;
       setTsids((prev) => (prev.includes(fullTsid) ? prev : [...prev, fullTsid]));
     }
-  }, [location, parameter, type, interval, duration, version]);
+  }, [location, parameter, type, interval, duration, version, setTsids]);
 
   const errors = [aliases.error, descriptors.error].filter(Boolean);
   if (aliases.isLoading) {
