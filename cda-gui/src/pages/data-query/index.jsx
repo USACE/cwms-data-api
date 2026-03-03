@@ -273,7 +273,6 @@ export default function DataQuery() {
                   const _office = e.target.value;
                   if (!_office) {
                     setOffice(null);
-                    setInterval(null);
                     setTsids([]);
                     return;
                   }
