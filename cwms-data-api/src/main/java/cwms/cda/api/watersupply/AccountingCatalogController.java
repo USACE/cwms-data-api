@@ -47,6 +47,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
@@ -57,6 +58,7 @@ import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -67,7 +69,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.time.Instant;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -141,7 +142,7 @@ public class AccountingCatalogController implements Handler {
         method = HttpMethod.GET,
         tags = {TAG}
     )
-
+    @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     @Override
     public void handle(Context ctx) {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
@@ -151,17 +152,15 @@ public class AccountingCatalogController implements Handler {
             final String locationId = ctx.pathParam(PROJECT_ID);
             final Instant startTime = requiredInstant(ctx, START);
             final Instant endTime = requiredInstant(ctx, END);
-            final String units = ctx.queryParam(UNIT) != null ? ctx.queryParam(UNIT) : "cms";
-            final boolean startInclusive = ctx.queryParam(START_TIME_INCLUSIVE) == null
-                    || Boolean.parseBoolean(ctx.queryParam(START_TIME_INCLUSIVE));
-            final boolean endInclusive = ctx.queryParam(END_TIME_INCLUSIVE) == null
-                    || Boolean.parseBoolean(ctx.queryParam(END_TIME_INCLUSIVE));
-            final boolean ascending = ctx.queryParam(ASCENDING) == null
-                    || Boolean.parseBoolean(ctx.queryParam(ASCENDING));
-            final int rowLimit = ctx.queryParam(ROW_LIMIT) != null ? Integer.parseInt(ctx.queryParam(ROW_LIMIT)) : 0;
+            final String units = ctx.queryParamAsClass(UNIT, String.class).getOrDefault("cms");
+            final boolean startInclusive = ctx.queryParamAsClass(START_TIME_INCLUSIVE, Boolean.class)
+                .getOrDefault(true);
+            final boolean endInclusive = ctx.queryParamAsClass(END_TIME_INCLUSIVE, Boolean.class).getOrDefault(true);
+            final boolean ascending = ctx.queryParamAsClass(ASCENDING, Boolean.class).getOrDefault(true);
+            final int rowLimit = ctx.queryParamAsClass(ROW_LIMIT, Integer.class).getOrDefault(0);
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
+            String formatHeader = ctx.headerAsClass(Header.ACCEPT, String.class).getOrDefault(Formats.JSONV1);
             ContentType contentType = Formats.parseHeader(formatHeader, WaterSupplyAccounting.class);
             ctx.contentType(contentType.toString());
             CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();

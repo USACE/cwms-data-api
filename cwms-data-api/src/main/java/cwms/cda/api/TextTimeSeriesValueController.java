@@ -59,7 +59,8 @@ public class TextTimeSeriesValueController extends BaseHandler {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the Text TimeSeries whose data is to be included in the response."),
                     @OpenApiParam(name = CLOB_ID, description = "Will be removed in a schema update. " +
-                            "This is a placeholder for integration testing with schema 23.3.16", deprecated = true)
+                            "This is a placeholder for integration testing with schema 23.3.16", deprecated = true,
+                            required = true)
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,

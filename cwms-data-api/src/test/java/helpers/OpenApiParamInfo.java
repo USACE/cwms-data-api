@@ -26,6 +26,7 @@ public class OpenApiParamInfo {
     private String name;
     private final boolean required;
     private final Class<?> type;
+    private boolean ignoreRequired = false;
 
     public OpenApiParamInfo(String name, boolean required, Class<?> type) {
         this.name = name;
@@ -36,6 +37,15 @@ public class OpenApiParamInfo {
     public OpenApiParamInfo setName(String name) {
         this.name = name;
         return this;
+    }
+
+    public OpenApiParamInfo setIgnoreRequired(boolean ignoreRequired) {
+        this.ignoreRequired = ignoreRequired;
+        return this;
+    }
+
+    public boolean ignoreRequired() {
+        return ignoreRequired;
     }
 
     public String getName() {

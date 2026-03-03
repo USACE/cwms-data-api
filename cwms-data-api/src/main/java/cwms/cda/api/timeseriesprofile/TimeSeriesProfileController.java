@@ -60,7 +60,8 @@ public final class TimeSeriesProfileController extends TimeSeriesProfileBase imp
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = OFFICE, description = "The office ID associated with the time series profile"),
+            @OpenApiParam(name = OFFICE, required = true,
+                description = "The office ID associated with the time series profile"),
         },
         pathParams = {
             @OpenApiParam(name = PARAMETER_ID, description = "The key parameter ID associated with the time "

@@ -32,22 +32,18 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.location.kind.TurbineDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.location.kind.TurbineChange;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.apibuilder.CrudHandler;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.time.Instant;
 import java.util.List;
@@ -116,6 +112,7 @@ public final class TurbineChangesGetController implements Handler {
         description = "Returns matching CWMS Turbine Change Data for a Reservoir Project.",
         tags = {TurbineController.TAG}
     )
+    @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     public void handle(@NotNull Context ctx) throws Exception {
         String projectId = ctx.pathParam(NAME);
         String office = ctx.pathParam(OFFICE);
