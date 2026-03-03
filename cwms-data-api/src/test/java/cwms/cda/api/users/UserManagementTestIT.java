@@ -213,7 +213,6 @@ public class UserManagementTestIT extends DataApiTestIT {
         users.addAll(tmp.getUsers());
         assertNotNull(tmp.getNextPage(), "Expected multiple pages of results for pagination test with regex filter.");
 
-        //this will fail because the regex filter is not being applied to subsequent pages because its not in the cursor not in the query params. This will change once we get a decision on which way to go.
         while (tmp.getNextPage() != null) {
             tmp = given()
                     .log().ifValidationFails(LogDetail.ALL, true)

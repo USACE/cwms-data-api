@@ -99,7 +99,7 @@ public class UsersController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
-            String username = ctx.queryParam(USERNAME_LIKE);
+            String usernameRegex = ctx.queryParam(USERNAME_LIKE);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Users.class);
@@ -120,7 +120,7 @@ public class UsersController implements CrudHandler {
                     Boolean.class, false, metrics,
                     name(UsersController.class.getName(), GET_ALL));
             UserDao dao = new UserDao(dsl);
-            Users users = dao.getAll(cursor, pageSize, office, includeRoles, username);
+            Users users = dao.getAll(cursor, pageSize, office, includeRoles, usernameRegex);
 
             String result = Formats.format(contentType, users);
 
