@@ -6,7 +6,6 @@ import Controls from "./components/Controls";
 import { Configuration, OfficesApi, TimeSeriesApi } from "cwmsjs";
 import { getPrecision, mergeTimeseries } from "../../utils/timeseries";
 import FailedTimeSeries from "./components/FailedTimeSeries";
-// import useConfigList from "./hooks/useConfigList";
 import TimeSeriesDropdown from "./components/TimeSeriesDropdown";
 import DataTabs from "./components/DataTabs";
 import Toggle from "./components/Toggle";
