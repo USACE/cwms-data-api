@@ -3,7 +3,6 @@ import PropTypes from "prop-types";
 
 export default function TimeSeriesManager({
   tsids,
-  status,
   visibleTSIDs,
   setTsids,
   toggleTSID,
