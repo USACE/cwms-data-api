@@ -359,7 +359,8 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         // create pump accounting
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
+            .accept(Formats.JSONV2)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -394,7 +395,7 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
             .redirects().max(3)
             .get("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
                 + contract.getWaterUser().getEntityName() + "/contracts/"
-                + slashContractId + "/accounting")
+                + encodedContractId + "/accounting")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()

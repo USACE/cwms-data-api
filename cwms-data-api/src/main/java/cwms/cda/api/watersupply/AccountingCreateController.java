@@ -26,6 +26,7 @@
 
 package cwms.cda.api.watersupply;
 
+import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.OFFICE;
@@ -81,8 +82,7 @@ public class AccountingCreateController extends BaseHandler {
     @OpenApi(
         requestBody = @OpenApiRequestBody(
             content = {
-                @OpenApiContent(from = WaterSupplyAccounting.class, type = Formats.JSONV1),
-                @OpenApiContent(from = WaterSupplyAccounting.class, type = Formats.JSONV2)
+                @OpenApiContent(from = WaterSupplyAccounting.class, type = Formats.JSONV1)
             },
             required = true),
         pathParams = {
@@ -98,6 +98,11 @@ public class AccountingCreateController extends BaseHandler {
             @OpenApiResponse(status = STATUS_201, description = "The pump accounting entry was created."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
+        headers = {
+            @OpenApiParam(name = ACCEPT, description = "The format of the request body. Accepts JSONV1 and JSONV2. "
+                + "Note: JSONV2 should be used if the contract name contains special characters such as '/'. "
+                + "In this case, the contract name should be encoded using URL-safe BASE64 encoding.")
+        },
         description = "Create a new pump accounting entry associated with a water supply contract.",
         path = "/projects/{office}/water-user/{water-user}/contracts/{contract-name}/accounting",
         method = HttpMethod.POST,
@@ -112,8 +117,8 @@ public class AccountingCreateController extends BaseHandler {
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             String contractId;
             if (formatHeader != null && formatHeader.equals(Formats.JSONV2)) {
-                contractId = Arrays.toString(
-                    Base64.decodeBase64(ctx.pathParam(CONTRACT_NAME).getBytes(StandardCharsets.UTF_8)));
+                byte[] decoded = Base64.decodeBase64(ctx.pathParam(CONTRACT_NAME));
+                contractId = new String(decoded);
             } else {
                 contractId = ctx.pathParam(CONTRACT_NAME);
             }
