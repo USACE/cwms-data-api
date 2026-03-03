@@ -234,7 +234,7 @@ public class RatingTemplateController implements CrudHandler {
         String retval;
 
 
-        if (contentType.contains(Formats.XMLV2)) {
+        if (contentType.contains(Formats.XMLV2) || contentType.contains(Formats.XML)) {
             retval = body;
         } else if (contentType.contains(Formats.JSONV2)) {
             retval = translateJsonToXml(body);

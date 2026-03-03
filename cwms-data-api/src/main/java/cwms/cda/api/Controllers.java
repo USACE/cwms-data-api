@@ -147,6 +147,7 @@ public final class Controllers {
 
     public static final String LOCATION_ID = "location-id";
     public static final String SOURCE_ENTITY = "source-entity";
+    public static final String SOURCE_ENTITY_LIKE = "source-entity-like";
     public static final String FORECAST_DATE = "forecast-date";
     public static final String ISSUE_DATE = "issue-date";
     public static final String LOCATION_KIND_LIKE = "location-kind-like";

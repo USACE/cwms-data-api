@@ -24,8 +24,31 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
+import static cwms.cda.api.Controllers.CWMS_OFFICE;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.GROUP_OFFICE_ID;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_LOCS;
+import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_TS;
+import static cwms.cda.data.dao.Dao.formatBool;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.ApiServlet;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.TimeSeriesCategoryDao;
@@ -51,7 +74,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
@@ -66,14 +88,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.Dao.formatBool;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
 final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
@@ -472,6 +486,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
             .queryParam(REPLACE_ASSIGNED_TS, "true")
             .queryParam(OFFICE, group.getOfficeId())
@@ -483,11 +498,13 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
+
         //Delete timeseries
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(BEGIN, "2025-05-08T11:00:00+00:00")
             .queryParam(END, "2025-05-19T11:00:00+00:00")
@@ -502,12 +519,14 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
+
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, cat.getId())
         .when()
@@ -523,6 +542,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(GROUP_OFFICE_ID, officeId)
@@ -540,6 +560,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
             .contentType(Formats.JSON)
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
         .when()
