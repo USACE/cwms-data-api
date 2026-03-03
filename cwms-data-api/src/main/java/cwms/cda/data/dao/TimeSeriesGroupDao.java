@@ -313,10 +313,10 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
     private void deleteViaUnassign(java.sql.Connection conn, String categoryId, String groupId, String office, boolean cascade) {
         DSLContext dslContext = getDslContext(conn, office);
+        TimeSeriesGroup group = getTimeSeriesGroup(null, office, null, categoryId, groupId);
         dslContext.transaction((Configuration trx) -> {
             Configuration config = trx.dsl().configuration();
             if (cascade) {
-                TimeSeriesGroup group = getTimeSeriesGroup(null, office, null, categoryId, groupId);
                 if (group != null) {
                     CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(config,
                             group.getTimeSeriesCategory().getId(), group.getId(),
