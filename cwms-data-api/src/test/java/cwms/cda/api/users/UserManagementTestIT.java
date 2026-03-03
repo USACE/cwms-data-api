@@ -201,7 +201,7 @@ public class UserManagementTestIT extends DataApiTestIT {
         Users tmp = given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .spec(authSpec)
-                .queryParam(Controllers.USERNAME_LIKE, "^M5HECTEST$")
+                .queryParam(Controllers.USERNAME_LIKE, "l2hectest.*")
                 .queryParam("page-size", 2)
         .when()
                 .get("/users")
@@ -211,6 +211,9 @@ public class UserManagementTestIT extends DataApiTestIT {
                 .extract().as(Users.class);
 
         users.addAll(tmp.getUsers());
+        assertNotNull(tmp.getNextPage(), "Expected multiple pages of results for pagination test with regex filter.");
+
+        //this will fail because the regex filter is not being applied to subsequent pages because its not in the cursor not in the query params. This will change once we get a decision on which way to go.
         while (tmp.getNextPage() != null) {
             tmp = given()
                     .log().ifValidationFails(LogDetail.ALL, true)
@@ -226,9 +229,9 @@ public class UserManagementTestIT extends DataApiTestIT {
         }
 
         assertEquals(tmp.getTotal(), users.size(), "Returned user size does not match provided total.");
-        final User m5hectest = users.stream().filter(u -> u.getUserName().equals("M5HECTEST")).findFirst().orElse(null);
-        assertNotNull(m5hectest, "Could not retrieve expected user.");
-        assertTrue(m5hectest.getRoles().get("SWT").contains("TS ID Creator"));
+        final User l2hectest = users.stream().filter(u -> u.getUserName().equals("L2HECTEST")).findFirst().orElse(null);
+        assertNotNull(l2hectest, "Could not retrieve expected user.");
+        assertTrue(l2hectest.getRoles().get("SPK").contains("TS ID Creator"));
     }
 
     @ParameterizedTest

@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import cwms.cda.data.dto.auth.users.UsersPageCursor;
 import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -148,6 +149,7 @@ public class UserDao extends JooqDao<User> {
             String cursorUserId = null;
             int pageSizeTmp = pageSize;
             String limitOffice = null;
+            String pageUsernameRegex = usernameRegex;
 
             Condition whereClause = office == null ? DSL.noCondition()
             // If we are including only those users with permissions to a  specific office
@@ -173,27 +175,27 @@ public class UserDao extends JooqDao<User> {
                     total = rec.value1();
                 }
             } else {
-                final String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "||");
+                Optional<UsersPageCursor> pageCursorOpt = CwmsDTOPaginated.decodeCursor(cursor, UsersPageCursor.class);
 
-                logger.atFine().log("decoded cursor: " + String.join("||", parts));
-                for (String p : parts) {
-                    logger.atFinest().log(p);
-                }
-
-                if (parts.length > 1) {
-                    cursorUserId = parts[0];
-                    total = Integer.parseInt(parts[2]);
-                    pageSizeTmp = Integer.parseInt(parts[1]);
-                    limitOffice = parts[3].equals("null") ? null : parts[3];
+                if(pageCursorOpt.isPresent()) {
+                    UsersPageCursor pageCursor = pageCursorOpt.get();
+                    cursorUserId = pageCursor.getCursorUserId();
+                    total = pageCursor.getTotal();
+                    pageSizeTmp = pageCursor.getPageSize();
+                    limitOffice = pageCursor.getLimitOffice();
+                    pageUsernameRegex = pageCursor.getUsernameRegex();
 
                     // Rebuild the where clause to match the initial conditions
                     whereClause = limitOffice == null ? DSL.noCondition()
-                    // If we are including only those users with permissions to a  specific office
-                    // we limit to those users that also have an entry in the at_sec_cwms_users_group table.
-                    : dsl.select(count(asterisk()))
-                        .from(vUserGroups)
-                        .where(upper(vUserGroups.DB_OFFICE_ID).eq(upper(limitOffice)))
-                        .and(vUserGroups.IS_MEMBER.eq("T")).asField().gt(1);
+                            // If we are including only those users with permissions to a  specific office
+                            // we limit to those users that also have an entry in the at_sec_cwms_users_group table.
+                            : dsl.select(count(asterisk()))
+                            .from(vUserGroups)
+                            .where(upper(vUserGroups.DB_OFFICE_ID).eq(upper(limitOffice)))
+                            .and(vUserGroups.IS_MEMBER.eq("T")).asField().gt(1);
+                    if (pageUsernameRegex != null && !pageUsernameRegex.isEmpty()) {
+                        whereClause = whereClause.and(JooqDao.caseInsensitiveLikeRegexNullTrue(userId, pageUsernameRegex));
+                    }
                 }
             }
 
@@ -235,7 +237,7 @@ public class UserDao extends JooqDao<User> {
             
             logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
-            final Users.Builder builder = new Users.Builder(cursor, pageSizeTmp, total, limitOffice);
+            final Users.Builder builder = new Users.Builder(cursor, pageSizeTmp, total, limitOffice, pageUsernameRegex);
 
             final Map<String, User.Builder> tmpUsers = new LinkedHashMap<>();
 
