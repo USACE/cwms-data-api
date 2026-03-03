@@ -32,12 +32,16 @@ import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import hec.lang.Const;
 import java.math.BigInteger;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import org.jooq.DSLContext;
+import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
+import org.jspecify.annotations.NonNull;
 import usace.cwms.db.jooq.codegen.packages.CWMS_WATER_SUPPLY_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.LOC_REF_TIME_WINDOW_TAB_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_REF_T;
@@ -57,16 +61,56 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
 
         connection(dsl, c -> {
             setOffice(c, accounting.getWaterUser().getProjectId().getOfficeId());
-
-            WAT_USR_CONTRACT_ACCT_TAB_T accountingTab = WaterSupplyUtils.toWaterUserContractAcctTs(accounting);
-            WATER_USER_CONTRACT_REF_T contractRefT = WaterSupplyUtils
-                    .toContractRef(accounting.getWaterUser(), accounting.getContractName());
-            LOC_REF_TIME_WINDOW_TAB_T pumpTimeWindowTab = WaterSupplyUtils.toTimeWindowTabT(accounting);
-            String timeZoneId = "UTC";
-            String overrideProt = formatBool(overrideProtection);
-            CWMS_WATER_SUPPLY_PACKAGE.call_STORE_ACCOUNTING_SET(DSL.using(c).configuration(), accountingTab,
-                    contractRefT, pumpTimeWindowTab, timeZoneId, volumeUnitId, storeRule, overrideProt);
+            try {
+                storeViaCodegen(c, accounting, overrideProtection, volumeUnitId, storeRule);
+            } catch (DataAccessException e) {
+                if (isBindException(e)) {
+                    try {
+                        storeViaManual(c, accounting, overrideProtection, volumeUnitId, storeRule);
+                        return;
+                    } catch (Exception e2) {
+                        RuntimeException re = new RuntimeException(e);
+                        re.addSuppressed(e2);
+                        throw re;
+                    }
+                }
+                throw e;
+            }
         });
+    }
+
+    private static boolean isBindException(DataAccessException e) {
+        boolean isBind = false;
+        Throwable cause = e.getCause();
+        if( cause instanceof SQLException){
+            SQLException se = (SQLException)cause;
+            String sqlMessage = se.getMessage();
+            Throwable sqlCause = se.getCause();
+            isBind = sqlCause instanceof IllegalArgumentException && sqlMessage.contains("Error while writing value");
+        }
+        return isBind;
+    }
+
+    private static void storeViaCodegen(Connection c, WaterSupplyAccounting accounting, boolean overrideProtection, String volumeUnitId, String storeRule) {
+        WAT_USR_CONTRACT_ACCT_TAB_T accountingTab = WaterSupplyUtils.toWaterUserContractAcctTs(accounting);
+        WATER_USER_CONTRACT_REF_T contractRefT = WaterSupplyUtils
+                .toContractRef(accounting.getWaterUser(), accounting.getContractName());
+        LOC_REF_TIME_WINDOW_TAB_T pumpTimeWindowTab = WaterSupplyUtils.toTimeWindowTabT(accounting);
+        String timeZoneId = "UTC";
+        String overrideProt = formatBool(overrideProtection);
+        CWMS_WATER_SUPPLY_PACKAGE.call_STORE_ACCOUNTING_SET(DSL.using(c).configuration(), accountingTab,
+                contractRefT, pumpTimeWindowTab, timeZoneId, volumeUnitId, storeRule, overrideProt);
+    }
+
+    private static void storeViaManual(Connection c, WaterSupplyAccounting accounting, boolean overrideProtection, String volumeUnitId, String storeRule) {
+        cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_TAB_T accountingTab = WaterSupplyUtils.toManualWaterUserContractAcctTs(accounting);
+        WATER_USER_CONTRACT_REF_T contractRefT = WaterSupplyUtils
+                .toContractRef(accounting.getWaterUser(), accounting.getContractName());
+        LOC_REF_TIME_WINDOW_TAB_T pumpTimeWindowTab = WaterSupplyUtils.toTimeWindowTabT(accounting);
+        String timeZoneId = "UTC";
+        String overrideProt = formatBool(overrideProtection);
+        cwms.cda.data.dao.watersupply.handgen.CWMS_WATER_SUPPLY_PACKAGE.call_STORE_ACCOUNTING_SET(DSL.using(c).configuration(), accountingTab,
+                contractRefT, pumpTimeWindowTab, timeZoneId, volumeUnitId, storeRule, overrideProt);
     }
 
     public List<WaterSupplyAccounting> retrieveAccounting(String contractName, WaterUser waterUser,
@@ -85,15 +129,51 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
 
         return connectionResult(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
-            WAT_USR_CONTRACT_ACCT_TAB_T watUsrContractAcctObjTs
-                = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_ACCOUNTING_SET(DSL.using(c).configuration(),
-                contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
-                endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
-            if (!watUsrContractAcctObjTs.isEmpty()) {
-                return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs, units);
-            } else {
-                return new ArrayList<>();
+            try {
+                return retrieveFromCodegen(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
+            } catch (DataAccessException e){
+                if(isInvalidColumn(e)){
+                   return retrieveViaManual(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
+                }
+                throw e;
             }
         });
+    }
+
+    private @NonNull List<WaterSupplyAccounting> retrieveViaManual(String units, Connection c, WATER_USER_CONTRACT_REF_T contractRefT, Timestamp startTimestamp, Timestamp endTimestamp, String timeZoneId, String startInclusiveFlag, String endInclusiveFlag, String ascendingFlagStr, BigInteger rowLimitBigInt, String transferType) {
+        cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_TAB_T watUsrContractAcctObjTs
+                = cwms.cda.data.dao.watersupply.handgen.CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_ACCOUNTING_SET(DSL.using(c).configuration(),
+                contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
+                endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
+        if (!watUsrContractAcctObjTs.isEmpty()) {
+            return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs);
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    private boolean isInvalidColumn(DataAccessException e) {
+        boolean isInvalid = false;
+
+        Throwable cause = e.getCause();
+        if( cause instanceof SQLException){
+            SQLException se = (SQLException)cause;
+            String sqlMessage = se.getMessage();
+            isInvalid =  sqlMessage.contains("Invalid column");
+        }
+
+        return isInvalid;
+    }
+
+    private static @NonNull List<WaterSupplyAccounting> retrieveFromCodegen(String units, Connection c, WATER_USER_CONTRACT_REF_T contractRefT, Timestamp startTimestamp, Timestamp endTimestamp, String timeZoneId, String startInclusiveFlag, String endInclusiveFlag, String ascendingFlagStr, BigInteger rowLimitBigInt, String transferType) {
+        WAT_USR_CONTRACT_ACCT_TAB_T watUsrContractAcctObjTs
+            = CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_ACCOUNTING_SET(DSL.using(c).configuration(),
+                contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
+                endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
+        if (!watUsrContractAcctObjTs.isEmpty()) {
+            return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs, units);
+        } else {
+            return new ArrayList<>();
+        }
     }
 }
