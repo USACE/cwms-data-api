@@ -150,7 +150,7 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                 .withOperatorKey("{noop}");
         try {
             // If the instance doesn't exist this will throw a NotFoundException which we can ignore, if it does exist we want to delete it before storing the new one
-            getForecastInstance(0, noopUrlBuilder, officeId, forecastInst.getSpec().getSpecId(), forecastInst.getSpec().getDesignator(), forecastDate.toInstant(), issueDate.toInstant());
+            getForecastInstance(ctx, 0, noopUrlBuilder, officeId, forecastInst.getSpec().getSpecId(), forecastInst.getSpec().getDesignator(), forecastDate.toInstant(), issueDate.toInstant());
             CWMS_FCST_PACKAGE.call_DELETE_FCST(ctx.configuration(), forecastInst.getSpec().getSpecId(), forecastInst.getSpec().getDesignator(),
                     forecastDate, issueDate, "UTC", officeId);
         } catch (NotFoundException e) {
@@ -293,35 +293,40 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     public ForecastInstance getForecastInstance(int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder,
             String officeArg, String name, String designator,
             Instant forecastDate, Instant issueDate) {
-        return connectionResult(dsl, c -> getForecastInstance(c, byteLimit, urlBuilder, officeArg, name, designator, forecastDate, issueDate));
+        return connectionResult(dsl, c -> {
+            DSLContext ctx = getDslContext(c, officeArg);
+            return getForecastInstance(ctx, byteLimit, urlBuilder, officeArg, name, designator, forecastDate, issueDate);
+        });
     }
 
-    private static ForecastInstance getForecastInstance(Connection c, int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder, String officeArg,
-                                                        String name, String designator, Instant forecastDate, Instant issueDate) throws SQLException, IOException {
+    private static ForecastInstance getForecastInstance(DSLContext ctx, int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder, String officeArg,
+                                                        String name, String designator, Instant forecastDate, Instant issueDate) {
         if(officeArg != null){
             officeArg = officeArg.toUpperCase();
         }
         String office = officeArg;
 
         String query = INSTANCE_QUERY + GET_ONE_CONDITIONS;
-        try (PreparedStatement preparedStatement = c.prepareStatement(query)) {
-            preparedStatement.setString(1, office);
-            preparedStatement.setString(2, name);
-            preparedStatement.setString(3, designator);
-            preparedStatement.setString(4, designator);
-            preparedStatement.setLong(5, forecastDate.toEpochMilli());
-            preparedStatement.setLong(6, issueDate.toEpochMilli());
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return map(byteLimit, urlBuilder, resultSet);
-                } else {
-                    String message = format("Could not find forecast instance for " +
-                                    "office id: %s, spec id: %s, designator: %s, forecast date: %s, issue date: %s",
-                            office, name, designator, forecastDate, issueDate);
-                    throw new NotFoundException(message);
+        return ctx.connectionResult(c -> {
+            try (PreparedStatement preparedStatement = c.prepareStatement(query)) {
+                preparedStatement.setString(1, office);
+                preparedStatement.setString(2, name);
+                preparedStatement.setString(3, designator);
+                preparedStatement.setString(4, designator);
+                preparedStatement.setLong(5, forecastDate.toEpochMilli());
+                preparedStatement.setLong(6, issueDate.toEpochMilli());
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        return map(byteLimit, urlBuilder, resultSet);
+                    } else {
+                        String message = format("Could not find forecast instance for " +
+                                        "office id: %s, spec id: %s, designator: %s, forecast date: %s, issue date: %s",
+                                office, name, designator, forecastDate, issueDate);
+                        throw new NotFoundException(message);
+                    }
                 }
             }
-        }
+        });
     }
 
     public void update(ForecastInstance forecastInst) {
@@ -331,11 +336,11 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
         Instant forecastDate = forecastInst.getDateTime();
         Instant issueDate = forecastInst.getIssueDateTime();
         connection(dsl, c -> {
+            DSLContext ctx = getDslContext(c, forecastInst.getSpec().getOfficeId());
             //Will throw a NotFoundException if instance doesn't exist
             ReplaceUtils.OperatorBuilder noopUrlBuilder = new ReplaceUtils.OperatorBuilder().withTemplate("")
                     .withOperatorKey("{noop}");
-            getForecastInstance(c, 0, noopUrlBuilder, officeId, specId, designator, forecastDate, issueDate);
-            DSLContext ctx = getDslContext(c, forecastInst.getSpec().getOfficeId());
+            getForecastInstance(ctx, 0, noopUrlBuilder, officeId, specId, designator, forecastDate, issueDate);
             store(ctx, forecastInst);
         });
 
