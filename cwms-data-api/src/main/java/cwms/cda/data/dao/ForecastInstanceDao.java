@@ -127,13 +127,26 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
        blob.setQUALITY_CODE(0L);
        blob.setTHE_BLOB(fileData);
        connection(dsl, conn -> {
-           setOffice(conn, officeId);
+           DSLContext ctx = getDslContext(conn, officeId);
            DefaultBinding.THREAD_LOCAL.set(UTC_CALENDAR);
-           CWMS_FCST_PACKAGE.call_STORE_FCST(DSL.using(conn).configuration(), forecastInst.getSpec().getSpecId(),
+           clearExistingForecastInstance(forecastInst, officeId, forecastDate, issueDate, ctx);
+           CWMS_FCST_PACKAGE.call_STORE_FCST(ctx.configuration(), forecastInst.getSpec().getSpecId(),
                    forecastInst.getSpec().getDesignator(), forecastDate, issueDate,
                    "UTC", forecastInst.getMaxAge(), forecastInst.getNotes(), forecastInfo,
                    blob, "F", "T", officeId);
        });
+    }
+
+    private void clearExistingForecastInstance(ForecastInstance forecastInst, String officeId, Timestamp forecastDate, Timestamp issueDate, DSLContext ctx) {
+        ReplaceUtils.OperatorBuilder noopUrlBuilder = new ReplaceUtils.OperatorBuilder().withTemplate("")
+                .withOperatorKey("{noop}");
+        try {
+            getForecastInstance(0, noopUrlBuilder, officeId, forecastInst.getSpec().getSpecId(), forecastInst.getSpec().getDesignator(), forecastDate.toInstant(), issueDate.toInstant());
+            CWMS_FCST_PACKAGE.call_DELETE_FCST(ctx.configuration(), forecastInst.getSpec().getSpecId(), forecastInst.getSpec().getDesignator(),
+                    forecastDate, issueDate, "UTC", officeId);
+        } catch (NotFoundException e) {
+            // nothing to delete
+        }
     }
 
     private static String mapToJson(Map<String, String> metadata) {
