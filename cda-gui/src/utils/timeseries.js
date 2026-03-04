@@ -144,7 +144,7 @@ export const getPrecision = (units) => {
  */
 export function getLatestValue(data) {
   // values is a 2D array of [[timestamp, value, quality_code], ...]
-  for (let index = data?.values.length - 1; index > 0; index--) {
+  for (let index = data?.values.length - 1; index >= 0; index--) {
     const value = data.values[index];
     if (value[1] != null) return value;
   }
