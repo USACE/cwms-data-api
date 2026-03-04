@@ -23,6 +23,17 @@ public final class UsersPageCursor implements PageCursor {
     String limitOffice;
     String usernameRegex;
 
+    public UsersPageCursor() {
+    }
+
+    private UsersPageCursor(Builder builder) {
+        this.cursorUserId = builder.cursorUserId;
+        this.total = builder.total;
+        this.pageSize = builder.pageSize;
+        this.limitOffice = builder.limitOffice;
+        this.usernameRegex = builder.usernameRegex;
+    }
+
     public String getCursorUserId() {
         return cursorUserId;
     }
@@ -74,25 +85,16 @@ public final class UsersPageCursor implements PageCursor {
     }
 
     public static class Builder {
-        private String cursorUserId;
-        private int total;
-        private int pageSize;
+        private final String cursorUserId;
+        private final int total;
+        private final int pageSize;
         private String limitOffice;
         private String usernameRegex;
 
-        public Builder withCursorUserId(String cursorUserId) {
+        public Builder(String cursorUserId, int pageSize, int total) {
             this.cursorUserId = cursorUserId;
-            return this;
-        }
-
-        public Builder withTotal(int total) {
-            this.total = total;
-            return this;
-        }
-
-        public Builder withPageSize(int pageSize) {
             this.pageSize = pageSize;
-            return this;
+            this.total = total;
         }
 
         public Builder withLimitOffice(String limitOffice) {
@@ -106,13 +108,7 @@ public final class UsersPageCursor implements PageCursor {
         }
 
         public UsersPageCursor build() {
-            UsersPageCursor cursor = new UsersPageCursor();
-            cursor.cursorUserId = this.cursorUserId;
-            cursor.total = this.total;
-            cursor.pageSize = this.pageSize;
-            cursor.limitOffice = this.limitOffice;
-            cursor.usernameRegex = this.usernameRegex;
-            return cursor;
+            return new UsersPageCursor(this);
         }
     }
 }

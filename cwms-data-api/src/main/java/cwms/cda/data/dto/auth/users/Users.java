@@ -88,10 +88,7 @@ public class Users extends CwmsDTOPaginated {
             }
             else if (this.workingUsers.users.size() == this.workingUsers.pageSize && !this.workingUsers.users.isEmpty()) {
                 User lastUser = this.workingUsers.users.get(this.workingUsers.users.size() - 1);
-                UsersPageCursor pageCursor = new UsersPageCursor.Builder()
-                        .withCursorUserId(lastUser.getUserName())
-                        .withPageSize(this.workingUsers.pageSize)
-                        .withTotal(this.workingUsers.total)
+                UsersPageCursor pageCursor = new UsersPageCursor.Builder(lastUser.getUserName(), this.workingUsers.pageSize, this.workingUsers.total)
                         .withLimitOffice(this.limitOffice)
                         .withUsernameRegex(this.userNameRegex)
                         .build();
