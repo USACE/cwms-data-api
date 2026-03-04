@@ -8,6 +8,7 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.ClassLoaderType
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import java.io.IOException;
@@ -47,10 +48,20 @@ public class OpenApiTestHelper {
         if (oa == null || oa.ignore()) {
             return new OpenApiDocInfo(m, true);
         }
+        String[] ignored = new String[0];
+        IgnoreRequiredQueryParamMismatch ignore = m.getAnnotation(IgnoreRequiredQueryParamMismatch.class);
+        if (ignore != null) {
+            ignored = ignore.parameterNames();
+        }
         OpenApiDocInfo info = new OpenApiDocInfo(m, false);
         for (OpenApiParam p : oa.queryParams()) {
             if (p != null && !p.name().trim().isEmpty()) {
                 OpenApiParamInfo paramObj = new OpenApiParamInfo(p.name(), p.required(), p.type());
+                for (String ignoredName : ignored) {
+                    if (p.name().equalsIgnoreCase(ignoredName)) {
+                        paramObj = paramObj.setIgnoreRequired(true);
+                    }
+                }
                 info.getQueryParameters().add(paramObj);
             }
         }

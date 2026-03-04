@@ -133,10 +133,7 @@ public class StandardTextController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String stdTextId) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
-            String office = ctx.queryParam(OFFICE);
-            if (office == null) {
-                throw new IllegalArgumentException(OFFICE + " is a required parameter");
-            }
+            String office = requiredParam(ctx, OFFICE);
             DSLContext dsl = getDslContext(ctx);
             StandardTextValue standardTextValue = getDao(dsl).retrieveStandardText(stdTextId, office);
 
@@ -204,12 +201,8 @@ public class StandardTextController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String stdTextId) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
-            String office = ctx.queryParam(OFFICE);
-            if (office == null) {
-                throw new IllegalArgumentException(OFFICE + " is a required parameter");
-            }
-            JooqDao.DeleteMethod deleteMethod = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class)
-                    .getOrThrow(e -> new IllegalArgumentException(METHOD + " is a required parameter"));
+            String office = requiredParam(ctx, OFFICE);
+            JooqDao.DeleteMethod deleteMethod = requiredParamAs(ctx, METHOD, JooqDao.DeleteMethod.class);
             String deleteAction;
             switch (deleteMethod) {
                 case DELETE_ALL:

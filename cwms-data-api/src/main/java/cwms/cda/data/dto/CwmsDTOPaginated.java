@@ -1,12 +1,15 @@
 package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
 import com.google.common.flogger.FluentLogger;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -132,6 +135,21 @@ public abstract class CwmsDTOPaginated extends CwmsDTOBase {
         return new String[0];
     }
 
+    public static <T extends PageCursor> Optional<T> decodeCursor(String cursor, Class<T> clazz) {
+        return decodeCursor(cursor, CwmsDTOPaginated.delimiter, clazz);
+    }
+
+    public static <T extends PageCursor> Optional<T> decodeCursor(String cursor, String delimiter, Class<T> clazz) {
+        try {
+            T typed = clazz.getDeclaredConstructor().newInstance();
+            typed.decodeCursor(cursor, delimiter);
+            return Optional.of(typed);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            logger.atInfo().withCause(e).log("Failed to instantiate cursor class %s", clazz.getName());
+        }
+        return Optional.empty();
+    }
+
     public static String encodeCursor(String page, int pageSize) {
         return encodeCursor(CwmsDTOPaginated.delimiter, page, pageSize);
     }
@@ -148,6 +166,14 @@ public abstract class CwmsDTOPaginated extends CwmsDTOBase {
     {
         return (parts.length == 0 || parts[0] == null || parts[0].equals("*")) ? null :
             encoder.encodeToString(Arrays.stream(parts).map(String::valueOf).collect(Collectors.joining(delimiter)).getBytes());
+    }
+
+    public static String encodeCursor(PageCursor pageCursor) {
+        return encodeCursor(CwmsDTOPaginated.delimiter, pageCursor);
+    }
+
+    public static String encodeCursor(String delimiter, PageCursor cursor) {
+        return cursor.encode(encoder, delimiter);
     }
 
     public static class CursorCheck implements Function1<String,Boolean> {
