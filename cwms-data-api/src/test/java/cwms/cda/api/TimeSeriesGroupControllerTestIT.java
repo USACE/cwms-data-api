@@ -39,6 +39,7 @@ import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_TS;
 import static cwms.cda.data.dao.Dao.formatBool;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
@@ -81,6 +82,7 @@ import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matchers;
 import org.jooq.Configuration;
+import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -132,13 +134,14 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             TimeSeriesDaoImpl timeSeriesDao = new TimeSeriesDaoImpl(configuration.dsl());
 
             for (TimeSeriesGroup group : groupsToCleanup) {
+                groupDao.unassignAll(group.getTimeSeriesCategory().getId(), group.getId(), group.getOfficeId());
+
                 try {
-                    groupDao.unassignAllTs(group, group.getOfficeId());
-                    if (!group.getOfficeId().equalsIgnoreCase(CWMS_OFFICE)) {
-                        groupDao.delete(group.getTimeSeriesCategory().getId(), group.getId(), group.getOfficeId(), true);
-                    }
+                    groupDao.delete(group.getTimeSeriesCategory().getId(), group.getId(), group.getOfficeId(), true);
                 } catch (NotFoundException e) {
                     LOGGER.atConfig().withCause(e).log("Group not found");
+                } catch (DataAccessException e) {
+                    LOGGER.atInfo().withCause(e).log("Failed to delete time series from group in office {}", group.getOfficeId());
                 }
             }
             for (TimeSeriesCategory category : categoriesToCleanup) {
@@ -1274,21 +1277,19 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         TimeSeriesGroup group = new TimeSeriesGroup(category, CWMS_OFFICE, groupId, "All Time Series", null, null);
 
         groupsToCleanup.add(group);
-//        createCategory( category, officeId); // I don't think this user can create in CWMS, probably don't want to delete this cat either
-//        createGroup(group); // I don't think this user can create in CWMS, probably don't want to delete this cat either
+        categoriesToCleanup.add(category);
 
         AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
         TimeSeriesGroup newGroup = new TimeSeriesGroup(group, Collections.singletonList(assignedTimeSeries));
 
         String newGroupJson = Formats.format(new ContentType(Formats.JSONV1), newGroup);
 
-
-        // Retrieve the group and assert it's empty
+        // Retrieve the assignments for SPK and assert it's empty
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .contentType(Formats.JSONV1)
-            .queryParam(OFFICE, CWMS_OFFICE) // office
+            .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
             .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
         .when()
@@ -1307,7 +1308,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .contentType(Formats.JSONV1)
-            .header("Authorization", user.toHeaderValue())
+            .header("Authorization", user2.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .body(newGroupJson)
         .when()
@@ -1324,7 +1325,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .contentType(Formats.JSONV1)
-            .queryParam(OFFICE, officeId)
+            .queryParam(OFFICE, officeId)  // we added assignments in officeId so seems ok to restrict.
             .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
             .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
         .when()
@@ -1338,6 +1339,46 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body("description", equalTo("All Time Series"))
             .body("assigned-time-series.size()", equalTo(1))
             .body("assigned-time-series[0].timeseries-id", equalTo(tsId));
+    }
+
+    private void createCategory(TimeSeriesCategory cat){
+        categoriesToCleanup.add(cat);
+
+        ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
+        String json = Formats.format(contentType, cat);
+
+        // Create Category
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSON)
+                .contentType(Formats.JSON)
+                .body(json)
+                .header("Authorization", user.toHeaderValue())
+                .when()
+                .post("/timeseries/category")
+                .then()
+                .statusCode(anyOf(is(HttpServletResponse.SC_CREATED), is(HttpServletResponse.SC_CONFLICT)))
+                ;
+    }
+
+    private void createGroup(TimeSeriesGroup group){
+        groupsToCleanup.add(group);
+
+        ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesGroup.class);
+        String json = Formats.format(contentType, group);
+
+        // Create Group
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSON)
+                .contentType(Formats.JSON)
+                .body(json)
+                .header("Authorization", user.toHeaderValue())
+                .when()
+                .post("/timeseries/group")
+                .then()
+                .statusCode(anyOf(is(HttpServletResponse.SC_CREATED), is(HttpServletResponse.SC_CONFLICT)))
+        ;
     }
 
     @ParameterizedTest
@@ -1481,8 +1522,10 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         String tsId = ts.get("name").asText();
 
         TimeSeriesCategory category = new TimeSeriesCategory(CWMS_OFFICE, "Default", "Default");
+        createCategory(category);
+
         TimeSeriesGroup districtGroup = new TimeSeriesGroup(category, CWMS_OFFICE, "Default", "All Time Series", null, null);
-        groupsToCleanup.add(districtGroup);
+        createGroup(districtGroup);
 
         AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
         TimeSeriesGroup newDistrictGroup = new TimeSeriesGroup(districtGroup, Collections.singletonList(assignedTimeSeries));
@@ -1511,7 +1554,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .contentType(Formats.JSONV1)
-            .queryParam(OFFICE, CWMS_OFFICE) //office
+            .queryParam(OFFICE, officeId) //office
             .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
             .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
         .when()
@@ -1575,7 +1618,6 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
 
         groupsToCleanup.add(group);
-
 
         assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, "AliasId", timeSeriesId, 1));
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);

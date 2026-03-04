@@ -33,7 +33,10 @@ import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.TimeSeriesGroup;
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.Configuration;
@@ -46,6 +49,7 @@ import org.jooq.SelectConditionStep;
 import org.jooq.SelectSeekStep4;
 import org.jooq.conf.ParamType;
 import org.jooq.impl.DSL;
+import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
@@ -326,8 +330,9 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 deleteTsGroupCascadeMode = DeleteTsGroupCascadeMode.USE_CASCADE_ROUTINE;
             } catch (RuntimeException e) {
                 if (isMissingOrBindFailure(e)) {
-                    logger.atWarning().withCause(e).log(
-                            "DELETE_TS_GROUP_CASCADE is not available. Falling back to iterative cascade delete.");
+                    // No reason to log the whole exception here. It was either missing or bind
+                    // and we think we have an alternative.
+                    logger.atFine().log("DELETE_TS_GROUP_CASCADE is not available. Falling back to iterative cascade delete.");
                     deleteTsGroupCascadeMode = DeleteTsGroupCascadeMode.USE_UNASSIGN;
                     deleteViaUnassign(dslContext, categoryId, groupId, office, true);
                 } else {
@@ -348,18 +353,59 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     private void deleteViaUnassign(DSLContext dslContext, String categoryId, String groupId, String office, boolean cascade) {
 
         dslContext.transaction((Configuration config) -> {
-            DSLContext context = config.dsl();
 
             if (cascade) {
-                TimeSeriesGroup group = getTimeSeriesGroup(context,null, office, null, categoryId, groupId);
-                if (group != null) {
-                    CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(config,
-                            group.getTimeSeriesCategory().getId(), group.getId(),
-                            null, "T", group.getOfficeId());
-                }
+                unassignAll(config, categoryId, groupId, office);
             }
             CWMS_TS_PACKAGE.call_DELETE_TS_GROUP(config, categoryId, groupId, office);
         });
+    }
+
+
+    public void unassignAll(String categoryId, String groupId, String office) {
+        dsl.transaction((Configuration config) -> {
+            unassignAll(config, categoryId, groupId, office);
+        });
+    }
+
+    private void unassignAll(Configuration config, String categoryId, String groupId, String office) {
+        DSLContext context = config.dsl();
+
+        List<String> assignmentOffices = getAssignmentOffices(context, categoryId, groupId, office);
+        logger.atInfo().log("For o:%s c:%s g:%s found assignments in offices:%s", office, categoryId, groupId, assignmentOffices);
+        if (!assignmentOffices.isEmpty()) {
+            for (String assignmentOffice : assignmentOffices) {
+                if (office != null && !"CWMS".equals(office)) {
+                    CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(config, assignmentOffice);
+                }
+                CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(config,
+                        categoryId, groupId,
+                        null, "T", assignmentOffice);
+            }
+        }
+    }
+
+    private List<String> getAssignmentOffices(DSLContext context, String categoryId, String groupId, String office) {
+        List<String> retval = new ArrayList<>();
+
+        // retrieve with a null tsOfficeId so that we get ALL ts assignments.
+        TimeSeriesGroup group = getTimeSeriesGroup(context,null, office, null, categoryId, groupId);
+        if (group != null) {
+
+            Set<String> assignmentOffices = new LinkedHashSet<>();
+            if (group.getAssignedTimeSeries() != null) {
+                for (AssignedTimeSeries ats : group.getAssignedTimeSeries()) {
+                    assignmentOffices.add(ats.getOfficeId());
+                }
+            }
+
+            boolean hadCwms = assignmentOffices.remove("CWMS");
+            retval.addAll(assignmentOffices);
+            if (hadCwms) {
+                assignmentOffices.add("CWMS"); // want it last
+            }
+        }
+        return retval;
     }
 
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
@@ -375,7 +421,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
     public void create(TimeSeriesGroup group, boolean failIfExists, boolean ignoreNulls) {
         connection(dsl, c -> {
-            Configuration configuration = getDslContext(c,group.getOfficeId()).configuration();
+            Configuration configuration = getDslContext(c, group.getOfficeId()).configuration();
             String categoryId = group.getTimeSeriesCategory().getId();
             CWMS_TS_PACKAGE.call_STORE_TS_GROUP(configuration, categoryId,
                 group.getId(), group.getDescription(), formatBool(failIfExists),
@@ -424,12 +470,23 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         );
     }
 
+
     public void unassignAllTs(TimeSeriesGroup group, String officeId) {
+
         connection(dsl, c ->
-            CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(
-                getDslContext(c, officeId).configuration(),
-                group.getTimeSeriesCategory().getId(), group.getId(),
-                null, "T", group.getOfficeId())
+            // For Default/Default if officeId is 'CWMS' this seems to not unassign
+                // the assigned timeseries where the office id of the timeseries is SPK.
+                // Is this a bug?
+                {
+                    DSLContext dslContext = getDslContext(c, officeId);
+
+                    // UNASSIGN_TS_GROUP apparently only unassigns the assignments that are in the
+                    // P_DB_OFFICE_ID  ( last parameter)
+                    CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(
+                        dslContext.configuration(),
+                        group.getTimeSeriesCategory().getId(), group.getId(),
+                        null, "T", group.getOfficeId());
+                }
         );
     }
 

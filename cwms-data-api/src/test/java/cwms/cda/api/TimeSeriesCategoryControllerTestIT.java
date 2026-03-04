@@ -76,7 +76,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
 
             for (TimeSeriesGroup group : groupsToCleanup) {
                 try {
-                    groupDao.unassignAllTs(group, "SPK");
+                    groupDao.unassignAllTs(group, group.getOfficeId());
                     if (!group.getOfficeId().equalsIgnoreCase(CWMS_OFFICE)) {
                         groupDao.delete(group.getTimeSeriesCategory().getId(), group.getId(), group.getOfficeId(), false);
                     }
