@@ -119,7 +119,15 @@ export default function DataQuery() {
             if (r.raw.ok) {
               let _data = await r.raw.json();
               return await fetchAllTSData(_data);
-            } else return { name: tsid, values: [], message: r.raw.text };
+            } else {
+              let message;
+              try {
+                message = await r.raw.text();
+              } catch (e) {
+                message = e?.message ?? "Failed to read error response";
+              }
+              return { name: tsid, values: [], message };
+            }
           })
           .catch((e) => {
             console.error(e);
@@ -187,7 +195,8 @@ export default function DataQuery() {
     const exportOrder = orderedSelectedTsids;
     const parameters = exportOrder.map((ts) => ts.split(".")[1]);
     const valueMaps = exportOrder.reduce((acc, tsid) => {
-      const values = timeseriesData.raw.find((series) => series.name === tsid)?.values || [];
+      const values =
+        timeseriesData.raw.find((series) => series.name === tsid)?.values || [];
       acc[tsid] = Object.fromEntries(values.map((entry) => [entry[0], entry[1]]));
       return acc;
     }, {});
