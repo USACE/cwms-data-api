@@ -20,6 +20,8 @@
 
 package cwms.cda.api.location.kind;
 
+import static cwms.cda.api.Controllers.*;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.BaseHandler;
@@ -30,19 +32,18 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.location.kind.GateChange;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import static cwms.cda.api.Controllers.*;
 
 public class GateChangeGetAllController extends BaseHandler {
     private static final int DEFAULT_PAGE_SIZE = 500;
@@ -94,6 +95,7 @@ public class GateChangeGetAllController extends BaseHandler {
             description = "Returns matching CWMS gate change data for a Reservoir Project.",
             tags = {OutletController.TAG}
     )
+    @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     @Override
     public void handle(@NotNull Context context) {
         String office = context.pathParam(OFFICE);
