@@ -88,7 +88,15 @@ public class Users extends CwmsDTOPaginated {
             }
             else if (this.workingUsers.users.size() == this.workingUsers.pageSize && !this.workingUsers.users.isEmpty()) {
                 User lastUser = this.workingUsers.users.get(this.workingUsers.users.size() - 1);
-                this.workingUsers.nextPage = encodeCursor(CwmsDTOPaginated.delimiter, lastUser.getUserName(), this.workingUsers.pageSize, this.workingUsers.total, this.limitOffice, this.userNameRegex);
+                UsersPageCursor pageCursor = new UsersPageCursor.Builder()
+                        .withCursorUserId(lastUser.getUserName())
+                        .withPageSize(this.workingUsers.pageSize)
+                        .withTotal(this.workingUsers.total)
+                        .withLimitOffice(this.limitOffice)
+                        .withUsernameRegex(this.userNameRegex)
+                        .build();
+                this.workingUsers.nextPage = CwmsDTOPaginated.encodeCursor(pageCursor);
+
             } else {
                 this.workingUsers.nextPage = null;
             }

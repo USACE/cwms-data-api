@@ -168,6 +168,14 @@ public abstract class CwmsDTOPaginated extends CwmsDTOBase {
             encoder.encodeToString(Arrays.stream(parts).map(String::valueOf).collect(Collectors.joining(delimiter)).getBytes());
     }
 
+    public static String encodeCursor(PageCursor pageCursor) {
+        return encodeCursor(CwmsDTOPaginated.delimiter, pageCursor);
+    }
+
+    public static String encodeCursor(String delimiter, PageCursor cursor) {
+        return cursor.encode(encoder, delimiter);
+    }
+
     public static class CursorCheck implements Function1<String,Boolean> {
         private static Pattern base64 = Pattern.compile("^[-A-Za-z0-9+/]*={0,3}$");
         @Override
