@@ -60,6 +60,7 @@ import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -150,7 +151,7 @@ public class AccountingCatalogController implements Handler {
         method = HttpMethod.GET,
         tags = {TAG}
     )
-
+    @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     @Override
     public void handle(Context ctx) {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
@@ -160,17 +161,15 @@ public class AccountingCatalogController implements Handler {
             final String locationId = ctx.pathParam(PROJECT_ID);
             final Instant startTime = requiredInstant(ctx, START);
             final Instant endTime = requiredInstant(ctx, END);
-            final String units = ctx.queryParam(UNIT) != null ? ctx.queryParam(UNIT) : "cms";
-            final boolean startInclusive = ctx.queryParam(START_TIME_INCLUSIVE) == null
-                    || Boolean.parseBoolean(ctx.queryParam(START_TIME_INCLUSIVE));
-            final boolean endInclusive = ctx.queryParam(END_TIME_INCLUSIVE) == null
-                    || Boolean.parseBoolean(ctx.queryParam(END_TIME_INCLUSIVE));
-            final boolean ascending = ctx.queryParam(ASCENDING) == null
-                    || Boolean.parseBoolean(ctx.queryParam(ASCENDING));
-            final int rowLimit = queryParamAsClass(ctx, Integer.class, 0, ROW_LIMIT);
+            final String units = ctx.queryParamAsClass(UNIT, String.class).getOrDefault("cms");
+            final boolean startInclusive = ctx.queryParamAsClass(START_TIME_INCLUSIVE, Boolean.class)
+                .getOrDefault(true);
+            final boolean endInclusive = ctx.queryParamAsClass(END_TIME_INCLUSIVE, Boolean.class).getOrDefault(true);
+            final boolean ascending = ctx.queryParamAsClass(ASCENDING, Boolean.class).getOrDefault(true);
+            final int rowLimit = ctx.queryParamAsClass(ROW_LIMIT, Integer.class).getOrDefault(0);
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
+            String formatHeader = ctx.headerAsClass(Header.ACCEPT, String.class).getOrDefault(Formats.JSONV1);
             if (formatHeader != null && formatHeader.equals(Formats.JSONV2)) {
                 byte[] decoded = Base64.decodeBase64(contractId);
                 contractId = new String(decoded);

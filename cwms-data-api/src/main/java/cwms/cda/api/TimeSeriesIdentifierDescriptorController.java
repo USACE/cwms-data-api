@@ -180,7 +180,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             if (Formats.DEFAULT.equals(formatHeader)) {
@@ -329,7 +329,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String timeseriesId) {
 
-        JooqDao.DeleteMethod method = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class).get();
+        JooqDao.DeleteMethod method =requiredParamAs(ctx, METHOD, JooqDao.DeleteMethod.class);
 
         String office = requiredParam(ctx, OFFICE);
 
