@@ -52,6 +52,7 @@ import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION_DATE;
 import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -245,9 +246,9 @@ public class RatingController extends BaseCrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
-            Instant startTimeDate = DateUtils.parseUserDate(ctx.queryParam(BEGIN), timezone).toInstant();
-            Instant endTimeDate = DateUtils.parseUserDate(ctx.queryParam(END), timezone).toInstant();
-            String office = ctx.queryParam(OFFICE);
+            Instant startTimeDate = DateUtils.parseUserDate(requiredParam(ctx, BEGIN), timezone).toInstant();
+            Instant endTimeDate = DateUtils.parseUserDate(requiredParam(ctx, END), timezone).toInstant();
+            String office = requiredParam(ctx, OFFICE);
             RatingDao ratingDao = getRatingDao(dsl);
             ratingDao.delete(office, ratingSpecId, startTimeDate, endTimeDate);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
@@ -400,7 +401,7 @@ public class RatingController extends BaseCrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String rating) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            String officeId = ctx.queryParam(OFFICE);
+            String officeId = requiredParam(ctx, OFFICE);
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
             VerticalDatum verticalDatum = VerticalDatum.getVerticalDatum(ctx.queryParam(DATUM));
 

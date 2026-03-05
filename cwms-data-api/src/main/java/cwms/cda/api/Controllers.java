@@ -147,6 +147,7 @@ public final class Controllers {
 
     public static final String LOCATION_ID = "location-id";
     public static final String SOURCE_ENTITY = "source-entity";
+    public static final String SOURCE_ENTITY_LIKE = "source-entity-like";
     public static final String FORECAST_DATE = "forecast-date";
     public static final String ISSUE_DATE = "issue-date";
     public static final String LOCATION_KIND_LIKE = "location-kind-like";
@@ -222,6 +223,7 @@ public final class Controllers {
     public static final String PREFIX = "prefix";
     public static final String PROJECT_LIKE = "project-like";
 
+    public static final String USERNAME_LIKE = "username-like";
     public static final String APPLICATION_ID = "application-id";
     public static final String REVOKE_EXISTING = "revoke-existing";
     public static final String REVOKE_TIMEOUT = "revoke-timeout";

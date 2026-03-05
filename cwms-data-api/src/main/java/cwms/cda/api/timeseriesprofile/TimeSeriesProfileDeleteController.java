@@ -59,7 +59,8 @@ public final class TimeSeriesProfileDeleteController extends TimeSeriesProfileBa
 
     @OpenApi(
             queryParams = {
-                @OpenApiParam(name = OFFICE, description = "The office associated with the time series profile"),
+                @OpenApiParam(name = OFFICE, required = true,
+                    description = "The office associated with the time series profile"),
             },
             pathParams = {
                 @OpenApiParam(name = LOCATION_ID, description = "The location ID associated with the time "

@@ -13,11 +13,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
-import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
 import cwms.cda.formatters.Formats;
 
@@ -55,12 +53,14 @@ public class Users extends CwmsDTOPaginated {
         private final Users workingUsers;
         private final Optional<String> nextPage;
         private final String limitOffice;
+        private final String userNameRegex;
 
 
-        public Builder(String cursor, int pageSize, int total, String limitOffice) {
+        public Builder(String cursor, int pageSize, int total, String limitOffice, String userNameRegex) {
             workingUsers = new Users(cursor, pageSize, total);
             this.nextPage = Optional.empty();
             this.limitOffice = limitOffice;
+            this.userNameRegex = userNameRegex;
         }
         
         /**
@@ -78,6 +78,7 @@ public class Users extends CwmsDTOPaginated {
             workingUsers = new Users(cursor, pageSize, total);
             this.nextPage = Optional.of(nextPage != null ? nextPage : "end");
             this.limitOffice = null; // Not used when processing existing JSON, value is encoded in next-page for the query.
+            this.userNameRegex = null; // Not used when processing existing JSON, value is encoded in next-page for the query.
         }
 
         public Users build() {
@@ -87,7 +88,12 @@ public class Users extends CwmsDTOPaginated {
             }
             else if (this.workingUsers.users.size() == this.workingUsers.pageSize && !this.workingUsers.users.isEmpty()) {
                 User lastUser = this.workingUsers.users.get(this.workingUsers.users.size() - 1);
-                this.workingUsers.nextPage = encodeCursor(CwmsDTOPaginated.delimiter, lastUser.getUserName(), this.workingUsers.pageSize, this.workingUsers.total, this.limitOffice);
+                UsersPageCursor pageCursor = new UsersPageCursor.Builder(lastUser.getUserName(), this.workingUsers.pageSize, this.workingUsers.total)
+                        .withLimitOffice(this.limitOffice)
+                        .withUsernameRegex(this.userNameRegex)
+                        .build();
+                this.workingUsers.nextPage = CwmsDTOPaginated.encodeCursor(pageCursor);
+
             } else {
                 this.workingUsers.nextPage = null;
             }

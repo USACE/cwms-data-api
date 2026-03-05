@@ -38,6 +38,13 @@ Welcome to CWMS Data API documentation!
 
 
 .. toctree::
+   :maxdepth: 3
+   :caption: Access Management
+
+   Access Management <./access-management/index.md>
+
+
+.. toctree::
    :maxdepth: 1
    :caption: Alternative Topics
 

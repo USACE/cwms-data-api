@@ -109,9 +109,9 @@ services:
 
   auth:
     image: quay.io/keycloak/keycloak:26.5
-    command: ["start-dev","--import-realm"]
+    command: ["start-dev", "--import-realm"]
     healthcheck:
-      test: "/usr/bin/curl -If localhost:${APP_PORT:-8081}/auth/health/ready || exit 1"
+      test: "/healthcheck.sh"
       interval: 5s
       timeout: 1s
       retries: 100

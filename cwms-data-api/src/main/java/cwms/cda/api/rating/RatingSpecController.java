@@ -153,7 +153,7 @@ public class RatingSpecController implements CrudHandler {
                             + "the rating-id of the Rating Spec to be included in the response")
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                    @OpenApiParam(name = OFFICE, description = "Specifies the "
                             + "owning office of the Rating Specs whose data is to be included in "
                             + "the response. If this field is not specified, matching rating "
                             + "information from all offices shall be returned."),
@@ -275,9 +275,9 @@ public class RatingSpecController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
             RatingSpecDao ratingDao = getRatingSpecDao(dsl);
-            JooqDao.DeleteMethod method = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class).get();
+            JooqDao.DeleteMethod method = requiredParamAs(ctx, METHOD, JooqDao.DeleteMethod.class);
             ratingDao.delete(office, method, ratingSpecId);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
