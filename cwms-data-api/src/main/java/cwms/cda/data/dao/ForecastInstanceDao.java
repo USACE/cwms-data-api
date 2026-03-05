@@ -307,7 +307,7 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
         String office = officeArg;
 
         String query = INSTANCE_QUERY + GET_ONE_CONDITIONS;
-        return ctx.connectionResult(c -> {
+        return connectionResult(ctx, c -> {
             try (PreparedStatement preparedStatement = c.prepareStatement(query)) {
                 preparedStatement.setString(1, office);
                 preparedStatement.setString(2, name);
