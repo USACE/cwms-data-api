@@ -775,7 +775,6 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         ;
     }
 
-    @Disabled("Update currently fails with an error trying to store a null spec id")
     @Test
     void test_create_get_update_get() throws IOException {
 
