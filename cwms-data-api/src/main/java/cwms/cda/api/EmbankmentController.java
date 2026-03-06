@@ -90,7 +90,7 @@ public final class EmbankmentController  implements CrudHandler {
     @Override
     public void getAll(Context ctx) {
         String office = ctx.queryParam(OFFICE);
-        String projectId = ctx.queryParam(PROJECT_ID);
+        String projectId = requiredParam(ctx, PROJECT_ID);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             EmbankmentDao dao = new EmbankmentDao(dsl);

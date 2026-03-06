@@ -214,7 +214,7 @@ public class TimeSeriesFilteredController implements Handler {
                     ? DateUtils.parseUserDate(end, timezone)
                     : ZonedDateTime.now(tz);
 
-            String office = requiredParam(ctx, OFFICE);
+            String office = ctx.queryParam(OFFICE);
 
             FilteredTimeSeriesParameters ftsParams = FilteredTimeSeriesParameters.Builder.from(ctx)
                     .build();

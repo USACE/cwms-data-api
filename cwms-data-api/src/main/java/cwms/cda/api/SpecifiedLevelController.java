@@ -163,7 +163,7 @@ public class SpecifiedLevelController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "owning office of the specified level to be renamed"),
-            @OpenApiParam(name = SPECIFIED_LEVEL_ID, description = "The new specified level id.")
+            @OpenApiParam(name = SPECIFIED_LEVEL_ID, required = true, description = "The new specified level id.")
         },
         method = HttpMethod.PATCH,
         tags = {TAG}
@@ -174,8 +174,8 @@ public class SpecifiedLevelController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             SpecifiedLevelDao dao = getDao(dsl);
-            String newSpecifiedLevelId = ctx.queryParam(SPECIFIED_LEVEL_ID);
-            String office = ctx.queryParam(OFFICE);
+            String newSpecifiedLevelId = requiredParam(ctx, SPECIFIED_LEVEL_ID);
+            String office = requiredParam(ctx, OFFICE);
             dao.update(oldSpecifiedLevelId, newSpecifiedLevelId, office);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
@@ -201,7 +201,7 @@ public class SpecifiedLevelController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             SpecifiedLevelDao dao = getDao(dsl);
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
             dao.delete(specifiedLevelId, office);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }

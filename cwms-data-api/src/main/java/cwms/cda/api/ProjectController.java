@@ -231,8 +231,8 @@ public class ProjectController implements CrudHandler {
             @OpenApiParam(name = NAME, description = "The name of the project to be renamed"),
         },
         queryParams = {
-            @OpenApiParam(name = NAME, description = "The new name of the project"),
-            @OpenApiParam(name = OFFICE, description = "The office of the project to be renamed"),
+            @OpenApiParam(name = NAME, required = true, description = "The new name of the project"),
+            @OpenApiParam(name = OFFICE, required = true, description = "The office of the project to be renamed"),
         },
         requestBody = @OpenApiRequestBody(
             content = {

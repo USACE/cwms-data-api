@@ -55,6 +55,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.helpers.DateUtils;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -378,6 +379,7 @@ public class LevelsController implements CrudHandler {
             description = "Retrieves requested Location Level",
             tags = TAG
     )
+    @IgnoreRequiredQueryParamMismatch(parameterNames = {EFFECTIVE_DATE})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String levelId) {
         String office = requiredParam(ctx, OFFICE);

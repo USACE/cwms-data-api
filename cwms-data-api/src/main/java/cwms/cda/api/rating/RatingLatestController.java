@@ -28,6 +28,7 @@ import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -91,7 +92,7 @@ public class RatingLatestController implements Handler {
 
             ContentType contentType = new ContentType(ctx.contentType() != null ? ctx.contentType() : Formats.JSONV2);
 
-            String officeId = ctx.queryParam(OFFICE);
+            String officeId = requiredParam(ctx, OFFICE);
 
             if (!contentType.toString().equals(Formats.JSONV2) && !contentType.toString().equals(Formats.XMLV2)) {
                 ctx.status(HttpCode.UNSUPPORTED_MEDIA_TYPE);
