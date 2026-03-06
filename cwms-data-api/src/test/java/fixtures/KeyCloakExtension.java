@@ -74,6 +74,7 @@ public final class KeyCloakExtension implements BeforeAllCallback {
                                         .withStartupTimeout(Duration.ofMinutes(5))
         );
         kcc.start();
+        
         authUrl = "http://"+kcc.getHost()+":"+kcc.getMappedPort(8080);
         
         // verify we can get the wellknown config

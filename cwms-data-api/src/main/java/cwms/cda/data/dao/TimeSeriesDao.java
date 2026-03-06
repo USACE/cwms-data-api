@@ -5,6 +5,7 @@ import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
+import cwms.cda.helpers.AuthorizationFilterHelper;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -49,6 +50,8 @@ public interface TimeSeriesDao {
                              ZonedDateTime versionDate, boolean trim, boolean includeEntryDate);
 
     TimeSeries getTimeseries(String cursor, int pageSize, TimeSeriesRequestParameters requestParameters);
+    TimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters,
+                             AuthorizationFilterHelper authFilter);
     FilteredTimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters, FilteredTimeSeriesParameters filterParams);
 
     String getTimeseries(String format, String names, String office, String unit, String datum,

@@ -1,17 +1,21 @@
 package cwms.cda.data.dao;
 
-import static com.google.common.flogger.LazyArgs.lazy;
 import static org.jooq.impl.DSL.*;
 
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import cwms.cda.data.dto.auth.users.UsersPageCursor;
 import org.jooq.CommonTableExpression;
@@ -29,13 +33,15 @@ import org.jooq.impl.DSL;
 import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.data.dto.CwmsDTOPaginated;
+import cwms.cda.data.dto.auth.TsGroupPrivilege;
 import cwms.cda.data.dto.auth.users.User;
 import cwms.cda.data.dto.auth.users.Users;
+import cwms.cda.helpers.AuthorizationContextHelper;
 import cwms.cda.security.DataApiPrincipal;
 import usace.cwms.db.jooq.codegen.tables.AV_SEC_USERS;
 
 public class UserDao extends JooqDao<User> {
-    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private static final String GET_USER =
         "select ut.userid as username,ut.email, ut.principle_name,groups.db_office_id as \"office\",groups.user_group_id as \"role\" " +
@@ -45,6 +51,23 @@ public class UserDao extends JooqDao<User> {
         "order by \"office\", \"role\""
         ;
 
+    private static final String GET_TS_GROUP_PRIVILEGES =
+        "SELECT DISTINCT " +
+        "    tsg.ts_group_code, " +
+        "    tsg.ts_group_id, " +
+        "    sa.privilege_bit " +
+        "FROM cwms_20.av_sec_users asu " +
+        "JOIN cwms_20.at_sec_allow sa ON asu.user_group_code = sa.user_group_code " +
+        "    AND asu.db_office_code = sa.db_office_code " +
+        "JOIN cwms_20.at_sec_ts_groups tsg ON sa.ts_group_code = tsg.ts_group_code " +
+        "WHERE upper(asu.username) = upper(?) " +
+        "AND asu.is_member = 'T' " +
+        "ORDER BY tsg.ts_group_code"
+        ;
+
+    private static final Pattern EMBARGO_PATTERN =
+        Pattern.compile(".*-(\\d+)(h|d)$", Pattern.CASE_INSENSITIVE);
+
     private final Table<?> AT_SEC_CWMS_USERS = table("cwms_20.at_sec_cwms_users","userid", "email","principle_name");
 
     public UserDao(DSLContext dsl) {
@@ -53,7 +76,7 @@ public class UserDao extends JooqDao<User> {
 
     @Override
     public Optional<User> getByUniqueName(String uniqueName, String cac_role) {
-        return Optional.ofNullable(dsl.connectionResult(c -> {
+        return Optional.of(dsl.connectionResult(c -> {
                 AuthDao.setSessionForAuthCheck(c);
                 try (PreparedStatement getUser = c.prepareStatement(GET_USER)) {
                     getUser.setString(1, uniqueName);
@@ -76,16 +99,73 @@ public class UserDao extends JooqDao<User> {
                                     roles.computeIfAbsent(roleOffice, (key) -> new ArrayList<>()).add(role);
                                 }
                             }
-                            logger.atInfo().log("Building user object.");
-                           return new User(userName, principalName, email, cac_role != null,  roles);
                         } else {
-                            return null;
+                            return (User)null;
                         }
                     }
+
+                    List<TsGroupPrivilege> tsGroupPrivileges = Collections.emptyList();
+                    if (AuthorizationContextHelper.isEnabled()) {
+                        tsGroupPrivileges = getTsGroupPrivileges(c, userName);
+                        logger.atInfo().log("Loaded %d TS group privileges for user %s", tsGroupPrivileges.size(), userName);
+                    }
+                    return new User(userName, principalName, email, cac_role != null, roles, tsGroupPrivileges);
                 }
             })
         );
 
+    }
+
+    private List<TsGroupPrivilege> getTsGroupPrivileges(Connection c, String userName) throws SQLException {
+        List<TsGroupPrivilege> privileges = new ArrayList<>();
+        try (PreparedStatement stmt = c.prepareStatement(GET_TS_GROUP_PRIVILEGES)) {
+            stmt.setString(1, userName);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    int tsGroupCode = rs.getInt("ts_group_code");
+                    String tsGroupId = rs.getString("ts_group_id");
+                    int privilegeBit = rs.getInt("privilege_bit");
+                    int embargoHours = parseEmbargoFromTsGroupId(tsGroupId);
+                    String privilege = convertPrivilegeBit(privilegeBit);
+                    privileges.add(new TsGroupPrivilege(tsGroupCode, tsGroupId, privilege, embargoHours));
+                }
+            }
+        }
+        return privileges;
+    }
+
+    private int parseEmbargoFromTsGroupId(String tsGroupId) {
+        if (tsGroupId == null) {
+            return 0;
+        }
+        Matcher matcher = EMBARGO_PATTERN.matcher(tsGroupId);
+        if (matcher.matches()) {
+            try {
+                int value = Integer.parseInt(matcher.group(1));
+                String unit = matcher.group(2).toLowerCase();
+                if ("d".equals(unit)) {
+                    return value * 24;
+                }
+                return value;
+            } catch (NumberFormatException e) {
+                logger.atWarning().log("Failed to parse embargo hours from TS group: %s", tsGroupId);
+                return 0;
+            }
+        }
+        return 0;
+    }
+
+    private String convertPrivilegeBit(int privilegeBit) {
+        boolean canRead = (privilegeBit & 2) != 0;
+        boolean canWrite = (privilegeBit & 4) != 0;
+        if (canRead && canWrite) {
+            return "read-write";
+        } else if (canWrite) {
+            return "write";
+        } else if (canRead) {
+            return "read";
+        }
+        return "none";
     }
 
     public void addRoles(DataApiPrincipal p, String user, String office, String[] roles) {
@@ -234,8 +314,9 @@ public class UserDao extends JooqDao<User> {
                 // association and always fully included per use in the response.
                 .orderBy(limitUserId, vUserGroups.DB_OFFICE_ID)
                 ;
-            
-            logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
+
+
+            logger.atInfo().log(query.getSQL(ParamType.INLINED));
 
             final Users.Builder builder = new Users.Builder(cursor, pageSizeTmp, total, limitOffice, pageUsernameRegex);
 

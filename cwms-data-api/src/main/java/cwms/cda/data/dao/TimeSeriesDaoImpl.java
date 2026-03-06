@@ -45,6 +45,8 @@ import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
 import cwms.cda.formatters.xml.XMLv1;
+import cwms.cda.helpers.AuthorizationFilterHelper;
+import cwms.cda.helpers.DateUtils;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.SQLException;
@@ -236,6 +238,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     @Override
+    public TimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters,
+                                    AuthorizationFilterHelper authFilter) {
+        return getRequestedTimeSeries(page, pageSize, requestParameters, null, authFilter);
+    }
+
+    @Override
     public FilteredTimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters, FilteredTimeSeriesParameters filterParams){
         TimeSeries ts =  getRequestedTimeSeries(page, pageSize, requestParameters, filterParams);
         FilteredTimeSeries fts = new FilteredTimeSeries(ts, filterParams);
@@ -245,6 +253,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     protected TimeSeries getRequestedTimeSeries(String page, int pageSize, @NotNull TimeSeriesRequestParameters requestParameters,
                                        @Nullable FilteredTimeSeriesParameters fp) {
+        return getRequestedTimeSeries(page, pageSize, requestParameters, fp, null);
+    }
+
+    protected TimeSeries getRequestedTimeSeries(String page, int pageSize, @NotNull TimeSeriesRequestParameters requestParameters,
+                                       @Nullable FilteredTimeSeriesParameters fp, @Nullable AuthorizationFilterHelper authFilter) {
 
         String names = requestParameters.getNames();
         String office = requestParameters.getOffice();
@@ -374,6 +387,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             nameToField.put("data_entry_date", dataEntryDate);
             FieldResolver resolver = new MapFieldResolver(nameToField);
             filterConditions = getFilterCondition(fp, resolver);
+        }
+
+        if (authFilter != null && authFilter.hasAuthorizationContext()) {
+            Field<String> officeField = valid.field("office_id", String.class);
+
+            Condition embargoFilter = authFilter.getEmbargoFilter(dateTimeCol, officeField, office);
+            filterConditions = filterConditions.and(embargoFilter);
+            logger.atFine().log("Applied embargo filter to timeseries query");
+
+            Condition timeWindowFilter = authFilter.getTimeWindowFilter(dateTimeCol,
+                Timestamp.from(beginTime.toInstant()));
+            filterConditions = filterConditions.and(timeWindowFilter);
+            logger.atFine().log("Applied time window filter to timeseries query");
         }
 
         Field<Integer> totalField;
