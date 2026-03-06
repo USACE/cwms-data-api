@@ -4,7 +4,7 @@ import { range } from ".";
 export function getYearRange(start_year, end_year, FORMAT = "YYYY") {
   let _start = dayjs().set("year", start_year);
   let _end = dayjs();
-  if (end_year) _end.set("year", end_year);
+  if (end_year) _end = _end.set("year", end_year);
 
   let _years = [];
   while (_start.unix() <= _end.unix()) {
@@ -14,11 +14,7 @@ export function getYearRange(start_year, end_year, FORMAT = "YYYY") {
   return _years;
 }
 
-export function getMonthRange({
-  selectedMonth,
-  selectedYear,
-  lookback_year = 1994,
-}) {
+export function getMonthRange({ selectedMonth, selectedYear, lookback_year = 1994 }) {
   const current_dt = dayjs();
   if (!selectedMonth) selectedMonth = current_dt.format("MMM");
   if (!selectedYear) selectedYear = current_dt.year();
