@@ -247,40 +247,33 @@ public class Formats {
     }
 
     /**
-     * Parses the supplied header param or queryParam to determine the content type.
-     * If both are supplied an exception is thrown.  If neither are supplied an exception is thrown.
+     * Parses the supplied header param and/or queryParam to determine the content type.
+     * Query parameter takes priority over the header and is parsed the same way as the header
+     * (i.e., supports full content types, versions, and DTO-specific aliases). If neither is
+     * supplied an exception is thrown.
      *
      * @param header     Accept header value
      * @param queryParam format query parameter value
      * @param klass      DTO object class, used for identifying content type aliases from the DTO's
      *                   <code>FormattableWith</code> annotations.
      * @return an appropriate standard mimetype for lookup
-     * @throws FormattingException if the header and queryParam are both supplied or neither are
+     * @throws FormattingException if neither header nor queryParam can be parsed into a supported content type
      */
     public static ContentType parseHeaderAndQueryParm(String header, String queryParam,
         Class<? extends CwmsDTOBase> klass) {
+        // If a query parameter is provided, it overrides the header.
         if (queryParam != null && !queryParam.isEmpty()) {
-            if (header != null && !header.isEmpty() && !DEFAULT.equals(header.trim())) {
-                // If the user supplies an accept header and also a format= parameter, which
-                // should we use?
-                // The older format= query parameters don't give us the option to supply a
-                // version the
-                // way that the accept header does.
-                throw new UnsupportedFormatException("Accept header and query parameter are both "
-                        + "present, this is not supported.");
-            }
-
             ContentType ct = parseQueryParam(queryParam, klass);
             if (ct != null) {
                 return ct;
-            } else {
-                throw new UnsupportedFormatException("content-type " + queryParam + " is not implemented");
             }
-        } else if (header == null) {
-            throw new UnsupportedFormatException("no content type or format specified");
-        } else {
-            return parseHeader(header, klass);
         }
+
+        // No query parameter provided; use the header (parseHeader handles null/empty by mapping to */*)
+        if (header == null) {
+            throw new UnsupportedFormatException("no content type or format specified");
+        }
+        return parseHeader(header, klass);
     }
 
     /**

@@ -14,6 +14,8 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.csv.CsvCollectionRows;
+import cwms.cda.formatters.csv.CsvRow;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.json.adapters.TimeSeriesRecordSerializer;
@@ -86,6 +88,7 @@ public class TimeSeries extends CwmsDTOPaginated {
                     implementation = Record.class
             )
     )
+    @CsvCollectionRows
     List<Record> values;
 
     @Schema(
@@ -303,10 +306,12 @@ public class TimeSeries extends CwmsDTOPaginated {
     public static class Record {
         // Explicitly set property order for array serialization
         @JsonProperty(value = "date-time", index = 0)
+        @CsvRow(index = 0)
         @Schema(implementation = Long.class, description = "Milliseconds since 1970-01-01 (Unix Epoch), always UTC")
         Timestamp dateTime;
 
         @JsonProperty(index = 1)
+        @CsvRow(index = 1)
         @Schema(description = "Requested time-series data value")
         Double value;
 

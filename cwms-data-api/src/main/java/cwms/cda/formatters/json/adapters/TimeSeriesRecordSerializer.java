@@ -30,6 +30,7 @@ package cwms.cda.formatters.json.adapters;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import com.fasterxml.jackson.dataformat.csv.CsvGenerator;
 import com.fasterxml.jackson.dataformat.xml.ser.XmlSerializerProvider;
 import cwms.cda.data.dto.TimeSeries;
 import java.io.IOException;
@@ -44,6 +45,7 @@ public class TimeSeriesRecordSerializer extends StdSerializer<TimeSeries.Record>
     public void serialize(TimeSeries.Record recordValue, JsonGenerator gen, SerializerProvider provider)
         throws IOException {
 
+
         if (provider instanceof XmlSerializerProvider) {
             // Handle XML serialization
 
@@ -54,7 +56,9 @@ public class TimeSeriesRecordSerializer extends StdSerializer<TimeSeries.Record>
             } else {
                 gen.writeNumberField("value", recordValue.getValue());
             }
-            gen.writeNumberField("quality-code", recordValue.getQualityCode());
+            if(!(gen instanceof CsvGenerator)) {
+                gen.writeNumberField("quality-code", recordValue.getQualityCode());
+            }
             gen.writeEndObject();
         } else {
             // Handle JSON serialization
@@ -66,12 +70,14 @@ public class TimeSeriesRecordSerializer extends StdSerializer<TimeSeries.Record>
             } else {
                 gen.writeNumber(recordValue.getValue());
             }
-            gen.writeNumber(recordValue.getQualityCode());
-            // Used to include the dataEntryDate in the serialized output if requested. Modifies length of the output array.
-            // If the dataEntryDate is requested, it will always be non-null
-            // Without the dataEntryDate, the array will have 3 elements: [dateTime, value, qualityCode]
-            if (recordValue.getDataEntryDate() != null) {
-                gen.writeNumber(recordValue.getDataEntryDate().getTime());
+            if(!(gen instanceof CsvGenerator)) {
+                gen.writeNumber(recordValue.getQualityCode());
+                // Used to include the dataEntryDate in the serialized output if requested. Modifies length of the output array.
+                // If the dataEntryDate is requested, it will always be non-null
+                // Without the dataEntryDate, the array will have 3 elements: [dateTime, value, qualityCode]
+                if (recordValue.getDataEntryDate() != null) {
+                    gen.writeNumber(recordValue.getDataEntryDate().getTime());
+                }
             }
             gen.writeEndArray();
         }
