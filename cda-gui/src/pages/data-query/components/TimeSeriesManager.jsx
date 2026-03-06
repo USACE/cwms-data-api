@@ -13,11 +13,9 @@ export default function TimeSeriesManager({
         tsids.length == 0 ? "hidden" : ""
       }`}
     >
-      {tsids.length === 0 && (
-        <div className="text-center text-gray-500 mt-2 text-lg">
-          <p>Select a TimeSeries to Begin</p>
-        </div>
-      )}
+      <div className="text-center text-gray-500 mt-2 text-lg">
+        <p>Select a TimeSeries to Begin</p>
+      </div>
       <h4 className="text-md font-bold mb-2">TimeSeries</h4>
 
       {tsids.map((tsid) => (
