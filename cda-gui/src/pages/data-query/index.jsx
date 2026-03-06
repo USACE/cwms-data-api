@@ -12,14 +12,22 @@ import Toggle from "./components/Toggle";
 import TimeSeriesBuilder from "./components/TimeSeriesBuilder";
 import TimeSeriesManager from "./components/TimeSeriesManager";
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
+const BASE_URL = (import.meta.env.BASE_URL || "").replace(/\/+$/, "");
+const CDA_BASE_URL =
+  import.meta.env.VITE_CDA_URL || (BASE_URL ? `${BASE_URL}/cwms-data` : "/cwms-data");
+
+const cda_config = new Configuration({
+  basePath: CDA_BASE_URL,
+});
 
 const v2_config = new Configuration({
+  basePath: CDA_BASE_URL,
   headers: {
     accept: "application/json;version=2",
   },
 });
 const ts_api = new TimeSeriesApi(v2_config);
-const offices_api = new OfficesApi();
+const offices_api = new OfficesApi(cda_config);
 
 // const config = cwmsConfigs["SWF"];
 // async function fetchConfig(configUrl) {
