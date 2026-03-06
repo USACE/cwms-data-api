@@ -21,6 +21,10 @@ import cwms.cda.data.dao.TimeSeriesVerticalDatumConverter;
 import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.DateFormatResolver;
+import cwms.cda.formatters.DateFormat;
+import cwms.cda.formatters.csv.CsvConfiguration;
+import cwms.cda.data.dto.csv.TimeSeriesCsv;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
@@ -112,7 +116,7 @@ public class TimeSeriesController implements CrudHandler {
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
-    private static final int DEFAULT_PAGE_SIZE = 500;
+    static final int DEFAULT_PAGE_SIZE = 500;
 
 
     public TimeSeriesController(MetricRegistry metrics) {
@@ -382,12 +386,26 @@ public class TimeSeriesController implements CrudHandler {
                         + "identifies where in the request you are. This is an opaque"
                         + " value, and can be obtained from the 'next-page' value in "
                         + "the response. Deprecated, use " + PAGE + " instead."),
-                @OpenApiParam(name = PAGE_SIZE,
-                        type = Integer.class,
+                 @OpenApiParam(name = PAGE_SIZE, type = Integer.class,
                         description = "How many entries per page returned. "
-                                + "Default " + DEFAULT_PAGE_SIZE + ". Use 0 to return an empty values array, "
+                        + "For JSON/XML paging, this controls page size. "
+                        + "For CSV, this controls the internal fetch batch size used while streaming a single response. "
+                        + "CSV clients do not request subsequent pages. "
+                        + "Default " + DEFAULT_PAGE_SIZE +". Use 0 to return an empty values array, "
                                 + "or -1 to return the entire window in one response without a next-page cursor. "
-                                + "Values less than -1 are invalid.")
+                                + "Values less than -1 are invalid."),
+                @OpenApiParam(name = INCLUDE_METADATA_AS_CSV_COMMENTS, type = Boolean.class,
+                        description = "When true, include dataset metadata as csv header comments "
+                        + "prepended with # (default is false)."),
+                @OpenApiParam(name = INCLUDE_OPTIONAL_CSV_COLUMNS, type = Boolean.class,
+                        description = "When true, include optional columns (quality-code, data-entry-date) "
+                        + "in the CSV response (default is false)."),
+                @OpenApiParam(name = DATE_FORMAT,
+                        description = "Specifies the format of any dates in the response. "
+                        + "Default is ISO8601-Instant. Other possibilities are epoch-millis, ISO8601-Offset, "
+                        + "ISO8601-Local, date-only, and custom."),
+                @OpenApiParam(name = DATE_FORMAT_PATTERN,
+                        description = "When date-format is set to 'custom', this parameter specifies the date format pattern.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -397,6 +415,7 @@ public class TimeSeriesController implements CrudHandler {
                         @OpenApiContent(from = TimeSeries.class, type = Formats.XMLV2),
                         @OpenApiContent(from = TimeSeries.class, type = Formats.XML),
                         @OpenApiContent(from = TimeSeries.class, type = Formats.JSON),
+                        @OpenApiContent(from = TimeSeriesCsv.class, type= Formats.CSV),
                         @OpenApiContent(from = TimeSeries.class, type = ""),}),
                 @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
                 @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
@@ -444,8 +463,21 @@ public class TimeSeriesController implements CrudHandler {
                     Integer.class, DEFAULT_PAGE_SIZE, metrics,
                     name(TimeSeriesController.class.getName(), GET_ALL)));
 
+            boolean includeMetadata = ctx.queryParamAsClass(INCLUDE_METADATA_AS_CSV_COMMENTS, Boolean.class)
+                    .getOrDefault(false);
+            boolean includeOptionalColumns = ctx.queryParamAsClass(INCLUDE_OPTIONAL_CSV_COLUMNS, Boolean.class)
+                    .getOrDefault(false);
+            String dateFormatParam = ctx.queryParam(DATE_FORMAT);
+            String dateFormatPattern = ctx.queryParam(DATE_FORMAT_PATTERN);
+
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format, TimeSeries.class);
+            DateFormat dateFormat = DateFormatResolver.resolve(dateFormatParam, dateFormatPattern);
+            CsvConfiguration csvConfig = new CsvConfiguration.Builder()
+                    .withMetadataIncluded(includeMetadata)
+                    .withOptionalColumnsIncluded(includeOptionalColumns)
+                    .withDateFormat(dateFormat)
+                    .build();
 
             String results;
             String version = contentType.getParameters().get(VERSION);
@@ -471,6 +503,13 @@ public class TimeSeriesController implements CrudHandler {
                         .withShouldTrim(trim.getOrDefault(true))
                         .withIncludeEntryDate(includeEntryDate)
                         .build();
+
+                // CSV: stream a single response; page-size is only internal batch size
+                if (Formats.CSV.equals(contentType.getType())) {
+                    streamCsv(ctx, csvConfig, pageSize, dao, requestParameters);
+                    return;
+                }
+
                 // Execute DAO call with a timeout so we can return a clearer message instead of a generic 500
                 int apiTimeoutMs = Integer.getInteger("cwms.cda.api.apiTimeoutMs", 45000);
                 CompletableFuture<TimeSeries> daoFuture = CompletableFuture.supplyAsync(
@@ -492,7 +531,7 @@ public class TimeSeriesController implements CrudHandler {
                     throw unwrapExecutionException(ex);
                 }
 
-                if(datum != null) { //this will be null for non-elevation ts
+                if (datum != null) { //this will be null for non-elevation ts
                     // user has requested a specific vertical datum
                     VerticalDatum vd = VerticalDatum.valueOf(datum);  // the users request
                     ts = TimeSeriesVerticalDatumConverter.convertToVerticalDatum(ts, vd);
@@ -512,6 +551,24 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
                 ctx.res.getOutputStream().write(bytes);
             } else {
+                String office = ctx.queryParam(OFFICE);
+
+                // CSV: stream a single response; page-size is only internal batch size
+                if (Formats.CSV.equals(contentType.getType())) {
+                    TimeSeriesRequestParameters requestParameters = new TimeSeriesRequestParameters.Builder()
+                            .withNames(names)
+                            .withOffice(office)
+                            .withUnits(units)
+                            .withBeginTime(beginZdt)
+                            .withEndTime(endZdt)
+                            .withShouldTrim(trim.getOrDefault(true))
+                            .withIncludeEntryDate(includeEntryDate)
+                            .withVersionDate(versionDate)
+                            .build();
+                    streamCsv(ctx, csvConfig, pageSize, dao, requestParameters);
+                    return;
+                }
+
                 if (versionDate != null) {
                     throw new IllegalArgumentException(String.format("Version date is only supported for:%s and %s",
                             Formats.JSONV2, Formats.XMLV2));
@@ -526,7 +583,6 @@ public class TimeSeriesController implements CrudHandler {
                     format = "json";
                 }
 
-                String office = ctx.queryParam(OFFICE);
                 results = dao.getTimeseries(format, names, office, units, datum, beginZdt, endZdt, tz);
                 ctx.status(HttpServletResponse.SC_OK);
 
@@ -536,6 +592,7 @@ public class TimeSeriesController implements CrudHandler {
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
                 ctx.res.getOutputStream().write(bytes);
             }
+
             addDeprecatedContentTypeWarning(ctx, contentType);
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
@@ -554,6 +611,27 @@ public class TimeSeriesController implements CrudHandler {
         }
     }
 
+    private void streamCsv(@NotNull Context ctx, CsvConfiguration csvConfig, int batchSize, TimeSeriesDao dao, TimeSeriesRequestParameters requestParameters) {
+        int csvBatchSize = validateCsvBatchSize(batchSize);
+        dao.streamRequestedTimeSeriesCsv(
+                requestParameters,
+                (stream, position, mediaType, totalLength) -> {
+                    ctx.status(HttpServletResponse.SC_OK);
+                    ctx.contentType(mediaType);
+                    ctx.header(Header.CONTENT_TYPE, Formats.CSV + "; charset=UTF-8");
+                    ctx.header("X-Stream-Batch-Size", String.valueOf(batchSize));
+                    try (stream) {
+                        IOUtils.copy(stream, ctx.res.getOutputStream());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                csvConfig,
+                null,
+                csvBatchSize //page-size drives streaming chunk size
+        );
+    }
+
     static RuntimeException unwrapExecutionException(java.util.concurrent.ExecutionException ex) {
         Throwable cause = ex.getCause();
         if (cause instanceof RuntimeException) {
@@ -564,6 +642,13 @@ public class TimeSeriesController implements CrudHandler {
             throw (Error) cause;
         }
         return new RuntimeException(cause);
+    }
+
+    private int validateCsvBatchSize(int requestedPageSize) {
+        if (requestedPageSize <= 0) {
+            throw new IllegalArgumentException("For CSV streaming, page-size must be greater than 0.");
+        }
+        return requestedPageSize;
     }
 
     private void addLinkHeader(@NotNull Context ctx, TimeSeries ts, ContentType contentType) {
