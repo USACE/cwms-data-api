@@ -1254,6 +1254,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
+    @Disabled("CWMS_TS.UNASSIGN_TS_GROUP doesn't work for CWMS owned groups")  // https://github.com/USACE/cwms-data-api/issues/1631
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     void test_patch_permissions_CWMS(String format) throws Exception {
@@ -1366,6 +1367,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body("assigned-time-series[0].timeseries-id", equalTo(tsId));
     }
 
+    @Disabled("CWMS_TS.UNASSIGN_TS_GROUP doesn't work for CWMS owned groups")  // https://github.com/USACE/cwms-data-api/issues/1631
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
     void test_patch_permissions_CWMS_with_replacement(String format) throws Exception {
