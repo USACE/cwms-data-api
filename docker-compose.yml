@@ -132,6 +132,7 @@ services:
       - KC_HTTP_RELATIVE_PATH=/auth
     volumes:
       - ./compose_files/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
+      - ./compose_files/keycloak/healthcheck.sh:/healthcheck.sh:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=PathPrefix(`/auth`)"
@@ -160,7 +161,7 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--ping"
-      - "--log.level=DEBUG"
+      - "--log.level=WARN"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=PathPrefix(`/traefik`)"
