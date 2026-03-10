@@ -8,18 +8,24 @@ import io.swagger.v3.oas.annotations.media.Schema;
                 + " Letter casing is ignored."
 )
 public enum MessageQueue {
-    TS_STORED("TS_STORED"),
-    STATUS("STATUS"),
-    REALTIME_OPS("REALTIME_OPS");
+    TS_STORED("TS_STORED", " CWMS messages about time series operations, such as data stored and deleted"),
+    STATUS("STATUS", " CWMS general system and application status messages"),
+    REALTIME_OPS("REALTIME_OPS", " CWMS application operational messages");
 
     private String queue;
+    private String description;
 
-    MessageQueue(String queue) {
+    MessageQueue(String queue, String description) {
         this.queue = queue;
+        this.description = description;
     }
 
     public String value() {
         return queue;
+    }
+
+    public String description() {
+        return description;
     }
 
     public static MessageQueue queueFor(String queue) {
