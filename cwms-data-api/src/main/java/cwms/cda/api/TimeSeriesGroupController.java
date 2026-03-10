@@ -277,17 +277,17 @@ public class TimeSeriesGroupController implements CrudHandler {
             String body = ctx.body();
             String office = requiredParam(ctx, OFFICE);
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
-            TimeSeriesGroup deserialize = Formats.parseContent(contentType, body, TimeSeriesGroup.class);
+            TimeSeriesGroup group = Formats.parseContent(contentType, body, TimeSeriesGroup.class);
             boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_TS, Boolean.class)
                 .getOrDefault(false);
             TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
-            if (!office.equalsIgnoreCase(CWMS_OFFICE) && !oldGroupId.equals(deserialize.getId())) {
-                timeSeriesGroupDao.renameTimeSeriesGroup(oldGroupId, deserialize);
+            if (!office.equalsIgnoreCase(CWMS_OFFICE) && !oldGroupId.equals(group.getId())) {
+                timeSeriesGroupDao.renameTimeSeriesGroup(oldGroupId, group);
             }
             if (replaceAssignedTs) {
-                timeSeriesGroupDao.unassignAll(deserialize.getTimeSeriesCategory().getId(), deserialize.getId(), office);
+                timeSeriesGroupDao.unassignForOffice(group.getTimeSeriesCategory().getId(), group.getId(), group.getOfficeId(), office);
             }
-            timeSeriesGroupDao.assignTs(deserialize, office);
+            timeSeriesGroupDao.assignTs(group, office);
             ctx.status(HttpServletResponse.SC_OK);
         }
     }

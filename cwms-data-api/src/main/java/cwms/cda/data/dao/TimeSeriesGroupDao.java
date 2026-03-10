@@ -368,21 +368,42 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         });
     }
 
+    // This may not be that useful in practice.  Typically groups either below to an office like SPK or to CWMS.
+    // Offices can assign ts to the CWMS group and they should be able to unassign their own ts from a CWMS group
+    // but SPK users shouldn't be able to unassign assignments that belong to other offices (SWT) and they
+    // shouldn't be able to remove CWMS assignments.   SPK users also shouldn't be able to delete CWMS groups.
+    //
+    // This method is currently used when cascade delete isn't available in the pl/sql and the user wants
+    // to unassign all assignments for a group so that the group will be empty and can then be deleted.
+    // In practice, CWMS groups can't be deleted, even if they were empty.  So this would only be helpful
+    // for office specific groups, in which case users only need to unassign for a single office (their own).
     private void unassignAll(Configuration config, String categoryId, String groupId, String office) {
         DSLContext context = config.dsl();
 
+        // Find all the offices with an assignment in the group.
         List<String> assignmentOffices = getAssignmentOffices(context, categoryId, groupId, office);
         logger.atInfo().log("For o:%s c:%s g:%s found assignments in offices:%s", office, categoryId, groupId, assignmentOffices);
         if (!assignmentOffices.isEmpty()) {
             for (String assignmentOffice : assignmentOffices) {
-                if (office != null && !"CWMS".equals(office)) {
-                    CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(config, assignmentOffice);
-                }
-                CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(config,
-                        categoryId, groupId,
-                        null, "T", assignmentOffice);
+                unassignForOffice(config, categoryId, groupId, office, assignmentOffice);
             }
         }
+    }
+
+    public void unassignForOffice( String categoryId, String groupId, String office, String assignmentOffice) {
+        connection(dsl, conn -> {
+            DSLContext dslContext = getDslContext(conn, office);
+            unassignForOffice(dslContext.configuration(), categoryId, groupId, office, assignmentOffice);
+        });
+    }
+
+    public static void unassignForOffice(Configuration config, String categoryId, String groupId, String office, String assignmentOffice) {
+        if (office != null && !"CWMS".equals(office)) {
+            CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(config, assignmentOffice);
+        }
+        CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(config,
+                categoryId, groupId,
+                null, "T", assignmentOffice);
     }
 
     private List<String> getAssignmentOffices(DSLContext context, String categoryId, String groupId, String office) {
