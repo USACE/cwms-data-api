@@ -30,6 +30,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.BaseHandler;
+import cwms.cda.api.enums.MessageQueue;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.rss.MessageDao;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -66,7 +67,9 @@ public final class RssHandler extends BaseHandler {
     @OpenApi(
         pathParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Office id for feed."),
-            @OpenApiParam(name = NAME, required = true, description = "Specifies the name of the feed. " +
+            @OpenApiParam(name = NAME, required = true,
+                type = MessageQueue.class,
+                description = "Specifies the name of the feed. " +
                 "eg TS_STORED, STATUS, REALTIME_OPS")
         },
         queryParams = {
