@@ -45,7 +45,6 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import org.jooq.DSLContext;
@@ -91,7 +90,7 @@ public final class MessageDao extends JooqDao<RssFeed> {
 
     @SuppressWarnings("unused") // MessageQueue.valueOf can return null. environment is being over zealous.
     private static MessageQueue getAqTable(String name) {
-        MessageQueue ret = MessageQueue.valueOf(name.toUpperCase());
+        MessageQueue ret = MessageQueue.queueFor(name.toUpperCase());
         if (ret == null) {
             throw new NotFoundException("No queue named '" + name + "'");
         }
