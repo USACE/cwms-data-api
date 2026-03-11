@@ -59,5 +59,23 @@ public interface TimeSeriesDao {
 
     List<RecentValue> findMostRecentsInRange(String office, List<String> tsIds, Timestamp pastLimit,
                                              Timestamp futureLimit, UnitSystem unitSystem);
+    /**
+     * Streams the requested TimeSeries data in CSV format using a {@link StreamConsumer},
+     * similar to the BlobDao streaming pattern. The DAO will invoke the provided consumer
+     * with an InputStream that produces the CSV bytes on-the-fly, avoiding buffering the
+     * entire dataset in memory.
+     *
+     * Notes:
+     * - The consumer is responsible for copying the InputStream to the HTTP response and
+     *   setting any additional headers as needed.
+     * - The mediaType passed to the consumer will be {@code Formats.CSV}.
+     * - The totalLength may be unknown and can be negative; callers should not rely on it.
+     *
+     * @param requestParameters request parameters describing the time-series retrieval
+     * @param pageSize page size to use when paging results internally; non-positive values disable limiting
+     * @param consumer a sink that will receive a streaming InputStream of CSV data
+     */
+    void streamRequestedTimeSeriesCsv(TimeSeriesRequestParameters requestParameters, int pageSize,
+                                      StreamConsumer consumer, boolean metadataAsColumns);
 
 }

@@ -106,6 +106,21 @@ import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.udt.records.DATE_TABLE_TYPE;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
+import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.BufferedWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicReference;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import com.fasterxml.jackson.databind.SequenceWriter;
+import cwms.cda.formatters.csv.CsvV1;
+import cwms.cda.formatters.Formats;
+import cwms.cda.data.dao.StreamConsumer;
+import cwms.cda.data.dto.csv.TimeSeriesCsv;
 
 public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeriesDao {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -192,6 +207,178 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 begin.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
                 end.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
                 timezone.getId(), office);
+    }
+    
+    @Override
+    public void streamRequestedTimeSeriesCsv(TimeSeriesRequestParameters requestParameters, int pageSize, StreamConsumer consumer, boolean metadataAsColumns) {
+        // This method mirrors the data selection flow of getRequestedTimeSeries, but delivers
+        // a streaming CSV InputStream via StreamConsumer (BlobDao pattern) to avoid buffering.
+        String names = requestParameters.getNames();
+        String office = requestParameters.getOffice();
+        String units = requestParameters.getUnits();
+        ZonedDateTime beginTime = requestParameters.getBeginTime();
+        ZonedDateTime endTime = requestParameters.getEndTime();
+
+        // Resolve office, timeseries id and code
+        final Field<String> officeId = CWMS_UTIL_PACKAGE.call_GET_DB_OFFICE_ID(
+                office != null ? DSL.val(office) : CWMS_UTIL_PACKAGE.call_USER_OFFICE_ID());
+        final Field<String> tsId = CWMS_TS_PACKAGE.call_GET_TS_ID__2(DSL.val(names), officeId);
+        final Field<BigDecimal> tsCode = CWMS_TS_PACKAGE.call_GET_TS_CODE__2(DSL.val(names), officeId);
+
+        // Determine actual unit (handle EN/SI to default units mapping)
+        Field<String> unit = units.compareToIgnoreCase("SI") == 0 || units.compareToIgnoreCase("EN") == 0
+                ? CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsCode), DSL.val(units, String.class))
+                : DSL.val(units, String.class);
+
+        // Give TV (time,value) column names
+        Field<Timestamp> dateTimeCol = field(DATE_TIME, Timestamp.class).as(DATE_TIME);
+        Field<Double> valueCol = field(VALUE, Double.class).as(VALUE);
+
+        Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
+        Long endTimeMilli = endTime.toInstant().toEpochMilli();
+        String trim = formatBool(requestParameters.isShouldTrim());
+        final String startInclusive = "T";
+        final String endInclusive = "T";
+        String previous = "F";
+        String next = "F";
+        Long versionDateMilli = requestParameters.getVersionDate() != null ? requestParameters.getVersionDate().toInstant().toEpochMilli() : null;
+        String maxVersion = requestParameters.getVersionDate() == null ? "T" : "F";
+
+        // Build the table(...) call to retrieve rows (mirror existing implementation style)
+        String retrievalMethod = "cwms_20.cwms_ts.retrieve_ts_out_tab"; // CSV excludes entry-date
+        SQL retrieveSelectData = DSL.sql(
+                "table(" + retrievalMethod + "(?,?," +
+                        "cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?), 'UTC'," +
+                        "?,?,?,?,?," + getVersionPart(requestParameters.getVersionDate()) + ",?,?) ) retrieveTs",
+                tsId,
+                unit,
+                beginTimeMilli,
+                endTimeMilli,
+                trim, startInclusive, endInclusive, previous, next,
+                versionDateMilli, maxVersion,
+                officeId
+        );
+
+        // Now select the needed columns (date_time, value) and restrict the time window
+        SelectConditionStep<org.jooq.Record2<Timestamp, Double>> query = dsl.select(dateTimeCol, valueCol)
+                .from(retrieveSelectData)
+                .where(dateTimeCol.ge(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(beginTimeMilli))))
+                .and(dateTimeCol.le(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTimeMilli))));
+
+        if (pageSize > 0) {
+            query.limit(DSL.val(pageSize));
+        }
+
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
+
+        // Build a piped stream pair to hand InputStream to the consumer
+        final PipedInputStream pis;
+        final PipedOutputStream pos;
+        try {
+            pis = new PipedInputStream(8192);
+            pos = new PipedOutputStream(pis);
+        } catch (IOException e) {
+            throw new DataAccessException("Failed to initialize CSV streaming pipe", e);
+        }
+
+        AtomicReference<Throwable> writerError = new AtomicReference<>(null);
+
+        Thread writer = new Thread(() -> {
+            try (Cursor<org.jooq.Record2<Timestamp, Double>> recCursor = query.fetchLazy()) {
+                // Prepare Jackson CSV writer aligned with CsvV1
+                CsvMapper csv = CsvV1.buildObjectMapper();
+                // Do not auto-close the underlying PipedOutputStream when closing SequenceWriter
+                csv.getFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+
+                // Gather metadata
+                String tsIdStr = dsl.fetchValue(tsId);
+                String officeResolved = dsl.fetchValue(officeId);
+                String resolvedUnits = dsl.fetchValue(unit);
+                Timestamp versionTs = requestParameters.getVersionDate() != null ? Timestamp.from(requestParameters.getVersionDate().toInstant()) : null;
+                Integer qualityCode = null; // unknown here
+
+                if (metadataAsColumns) {
+                    // Stream rows with metadata as columns using a CsvMapper that includes @CsvMetadata fields
+                    CsvMapper fullMapper = new CsvMapper();
+                    fullMapper.findAndRegisterModules();
+                    fullMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS);
+                    fullMapper.disable(com.fasterxml.jackson.databind.DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
+                    fullMapper.getFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+                    // Include metadata columns
+                    com.fasterxml.jackson.databind.AnnotationIntrospector defaults = fullMapper.getSerializationConfig().getAnnotationIntrospector();
+                    com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair pair = new com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair(
+                            new cwms.cda.formatters.csv.CsvMetadataIntrospector(true), defaults);
+                    fullMapper.setAnnotationIntrospector(pair);
+
+                    CsvSchema schema = fullMapper.schemaFor(TimeSeriesCsv.class).withHeader();
+                    SequenceWriter sw = fullMapper.writer(schema).writeValues(pos);
+                    for (org.jooq.Record2<Timestamp, Double> r : recCursor) {
+                        Timestamp ts = r.value1();
+                        Double val = r.value2();
+                        TimeSeriesCsv row = new TimeSeriesCsv(
+                                tsIdStr, officeResolved, ts == null ? null : ts.toInstant(), val, resolvedUnits,
+                                versionTs == null ? null : versionTs.toInstant(), qualityCode
+                        );
+                        sw.write(row);
+                    }
+                    sw.flush();
+                } else {
+                    // First write metadata as comments, then stream minimal rows (date-time,value)
+                    try (BufferedWriter headerWriter = new BufferedWriter(new OutputStreamWriter(pos, StandardCharsets.UTF_8))) {
+                        // Determine present metadata count (exclude nulls but match example keys order)
+                        int count = 0;
+                        if (tsIdStr != null) count++;
+                        if (officeResolved != null) count++;
+                        if (versionTs != null) count++;
+                        if (qualityCode != null) count++;
+                        if (resolvedUnits != null) count++;
+
+                        headerWriter.write("# metadata-count: " + count + "\n");
+                        if (tsIdStr != null) headerWriter.write("# time-series-id: " + tsIdStr + "\n");
+                        if (officeResolved != null) headerWriter.write("# office-id: " + officeResolved + "\n");
+                        if (versionTs != null) headerWriter.write("# version-date: " + versionTs.toInstant().toString() + "\n");
+                        if (qualityCode != null) headerWriter.write("# quality-code: " + qualityCode + "\n");
+                        if (resolvedUnits != null) headerWriter.write("# units: " + resolvedUnits + "\n");
+                        headerWriter.flush();
+                    }
+
+                    // After comments, write CSV header and rows but only include non-metadata fields
+                    CsvSchema schema = csv.schemaFor(TimeSeriesCsv.class).withHeader();
+                    SequenceWriter sw = csv.writer(schema).writeValues(pos);
+                    for (org.jooq.Record2<Timestamp, Double> r : recCursor) {
+                        Timestamp ts = r.value1();
+                        Double val = r.value2();
+                        TimeSeriesCsv row = new TimeSeriesCsv(tsIdStr, officeResolved, ts == null ? null : ts.toInstant(), val,
+                                resolvedUnits, versionTs == null ? null : versionTs.toInstant(), qualityCode);
+                        sw.write(row);
+                    }
+                    sw.flush();
+                }
+            } catch (Throwable t) {
+                writerError.set(t);
+            } finally {
+                try { pos.close(); } catch (IOException ignore) {}
+            }
+        }, "ts-csv-writer");
+        writer.setDaemon(true);
+        writer.start();
+
+        try {
+            // totalLength unknown during streaming; pass -1
+            consumer.accept(pis, 0, Formats.CSV, -1);
+        } catch (Exception e) {
+            throw new DataAccessException("Error delivering CSV stream to consumer", e);
+        } finally {
+            try { pis.close(); } catch (IOException ignore) {}
+        }
+
+        Throwable t = writerError.get();
+        if (t != null) {
+            if (t instanceof DataAccessException) {
+                throw (DataAccessException) t;
+            }
+            throw new DataAccessException("Error streaming CSV for TimeSeries", t);
+        }
     }
 
     /**

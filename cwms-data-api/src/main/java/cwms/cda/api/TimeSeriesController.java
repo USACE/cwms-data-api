@@ -503,6 +503,33 @@ public class TimeSeriesController implements CrudHandler {
                         .withShouldTrim(trim.getOrDefault(true))
                         .withIncludeEntryDate(includeEntryDate)
                         .build();
+                // If CSV requested, stream directly from DAO using StreamConsumer (BlobDao pattern)
+                if (Formats.CSV.equals(contentType.getType())) {
+                    ctx.status(HttpServletResponse.SC_OK);
+                    ctx.contentType(Formats.CSV);
+                    // Older proxies/clients may require explicit charset
+                    ctx.header(Header.CONTENT_TYPE, Formats.CSV + "; charset=UTF-8");
+
+                    boolean metadataAsColumns = ctx.queryParamAsClass("metadata-as-columns", Boolean.class)
+                            .getOrDefault(false);
+
+                    cwms.cda.data.dao.StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
+                        if (is != null) {
+                            IOUtils.copy(is, ctx.res.getOutputStream());
+                        }
+                    };
+
+                    try {
+                        dao.streamRequestedTimeSeriesCsv(requestParameters, pageSize, consumer, metadataAsColumns);
+                        ctx.res.flushBuffer();
+                    } catch (IOException ioEx) {
+                        throw new DataAccessException("Failed streaming CSV response", ioEx);
+                    }
+                    // CSV is streamed; do not proceed to JSON/XML formatting
+                    addDeprecatedContentTypeWarning(ctx, contentType);
+                    return;
+                }
+
                 TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters);
 
                 if(datum != null) { //this will be null for non-elevation ts
