@@ -59,9 +59,13 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
+import static cwms.cda.api.LocationController.LOCATIONS_TAG;
+
 public final class VerticalDatumController implements CrudHandler {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    // NOTE: manually expanded due to limits of OpenApi Annotations.
+    private static final String VDI_PATH = "/location/{location-id}/vertical-datum";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -96,7 +100,8 @@ public final class VerticalDatumController implements CrudHandler {
                                        @OpenApiContent(type = Formats.XML, from = VerticalDatumInfo.class)})
             },
             description = "Returns Vertical Datum Info for the specified location.",
-            tags = {"Locations"}
+            path = VDI_PATH,
+            tags = {LOCATIONS_TAG}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String locationId) {
@@ -129,7 +134,8 @@ public final class VerticalDatumController implements CrudHandler {
             },
             description = "Create Vertical Datum Info for a Location",
             method = HttpMethod.POST,
-            tags = {"Locations"},
+            path = VDI_PATH,
+            tags = {LOCATIONS_TAG},
             responses = {
                     @OpenApiResponse(status = Controllers.STATUS_201, description = "Vertical Datum Info successfully stored to CWMS.")
             }
@@ -173,7 +179,8 @@ public final class VerticalDatumController implements CrudHandler {
             },
             description = "Update Vertical Datum Info for a Location",
             method = HttpMethod.PATCH,
-            tags = {"Locations"},
+            path = VDI_PATH,
+            tags = {LOCATIONS_TAG},
             responses = {
                     @OpenApiResponse(status = Controllers.STATUS_200, description = "Updated Vertical Datum Info")
             }
@@ -207,7 +214,8 @@ public final class VerticalDatumController implements CrudHandler {
             },
             description = "Delete Vertical Datum Info for a Location",
             method = HttpMethod.DELETE,
-            tags = {"Locations"},
+            path = VDI_PATH,
+            tags = {LOCATIONS_TAG},
             responses = {
                     @OpenApiResponse(status = Controllers.STATUS_200, description = "Vertical Datum Info successfully deleted from CWMS."),
                     @OpenApiResponse(status = Controllers.STATUS_404, description = "Vertical Datum Info not found.")

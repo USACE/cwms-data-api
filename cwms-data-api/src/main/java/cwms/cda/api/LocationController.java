@@ -73,6 +73,9 @@ import org.jooq.exception.DataAccessException;
 
 public class LocationController implements CrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+    public static final String LOCATIONS_TAG = "Locations";
+
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -144,7 +147,7 @@ public class LocationController implements CrudHandler {
             },
             description = "Returns CWMS Location Data.  The Catalog end-point is also capable of "
                     + "retrieving lists of locations and can filter on additional fields.",
-            tags = {"Locations"}
+            tags = {LOCATIONS_TAG}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -234,7 +237,7 @@ public class LocationController implements CrudHandler {
                         + "inputs provided the location was not found.")
             },
             description = "Returns CWMS Location Data",
-            tags = {"Locations"}
+            tags = {LOCATIONS_TAG}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String locationId) {
@@ -281,7 +284,7 @@ public class LocationController implements CrudHandler {
             description = "Create new CWMS Location",
             method = HttpMethod.POST,
             path = "/locations",
-            tags = {"Locations"}
+            tags = {LOCATIONS_TAG}
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -319,7 +322,7 @@ public class LocationController implements CrudHandler {
             description = "Update CWMS Location",
             method = HttpMethod.PATCH,
             path = "/locations",
-            tags = {"Locations"},
+            tags = {LOCATIONS_TAG},
             responses = {
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the location was not found.")
@@ -377,7 +380,7 @@ public class LocationController implements CrudHandler {
             description = "Delete CWMS Location",
             method = HttpMethod.DELETE,
             path = "/locations",
-            tags = {"Locations"},
+            tags = {LOCATIONS_TAG},
             responses = {
                 @OpenApiResponse(status = STATUS_200, description = "Location successfully deleted from CWMS."),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
