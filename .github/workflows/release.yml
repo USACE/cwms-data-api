@@ -61,7 +61,7 @@ jobs:
         with:
           ref: ${{inputs.branch}}
       - name: setup java
-        uses: actions/setup-java@v5.0.0
+        uses: actions/setup-java@v5.2.0
         with:
           distribution: 'temurin'
           java-version: '11'
@@ -84,7 +84,7 @@ jobs:
         id: create_release
         # Allow testing without creating a release
         if: github.event_name != 'pull_request' && (github.event.ref == 'refs/heads/develop' || startsWith(github.event.ref, 'refs/tags'))
-        uses: softprops/action-gh-release@v2.3.2
+        uses: softprops/action-gh-release@v2.5.0
         with:
           files: cwms-data-api/build/libs/cwms-data-api-${{env.VERSION}}.war
           tag_name: ${{env.VERSION}}

@@ -56,6 +56,9 @@ ENV cwms.dataapi.access.providers="KeyAccessManager,OpenID"
 ENV cwms.dataapi.access.openid.wellKnownUrl="https://<prefix>/.well-known/openid-configuration"
 ENV cwms.dataapi.access.openid.issuer="<issuer>"
 ENV cwms.dataapi.access.openid.timeout="604800"
+# Putting default values here to easy configuration
+ENV cwms.dataapi.access.openid.clientId=cwms
+ENV cwms.dataapi.access.openid.idpHint=federation-eams
 #ENV cwms.dataapi.access.openid.altAuthUrl="https://identityc-test.cwbi.us/auth/realms/cwbi"
 
 # used to simplify redeploy in certain contexts. Update to match -<marker> in image label
