@@ -5,12 +5,10 @@ import react from "@vitejs/plugin-react";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   // const BASE_PATH = env?.BASE_PATH ?? "/cwms-data";
+  console.log({ CDA_API_ROOT: env.VITE_CDA_API_ROOT });
   return {
     base: "/cwms-data",
     plugins: [react()],
-    define: {
-      "import.meta.env.CDA_URL": JSON.stringify("/cwms-data"),
-    },
     server: {
       proxy: {
         "^/cwms-data/timeseries/.*": {

@@ -14,7 +14,7 @@ import { useDebounce } from "use-debounce";
 // Catalog client
 const catalogApi = new CatalogApi(
   new Configuration({
-    basePath: import.meta.env.CDA_URL,
+    basePath: import.meta.env.VITE_CDA_API_ROOT,
     headers: { accept: "application/json;version=2" },
   }),
 );
