@@ -25,7 +25,6 @@ export default function SettingsMenu({
             <Toggle
               checked={cacheEnabled}
               onChange={setCacheEnabled}
-              label=""
               className="ml-0"
             />
           </div>
@@ -43,7 +42,6 @@ export default function SettingsMenu({
             <Toggle
               checked={!sortAscending}
               onChange={(checked) => setSortAscending(!checked)}
-              label=""
               className="ml-0"
             />
           </div>
