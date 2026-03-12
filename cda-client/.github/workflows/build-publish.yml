@@ -1,0 +1,66 @@
+name: Build, Test, and Publish
+
+on:
+  workflow_dispatch:
+
+permissions:
+  pages: write
+  id-token: write
+
+jobs:
+  build-test-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate and build API
+        run: npm run buildApi
+
+      - name: Install dependencies in tests directory
+        working-directory: tests
+        run: npm ci
+
+      - name: Link cwmjs dependency from src to tests
+        run: npm run link
+
+      - name: Run tests
+        working-directory: tests
+        run: npm run test --ci
+
+      - name: Publish to npm
+        if: success()
+        working-directory: cwmsjs
+        run: npm publish --provenance --access public
+
+      - name: Build docs
+        if: success()
+        run: npm run buildDocs
+
+      - name: Upload docs artifact
+        if: success()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./cwmsjs/docs
+
+  deploy-docs:
+    needs: build-test-publish
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
