@@ -12,6 +12,7 @@ import DataTabs from "./components/DataTabs";
 import Toggle from "./components/Toggle";
 import TimeSeriesBuilder from "./components/TimeSeriesBuilder";
 import TimeSeriesManager from "./components/TimeSeriesManager";
+import SettingsMenu from "./components/SettingsMenu";
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
 
 const v2_config = new Configuration({
@@ -21,6 +22,8 @@ const v2_config = new Configuration({
 });
 const ts_api = new TimeSeriesApi(v2_config);
 const offices_api = new OfficesApi();
+const DATA_QUERY_CACHE_KEY = "data-query-cache-enabled";
+const DEFAULT_CACHE_ENABLED = true;
 
 // const config = cwmsConfigs["SWF"];
 // async function fetchConfig(configUrl) {
@@ -32,6 +35,12 @@ const offices_api = new OfficesApi();
 export default function DataQuery() {
   const [tsids, setTsids] = useState([]);
   const [visibleTSIDs, setVisibleTSIDs] = useState(tsids);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [cacheEnabled, setCacheEnabled] = useState(() => {
+    if (typeof window === "undefined") return DEFAULT_CACHE_ENABLED;
+    const storedValue = window.localStorage.getItem(DATA_QUERY_CACHE_KEY);
+    return storedValue === null ? DEFAULT_CACHE_ENABLED : storedValue === "true";
+  });
   //   const [location, setLocation] = useState(null);
   //   const [parameter, setParameter] = useState(null);
   //   const [interval, setInterval] = useState(null);
@@ -41,6 +50,11 @@ export default function DataQuery() {
     // Reset visible list when tsids change
     setVisibleTSIDs(tsids);
   }, [tsids]);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(DATA_QUERY_CACHE_KEY, String(cacheEnabled));
+    }
+  }, [cacheEnabled]);
 
   const toggleTSID = (tsid) =>
     setVisibleTSIDs((prev) =>
@@ -61,7 +75,7 @@ export default function DataQuery() {
   const [beginDateTime, setBeginDateTime] = useState(dayjs().subtract(1, "day"));
   const [endDateTime, setEndDateTime] = useState(dayjs());
 
-  async function fetchAllTSData(data) {
+  async function fetchAllTSData(data, requestOverrides) {
     let startDate = data?.begin;
     let endDate = data?.end;
     let values = data?.values;
@@ -69,16 +83,19 @@ export default function DataQuery() {
     const maxPages = 200;
     let pageCount = 0;
     while (nextPage) {
-      let _result = await ts_api.getTimeSeries({
-        begin: startDate,
-        end: endDate,
-        name,
-        office,
-        page: nextPage,
-        pageSize: 25000,
-        // begin: beginDateTime.format(CDA_DATE_FORMAT),
-        // end: endDateTime.format(CDA_DATE_FORMAT),
-      });
+      let _result = await ts_api.getTimeSeries(
+        {
+          begin: startDate,
+          end: endDate,
+          name,
+          office,
+          page: nextPage,
+          pageSize: 25000,
+          // begin: beginDateTime.format(CDA_DATE_FORMAT),
+          // end: endDateTime.format(CDA_DATE_FORMAT),
+        },
+        requestOverrides,
+      );
       // if (!_result?.page) page = false
       nextPage = _result?.nextPage;
       endDate = _result?.end;
@@ -102,24 +119,40 @@ export default function DataQuery() {
   const {
     data: timeseriesData,
     isLoading: timeseriesLoading,
+    refetch: refetchTimeseries,
     error,
   } = useQuery({
-    queryKey: ["cdaTimeSeries", tsids, office, beginDateTime, endDateTime],
+    queryKey: [
+      "cdaTimeSeries",
+      tsids,
+      office,
+      beginDateTime,
+      endDateTime,
+      cacheEnabled,
+    ],
 
     queryFn: async () => {
+      const requestOverrides = cacheEnabled
+        ? undefined
+        : {
+            cache: "no-store",
+          };
       const promises = tsids.map((tsid) => {
         return ts_api
-          .getTimeSeriesRaw({
-            name: tsid,
-            office: office,
-            begin: beginDateTime.format(CDA_DATE_FORMAT),
-            end: endDateTime.format(CDA_DATE_FORMAT),
-            pageSize: 25000,
-          })
+          .getTimeSeriesRaw(
+            {
+              name: tsid,
+              office: office,
+              begin: beginDateTime.format(CDA_DATE_FORMAT),
+              end: endDateTime.format(CDA_DATE_FORMAT),
+              pageSize: 25000,
+            },
+            requestOverrides,
+          )
           .then(async (r) => {
             if (r.raw.ok) {
               let _data = await r.raw.json();
-              return await fetchAllTSData(_data);
+              return await fetchAllTSData(_data, requestOverrides);
             } else return { name: tsid, values: [], message: r.raw.text };
           })
           .catch((e) => {
@@ -141,6 +174,8 @@ export default function DataQuery() {
           tsid.split(".").every((part) => part.trim() !== ""),
       ) &&
       office !== undefined,
+    staleTime: cacheEnabled ? 1000 * 60 * 5 : 0,
+    gcTime: cacheEnabled ? 1000 * 60 * 30 : 0,
   });
 
   const timeseriesParams = useMemo(() => {
@@ -224,6 +259,15 @@ export default function DataQuery() {
     link.click();
     document.body.removeChild(link);
   };
+  const handleRefreshTimeseries = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchTimeseries();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+  const hasActiveSettings = cacheEnabled !== DEFAULT_CACHE_ENABLED;
 
   if (error)
     return (
@@ -239,6 +283,13 @@ export default function DataQuery() {
   return (
     <div className="px-5">
       <UsaceBox title="Hydrologic Query">
+        <div className="mb-4 flex justify-end">
+          <SettingsMenu
+            cacheEnabled={cacheEnabled}
+            setCacheEnabled={setCacheEnabled}
+            active={hasActiveSettings}
+          />
+        </div>
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex flex-col gap-4 w-4/5 md:w-3/5">
             <div className={!office ? "text-lg m-auto" : "flex gap-4"}>
@@ -334,6 +385,15 @@ export default function DataQuery() {
               }`}
             >
               Download JSON
+            </Button>
+            <Button
+              onClick={handleRefreshTimeseries}
+              disabled={!tsids.length || !office || isRefreshing}
+              className={`mb-4 bg-slate-700 text-white px-4 py-2 rounded ms-2 ${
+                !tsids.length || !office ? "hidden" : ""
+              }`}
+            >
+              {isRefreshing ? "Refreshing..." : "Refresh Data"}
             </Button>
           </div>
 
