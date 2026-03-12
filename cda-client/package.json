@@ -1,6 +1,6 @@
 {
   "name": "cwmsjs-generator",
-  "version": "2.3.2",
+  "version": "2.4.0",
   "description": "OpenAPI generator for building the cwmsjs JavaScript/TypeScript library for CWMS Data API",
   "author": "USACE,HEC,CWMS,OpenApi Contributors",
   "repository": {
@@ -29,13 +29,33 @@
   },
   "typings": "./build/generated/openApi/dist/index.d.ts",
   "scripts": {
-    "build": "cd build && cd generated && cd openApi && npm run build"
+    "build": "npm run buildApi && npm run buildDocs",
+    "buildApi": "npm run buildSpec && npm run openapi && npm run modPackage && npm run postGenerate && cd cwmsjs && npm install && npm run build",
+    "buildDocs": "npm run docs && npm run examples",
+    "buildSpec": "npm run getSpec && npm run modSpec",
+    "clean": "shx mkdir -p ./cwmsjs && shx rm -r ./cwmsjs",
+    "docs": "node ./scripts/buildTypedoc.js",
+    "examples": "node ./scripts/tests2exampledocs.js ",
+    "getSpec": "node ./scripts/getSpec.js",
+    "modPackage": "node ./scripts/package-updates/modPackage.js",
+    "modSpec": "node ./scripts/spec-updates/modSpec.js",
+    "postGenerate": "node ./scripts/postGenerate.js",
+    "link": "cd cwmsjs && npm link && cd ../tests && npm link cwmsjs",
+    "openapi": "npx @openapitools/openapi-generator-cli generate -g typescript-fetch -o ./cwmsjs -i cwms-swagger-mod.json -c openapi.config.json"
   },
   "dependencies": {
-    "es6-promise": "^4.2.4"
+    "es6-promise": "^4.2.4",
+    "shx": "^0.3.4",
+    "url-parse": "^1.4.3",
+    "whatwg-fetch": "^3.0.0"
   },
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "^2.15.3",
+    "@types/url-parse": "1.4.4",
+    "babel-cli": "^6.26.0",
+    "node-jq": "^6.0.1",
+    "prettier": "^3.3.3",
+    "typedoc": "^0.25.13",
     "typescript": "^4.9.5"
   }
 }
