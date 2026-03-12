@@ -25,7 +25,7 @@ const offices_api = new OfficesApi();
 const DATA_QUERY_CACHE_KEY = "data-query-cache-enabled";
 const DATA_QUERY_SORT_ASC_KEY = "data-query-sort-ascending";
 const DEFAULT_CACHE_ENABLED = true;
-const DEFAULT_SORT_ASCENDING = true;
+const DEFAULT_SORT_ASCENDING = false;
 
 // const config = cwmsConfigs["SWF"];
 // async function fetchConfig(configUrl) {

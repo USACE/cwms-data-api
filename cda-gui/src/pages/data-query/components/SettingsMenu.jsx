@@ -34,15 +34,15 @@ export default function SettingsMenu({
           <div className="mt-4 flex items-start justify-between gap-4">
             <div>
               <div className="text-sm font-semibold text-slate-900">
-                Ascending table order
+                Descending table order
               </div>
               <p className="text-xs text-slate-600">
-                Show the oldest timestamps first. Disable to show newest rows first.
+                Keep newest timestamps first. Disable to switch to oldest rows first.
               </p>
             </div>
             <Toggle
-              checked={sortAscending}
-              onChange={setSortAscending}
+              checked={!sortAscending}
+              onChange={(checked) => setSortAscending(!checked)}
               label=""
               className="ml-0"
             />
