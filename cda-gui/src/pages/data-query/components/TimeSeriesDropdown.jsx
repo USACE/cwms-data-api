@@ -76,6 +76,11 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
             onChange={(event) => setSearchTerm(event.target.value)}
             className="px-3 py-2 border rounded w-full"
             placeholder="Search TSID (e.g. Location.Elev.Inst.1Hour.0.Version)"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            name="tsid-search"
           />
           <ComboboxOptions className="bg-white border mt-1 max-h-60 overflow-auto">
             {loading ? (
