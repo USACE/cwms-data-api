@@ -23,7 +23,9 @@ const v2_config = new Configuration({
 const ts_api = new TimeSeriesApi(v2_config);
 const offices_api = new OfficesApi();
 const DATA_QUERY_CACHE_KEY = "data-query-cache-enabled";
+const DATA_QUERY_SORT_ASC_KEY = "data-query-sort-ascending";
 const DEFAULT_CACHE_ENABLED = true;
+const DEFAULT_SORT_ASCENDING = true;
 
 // const config = cwmsConfigs["SWF"];
 // async function fetchConfig(configUrl) {
@@ -41,6 +43,11 @@ export default function DataQuery() {
     const storedValue = window.localStorage.getItem(DATA_QUERY_CACHE_KEY);
     return storedValue === null ? DEFAULT_CACHE_ENABLED : storedValue === "true";
   });
+  const [sortAscending, setSortAscending] = useState(() => {
+    if (typeof window === "undefined") return DEFAULT_SORT_ASCENDING;
+    const storedValue = window.localStorage.getItem(DATA_QUERY_SORT_ASC_KEY);
+    return storedValue === null ? DEFAULT_SORT_ASCENDING : storedValue === "true";
+  });
   //   const [location, setLocation] = useState(null);
   //   const [parameter, setParameter] = useState(null);
   //   const [interval, setInterval] = useState(null);
@@ -55,6 +62,14 @@ export default function DataQuery() {
       window.localStorage.setItem(DATA_QUERY_CACHE_KEY, String(cacheEnabled));
     }
   }, [cacheEnabled]);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        DATA_QUERY_SORT_ASC_KEY,
+        String(sortAscending),
+      );
+    }
+  }, [sortAscending]);
 
   const toggleTSID = (tsid) =>
     setVisibleTSIDs((prev) =>
@@ -267,7 +282,9 @@ export default function DataQuery() {
       setIsRefreshing(false);
     }
   };
-  const hasActiveSettings = cacheEnabled !== DEFAULT_CACHE_ENABLED;
+  const hasActiveSettings =
+    cacheEnabled !== DEFAULT_CACHE_ENABLED ||
+    sortAscending !== DEFAULT_SORT_ASCENDING;
 
   if (error)
     return (
@@ -287,6 +304,8 @@ export default function DataQuery() {
           <SettingsMenu
             cacheEnabled={cacheEnabled}
             setCacheEnabled={setCacheEnabled}
+            sortAscending={sortAscending}
+            setSortAscending={setSortAscending}
             active={hasActiveSettings}
           />
         </div>
@@ -420,6 +439,7 @@ export default function DataQuery() {
               isLoading={timeseriesLoading}
               cdaParams={cdaParams}
               timeseriesParams={timeseriesParams}
+              sortAscending={sortAscending}
             />
           )}
         </div>

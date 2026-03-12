@@ -3,7 +3,13 @@ import PropTypes from "prop-types";
 import Toggle from "./Toggle";
 import SettingsGearButton from "./SettingsGearButton";
 
-export default function SettingsMenu({ cacheEnabled, setCacheEnabled, active }) {
+export default function SettingsMenu({
+  cacheEnabled,
+  setCacheEnabled,
+  sortAscending,
+  setSortAscending,
+  active,
+}) {
   return (
     <Menu as="div" className="relative inline-block text-left">
       <MenuButton as={SettingsGearButton} active={active} />
@@ -24,6 +30,24 @@ export default function SettingsMenu({ cacheEnabled, setCacheEnabled, active }) 
             />
           </div>
         </MenuItem>
+        <MenuItem>
+          <div className="mt-4 flex items-start justify-between gap-4">
+            <div>
+              <div className="text-sm font-semibold text-slate-900">
+                Ascending table order
+              </div>
+              <p className="text-xs text-slate-600">
+                Show the oldest timestamps first. Disable to show newest rows first.
+              </p>
+            </div>
+            <Toggle
+              checked={sortAscending}
+              onChange={setSortAscending}
+              label=""
+              className="ml-0"
+            />
+          </div>
+        </MenuItem>
       </MenuItems>
     </Menu>
   );
@@ -33,4 +57,6 @@ SettingsMenu.propTypes = {
   active: PropTypes.bool,
   cacheEnabled: PropTypes.bool.isRequired,
   setCacheEnabled: PropTypes.func.isRequired,
+  setSortAscending: PropTypes.func.isRequired,
+  sortAscending: PropTypes.bool.isRequired,
 };
