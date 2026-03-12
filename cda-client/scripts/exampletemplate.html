@@ -1,0 +1,96 @@
+
+
+
+<!DOCTYPE html>
+<html class="default" lang="en">
+    
+    <head>
+        <meta charSet="utf-8" />
+        <meta http-equiv="x-ua-compatible" content="IE=edge" />
+        <title>${docName} Example | cwmsjs v${packageVersion}</title>
+        <meta name="description" content="Documentation for cwmsjs" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="../assets/style.css" />
+        <link rel="stylesheet" href="../assets/highlight.css" />
+        <script defer src="../assets/main.js"></script>
+        <script async src="../assets/icons.js" id="tsd-icons-script"></script>
+        <script async src="../assets/search.js" id="tsd-search-script"></script>
+        <script async src="../assets/navigation.js" id="tsd-nav-script"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.26.0/themes/prism.css" id="light-theme" disabled>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.26.0/themes/prism-okaidia.css" id="dark-theme">
+    </head>
+
+    <body>
+        <script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"; document.body.style.display = "none"; setTimeout(() => app ? app.showPage() : document.body.style.removeProperty("display"), 500)</script>
+        <script>
+            const lightTheme = document.getElementById('light-theme');
+            const darkTheme = document.getElementById('dark-theme');
+            if (document.documentElement.dataset.theme == "light") {
+                lightTheme.disabled = false;
+                darkTheme.disabled = true;
+            } else {
+                lightTheme.disabled = true;
+                darkTheme.disabled = false;
+            }
+        </script>
+        <header class="tsd-page-toolbar">
+            <div class="tsd-toolbar-contents container">
+                <div class="table-cell" id="tsd-search" data-base="..">
+                    <div class="field"><label for="tsd-search-field"
+                            class="tsd-widget tsd-toolbar-icon search no-caption"><svg width="16" height="16"
+                                viewBox="0 0 16 16" fill="none">
+                                <use href="../assets/icons.svg#icon-search"></use>
+                            </svg></label><input type="text" id="tsd-search-field" aria-label="Search" /></div>
+                    <div class="field">
+                        <div id="tsd-toolbar-links"></div>
+                    </div>
+                    <ul class="results">
+                        <li class="state loading">Preparing search index...</li>
+                        <li class="state failure">The search index is not available</li>
+                    </ul><a href="/cwms-data-api-client-javascript/" class="title">HOME - cwmsjs - v${packageVersion}</a>
+                </div>
+            </div>
+        </header>
+        <div style="margin: auto; width: 80%; padding: 10px;">
+                <div class="tsd-page-title">
+                    <ul class="tsd-breadcrumb">
+                        <li><a href="../modules.html">cwmsjs</a></li>
+                        <li><a href="/cwms-data-api-client-javascript/examples">Examples</a></li>
+                        <li><a href="/cwms-data-api-client-javascript/examples/${docName}.html">${docName}</a></li>
+                    </ul>
+                    <h1>Example: ${docName}</h1>
+                    <p>cwmsjs v${packageVersion}</p>
+                </div>
+                <section class="tsd-panel tsd-comment">
+                    <div class="tsd-comment tsd-typography">
+                        <p>An example for calling the ${docName} endpoint via CDA in JavaScript</p>
+                        <p><a href="https://cwms-data.usace.army.mil/cwms-data">Swagger UI</a> for Endpoints</p>
+                    </div>
+                    <div class="tsd-comment tsd-typography"></div>
+                </section>
+                <hr />
+                <section>
+                    <h2>Groundwork-Water + React</h2>
+                    <div>Checkout <a href="https://usace-watermanagement.github.io/groundwork-water/#/docs/hooks">Groundwork-Water Hooks</a><br>
+                        <em>The data components library for USACE made in React + Groundwork</em>
+                        <p>
+                            Hooks are made wrapping CWMSjs using code similar to the React example below. <br>
+                            They also provide variables for you to track the state, progress, and data of the request.
+                            <br>
+                            The header on the Groundwork-Water webpage provides a list of currently available hooks. 
+                        </p>
+                    </div>
+                </section>
+                <hr />
+                <section class="tsd-panel tsd-hierarchy">
+                    ${pageBody}
+                </section>
+        </div>
+        <footer>
+            <p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
+        </footer>
+        <div class="overlay"></div>
+        <script src="https://cdn.jsdelivr.net/npm/prismjs@1.26.0/prism.js"></script>
+    </body>
+
+</html>
