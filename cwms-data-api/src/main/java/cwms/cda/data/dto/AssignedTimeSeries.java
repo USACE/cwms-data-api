@@ -24,7 +24,10 @@
 
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public class AssignedTimeSeries extends CwmsDTOBase {
     private String officeId;
     private String timeseriesId;

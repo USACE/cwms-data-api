@@ -230,7 +230,7 @@ public class DataApiTestIT {
                     @Override
                     public void sessionEvent(SessionEvent event) {
                         logger.atInfo().log("Got event of type: %s", event.getType());
-                        logger.atInfo().log("Session is:", event.getSession().toString());
+                        logger.atInfo().log("Session is: %s", event.getSession().toString());
                     }
 
                 });

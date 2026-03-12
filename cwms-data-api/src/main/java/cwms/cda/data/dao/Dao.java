@@ -31,7 +31,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTO;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.jooq.DSLContext;
@@ -43,6 +42,7 @@ public abstract class Dao<T> {
     public static final int CWMS_18_1_8 = 180108;
     public static final int CWMS_21_1_1 = 210101;
     public static final int CWMS_23_03_16 = 230316;
+    public static final int CWMS_25_07_01 = 250701;
 
     public static final String PROP_BASE = "cwms.cda.data.dao.dao";
     public static final String VERSION_NAME = "version";
