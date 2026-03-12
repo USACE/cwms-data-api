@@ -18,7 +18,7 @@ Opinion 1
 @brysonspilman
 
 Summary:
-Since the intended use of the CSV format is for retrieval only, a customized format that follows standardize csv practices is appropriate.
+Since the intended use of the CSV format is for retrieval only, a customized format that follows standardized csv practices is appropriate.
 
 Key points:
 
