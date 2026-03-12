@@ -33,6 +33,7 @@ import static org.jooq.impl.DSL.rowNumber;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.table;
 
+import cwms.cda.api.enums.MessageQueue;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -44,7 +45,6 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import org.jooq.DSLContext;
@@ -62,7 +62,7 @@ public final class MessageDao extends JooqDao<RssFeed> {
 
     public RssFeed retrieveFeed(String cursor, int pageSize, String office, String name,
         Instant since, UnaryOperator<String> urlBuilder) {
-        AqTable aqTable = getAqTable(name);
+        MessageQueue aqTable = getAqTable(name);
         String[] cursorSplit = CwmsDTOPaginated.decodeCursor(cursor);
         int offset = 0;
         if(cursorSplit.length == 2) {
@@ -83,30 +83,18 @@ public final class MessageDao extends JooqDao<RssFeed> {
             String nextCursor = CwmsDTOPaginated.encodeCursor(items.size() + offset, pageSize);
             nextLink = new AtomLink("next", urlBuilder.apply(nextCursor));
         }
-        String description;
-        switch(aqTable) {
-            case TS_STORED:
-                description = " CWMS messages about time series operations, such as data stored and deleted";
-                break;
-            case STATUS:
-                description = " CWMS general system and application status messages";
-                break;
-            case REALTIME_OPS:
-                description = " CWMS application operational messages";
-                break;
-            default:
-                description = null;
-        }
+        String description = aqTable.description();
         RssChannel channel = new RssChannel(name, nextLink, description, items);
         return new RssFeed(channel);
     }
 
-    private static AqTable getAqTable(String name) {
-        try {
-            return AqTable.valueOf(name.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new NotFoundException(e);
+    @SuppressWarnings("unused") // MessageQueue.valueOf can return null. environment is being over zealous.
+    private static MessageQueue getAqTable(String name) {
+        MessageQueue ret = MessageQueue.queueFor(name.toUpperCase());
+        if (ret == null) {
+            throw new NotFoundException("No queue named '" + name + "'");
         }
+        return ret;
     }
 
     private static RssItem rssItem(Record record, String p) {
@@ -116,7 +104,7 @@ public final class MessageDao extends JooqDao<RssFeed> {
         return new RssItem(p, enqTimestamp, msgId);
     }
 
-    private Result<?> retrieveMessages(int offset, int pageSize, Instant since, String office, AqTable name) {
+    private Result<?> retrieveMessages(int offset, int pageSize, Instant since, String office, MessageQueue name) {
         Timestamp sinceTimestamp = since == null ? null : Timestamp.from(since);
         Table<?> t = table(name("CWMS_20", "AQ$" + office + "_" + name.name() + "_TABLE")).as("t");
 
