@@ -122,6 +122,14 @@ However, *DO NOT* be afraid to say, "that looks terrible", and tweak it until it
 7. Use "real" names for data in test data set. Either use actual real location/project/basin/etc names, or make up something that feels like one.
   a. NOTE: within reason. Location names, absolutely, but otherwise make sure the purpose of the name is clear.
 8. Name files consistent with the purpose of the test.
+9. Narrative tests: Test method names should be a narrative summary of the test. For example, `test_stream_create_then_update_then_delete_success(...)`. 
+  a. Use underscores to make the narrative structure of the test name clear. 
+  a. The method name should be a clear summary of what is being tested (create, get, update, delete) in order of operations.
+  b. It should also include the expected result (success, error code, etc.)
+  c. Comments should also be used in narrative flow to clarify the details of the test internally, but not as a substitute for a clear method name.
+  d. Setup and tear down methods should also be clearly labelled as such. Setup/teardown methods should call into well-named helper methods to clarify the purpose of the setup/teardown steps.
+   (example: setup method calls helper method `create_test_location()` followed by `create_test_time_series()` to clarify the purpose of the setup step)
+
    
 
 
@@ -151,6 +159,9 @@ description.
 
 Once you have made your changes submit a [pull request](https://help.github.com/en/articles/creating-a-pull-request-from-a-fork).
 Please submit all PRs to the develop branch.
+
+If there is an OpenAPI change, the pull request should include a screenshot of the Swagger UI showing the change 
+under the docs/swagger-screenshots directory (for example, see [Locations.png](https://github.com/USACE/cwms-data-api/blob/abfa3d8cd6cd9cd79c8435761fa95c447e534afc/docs/source/swagger-screenshots/Locations.png)). 
 
 Barring nothing working at all or the code not being related to CWMS Data API your contributions will be accepted.
 
