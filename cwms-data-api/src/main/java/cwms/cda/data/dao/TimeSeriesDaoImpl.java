@@ -9,6 +9,7 @@ import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.helpers.DateUtils;
 
+import java.io.IOException;
 import java.sql.Connection;
 
 import static org.jooq.impl.DSL.asterisk;
@@ -106,21 +107,13 @@ import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.udt.records.DATE_TABLE_TYPE;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
-import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
+
 import java.io.OutputStreamWriter;
 import java.io.BufferedWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.atomic.AtomicReference;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.dataformat.csv.CsvMapper;
-import com.fasterxml.jackson.dataformat.csv.CsvSchema;
-import com.fasterxml.jackson.databind.SequenceWriter;
 import cwms.cda.formatters.csv.CsvV1;
 import cwms.cda.formatters.Formats;
-import cwms.cda.data.dao.StreamConsumer;
-import cwms.cda.data.dto.csv.TimeSeriesCsv;
+import cwms.cda.data.dto.csv.TimeSeriesCsvRow;
 
 public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeriesDao {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -210,7 +203,20 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
     
     @Override
-    public void streamRequestedTimeSeriesCsv(TimeSeriesRequestParameters requestParameters, int pageSize, StreamConsumer consumer, boolean metadataAsColumns) {
+    public void streamRequestedTimeSeriesCsv(TimeSeriesRequestParameters requestParameters,
+                                             StreamConsumer consumer, boolean includeMetadataAsColumns, boolean includeMetadataAsComments) {
+        // Delegate to the overload that supports tuning knobs with defaults
+        streamRequestedTimeSeriesCsv(requestParameters, consumer,
+                includeMetadataAsColumns, includeMetadataAsComments, null, null);
+    }
+
+    // Overload allowing the caller to provide JDBC/jOOQ fetch size and rows-per-buffer for CSV rendering
+    public void streamRequestedTimeSeriesCsv(TimeSeriesRequestParameters requestParameters,
+                                             StreamConsumer consumer,
+                                             boolean includeMetadataAsColumns,
+                                             boolean includeMetadataAsComments,
+                                             Integer dbFetchSize,
+                                             Integer rowsPerBuffer) {
         // This method mirrors the data selection flow of getRequestedTimeSeries, but delivers
         // a streaming CSV InputStream via StreamConsumer (BlobDao pattern) to avoid buffering.
         String names = requestParameters.getNames();
@@ -230,9 +236,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 ? CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsCode), DSL.val(units, String.class))
                 : DSL.val(units, String.class);
 
-        // Give TV (time,value) column names
+        // Give TVQ (time,value,quality) column names
         Field<Timestamp> dateTimeCol = field(DATE_TIME, Timestamp.class).as(DATE_TIME);
         Field<Double> valueCol = field(VALUE, Double.class).as(VALUE);
+        Field<Integer> qualityCol = field(QUALITY_CODE, Integer.class).as(QUALITY_CODE);
 
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
@@ -259,126 +266,216 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 officeId
         );
 
-        // Now select the needed columns (date_time, value) and restrict the time window
-        SelectConditionStep<org.jooq.Record2<Timestamp, Double>> query = dsl.select(dateTimeCol, valueCol)
+        // Now select the needed columns (date_time, value, quality) and restrict the time window
+        SelectConditionStep<org.jooq.Record3<Timestamp, Double, Integer>> query = dsl.select(dateTimeCol, valueCol, qualityCol)
                 .from(retrieveSelectData)
                 .where(dateTimeCol.ge(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(beginTimeMilli))))
                 .and(dateTimeCol.le(CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(DSL.val(endTimeMilli))));
 
-        if (pageSize > 0) {
-            query.limit(DSL.val(pageSize));
-        }
+        // No page size limiting when streaming
 
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
-        // Build a piped stream pair to hand InputStream to the consumer
-        final PipedInputStream pis;
-        final PipedOutputStream pos;
-        try {
-            pis = new PipedInputStream(8192);
-            pos = new PipedOutputStream(pis);
-        } catch (IOException e) {
-            throw new DataAccessException("Failed to initialize CSV streaming pipe", e);
+        // Apply optional JDBC fetch size hint
+        if (dbFetchSize != null && dbFetchSize > 0) {
+            try {
+                query.fetchSize(dbFetchSize);
+            } catch (Exception ex) {
+                // Some drivers may ignore/throw; log and continue
+                logger.atFine().withCause(ex).log("Fetch size hint ignored: %s", dbFetchSize);
+            }
         }
 
-        AtomicReference<Throwable> writerError = new AtomicReference<>(null);
+        // Create a lazy CSV InputStream that renders rows on-demand from the database cursor
+        try (Cursor<org.jooq.Record3<Timestamp, Double, Integer>> recCursor = query.fetchLazy()) {
+            String tsIdStr = dsl.fetchValue(tsId);
+            String officeResolved = dsl.fetchValue(officeId);
+            String resolvedUnits = dsl.fetchValue(unit);
+            Timestamp versionTs = requestParameters.getVersionDate() != null ? Timestamp.from(requestParameters.getVersionDate().toInstant()) : null;
 
-        Thread writer = new Thread(() -> {
-            try (Cursor<org.jooq.Record2<Timestamp, Double>> recCursor = query.fetchLazy()) {
-                // Prepare Jackson CSV writer aligned with CsvV1
-                CsvMapper csv = CsvV1.buildObjectMapper();
-                // Do not auto-close the underlying PipedOutputStream when closing SequenceWriter
-                csv.getFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+            CsvV1 csvFormatter = new CsvV1();
 
-                // Gather metadata
-                String tsIdStr = dsl.fetchValue(tsId);
-                String officeResolved = dsl.fetchValue(officeId);
-                String resolvedUnits = dsl.fetchValue(unit);
-                Timestamp versionTs = requestParameters.getVersionDate() != null ? Timestamp.from(requestParameters.getVersionDate().toInstant()) : null;
-                Integer qualityCode = null; // unknown here
+            CsvOnDemandInputStream stream = new CsvOnDemandInputStream(
+                    recCursor,
+                    csvFormatter,
+                    tsIdStr,
+                    officeResolved,
+                    resolvedUnits,
+                    versionTs,
+                    includeMetadataAsColumns,
+                    includeMetadataAsComments,
+                    rowsPerBuffer
+            );
 
-                if (metadataAsColumns) {
-                    // Stream rows with metadata as columns using a CsvMapper that includes @CsvMetadata fields
-                    CsvMapper fullMapper = new CsvMapper();
-                    fullMapper.findAndRegisterModules();
-                    fullMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS);
-                    fullMapper.disable(com.fasterxml.jackson.databind.DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
-                    fullMapper.getFactory().disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
-                    // Include metadata columns
-                    com.fasterxml.jackson.databind.AnnotationIntrospector defaults = fullMapper.getSerializationConfig().getAnnotationIntrospector();
-                    com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair pair = new com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair(
-                            new cwms.cda.formatters.csv.CsvMetadataIntrospector(true), defaults);
-                    fullMapper.setAnnotationIntrospector(pair);
-
-                    CsvSchema schema = fullMapper.schemaFor(TimeSeriesCsv.class).withHeader();
-                    SequenceWriter sw = fullMapper.writer(schema).writeValues(pos);
-                    for (org.jooq.Record2<Timestamp, Double> r : recCursor) {
-                        Timestamp ts = r.value1();
-                        Double val = r.value2();
-                        TimeSeriesCsv row = new TimeSeriesCsv(
-                                tsIdStr, officeResolved, ts == null ? null : ts.toInstant(), val, resolvedUnits,
-                                versionTs == null ? null : versionTs.toInstant(), qualityCode
-                        );
-                        sw.write(row);
-                    }
-                    sw.flush();
-                } else {
-                    // First write metadata as comments, then stream minimal rows (date-time,value)
-                    try (BufferedWriter headerWriter = new BufferedWriter(new OutputStreamWriter(pos, StandardCharsets.UTF_8))) {
-                        // Determine present metadata count (exclude nulls but match example keys order)
-                        int count = 0;
-                        if (tsIdStr != null) count++;
-                        if (officeResolved != null) count++;
-                        if (versionTs != null) count++;
-                        if (qualityCode != null) count++;
-                        if (resolvedUnits != null) count++;
-
-                        headerWriter.write("# metadata-count: " + count + "\n");
-                        if (tsIdStr != null) headerWriter.write("# time-series-id: " + tsIdStr + "\n");
-                        if (officeResolved != null) headerWriter.write("# office-id: " + officeResolved + "\n");
-                        if (versionTs != null) headerWriter.write("# version-date: " + versionTs.toInstant().toString() + "\n");
-                        if (qualityCode != null) headerWriter.write("# quality-code: " + qualityCode + "\n");
-                        if (resolvedUnits != null) headerWriter.write("# units: " + resolvedUnits + "\n");
-                        headerWriter.flush();
-                    }
-
-                    // After comments, write CSV header and rows but only include non-metadata fields
-                    CsvSchema schema = csv.schemaFor(TimeSeriesCsv.class).withHeader();
-                    SequenceWriter sw = csv.writer(schema).writeValues(pos);
-                    for (org.jooq.Record2<Timestamp, Double> r : recCursor) {
-                        Timestamp ts = r.value1();
-                        Double val = r.value2();
-                        TimeSeriesCsv row = new TimeSeriesCsv(tsIdStr, officeResolved, ts == null ? null : ts.toInstant(), val,
-                                resolvedUnits, versionTs == null ? null : versionTs.toInstant(), qualityCode);
-                        sw.write(row);
-                    }
-                    sw.flush();
-                }
-            } catch (Throwable t) {
-                writerError.set(t);
-            } finally {
-                try { pos.close(); } catch (IOException ignore) {}
+            try (stream) {
+                // Unknown total length
+                consumer.accept(stream, Formats.CSV);
             }
-        }, "ts-csv-writer");
-        writer.setDaemon(true);
-        writer.start();
-
-        try {
-            // totalLength unknown during streaming; pass -1
-            consumer.accept(pis, 0, Formats.CSV, -1);
         } catch (Exception e) {
-            throw new DataAccessException("Error delivering CSV stream to consumer", e);
-        } finally {
-            try { pis.close(); } catch (IOException ignore) {}
+            throw new DataAccessException("Error generating CSV for TimeSeries", e);
+        }
+    }
+
+    // InputStream that renders CSV rows on-demand from a jOOQ Cursor
+    private static final class CsvOnDemandInputStream extends java.io.InputStream {
+        private final Cursor<org.jooq.Record3<Timestamp, Double, Integer>> cursor;
+        private final java.util.Iterator<org.jooq.Record3<Timestamp, Double, Integer>> it;
+        private final CsvV1 csv;
+        private final String tsIdStr;
+        private final String officeId;
+        private final String units;
+        private final Timestamp versionTs;
+        private final boolean includeMetaColumns;
+        private final boolean includeMetaComments;
+        private final int rowsPerBuffer;
+
+        private byte[] buffer = new byte[0];
+        private int bufPos = 0;
+        private boolean first = true;
+        private boolean closed = false;
+
+        CsvOnDemandInputStream(Cursor<org.jooq.Record3<Timestamp, Double, Integer>> cursor,
+                               CsvV1 csv,
+                               String tsIdStr,
+                               String officeId,
+                               String units,
+                               Timestamp versionTs,
+                               boolean includeMetaColumns,
+                               boolean includeMetaComments,
+                               Integer rowsPerBuffer) {
+            this.cursor = cursor;
+            this.it = cursor.iterator();
+            this.csv = csv;
+            this.tsIdStr = tsIdStr;
+            this.officeId = officeId;
+            this.units = units;
+            this.versionTs = versionTs;
+            this.includeMetaColumns = includeMetaColumns;
+            this.includeMetaComments = includeMetaComments;
+            int rpb = rowsPerBuffer == null ? 1 : rowsPerBuffer;
+            this.rowsPerBuffer = rpb > 0 ? rpb : 1;
         }
 
-        Throwable t = writerError.get();
-        if (t != null) {
-            if (t instanceof DataAccessException) {
-                throw (DataAccessException) t;
-            }
-            throw new DataAccessException("Error streaming CSV for TimeSeries", t);
+        @Override
+        public int read() throws IOException {
+            byte[] one = new byte[1];
+            int r = read(one, 0, 1);
+            return r == -1 ? -1 : (one[0] & 0xFF);
         }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            if (closed) {
+                throw new IOException("Stream closed");
+            }
+            if (b == null) {
+                throw new NullPointerException("b");
+            }
+            if (off < 0 || len < 0 || len > b.length - off) {
+                throw new IndexOutOfBoundsException();
+            }
+
+            int totalCopied = 0;
+            while (len > 0) {
+                if (bufPos >= buffer.length) {
+                    if (!fillBuffer()) {
+                        break; // EOF
+                    }
+                }
+                int toCopy = Math.min(len, buffer.length - bufPos);
+                System.arraycopy(buffer, bufPos, b, off, toCopy);
+                bufPos += toCopy;
+                off += toCopy;
+                len -= toCopy;
+                totalCopied += toCopy;
+            }
+            return totalCopied == 0 ? -1 : totalCopied;
+        }
+
+        private boolean fillBuffer() {
+            if (!it.hasNext()) {
+                buffer = new byte[0];
+                bufPos = 0;
+                return false;
+            }
+
+            StringBuilder sb = new StringBuilder(8192);
+            int produced = 0;
+            while (it.hasNext() && produced < rowsPerBuffer) {
+                org.jooq.Record3<Timestamp, Double, Integer> r = it.next();
+                Timestamp ts = r.value1();
+                Double val = r.value2();
+                Integer qualityCode = r.value3();
+
+                TimeSeriesCsvRow row = new TimeSeriesCsvRow(
+                        tsIdStr,
+                        officeId,
+                        ts == null ? null : ts.toInstant(),
+                        val,
+                        units,
+                        versionTs == null ? null : versionTs.toInstant(),
+                        qualityCode
+                );
+
+                String rendered;
+                if (includeMetaColumns) {
+                    rendered = csv.formatWithMetaDataIncludedAsColumns(row);
+                } else if (includeMetaComments) {
+                    rendered = csv.formatWithMetaDataIncludedAsComments(row);
+                } else {
+                    rendered = csv.format(row);
+                }
+
+                if (first) {
+                    sb.append(rendered);
+                    first = false;
+                } else {
+                    String dataLine = extractLastCsvLine(rendered);
+                    if (!dataLine.endsWith("\n")) {
+                        dataLine = dataLine + "\n";
+                    }
+                    sb.append(dataLine);
+                }
+                produced++;
+            }
+
+            buffer = sb.toString().getBytes(StandardCharsets.UTF_8);
+            bufPos = 0;
+            return buffer.length > 0;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (!closed) {
+                closed = true;
+                try {
+                    cursor.close();
+                } catch (Exception ex) {
+                    // ignore, we're closing
+                }
+            }
+        }
+    }
+
+    private static String extractLastCsvLine(String s) {
+        if (s == null || s.isEmpty()) {
+            return "";
+        }
+        int i = s.length() - 1;
+        // Skip trailing newline characters
+        while (i >= 0 && (s.charAt(i) == '\n' || s.charAt(i) == '\r')) {
+            i--;
+        }
+        if (i < 0) {
+            return "";
+        }
+        int start = s.lastIndexOf('\n', i);
+        String line = s.substring(start + 1, i + 1);
+        // Strip a trailing CR if present
+        if (!line.isEmpty() && line.charAt(line.length() - 1) == '\r') {
+            line = line.substring(0, line.length() - 1);
+        }
+        return line;
     }
 
     /**

@@ -1,0 +1,3 @@
+time-series-id,office-id,date-time,value,units,version-date,quality-code
+RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST,SPK,2021-06-21T21:06:00Z,1.0,ft,2025-07-22T14:00:00Z,0
+RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST,SPK,2021-06-22T21:06:00Z,2.0,ft,2025-07-22T14:00:00Z,0

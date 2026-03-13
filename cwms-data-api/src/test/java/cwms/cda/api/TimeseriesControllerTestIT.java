@@ -1804,6 +1804,189 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         ;
     }
 
+    @Test
+    void test_csv_v2_default_metadata_comments() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/lrl/1day_offset.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get(NAME).asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // insert
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam(OFFICE,officeId)
+        .when()
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // retrieve CSV v2 with no metadata params (default → comments)
+        String body = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept("text/csv;version=2")
+            .queryParam(OFFICE, officeId)
+            .queryParam(NAME, ts.get(NAME).asText())
+        .when()
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract().asString();
+
+        assertNotNull(body);
+        String normalized = body.replace("\r", "");
+        assertTrue(normalized.startsWith("# metadata-count:"), "Expected metadata comments header");
+        assertTrue(normalized.contains("\ndate-time,value\n") || normalized.contains("\ndate-time,value\r\n"),
+                "Expected minimal header 'date-time,value'");
+    }
+
+    @Test
+    void test_csv_v2_with_metadata_comments_param() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/lrl/1day_offset.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get(NAME).asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        createLocation(location, true, officeId);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam(OFFICE,officeId)
+        .when()
+            .post("/timeseries/")
+        .then()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        String body = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept("text/csv;version=2")
+            .queryParam(OFFICE, officeId)
+            .queryParam(NAME, ts.get(NAME).asText())
+            .queryParam("include-metadata-as-comments", true)
+        .when()
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract().asString();
+
+        assertNotNull(body);
+        String normalized = body.replace("\r", "");
+        assertTrue(normalized.startsWith("# metadata-count:"));
+    }
+
+    @Test
+    void test_csv_v2_with_metadata_columns_param() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/lrl/1day_offset.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get(NAME).asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        createLocation(location, true, officeId);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam(OFFICE,officeId)
+        .when()
+            .post("/timeseries/")
+        .then()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        String body = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept("text/csv;version=2")
+            .queryParam(OFFICE, officeId)
+            .queryParam(NAME, ts.get(NAME).asText())
+            .queryParam("include-metadata-as-columns", true)
+        .when()
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract().asString();
+
+        assertNotNull(body);
+        String normalized = body.replace("\r", "");
+        // Should not start with comments
+        assertTrue(!normalized.startsWith("# "));
+        // Header should include metadata columns
+        assertTrue(normalized.startsWith("time-series-id,office-id,date-time,value,units,version-date,quality-code"),
+                "Expected metadata columns in header");
+    }
+
+    @Test
+    void test_csv_v2_both_metadata_flags_error() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        InputStream resource = this.getClass().getResourceAsStream(
+                "/cwms/cda/api/lrl/1day_offset.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get(NAME).asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        createLocation(location, true, officeId);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam(OFFICE,officeId)
+        .when()
+            .post("/timeseries/")
+        .then()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept("text/csv;version=2")
+            .queryParam(OFFICE, officeId)
+            .queryParam(NAME, ts.get(NAME).asText())
+            .queryParam("include-metadata-as-columns", true)
+            .queryParam("include-metadata-as-comments", true)
+        .when()
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+    }
+
     enum GetAllTest
     {
         DEFAULT(Formats.DEFAULT, Formats.JSONV2),

@@ -1,0 +1,8 @@
+# metadata-count: 5
+# time-series-id: RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST
+# office-id: SPK
+# units: ft
+# version-date: 2025-07-22T14:00:00Z
+# quality-code: 0
+date-time,value
+2021-06-21T21:06:00Z,1.0

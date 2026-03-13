@@ -421,6 +421,12 @@ public class TimeSeriesController implements CrudHandler {
                         type = Integer.class,
                         description = "How many entries per page returned. "
                                 + "Default " + DEFAULT_PAGE_SIZE + ".")
+                ,
+                @OpenApiParam(name = "include-metadata-as-columns", type = Boolean.class,
+                        description = "When true and format=csv with version=2, include dataset metadata as CSV columns instead of as comments.")
+                ,
+                @OpenApiParam(name = "include-metadata-as-comments", type = Boolean.class,
+                        description = "When true and format=csv with version=2, include dataset metadata as header comments (default behavior if neither flag is provided).")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -510,17 +516,100 @@ public class TimeSeriesController implements CrudHandler {
                     // Older proxies/clients may require explicit charset
                     ctx.header(Header.CONTENT_TYPE, Formats.CSV + "; charset=UTF-8");
 
-                    boolean metadataAsColumns = ctx.queryParamAsClass("metadata-as-columns", Boolean.class)
+                    boolean includeMetadataAsColumns = ctx.queryParamAsClass("include-metadata-as-columns", Boolean.class)
+                            .getOrDefault(false);
+                    boolean includeMetadataAsComments = ctx.queryParamAsClass("include-metadata-as-comments", Boolean.class)
                             .getOrDefault(false);
 
+                    // Optional tuning knobs
+                    Integer dbFetchSize = null;
+                    Integer rowsPerBuffer = null;
+                    try {
+                        dbFetchSize = ctx.queryParamAsClass("db-fetch-size", Integer.class).allowNullable().get();
+                    } catch (Exception ignored1) { }
+                    try {
+                        rowsPerBuffer = ctx.queryParamAsClass("rows-per-buffer", Integer.class).allowNullable().get();
+                    } catch (Exception ignored2) { }
+
+                    // Optional HTTP Range support (bytes). For generated CSV we cannot know total length up front,
+                    // but we can honor offset and end by skipping and limiting the stream.
+                    final long[] requestedRange = cwms.cda.api.RangeParser.parseFirstRange(ctx.header(Header.RANGE));
+                    // Advertise support for byte ranges similar to BlobController
+                    ctx.header(Header.ACCEPT_RANGES, "bytes");
+
+                    if (includeMetadataAsColumns && includeMetadataAsComments) {
+                        throw new IllegalArgumentException("include-metadata-as-columns and include-metadata-as-comments are mutually exclusive");
+                    }
+                    dbFetchSize = pageSize;
+                    rowsPerBuffer = 64;
+
+                    //TODO - how do we handle total length? Can we use seekableStream if we don't know it?
                     cwms.cda.data.dao.StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
-                        if (is != null) {
-                            IOUtils.copy(is, ctx.res.getOutputStream());
+                        if (is == null) {
+                            ctx.status(HttpServletResponse.SC_NOT_FOUND)
+                                    .json(new CdaError("Unable to find timeseries based on given parameters"));
+                        } else {
+                            // Set content type from producer when available
+                            String mt = (mediaType != null && !mediaType.isEmpty()) ? mediaType : Formats.CSV;
+                            ctx.contentType(mt);
+
+                            if (requestedRange != null) {
+                                long[] interpreted = requestedRange;
+                                // We do not know the total length of the generated CSV. We will interpret the range
+                                // locally and stream up to the requested window. If the end is -1 (suffix) or null,
+                                // stream until EOF after skipping.
+                                Long offset = interpreted[0];
+                                Long endByte = interpreted[1];
+
+                                long skipBytes = Math.max(0L, offset);
+                                long maxBytes = (endByte != null && endByte >= 0 && endByte >= offset) ? (endByte - offset + 1) : Long.MAX_VALUE;
+
+                                // Indicate partial content and that we accept byte ranges
+                                ctx.status(206);
+                                ctx.header(Header.ACCEPT_RANGES, "bytes");
+                                // We cannot reliably set Content-Range without total size; omit it.
+
+                                // Skip the requested offset
+                                long remainingToSkip = skipBytes;
+                                byte[] skipBuf = new byte[8192];
+                                while (remainingToSkip > 0) {
+                                    int toRead = (int) Math.min(skipBuf.length, remainingToSkip);
+                                    int read = is.read(skipBuf, 0, toRead);
+                                    if (read == -1) {
+                                        break; // EOF reached while skipping
+                                    }
+                                    remainingToSkip -= read;
+                                }
+
+                                // Now copy up to maxBytes
+                                long copied = 0L;
+                                byte[] buf = new byte[8192];
+                                while (copied < maxBytes) {
+                                    int toRead = (int) Math.min(buf.length, maxBytes - copied);
+                                    int read = is.read(buf, 0, toRead);
+                                    if (read == -1) {
+                                        break; // EOF
+                                    }
+                                    ctx.res.getOutputStream().write(buf, 0, read);
+                                    copied += read;
+                                }
+                                ctx.res.getOutputStream().flush();
+                                // Update metrics with what we actually sent
+                                requestResultSize.update(copied);
+                            } else {
+                                // No range header: stream as-is; do not set Content-Length (unknown)
+                                long copied = IOUtils.copyLarge(is, ctx.res.getOutputStream());
+                                requestResultSize.update(copied);
+                            }
                         }
                     };
 
                     try {
-                        dao.streamRequestedTimeSeriesCsv(requestParameters, pageSize, consumer, metadataAsColumns);
+                        // Prefer TimeSeriesDaoImpl overload when available
+                        if (dao instanceof TimeSeriesDaoImpl) {
+                            ((TimeSeriesDaoImpl) dao).streamRequestedTimeSeriesCsv(requestParameters, consumer,
+                                    includeMetadataAsColumns, includeMetadataAsComments, dbFetchSize, rowsPerBuffer);
+                        }
                         ctx.res.flushBuffer();
                     } catch (IOException ioEx) {
                         throw new DataAccessException("Failed streaming CSV response", ioEx);

@@ -144,21 +144,6 @@ public class TimeSeriesTest {
 		return buildTimeSeries(null);
 	}
 
-    private TimeSeries buildTimeSeriesWithDateTimes(long... dateTimes) {
-        String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
-
-        ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
-        ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
-        ZonedDateTime versionDate = ZonedDateTime.parse("2025-07-22T14:00:00-00:00[UTC]");
-        TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, null, versionDate, null);
-        for(long dateTime : dateTimes) {
-            Instant instant = Instant.ofEpochMilli(dateTime);
-            ZonedDateTime zdt = instant.atZone(ZoneId.of("UTC"));
-            ts.addValue(Timestamp.from(zdt.toInstant()), 12.34567, 0);
-        }
-        return ts;
-    }
-
 	@NotNull
 	private TimeSeries buildTimeSeries(VerticalDatumInfo vdi) {
 		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
@@ -270,41 +255,4 @@ public class TimeSeriesTest {
 		assertFalse(xmlStr.contains("officeId"));
 		assertTrue(xmlStr.contains("office-id"));
 	}
-
-    @Test
-    void testCsvSerialization() throws Exception {
-        // Build a sample time series with two values. time-series.csv matches this data
-        TimeSeries ts = buildTimeSeriesWithDateTimes(1772826360000L, 1772826420000L);
-
-        InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/cda/data/dto/time-series.csv");
-        assertNotNull(stream);
-        String expected = IOUtils.toString(stream, StandardCharsets.UTF_8);
-        expected = expected.replaceAll("\\r", "");
-
-        CsvV1 csv = new CsvV1();
-        String csvBody = csv.format(ts);
-        assertNotNull(csvBody);
-        csvBody = csvBody.replaceAll("\\r", "");
-
-        assertEquals(expected, csvBody);
-    }
-
-    @Test
-    void testCsvSerialization_excludesDataEntryDate() throws Exception {
-        // Build a series where Records include data-entry-date; CSV should still only include date-time, value
-        TimeSeries ts = buildTimeSeriesWithDateTimes(1772826360000L, 1772826420000L);
-
-        InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/cda/data/dto/time-series.csv");
-        assertNotNull(stream);
-        String expected = IOUtils.toString(stream, StandardCharsets.UTF_8);
-
-        expected = expected.replaceAll("\\r", "");
-
-        CsvV1 csv = new CsvV1();
-        String csvBody = csv.format(ts);
-        assertNotNull(csvBody);
-        csvBody = csvBody.replaceAll("\\r", "");
-
-        assertEquals(expected, csvBody);
-    }
 }

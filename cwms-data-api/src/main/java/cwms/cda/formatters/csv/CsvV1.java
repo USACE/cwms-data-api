@@ -11,14 +11,16 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.introspect.AnnotationIntrospectorPair;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.dataformat.csv.CsvGenerator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.data.dto.Office;
-import cwms.cda.data.dto.csv.CwmsCsvDTOBase;
+import cwms.cda.data.dto.csv.CwmsCsvRow;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
@@ -30,6 +32,9 @@ public class CsvV1 implements CsvFormatter {
         return Formats.CSV;
     }
 
+    /**
+     * Default formatting does not include metadata in either columns or comments.
+    **/
     @Override
     public String format(CwmsDTOBase dto) {
         String retVal;
@@ -38,13 +43,10 @@ public class CsvV1 implements CsvFormatter {
                 retVal = new CsvV1Office().format(dto);
             } else if (dto instanceof LocationGroup ) {
                 retVal =  new CsvV1LocationGroup().format(dto);
-            } else if(dto instanceof CwmsCsvDTOBase) {
-                CwmsCsvDTOBase csvDto = (CwmsCsvDTOBase) dto;
+            } else if(dto instanceof CwmsCsvRow) {
                 CsvMapper csvMapper = buildObjectMapperCsvMetadataExcluded();
                 CsvSchema headerSchema = csvMapper.schemaFor(dto.getClass()).withHeader();
-                String body = csvMapper.writer(headerSchema).writeValueAsString(dto);
-                String comments = csvDto.buildMetadataComments();
-                retVal = comments + body;
+                retVal = csvMapper.writer(headerSchema).writeValueAsString(dto);
             } else {
                 throw new FormattingException(dto.getClass().getName() + " is not currently supported for CSV formatting.");
             }
@@ -55,7 +57,7 @@ public class CsvV1 implements CsvFormatter {
     }
 
     @Override
-    public String formatWithMetaDataIncludedAsColumns(CwmsCsvDTOBase dto) {
+    public String formatWithMetaDataIncludedAsColumns(CwmsCsvRow dto) {
         try {
             CsvMapper csvMapper = buildObjectMapperWithMetadataIncluded();
             CsvSchema headerSchema = csvMapper.schemaFor(dto.getClass()).withHeader();
@@ -75,6 +77,14 @@ public class CsvV1 implements CsvFormatter {
                 retVal = new CsvV1Office().format(dtoList);
             } else if(dto instanceof LocationGroup) {
                 retVal = new CsvV1LocationGroup().format(dtoList);
+            } else if(dto instanceof CwmsCsvRow) {
+                try {
+                    CsvMapper csvMapper = buildObjectMapperCsvMetadataExcluded();
+                    CsvSchema headerSchema = csvMapper.schemaFor(dto.getClass()).withHeader();
+                    retVal = csvMapper.writer(headerSchema).writeValueAsString(dtoList);
+                } catch (JsonProcessingException e) {
+                    throw new FormattingException("Could not serialize list of:" + dto.getClass().getName(), e);
+                }
             } else {
                 throw new FormattingException("List of " + dto.getClass().getName() + " is not currently supported for CSV formatting.");
             }
@@ -83,7 +93,7 @@ public class CsvV1 implements CsvFormatter {
     }
 
     @Override
-    public String formatWithMetaDataIncludedAsComments(CwmsCsvDTOBase dto) {
+    public String formatWithMetaDataIncludedAsComments(CwmsCsvRow dto) {
         try {
             CsvMapper csvMapper = buildObjectMapperCsvMetadataExcluded();
             CsvSchema headerSchema = csvMapper.schemaFor(dto.getClass()).withHeader();
@@ -93,6 +103,40 @@ public class CsvV1 implements CsvFormatter {
         }  catch (JsonProcessingException e) {
             throw new FormattingException("Could not serialize:" + dto.getClass().getName(), e);
         }
+    }
+
+    @Override
+    public String formatWithMetaDataIncludedAsComments(List<? extends CwmsCsvRow> dtoList) {
+        String retVal = null;
+        if (dtoList != null && !dtoList.isEmpty()) {
+            CwmsCsvRow dto = dtoList.get(0);
+            try {
+                CsvMapper csvMapper = buildObjectMapperCsvMetadataExcluded();
+                CsvSchema headerSchema = csvMapper.schemaFor(dto.getClass()).withHeader();
+                String body = csvMapper.writer(headerSchema).writeValueAsString(dtoList);
+                String comments = dto.buildMetadataComments();
+                retVal = comments + body;
+            } catch (JsonProcessingException e) {
+                throw new FormattingException("Could not serialize list of:" + dto.getClass().getName(), e);
+            }
+        }
+        return retVal;
+    }
+
+    @Override
+    public String formatWithMetaDataIncludedAsColumns(List<? extends CwmsCsvRow> dtoList) {
+        String retVal = null;
+        if (dtoList != null && !dtoList.isEmpty()) {
+            CwmsCsvRow dto = dtoList.get(0);
+            try {
+                CsvMapper csvMapper = buildObjectMapperWithMetadataIncluded();
+                CsvSchema headerSchema = csvMapper.schemaFor(dto.getClass()).withHeader();
+                retVal = csvMapper.writer(headerSchema).writeValueAsString(dtoList);
+            } catch (JsonProcessingException e) {
+                throw new FormattingException("Could not serialize list of:" + dto.getClass().getName(), e);
+            }
+        }
+        return retVal;
     }
 
     @Override
@@ -143,11 +187,13 @@ public class CsvV1 implements CsvFormatter {
         // Without these two disables an Instant gets written as 3333333.335000000
         retval.disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS);
         retval.disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
+        retval.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        retval.disable(CsvGenerator.Feature.ALWAYS_QUOTE_STRINGS);
+        retval.enable(CsvGenerator.Feature.STRICT_CHECK_FOR_QUOTING);
 
-        // Do not force a global naming strategy here; allow DTO-level @JsonNaming
-        // (e.g., JSON and XML strategies on the DTO) to dictate property names so CSV aligns.
         retval.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         retval.registerModule(new JavaTimeModule());
+        retval.registerModule(new Jdk8Module());
         retval.enable(CsvParser.Feature.ALLOW_COMMENTS);
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());

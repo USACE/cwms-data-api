@@ -75,7 +75,17 @@ public interface TimeSeriesDao {
      * @param pageSize page size to use when paging results internally; non-positive values disable limiting
      * @param consumer a sink that will receive a streaming InputStream of CSV data
      */
-    void streamRequestedTimeSeriesCsv(TimeSeriesRequestParameters requestParameters, int pageSize,
-                                      StreamConsumer consumer, boolean metadataAsColumns);
+    /**
+     * Stream time-series in CSV using CsvV1 formatter.
+     *
+     * @param requestParameters parameters describing the request
+     * @param consumer sink for the InputStream
+     * @param includeMetadataAsColumns when true, include metadata as CSV columns
+     * @param includeMetadataAsComments when true, include metadata as header comments
+     */
+    void streamRequestedTimeSeriesCsv(TimeSeriesRequestParameters requestParameters,
+                                      StreamConsumer consumer,
+                                      boolean includeMetadataAsColumns,
+                                      boolean includeMetadataAsComments);
 
 }
