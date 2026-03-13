@@ -164,6 +164,7 @@ public final class Controllers {
     public static final String QUALITY = "quality";
     public static final String NAMES = "names";
     public static final String FILTER_BASE_LOCATIONS = "filter-base-locations";
+    public static final String SEARCH_TEXT = "search-text";
 
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";

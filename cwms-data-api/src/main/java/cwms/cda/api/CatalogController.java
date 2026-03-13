@@ -237,6 +237,8 @@ public class CatalogController implements CrudHandler {
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
             boolean includeAliases = ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class)
                     .getOrDefault(false);
+            String searchText = ctx.queryParamAsClass(SEARCH_TEXT, String.class)
+                .getOrDefault(null);
             String acceptHeader = ctx.header(ACCEPT);
             ContentType contentType = Formats.parseHeader(acceptHeader, Catalog.class);
             Catalog cat = null;
@@ -281,6 +283,7 @@ public class CatalogController implements CrudHandler {
                         .withLocationType(locationType)
                         .withFilterBaseLocations(filterBaseLocations)
                         .withNegateLocationKindLike(negateLocationKind)
+                        .withSearchText(searchText)
                         .withIncludeAliases(includeAliases)
                         .build();
 

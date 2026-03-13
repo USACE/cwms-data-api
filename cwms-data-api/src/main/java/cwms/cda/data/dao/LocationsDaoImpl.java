@@ -102,7 +102,7 @@ import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final long DELETED_TS_MARKER = 0L;
-
+    private static Boolean HAS_SEARCH_COLUMN;
 
 
     public LocationsDaoImpl(DSLContext dsl) {
@@ -581,6 +581,12 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         //location codes (previous implementation used location_id) for joins, feel free to implement.
         Objects.requireNonNull(params.getIdLike(),
                 "A value must be provided for the idLike field. Specify .* if you don't care.");
+        String textSearch = params.getSearchText();
+        if (textSearch != null && !textSearch.isBlank() && !hasSearchDocColumn(dsl, table)) {
+            throw new IllegalArgumentException(
+                "Text search is not supported because SEARCH_DOC is not present in " + table.getName()
+            );
+        }
 
         // "condition" needs to be used by the count query and the results query.
         Condition condition = buildWhereCondition(params);
@@ -728,6 +734,17 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             condition = condition.and(fieldMapping.getSubLocationId().isNotNull());
         }
 
+        String textSearch = params.getSearchText();
+        if (textSearch != null && !textSearch.isBlank()) {
+            condition = condition.and(
+                DSL.condition(
+                    "CONTAINS({0}, ?) > 0",
+                    fieldMapping.getSearchDoc(),
+                    textSearch
+                )
+            );
+        }
+
         return condition;
     }
 
@@ -756,6 +773,18 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     private LocationAlias buildLocationAlias(Record row, FieldMapping mapping) {
         return new LocationAlias(row.get(mapping.getAliasCategory()) + "-" + row.get(mapping.getAliasGroup()),
             row.get(mapping.getLocationId()));
+    }
+
+    private static synchronized boolean hasSearchDocColumn(DSLContext dsl, Table<?> table) {
+        if(HAS_SEARCH_COLUMN != null) {
+            return HAS_SEARCH_COLUMN;
+        }
+        HAS_SEARCH_COLUMN =  dsl.meta()
+            .getTables(table.getName())
+            .stream()
+            .flatMap(t -> Arrays.stream(t.fields()))
+            .anyMatch(c -> c.getName().equalsIgnoreCase("SEARCH_DOC"));
+        return HAS_SEARCH_COLUMN;
     }
 
     @NotNull
@@ -886,6 +915,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         boolean includesAliases();
 
         Table<Record> getTable();
+
+        Field<String> getSearchDoc();
     }
 
     private static class AvLoc2FieldMapping implements FieldMapping {
@@ -1043,6 +1074,11 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         public Table getTable() {
             return AV_LOC2.AV_LOC2;
         }
+
+        @Override
+        public Field<String> getSearchDoc() {
+            return DSL.field(DSL.name(getTable().getName(), "SEARCH_DOC"), String.class);
+        }
     }
 
     private static class AvLocFieldMapping implements FieldMapping {
@@ -1194,6 +1230,11 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         @Override
         public boolean includesAliases() {
             return false;
+        }
+
+        @Override
+        public Field<String> getSearchDoc() {
+            return DSL.field(DSL.name(getTable().getName(), "SEARCH_DOC"), String.class);
         }
 
         @Override
