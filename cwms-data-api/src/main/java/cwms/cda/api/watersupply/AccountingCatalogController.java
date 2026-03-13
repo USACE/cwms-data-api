@@ -26,6 +26,7 @@
 
 package cwms.cda.api.watersupply;
 
+import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.END;
@@ -42,6 +43,7 @@ import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.WATER_USER;
+import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.requiredInstant;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -70,6 +72,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.time.Instant;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -137,6 +140,12 @@ public class AccountingCatalogController implements Handler {
                 + "provided input parameters."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
+        headers = {
+            @OpenApiParam(name = ACCEPT, description = "The requested response format. Supported values are "
+                + Formats.JSONV1 + ", " + Formats.JSON + ", and " + Formats.JSONV2 + ". " + Formats.JSONV2
+                + " should be used only when providing a URL-safe base64 encoded contract ID. If not provided, "
+                + Formats.JSONV1 + " will be used as the default.")
+        },
         description = "Get pump accounting entries associated with a water supply contract.",
         path = "/projects/{office}/water-user/{water-user}/contracts/{contract-name}/accounting",
         method = HttpMethod.GET,
@@ -148,7 +157,7 @@ public class AccountingCatalogController implements Handler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             final String office = ctx.pathParam(OFFICE);
             final String waterUserName = ctx.pathParam(WATER_USER);
-            final String contractId = ctx.pathParam(CONTRACT_NAME);
+            String contractId = ctx.pathParam(CONTRACT_NAME);
             final String locationId = ctx.pathParam(PROJECT_ID);
             final Instant startTime = requiredInstant(ctx, START);
             final Instant endTime = requiredInstant(ctx, END);
@@ -161,6 +170,10 @@ public class AccountingCatalogController implements Handler {
             DSLContext dsl = getDslContext(ctx);
 
             String formatHeader = ctx.headerAsClass(Header.ACCEPT, String.class).getOrDefault(Formats.JSONV1);
+            if (formatHeader != null && formatHeader.equals(Formats.JSONV2)) {
+                byte[] decoded = Base64.decodeBase64(contractId);
+                contractId = new String(decoded);
+            }
             ContentType contentType = Formats.parseHeader(formatHeader, WaterSupplyAccounting.class);
             ctx.contentType(contentType.toString());
             CwmsId projectLocation = new CwmsId.Builder().withOfficeId(office).withName(locationId).build();
