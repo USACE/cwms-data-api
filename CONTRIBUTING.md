@@ -112,23 +112,23 @@ However, *DO NOT* be afraid to say, "that looks terrible", and tweak it until it
 
 #### Tests
 
-1. Assume the following when creating and naming your test:
-   a. Someone will come in cold to the entire project.
+1. Assume the following when creating and naming your test:<br>
+   a. Someone will come in cold to the entire project.<br>
    b. The tests will be used by API users to guide their client application designs
-3. For repeated tests with different, but very similar data, ParameterizedTests are preferred.
+3. For repeated tests with different, but very similar data, ParameterizedTests are preferred.<br>
 4. In integration tests for data that should be cleaned up after all tests register them with the functions available in the base class. Create if reasonable.
 5. If it adds clarity, do not be afraid to use the `@Order` annotation to sequence tests. (See the [ApiKey Controller Test](https://github.com/USACE/cwms-data-api/blob/develop/cwms-data-api/src/test/java/cwms/cda/api/auth/ApiKeyControllerTestIT.java) for an example)
 6. Prefer disabling test by database schema version, if that does work use `EnabledIfProperty` and share a property name between related tests.
 7. Use "real" names for data in test data set. Either use actual real location/project/basin/etc names, or make up something that feels like one.
   a. NOTE: within reason. Location names, absolutely, but otherwise make sure the purpose of the name is clear.
 8. Name files consistent with the purpose of the test.
-9. Narrative tests: Test method names should be a narrative summary of the test. For example, `test_stream_create_then_update_then_delete_success(...)`. 
+9. Narrative tests: Test method names should be a narrative summary of the test. For example, `test_stream_create_then_update_then_delete_success(...)`. <br>
   a. Use underscores to make the narrative structure of the test name clear. 
-  a. The method name should be a clear summary of what is being tested (create, get, update, delete) in order of operations.
-  b. It should also include the expected result (success, error code, etc.)
-  c. Comments should also be used in narrative flow to clarify the details of the test internally, but not as a substitute for a clear method name.
-  d. Setup and tear down methods should also be clearly labelled as such. Setup/teardown methods should call into well-named helper methods to clarify the purpose of the setup/teardown steps.
-   (example: setup method calls helper method `create_test_location()` followed by `create_test_time_series()` to clarify the purpose of the setup step)
+  b. The method name should be a clear summary of what is being tested (create, get, update, delete) in order of operations.<br>
+  c. It should also include the expected result (success, error code, etc.)<br>
+  d. Comments should also be used in narrative flow to clarify the details of the test internally, but not as a substitute for a clear method name.<br>
+  e. Setup and tear down methods should also be clearly labelled as such. Setup/teardown methods should call into well-named helper methods to clarify the purpose of the setup/teardown steps.<br>
+   (example: setup method calls helper method `create_test_location()` followed by `create_test_time_series()` to clarify the purpose of the setup step)<br>
 
    
 
