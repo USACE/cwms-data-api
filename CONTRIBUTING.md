@@ -123,7 +123,7 @@ However, *DO NOT* be afraid to say, "that looks terrible", and tweak it until it
   a. NOTE: within reason. Location names, absolutely, but otherwise make sure the purpose of the name is clear.
 8. Name files consistent with the purpose of the test.
 9. Narrative tests: Test method names should be a narrative summary of the test. For example, `test_stream_create_then_update_then_delete_success(...)`. <br>
-  a. Use underscores to make the narrative structure of the test name clear. 
+  a. Use underscores to make the narrative structure of the test name clear.<br>
   b. The method name should be a clear summary of what is being tested (create, get, update, delete) in order of operations.<br>
   c. It should also include the expected result (success, error code, etc.)<br>
   d. Comments should also be used in narrative flow to clarify the details of the test internally, but not as a substitute for a clear method name.<br>
