@@ -6,6 +6,11 @@ on:
       # mark as test allow additional releases within a day with
       # a marker after test.
       - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-test[a-z]*'
+      # Release tags once things are verified.
+      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]'
+      # mark as test allow additional releases within a day with
+      # a marker after test.
+      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-[a-z]*'
 jobs:
   release:
     uses: ./.github/workflows/release.yml
