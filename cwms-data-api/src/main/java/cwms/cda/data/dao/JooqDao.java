@@ -721,6 +721,34 @@ public abstract class JooqDao<T> extends Dao<T> {
         return retVal;
     }
 
+    /**
+     * Returns true if:
+     * - PL/SQL procedure doesn't exist
+     * - or it exists but fails to bind (signature mismatch)
+     *
+     */
+    public static boolean isMissingOrBindFailure(Throwable t) {
+        Optional<SQLException> sqlExOpt = JooqDao.getSqlException(t);
+        if (sqlExOpt.isEmpty()) {
+            return false;
+        }
+
+        SQLException sqlEx = sqlExOpt.get();
+        String msg = sqlEx.getMessage();
+        if (msg == null) {
+            msg = "";
+        }
+        msg = msg.toUpperCase();
+
+        // Example:
+        //  - ORA-06550 ... PLS-00302: component 'DELETE_TS_GROUP_CASCADE' must be declared
+        return msg.contains("PLS-00302")
+                || msg.contains("PLS-00306")
+                || msg.contains("ORA-04043")
+                || msg.contains("ORA-06550")
+                || msg.contains("ORA-00904");
+    }
+
 
     private static UnsupportedOperationException buildUnsupportedOperationException(RuntimeException input) {
         Throwable cause = input;
