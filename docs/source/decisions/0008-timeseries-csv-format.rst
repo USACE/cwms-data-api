@@ -17,10 +17,12 @@ Opinion 1
 
 @brysonspilman
 
-Summary:
+Summary
+~~~~~~~
 Since the intended use of the CSV format is for retrieval only, a customized format that follows standardized csv practices is appropriate.
 
-Key points:
+Key points
+~~~~~~~~~~
 
 - CSV will be serialized via the jackson api, with either a custom csv DTO, or csv annotations on the existing DTO on specific fields to include.
 - Timeseries CSV will include the date-time, value, and units fields as well as optionally the time-series id, office, quality, and version-date.
@@ -34,23 +36,24 @@ Key points:
 - One row is produced per Record.
 - Multi-retrieve never includes multiple time-series IDs.
 
-Example CSVs:
+Example CSVs
+~~~~~~~~~~~~
 
-1) All optionals turned off, and no metadata comments:
+1. All optionals turned off, and no metadata comments:
 date-time, value, units
 2021-06-21T00:00:00Z, 0.0, ft
 2021-06-22T00:00:00Z, 1.0, ft
 2021-06-23T00:00:00Z, 2.0, ft
 2021-06-24T00:00:00Z, 3.0, ft
 
-2) All optionals turned on, and no metadata comments, with custom serializer used for value field to include units in the column-header:
+2. All optionals turned on, and no metadata comments, with custom serializer used for value field to include units in the column-header:
 date-time, value (ft)
 2021-06-21T00:00:00Z, 0.0
 2021-06-22T00:00:00Z, 1.0
 2021-06-23T00:00:00Z, 2.0
 2021-06-24T00:00:00Z, 3.0
 
-3) All optionals turned on, with metadata-as-comments turned on:
+3. All optionals turned on, with metadata-as-comments turned on:
 # metadata-count: 5
 # time-series-id: ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI
 # office-id: SWT
@@ -63,14 +66,14 @@ date-time, value
 2021-06-23T00:00:00Z, 2.0
 2021-06-24T00:00:00Z, 3.0
 
-4) All optionals turned on, with metadata-as-comments not turned on:
+4. All optionals turned on, with metadata-as-comments not turned on:
 time-series-id, office-id, date-time, value, units, version-date, quality-code
 ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI, SWT, 2021-06-21T00:00:00Z, 0.0, ft, 2021-06-21T00:00:00Z, 1
 ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI, SWT, 2021-06-22T00:00:00Z, 1.0, ft, 2021-06-21T00:00:00Z, 1
 ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI, SWT, 2021-06-23T00:00:00Z, 2.0, ft, 2021-06-21T00:00:00Z, 1
 ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI, SWT, 2021-06-24T00:00:00Z, 3.0, ft, 2021-06-21T00:00:00Z, 1
 
-(Note that if we go with option 2 for units, then the units column would not be included in this example in 4), instead it would be included in the value column header)
+(Note that if we go with option 2 for units, then the units column would not be included in this example in 4., instead it would be included in the value column header)
 
 Decision Status
 ===============
