@@ -671,19 +671,20 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         Throwable cause = (input instanceof DataAccessException) ? input.getCause() : input;
         String localizedMessage = cause.getLocalizedMessage();
+        String sanitizedMessage = null;
         if (localizedMessage != null) {
             Matcher matcher = INVALID_OFFICE_ID.matcher(localizedMessage);
             if (matcher.find()) {
                 String office = sanitizeOrNull(matcher.group(1));
                 if (office != null) {
-                    localizedMessage = "\"" + office + "\" is not a valid CWMS office id";
+                    sanitizedMessage = "\"" + office + "\" is not a valid CWMS office id";
                 }
             }
         }
-        if (localizedMessage == null || localizedMessage.isEmpty()) {
-            localizedMessage = "Invalid Office.";
+        if (sanitizedMessage == null || sanitizedMessage.isEmpty()) {
+            sanitizedMessage = "Invalid Office.";
         }
-        return new InvalidItemException(localizedMessage, cause);
+        return new InvalidItemException(sanitizedMessage, cause);
     }
 
     public static boolean isUnsupportedOperationException(RuntimeException input) {
