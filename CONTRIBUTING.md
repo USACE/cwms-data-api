@@ -162,7 +162,7 @@ Once you have made your changes submit a [pull request](https://help.github.com/
 Please submit all PRs to the develop branch.
 
 If there is an OpenAPI change, the pull request should include a screenshot of the Swagger UI showing the change 
-under the docs/swagger-screenshots directory (for example, see [Locations.png](https://github.com/USACE/cwms-data-api/blob/abfa3d8cd6cd9cd79c8435761fa95c447e534afc/docs/source/swagger-screenshots/Locations.png)). 
+under the docs/source/swagger-screenshots directory (for example, see [Locations.png](https://github.com/USACE/cwms-data-api/blob/abfa3d8cd6cd9cd79c8435761fa95c447e534afc/docs/source/swagger-screenshots/Locations.png)). 
 
 Barring nothing working at all or the code not being related to CWMS Data API your contributions will be accepted.
 
