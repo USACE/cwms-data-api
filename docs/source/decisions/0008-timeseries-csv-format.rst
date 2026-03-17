@@ -43,11 +43,11 @@ Example CSVs
 
    .. code-block:: text
 
-      date-time, value, units
-      2021-06-21T00:00:00Z, 0.0, ft
-      2021-06-22T00:00:00Z, 1.0, ft
-      2021-06-23T00:00:00Z, 2.0, ft
-      2021-06-24T00:00:00Z, 3.0, ft
+      date-time, value
+      2021-06-21T00:00:00Z, 0.0
+      2021-06-22T00:00:00Z, 1.0
+      2021-06-23T00:00:00Z, 2.0
+      2021-06-24T00:00:00Z, 3.0
 
 2. All optionals turned on, with metadata-as-comments turned on:
 
