@@ -49,17 +49,7 @@ Example CSVs
       2021-06-23T00:00:00Z, 2.0, ft
       2021-06-24T00:00:00Z, 3.0, ft
 
-2. All optionals turned on, and no metadata comments, with custom serializer used for value field to include units in the column-header:
-
-   .. code-block:: text
-
-      date-time, value (ft)
-      2021-06-21T00:00:00Z, 0.0
-      2021-06-22T00:00:00Z, 1.0
-      2021-06-23T00:00:00Z, 2.0
-      2021-06-24T00:00:00Z, 3.0
-
-3. All optionals turned on, with metadata-as-comments turned on:
+2. All optionals turned on, with metadata-as-comments turned on:
 
    .. code-block:: text
 
@@ -75,7 +65,7 @@ Example CSVs
       2021-06-23T00:00:00Z, 2.0
       2021-06-24T00:00:00Z, 3.0
 
-4. All optionals turned on, with metadata-as-comments not turned on:
+3. All optionals turned on, with metadata-as-comments not turned on:
 
    .. code-block:: text
 
@@ -84,8 +74,6 @@ Example CSVs
       ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI, SWT, 2021-06-22T00:00:00Z, 1.0, ft, 2021-06-21T00:00:00Z, 1
       ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI, SWT, 2021-06-23T00:00:00Z, 2.0, ft, 2021-06-21T00:00:00Z, 1
       ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI, SWT, 2021-06-24T00:00:00Z, 3.0, ft, 2021-06-21T00:00:00Z, 1
-
-(Note that if we go with option 2 for units, then the units column would not be included in this example in 4., instead it would be included in the value column header)
 
 Decision Status
 ===============
