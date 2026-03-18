@@ -50,6 +50,7 @@ import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.StoreRule;
+import cwms.cda.data.dao.StreamConsumer;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dao.TimeSeriesDeleteOptions;
@@ -544,7 +545,7 @@ public class TimeSeriesController implements CrudHandler {
                     rowsPerBuffer = 64;
 
                     //TODO - how do we handle total length? Can we use seekableStream if we don't know it?
-                    cwms.cda.data.dao.StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
+                    StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
                         if (is == null) {
                             ctx.status(HttpServletResponse.SC_NOT_FOUND)
                                     .json(new CdaError("Unable to find timeseries based on given parameters"));
