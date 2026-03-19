@@ -24,8 +24,8 @@ Since the intended use of the CSV format is for retrieval only, a customized for
 Key points
 ~~~~~~~~~~
 
-- CSV will be serialized via the jackson api, with either a custom csv DTO, or csv annotations on the existing DTO on specific fields to include.
-- Timeseries CSV will include the date-time, value, and units fields as well as optionally the time-series id, office, quality, and version-date.
+- CSV will be serialized via the jackson api
+- Timeseries CSV will include the date-time and value fields as well as optionally the time-series id, office, quality, units, and version-date.
 - By default, optional fields will not be included.
 - A flag to include optional fields as metadata comments at the top of the file may be added. This would be a commented line indicating the amount of metadata followed by commented metadata rows using key:value pairs. See example below.
 - Column names use kebab-case for consistency with JSON and XML.
