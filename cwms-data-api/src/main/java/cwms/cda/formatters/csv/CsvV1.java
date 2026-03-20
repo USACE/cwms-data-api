@@ -139,6 +139,23 @@ public class CsvV1 implements CsvFormatter {
         return retVal;
     }
 
+    public static String stripHeaderWithMetadataComments(String csv) {
+        StringBuilder sb = new StringBuilder();
+        String[] lines = csv.split("\\r?\\n");
+        boolean headerFound = false;
+        for (String line : lines) {
+            if (!headerFound) {
+                if (!line.startsWith("#")) {
+                    headerFound = true; // first non-comment line is the header
+                }
+                continue; //continue until we find the header, skipping all comment lines, and also skipping the header line itself
+            }
+            sb.append(line).append(System.lineSeparator());
+        }
+        return sb.toString();
+    }
+
+
     @Override
     public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
         T retVal = null;

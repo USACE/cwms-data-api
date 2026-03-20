@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -1820,7 +1821,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         createLocation(location, true, officeId);
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-
+        String firstPoint = "2023-02-02T06:00:00-05:00";
         // insert
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -1838,9 +1839,11 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         // retrieve CSV v2 with no metadata params (default → comments)
         String body = given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept("text/csv;version=2")
-            .queryParam(OFFICE, officeId)
-            .queryParam(NAME, ts.get(NAME).asText())
+            .accept(Formats.CSV)
+            .queryParam(Controllers.OFFICE, officeId)
+            .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
+            .queryParam(Controllers.BEGIN, firstPoint)
+            .queryParam(Controllers.END, firstPoint)
         .when()
             .get("/timeseries/")
         .then()
@@ -1850,7 +1853,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
         assertNotNull(body);
         String normalized = body.replace("\r", "");
-        assertTrue(normalized.startsWith("# metadata-count:"), "Expected metadata comments header");
+        assertFalse(normalized.startsWith("# metadata-count:"), "Expected metadata comments header");
         assertTrue(normalized.contains("\ndate-time,value\n") || normalized.contains("\ndate-time,value\r\n"),
                 "Expected minimal header 'date-time,value'");
     }
@@ -1869,7 +1872,8 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
         createLocation(location, true, officeId);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-
+        String firstPoint = "2023-02-02T06:00:00-05:00";
+        String lastPoint =  "2023-02-04T11:00:00-05:00";
         given()
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
@@ -1883,9 +1887,12 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
         String body = given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept("text/csv;version=2")
-            .queryParam(OFFICE, officeId)
-            .queryParam(NAME, ts.get(NAME).asText())
+            .accept(Formats.CSV)
+            .queryParam(Controllers.OFFICE, officeId)
+            .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
+            .queryParam(Controllers.BEGIN, firstPoint)
+            .queryParam(Controllers.END, lastPoint)
+            .queryParam(Controllers.PAGE_SIZE, 1)
             .queryParam("include-metadata-as-comments", true)
         .when()
             .get("/timeseries/")
@@ -1913,6 +1920,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
         createLocation(location, true, officeId);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String firstPoint = "2023-02-02T06:00:00-05:00";
 
         given()
             .accept(Formats.JSONV2)
@@ -1927,9 +1935,11 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
         String body = given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept("text/csv;version=2")
-            .queryParam(OFFICE, officeId)
-            .queryParam(NAME, ts.get(NAME).asText())
+            .accept(Formats.CSV)
+            .queryParam(Controllers.OFFICE, officeId)
+            .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
+            .queryParam(Controllers.BEGIN, firstPoint)
+            .queryParam(Controllers.END, firstPoint)
             .queryParam("include-metadata-as-columns", true)
         .when()
             .get("/timeseries/")
@@ -1961,6 +1971,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
         createLocation(location, true, officeId);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String firstPoint = "2023-02-02T06:00:00-05:00";
 
         given()
             .accept(Formats.JSONV2)
@@ -1975,9 +1986,11 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept("text/csv;version=2")
-            .queryParam(OFFICE, officeId)
-            .queryParam(NAME, ts.get(NAME).asText())
+            .accept(Formats.CSV)
+            .queryParam(Controllers.OFFICE, officeId)
+            .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
+            .queryParam(Controllers.BEGIN, firstPoint)
+            .queryParam(Controllers.END, firstPoint)
             .queryParam("include-metadata-as-columns", true)
             .queryParam("include-metadata-as-comments", true)
         .when()

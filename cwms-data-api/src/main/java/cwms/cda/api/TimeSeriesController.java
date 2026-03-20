@@ -59,6 +59,8 @@ import cwms.cda.data.dao.TimeSeriesVerticalDatumConverter;
 import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.csv.CsvV1;
+import cwms.cda.data.dto.csv.TimeSeriesCsvRow;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
@@ -510,113 +512,9 @@ public class TimeSeriesController implements CrudHandler {
                         .withShouldTrim(trim.getOrDefault(true))
                         .withIncludeEntryDate(includeEntryDate)
                         .build();
-                // If CSV requested, stream directly from DAO using StreamConsumer (BlobDao pattern)
+                // If CSV requested, stream directly from DAO using StreamConsumer
                 if (Formats.CSV.equals(contentType.getType())) {
-                    ctx.status(HttpServletResponse.SC_OK);
-                    ctx.contentType(Formats.CSV);
-                    // Older proxies/clients may require explicit charset
-                    ctx.header(Header.CONTENT_TYPE, Formats.CSV + "; charset=UTF-8");
-
-                    boolean includeMetadataAsColumns = ctx.queryParamAsClass("include-metadata-as-columns", Boolean.class)
-                            .getOrDefault(false);
-                    boolean includeMetadataAsComments = ctx.queryParamAsClass("include-metadata-as-comments", Boolean.class)
-                            .getOrDefault(false);
-
-                    // Optional tuning knobs
-                    Integer dbFetchSize = null;
-                    Integer rowsPerBuffer = null;
-                    try {
-                        dbFetchSize = ctx.queryParamAsClass("db-fetch-size", Integer.class).allowNullable().get();
-                    } catch (Exception ignored1) { }
-                    try {
-                        rowsPerBuffer = ctx.queryParamAsClass("rows-per-buffer", Integer.class).allowNullable().get();
-                    } catch (Exception ignored2) { }
-
-                    // Optional HTTP Range support (bytes). For generated CSV we cannot know total length up front,
-                    // but we can honor offset and end by skipping and limiting the stream.
-                    final long[] requestedRange = cwms.cda.api.RangeParser.parseFirstRange(ctx.header(Header.RANGE));
-                    // Advertise support for byte ranges similar to BlobController
-                    ctx.header(Header.ACCEPT_RANGES, "bytes");
-
-                    if (includeMetadataAsColumns && includeMetadataAsComments) {
-                        throw new IllegalArgumentException("include-metadata-as-columns and include-metadata-as-comments are mutually exclusive");
-                    }
-                    dbFetchSize = pageSize;
-                    rowsPerBuffer = 64;
-
-                    //TODO - how do we handle total length? Can we use seekableStream if we don't know it?
-                    StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
-                        if (is == null) {
-                            ctx.status(HttpServletResponse.SC_NOT_FOUND)
-                                    .json(new CdaError("Unable to find timeseries based on given parameters"));
-                        } else {
-                            // Set content type from producer when available
-                            String mt = (mediaType != null && !mediaType.isEmpty()) ? mediaType : Formats.CSV;
-                            ctx.contentType(mt);
-
-                            if (requestedRange != null) {
-                                long[] interpreted = requestedRange;
-                                // We do not know the total length of the generated CSV. We will interpret the range
-                                // locally and stream up to the requested window. If the end is -1 (suffix) or null,
-                                // stream until EOF after skipping.
-                                Long offset = interpreted[0];
-                                Long endByte = interpreted[1];
-
-                                long skipBytes = Math.max(0L, offset);
-                                long maxBytes = (endByte != null && endByte >= 0 && endByte >= offset) ? (endByte - offset + 1) : Long.MAX_VALUE;
-
-                                // Indicate partial content and that we accept byte ranges
-                                ctx.status(206);
-                                ctx.header(Header.ACCEPT_RANGES, "bytes");
-                                // We cannot reliably set Content-Range without total size; omit it.
-
-                                // Skip the requested offset
-                                long remainingToSkip = skipBytes;
-                                byte[] skipBuf = new byte[8192];
-                                while (remainingToSkip > 0) {
-                                    int toRead = (int) Math.min(skipBuf.length, remainingToSkip);
-                                    int read = is.read(skipBuf, 0, toRead);
-                                    if (read == -1) {
-                                        break; // EOF reached while skipping
-                                    }
-                                    remainingToSkip -= read;
-                                }
-
-                                // Now copy up to maxBytes
-                                long copied = 0L;
-                                byte[] buf = new byte[8192];
-                                while (copied < maxBytes) {
-                                    int toRead = (int) Math.min(buf.length, maxBytes - copied);
-                                    int read = is.read(buf, 0, toRead);
-                                    if (read == -1) {
-                                        break; // EOF
-                                    }
-                                    ctx.res.getOutputStream().write(buf, 0, read);
-                                    copied += read;
-                                }
-                                ctx.res.getOutputStream().flush();
-                                // Update metrics with what we actually sent
-                                requestResultSize.update(copied);
-                            } else {
-                                // No range header: stream as-is; do not set Content-Length (unknown)
-                                long copied = IOUtils.copyLarge(is, ctx.res.getOutputStream());
-                                requestResultSize.update(copied);
-                            }
-                        }
-                    };
-
-                    try {
-                        // Prefer TimeSeriesDaoImpl overload when available
-                        if (dao instanceof TimeSeriesDaoImpl) {
-                            ((TimeSeriesDaoImpl) dao).streamRequestedTimeSeriesCsv(requestParameters, consumer,
-                                    includeMetadataAsColumns, includeMetadataAsComments, dbFetchSize, rowsPerBuffer);
-                        }
-                        ctx.res.flushBuffer();
-                    } catch (IOException ioEx) {
-                        throw new DataAccessException("Failed streaming CSV response", ioEx);
-                    }
-                    // CSV is streamed; do not proceed to JSON/XML formatting
-                    addDeprecatedContentTypeWarning(ctx, contentType);
+                    streamCsv(ctx, pageSize, dao, requestParameters, contentType);
                     return;
                 }
 
@@ -651,6 +549,20 @@ public class TimeSeriesController implements CrudHandler {
                 }
 
                 String office = ctx.queryParam(OFFICE);
+                // If CSV requested, stream directly from DAO using StreamConsumer
+                if (Formats.CSV.equals(contentType.getType())) {
+                    TimeSeriesRequestParameters requestParameters = new TimeSeriesRequestParameters.Builder()
+                            .withNames(names)
+                            .withOffice(office)
+                            .withUnits(units)
+                            .withBeginTime(beginZdt)
+                            .withEndTime(endZdt)
+                            .withShouldTrim(trim.getOrDefault(true))
+                            .withIncludeEntryDate(includeEntryDate)
+                            .build();
+                    streamCsv(ctx, pageSize, dao, requestParameters, contentType);
+                    return;
+                }
                 results = dao.getTimeseries(format, names, office, units, datum, beginZdt, endZdt, tz);
                 ctx.status(HttpServletResponse.SC_OK);
                 ctx.result(results);
@@ -668,6 +580,87 @@ public class TimeSeriesController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.json(re);
         }
+    }
+
+    private void streamCsv(@NotNull Context ctx, int pageSize, TimeSeriesDao dao, TimeSeriesRequestParameters requestParameters, ContentType contentType) {
+        ctx.status(HttpServletResponse.SC_OK);
+        ctx.contentType(Formats.CSV);
+        // Older proxies/clients may require explicit charset
+        ctx.header(Header.CONTENT_TYPE, Formats.CSV + "; charset=UTF-8");
+
+        boolean includeMetadataAsColumns = ctx.queryParamAsClass("include-metadata-as-columns", Boolean.class)
+                .getOrDefault(false);
+        boolean includeMetadataAsComments = ctx.queryParamAsClass("include-metadata-as-comments", Boolean.class)
+                .getOrDefault(false);
+
+        if (includeMetadataAsColumns && includeMetadataAsComments) {
+            throw new IllegalArgumentException("include-metadata-as-columns and include-metadata-as-comments are mutually exclusive");
+        }
+
+        // We don't know total length up front; advertise ranges but allow chunked transfer.
+        ctx.header(Header.ACCEPT_RANGES, "bytes");
+        // Since we're paging rows by pageSize, expose that as the batch size to clients.
+        ctx.header("X-Rows-Per-Batch", String.valueOf(pageSize));
+
+        // Stream per page using the proven getRequestedTimeSeries paging/query logic
+        CsvV1 csv = new CsvV1();
+        String cursor = ctx.queryParamAsClass(PAGE, String.class).getOrDefault("");
+        boolean firstPage = true;
+
+        try {
+            while (true) {
+                TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters);
+                if (ts == null || ts.getValues() == null || ts.getValues().isEmpty()) {
+                    break;
+                }
+
+                // Map DTO records to CSV rows for this page
+                java.util.List<TimeSeriesCsvRow> rows = new java.util.ArrayList<>(ts.getValues().size());
+                String tsId = ts.getName();
+                String officeId = ts.getOfficeId();
+                String units = ts.getUnits();
+                java.time.Instant versionInstant = ts.getVersionDate() == null ? null : ts.getVersionDate().toInstant();
+                for (TimeSeries.Record r : ts.getValues()) {
+                    java.time.Instant dt = r.getDateTime() == null ? null : r.getDateTime().toInstant();
+                    rows.add(new TimeSeriesCsvRow(tsId, officeId, dt, r.getValue(), units, versionInstant, r.getQualityCode()));
+                }
+
+                // Render this page's rows
+                String pageCsv;
+                if (includeMetadataAsColumns) {
+                    pageCsv = csv.formatWithMetaDataIncludedAsColumns(rows);
+                } else if (includeMetadataAsComments) {
+                    // Only include comments on the first page
+                    if (firstPage) {
+                        pageCsv = csv.formatWithMetaDataIncludedAsComments(rows);
+                    } else {
+                        pageCsv = csv.format(rows);
+                    }
+                } else {
+                    pageCsv = csv.format(rows);
+                }
+
+                // For subsequent pages, we only want the rows, not the metadata comments or header
+                if (!firstPage) {
+                    pageCsv = CsvV1.stripHeaderWithMetadataComments(pageCsv);
+                }
+
+                byte[] bytes = pageCsv.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                ctx.res.getOutputStream().write(bytes);
+                ctx.res.flushBuffer();
+
+                cursor = ts.getNextPage();
+                if (cursor == null || cursor.isEmpty()) {
+                    break;
+                }
+                firstPage = false;
+            }
+        } catch (IOException e) {
+            throw new DataAccessException("Failed streaming CSV response", e);
+        }
+
+        // CSV is streamed; do not proceed to JSON/XML formatting
+        addDeprecatedContentTypeWarning(ctx, contentType);
     }
 
     private void addLinkHeader(@NotNull Context ctx, TimeSeries ts, ContentType contentType) {
