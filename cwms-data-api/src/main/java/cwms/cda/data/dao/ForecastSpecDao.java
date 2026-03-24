@@ -81,9 +81,9 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
                     instDao.delete(officeId, fi.getSpec().getSpecId(), fi.getSpec().getDesignator(), fi.getDateTime(), fi.getIssueDateTime());
                 }
 
-                // 2) Clear existing forecast location association(s) and store the spec
-                removeExistingForecastSpec(tx, officeId, specId, designator);
-
+                // 2) Clear existing forecast location association by deleting the spec and re-storing with new location id.
+                CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(tx.configuration(), specId,
+                        designator, DeleteRule.DELETE_KEY.getRule(), officeId);
                 CWMS_FCST_PACKAGE.call_STORE_FCST_SPEC(tx.configuration(), specId, designator, sourceEntityId, description, locationId,
                         tsIdsFinal, "F", "F", officeId);
 
@@ -93,24 +93,6 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
                 }
             });
         });
-    }
-
-    private void removeExistingForecastSpec(DSLContext ctx, String officeId, String specId, String designator) {
-        // Find any existing designators (including NULL) for this spec in this office. Probably is only one, but just to be safe.
-        List<String> existingDesignators = ctx
-                .select(AV_FCST_SPEC.AV_FCST_SPEC.FCST_DESIGNATOR)
-                .from(AV_FCST_SPEC.AV_FCST_SPEC)
-                .where(AV_FCST_SPEC.AV_FCST_SPEC.OFFICE_ID.equalIgnoreCase(officeId.toUpperCase()))
-                .and(AV_FCST_SPEC.AV_FCST_SPEC.FCST_SPEC_ID.equalIgnoreCase(specId))
-                .and(designator == null ?
-                        AV_FCST_SPEC.AV_FCST_SPEC.FCST_DESIGNATOR.isNull() :
-                        AV_FCST_SPEC.AV_FCST_SPEC.FCST_DESIGNATOR.eq(designator))
-                .fetchInto(String.class);
-
-        for (String existingDesignator : existingDesignators) {
-            CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(ctx.configuration(), specId,
-                    existingDesignator, DeleteRule.DELETE_KEY.getRule(), officeId);
-        }
     }
 
     public void delete(String office, String specId, String designator, DeleteRule deleteRule) {
