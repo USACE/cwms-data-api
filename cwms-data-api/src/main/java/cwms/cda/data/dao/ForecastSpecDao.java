@@ -19,21 +19,15 @@ import org.jooq.Record7;
 import org.jooq.SelectOnConditionStep;
 import org.jooq.Table;
 import org.jooq.impl.DSL;
-import org.jooq.impl.DefaultBinding;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.TimeZone;
-import java.util.Calendar;
-import java.sql.Timestamp;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
 public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
-
-    private static final Calendar UTC_CALENDAR = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
     public ForecastSpecDao(DSLContext dsl) {
         super(dsl);
@@ -43,51 +37,62 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
     public void create(ForecastSpec forecastSpec) {
 
        connection(dsl, conn -> {
-           // Ensure office is set and operate within a single transaction
-           final String officeId = forecastSpec.getOfficeId();
-           final String specId = forecastSpec.getSpecId();
-           final String designator = forecastSpec.getDesignator();
-           final String sourceEntityId = forecastSpec.getSourceEntityId();
-           final String description = forecastSpec.getDescription();
-           final String locationId = forecastSpec.getLocationId();
+           setOffice(conn, forecastSpec.getOfficeId());
 
            String timeSeriesIds = null;
            if (forecastSpec.getTimeSeriesIds() != null) {
                timeSeriesIds = String.join("\n", forecastSpec.getTimeSeriesIds());
            }
-           final String tsIdsFinal = timeSeriesIds;
+           CWMS_FCST_PACKAGE.call_STORE_FCST_SPEC(DSL.using(conn).configuration(), forecastSpec.getSpecId(),
+                   forecastSpec.getDesignator(), forecastSpec.getSourceEntityId(),
+                   forecastSpec.getDescription(), forecastSpec.getLocationId(),
+                   timeSeriesIds, "F", "F", forecastSpec.getOfficeId());
 
-           // Use office-scoped DSL context
-           DSLContext ctx = getDslContext(conn, officeId);
-
-           ctx.transaction(configuration -> {
-               DSLContext tx = DSL.using(configuration);
-
-               // 1) Capture and remove existing forecast instances for this spec/designator
-               ReplaceUtils.OperatorBuilder noopUrlBuilder = new ReplaceUtils.OperatorBuilder()
-                       .withTemplate("")
-                       .withOperatorKey("{noop}");
-               ForecastInstanceDao instDao = new ForecastInstanceDao(tx);
-               List<ForecastInstance> existingInstances = instDao.getForecastInstances(Integer.MAX_VALUE, noopUrlBuilder,
-                       officeId, specId, designator);
-
-               // Delete instances to avoid conflicts during spec/location update
-               for (ForecastInstance fi : existingInstances) {
-                   instDao.delete(officeId, fi.getSpec().getSpecId(), fi.getSpec().getDesignator(), fi.getDateTime(), fi.getIssueDateTime());
-               }
-
-               // 2) Clear existing forecast location association(s) and store the spec
-               removeExistingForecastSpec(tx, officeId, specId, designator);
-
-               CWMS_FCST_PACKAGE.call_STORE_FCST_SPEC(tx.configuration(), specId, designator, sourceEntityId, description, locationId,
-                       tsIdsFinal, "F", "F", officeId);
-
-               // 3) Re-store the previously removed forecast instances
-               for (ForecastInstance fi : existingInstances) {
-                   instDao.create(fi);
-               }
-           });
        });
+    }
+
+    public void updateSpecWithLocationIdChange(ForecastSpec forecastSpec) {
+        connection(dsl, conn -> {
+            final String officeId = forecastSpec.getOfficeId();
+            final String specId = forecastSpec.getSpecId();
+            final String designator = forecastSpec.getDesignator();
+            final String sourceEntityId = forecastSpec.getSourceEntityId();
+            final String description = forecastSpec.getDescription();
+            final String locationId = forecastSpec.getLocationId();
+            String timeSeriesIds = null;
+            if (forecastSpec.getTimeSeriesIds() != null) {
+                timeSeriesIds = String.join("\n", forecastSpec.getTimeSeriesIds());
+            }
+            final String tsIdsFinal = timeSeriesIds;
+            DSLContext ctx = getDslContext(conn, officeId);
+
+            ctx.transaction(configuration -> {
+                DSLContext tx = DSL.using(configuration);
+                // 1) Capture and remove existing forecast instances for this spec/designator
+                ReplaceUtils.OperatorBuilder noopUrlBuilder = new ReplaceUtils.OperatorBuilder()
+                        .withTemplate("")
+                        .withOperatorKey("{noop}");
+                ForecastInstanceDao instDao = new ForecastInstanceDao(tx);
+                List<ForecastInstance> existingInstances = instDao.getForecastInstances(Integer.MAX_VALUE, noopUrlBuilder,
+                        officeId, specId, designator);
+
+                // Delete instances to avoid conflicts during spec/location update
+                for (ForecastInstance fi : existingInstances) {
+                    instDao.delete(officeId, fi.getSpec().getSpecId(), fi.getSpec().getDesignator(), fi.getDateTime(), fi.getIssueDateTime());
+                }
+
+                // 2) Clear existing forecast location association(s) and store the spec
+                removeExistingForecastSpec(tx, officeId, specId, designator);
+
+                CWMS_FCST_PACKAGE.call_STORE_FCST_SPEC(tx.configuration(), specId, designator, sourceEntityId, description, locationId,
+                        tsIdsFinal, "F", "F", officeId);
+
+                // 3) Re-store the previously removed forecast instances
+                for (ForecastInstance fi : existingInstances) {
+                    instDao.create(fi);
+                }
+            });
+        });
     }
 
     private void removeExistingForecastSpec(DSLContext ctx, String officeId, String specId, String designator) {
@@ -203,9 +208,4 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
         return map(fetch);
     }
 
-    public void update(ForecastSpec forecastSpec) {
-        //Will throw NotFoundException is spec does not exist
-        getForecastSpec(forecastSpec.getOfficeId(), forecastSpec.getSpecId(), forecastSpec.getDesignator());
-        create(forecastSpec);
-    }
 }
