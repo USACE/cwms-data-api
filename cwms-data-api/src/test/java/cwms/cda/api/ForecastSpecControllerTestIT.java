@@ -94,21 +94,21 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
     static void deleteSpec() throws SQLException {
            CwmsDataApiSetupCallback.getDatabaseLink()
                    .connection(c -> {
-                       Map<String, Optional<String>> specs = Map.of(
-                               SPEC_ID, Optional.of("designator"),
-                               SPEC_ID + "-NULL-DESIGNATOR", Optional.empty(),
-                               SPEC_ID + "-TEST", Optional.of("designator"),
-                               SPEC_ID + "TEST", Optional.of("designator"),
-                               SPEC_ID + "TEST-2", Optional.of("designator"),
-                               SPEC_ID + "-TEST-2", Optional.of("designator"),
-                               "TEST_SPEC_2", Optional.of("designator"),
-                               SPEC_ID + "-LRTS", Optional.of("designator"),
-                               SPEC_ID + "-2", Optional.of("designator")
+                       Map<String, String> specs = Map.of(
+                               SPEC_ID, "designator",
+                               SPEC_ID + "-NULL-DESIGNATOR", null,
+                               SPEC_ID + "-TEST", "designator",
+                               SPEC_ID + "TEST", "designator",
+                               SPEC_ID + "TEST-2", "designator",
+                               SPEC_ID + "-TEST-2", "designator",
+                               "TEST_SPEC_2", "designator",
+                               SPEC_ID + "-LRTS", "designator",
+                               SPEC_ID + "-2", "designator"
                        );
 
                        specs.forEach((id, desigOpt) -> {
                            try {
-                               CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), id, desigOpt.orElse(null),
+                               CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), id, desigOpt,
                                        DeleteRule.DELETE_ALL.getRule(), OFFICE);
                            } catch (DataAccessException e) {
                                LOGGER.atFine().withCause(e).log("Couldn't clean up forecast spec before executing tests. Probably didn't exist");

@@ -57,6 +57,8 @@ public final class ForecastSpecController extends BaseCrudHandler {
                 ForecastSpec existing = dao.getForecastSpec(forecastSpec.getOfficeId(), forecastSpec.getSpecId(), forecastSpec.getDesignator());
                 if(locationsAreDifferent(forecastSpec, existing)) {
                     dao.updateSpecWithLocationIdChange(forecastSpec);
+                } else {
+                    dao.create(forecastSpec);
                 }
             } catch (NotFoundException e) {
                 dao.create(forecastSpec);
