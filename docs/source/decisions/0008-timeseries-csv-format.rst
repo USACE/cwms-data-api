@@ -24,7 +24,7 @@ Since the intended use of the CSV format is for retrieval only, a customized for
 Key points
 ~~~~~~~~~~
 
-- CSV will be serialized via the jackson api
+- CSV will be serialized via the jackson api for consistency with JSON and XML serialization.
 - Timeseries CSV will include the date-time and value fields as well as optionally the time-series id, office, quality, units, and version-date.
 - By default, optional fields will not be included.
 - Comments are indicated by a leading # character. This is not an RFC 4180 standard, but is a common convention already used by some CWMS systems, including the existing office and location-group endpoints which return csv.
