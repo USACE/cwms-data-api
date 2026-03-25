@@ -27,14 +27,16 @@ Key points
 - CSV will be serialized via the jackson api
 - Timeseries CSV will include the date-time and value fields as well as optionally the time-series id, office, quality, units, and version-date.
 - By default, optional fields will not be included.
+- Comments are indicated by a leading # character. This is not an RFC 4180 standard, but is a common convention already used by some CWMS systems, including the existing office and location-group endpoints which return csv.
 - A flag to include optional fields as metadata comments at the top of the file may be added. This would be a commented line indicating the amount of metadata followed by commented metadata rows using key:value pairs. See example below.
 - Column names use kebab-case for consistency with JSON and XML.
-- Units will either be included in metadata comments or as a column. Recommend not including this in the value column-header, as column names should match DTO fields. A custom serializer could be created if units need to be included in the value-column-header.
+- Units will either be included in metadata comments or as a column. Recommend not including this in the value column-header, as column names should match DTO fields.
 - date-time values will be serialized as ISO-8601 strings. NOTE this differs from JSON and XML for date-time which are serialized as epoch-millis.
 - Null values are empty fields. Missing values use quality-code = 5, for consistency with JSON and XML.
-- UTF-8 encoding, comma delimiter, LF line endings, header always included.
-- One row is produced per Record.
-- Multi-retrieve never includes multiple time-series IDs.
+- UTF-8 encoding, comma delimiter, LF line endings. Comma-only CSV follows RFC 4180 compliance
+- Column headers are always present
+- One row is produced per Record. Record is defined as a single date-time and value pair
+- A payload never includes multiple time-series IDs.
 
 Example CSVs
 ~~~~~~~~~~~~
