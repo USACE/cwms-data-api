@@ -43,6 +43,7 @@ dependencies {
         exclude group: "log4j", module: "log4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
         exclude group: "org.jooq.pro-java-8", module: "jooq"
+        exclude group: "org.jooq.pro-java-11", module: "jooq"
     }
 
     implementation(libs.slf4j)
@@ -71,6 +72,7 @@ dependencies {
     implementation(libs.cwms.ratings.io.xml)
     implementation(libs.cwms.ratings.io.jdbc) {
         exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
+        exclude group: "org.jooq.pro-java-11", module: "jooq"
     }
 
     implementation(libs.jooq) {
