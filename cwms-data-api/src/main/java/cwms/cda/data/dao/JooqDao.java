@@ -677,7 +677,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         if (localizedMessage != null) {
             Matcher matcher = FIELD_LENGTH_EXCEEDED.matcher(localizedMessage);
-            if (matcher.matches()) {
+            if (matcher.find()) {
                 String parameter = matcher.group(1);
                 int actualLength = Integer.parseInt(matcher.group(2));
                 int maxLength = Integer.parseInt(matcher.group(3));
