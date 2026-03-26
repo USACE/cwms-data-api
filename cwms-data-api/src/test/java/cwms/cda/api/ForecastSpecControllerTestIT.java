@@ -26,8 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import static cwms.cda.api.Controllers.DESIGNATOR;
 import static cwms.cda.api.Controllers.ID_MASK;
@@ -96,7 +96,6 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
                    .connection(c -> {
                        Map<String, String> specs = Map.of(
                                SPEC_ID, "designator",
-                               SPEC_ID + "-NULL-DESIGNATOR", null,
                                SPEC_ID + "-TEST", "designator",
                                SPEC_ID + "TEST", "designator",
                                SPEC_ID + "TEST-2", "designator",
@@ -105,10 +104,12 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
                                SPEC_ID + "-LRTS", "designator",
                                SPEC_ID + "-2", "designator"
                        );
+                       Map<String, String> specsComplete = new HashMap<>(specs);
+                       specsComplete.put(SPEC_ID + "-NULL-DESIGNATOR", null);
 
-                       specs.forEach((id, desigOpt) -> {
+                       specsComplete.forEach((id, desig) -> {
                            try {
-                               CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), id, desigOpt,
+                               CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), id, desig,
                                        DeleteRule.DELETE_ALL.getRule(), OFFICE);
                            } catch (DataAccessException e) {
                                LOGGER.atFine().withCause(e).log("Couldn't clean up forecast spec before executing tests. Probably didn't exist");
