@@ -124,7 +124,7 @@ However, *DO NOT* be afraid to say, "that looks terrible", and tweak it until it
 8. Name files consistent with the purpose of the test.
 9. Narrative tests: Test method names should be a narrative summary of the test. For example, `test_stream_create_then_update_then_delete_success()`. <br>
   a. Use underscores to make the narrative structure of the test name clear.<br>
-  b. The method name should be a clear summary of what is being tested (create, get, update, delete) in order of operations. Not how the above example follows this with use of <i>then</i><br>
+  b. The method name should be a clear summary of what is being tested (create, get, update, delete) in order of operations. Note how the above example follows this with use of <i>then</i><br>
   c. It should also include the expected result (success, error code, etc.)<br>
   d. Comments should also be used in narrative flow to clarify the details of the test internally, but not as a substitute for a clear method name. (example: [StreamControllerTestIT comments](https://github.com/USACE/cwms-data-api/blob/a1d265372ead2db0123b74ff0ffa6c76a7e21949/cwms-data-api/src/test/java/cwms/cda/api/StreamControllerTestIT.java#L124)<br>
   e. Setup and tear down methods should also be clearly labelled as such. Setup/teardown methods should call into well-named helper methods to clarify the purpose of the setup/teardown steps.<br>
