@@ -597,7 +597,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             SQLException sqlException = optional.get();
             String message = sqlException.getLocalizedMessage();
 
-            if (INVALID_UNIT.matcher(message).matches()) {
+            if (INVALID_UNIT.matcher(message).find()) {
                 retVal = true;
             }
 
@@ -608,7 +608,7 @@ public abstract class JooqDao<T> extends Dao<T> {
                 }
             }
 
-            if (CONVERSION_ERROR.matcher(message).matches()) {
+            if (CONVERSION_ERROR.matcher(message).find()) {
                 retVal = true;
             }
         }
