@@ -161,12 +161,51 @@ public final class WaterSupplyUtils {
                 .withWaterRight(waterUserTabT.getWATER_RIGHT()).build();
     }
 
+    static WaterUser toWaterUser(usace.cwms.db.jooq.codegen_shadow.udt.records.WATER_USER_OBJ_T waterUserTabT) {
+        return new WaterUser.Builder().withEntityName(waterUserTabT.getENTITY_NAME())
+            .withProjectId(new CwmsId.Builder().withName(waterUserTabT.getPROJECT_LOCATION_REF()
+                .call_GET_LOCATION_ID()).withOfficeId(waterUserTabT.getPROJECT_LOCATION_REF()
+                .getOFFICE_ID()).build())
+            .withWaterRight(waterUserTabT.getWATER_RIGHT()).build();
+    }
+
     static WATER_USER_OBJ_T toWaterUserObjT(WaterUser waterUser) {
         WATER_USER_OBJ_T waterUserObjT = new WATER_USER_OBJ_T();
         waterUserObjT.setENTITY_NAME(waterUser.getEntityName());
         waterUserObjT.setPROJECT_LOCATION_REF(LocationUtil.getLocationRef(waterUser.getProjectId()));
         waterUserObjT.setWATER_RIGHT(waterUser.getWaterRight());
         return waterUserObjT;
+    }
+
+    static usace.cwms.db.jooq.codegen_shadow.udt.records.WATER_USER_OBJ_T toWaterUserObjTShadow(WaterUser waterUser) {
+        var waterUserObjT = new usace.cwms.db.jooq.codegen_shadow.udt.records.WATER_USER_OBJ_T();
+        waterUserObjT.setENTITY_NAME(waterUser.getEntityName());
+        waterUserObjT.setPROJECT_LOCATION_REF(getLocationRef(waterUser.getProjectId()));
+        waterUserObjT.setWATER_RIGHT(waterUser.getWaterRight());
+        return waterUserObjT;
+    }
+
+    public static usace.cwms.db.jooq.codegen_shadow.udt.records.LOCATION_REF_T getLocationRef(CwmsId cwmsId) {
+        usace.cwms.db.jooq.codegen_shadow.udt.records.LOCATION_REF_T retval = null;
+        if(cwmsId != null) {
+            retval = new usace.cwms.db.jooq.codegen_shadow.udt.records.LOCATION_REF_T();
+            String[] split = cwmsId.getName().split("-");
+            retval.setBASE_LOCATION_ID(split[0]);
+            if(split.length > 1) {
+                retval.setSUB_LOCATION_ID(split[1]);
+            }
+            retval.setOFFICE_ID(cwmsId.getOfficeId());
+        }
+        return retval;
+    }
+
+    static usace.cwms.db.jooq.codegen_shadow.udt.records.LOOKUP_TYPE_OBJ_T toLookupTypeOShadow(LookupType lookupType) {
+        var lookupTypeObjT = new usace.cwms.db.jooq.codegen_shadow.udt.records.LOOKUP_TYPE_OBJ_T();
+        lookupTypeObjT.setOFFICE_ID(lookupType.getOfficeId());
+        lookupTypeObjT.setDISPLAY_VALUE(lookupType.getDisplayValue());
+        lookupTypeObjT.setTOOLTIP(lookupType.getTooltip());
+        lookupTypeObjT.setACTIVE(Dao.formatBool(lookupType.getActive()));
+        return lookupTypeObjT;
     }
 
     static LOOKUP_TYPE_OBJ_T toLookupTypeO(LookupType lookupType) {
@@ -184,8 +223,15 @@ public final class WaterSupplyUtils {
         return new LOOKUP_TYPE_TAB_T(lookupTypeList);
     }
 
+    static usace.cwms.db.jooq.codegen_shadow.udt.records.WATER_USER_CONTRACT_REF_T toContractRefShadow(WaterUser waterUser, String contractName) {
+        var waterUserContractRefT = new usace.cwms.db.jooq.codegen_shadow.udt.records.WATER_USER_CONTRACT_REF_T();
+        waterUserContractRefT.setWATER_USER(toWaterUserObjTShadow(waterUser));
+        waterUserContractRefT.setCONTRACT_NAME(contractName);
+        return waterUserContractRefT;
+    }
+
     static WATER_USER_CONTRACT_REF_T toContractRef(WaterUser waterUser, String contractName) {
-        WATER_USER_CONTRACT_REF_T waterUserContractRefT = new WATER_USER_CONTRACT_REF_T();
+        var waterUserContractRefT = new WATER_USER_CONTRACT_REF_T();
         waterUserContractRefT.setWATER_USER(toWaterUserObjT(waterUser));
         waterUserContractRefT.setCONTRACT_NAME(contractName);
         return waterUserContractRefT;
@@ -233,14 +279,16 @@ public final class WaterSupplyUtils {
 
         for (Map.Entry<Instant, List<PumpTransfer>> entry : accounting.getPumpAccounting().entrySet()) {
             for (PumpTransfer transfer : entry.getValue()) {
-                WAT_USR_CONTRACT_ACCT_OBJ_T watUsrContractAcctObjT = getWatUsrContractAcctObjT(accounting, entry, transfer, pumpIn, pumpOut, pumpBelow);
+                var watUsrContractAcctObjT = getWatUsrContractAcctObjT(accounting, entry, transfer, pumpIn, pumpOut, pumpBelow);
                 watUsrContractAcctObjTList.add(watUsrContractAcctObjT);
             }
         }
         return new WAT_USR_CONTRACT_ACCT_TAB_T(watUsrContractAcctObjTList);
     }
 
-    private static @NonNull WAT_USR_CONTRACT_ACCT_OBJ_T getWatUsrContractAcctObjT(WaterSupplyAccounting accounting, Map.Entry<Instant, List<PumpTransfer>> entry, PumpTransfer transfer, LOCATION_REF_T pumpIn, LOCATION_REF_T pumpOut, LOCATION_REF_T pumpBelow) {
+    private static @NonNull WAT_USR_CONTRACT_ACCT_OBJ_T getWatUsrContractAcctObjT(WaterSupplyAccounting accounting,
+        Map.Entry<Instant, List<PumpTransfer>> entry, PumpTransfer transfer,
+        LOCATION_REF_T pumpIn, LOCATION_REF_T pumpOut, LOCATION_REF_T pumpBelow) {
         WAT_USR_CONTRACT_ACCT_OBJ_T watUsrContractAcctObjT = new WAT_USR_CONTRACT_ACCT_OBJ_T();
         WATER_USER_CONTRACT_REF_T contractRef = toContractRef(accounting.getWaterUser(),
                 accounting.getContractName());
@@ -259,7 +307,26 @@ public final class WaterSupplyUtils {
         return watUsrContractAcctObjT;
     }
 
-    private static LOCATION_REF_T getPumpLocationRef(PumpType pumpType, LOCATION_REF_T pumpIn, LOCATION_REF_T pumpOut, LOCATION_REF_T pumpBelow) {
+    private static usace.cwms.db.jooq.codegen_shadow.udt.records.LOCATION_REF_T getPumpLocationRef(PumpType pumpType,
+        usace.cwms.db.jooq.codegen_shadow.udt.records.LOCATION_REF_T pumpIn,
+        usace.cwms.db.jooq.codegen_shadow.udt.records.LOCATION_REF_T pumpOut,
+        usace.cwms.db.jooq.codegen_shadow.udt.records.LOCATION_REF_T pumpBelow) {
+        switch (pumpType) {
+            case IN:
+                return pumpIn;
+            case OUT:
+                return pumpOut;
+            case BELOW:
+                return pumpBelow;
+            default:
+                logger.atWarning().log("Invalid pump type");
+                throw new IllegalArgumentException(
+                    String.format("Invalid pump type for mapping to DB object: %s", pumpType));
+        }
+    }
+
+    private static LOCATION_REF_T getPumpLocationRef(PumpType pumpType, LOCATION_REF_T pumpIn,
+        LOCATION_REF_T pumpOut, LOCATION_REF_T pumpBelow) {
         switch (pumpType) {
             case IN:
                 return pumpIn;
@@ -305,6 +372,37 @@ public final class WaterSupplyUtils {
         return new LOC_REF_TIME_WINDOW_TAB_T(timeWindowList);
     }
 
+    static usace.cwms.db.jooq.codegen_shadow.udt.records.LOC_REF_TIME_WINDOW_TAB_T toTimeWindowTabTShadow(WaterSupplyAccounting accounting) {
+        List<usace.cwms.db.jooq.codegen_shadow.udt.records.LOC_REF_TIME_WINDOW_OBJ_T> timeWindowList = new ArrayList<>();
+        var pumpIn = getLocationRef(accounting.getPumpLocations().getPumpIn());
+        var pumpOut = getLocationRef(accounting.getPumpLocations().getPumpOut());
+        var pumpBelow = getLocationRef(accounting.getPumpLocations().getPumpBelow());
+
+        for (Map.Entry<Instant, List<PumpTransfer>> entry : accounting.getPumpAccounting().entrySet()) {
+            for (PumpTransfer transfer : entry.getValue()) {
+                var timeWindow = new usace.cwms.db.jooq.codegen_shadow.udt.records.LOC_REF_TIME_WINDOW_OBJ_T();
+                switch (transfer.getPumpType()) {
+                    case IN:
+                        timeWindow.setLOCATION_REF(pumpIn);
+                        break;
+                    case OUT:
+                        timeWindow.setLOCATION_REF(pumpOut);
+                        break;
+                    case BELOW:
+                        timeWindow.setLOCATION_REF(pumpBelow);
+                        break;
+                    default:
+                        logger.atWarning().log("Invalid pump type");
+                        break;
+                }
+                timeWindow.setSTART_DATE(Timestamp.from(entry.getKey()));
+                timeWindow.setEND_DATE(Timestamp.from(entry.getKey()));
+                timeWindowList.add(timeWindow);
+            }
+        }
+        return new usace.cwms.db.jooq.codegen_shadow.udt.records.LOC_REF_TIME_WINDOW_TAB_T(timeWindowList);
+    }
+
     static List<WaterSupplyAccounting> toWaterSupplyAccountingList(Connection c, WAT_USR_CONTRACT_ACCT_TAB_T
             watUsrContractAcctTabT) {
 
@@ -336,14 +434,15 @@ public final class WaterSupplyUtils {
     }
 
     // Like the other toWaterSupplyAccountingList but this one takes handgen class.
-    public static List<WaterSupplyAccounting> toWaterSupplyAccountingList(Connection c, cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_TAB_T
+    public static List<WaterSupplyAccounting> toWaterSupplyAccountingList(Connection c,
+        usace.cwms.db.jooq.codegen_shadow.udt.records.WAT_USR_CONTRACT_ACCT_TAB_T
             watUsrContractAcctTabT, String flowUnits) {
 
         List<WaterSupplyAccounting> waterSupplyAccounting = new ArrayList<>();
         Map<WaterSupplyUtils.AccountingKey, WaterSupplyAccounting> cacheMap = new TreeMap<>();
 
-        for (cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T watUsrContractAcctObjT : watUsrContractAcctTabT) {
-            WATER_USER_CONTRACT_REF_T watUsrContractRef = watUsrContractAcctObjT.getWATER_USER_CONTRACT_REF();
+        for (usace.cwms.db.jooq.codegen_shadow.udt.records.WAT_USR_CONTRACT_ACCT_OBJ_T watUsrContractAcctObjT : watUsrContractAcctTabT) {
+            usace.cwms.db.jooq.codegen_shadow.udt.records.WATER_USER_CONTRACT_REF_T watUsrContractRef = watUsrContractAcctObjT.getWATER_USER_CONTRACT_REF();
             WaterSupplyUtils.AccountingKey key = new WaterSupplyUtils.AccountingKey.Builder()
                     .withContractName(watUsrContractRef.getCONTRACT_NAME())
                     .withWaterUser(new WaterUser.Builder()
@@ -416,9 +515,9 @@ public final class WaterSupplyUtils {
             .build();
     }
 
-    private static WaterSupplyAccounting createAccounting(Connection c, cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T acctObjT, String flowUnits) {
+    private static WaterSupplyAccounting createAccounting(Connection c, usace.cwms.db.jooq.codegen_shadow.udt.records.WAT_USR_CONTRACT_ACCT_OBJ_T acctObjT, String flowUnits) {
         WaterContractDao waterContractDao = new WaterContractDao(DSL.using(c));
-        WATER_USER_OBJ_T waterUserObjT = acctObjT.getWATER_USER_CONTRACT_REF().getWATER_USER();
+        usace.cwms.db.jooq.codegen_shadow.udt.records.WATER_USER_OBJ_T waterUserObjT = acctObjT.getWATER_USER_CONTRACT_REF().getWATER_USER();
         WaterUserContract waterUserContract = waterContractDao.getWaterContract(
                 acctObjT.getWATER_USER_CONTRACT_REF().getCONTRACT_NAME(),
                 new CwmsId.Builder()
@@ -498,7 +597,7 @@ public final class WaterSupplyUtils {
                 Collections.singletonList(transfer));
     }
 
-    public static void addTransfer(cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T acctObjTs, WaterSupplyAccounting accounting, String flowUnits) {
+    public static void addTransfer(usace.cwms.db.jooq.codegen_shadow.udt.records.WAT_USR_CONTRACT_ACCT_OBJ_T acctObjTs, WaterSupplyAccounting accounting, String flowUnits) {
         PumpTransfer transfer = null;
         String transferDisplay = acctObjTs.getPHYSICAL_TRANSFER_TYPE().getDISPLAY_VALUE();
         String accountingRemarks = acctObjTs.getACCOUNTING_REMARKS();
@@ -530,43 +629,42 @@ public final class WaterSupplyUtils {
                 Collections.singletonList(transfer));
     }
 
-    public static cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_TAB_T toManualWaterUserContractAcctTs(WaterSupplyAccounting accounting) {
-        List<cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T> watUsrContractAcctObjTList = new ArrayList<>();
-        LOCATION_REF_T pumpIn = LocationUtil.getLocationRef(accounting.getPumpLocations().getPumpIn());
-        LOCATION_REF_T pumpOut = LocationUtil.getLocationRef(accounting.getPumpLocations().getPumpOut());
-        LOCATION_REF_T pumpBelow = LocationUtil.getLocationRef(accounting.getPumpLocations().getPumpBelow());
+    public static usace.cwms.db.jooq.codegen_shadow.udt.records.WAT_USR_CONTRACT_ACCT_TAB_T toManualWaterUserContractAcctTs(WaterSupplyAccounting accounting) {
+        List<usace.cwms.db.jooq.codegen_shadow.udt.records.WAT_USR_CONTRACT_ACCT_OBJ_T> watUsrContractAcctObjTList = new ArrayList<>();
+        var pumpIn = getLocationRef(accounting.getPumpLocations().getPumpIn());
+        var pumpOut = getLocationRef(accounting.getPumpLocations().getPumpOut());
+        var pumpBelow = getLocationRef(accounting.getPumpLocations().getPumpBelow());
 
-        for (Map.Entry<Instant, List<PumpTransfer>> entry : accounting.getPumpAccounting().entrySet()) {
-            for (PumpTransfer transfer : entry.getValue()) {
-                cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T watUsrContractAcctObjT =
-                        getManualWatUsrContractAcctObjT(accounting, entry, transfer, pumpIn, pumpOut, pumpBelow);
+        for (var entry : accounting.getPumpAccounting().entrySet()) {
+            for (var transfer : entry.getValue()) {
+                var watUsrContractAcctObjT = getManualWatUsrContractAcctObjT(accounting, entry, transfer, pumpIn,
+                    pumpOut, pumpBelow);
                 watUsrContractAcctObjTList.add(watUsrContractAcctObjT);
             }
         }
-        return new cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_TAB_T(watUsrContractAcctObjTList);
+        return new usace.cwms.db.jooq.codegen_shadow.udt.records.WAT_USR_CONTRACT_ACCT_TAB_T(watUsrContractAcctObjTList);
     }
 
-    private static cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T getManualWatUsrContractAcctObjT(
-            WaterSupplyAccounting accounting,
-            Map.Entry<Instant, List<PumpTransfer>> entry,
-            PumpTransfer transfer,
-            LOCATION_REF_T pumpIn,
-            LOCATION_REF_T pumpOut,
-            LOCATION_REF_T pumpBelow) {
-        cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T watUsrContractAcctObjT =
-                new cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T();
-        WATER_USER_CONTRACT_REF_T contractRef = toContractRef(accounting.getWaterUser(),
-                accounting.getContractName());
+    private static usace.cwms.db.jooq.codegen_shadow.udt.records.WAT_USR_CONTRACT_ACCT_OBJ_T getManualWatUsrContractAcctObjT(
+        WaterSupplyAccounting accounting,
+        Map.Entry<Instant, List<PumpTransfer>> entry,
+        PumpTransfer transfer,
+        usace.cwms.db.jooq.codegen_shadow.udt.records.LOCATION_REF_T pumpIn,
+        usace.cwms.db.jooq.codegen_shadow.udt.records.LOCATION_REF_T pumpOut,
+        usace.cwms.db.jooq.codegen_shadow.udt.records.LOCATION_REF_T pumpBelow) {
+        var watUsrContractAcctObjT = new usace.cwms.db.jooq.codegen_shadow.udt.records.WAT_USR_CONTRACT_ACCT_OBJ_T();
+        var contractRef = toContractRefShadow(accounting.getWaterUser(), accounting.getContractName());
         watUsrContractAcctObjT.setWATER_USER_CONTRACT_REF(contractRef);
         watUsrContractAcctObjT.setACCOUNTING_REMARKS(transfer.getComment());
         watUsrContractAcctObjT.setPUMP_FLOW(transfer.getFlow());
-        LOOKUP_TYPE_OBJ_T transferType = toLookupTypeO(new LookupType.Builder()
+        var transferType = toLookupTypeOShadow(new LookupType.Builder()
                 .withDisplayValue(transfer.getTransferTypeDisplay())
                 .withActive(true)
                 .withOfficeId(accounting.getWaterUser().getProjectId().getOfficeId())
                 .build());
         watUsrContractAcctObjT.setPHYSICAL_TRANSFER_TYPE(transferType);
-        watUsrContractAcctObjT.setPUMP_LOCATION_REF(getPumpLocationRef(transfer.getPumpType(), pumpIn, pumpOut, pumpBelow));
+        watUsrContractAcctObjT.setPUMP_LOCATION_REF(
+            getPumpLocationRef(transfer.getPumpType(), pumpIn, pumpOut, pumpBelow));
         watUsrContractAcctObjT.setTRANSFER_START_DATETIME(Timestamp.from(entry.getKey()));
         return watUsrContractAcctObjT;
     }

@@ -7,6 +7,7 @@ plugins {
     id 'war'
     id 'com.github.node-gradle.node' version '7.1.0'
     id "org.openapi.generator" version "7.15.0"
+    id 'com.gradleup.shadow' version '8.3.10'
 }
 
 configurations {
@@ -16,6 +17,7 @@ configurations {
     baseLibs
     tomcatLibs
     testImplementation.extendsFrom(tomcatLibs)
+    jooqCodegenShadow
 }
 
 configurations.implementation {
@@ -45,6 +47,17 @@ dependencies {
         exclude group: "org.jooq.pro-java-8", module: "jooq"
         exclude group: "org.jooq.pro-java-11", module: "jooq"
     }
+    jooqCodegenShadow(libs.cwms.db.jooq.codegen.shadow) {
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
+        exclude group: "org.jooq.pro", module: "*"
+        exclude group: "org.jooq", module: "jooq"
+        exclude group: "log4j", module: "log4j"
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "org.jooq.pro-java-8", module: "jooq"
+        exclude group: "org.jooq.pro-java-11", module: "jooq"
+    }
+    implementation(files("$buildDir/libs/${project.name}-${project.version}-codegen-shadow.jar"))
 
     implementation(libs.slf4j)
 
@@ -384,3 +397,10 @@ if (JavaVersion.current() >= JavaVersion.VERSION_11) {
         nodeProjectDir = file("$rootDir/cda-client/")
     }
 }
+
+tasks.register('shadeCodegen', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+    archiveClassifier.set('codegen-shadow')
+    configurations = [project.configurations.jooqCodegenShadow]
+    relocate 'usace.cwms.db.jooq.codegen', 'usace.cwms.db.jooq.codegen_shadow'
+}
+tasks.compileJava.dependsOn(tasks.shadeCodegen)
