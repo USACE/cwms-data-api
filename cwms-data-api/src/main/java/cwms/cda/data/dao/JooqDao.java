@@ -389,7 +389,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     public static boolean isValueTooLargeException(RuntimeException input) {
         return getSqlException(input.getCause()).map(sqlException -> hasCodeOrMessage(sqlException,
-                        Arrays.asList(6502, 12899, 20041),
+                        Arrays.asList(6502, 12899, 20041, 17072),
                         Arrays.asList("value too large for column", "character string buffer too small",
                                 "Error while writing value at JDBC bind index:")))
                 .orElse(false);
