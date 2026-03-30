@@ -130,10 +130,10 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
         return connectionResult(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
             try {
-                return retrieveFromCodegen(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
+                return retrieveViaManual(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
             } catch (DataAccessException e){
                 if(isInvalidColumn(e)){
-                   return retrieveViaManual(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
+                    return retrieveFromCodegen(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
                 }
                 throw e;
             }
@@ -146,7 +146,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
                 contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
                 endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
         if (!watUsrContractAcctObjTs.isEmpty()) {
-            return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs);
+            return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs, units);
         } else {
             return new ArrayList<>();
         }
@@ -171,7 +171,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
                 contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
                 endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
         if (!watUsrContractAcctObjTs.isEmpty()) {
-            return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs, units);
+            return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs);
         } else {
             return new ArrayList<>();
         }

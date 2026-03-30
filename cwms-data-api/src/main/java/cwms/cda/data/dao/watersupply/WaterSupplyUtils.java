@@ -247,6 +247,7 @@ public final class WaterSupplyUtils {
         watUsrContractAcctObjT.setWATER_USER_CONTRACT_REF(contractRef);
         watUsrContractAcctObjT.setACCOUNTING_REMARKS(transfer.getComment());
         watUsrContractAcctObjT.setPUMP_FLOW(transfer.getFlow());
+        watUsrContractAcctObjT.setPUMP_FLOW_UNIT(transfer.getFlowUnit());
         LOOKUP_TYPE_OBJ_T transferType = toLookupTypeO(new LookupType.Builder()
                 .withDisplayValue(transfer.getTransferTypeDisplay())
                 .withActive(true)
@@ -305,7 +306,7 @@ public final class WaterSupplyUtils {
     }
 
     static List<WaterSupplyAccounting> toWaterSupplyAccountingList(Connection c, WAT_USR_CONTRACT_ACCT_TAB_T
-            watUsrContractAcctTabT, String flowUnits) {
+            watUsrContractAcctTabT) {
 
         List<WaterSupplyAccounting> waterSupplyAccounting = new ArrayList<>();
         Map<AccountingKey, WaterSupplyAccounting> cacheMap = new TreeMap<>();
@@ -323,9 +324,9 @@ public final class WaterSupplyUtils {
                 .build();
             if (cacheMap.containsKey(key)) {
                 WaterSupplyAccounting accounting = cacheMap.get(key);
-                addTransfer(watUsrContractAcctObjT, accounting, flowUnits);
+                addTransfer(watUsrContractAcctObjT, accounting, watUsrContractAcctObjT.getPUMP_FLOW_UNIT());
             } else {
-                cacheMap.put(key, createAccounting(c, watUsrContractAcctObjT, flowUnits));
+                cacheMap.put(key, createAccounting(c, watUsrContractAcctObjT, watUsrContractAcctObjT.getPUMP_FLOW_UNIT()));
             }
         }
         for (Map.Entry<AccountingKey, WaterSupplyAccounting> entry : cacheMap.entrySet()) {
@@ -336,7 +337,7 @@ public final class WaterSupplyUtils {
 
     // Like the other toWaterSupplyAccountingList but this one takes handgen class.
     public static List<WaterSupplyAccounting> toWaterSupplyAccountingList(Connection c, cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_TAB_T
-            watUsrContractAcctTabT) {
+            watUsrContractAcctTabT, String flowUnits) {
 
         List<WaterSupplyAccounting> waterSupplyAccounting = new ArrayList<>();
         Map<WaterSupplyUtils.AccountingKey, WaterSupplyAccounting> cacheMap = new TreeMap<>();
@@ -354,9 +355,9 @@ public final class WaterSupplyUtils {
                     .build();
             if (cacheMap.containsKey(key)) {
                 WaterSupplyAccounting accounting = cacheMap.get(key);
-                addTransfer(watUsrContractAcctObjT, accounting, watUsrContractAcctObjT.getPUMP_FLOW_UNIT());
+                addTransfer(watUsrContractAcctObjT, accounting, flowUnits);
             } else {
-                cacheMap.put(key, createAccounting(c, watUsrContractAcctObjT, watUsrContractAcctObjT.getPUMP_FLOW_UNIT()));
+                cacheMap.put(key, createAccounting(c, watUsrContractAcctObjT, flowUnits));
             }
         }
         for (Map.Entry<WaterSupplyUtils.AccountingKey, WaterSupplyAccounting> entry : cacheMap.entrySet()) {
@@ -559,7 +560,6 @@ public final class WaterSupplyUtils {
         watUsrContractAcctObjT.setWATER_USER_CONTRACT_REF(contractRef);
         watUsrContractAcctObjT.setACCOUNTING_REMARKS(transfer.getComment());
         watUsrContractAcctObjT.setPUMP_FLOW(transfer.getFlow());
-        watUsrContractAcctObjT.setPUMP_FLOW_UNIT(transfer.getFlowUnit());
         LOOKUP_TYPE_OBJ_T transferType = toLookupTypeO(new LookupType.Builder()
                 .withDisplayValue(transfer.getTransferTypeDisplay())
                 .withActive(true)
