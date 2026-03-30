@@ -7,15 +7,15 @@ package cwms.cda.data.dao.watersupply.handgen.records;
 
 import java.sql.Timestamp;
 import org.jooq.Field;
-import org.jooq.Record7;
-import org.jooq.Row7;
+import org.jooq.Record6;
+import org.jooq.Row6;
 import org.jooq.impl.UDTRecordImpl;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_REF_T;
 
 public class WAT_USR_CONTRACT_ACCT_OBJ_T extends UDTRecordImpl<cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T>
-        implements Record7<WATER_USER_CONTRACT_REF_T, LOCATION_REF_T, LOOKUP_TYPE_OBJ_T, Double, String, Timestamp, String> {
+        implements Record6<WATER_USER_CONTRACT_REF_T, LOCATION_REF_T, LOOKUP_TYPE_OBJ_T, Double, Timestamp, String> {
     private static final long serialVersionUID = 1L;
 
     public WAT_USR_CONTRACT_ACCT_OBJ_T setWATER_USER_CONTRACT_REF(WATER_USER_CONTRACT_REF_T value) {
@@ -54,15 +54,6 @@ public class WAT_USR_CONTRACT_ACCT_OBJ_T extends UDTRecordImpl<cwms.cda.data.dao
         return (Double)this.get(3);
     }
 
-    public WAT_USR_CONTRACT_ACCT_OBJ_T setPUMP_FLOW_UNIT(String value) {
-        this.set(4, value);
-        return this;
-    }
-
-    public String getPUMP_FLOW_UNIT() {
-        return (String)this.get(4);
-    }
-
     public WAT_USR_CONTRACT_ACCT_OBJ_T setTRANSFER_START_DATETIME(Timestamp value) {
         this.set(5, value);
         return this;
@@ -81,12 +72,12 @@ public class WAT_USR_CONTRACT_ACCT_OBJ_T extends UDTRecordImpl<cwms.cda.data.dao
         return (String)this.get(6);
     }
 
-    public Row7<WATER_USER_CONTRACT_REF_T, LOCATION_REF_T, LOOKUP_TYPE_OBJ_T, Double, String, Timestamp, String> fieldsRow() {
-        return (Row7)super.fieldsRow();
+    public Row6<WATER_USER_CONTRACT_REF_T, LOCATION_REF_T, LOOKUP_TYPE_OBJ_T, Double, Timestamp, String> fieldsRow() {
+        return (Row6)super.fieldsRow();
     }
 
-    public Row7<WATER_USER_CONTRACT_REF_T, LOCATION_REF_T, LOOKUP_TYPE_OBJ_T, Double, String, Timestamp, String> valuesRow() {
-        return (Row7)super.valuesRow();
+    public Row6<WATER_USER_CONTRACT_REF_T, LOCATION_REF_T, LOOKUP_TYPE_OBJ_T, Double, Timestamp, String> valuesRow() {
+        return (Row6)super.valuesRow();
     }
 
     public Field<WATER_USER_CONTRACT_REF_T> field1() {
@@ -105,14 +96,11 @@ public class WAT_USR_CONTRACT_ACCT_OBJ_T extends UDTRecordImpl<cwms.cda.data.dao
         return cwms.cda.data.dao.watersupply.handgen.WAT_USR_CONTRACT_ACCT_OBJ_T.PUMP_FLOW;
     }
 
-    public Field<String> field5() {
-        return cwms.cda.data.dao.watersupply.handgen.WAT_USR_CONTRACT_ACCT_OBJ_T.PUMP_FLOW_UNIT;
-    }
-    public Field<Timestamp> field6() {
+    public Field<Timestamp> field5() {
         return cwms.cda.data.dao.watersupply.handgen.WAT_USR_CONTRACT_ACCT_OBJ_T.TRANSFER_START_DATETIME;
     }
 
-    public Field<String> field7() {
+    public Field<String> field6() {
         return cwms.cda.data.dao.watersupply.handgen.WAT_USR_CONTRACT_ACCT_OBJ_T.ACCOUNTING_REMARKS;
     }
 
@@ -132,15 +120,11 @@ public class WAT_USR_CONTRACT_ACCT_OBJ_T extends UDTRecordImpl<cwms.cda.data.dao
         return this.getPUMP_FLOW();
     }
 
-    public String component5() {
-        return this.getPUMP_FLOW_UNIT();
-    }
-
-    public Timestamp component6() {
+    public Timestamp component5() {
         return this.getTRANSFER_START_DATETIME();
     }
 
-    public String component7() {
+    public String component6() {
         return this.getACCOUNTING_REMARKS();
     }
 
@@ -160,15 +144,11 @@ public class WAT_USR_CONTRACT_ACCT_OBJ_T extends UDTRecordImpl<cwms.cda.data.dao
         return this.getPUMP_FLOW();
     }
 
-    public String value5() {
-        return this.getPUMP_FLOW_UNIT();
-    }
-
-    public Timestamp value6() {
+    public Timestamp value5() {
         return this.getTRANSFER_START_DATETIME();
     }
 
-    public String value7() {
+    public String value6() {
         return this.getACCOUNTING_REMARKS();
     }
 
@@ -192,29 +172,23 @@ public class WAT_USR_CONTRACT_ACCT_OBJ_T extends UDTRecordImpl<cwms.cda.data.dao
         return this;
     }
 
-    public WAT_USR_CONTRACT_ACCT_OBJ_T value5(String value) {
-        this.setPUMP_FLOW_UNIT(value);
-        return this;
-    }
-
-    public WAT_USR_CONTRACT_ACCT_OBJ_T value6(Timestamp value) {
+    public WAT_USR_CONTRACT_ACCT_OBJ_T value5(Timestamp value) {
         this.setTRANSFER_START_DATETIME(value);
         return this;
     }
 
-    public WAT_USR_CONTRACT_ACCT_OBJ_T value7(String value) {
+    public WAT_USR_CONTRACT_ACCT_OBJ_T value6(String value) {
         this.setACCOUNTING_REMARKS(value);
         return this;
     }
 
-    public WAT_USR_CONTRACT_ACCT_OBJ_T values(WATER_USER_CONTRACT_REF_T value1, LOCATION_REF_T value2, LOOKUP_TYPE_OBJ_T value3, Double value4, String value5, Timestamp value6, String value7) {
+    public WAT_USR_CONTRACT_ACCT_OBJ_T values(WATER_USER_CONTRACT_REF_T value1, LOCATION_REF_T value2, LOOKUP_TYPE_OBJ_T value3, Double value4, Timestamp value5, String value6) {
         this.value1(value1);
         this.value2(value2);
         this.value3(value3);
         this.value4(value4);
         this.value5(value5);
         this.value6(value6);
-        this.value7(value7);
         return this;
     }
 
@@ -222,13 +196,12 @@ public class WAT_USR_CONTRACT_ACCT_OBJ_T extends UDTRecordImpl<cwms.cda.data.dao
         super(cwms.cda.data.dao.watersupply.handgen.WAT_USR_CONTRACT_ACCT_OBJ_T.WAT_USR_CONTRACT_ACCT_OBJ_T);
     }
 
-    public WAT_USR_CONTRACT_ACCT_OBJ_T(WATER_USER_CONTRACT_REF_T WATER_USER_CONTRACT_REF, LOCATION_REF_T PUMP_LOCATION_REF, LOOKUP_TYPE_OBJ_T PHYSICAL_TRANSFER_TYPE, Double PUMP_FLOW, String PUMP_FLOW_UNIT, Timestamp TRANSFER_START_DATETIME, String ACCOUNTING_REMARKS) {
+    public WAT_USR_CONTRACT_ACCT_OBJ_T(WATER_USER_CONTRACT_REF_T WATER_USER_CONTRACT_REF, LOCATION_REF_T PUMP_LOCATION_REF, LOOKUP_TYPE_OBJ_T PHYSICAL_TRANSFER_TYPE, Double PUMP_FLOW, Timestamp TRANSFER_START_DATETIME, String ACCOUNTING_REMARKS) {
         super(cwms.cda.data.dao.watersupply.handgen.WAT_USR_CONTRACT_ACCT_OBJ_T.WAT_USR_CONTRACT_ACCT_OBJ_T);
         this.setWATER_USER_CONTRACT_REF(WATER_USER_CONTRACT_REF);
         this.setPUMP_LOCATION_REF(PUMP_LOCATION_REF);
         this.setPHYSICAL_TRANSFER_TYPE(PHYSICAL_TRANSFER_TYPE);
         this.setPUMP_FLOW(PUMP_FLOW);
-        this.setPUMP_FLOW_UNIT(PUMP_FLOW_UNIT);
         this.setTRANSFER_START_DATETIME(TRANSFER_START_DATETIME);
         this.setACCOUNTING_REMARKS(ACCOUNTING_REMARKS);
         this.resetChangedOnNotNull();

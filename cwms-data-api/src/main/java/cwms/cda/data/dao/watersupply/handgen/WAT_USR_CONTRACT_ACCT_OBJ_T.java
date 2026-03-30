@@ -26,7 +26,6 @@ public class WAT_USR_CONTRACT_ACCT_OBJ_T extends UDTImpl<cwms.cda.data.dao.water
     public static final UDTField<cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T, LOCATION_REF_T> PUMP_LOCATION_REF;
     public static final UDTField<cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T, LOOKUP_TYPE_OBJ_T> PHYSICAL_TRANSFER_TYPE;
     public static final UDTField<cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T, Double> PUMP_FLOW;
-    public static final UDTField<cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T, String> PUMP_FLOW_UNIT;
     public static final UDTField<cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T, Timestamp> TRANSFER_START_DATETIME;
     public static final UDTField<cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T, String> ACCOUNTING_REMARKS;
 
@@ -47,7 +46,6 @@ public class WAT_USR_CONTRACT_ACCT_OBJ_T extends UDTImpl<cwms.cda.data.dao.water
         PUMP_LOCATION_REF = createField(DSL.name("PUMP_LOCATION_REF"), usace.cwms.db.jooq.codegen.udt.LOCATION_REF_T.LOCATION_REF_T.getDataType(), WAT_USR_CONTRACT_ACCT_OBJ_T, "");
         PHYSICAL_TRANSFER_TYPE = createField(DSL.name("PHYSICAL_TRANSFER_TYPE"), usace.cwms.db.jooq.codegen.udt.LOOKUP_TYPE_OBJ_T.LOOKUP_TYPE_OBJ_T.getDataType(), WAT_USR_CONTRACT_ACCT_OBJ_T, "");
         PUMP_FLOW = createField(DSL.name("PUMP_FLOW"), SQLDataType.DOUBLE, WAT_USR_CONTRACT_ACCT_OBJ_T, "");
-        PUMP_FLOW_UNIT = createField(DSL.name("PUMP_FLOW_UNIT"), SQLDataType.VARCHAR(16), WAT_USR_CONTRACT_ACCT_OBJ_T, "");
         TRANSFER_START_DATETIME = createField(DSL.name("TRANSFER_START_DATETIME"), SQLDataType.TIMESTAMP(0), WAT_USR_CONTRACT_ACCT_OBJ_T, "", new DateAsTimestampBinding());
         ACCOUNTING_REMARKS = createField(DSL.name("ACCOUNTING_REMARKS"), SQLDataType.VARCHAR(255), WAT_USR_CONTRACT_ACCT_OBJ_T, "");
     }
