@@ -86,7 +86,8 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
             SQLException se = (SQLException)cause;
             String sqlMessage = se.getMessage();
             Throwable sqlCause = se.getCause();
-            isBind = sqlCause instanceof IllegalArgumentException && sqlMessage.contains("Error while writing value");
+            isBind = (sqlCause instanceof IllegalArgumentException || sqlCause instanceof ArrayIndexOutOfBoundsException)
+                && sqlMessage.contains("Error while writing value");
         }
         return isBind;
     }
