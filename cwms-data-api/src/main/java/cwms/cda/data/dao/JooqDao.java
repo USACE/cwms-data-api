@@ -89,8 +89,8 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static final Pattern INVALID_OFFICE_ID = Pattern.compile(
             "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
     private static final Pattern INVALID_UNIT = Pattern.compile(
-            "(.+\\R+){6}ORA-20102: The unit: \\S+"
-                    + " is not a recognized CWMS Database unit for the .+(.+\\R+){10}");
+            "ORA-20102: The unit: \\S+"
+                    + " is not a recognized CWMS Database unit for the");
     private static final Pattern CONVERSION_ERROR = Pattern.compile(
             "^ORA-20998: ERROR: Cannot convert ((parameter .+ from specified units: .+$)"
                     + "|(from unit .+ to unit .+$))");
@@ -608,7 +608,7 @@ public abstract class JooqDao<T> extends Dao<T> {
                 }
             }
 
-            if (CONVERSION_ERROR.matcher(message).find()) {
+            if (CONVERSION_ERROR.matcher(message).matches()) {
                 retVal = true;
             }
         }
