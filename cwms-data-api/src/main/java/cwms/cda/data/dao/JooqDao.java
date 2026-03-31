@@ -69,6 +69,7 @@ import org.jooq.SQLDialect;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.CustomCondition;
 import org.jooq.impl.DSL;
+import org.jooq.impl.DefaultConfiguration;
 import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
@@ -89,8 +90,8 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static final Pattern INVALID_OFFICE_ID = Pattern.compile(
             "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
     private static final Pattern INVALID_UNIT = Pattern.compile(
-            "(.+\\R+){6}ORA-20102: The unit: \\S+"
-                    + " is not a recognized CWMS Database unit for the .+(.+\\R+){10}");
+            "ORA-20102: The unit: \\S+"
+                    + " is not a recognized CWMS Database unit for the ");
     private static final Pattern CONVERSION_ERROR = Pattern.compile(
             "^ORA-20998: ERROR: Cannot convert ((parameter .+ from specified units: .+$)"
                     + "|(from unit .+ to unit .+$))");
@@ -141,7 +142,10 @@ public abstract class JooqDao<T> extends Dao<T> {
                 connection -> setClientInfo(ctx, connection),
                 new cwms.cda.datasource.LrtsSessionPreparer(isNewLRTS));
         DataSource wrappedDataSource = new ConnectionPreparingDataSource(preparer, dataSource);
-        retVal = DSL.using(wrappedDataSource, SQLDialect.ORACLE18C);
+        DefaultConfiguration configuration = new DefaultConfiguration();
+        configuration.set(wrappedDataSource);
+        configuration.set(SQLDialect.ORACLE18C);
+        retVal = DSL.using(configuration);
 
         retVal.configuration().set(new DefaultExecuteListenerProvider(listener));
 
@@ -163,7 +167,10 @@ public abstract class JooqDao<T> extends Dao<T> {
         // Everything that uses the returned dsl after this method will reuse this connection.
         // This method should probably be called from within a connection{  } block and jOOQ
         // code within the block should use the returned DSLContext or the connection.
-        DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
+        DefaultConfiguration configuration = new DefaultConfiguration();
+        configuration.set(connection);
+        configuration.set(SQLDialect.ORACLE18C);
+        DSLContext dsl = DSL.using(configuration);
         setOffice(connection, officeId);
         return dsl;
     }
