@@ -95,8 +95,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             "^ORA-20998: ERROR: Cannot convert ((parameter .+ from specified units: .+$)"
                     + "|(from unit .+ to unit .+$))");
     private static final Pattern FIELD_LENGTH_EXCEEDED = Pattern.compile(
-            "^ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
-                    + "\\(actual: (\\d+), maximum: (\\d+)\\)\\R*$");
+            "ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
+                    + "\\(actual: (\\d+), maximum: (\\d+)\\)");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
