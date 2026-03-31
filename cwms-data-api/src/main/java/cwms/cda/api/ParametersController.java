@@ -67,8 +67,8 @@ public class ParametersController implements CrudHandler {
                     @OpenApiParam(name = FORMAT, deprecated = true, description = "Specifies the"
                             + " encoding format of the response. Valid value for the format field"
                             + " for this URI are:"
-                            + "\n* `tab`"
-                            + "\n* `csv`"
+                            + "\n* `tab` (deprecated)"
+                            + "\n* `csv` (deprecated)"
                             + "\n* `xml`"
                             + "\n* `json` (default)"
                             + "\n\nSee <a href=\"legacy-format/\">this page</a> for more information about accept header usage."),

@@ -12,6 +12,8 @@ import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.OFFICE;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.greaterThan;
+import io.restassured.response.ValidatableResponse;
 
 @Tag("integration")
 class ParametersControllerTestIT extends DataApiTestIT
@@ -37,23 +39,29 @@ class ParametersControllerTestIT extends DataApiTestIT
 			.contentType(is(test._expectedContentType));
 	}
 
-	@ParameterizedTest
-	@EnumSource(GetAllLegacyTest.class)
-	void test_get_all_parameters_legacy_types(GetAllLegacyTest test)
-	{
-		given()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.queryParam(FORMAT, test._accept)
-		.when()
-			.redirects().follow(true)
-			.redirects().max(3)
-			.get("/parameters/")
-		.then()
-			.log().ifValidationFails(LogDetail.ALL,true)
-			.assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK))
-			.contentType(is(test._expectedContentType));
-	}
+ @ParameterizedTest
+ @EnumSource(GetAllLegacyTest.class)
+ void test_get_all_parameters_legacy_types(GetAllLegacyTest test)
+ {
+     ValidatableResponse response = given()
+         .log().ifValidationFails(LogDetail.ALL,true)
+         .queryParam(FORMAT, test._accept)
+     .when()
+         .redirects().follow(true)
+         .redirects().max(3)
+         .get("/parameters/")
+     .then()
+         .log().ifValidationFails(LogDetail.ALL,true)
+         .assertThat()
+         .statusCode(is(HttpServletResponse.SC_OK))
+         .contentType(is(test._expectedContentType));
+
+     // ensure default-english-unit and default-si-unit values are no longer the same
+     if (test == GetAllLegacyTest.JSON) {
+         response.body("parameters.parameters.findAll { it.'default-english-unit' != it.'default-si-unit' }.size()",
+                 greaterThan(0));
+     }
+ }
 
 	enum GetAllLegacyTest
 	{
