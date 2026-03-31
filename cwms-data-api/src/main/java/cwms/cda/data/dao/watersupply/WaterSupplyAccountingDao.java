@@ -103,9 +103,9 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
     }
 
     private static void storeViaManual(Connection c, WaterSupplyAccounting accounting, boolean overrideProtection, String volumeUnitId, String storeRule) {
-        var accountingTab = WaterSupplyUtils.toManualWaterUserContractAcctTs(accounting);
-        var contractRefT = WaterSupplyUtils .toContractRefShadow(accounting.getWaterUser(), accounting.getContractName());
-        var pumpTimeWindowTab = WaterSupplyUtils.toTimeWindowTabTShadow(accounting);
+        var accountingTab = WaterSupplyUtilsShadow.toManualWaterUserContractAcctTs(accounting);
+        var contractRefT = WaterSupplyUtilsShadow .toContractRef(accounting.getWaterUser(), accounting.getContractName());
+        var pumpTimeWindowTab = WaterSupplyUtilsShadow.toTimeWindowTabT(accounting);
         String timeZoneId = "UTC";
         String overrideProt = formatBool(overrideProtection);
         usace.cwms.db.jooq.codegen_shadow.packages.CWMS_WATER_SUPPLY_PACKAGE.call_STORE_ACCOUNTING_SET(DSL.using(c).configuration(), accountingTab,
@@ -128,7 +128,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
         return connectionResult(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
             try {
-                var contractRefT = WaterSupplyUtils.toContractRefShadow(waterUser, contractName);
+                var contractRefT = WaterSupplyUtilsShadow.toContractRef(waterUser, contractName);
                 return retrieveViaManual(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
             } catch (DataAccessException e){
                 if(isInvalidColumn(e)){
@@ -146,7 +146,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
                 contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
                 endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
         if (!watUsrContractAcctObjTs.isEmpty()) {
-            return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs, units);
+            return WaterSupplyUtilsShadow.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs, units);
         } else {
             return new ArrayList<>();
         }
