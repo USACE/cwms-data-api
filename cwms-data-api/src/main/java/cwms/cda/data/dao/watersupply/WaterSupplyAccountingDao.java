@@ -129,12 +129,12 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
         return connectionResult(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
             try {
-                var contractRefT = WaterSupplyUtilsShadow.toContractRef(waterUser, contractName);
-                return retrieveViaManual(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
+                var contractRefT = WaterSupplyUtils.toContractRef(waterUser, contractName);
+                return retrieveFromCodegen(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
             } catch (DataAccessException e){
                 if(isInvalidColumn(e)){
-                    var contractRefT = WaterSupplyUtils.toContractRef(waterUser, contractName);
-                    return retrieveFromCodegen(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
+                    var contractRefT = WaterSupplyUtilsShadow.toContractRef(waterUser, contractName);
+                    return retrieveViaManual(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
                 }
                 throw e;
             }
