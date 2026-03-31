@@ -47,6 +47,11 @@ dependencies {
         exclude group: "org.jooq.pro-java-8", module: "jooq"
         exclude group: "org.jooq.pro-java-11", module: "jooq"
     }
+    //Adding a shaded version of the previous schemas codegen
+    //Due to the way jOOQ generates UDT's, any changes to members of the UDT
+    //means it is not backwards compatible (the bind indexes get messed up)
+    //We could also use this mechanism to shade a 'latest' version of the schema codegen
+    //to allow for work not yet merged into a schema release/rc
     jooqCodegenShadow(libs.cwms.db.jooq.codegen.shadow) {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
@@ -401,6 +406,9 @@ if (JavaVersion.current() >= JavaVersion.VERSION_11) {
 tasks.register('shadeCodegen', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
     archiveClassifier.set('codegen-shadow')
     configurations = [project.configurations.jooqCodegenShadow]
+    //See comment above on why shading is needed. Using 'codegen_shadow' as a
+    //suitably obnoxious package name so that imports don't get confused.
+    //We can also shade a 'codegen_latest' in the future if needed.
     relocate 'usace.cwms.db.jooq.codegen', 'usace.cwms.db.jooq.codegen_shadow'
 }
 tasks.compileJava.dependsOn(tasks.shadeCodegen)
