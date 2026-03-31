@@ -26,45 +26,56 @@ Key points
 
 .. list-table::
    :header-rows: 1
-   :widths: 25 75
+   :widths: 20 25 55
 
-   * - Decision
+   * - Topic
+     - Decision
      - Justification
-   * - Serialization: Jackson API
+   * - Serialization
+     - We will utilize the Jackson API
      - Maintain consistency with JSON and XML serialization infrastructure and object-mapper settings already used across the API.
    * - Required columns
-     - The following are always present: date-time and value. Units are always included in the value column header as parentheses, e.g., ``value (ft)``. Units must exist in exactly one canonical location in all modes.
+     - Always include ``date-time`` and ``value``; include units in the value column header as parentheses (e.g., ``value (ft)``)
+     - Units must exist in exactly one canonical location in all modes.
    * - Optional columns
-     - The following columns are optional and off by default: time-series-id, office-id, version-date, data-entry-date, quality. Everything except date-time and value (with units in the header) is optional. Because headers are always included, optional columns can be easily toggled on and off without breaking parsing logic. Clients should rely on column names, not indices, to access fields.
-   * - Meta-data fields
-     - The following fields are considered metadata and may be included at the top of the payload, rather than as columns: time-series-id, office-id, version-date. Meta-data fields are optional and are turned off by default. This is useful if we want metadata shown but don't want repeated data in rows. If included via an Accept header parameter ``metadata-format=comment``, the payload starts with a line indicating how many metadata comment lines follow to aid parsing (e.g., ``# metadata-count: 3``).
+     - Optional (off by default): ``time-series-id``, ``office-id``, ``version-date``, ``data-entry-date``, ``quality``
+     - Everything except ``date-time`` and ``value`` (with units in the header) is optional. Because headers are always included, optional columns can be toggled without breaking parsing. Clients should rely on column names, not indices.
+   * - Metadata fields
+     - May be emitted as top-of-payload comments (``metadata-format=comment``) or as actual columns (``metadata-format=column``)
+     - The following fields can be treated as metadata comments at top-of-payload rather than columns: ``time-series-id``, ``office-id``, ``version-date``. These are optional (off by default). When included as comments, the payload starts with a line indicating count (e.g., ``# metadata-count: 3``) to aid parsing.
    * - Units location
-     - Units are always expressed in the value column header via parentheses (e.g., ``value (m^3/s)``) and are not repeated elsewhere. We do not include units as a separate column nor in metadata comments. We avoid the anti-pattern of dual representation of the same semantic field; units must exist in exactly one canonical location in all modes. Note this will require custom deserialization handling to extract units from the header, but it is worth it to avoid the bloat and confusion of multiple unit representations.
+     - Express units only in the value column header via parentheses (e.g., ``value (cfs)``)
+     - Do not include units as a separate column or in metadata comments. This avoids the anti-pattern of dual representation; units live in exactly one canonical location. Custom deserialization may be required to extract units from the header, which is preferable to duplicate representations.
    * - Version-date encoding
-     - Serialized in the CSV column as: ``base`` for the special value 1111-11-11T11:11, ``aggregate`` for aggregate versions, an ISO-8601 timestamp for actual version dates, and omitted entirely if unversioned. This requires custom serialization handling and matches CWMS-VUE behavior. The alternative (a separate CSV column per case) is not adopted because there is no compelling use-case and it would bloat the schema.
+     - Use ``base`` for 1111-11-11T11:11, ``aggregate`` for aggregate versions, ISO-8601 timestamp for actual version dates, and omit the field if unversioned
+     - Matches CWMS-VUE behavior. A separate CSV column per case was rejected due to lack of use-cases and schema bloat. Note this requires custom serialization handling.
    * - Column headers
-     - Column headers are always present. RFC 4180 allows headers and doing so keeps the format scalable if additional optional columns are introduced later; clients do not have to rely on fixed column indices.
+     - Always include headers
+     - RFC 4180 allows headers; including them keeps the format scalable if optional columns are introduced later and prevents reliance on fixed column indices. We will include a header param of ``headers=present`` in the Accept header to explicitly indicate that headers are included, even though they will always be present. This allows for future flexibility if we ever need to emit headerless CSV for some reason.
    * - Comments
-     - Lines beginning with ``#`` are treated as comments. While not part of RFC 4180, this convention is already used by CWMS endpoints (e.g., office and location-group) that return CSV, and it provides backward compatibility and human readability.
+     - Treat lines beginning with ``#`` as comments
+     - While not part of RFC 4180, this convention is already used by CWMS endpoints (e.g., office and location-group) that return CSV, and is human-readable.
    * - Column naming
-     - Kebab-case column names for consistency with JSON and XML.
+     - Kebab-case names
+     - Keeps naming consistent with JSON and XML.
    * - Accept header for format and columns
-     - Default CSV serialization uses ISO-8601 strings. Clients may request alternate formats via the HTTP Accept header parameter ``date-format``, for example:
-       
-       - ``text/csv;date-format=ISO8601-Instant`` (default)
-       - ``text/csv;date-format=epoch-millis``
-       
-       Use Accept header parameters to turn on optional columns as needed (e.g., ``quality=provided``, ``data-entry-date=provided``). If these were query params instead, it would allow easier toggling of columns within the browser.
+     - Use HTTP Accept header parameters to select date format and optional columns
+     - Default CSV serialization uses ISO-8601 strings. Examples: ``text/csv;date-format=ISO8601-Instant`` (default), ``text/csv;date-format=epoch-millis``. Use Accept header parameters to enable optional columns (e.g., ``quality=present``, ``data-entry-date=present``). If these were query params instead, toggling would be easier in a browser, but Accept keeps content negotiation consistent.
    * - Quality representation
-     - ``quality`` (aka quality-code) is an optional integer column. A bitmask (integer) is preferred over a byte[] because it compactly represents multiple boolean flags in a single scalar value with fast, native bitwise operations, whereas a byte[] adds overhead without improving expressiveness for fixed flag sets.
+     - ``quality`` (aka quality-code) is an optional integer bitmask
+     - A bitmask (integer) compactly represents multiple boolean flags with fast native bitwise operations; a ``byte[]`` adds overhead without improving expressiveness for fixed flag sets.
    * - Nulls and missing values
-     - Null field values are rendered as empty CSV fields. Missing values use quality-code = 5 for consistency with JSON and XML.
+     - Render nulls as empty fields; use ``quality-code = 5`` for missing values
+     - Keeps behavior consistent with JSON and XML.
    * - Encoding and delimiters
-     - UTF-8, comma delimiter, LF line endings. Comma-only CSV follows RFC 4180 compliance.
+     - UTF-8, comma delimiter, LF line endings
+     - Comma-only CSV follows RFC 4180 compliance.
    * - Record structure
-     - One row per record, where a record is defined as a single date-time and value pair with quality and data-entry-date optionally included as columns.
+     - One row per record
+     - A record is a single date-time and value pair; ``quality-code`` and ``data-entry-date`` may be included as optional columns.
    * - Single TS per payload
-     - A payload never includes multiple time-series IDs.
+     - Do not mix multiple time-series IDs in one payload
+     - Ensures a payload represents exactly one time-series.
 
 Example CSVs
 ~~~~~~~~~~~~
