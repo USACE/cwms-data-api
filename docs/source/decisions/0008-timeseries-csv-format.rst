@@ -36,7 +36,7 @@ Key points
      - Maintain consistency with JSON and XML serialization infrastructure and object-mapper settings already used across the API.
    * - Required columns
      - Always include ``date-time`` and ``value``; include units in the value column header as parentheses (e.g., ``value (ft)``)
-     - Units must exist in exactly one canonical location in all modes.
+     - Units should exist in exactly one canonical location in all modes. Conditionally adding them as metadata comments will cause confusion over the inconsistency
    * - Optional columns
      - Optional (off by default): ``time-series-id``, ``office-id``, ``version-date``, ``data-entry-date``, ``quality``
      - Everything except ``date-time`` and ``value`` (with units in the header) is optional. Because headers are always included, optional columns can be toggled without breaking parsing. Clients should rely on column names, not indices.
