@@ -1778,10 +1778,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("expiration-date", equalTo(levelDate.plusYears(50).toInstant().toString()))
-<<<<<<< HEAD
-=======
             .body("interval-months", equalTo(12))
->>>>>>> develop
             .body("seasonal-values.size()", is(numValues));
     }
 
@@ -1794,11 +1791,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         ZonedDateTime levelDate = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:00Z"), ZoneId.of("UTC"));
         List<SeasonalValueBean> values = new ArrayList<>();
         int numValues = 12;
-<<<<<<< HEAD
-        for (int i = 1; i <= numValues; i++) {
-=======
         for (int i = 0; i < numValues; i++) {
->>>>>>> develop
             values.add(new SeasonalValueBean.Builder()
                 .withValue(i + 1.0)
                 .withOffsetMonths(i)

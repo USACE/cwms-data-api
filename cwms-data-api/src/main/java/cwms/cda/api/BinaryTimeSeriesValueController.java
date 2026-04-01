@@ -24,7 +24,6 @@
 
 package cwms.cda.api;
 
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
@@ -33,7 +32,6 @@ import cwms.cda.data.dao.BlobDao;
 import cwms.cda.data.dao.StreamConsumer;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -42,12 +40,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 import javax.servlet.http.HttpServletResponse;
-<<<<<<< HEAD
-import java.io.InputStream;
-=======
->>>>>>> develop
 
-import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -108,16 +101,8 @@ public class BinaryTimeSeriesValueController extends BaseHandler {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                             + "blob based on given parameters"));
                 } else {
-<<<<<<< HEAD
-                    long size = blob.length();
-                    requestResultSize.update(size);
-                    try (InputStream is = blob.getBinaryStream()) {
-                        RangeRequestUtil.seekableStream(ctx, is, mediaType, size);
-                    }
-=======
                     updateResultSize(totalLength);
                     RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
->>>>>>> develop
                 }
             };
 

@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 
+import static cwms.cda.api.Controllers.DESIGNATOR;
 import static cwms.cda.api.Controllers.ID_MASK;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
