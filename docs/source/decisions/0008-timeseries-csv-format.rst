@@ -39,7 +39,7 @@ Key points
      - Units should exist in exactly one canonical location in all modes. Conditionally adding them as metadata comments will cause confusion over the inconsistency
    * - Optional columns
      - Optional (off by default): ``time-series-id``, ``office-id``, ``version-date``, ``data-entry-date``, ``quality``
-     - Everything except ``date-time`` and ``value`` (with units in the header) is optional. Because headers are always included, optional columns can be toggled without breaking parsing. Clients should rely on column names, not indices.
+     - Everything except ``date-time`` and ``value`` (with units in the header) is optional. Because headers are always included, optional columns can be toggled without breaking parsing. Clients should rely on column names, not indices. Given units are in the `value` header, clients will need to handle this appropriately to determine the correct column index.
    * - Metadata fields
      - May be emitted as top-of-payload comments (``metadata-format=comment``) or as actual columns (``metadata-format=column``)
      - The following fields can be treated as metadata comments at top-of-payload rather than columns: ``time-series-id``, ``office-id``, ``version-date``. These are optional (off by default). When included as comments, the payload starts with a line indicating count (e.g., ``# metadata-count: 3``) to aid parsing.
