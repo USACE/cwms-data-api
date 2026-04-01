@@ -65,7 +65,7 @@ Key points
      - ``quality`` (aka quality-code) is an optional integer bitmask
      - A bitmask (integer) compactly represents multiple boolean flags with fast native bitwise operations; a ``byte[]`` adds overhead without improving expressiveness for fixed flag sets.
    * - Nulls and missing values
-     - Render nulls as empty fields; use ``quality-code = 5`` for missing values
+     - Missing values will be represented with an empty value field (null) and will have ``quality-code = 5``. Constants will not be used to represent missing values.
      - Keeps behavior consistent with JSON and XML.
    * - Encoding and delimiters
      - UTF-8, comma delimiter, LF line endings
