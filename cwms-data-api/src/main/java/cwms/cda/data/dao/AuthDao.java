@@ -204,7 +204,8 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                         if (rs.next()) {
                             return rs.getString(1);
                         } else {
-                            throw new CwmsAuthException("No user for key");
+                            throw new CwmsAuthException("Authentication failed. "
+                                + "The API Key may be invalid or no longer active.");
                         }
                     }
                 } catch (SQLException ex) {
