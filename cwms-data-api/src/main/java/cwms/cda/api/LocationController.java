@@ -73,6 +73,9 @@ import org.jooq.exception.DataAccessException;
 
 public class LocationController implements CrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+    public static final String LOCATIONS_TAG = "Locations";
+
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -144,7 +147,7 @@ public class LocationController implements CrudHandler {
             },
             description = "Returns CWMS Location Data.  The Catalog end-point is also capable of "
                     + "retrieving lists of locations and can filter on additional fields.",
-            tags = {"Locations"}
+            tags = {LOCATIONS_TAG}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -155,7 +158,7 @@ public class LocationController implements CrudHandler {
             LocationsDao locationsDao = getLocationsDao(dsl);
 
             String names = ctx.queryParam(NAMES);
-            String units = ctx.queryParam(UNIT);
+            String units = ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.SI.value());
             String datum = ctx.queryParam(DATUM);
             String office = ctx.queryParam(OFFICE);
 
@@ -205,6 +208,9 @@ public class LocationController implements CrudHandler {
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to get")
+            },
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "owning office of the location level(s) whose data is to be "
@@ -218,6 +224,8 @@ public class LocationController implements CrudHandler {
                         + "default SI units for their parameters."),
                 @OpenApiParam(name = INCLUDE_ALIASES, type = Boolean.class, description = "Specifies whether to "
                         + "include location aliases in the response. Default: false"),
+                @OpenApiParam(name = DATUM, description = "Specifies the elevation datum of"
+                        + " the response. This field affects only vertical datum. Valid values: NAVD88, NGVD29."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -229,29 +237,30 @@ public class LocationController implements CrudHandler {
                         + "inputs provided the location was not found.")
             },
             description = "Returns CWMS Location Data",
-            tags = {"Locations"}
+            tags = {LOCATIONS_TAG}
     )
     @Override
-    public void getOne(@NotNull Context ctx, @NotNull String name) {
+    public void getOne(@NotNull Context ctx, @NotNull String locationId) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String units =
-                    ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
+                    ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.SI.value());
             String office = requiredParam(ctx, OFFICE);
             boolean includeAliases =
                     ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class).getOrDefault(false);
+            String datum = ctx.queryParam(DATUM);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             ctx.contentType(contentType.toString());
             LocationsDao locationDao = getLocationsDao(dsl);
-            Location location = locationDao.getLocation(name, units, office, includeAliases);
+            Location location = locationDao.getLocation(locationId, units, office, includeAliases, datum);
             String serializedLocation = Formats.format(contentType, location);
             ctx.result(serializedLocation);
             addDeprecatedContentTypeWarning(ctx, contentType);
         } catch (IOException ex) {
-            String errorMsg = "Error retrieving " + name;
+            String errorMsg = "Error retrieving " + locationId;
             CdaError re = new CdaError(errorMsg);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
             logger.atSevere().withCause(ex).log("%s", errorMsg);
@@ -275,7 +284,7 @@ public class LocationController implements CrudHandler {
             description = "Create new CWMS Location",
             method = HttpMethod.POST,
             path = "/locations",
-            tags = {"Locations"}
+            tags = {LOCATIONS_TAG}
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -301,6 +310,9 @@ public class LocationController implements CrudHandler {
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to update")
+            },
             requestBody = @OpenApiRequestBody(
                     content = {
                         @OpenApiContent(from = Location.class, type = Formats.XML),
@@ -310,7 +322,7 @@ public class LocationController implements CrudHandler {
             description = "Update CWMS Location",
             method = HttpMethod.PATCH,
             path = "/locations",
-            tags = {"Locations"},
+            tags = {LOCATIONS_TAG},
             responses = {
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the location was not found.")
@@ -329,7 +341,7 @@ public class LocationController implements CrudHandler {
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             //getLocation will throw an error if location does not exist
             Location existingLocation = locationsDao.getLocation(locationId,
-                    UnitSystem.EN.getValue(), locationFromBody.getOfficeId(), false);
+                    UnitSystem.EN.getValue(), locationFromBody.getOfficeId(), false, null);
             existingLocation = updatedClearedFields(ctx.body(), contentType.getType(),
                     existingLocation);
             //only store (update) if location does exist
@@ -354,20 +366,21 @@ public class LocationController implements CrudHandler {
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to delete")
+            },
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
                         + "the location whose data is to be deleted. If this field is not "
                         + "specified, matching location information will be deleted from all "
                         + "offices."),
-                //Keeping hidden from the API docs for now as this call is particularly destructive
-                //@OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
-                //description = "Specifies whether to specifies whether to delete associated data " +
-                //"for this location before deleting the location itself. Default: false")
+                @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class, description = "Specifies whether to delete"
+                        + " associated data for this location before deleting the location itself. Default: false")
             },
             description = "Delete CWMS Location",
             method = HttpMethod.DELETE,
             path = "/locations",
-            tags = {"Locations"},
+            tags = {LOCATIONS_TAG},
             responses = {
                 @OpenApiResponse(status = STATUS_200, description = "Location successfully deleted from CWMS."),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "

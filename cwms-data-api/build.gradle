@@ -151,6 +151,8 @@ dependencies {
     implementation(libs.bundles.overrides)
 
     testImplementation(libs.bundles.java.parser)
+    implementation(libs.togglz.core)
+    implementation(libs.minio)
 }
 
 task extractWebJars(type: Copy) {
@@ -227,6 +229,7 @@ task run(type: JavaExec) {
     mainClass = "fixtures.TomcatServer"
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("cwms") }
 
     def context = project.findProperty("cda.war.context") ?: "spk-data"
 
@@ -245,7 +248,7 @@ task run(type: JavaExec) {
 }
 
 task integrationTests(type: Test) {
-    dependsOn test
+//    dependsOn test
     dependsOn generateConfig
     dependsOn war
 

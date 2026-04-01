@@ -27,8 +27,9 @@ package cwms.cda.api;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.ClobDao;
+import cwms.cda.data.dao.StreamConsumer;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -37,26 +38,16 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.jooq.DSLContext;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.InputStream;
-
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
-public class TextTimeSeriesValueController implements Handler {
+public class TextTimeSeriesValueController extends BaseHandler {
     public static final String TEXT_PLAIN = "text/plain";
-    private final MetricRegistry metrics;
-    private final Histogram requestResultSize;
 
     public TextTimeSeriesValueController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        requestResultSize = this.metrics.histogram((name(TextTimeSeriesValueController.class, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
@@ -67,14 +58,9 @@ public class TextTimeSeriesValueController implements Handler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the Text TimeSeries whose data is to be included in the response."),
-                    @OpenApiParam(name = TIMEZONE,  description = "Specifies "
-                            + "the time zone of the values of the begin and end fields (unless "
-                            + "otherwise specified). If this field is not specified, "
-                            + "the default time zone of UTC shall be used."),
-                    @OpenApiParam(name = DATE, required = true, description = "The date of the text value to retrieve"),
-                    @OpenApiParam(name = VERSION_DATE, description = "The version date for the value to retrieve."),
                     @OpenApiParam(name = CLOB_ID, description = "Will be removed in a schema update. " +
-                            "This is a placeholder for integration testing with schema 23.3.16", deprecated = true)
+                            "This is a placeholder for integration testing with schema 23.3.16", deprecated = true,
+                            required = true)
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -86,24 +72,21 @@ public class TextTimeSeriesValueController implements Handler {
     )
     public void handle(Context ctx) {
         //Implementation will change with new CWMS schema
-        //https://www.hec.usace.army.mil/confluence/display/CWMS/2024-02-29+Task2A+Text-ts+and+Binary-ts+Design
+        //https://www.hec.usace.army.mil/confluence/spaces/CWMS/pages/183110112/2024-02-29+Developer+Meeting+Task2A+Text-ts+and+Binary-ts+Design
+        logUnusedPathParameter(ctx, NAME, "Handled as " + CLOB_ID + " in query parameter.  May change with schema.");
         String textId = requiredParam(ctx, CLOB_ID);
         String officeId = requiredParam(ctx, OFFICE);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             ClobDao clobDao = new ClobDao(dsl);
-            clobDao.getClob(textId, officeId, clob -> {
-                if (clob == null) {
-                    ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
-                            + "clob based on given parameters"));
-                } else {
-                    long size = clob.length();
-                    requestResultSize.update(size);
-                    try(InputStream is = clob.getAsciiStream()){
-                        RangeRequestUtil.seekableStream(ctx, is, TEXT_PLAIN, size);
-                    }
-                }
-            });
+
+            StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
+                updateResultSize(totalLength);
+                ctx.header(Header.ACCEPT_RANGES, "bytes");
+                RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
+            };
+            clobDao.getClob(textId, officeId, consumer);
+
         }
     }
 }

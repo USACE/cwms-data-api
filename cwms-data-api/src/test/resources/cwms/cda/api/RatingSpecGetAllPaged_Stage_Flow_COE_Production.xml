@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ratings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.hec.usace.army.mil/xmlSchema/cwms/Ratings.xsd">
+  <rating-template office-id="SPK">
+    <parameters-id>Stage;Flow</parameters-id>
+    <version>COE</version>
+    <ind-parameter-specs>
+      <ind-parameter-spec position="1">
+        <parameter>Stage</parameter>
+        <in-range-method>LINEAR</in-range-method>
+        <out-range-low-method>ERROR</out-range-low-method>
+        <out-range-high-method>ERROR</out-range-high-method>
+      </ind-parameter-spec>
+    </ind-parameter-specs>
+    <dep-parameter>Flow</dep-parameter>
+    <description></description>
+  </rating-template>
+  <rating-spec office-id="SPK">
+    <rating-spec-id>{location-id}.Stage;Flow.COE.{version-template}</rating-spec-id>
+    <template-id>Stage;Flow.COE</template-id>
+    <location-id>{location-id}</location-id>
+    <version>{version-template}</version>
+    <source-agency></source-agency>
+    <in-range-method>LINEAR</in-range-method>
+    <out-range-low-method>NULL</out-range-low-method>
+    <out-range-high-method>NEAREST</out-range-high-method>
+    <active>true</active>
+    <auto-update>false</auto-update>
+    <auto-activate>false</auto-activate>
+    <auto-migrate-extension>false</auto-migrate-extension>
+    <ind-rounding-specs>
+      <ind-rounding-spec position="1">4444444444</ind-rounding-spec>
+    </ind-rounding-specs>
+    <dep-rounding-spec>4444444444</dep-rounding-spec>
+    <description></description>
+  </rating-spec>
+  <simple-rating office-id="SPK">
+    <rating-spec-id>{location-id}.Stage;Flow.COE.{version-template}</rating-spec-id>
+    <units-id>ft;cfs</units-id>
+    <effective-date>2002-04-09T13:53:01Z</effective-date>
+    <create-date>2014-06-11T14:46:00Z</create-date>
+    <active>true</active>
+    <description/>
+    <rating-points>
+      <point>
+        <ind>2.37744006</ind>
+        <dep>14.1584233</dep>
+      </point>
+    </rating-points>
+  </simple-rating>
+</ratings>

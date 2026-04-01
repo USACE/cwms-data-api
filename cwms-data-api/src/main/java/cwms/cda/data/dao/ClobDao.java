@@ -22,6 +22,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_OFFICE;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -50,7 +51,7 @@ public class ClobDao extends JooqDao<Clob> {
 
         Condition cond = upper(vClob.ID).eq(upper(uniqueName));
         if (office != null && !office.isEmpty()) {
-            cond = cond.and(vOffice.OFFICE_ID.eq(office));
+            cond = cond.and(vOffice.OFFICE_ID.eq(office.toUpperCase()));
         }
 
         RecordMapper<Record, Clob> mapper = joinRecord ->
@@ -75,14 +76,14 @@ public class ClobDao extends JooqDao<Clob> {
         AV_OFFICE vOffice = AV_OFFICE.AV_OFFICE;
 
         Condition whereClause = JooqDao.caseInsensitiveLikeRegex(vClob.ID, idRegex)
-            .and(JooqDao.caseInsensitiveLikeRegexNullTrue(vOffice.OFFICE_ID, officeLike));
+                .and(JooqDao.caseInsensitiveLikeRegexNullTrue(vOffice.OFFICE_ID, officeLike));
         if (cursor == null || cursor.isEmpty()) {
             SelectConditionStep<Record1<Integer>> count = dsl.select(count(asterisk()))
-                .from(vClob)
-                .join(vOffice).on(vClob.OFFICE_CODE.eq(vOffice.OFFICE_CODE))
-                .where(whereClause);
+                    .from(vClob)
+                    .join(vOffice).on(vClob.OFFICE_CODE.eq(vOffice.OFFICE_CODE))
+                    .where(whereClause);
             Record1<Integer> rec = count.fetchOne();
-            if(rec != null) {
+            if (rec != null) {
                 total = rec.value1();
             }
         } else {
@@ -104,27 +105,27 @@ public class ClobDao extends JooqDao<Clob> {
         Condition moreInSameOffice = cursorClobId == null || cursorOffice == null ? noCondition() :
                 vOffice.OFFICE_ID.eq(cursorOffice.toUpperCase())
                         .and(upper(vClob.ID).greaterThan(cursorClobId.toUpperCase()));
-        Condition nextOffices = cursorOffice == null ? noCondition():
+        Condition nextOffices = cursorOffice == null ? noCondition() :
                 upper(vOffice.OFFICE_ID).greaterThan(cursorOffice.toUpperCase());
         Condition pagingCondition = moreInSameOffice.or(nextOffices);
 
         SelectLimitPercentStep<Record4<String, String, String, String>> query = dsl.select(
-                vOffice.OFFICE_ID,
-                vClob.ID,
-                vClob.DESCRIPTION,
-                includeValues ? vClob.VALUE : DSL.inline("").as(vClob.VALUE)
-            )
-            .from(vClob)
-            .join(vOffice).on(vClob.OFFICE_CODE.eq(vOffice.OFFICE_CODE))
-            .where(whereClause)
-            .and(pagingCondition)
-            .orderBy(vOffice.OFFICE_ID, vClob.ID)
-            .limit(pageSize);
+                        vOffice.OFFICE_ID,
+                        vClob.ID,
+                        vClob.DESCRIPTION,
+                        includeValues ? vClob.VALUE : DSL.inline("").as(vClob.VALUE)
+                )
+                .from(vClob)
+                .join(vOffice).on(vClob.OFFICE_CODE.eq(vOffice.OFFICE_CODE))
+                .where(whereClause)
+                .and(pagingCondition)
+                .orderBy(vOffice.OFFICE_ID, vClob.ID)
+                .limit(pageSize);
 
 
         Clobs.Builder builder = new Clobs.Builder(cursor, pageSize, total);
 
-        logger.atFine().log("%s", lazy(()->query.getSQL(ParamType.INLINED)));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         query.fetch().forEach(row -> {
             usace.cwms.db.jooq.codegen.tables.records.AV_CLOB clob = row.into(vClob);
@@ -169,13 +170,13 @@ public class ClobDao extends JooqDao<Clob> {
 
         String pFailIfExists = getBoolean(failIfExists);
         connection(dsl, c ->
-            CWMS_TEXT_PACKAGE.call_STORE_TEXT(
-                    getDslContext(c, clob.getOfficeId()).configuration(),
-                    clob.getValue(),
-                    clob.getId(),
-                    clob.getDescription(),
-                    pFailIfExists,
-                    clob.getOfficeId()));
+                CWMS_TEXT_PACKAGE.call_STORE_TEXT(
+                        getDslContext(c, clob.getOfficeId()).configuration(),
+                        clob.getValue(),
+                        clob.getId(),
+                        clob.getDescription(),
+                        pFailIfExists,
+                        clob.getOfficeId()));
     }
 
     @NotNull
@@ -190,8 +191,8 @@ public class ClobDao extends JooqDao<Clob> {
     }
 
     public void delete(String officeId, String id) {
-        connection(dsl,c -> CWMS_TEXT_PACKAGE.call_DELETE_TEXT(
-                getDslContext(c,officeId).configuration(), id, officeId)
+        connection(dsl, c -> CWMS_TEXT_PACKAGE.call_DELETE_TEXT(
+                getDslContext(c, officeId).configuration(), id, officeId)
         );
     }
 
@@ -205,50 +206,47 @@ public class ClobDao extends JooqDao<Clob> {
         // it throws -  ORA-20244: NULL_ARGUMENT: Argument P_TEXT is not allowed to be null
         // Also note: when pIgnoreNulls == 'F' and the value is "" (empty string)
         // it throws -  ORA-20244: NULL_ARGUMENT: Argument P_TEXT is not allowed to be null
-        connection(dsl,c ->
-            CWMS_TEXT_PACKAGE.call_UPDATE_TEXT(
-                getDslContext(c,clob.getOfficeId()).configuration(),
-                clob.getValue(),
-                clob.getId(),
-                clob.getDescription(),
-                pIgnoreNulls,
-                clob.getOfficeId()
-            )
+        connection(dsl, c ->
+                CWMS_TEXT_PACKAGE.call_UPDATE_TEXT(
+                        getDslContext(c, clob.getOfficeId()).configuration(),
+                        clob.getValue(),
+                        clob.getId(),
+                        clob.getDescription(),
+                        pIgnoreNulls,
+                        clob.getOfficeId()
+                )
         );
     }
 
     /**
      *
-     * @param clobId the id to search for
-     * @param officeId the office
-     * @param clobConsumer a consumer that should be handed the input stream and the length of the stream.
+     * @param clobId         the id to search for
+     * @param officeId       the office
+     * @param streamConsumer a consumer that should be handed the input stream and the length of the stream.
      */
-    public void getClob(String clobId, String officeId, ClobConsumer clobConsumer) {
-        // Not using jOOQ here because we want the java.sql.Clob and not an automatic field binding.  We want
-        // clob so that we can pull out a stream to the data and pass that to javalin.
-        // If the request included Content-Ranges Javalin can have the stream skip to the correct
-        // location, which will avoid reading unneeded data.  Passing this stream right to the javalin
-        // response should let CDA return a huge (2Gb) clob to the client without ever holding the entire String
-        // in memory.
-        // We can't use the stream once the connection we get from jooq is closed, so we have to pass in
-        // what we want javalin to do with the stream as a consumer.
-        //
-
+    public void getClob(String clobId, String officeId, StreamConsumer streamConsumer) {
         dsl.connection(connection -> {
+            // Not using jOOQ here because we want the java.sql.Clob and not an automatic field binding.  We want
+            // clob so that we can pull out a stream to the data and pass that to javalin.
+            // If the request included Content-Ranges Javalin can have the stream skip to the correct
+            // location, which will avoid reading unneeded data.  Passing this stream right to the javalin
+            // response should let CDA return a huge (2Gb) clob to the client without ever holding the entire String
+            // in memory.
+            // We can't use the stream once the connection we get from jooq is closed, so we have to pass in
+            // what we want javalin to do with the stream as a consumer.
             try (PreparedStatement preparedStatement = connection.prepareStatement(SELECT_CLOB_QUERY)) {
-                preparedStatement.setString(1, officeId);
+                preparedStatement.setString(1, officeId.toUpperCase());
                 preparedStatement.setString(2, clobId);
 
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         java.sql.Clob clob = resultSet.getClob("VALUE");
+                        long length = clob.length();
 
-                        try {
-                            clobConsumer.accept(clob);
+                        try (InputStream is = clob.getAsciiStream()) {
+                            streamConsumer.accept(is, 0, "text/plain", length);
                         } finally {
-                            if (clob != null) {
-                                clob.free();
-                            }
+                            clob.free();
                         }
                     } else {
                         throw new NotFoundException("Unable to find clob with id " + clobId + " in office " + officeId);
@@ -259,19 +257,16 @@ public class ClobDao extends JooqDao<Clob> {
     }
 
     public static String readFully(java.sql.Clob clob) throws IOException, SQLException {
-        try(Reader reader = clob.getCharacterStream();
-            BufferedReader br = new BufferedReader(reader)) {
+        try (Reader reader = clob.getCharacterStream();
+             BufferedReader br = new BufferedReader(reader)) {
             StringBuilder sb = new StringBuilder();
             String line;
-            while(null != (line = br.readLine())) {
+            while (null != (line = br.readLine())) {
                 sb.append(line);
             }
             return sb.toString();
         }
     }
 
-    @FunctionalInterface
-    public interface ClobConsumer {
-        void accept(java.sql.Clob blob) throws SQLException, IOException;
-    }
+
 }

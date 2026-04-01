@@ -56,6 +56,7 @@ import static cwms.cda.api.Controllers.queryParamAsDouble;
 import static cwms.cda.api.Controllers.queryParamAsInstant;
 import static cwms.cda.api.Controllers.requiredParam;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.MeasurementDao;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.measurement.Measurement;
@@ -165,10 +166,7 @@ public final class MeasurementController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String locationId) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
-        }
-
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -208,9 +206,7 @@ public final class MeasurementController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void update(@NotNull Context ctx, @NotNull String locationId) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
-        }
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -220,9 +216,9 @@ public final class MeasurementController implements CrudHandler {
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the measurements to delete"),
-                    @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window to delete. " +
+                    @OpenApiParam(name = BEGIN, description = "The start of the time window to delete. " +
                             TIME_FORMAT_DESC),
-                    @OpenApiParam(name = END, required = true, description = "The end of the time window to delete." +
+                    @OpenApiParam(name = END, description = "The end of the time window to delete." +
                             TIME_FORMAT_DESC),
                     @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone "
                             + "to be used if the format of the " + BEGIN + "and " + END

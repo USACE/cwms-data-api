@@ -32,6 +32,7 @@ import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
+import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dao.basin.BasinDao;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationCategory;
@@ -42,9 +43,12 @@ import cwms.cda.helpers.ZoneIdHelper;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.IntegrationTestNameGenerator;
 import fixtures.KeyCloakExtension;
+import fixtures.MinIOExtension;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
-
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -52,7 +56,9 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,17 +66,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.catalina.Manager;
 import org.apache.catalina.SessionEvent;
 import org.apache.catalina.SessionListener;
 import org.apache.catalina.session.StandardSession;
 import org.apache.commons.io.IOUtils;
-import freemarker.template.Configuration;
-import freemarker.template.Template;
-import freemarker.template.TemplateException;
-
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -81,6 +82,7 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 
 /**
@@ -90,9 +92,10 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 @DisplayNameGeneration(IntegrationTestNameGenerator.class)
 @Tag("integration")
 @ExtendWith(KeyCloakExtension.class)
+@ExtendWith(MinIOExtension.class)
 @ExtendWith(CwmsDataApiSetupCallback.class)
 public class DataApiTestIT {
-    private static FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     protected static String createLocationQuery = null;
     protected static String createTimeseriesQuery = null;
@@ -228,7 +231,7 @@ public class DataApiTestIT {
                     @Override
                     public void sessionEvent(SessionEvent event) {
                         logger.atInfo().log("Got event of type: %s", event.getType());
-                        logger.atInfo().log("Session is:", event.getSession().toString());
+                        logger.atInfo().log("Session is: %s", event.getSession().toString());
                     }
 
                 });
@@ -285,6 +288,45 @@ public class DataApiTestIT {
         }, "cwms_20");
     }
 
+    protected static void addVerticalDatumOffsetForExistingLocation(String location, String officeId, VerticalDatum from, VerticalDatum to, double offset, boolean isEstimate) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        String desc = isEstimate ? "ESTIMATE" : "";
+        final String insertSql =
+                "INSERT INTO AT_VERT_DATUM_OFFSET " +
+                        " (LOCATION_CODE, VERTICAL_DATUM_ID_1, VERTICAL_DATUM_ID_2, EFFECTIVE_DATE, OFFSET, DESCRIPTION) " +
+                        " VALUES (?, ?, ?, ?, ?, ?)";
+
+        db.connection(c -> {
+            String sql = "SELECT LOCATION_CODE FROM AV_LOC2 WHERE DB_OFFICE_ID = ? AND LOCATION_ID = ?";
+            Long locationCode = null;
+            try (PreparedStatement ps = c.prepareStatement(sql)) {
+                ps.setString(1, officeId);
+                ps.setString(2, location);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        locationCode = rs.getLong(1);
+                    }
+                }
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to verify location exists for offset insert", ex);
+            }
+            if (locationCode == null) {
+                throw new IllegalArgumentException("Location not found for office=" + officeId + ", id=" + location);
+            }
+            try (PreparedStatement ps = c.prepareStatement(insertSql)) {
+                ps.setLong(1, locationCode);              // LOCATION_CODE
+                ps.setString(2, from.toString());       // VERTICAL_DATUM_ID_1
+                ps.setString(3, to.toString());         // VERTICAL_DATUM_ID_2
+                ps.setDate(4, Date.valueOf("1000-01-01")); //EFFECTIVE_DATE
+                ps.setDouble(5, offset);                // OFFSET
+                ps.setString(6, desc);                  // DESCRIPTION ("" if not estimate)
+                ps.executeUpdate();
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to insert vertical datum offset", ex);
+            }
+        }, "cwms_20");
+    }
+
     /**
      * Creates location with all minimum required data.
      * Additional calls to this function with the same location name are noop.
@@ -328,6 +370,66 @@ public class DataApiTestIT {
                 throw new RuntimeException("Unable to create location", ex);
             }
         }, "cwms_20");
+    }
+
+    protected static void createLocationWithVerticalDatum(String location, boolean active, String office, VerticalDatum verticalDatum) throws SQLException
+    {
+        createLocation(location, active, office);
+        updateLocation(location, active, office, verticalDatum);
+    }
+
+    private static void updateLocation(String location, boolean active, String officeId, VerticalDatum verticalDatum) throws SQLException {
+
+        String P_LOCATION_ID = location;
+        String P_LOCATION_TYPE = "SITE";
+        Number P_ELEVATION = 11;
+        String P_ELEV_UNIT_ID = "m";
+
+        // Pretty sure this isn't supposed to have a dash.  The create doesn't check.  The default create just passes null.
+        // If it has a dash then the offsets don't work.
+        // select VERTICAL_DATUM, count(*) as COUNT
+        //  from AT_PHYSICAL_LOCATION
+        //  group by VERTICAL_DATUM
+        //  order by COUNT desc
+        // has no entries with a dash in the name (unless we've run this test with a dash).
+        String P_VERTICAL_DATUM = verticalDatum.toString();
+        Number P_LATITUDE = 38.5757;   // pretty sure that if these are 0,0 then its not inside the navd88 bounds and the offsets come back []
+        Number P_LONGITUDE = -121.4789;
+        String P_HORIZONTAL_DATUM = "WGS84";
+        String P_PUBLIC_NAME = "Integration Test Sac Dam";
+        String P_LONG_NAME= null;
+        String P_DESCRIPTION = "for testing";
+        String P_TIME_ZONE_ID = "UTC";
+        String P_COUNTY_NAME = "Sacramento";
+        String P_STATE_INITIAL = "CA";
+        String P_ACTIVE = active ? "T" : "F";
+        String P_DB_OFFICE_ID = officeId;
+
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection(c -> {
+            DSLContext dslContext = getDslContext(c, officeId);
+
+            //            CWMS_LOC_PACKAGE.call_DELETE_LOCATION(dslContext.configuration(), P_LOCATION_ID, String.valueOf(DeleteRule.DELETE_LOC_CASCADE), P_DB_OFFICE_ID);
+            //            CWMS_LOC_PACKAGE.call_CREATE_LOCATION(dslContext.configuration(),
+            //                    P_LOCATION_ID, P_LOCATION_TYPE, P_ELEVATION, P_ELEV_UNIT_ID, P_VERTICAL_DATUM, P_LATITUDE, P_LONGITUDE,
+            //                    P_HORIZONTAL_DATUM, P_PUBLIC_NAME, P_LONG_NAME, P_DESCRIPTION, P_TIME_ZONE_ID, P_COUNTY_NAME, P_STATE_INITIAL,
+            //                    P_ACTIVE, P_DB_OFFICE_ID);
+
+            String P_IGNORENULLS = "F";
+            CWMS_LOC_PACKAGE.call_UPDATE_LOCATION(dslContext.configuration(),
+                                                  P_LOCATION_ID, P_LOCATION_TYPE, P_ELEVATION, P_ELEV_UNIT_ID, P_VERTICAL_DATUM, P_LATITUDE, P_LONGITUDE,
+                                                  P_HORIZONTAL_DATUM, P_PUBLIC_NAME, P_LONG_NAME, P_DESCRIPTION, P_TIME_ZONE_ID, P_COUNTY_NAME, P_STATE_INITIAL,
+                                                  P_ACTIVE, P_IGNORENULLS, P_DB_OFFICE_ID );
+
+        });
+
+    }
+
+    private static DSLContext getDslContext(Connection database, String officeId)
+    {
+        DSLContext dsl =  DSL.using(database, SQLDialect.ORACLE18C);
+        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
+        return dsl;
     }
 
     /**
@@ -550,7 +652,7 @@ public class DataApiTestIT {
     @AfterEach
     public void cleanupLocationGroups() throws Exception {
         if (this.groupsCreated.isEmpty()) {
-            logger.atInfo().log("No groups to cleanup.");
+            logger.atFine().log("No groups to cleanup.");
             return;
         }
         logger.atInfo().log("Cleaning up groups that tests did not remove.");
@@ -575,7 +677,7 @@ public class DataApiTestIT {
     @AfterEach
     public void cleanupLocationCategories() throws Exception {
         if (this.categoriesCreated.isEmpty()) {
-            logger.atInfo().log("No location categories to cleanup.");
+            logger.atFine().log("No location categories to cleanup.");
             return;
         }
         logger.atInfo().log("Cleaning up location categories that tests did not remove.");
@@ -605,7 +707,7 @@ public class DataApiTestIT {
      */
     public static void cleanupBasins() throws Exception {
         if (basinsCreated.isEmpty()) {
-            logger.atInfo().log("No basins to cleanup.");
+            logger.atFine().log("No basins to cleanup.");
             return;
         }
         logger.atInfo().log("Cleaning up basins test did not remove.");

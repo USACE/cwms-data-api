@@ -179,8 +179,7 @@ public class RatingMetadataController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String ratingId) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of
-        // generated methods, choose Tools | Specs.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @NotNull
@@ -192,22 +191,19 @@ public class RatingMetadataController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of
-        // generated methods, choose Tools | Specs.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String locationCode) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of
-        // generated methods, choose Tools | Specs.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String locationCode) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of
-        // generated methods, choose Tools | Specs.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
 }

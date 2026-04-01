@@ -21,7 +21,6 @@ import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
 
-import org.jooq.ConnectionRunnable;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
@@ -65,7 +64,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import com.google.common.flogger.FluentLogger;
@@ -1040,7 +1038,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Condition nestedCondition = view.ALIASED_ITEM.isNull()
                 .and(view.VALUE.isNotNull())
                 .and(view.CWMS_TS_ID.eq(tsId))
-                .and(view.OFFICE_ID.eq(officeId));
+                .and(view.OFFICE_ID.eq(officeId.toUpperCase()));
 
         if (twoWeeksFromNow != null) {
             nestedCondition = nestedCondition.and(view.DATE_TIME.lt(twoWeeksFromNow));
@@ -1062,7 +1060,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .from(view)
                 .where(view.DATE_TIME.in(maxSelect))
                 .and(view.CWMS_TS_ID.eq(tsId))
-                .and(view.OFFICE_ID.eq(officeId))
+                .and(view.OFFICE_ID.eq(officeId.toUpperCase()))
                 .and(view.UNIT_ID.eq(unit))
                 .and(view.VALUE.isNotNull())
                 .and(view.ALIASED_ITEM.isNull())
@@ -1133,7 +1131,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             // build whereCondition depending on office
             Condition whereCondition = AV_CWMS_TS_ID2.CWMS_TS_ID.in(tsIds);
             if (office != null) {
-                whereCondition = whereCondition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office));
+                whereCondition = whereCondition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.toUpperCase()));
             }
 
             // create baseIds alias
@@ -1285,7 +1283,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.GROUP_ID.eq(groupId));
         }
         if (office != null) {
-            whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID.eq(office));
+            whereCondition = whereCondition.and(AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN.DB_OFFICE_ID.eq(office.toUpperCase()));
         }
 
         CommonTableExpression<?> baseIds = name("base_ids").as(
@@ -1474,36 +1472,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 }
             });
         });
-    }
-
-    //
-
-    /**
-     * The idea here is that this will check the current default datum,
-     *     possible switch to the specified datum and
-     *     then run the code and
-     *     if the datum was previously switched
-     *     then switch back to the initial datum.
-     * @param targetDatum The desired ver
-     * @param dslContext
-     * @param cr
-     */
-    private void withDefaultDatum(@Nullable VerticalDatum targetDatum, DSLContext dslContext, ConnectionRunnable cr) {
-        String defaultVertDatum = CWMS_LOC_PACKAGE.call_GET_DEFAULT_VERTICAL_DATUM(dslContext.configuration());
-        String targetName = (targetDatum != null) ? targetDatum.toString() : null;
-        boolean changeDefaultDatum = !Objects.equals(targetDatum, defaultVertDatum);
-        try {
-            if (changeDefaultDatum) {
-                CWMS_LOC_PACKAGE.call_SET_DEFAULT_VERTICAL_DATUM(dslContext.configuration(), targetName);
-            }
-
-            connection(dslContext, cr);
-        }finally{
-            if (changeDefaultDatum) {
-                // If we changed it we should restore.
-                CWMS_LOC_PACKAGE.call_SET_DEFAULT_VERTICAL_DATUM(dslContext.configuration(), defaultVertDatum);
-            }
-        }
     }
 
     @Override

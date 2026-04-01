@@ -1,5 +1,5 @@
 {
-  "contract-name": "Sac River",
+  "contract-name": "Sac River Pumps",
   "water-user": {
     "entity-name": "California DWR",
     "project-id": {
@@ -28,18 +28,21 @@
         "pump-type": "IN",
         "transfer-type-display": "Temporary Inlet",
         "flow": 1.0,
+        "flow-unit": "cms",
         "comment": "Added water to the system"
       },
       {
         "pump-type": "OUT",
         "transfer-type-display": "Pipeline",
         "flow": 2.0,
+        "flow-unit": "cms",
         "comment": "Removed excess water"
       },
       {
         "pump-type": "BELOW",
         "transfer-type-display": "Pipeline",
         "flow": 3.0,
+        "flow-unit": "cms",
         "comment": "Daily water release"
       }
     ],
@@ -48,18 +51,21 @@
         "pump-type": "IN",
         "transfer-type-display": "Pipeline",
         "flow": 4.0,
+        "flow-unit": "cms",
         "comment": "Pump transfer for the day"
       },
       {
         "pump-type": "OUT",
         "transfer-type-display": "Pipeline",
         "flow": 5.0,
+        "flow-unit": "cms",
         "comment": "Excess water transfer"
       },
       {
         "pump-type": "BELOW",
         "transfer-type-display": "Pipeline",
         "flow": 6.0,
+        "flow-unit": "cms",
         "comment": "Water returned to the river"
       }
     ],
@@ -68,18 +74,21 @@
         "pump-type": "IN",
         "transfer-type-display": "Pipeline",
         "flow": 7.0,
+        "flow-unit": "cms",
         "comment": "Pump transfer for the day"
       },
       {
         "pump-type": "OUT",
         "transfer-type-display": "Pipeline",
         "flow": 8.0,
+        "flow-unit": "cms",
         "comment": "Excess water transfer"
       },
       {
         "pump-type": "BELOW",
         "transfer-type-display": "Pipeline",
         "flow": 9.0,
+        "flow-unit": "cms",
         "comment": "Water returned to the river"
       }
 

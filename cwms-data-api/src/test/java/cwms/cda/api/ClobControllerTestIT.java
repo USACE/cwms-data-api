@@ -13,6 +13,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -107,7 +108,7 @@ public class ClobControllerTestIT extends DataApiTestIT {
     @Test
     void test_getOne_notFound() throws UnsupportedEncodingException {
         String clobId = "TEST";
-        String urlencoded = URLEncoder.encode(clobId, "UTF-8");
+        String urlencoded = URLEncoder.encode(clobId, StandardCharsets.UTF_8);
 
         given()
         .log().ifValidationFails(LogDetail.ALL, true)
@@ -150,19 +151,68 @@ public class ClobControllerTestIT extends DataApiTestIT {
     void test_getOne_plainText_withRange()
     {
         // We can now do Range requests!
+
+        // If we ask for byte 0 to the _end_ that is like a normal request for the whole file, we should get "test value"
         given()
-            .accept("text/plain")
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .queryParam(Controllers.OFFICE, SPK)
-            .queryParam(Controllers.CLOB_ID, EXISTING_CLOB_ID)
-            .header("Range"," bytes=3-")
-        .when()
-            .get("/clobs/ignored")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
-            .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
-            .body( is("t value"));
+                .accept("text/plain")
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(Controllers.OFFICE, SPK)
+                .queryParam(Controllers.CLOB_ID, EXISTING_CLOB_ID)
+                .header("Range", " bytes=0-")
+                .when()
+                .get("/clobs/ignored")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+                .body( is(EXISTING_CLOB_VALUE));
+
+        // Our test value is 10 bytes so if we ask for 0-9 we should get the whole value
+        given()
+                .accept("text/plain")
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(Controllers.OFFICE, SPK)
+                .queryParam(Controllers.CLOB_ID, EXISTING_CLOB_ID)
+                .header("Range", " bytes=0-9")
+                .when()
+                .get("/clobs/ignored")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+                .body( is(EXISTING_CLOB_VALUE));
+
+        // If we ask for byte 3 to the end we should get "t value"
+        given()
+                .accept("text/plain")
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(Controllers.OFFICE, SPK)
+                .queryParam(Controllers.CLOB_ID, EXISTING_CLOB_ID)
+                .header("Range", " bytes=3-")
+                .when()
+                .get("/clobs/ignored")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+                .body( is("t value"));
+
+        // If we ask for byte 3 to 7 we should get "t val"
+        given()
+                .accept("text/plain")
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(Controllers.OFFICE, SPK)
+                .queryParam(Controllers.CLOB_ID, EXISTING_CLOB_ID)
+                .header("Range", " bytes=3-7")
+                .when()
+                .get("/clobs/ignored")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+                .body( is("t val"));
+
+
     }
 
     @Test

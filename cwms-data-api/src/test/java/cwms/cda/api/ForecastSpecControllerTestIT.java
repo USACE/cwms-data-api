@@ -117,7 +117,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(DESIGNATOR, designator)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -160,7 +160,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(DESIGNATOR, designator)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -324,7 +324,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(DESIGNATOR, designator)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -345,7 +345,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, SPEC_ID)
-            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(DESIGNATOR, designator)
             .queryParam(Controllers.METHOD, JooqDao.DeleteMethod.DELETE_ALL)
         .when()
             .redirects().follow(true)
@@ -362,7 +362,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(DESIGNATOR, designator)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -371,6 +371,210 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+        ;
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void create_getAll_delete_getAll(String format) throws Exception {
+
+        // Structure of test:
+        // 1) Create two specs
+        // 2) Call getAll and verify a list/array is returned containing both
+        // 3) Delete both specs
+        // 4) Call getAll again and verify they are not returned
+
+        // Step 1) Create two specs
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/forecast_spec_create.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        String specId = SPEC_ID + "TEST";
+        tsData = tsData.replace("\"spec-id\": \"" + SPEC_ID + "\"", "\"spec-id\": \"" + specId + "\"");
+        // First spec uses SPEC_ID as-is. Second spec will replace spec-id with SPEC_ID + "-2"
+        String specId2 = specId + "-2";
+        String tsData2 = tsData.replace("\"spec-id\": \"" + specId + "\"", "\"spec-id\": \"" + specId2 + "\"");
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Create first spec
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Create second spec
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSONV2)
+            .body(tsData2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Step 2) getAll should return a list containing both specs when filtered by office and designator
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.DESIGNATOR_MASK, "*")
+            .queryParam(Controllers.ID_MASK, specId + "*")
+            .queryParam(Controllers.SOURCE_ENTITY, ".*")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            // verify it is an array with 2 elements and contains both spec-ids
+            .body("size()", equalTo(2))
+            .body("[0].designator", equalTo(designator))
+            .body("[1].designator", equalTo(designator))
+        ;
+
+        // Step 3) Delete both specs
+        truncateFcstTimeSeries();
+
+        // Step 4) Verify getAll no longer returns the deleted specs
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(DESIGNATOR, "*")
+            .queryParam(ID_MASK, specId + "*")
+            .queryParam(Controllers.SOURCE_ENTITY, ".*")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            // Expect empty array
+            .body("size()", equalTo(0))
+        ;
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void create_getAll_with_entity_like_delete_getAll(String format) throws Exception {
+
+        // Structure of test:
+        // 1) Create two specs
+        // 2) Call getAll and verify a list/array is returned containing both
+        // 3) Delete both specs
+        // 4) Call getAll again and verify they are not returned
+
+        // Step 1) Create two specs
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/forecast_spec_create.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        String specId = SPEC_ID + "TEST";
+        tsData = tsData.replace("\"spec-id\": \"" + SPEC_ID + "\"", "\"spec-id\": \"" + specId + "\"");
+        // First spec uses SPEC_ID as-is. Second spec will replace spec-id with SPEC_ID + "-2"
+        String specId2 = specId + "-2";
+        String tsData2 = tsData.replace("\"spec-id\": \"" + specId + "\"", "\"spec-id\": \"" + specId2 + "\"");
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Create first spec
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post(PATH)
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Create second spec
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .contentType(Formats.JSONV2)
+                .body(tsData2)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post(PATH)
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Step 2) getAll should return a list containing both specs when filtered by office and designator
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.DESIGNATOR_MASK, "*")
+                .queryParam(Controllers.ID_MASK, specId + "*")
+                .queryParam(Controllers.SOURCE_ENTITY_LIKE, "%")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get(PATH)
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                // verify it is an array with 2 elements and contains both spec-ids
+                .body("size()", equalTo(2))
+                .body("[0].designator", equalTo(designator))
+                .body("[1].designator", equalTo(designator))
+        ;
+
+        // Step 3) Delete both specs
+        truncateFcstTimeSeries();
+
+        // Step 4) Verify getAll no longer returns the deleted specs
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(DESIGNATOR, "*")
+                .queryParam(ID_MASK, specId + "*")
+                .queryParam(Controllers.SOURCE_ENTITY, ".*")
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get(PATH)
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                // Expect empty array
+                .body("size()", equalTo(0))
         ;
     }
 
@@ -408,7 +612,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
                 .header(AUTH_HEADER, user.toHeaderValue())
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(Controllers.NAME, "SPK-Daily-UKY-Test")
-                .queryParam(Controllers.DESIGNATOR, designator)
+                .queryParam(DESIGNATOR, designator)
                 .queryParam(Controllers.METHOD, JooqDao.DeleteMethod.DELETE_ALL)
         .when()
                 .redirects().follow(true)
@@ -424,7 +628,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
                 .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(Controllers.DESIGNATOR, designator)
+                .queryParam(DESIGNATOR, designator)
         .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -481,7 +685,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(DESIGNATOR, designator)
             .header(ApiServlet.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
@@ -508,7 +712,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, specId)
-            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(DESIGNATOR, designator)
             .queryParam(Controllers.METHOD, JooqDao.DeleteMethod.DELETE_ALL)
         .when()
             .redirects().follow(true)
@@ -525,7 +729,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(DESIGNATOR, designator)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -556,7 +760,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(DESIGNATOR, designator)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -598,7 +802,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(DESIGNATOR, designator)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -639,7 +843,7 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.DESIGNATOR, designator)
+            .queryParam(DESIGNATOR, designator)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

@@ -26,6 +26,7 @@
 
 package cwms.cda.api.watersupply;
 
+import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.OFFICE;
@@ -36,9 +37,10 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
+import cwms.cda.api.BaseHandler;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dao.watersupply.WaterSupplyAccountingDao;
+import cwms.cda.data.dao.watersupply.WaterSupplyUtils;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.PumpTransfer;
@@ -47,31 +49,29 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
+import mil.army.usace.hec.metadata.DataSetIllegalArgumentException;
+import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class AccountingCreateController implements Handler {
+public class AccountingCreateController extends BaseHandler {
     private static final String TAG = "Pump Accounting";
-    private final MetricRegistry metrics;
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
 
     public AccountingCreateController(MetricRegistry metrics) {
-        this.metrics = metrics;
+        super(metrics);
     }
 
     @NotNull
@@ -91,11 +91,17 @@ public class AccountingCreateController implements Handler {
             @OpenApiParam(name = WATER_USER, description = "The water user the accounting is associated with.",
                     required = true),
             @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract associated with the "
-                    + "accounting.", required = true),
+                    + "accounting. For names with special characters (such as '/'), use the JSONV2 accept header "
+                    + "with a name encoded using URL-safe BASE64.", required = true),
         },
         responses = {
             @OpenApiResponse(status = STATUS_201, description = "The pump accounting entry was created."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
+        },
+        headers = {
+            @OpenApiParam(name = ACCEPT, description = "The format of the request body. Accepts JSONV1 and JSONV2. "
+                + "Note: JSONV2 should be used if the contract name contains special characters such as '/'. "
+                + "In this case, the contract name should be encoded using URL-safe BASE64 encoding.")
         },
         description = "Create a new pump accounting entry associated with a water supply contract.",
         path = "/projects/{office}/water-user/{water-user}/contracts/{contract-name}/accounting",
@@ -105,11 +111,20 @@ public class AccountingCreateController implements Handler {
 
     @Override
     public void handle(@NotNull Context ctx) {
+        logUnusedPathParameter(ctx, WATER_USER, "Body contains required information.");
+
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            final String contractId = ctx.pathParam(CONTRACT_NAME);
+            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
+            String contractId;
+            if (formatHeader != null && formatHeader.equals(Formats.JSONV2)) {
+                byte[] decoded = Base64.decodeBase64(ctx.pathParam(CONTRACT_NAME));
+                contractId = new String(decoded);
+            } else {
+                contractId = ctx.pathParam(CONTRACT_NAME);
+            }
+
             final String office = ctx.pathParam(OFFICE);
             DSLContext dsl = getDslContext(ctx);
-            String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, WaterSupplyAccounting.class);
             ctx.contentType(contentType.toString());
             WaterSupplyAccounting accounting = Formats.parseContent(contentType, ctx.body(),
@@ -132,9 +147,15 @@ public class AccountingCreateController implements Handler {
                 }
             }
 
-            waterSupplyAccountingDao.storeAccounting(accounting);
-            StatusResponse re = new StatusResponse(office, "The pump accounting entry was created.", contractId);
-            ctx.status(HttpServletResponse.SC_CREATED).json(re);
+            // Ensure flows are stored in SI units
+            try {
+                WaterSupplyAccounting accountingInSi = WaterSupplyUtils.convertAccountingFlowsToSi(accounting);
+                waterSupplyAccountingDao.storeAccounting(accountingInSi);
+                StatusResponse re = new StatusResponse(office, "The pump accounting entry was created.", contractId);
+                ctx.status(HttpServletResponse.SC_CREATED).json(re);
+            } catch (DataSetIllegalArgumentException | IllegalArgumentException ex) {
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json("Unable to process units for flow: " + ex.getMessage());
+            }
         }
     }
 
@@ -146,4 +167,6 @@ public class AccountingCreateController implements Handler {
         }
         return false;
     }
+
+    
 }

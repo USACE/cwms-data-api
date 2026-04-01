@@ -663,7 +663,8 @@
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
         "https://cwms-data.test:8444/*",
-        "https://localhost:5010/*"
+        "https://localhost:5010/*",
+        "http://localhost:*"
       ],
       "webOrigins": [
         "*"

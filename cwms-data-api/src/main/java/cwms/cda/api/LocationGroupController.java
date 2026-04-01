@@ -86,10 +86,10 @@ public class LocationGroupController implements CrudHandler {
                 + " the assigned locations in the returned location groups. (default: false)"),
             @OpenApiParam(name = LOCATION_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
                 + "matching against the location category id"),
-            @OpenApiParam(name = CATEGORY_OFFICE_ID, required = true, description = "Specifies the "
+            @OpenApiParam(name = CATEGORY_OFFICE_ID, description = "Specifies the "
                 + "owning office of the category the location group belongs to "
                 + "whose data is to be included in the response."),
-            @OpenApiParam(name = LOCATION_OFFICE_ID, required = true, description = "Specifies the "
+            @OpenApiParam(name = LOCATION_OFFICE_ID, description = "Specifies the "
                 + "owning office of the location assigned to the location group whose data is to be included in the response."),
         },
         responses = {
@@ -108,8 +108,8 @@ public class LocationGroupController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LocationGroupDao cdm = new LocationGroupDao(dsl);
 
-            String groupOfficeId = requiredParam(ctx, OFFICE);
-            String categoryOfficeId = requiredParam(ctx, CATEGORY_OFFICE_ID);
+            String groupOfficeId = ctx.queryParam(OFFICE);
+            String categoryOfficeId = ctx.queryParam(CATEGORY_OFFICE_ID);
             String locationOfficeId = ctx.queryParam(LOCATION_OFFICE_ID);
 
             boolean includeAssigned = queryParamAsClass(ctx, new String[]{INCLUDE_ASSIGNED},
@@ -152,11 +152,12 @@ public class LocationGroupController implements CrudHandler {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "owning office of the location group whose data is to be included "
                 + "in the response."),
-            @OpenApiParam(name = GROUP_OFFICE_ID, required = true, description = "Specifies the "
-                + "owning office of the location group whose data is to be included in the response."),
-            @OpenApiParam(name = CATEGORY_OFFICE_ID, required = true, description = "Specifies the "
+            @OpenApiParam(name = GROUP_OFFICE_ID, description = "Specifies the "
+                + "owning office of the location group whose data is to be included in the response. "
+                + "Required for GEO JSON format."),
+            @OpenApiParam(name = CATEGORY_OFFICE_ID, description = "Specifies the "
                 + "owning office of the category the location group belongs to "
-                + "whose data is to be included in the response."),
+                + "whose data is to be included in the response. Required for GEO JSON format."),
             @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies"
                 + " the category containing the location group whose data is to be "
                 + "included in the response."),
@@ -263,6 +264,10 @@ public class LocationGroupController implements CrudHandler {
                 @OpenApiContent(from = LocationGroup.class, type = Formats.JSON)
             },
             required = true),
+        pathParams = {
+            @OpenApiParam(name = GROUP_ID, required = true, description = "Specifies "
+                + "the location_group to be renamed.")
+        },
         queryParams = {
             @OpenApiParam(name = REPLACE_ASSIGNED_LOCS, type = Boolean.class, description = "Specifies whether to "
                 + "unassign all existing locations before assigning new locations specified in the content body "
@@ -276,7 +281,7 @@ public class LocationGroupController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String oldGroupId) {
+    public void update(@NotNull Context ctx, @NotNull String groupId) {
 
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
@@ -288,8 +293,8 @@ public class LocationGroupController implements CrudHandler {
             boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS,
                     Boolean.class).getOrDefault(false);
             LocationGroupDao locationGroupDao = new LocationGroupDao(dsl);
-            if (!office.equalsIgnoreCase(CWMS_OFFICE) && !oldGroupId.equals(deserialize.getId())) {
-                locationGroupDao.renameLocationGroup(oldGroupId, deserialize);
+            if (!office.equalsIgnoreCase(CWMS_OFFICE) && !groupId.equals(deserialize.getId())) {
+                locationGroupDao.renameLocationGroup(groupId, deserialize);
             }
             if (replaceAssignedLocs) {
                 locationGroupDao.unassignAllLocs(deserialize, office);
@@ -321,8 +326,8 @@ public class LocationGroupController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             LocationGroupDao dao = new LocationGroupDao(dsl);
-            String office = ctx.queryParam(OFFICE);
-            String categoryId = ctx.queryParam(CATEGORY_ID);
+            String office = requiredParam(ctx, OFFICE);
+            String categoryId = requiredParam(ctx, CATEGORY_ID);
             boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class).getOrDefault(false);
             dao.delete(categoryId, groupId, cascadeDelete, office);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);

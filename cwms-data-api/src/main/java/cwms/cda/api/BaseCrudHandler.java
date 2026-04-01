@@ -23,12 +23,15 @@ package cwms.cda.api;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import io.javalin.apibuilder.CrudHandler;
+import io.javalin.http.Context;
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 
 public abstract class BaseCrudHandler  implements CrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -45,5 +48,22 @@ public abstract class BaseCrudHandler  implements CrudHandler {
 
     protected final void updateResultSize(String responseString) {
         requestResultSize.update(responseString.length());
+    }
+
+    protected final void updateResultSize(int responseLength) {
+        requestResultSize.update(responseLength);
+    }
+
+    protected final void updateResultSize(long responseLength) {
+        requestResultSize.update(responseLength);
+    }
+
+    public MetricRegistry getMetrics() {
+        return metrics;
+    }
+
+    protected final void logUnusedPathParameter(Context ctx, String pathParam, String reason) {
+        String param = ctx.pathParam(pathParam);
+        LOGGER.atFinest().log("Path parameter '%s' is documented but not used in handler '%s'\nValue: '%s'\nReason: '%s'", pathParam, this.getClass().getSimpleName(), param, reason);
     }
 }
