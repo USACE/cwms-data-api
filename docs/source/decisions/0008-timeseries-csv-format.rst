@@ -66,7 +66,7 @@ Key points
      - Keeps behavior consistent with JSON and XML.
    * - Encoding and delimiters
      - UTF-8, comma delimiter, LF line endings
-     - Comma-only CSV follows RFC 4180 compliance.
+     - Comma-only CSV follows RFC 4180 compliance. Tab/Pipe/semicolon delimiters will not be supported.
    * - Record structure
      - One row per record
      - A record is a single date-time and value pair; ``quality-code`` and ``data-entry-date`` may be included as optional columns. ``version-date`` is also an attribute of the record, but is not expected to vary within a payload and can be treated as metadata.
