@@ -17,7 +17,7 @@ export default [
       {
         id: "swagger-schema",
         text: "Swagger Docs Schema",
-        href: "/cwms-data/swagger-docs",
+        href: "/swagger-docs",
       },
     ],
   },
