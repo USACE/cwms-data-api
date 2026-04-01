@@ -48,7 +48,7 @@ Key points
      - Matches CWMS-VUE behavior. A separate CSV column per case was rejected due to lack of use-cases and schema bloat. Note this requires custom serialization handling.
    * - Column headers
      - Always include headers
-     - RFC 4180 allows headers; including them keeps the format scalable if optional columns are introduced later and prevents reliance on fixed column indices. We will include a header param of ``headers=present`` in the Accept header to explicitly indicate that headers are included, even though they will always be present. This allows for future flexibility if we ever need to emit headerless CSV for some reason.
+     - RFC 4180 allows headers; including them keeps the format scalable if optional columns are introduced later and prevents reliance on fixed column indices. We will include a header param of ``header=present`` in the Accept header to explicitly indicate that headers are included, even though they will always be present. This allows for future flexibility if we ever need to emit headerless CSV for some reason.
    * - Comments
      - Treat lines beginning with ``#`` as comments
      - While not part of RFC 4180, this convention is already used by CWMS endpoints (e.g., office and location-group) that return CSV, and is human-readable.
