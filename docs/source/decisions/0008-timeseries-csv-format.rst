@@ -31,9 +31,6 @@ Key points
    * - Topic
      - Decision
      - Justification
-   * - Serialization
-     - We will utilize the Jackson API
-     - Maintain consistency with JSON and XML serialization infrastructure and object-mapper settings already used across the API.
    * - Required columns
      - Always include ``date-time`` and ``value``; include units in the value column header as parentheses (e.g., ``value (ft)``)
      - Units should exist in exactly one canonical location in all modes. Conditionally adding them as metadata comments will cause confusion over the inconsistency
