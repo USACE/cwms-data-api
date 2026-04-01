@@ -41,8 +41,8 @@ Key points
      - Optional (off by default): ``time-series-id``, ``office-id``, ``version-date``, ``data-entry-date``, ``quality``
      - Everything except ``date-time`` and ``value`` (with units in the header) is optional. Because headers are always included, optional columns can be toggled without breaking parsing. Clients should rely on column names, not indices. Given units are in the `value` header, clients will need to handle this appropriately to determine the correct column index.
    * - Metadata fields
-     - May be emitted as top-of-payload comments (``metadata-format=comment``) or as actual columns (``metadata-format=column``)
-     - The following fields can be treated as metadata comments at top-of-payload rather than columns: ``time-series-id``, ``office-id``, ``version-date``. These are optional (off by default). When included as comments, the payload starts with a line indicating count (e.g., ``# metadata-count: 3``) to aid parsing.
+     - May be emitted as top-of-payload comments (``metadata-format=comments``) or as actual columns (``metadata-format=columns``)
+     - The following fields can be treated as metadata comments at top-of-payload rather than columns: ``time-series-id``, ``office-id``, ``version-date``. These are optional (off by default). It is assumed that the only comments in the payload will be metadata comments, and as such, clients can parse out metadata by reading comment lines until the first non-comment line is reached.
    * - Units location
      - Express units only in the value column header via parentheses (e.g., ``value (cfs)``)
      - Do not include units as a separate column or in metadata comments. This avoids the anti-pattern of dual representation; units live in exactly one canonical location. Custom deserialization may be required to extract units from the header, which is preferable to duplicate representations.
@@ -72,7 +72,7 @@ Key points
      - Comma-only CSV follows RFC 4180 compliance.
    * - Record structure
      - One row per record
-     - A record is a single date-time and value pair; ``quality-code`` and ``data-entry-date`` may be included as optional columns.
+     - A record is a single date-time and value pair; ``quality-code`` and ``data-entry-date`` may be included as optional columns. ``version-date`` is also an attribute of the record, but is not expected to vary within a payload and can be treated as metadata.
    * - Single TS per payload
      - Do not mix multiple time-series IDs in one payload
      - Ensures a payload represents exactly one time-series.
@@ -94,7 +94,6 @@ Example CSVs
 
    .. code-block:: text
 
-      # metadata-count: 3
       # time-series-id: ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI
       # office-id: SWT
       # version-date: aggregate
