@@ -21,6 +21,11 @@ jobs:
             image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25.07.01"
           - env: next-release
             image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.02.17-RC01"
+# place holder for now and leaving commented but in place. General scheme target tests again the current release, the next release, the previous release, and latest development.
+# at this time every possible instance of concern is on 25.07.01, once 26.02.17 is finalized it becomes release and 25.07.01 becomes previous.
+# next-release will be comment out until such time as a RC gets made
+#          - env: previous
+#           image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25.07.01"
     name: build and test (jdk ${{matrix.jdk}}, schema ${{matrix.schema.env}})
     runs-on: ubuntu-latest
     outputs:
