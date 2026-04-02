@@ -56,6 +56,13 @@ jobs:
           annotate_only: true
           include_passed: true
           report_paths: '**/TEST-*.xml'
+      - name: Build Badge
+        uses: emibcn/badge-action@v2.0.2
+        with:
+          label: 'Build'
+          status: 'Ok'
+          color: 'blue,555,daf'
+          path: '.github/badges/${{ matrix.jdk }}/${{ matrix.schema.env }}.svg'
   open-api-static-analysis:
     name: OpenApi Static Analysis Tests
     runs-on: ubuntu-latest
@@ -101,3 +108,23 @@ jobs:
           tag: latest-dev
 
       # No uploads, we're just verifying that nothing broke the docker image.
+  badges:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Badge Branch
+        uses: actions/checkout@v5.0.0
+        with:
+          ref: badges
+          fetch-depth: 1
+          path: badge-workingdir
+      - name: Apply Badge
+        working-directory: badge-workingdir
+        run: |
+          mkdir build
+          cp ../.github/badges/${{ matrix.jdk }}/${{ matrix.schema.env }}.svg build/${{ matrix.jdk }}/${{ matrix.schema.env }}.svg
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add build/${{ matrix.jdk }}/${{ matrix.schema.env }}.svg
+          git commit -m "Update Badge for build ${{ github.event.ref }}"
+          git push origin badges
