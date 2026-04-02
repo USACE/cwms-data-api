@@ -89,14 +89,14 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static final Pattern INVALID_OFFICE_ID = Pattern.compile(
             "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
     private static final Pattern INVALID_UNIT = Pattern.compile(
-            "(.+\\R+){6}ORA-20102: The unit: \\S+"
-                    + " is not a recognized CWMS Database unit for the .+(.+\\R+){10}");
+            "ORA-20102: The unit: \\S+"
+                    + " is not a recognized CWMS Database unit for the");
     private static final Pattern CONVERSION_ERROR = Pattern.compile(
             "^ORA-20998: ERROR: Cannot convert ((parameter .+ from specified units: .+$)"
                     + "|(from unit .+ to unit .+$))");
     private static final Pattern FIELD_LENGTH_EXCEEDED = Pattern.compile(
-            "^ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
-                    + "\\(actual: (\\d+), maximum: (\\d+)\\)\\R*$");
+            "ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
+                    + "\\(actual: (\\d+), maximum: (\\d+)\\)");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -389,7 +389,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     public static boolean isValueTooLargeException(RuntimeException input) {
         return getSqlException(input.getCause()).map(sqlException -> hasCodeOrMessage(sqlException,
-                        Arrays.asList(6502, 12899, 20041),
+                        Arrays.asList(6502, 12899, 20041, 17072),
                         Arrays.asList("value too large for column", "character string buffer too small",
                                 "Error while writing value at JDBC bind index:")))
                 .orElse(false);
@@ -597,7 +597,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             SQLException sqlException = optional.get();
             String message = sqlException.getLocalizedMessage();
 
-            if (INVALID_UNIT.matcher(message).matches()) {
+            if (INVALID_UNIT.matcher(message).find()) {
                 retVal = true;
             }
 
@@ -677,7 +677,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         if (localizedMessage != null) {
             Matcher matcher = FIELD_LENGTH_EXCEEDED.matcher(localizedMessage);
-            if (matcher.matches()) {
+            if (matcher.find()) {
                 String parameter = matcher.group(1);
                 int actualLength = Integer.parseInt(matcher.group(2));
                 int maxLength = Integer.parseInt(matcher.group(3));

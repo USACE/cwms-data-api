@@ -7,6 +7,7 @@ plugins {
     id 'war'
     id 'com.github.node-gradle.node' version '7.1.0'
     id "org.openapi.generator" version "7.15.0"
+    id 'com.gradleup.shadow' version '8.3.10'
 }
 
 configurations {
@@ -16,6 +17,7 @@ configurations {
     baseLibs
     tomcatLibs
     testImplementation.extendsFrom(tomcatLibs)
+    jooqCodegenShadow
 }
 
 configurations.implementation {
@@ -43,7 +45,24 @@ dependencies {
         exclude group: "log4j", module: "log4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
         exclude group: "org.jooq.pro-java-8", module: "jooq"
+        exclude group: "org.jooq.pro-java-11", module: "jooq"
     }
+    //Adding a shaded version of the previous schemas codegen
+    //Due to the way jOOQ generates UDT's, any changes to members of the UDT
+    //means it is not backwards compatible (the bind indexes get messed up)
+    //We could also use this mechanism to shade a 'latest' version of the schema codegen
+    //to allow for work not yet merged into a schema release/rc
+    jooqCodegenShadow(libs.cwms.db.jooq.codegen.shadow) {
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
+        exclude group: "org.jooq.pro", module: "*"
+        exclude group: "org.jooq", module: "jooq"
+        exclude group: "log4j", module: "log4j"
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "org.jooq.pro-java-8", module: "jooq"
+        exclude group: "org.jooq.pro-java-11", module: "jooq"
+    }
+    implementation(files("$buildDir/libs/${project.name}-${project.version}-codegen-shadow.jar"))
 
     implementation(libs.slf4j)
 
@@ -71,6 +90,7 @@ dependencies {
     implementation(libs.cwms.ratings.io.xml)
     implementation(libs.cwms.ratings.io.jdbc) {
         exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
+        exclude group: "org.jooq.pro-java-11", module: "jooq"
     }
 
     implementation(libs.jooq) {
@@ -382,3 +402,13 @@ if (JavaVersion.current() >= JavaVersion.VERSION_11) {
         nodeProjectDir = file("$rootDir/cda-client/")
     }
 }
+
+tasks.register('shadeCodegen', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+    archiveClassifier.set('codegen-shadow')
+    configurations = [project.configurations.jooqCodegenShadow]
+    //See comment above on why shading is needed. Using 'codegen_shadow' as a
+    //suitably obnoxious package name so that imports don't get confused.
+    //We can also shade a 'codegen_latest' in the future if needed.
+    relocate 'usace.cwms.db.jooq.codegen', 'usace.cwms.db.jooq.codegen_shadow'
+}
+tasks.compileJava.dependsOn(tasks.shadeCodegen)

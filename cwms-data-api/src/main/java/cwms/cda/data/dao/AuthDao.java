@@ -25,8 +25,10 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -492,8 +494,15 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     private static ApiKey rs2ApiKey(ResultSet rs) throws SQLException {
         String userId = rs.getString("userid");
         String keyName = rs.getString("key_name");
-        ZonedDateTime created = rs.getObject("created",ZonedDateTime.class);
-        ZonedDateTime expires = rs.getObject("expires",ZonedDateTime.class);
+
+        ZonedDateTime created = Optional.ofNullable(rs.getObject("created", Timestamp.class))
+            .map(Timestamp::toInstant)
+            .map(i -> i.atZone(ZoneOffset.UTC))
+            .orElse(null);
+        ZonedDateTime expires = Optional.ofNullable(rs.getObject("expires", Timestamp.class))
+            .map(Timestamp::toInstant)
+            .map(i -> i.atZone(ZoneOffset.UTC))
+            .orElse(null);
         return new ApiKey(userId,keyName,null,created,expires);
     }
 

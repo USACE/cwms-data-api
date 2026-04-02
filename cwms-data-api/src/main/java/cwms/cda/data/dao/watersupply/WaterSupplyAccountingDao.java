@@ -86,7 +86,8 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
             SQLException se = (SQLException)cause;
             String sqlMessage = se.getMessage();
             Throwable sqlCause = se.getCause();
-            isBind = sqlCause instanceof IllegalArgumentException && sqlMessage.contains("Error while writing value");
+            isBind = (sqlCause instanceof IllegalArgumentException || sqlCause instanceof ArrayIndexOutOfBoundsException)
+                && sqlMessage.contains("Error while writing value");
         }
         return isBind;
     }
@@ -103,13 +104,12 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
     }
 
     private static void storeViaManual(Connection c, WaterSupplyAccounting accounting, boolean overrideProtection, String volumeUnitId, String storeRule) {
-        cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_TAB_T accountingTab = WaterSupplyUtils.toManualWaterUserContractAcctTs(accounting);
-        WATER_USER_CONTRACT_REF_T contractRefT = WaterSupplyUtils
-                .toContractRef(accounting.getWaterUser(), accounting.getContractName());
-        LOC_REF_TIME_WINDOW_TAB_T pumpTimeWindowTab = WaterSupplyUtils.toTimeWindowTabT(accounting);
+        var accountingTab = WaterSupplyUtilsShadow.toManualWaterUserContractAcctTs(accounting);
+        var contractRefT = WaterSupplyUtilsShadow .toContractRef(accounting.getWaterUser(), accounting.getContractName());
+        var pumpTimeWindowTab = WaterSupplyUtilsShadow.toTimeWindowTabT(accounting);
         String timeZoneId = "UTC";
         String overrideProt = formatBool(overrideProtection);
-        cwms.cda.data.dao.watersupply.handgen.CWMS_WATER_SUPPLY_PACKAGE.call_STORE_ACCOUNTING_SET(DSL.using(c).configuration(), accountingTab,
+        usace.cwms.db.jooq.codegen_shadow.packages.CWMS_WATER_SUPPLY_PACKAGE.call_STORE_ACCOUNTING_SET(DSL.using(c).configuration(), accountingTab,
                 contractRefT, pumpTimeWindowTab, timeZoneId, volumeUnitId, storeRule, overrideProt);
     }
 
@@ -118,7 +118,6 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
             boolean startInclusive, boolean endInclusive, boolean ascendingFlag, int rowLimit) {
 
         String transferType = null;
-        WATER_USER_CONTRACT_REF_T contractRefT = WaterSupplyUtils.toContractRef(waterUser, contractName);
         Timestamp startTimestamp = Timestamp.from(startTime);
         Timestamp endTimestamp = Timestamp.from(endTime);
         String timeZoneId = "UTC";
@@ -130,23 +129,25 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
         return connectionResult(dsl, c -> {
             setOffice(c, projectLocation.getOfficeId());
             try {
+                var contractRefT = WaterSupplyUtils.toContractRef(waterUser, contractName);
                 return retrieveFromCodegen(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
             } catch (DataAccessException e){
                 if(isInvalidColumn(e)){
-                   return retrieveViaManual(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
+                    var contractRefT = WaterSupplyUtilsShadow.toContractRef(waterUser, contractName);
+                    return retrieveViaManual(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
                 }
                 throw e;
             }
         });
     }
 
-    private @NonNull List<WaterSupplyAccounting> retrieveViaManual(String units, Connection c, WATER_USER_CONTRACT_REF_T contractRefT, Timestamp startTimestamp, Timestamp endTimestamp, String timeZoneId, String startInclusiveFlag, String endInclusiveFlag, String ascendingFlagStr, BigInteger rowLimitBigInt, String transferType) {
-        cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_TAB_T watUsrContractAcctObjTs
-                = cwms.cda.data.dao.watersupply.handgen.CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_ACCOUNTING_SET(DSL.using(c).configuration(),
+    private @NonNull List<WaterSupplyAccounting> retrieveViaManual(String units, Connection c, usace.cwms.db.jooq.codegen_shadow.udt.records.WATER_USER_CONTRACT_REF_T contractRefT, Timestamp startTimestamp, Timestamp endTimestamp, String timeZoneId, String startInclusiveFlag, String endInclusiveFlag, String ascendingFlagStr, BigInteger rowLimitBigInt, String transferType) {
+        usace.cwms.db.jooq.codegen_shadow.udt.records.WAT_USR_CONTRACT_ACCT_TAB_T watUsrContractAcctObjTs
+                = usace.cwms.db.jooq.codegen_shadow.packages.CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_ACCOUNTING_SET(DSL.using(c).configuration(),
                 contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
                 endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
         if (!watUsrContractAcctObjTs.isEmpty()) {
-            return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs);
+            return WaterSupplyUtilsShadow.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs, units);
         } else {
             return new ArrayList<>();
         }
@@ -171,7 +172,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
                 contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
                 endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
         if (!watUsrContractAcctObjTs.isEmpty()) {
-            return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs, units);
+            return WaterSupplyUtils.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs);
         } else {
             return new ArrayList<>();
         }
