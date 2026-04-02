@@ -26,14 +26,7 @@
 
 package cwms.cda.api.timeseriesprofile;
 
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.METHOD;
-import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
-import static cwms.cda.api.Controllers.PROFILE_DATA;
-import static cwms.cda.api.Controllers.VERSION;
-import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.api.Controllers.requiredInstant;
-import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -42,6 +35,7 @@ import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileInstanceDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -67,6 +61,11 @@ public final class TimeSeriesProfileInstanceCreateController extends TimeSeriesP
                 + " time series profile instance. Default is REPLACE_ALL"),
             @OpenApiParam(name = OVERRIDE_PROTECTION, type = Boolean.class, description = "Override protection"
                 + " for the time series profile instance. Default is false"),
+            @OpenApiParam(name = TIMEZONE,  description = "Specifies "
+                + "the time zone of the values of " + VERSION_DATE + " fields (unless "
+                + "otherwise specified).  If this field is not specified, the default time zone "
+                + "of UTC shall be used.\r\nIgnored if " + VERSION_DATE + " was specified with "
+                + "offset and timezone."),
             @OpenApiParam(name = VERSION_DATE, type = Instant.class, description = "The version date of the"
                 + " time series profile instance. Accepts ISO8601 format.", required = true),
             @OpenApiParam(name = PROFILE_DATA, required = true, description = "The profile data of the"
@@ -84,6 +83,7 @@ public final class TimeSeriesProfileInstanceCreateController extends TimeSeriesP
             @OpenApiResponse(status = "409", description = "Time series profile instance already exists")
         }
     )
+    @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     @Override
     public void handle(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {

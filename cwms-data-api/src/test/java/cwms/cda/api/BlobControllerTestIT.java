@@ -18,6 +18,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import static io.restassured.RestAssured.given;
@@ -36,6 +37,11 @@ public class BlobControllerTestIT extends DataApiTestIT {
     private static final String EXISTING_BLOB_VALUE = "test value";
 
     @BeforeAll
+    public static void setup() throws Exception {
+        createExistingBlob();
+    }
+
+
     static void createExistingBlob() throws Exception
     {
         String origDesc = "test description";
@@ -67,7 +73,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
     @Test
     void test_getOne_not_found() throws UnsupportedEncodingException {
         String blobId = "TEST";
-        String urlencoded = URLEncoder.encode(blobId, "UTF-8");
+        String urlencoded = URLEncoder.encode(blobId, StandardCharsets.UTF_8);
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -123,6 +129,35 @@ public class BlobControllerTestIT extends DataApiTestIT {
     void test_blob_range()
     {
         // We can now do Range requests!
+        // Our example blob above has a value "test value"
+
+        // If we ask for byte 0 to the _end_ that is like a normal request for the whole file, we should get "test value"
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(Controllers.OFFICE, SPK)
+                .header("Range", " bytes=0-")
+                .when()
+                .get("/blobs/" + EXISTING_BLOB_ID)
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+                .body( is(EXISTING_BLOB_VALUE));
+
+        // Our test value is 10 bytes so if we ask for 0-9 we should get the whole value
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(Controllers.OFFICE, SPK)
+                .header("Range", " bytes=0-9")
+                .when()
+                .get("/blobs/" + EXISTING_BLOB_ID)
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+                .body( is(EXISTING_BLOB_VALUE));
+
+        // If we ask for byte 3 to the end we should get "t value"
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .queryParam(Controllers.OFFICE, SPK)
@@ -134,6 +169,19 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
             .body( is("t value"));
+
+        // If we ask for byte 3 to 7 we should get "t val"
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(Controllers.OFFICE, SPK)
+                .header("Range", " bytes=3-7")
+                .when()
+                .get("/blobs/" + EXISTING_BLOB_ID)
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+                .body( is("t val"));
     }
 
     @Test
@@ -406,7 +454,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
 
                 nextPage = pageN.path("next-page");
                 int pageTotal = pageN.path("blobs.size()");
-                assertTrue(pageTotal <= pageSize, "Expected the page to return no more than the configured page size");
+                assertTrue(pageTotal <= pageSize, "Expected the page to return no more than the configured page size. Expected " + pageTotal + "<=" + pageSize);
 
                 totalRetrieved += pageTotal;
             } while( nextPage != null );

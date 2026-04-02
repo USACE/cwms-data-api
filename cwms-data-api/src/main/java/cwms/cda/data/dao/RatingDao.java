@@ -24,6 +24,7 @@
 
 package cwms.cda.data.dao;
 
+import cwms.cda.formatters.FormattingException;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import java.io.IOException;
@@ -33,9 +34,9 @@ import java.util.regex.Pattern;
 
 public interface RatingDao {
 
-    Pattern officeMatcher = Pattern.compile(".*office-id=\"(.*?)\"");
+    Pattern officeMatcher = Pattern.compile(".*office-id(?:=\"([^\"]+)\"|>([^<]+)</office-id>)");
 
-    void create(String ratingSet, boolean replaceBaseCurve) throws IOException, RatingException;
+    void create(String ratingSet, boolean replaceBaseCurve, VerticalDatum vd) throws IOException, RatingException;
 
     RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId, String specificationId,
                        Instant start, Instant end) throws IOException, RatingException;
@@ -46,17 +47,25 @@ public interface RatingDao {
                            String start, String end, String timezone);
 
 
-    void store(String ratingSet, boolean replaceBaseCurve) throws IOException, RatingException;
+    void store(String ratingSet, boolean replaceBaseCurve, VerticalDatum vd) throws IOException, RatingException;
 
     void delete(String officeId, String specificationId, Instant start, Instant end);
+
+    default void create(String ratingSet, boolean replaceBaseCurve) throws IOException, RatingException {
+        create(ratingSet, replaceBaseCurve, null);
+    }
+
+    default void store(String ratingSet, boolean replaceBaseCurve) throws IOException, RatingException {
+        store(ratingSet, replaceBaseCurve, null);
+    }
 
     static String extractOfficeFromXml(String xml) {
         Matcher officeMatch = officeMatcher.matcher(xml);
 
         if (officeMatch.find()) {
-            return officeMatch.group(1);
+            return officeMatch.group(1) != null ? officeMatch.group(1) : officeMatch.group(2);
         } else {
-            throw new RuntimeException("Unable to determine office for data set");
+            throw new FormattingException("Unable to find office-id element within the XML data set.");
         }
     }
 }

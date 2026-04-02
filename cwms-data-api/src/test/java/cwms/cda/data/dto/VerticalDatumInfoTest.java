@@ -122,6 +122,21 @@ class VerticalDatumInfoTest
 		assertVDIEquals(expected, actual);
 	}
 
+    @Test
+    void test_xml_serialize_attributes() {
+        VerticalDatumInfo vdi = new VerticalDatumInfo.Builder()
+                .withOffice("LRL")
+                .withUnit("m")
+                .withLocation("Buckhorn")
+                .withNativeDatum("NGVD-29")
+                .withLocalDatumName("Local Datum Name")
+                .withElevation(230.7)
+                .build();
+        String serialized = new XMLv1().format(vdi);
+        //verify unit and office are attributes not elements since the db expects them as attributes
+        assertTrue(serialized.contains("<vertical-datum-info office=\"LRL\" unit=\"m\""));
+    }
+
 	@Test
 	void testVertDatum1() throws IOException
 	{

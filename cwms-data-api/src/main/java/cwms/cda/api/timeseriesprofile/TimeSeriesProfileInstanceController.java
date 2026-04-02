@@ -95,10 +95,12 @@ public final class TimeSeriesProfileInstanceController extends TimeSeriesProfile
                 + " time series profile instance. Default is true"),
             @OpenApiParam(name = END_TIME_INCLUSIVE, type = Boolean.class, description = "The end inclusive of the"
                 + " time series profile instance. Default is true"),
-            @OpenApiParam(name = PREVIOUS, type = boolean.class, description = "Whether to include the previous "
-                + " time window of the time series profile instance. Default is false"),
-            @OpenApiParam(name = NEXT, type = boolean.class, description = "Whether to include the next time window "
-                    + "of the time series profile instance. Default is false"),
+            @OpenApiParam(name = PREVIOUS, type = boolean.class, description = "Whether to include the data point "
+                + "with the closest timestamp prior to the specified start of the time window for the time series "
+                + "profile instance. Default is false"),
+            @OpenApiParam(name = NEXT, type = boolean.class, description = "Whether to include the data point with "
+                + "the closest timestamp after the specified end of the time window for the time series profile "
+                + "instance. Default is false"),
             @OpenApiParam(name = MAX_VERSION, type = boolean.class, description = "Whether to use the max version"
                 + " date of the time series profile instance. Default is false. If no version date is provided, and"
                     + " maxVersion is false, the min version date will be used."),

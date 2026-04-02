@@ -55,6 +55,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.helpers.DateUtils;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -161,6 +162,9 @@ public class LevelsController implements CrudHandler {
                 @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies the "
                         + "effective date of the level to be deleted. If not provided will "
                         + "delete all data and reference to the location level."),
+                    @OpenApiParam(name = DATE, deprecated = true, description = "Specifies "
+                            + "the effective date of Location Level that will be deleted."
+                            + " Deprecated, use " + EFFECTIVE_DATE + " instead"),
                 @OpenApiParam(name = TIMEZONE, description = "Specifies the time zone of "
                         + "the value of the effective date field (unless otherwise "
                         + "specified).If this field is not specified, the default time zone of UTC "
@@ -196,6 +200,9 @@ public class LevelsController implements CrudHandler {
                 @OpenApiParam(name = LEVEL_ID_MASK, description = "Specifies the name(s) of "
                         + "the location level(s) whose data is to be included in the response. "
                         + "Uses * for all."),
+                @OpenApiParam(name = NAME, deprecated = true, description = "Specifies the name(s) of "
+                        + "the location level(s) whose data is to be included in the response. "
+                        + "Uses * for all. Deprecated, use " + LEVEL_ID_MASK + " instead"),
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning "
                         + "office of the location level(s) whose data is to be included in the"
                         + " response. If this field is not specified, matching location level "
@@ -338,6 +345,9 @@ public class LevelsController implements CrudHandler {
                 @OpenApiParam(name = EFFECTIVE_DATE, required = true, description = "Specifies "
                         + "the effective date of Location Level to be returned."
                         + "Expected formats are `YYYY-MM-DDTHH:MM` or `YYYY-MM-DDTHH:MM:SS`"),
+                @OpenApiParam(name = DATE, deprecated = true, description = "Specifies "
+                        + "the effective date of Location Level that will be returned."
+                        + " Deprecated, use " + EFFECTIVE_DATE + " instead"),
                 @OpenApiParam(name = EFFECTIVE_DATE_EXACT, description = "If true"
                         + " only a level with the exact provided date will be returned. If false"
                         + " The most recent level on or before this time will be returned."
@@ -369,6 +379,7 @@ public class LevelsController implements CrudHandler {
             description = "Retrieves requested Location Level",
             tags = TAG
     )
+    @IgnoreRequiredQueryParamMismatch(parameterNames = {EFFECTIVE_DATE})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String levelId) {
         String office = requiredParam(ctx, OFFICE);
@@ -401,7 +412,10 @@ public class LevelsController implements CrudHandler {
             },
             queryParams = {
                 @OpenApiParam(name = EFFECTIVE_DATE, description = "Specifies "
-                        + "the effective date of Location Level that will be updated")
+                        + "the effective date of Location Level that will be updated"),
+                @OpenApiParam(name = DATE, deprecated = true, description = "Specifies "
+                        + "the effective date of Location Level that will be updated."
+                        + " Deprecated, use " + EFFECTIVE_DATE + " instead")
             },
             requestBody = @OpenApiRequestBody(
                     content = {

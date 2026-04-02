@@ -115,25 +115,47 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     }
 
     public void create(ForecastInstance forecastInst) {
-       String officeId = forecastInst.getSpec().getOfficeId();
-       Timestamp forecastDate = Timestamp.from(forecastInst.getDateTime());
-       Timestamp issueDate = Timestamp.from(forecastInst.getIssueDateTime());
-       String forecastInfo = mapToJson(forecastInst.getMetadata());
-       byte[] fileData = forecastInst.getFileData();
-       BLOB_FILE_T blob = new BLOB_FILE_T();
-       blob.setFILENAME(forecastInst.getFilename());
-       blob.setMEDIA_TYPE(forecastInst.getFileMediaType());
-       blob.setDATA_ENTRY_DATE(OffsetDateTime.now());
-       blob.setQUALITY_CODE(0L);
-       blob.setTHE_BLOB(fileData);
        connection(dsl, conn -> {
-           setOffice(conn, officeId);
-           DefaultBinding.THREAD_LOCAL.set(UTC_CALENDAR);
-           CWMS_FCST_PACKAGE.call_STORE_FCST(DSL.using(conn).configuration(), forecastInst.getSpec().getSpecId(),
-                   forecastInst.getSpec().getDesignator(), forecastDate, issueDate,
-                   "UTC", forecastInst.getMaxAge(), forecastInst.getNotes(), forecastInfo,
-                   blob, "F", "T", officeId);
+           DSLContext ctx = getDslContext(conn, forecastInst.getSpec().getOfficeId());
+           store(ctx, forecastInst);
        });
+    }
+
+    private void store(DSLContext ctx, ForecastInstance forecastInst) {
+        String officeId = forecastInst.getSpec().getOfficeId();
+        Timestamp forecastDate = Timestamp.from(forecastInst.getDateTime());
+        Timestamp issueDate = Timestamp.from(forecastInst.getIssueDateTime());
+        String forecastInfo = mapToJson(forecastInst.getMetadata());
+        byte[] fileData = forecastInst.getFileData();
+        BLOB_FILE_T blob = new BLOB_FILE_T();
+        blob.setFILENAME(forecastInst.getFilename());
+        blob.setMEDIA_TYPE(forecastInst.getFileMediaType());
+        blob.setDATA_ENTRY_DATE(OffsetDateTime.now());
+        blob.setQUALITY_CODE(0L);
+        blob.setTHE_BLOB(fileData);
+        DefaultBinding.THREAD_LOCAL.set(UTC_CALENDAR);
+        // Ensure delete + store occur in a single transaction so a store failure rolls back the delete
+        ctx.transaction(configuration -> {
+            DSLContext tx = DSL.using(configuration);
+            clearExistingForecastInstance(tx, forecastInst, officeId, forecastDate, issueDate);
+            CWMS_FCST_PACKAGE.call_STORE_FCST(configuration, forecastInst.getSpec().getSpecId(),
+                    forecastInst.getSpec().getDesignator(), forecastDate, issueDate,
+                    "UTC", forecastInst.getMaxAge(), forecastInst.getNotes(), forecastInfo,
+                    blob, "F", "T", officeId);
+        });
+    }
+
+    private void clearExistingForecastInstance(DSLContext ctx, ForecastInstance forecastInst, String officeId, Timestamp forecastDate, Timestamp issueDate) {
+        ReplaceUtils.OperatorBuilder noopUrlBuilder = new ReplaceUtils.OperatorBuilder().withTemplate("")
+                .withOperatorKey("{noop}");
+        try {
+            // If the instance doesn't exist this will throw a NotFoundException which we can ignore, if it does exist we want to delete it before storing the new one
+            getForecastInstance(ctx, 0, noopUrlBuilder, officeId, forecastInst.getSpec().getSpecId(), forecastInst.getSpec().getDesignator(), forecastDate.toInstant(), issueDate.toInstant());
+            CWMS_FCST_PACKAGE.call_DELETE_FCST(ctx.configuration(), forecastInst.getSpec().getSpecId(), forecastInst.getSpec().getDesignator(),
+                    forecastDate, issueDate, "UTC", officeId);
+        } catch (NotFoundException e) {
+            // nothing to delete
+        }
     }
 
     private static String mapToJson(Map<String, String> metadata) {
@@ -149,7 +171,7 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
 
     private static Map<String, String> mapFromJson(String forecastInfo) {
         try {
-            return JsonV2.buildObjectMapper().readValue(forecastInfo, new TypeReference<Map<String, String>>() {
+            return JsonV2.buildObjectMapper().readValue(forecastInfo, new TypeReference<>() {
             });
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Error serializing forecast info to JSON", e);
@@ -157,7 +179,12 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     }
 
     public List<ForecastInstance> getForecastInstances(int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder,
-            String office, String name, String designator) {
+            String officeArg, String name, String designator) {
+
+        if(officeArg != null){
+            officeArg = officeArg.toUpperCase();
+        }
+        String office = officeArg;
 
         String query = INSTANCE_QUERY + GET_ALL_CONDITIONS;
         return connectionResult(dsl, (Connection c) -> {
@@ -264,10 +291,23 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     }
 
     public ForecastInstance getForecastInstance(int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder,
-            String office, String name, String designator,
+            String officeArg, String name, String designator,
             Instant forecastDate, Instant issueDate) {
-        String query = INSTANCE_QUERY + GET_ONE_CONDITIONS;
         return connectionResult(dsl, c -> {
+            DSLContext ctx = getDslContext(c, officeArg);
+            return getForecastInstance(ctx, byteLimit, urlBuilder, officeArg, name, designator, forecastDate, issueDate);
+        });
+    }
+
+    private static ForecastInstance getForecastInstance(DSLContext ctx, int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder, String officeArg,
+                                                        String name, String designator, Instant forecastDate, Instant issueDate) {
+        if(officeArg != null){
+            officeArg = officeArg.toUpperCase();
+        }
+        String office = officeArg;
+
+        String query = INSTANCE_QUERY + GET_ONE_CONDITIONS;
+        return connectionResult(ctx, c -> {
             try (PreparedStatement preparedStatement = c.prepareStatement(query)) {
                 preparedStatement.setString(1, office);
                 preparedStatement.setString(2, name);
@@ -295,11 +335,15 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
         String designator = forecastInst.getSpec().getDesignator();
         Instant forecastDate = forecastInst.getDateTime();
         Instant issueDate = forecastInst.getIssueDateTime();
-        //Will throw a NotFoundException if instance doesn't exist
-        ReplaceUtils.OperatorBuilder noopUrlBuilder = new ReplaceUtils.OperatorBuilder().withTemplate("")
-                .withOperatorKey("{noop}");
-        getForecastInstance(0, noopUrlBuilder, officeId, specId, designator, forecastDate, issueDate);
-        create(forecastInst);
+        connection(dsl, c -> {
+            DSLContext ctx = getDslContext(c, forecastInst.getSpec().getOfficeId());
+            //Will throw a NotFoundException if instance doesn't exist
+            ReplaceUtils.OperatorBuilder noopUrlBuilder = new ReplaceUtils.OperatorBuilder().withTemplate("")
+                    .withOperatorKey("{noop}");
+            getForecastInstance(ctx, 0, noopUrlBuilder, officeId, specId, designator, forecastDate, issueDate);
+            store(ctx, forecastInst);
+        });
+
     }
 
     public void delete(String office, String name, String designator,
@@ -314,7 +358,7 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     }
 
     public void getFileBlob(String office, String name, String designator,
-            Instant forecastDate, Instant issueDate, BlobDao.BlobConsumer consumer) {
+            Instant forecastDate, Instant issueDate, StreamConsumer consumer) {
 
         String query = FILE_QUERY + FILE_CONDITIONS;
         connection(dsl, c -> {
@@ -337,8 +381,8 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                                 }
 
                                 Blob blob = (Blob) attributes[5];
-                                try {
-                                    consumer.accept(blob, mediaType);
+                                try (InputStream is = blob.getBinaryStream()){
+                                    consumer.accept(is, 0, mediaType, blob.length());
                                     return;
                                 } finally {
                                     if (blob != null) {
@@ -348,7 +392,8 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                             }
                         }
                     }
-                    consumer.accept(null, null);
+                    // If we get here there was some problem finding the stream.
+                    throw new NotFoundException("Forecast Instance file not found");
                 }
             }
         });

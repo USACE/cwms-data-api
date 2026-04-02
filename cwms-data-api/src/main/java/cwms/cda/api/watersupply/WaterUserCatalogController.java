@@ -56,10 +56,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class WaterUserCatalogController extends WaterSupplyControllerBase implements Handler {
+public final class WaterUserCatalogController extends WaterSupplyControllerBase {
 
     public WaterUserCatalogController(MetricRegistry metrics) {
-        waterMetrics(metrics);
+        super(metrics);
     }
 
     @OpenApi(

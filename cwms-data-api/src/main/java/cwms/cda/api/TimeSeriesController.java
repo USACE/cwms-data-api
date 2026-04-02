@@ -178,11 +178,6 @@ public class TimeSeriesController implements CrudHandler {
                     required = true
             ),
             queryParams = {
-                @OpenApiParam(name = TIMEZONE, description = "Specifies "
-                        + "the time zone of the version-date field (unless "
-                        + "otherwise specified). If this field is not specified, the default time zone "
-                        + "of UTC shall be used.\r\nIgnored if version-date was specified with "
-                        + "offset and timezone."),
                 @OpenApiParam(name = CREATE_AS_LRTS,  type = Boolean.class, description = "Flag indicating if "
                         + "timeseries should be created as Local Regular Time Series. "
                         + "'True' or 'False', default is 'False'"),
@@ -417,6 +412,11 @@ public class TimeSeriesController implements CrudHandler {
                         + "of data as a series of pages. This parameter is used to describes the "
                         + "current location in the response stream.  This is an opaque "
                         + "value, and can be obtained from the 'next-page' value in the response."),
+                @OpenApiParam(name = CURSOR, deprecated = true,
+                        description = "This end point can return a lot of data, this "
+                        + "identifies where in the request you are. This is an opaque"
+                        + " value, and can be obtained from the 'next-page' value in "
+                        + "the response. Deprecated, use " + PAGE + " instead."),
                 @OpenApiParam(name = PAGE_SIZE,
                         type = Integer.class,
                         description = "How many entries per page returned. "
@@ -580,7 +580,7 @@ public class TimeSeriesController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String id) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+            ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
         }
 
     }
@@ -597,11 +597,6 @@ public class TimeSeriesController implements CrudHandler {
                     },
                     required = true),
             queryParams = {
-                @OpenApiParam(name = TIMEZONE, description = "Specifies "
-                        + "the time zone of the version-date field (unless "
-                        + "otherwise specified). If this field is not specified, the default time zone "
-                        + "of UTC shall be used.\r\nIgnored if version-date was specified with "
-                        + "offset and timezone."),
                 @OpenApiParam(name = CREATE_AS_LRTS, type = Boolean.class, description = ""),
                 @OpenApiParam(name = STORE_RULE,  type = StoreRule.class, description = STORE_RULE_DESC),
                 @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description =

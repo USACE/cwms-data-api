@@ -39,6 +39,7 @@
     "active": true
   },
   "flow": 1.0,
+  "flow-unit": "cms",
   "transfer-date": 10000012648112,
   "comment": "Test Comment"
 }

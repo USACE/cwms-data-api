@@ -389,7 +389,8 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .header("Transfer-Encoding", equalTo("chunked"))
+                .header("Accept-Ranges", equalTo("bytes"))
+                .header("Content-Length", not(isEmptyOrNullString()))
                 .contentType(equalTo("text/plain"))
                 .extract()
                 .response()
@@ -507,7 +508,8 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .header("Transfer-Encoding", equalTo("chunked"))
+                .header("Accept-Ranges", equalTo("bytes"))
+                .header("Content-Length", not(isEmptyOrNullString()))
                 .contentType(equalTo("text/plain"))
                 .extract()
                 .response()
@@ -773,7 +775,6 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
         ;
     }
 
-    @Disabled("Update currently fails with an error trying to store a null spec id")
     @Test
     void test_create_get_update_get() throws IOException {
 

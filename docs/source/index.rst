@@ -38,8 +38,23 @@ Welcome to CWMS Data API documentation!
 
 
 .. toctree::
-    :maxdepth: 1
-    :caption: Alternative Topics
+   :maxdepth: 3
+   :caption: Access Management
 
-    Alternative Topics <./alternative-topics/index.rst>
+   Access Management <./access-management/index.md>
 
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Alternative Topics
+
+   Alternative Topics <./alternative-topics/index.rst>
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Design Documents
+   
+   Design <./introduction/design.rst>
+   Decision Records <./decisions/index.rst>
+   Design Documents <./design/index.rst>
+  

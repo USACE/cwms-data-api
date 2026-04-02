@@ -373,7 +373,7 @@ class RatingsControllerTestIT extends DataApiTestIT
     void test_1206_rating_create_json() throws IOException {
         // example from 1206 but office changed to SPK
         String body = readResourceFile("cwms/cda/api/spk/ratings_ind.json");
-
+        body = body.replaceAll("Barren", EXISTING_LOC);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         // Create the set
@@ -397,7 +397,7 @@ class RatingsControllerTestIT extends DataApiTestIT
     void test_1206_rating_create_xml() throws IOException {
         // example from 1206 but office changed to SPK and converted to xml
         String body = readResourceFile("cwms/cda/api/spk/ratings_ind.xml");
-
+        body = body.replaceAll("Barren", EXISTING_LOC);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         // Create the set
@@ -418,4 +418,3 @@ class RatingsControllerTestIT extends DataApiTestIT
     }
 
 }
-

@@ -61,7 +61,7 @@ html_css_files = ['custom.css']
 html_theme = "sphinx_rtd_theme"
 
 html_theme_options = {
-    "navigation_depth": 3,
+    "navigation_depth": 5,
     "collapse_navigation": False,
     "includehidden": False, #avoid pulling anchors/hidden items into the sidebar
 }
@@ -69,4 +69,3 @@ html_theme_options = {
 
 # -- Options for EPUB output
 epub_show_urls = "footnote"
-

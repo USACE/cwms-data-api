@@ -2,52 +2,34 @@ package cwms.cda.security;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
 
-import io.swagger.v3.oas.models.security.OAuthFlow;
-import io.swagger.v3.oas.models.security.OAuthFlows;
-import io.swagger.v3.oas.models.security.Scopes;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 
 public class OpenIDConfig {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
-    private static final String ALT_WELL_KNOWN = "cwms.dataapi.access.openid.useAltWellKnown";
-    private static final boolean USE_ALT_WELLKNOWN;
-
-    static {
-        String altWellKnownStr = System.getProperty(ALT_WELL_KNOWN,System.getenv(ALT_WELL_KNOWN));
-        if (altWellKnownStr != null) {
-            USE_ALT_WELLKNOWN = Boolean.parseBoolean(altWellKnownStr);
-        } else {
-            USE_ALT_WELLKNOWN = false;
-        }
-    }
-
+    
     private URL wellKnown;
-    private URL altWellKnown = null; // silly, but needed by the docker-compose setup so URLs match and work.
+    
     private String issuer;
-    private URL authUrl;
-    private URL tokenUrl;
-    private URL userInfoUrl;
-    private URL logoutUrl;
+    private String client_id;
+    private String idp_hint; // keycloak specific kc_idp_hint to direct federation
+    
     private URL jwksUrl;
     
-    private Scopes scopes = new Scopes();
-    private OAuthFlows flows = new OAuthFlows();
 
-    public OpenIDConfig(URL wellKnown, String altAuthUrl) throws IOException {
+    public OpenIDConfig(URL wellKnown, String client_id, String idp_hint) throws IOException {
         this.wellKnown = wellKnown;
-        if (USE_ALT_WELLKNOWN) {
-            this.altWellKnown = substituteBase(wellKnown, altAuthUrl);
-        }
-        
+        this.idp_hint = idp_hint;
+        this.client_id = client_id;
         HttpURLConnection http = null;
         try
         {
@@ -60,34 +42,6 @@ public class OpenIDConfig {
                 JsonNode node = mapper.readTree(http.getInputStream());
                 jwksUrl = new URL(node.get("jwks_uri").asText());
                 issuer = node.get("issuer").asText();
-                tokenUrl = substituteBase(new URL(node.get("token_endpoint").asText()),altAuthUrl);
-                userInfoUrl = substituteBase(new URL(node.get("userinfo_endpoint").asText()),altAuthUrl);
-                logoutUrl = substituteBase(new URL(node.get("end_session_endpoint").asText()),altAuthUrl);
-                authUrl = substituteBase(new URL(node.get("authorization_endpoint").asText()),altAuthUrl);
-                JsonNode scopes = node.get("scopes_supported");
-                for(JsonNode scope: scopes) {
-                    this.scopes.addString(scope.asText(), "");
-                }
-
-                JsonNode grants = node.get("grant_types_supported");
-                for(JsonNode grant: grants) {
-                    OAuthFlow flow = new OAuthFlow();
-                    flow.setTokenUrl(tokenUrl.toString());
-                    flow.setAuthorizationUrl(authUrl.toString());
-                    flow.setScopes(this.scopes);
-                    String grantStr = grant.asText();
-                    if (grantStr.equalsIgnoreCase("implicit")) {
-                        flows.setImplicit(flow);
-                    } else if(grantStr.equalsIgnoreCase("password")) {
-                        flows.setPassword(flow);
-                    } else if(grantStr.equalsIgnoreCase("authorization_code")) {
-                        flows.setAuthorizationCode(flow);
-                    } else if (grantStr.equalsIgnoreCase("client_credentials")) {
-                        flows.setClientCredentials(flow);
-                    }
-                }
-
-
             } else {
                 log.atSevere().log("Unable to retrieve data from realm. Response code %d",status);
             }
@@ -97,30 +51,30 @@ public class OpenIDConfig {
             }
         }
     }
-
-    private URL substituteBase(URL endPoint, String altAuthUrl) throws MalformedURLException {
-        if (altAuthUrl == null) {
-            return endPoint;
-        }
-        log.atInfo().log("Changing '%s' with '%s'", endPoint.toString(), altAuthUrl);
-        String originalPath = endPoint.getPath();
-        log.atInfo().log("New Path = %s", altAuthUrl+originalPath);
-        return new URL(altAuthUrl+originalPath);
-    }
-
+    
     public URL getJwksUrl() {
         return jwksUrl;
     }
 
     public SecurityScheme getScheme() {
-        URL theUrl = wellKnown;
-        if (USE_ALT_WELLKNOWN) {
-            theUrl = altWellKnown;
+
+        
+        SecurityScheme scheme =  new SecurityScheme().type(Type.OPENIDCONNECT)
+                                                    .openIdConnectUrl(wellKnown.toString())
+                                                    .scheme("openid");
+        if (idp_hint != null)
+        {
+            Map<String, Object> hint = new HashMap<>();
+            hint.put("query-parameter", "kc_idp_hint");
+            ArrayList<String> values = new ArrayList<>();
+            for (String value: idp_hint.split(",")) {
+                values.add(value.trim());
+            }
+            hint.put("values", values);
+            scheme.addExtension("x-kc_idp_hint", hint);
         }
-        return new SecurityScheme().type(Type.OPENIDCONNECT)
-                                   .openIdConnectUrl(theUrl.toString())
-                                   .name("Authorization")
-                                   .flows(flows)
-                                   .in(In.HEADER);
+
+        scheme.addExtension("x-oidc-client-id", client_id);
+        return scheme;
     }
 }

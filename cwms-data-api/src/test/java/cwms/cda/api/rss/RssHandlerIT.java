@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.DataApiTestIT;
+import cwms.cda.api.enums.MessageQueue;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
@@ -89,7 +90,7 @@ final class RssHandlerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/rss/" + OFFICE_ID + "/status")
+            .get("/rss/{office}/{name}", OFFICE_ID, MessageQueue.STATUS.value())
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -157,7 +158,7 @@ final class RssHandlerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .get("/rss/" + OFFICE_ID + "/answering-machine")
+            .get("/rss/{office}/{name}", OFFICE_ID, "answering-machine")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()

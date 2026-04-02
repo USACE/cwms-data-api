@@ -27,6 +27,7 @@ import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.ClobDao;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.StreamConsumer;
 import cwms.cda.data.dto.Clob;
 import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -43,7 +44,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.InputStream;
+
 import java.util.Objects;
 import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
@@ -85,6 +86,11 @@ public class ClobController implements CrudHandler {
                         + "identifies where in the request you are. This is an opaque"
                         + " value, and can be obtained from the 'next-page' value in "
                         + "the response."),
+            @OpenApiParam(name = CURSOR, deprecated = true,
+                    description = "This end point can return a lot of data, this "
+                            + "identifies where in the request you are. This is an opaque"
+                            + " value, and can be obtained from the 'next-page' value in "
+                            + "the response. Deprecated, use " + PAGE + " instead."),
             @OpenApiParam(name = PAGE_SIZE,
                 type = Integer.class,
                 description = "How many entries per page returned. Default "
@@ -151,6 +157,14 @@ public class ClobController implements CrudHandler {
                 + "When the accept header is set to " + Formats.JSONV2 + " the clob will be returned as a serialized Clob "
                 + "object with fields for office-id, id, description and value. "
                 + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
+            pathParams = {
+                    @OpenApiParam(name = CLOB_ID, description = "If the _query_ parameter is provided this _path_ parameter "
+                            + "is ignored and the value of the query parameter is used.   "
+                            + "Note: the query parameter is necessary for id's that contain '/' or other special "
+                            + "characters. This is due to limitations in path pattern matching. "
+                            + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
+                            + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+            },
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
                 @OpenApiParam(name = CLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
@@ -187,16 +201,16 @@ public class ClobController implements CrudHandler {
             if (TEXT_PLAIN.equals(formatHeader)) {
                 // useful cmd:  curl -X 'GET' 'http://localhost:7000/cwms-data/clobs/encoded?office=SPK&id=%2FTIME%20SERIES%20TEXT%2F6261044'
                 // -H 'accept: text/plain' --header "Range: bytes=20000-40000"
-                dao.getClob(clobId, office, c -> {
-                    if (c == null) {
-                        ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
-                                + "clob based on given parameters"));
-                    } else {
-                        try (InputStream is = c.getAsciiStream()) {
-                            RangeRequestUtil.seekableStream(ctx, is, TEXT_PLAIN, c.length());
-                        }
-                    }
-                });
+
+                ctx.header(Header.ACCEPT_RANGES, "bytes");
+
+                StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
+                        requestResultSize.update(totalLength);
+                        RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
+                };
+
+                dao.getClob(clobId, office, consumer);
+
             } else {
                 Optional<Clob> optAc = dao.getByUniqueName(clobId, office);
 

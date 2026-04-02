@@ -24,39 +24,32 @@
 
 package cwms.cda.api;
 
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.BlobDao;
+import cwms.cda.data.dao.StreamConsumer;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.InputStream;
 
-import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
-public class BinaryTimeSeriesValueController implements Handler {
-    private final MetricRegistry metrics;
-    private final Histogram requestResultSize;
-
+public class BinaryTimeSeriesValueController extends BaseHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     public BinaryTimeSeriesValueController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        requestResultSize = this.metrics.histogram((name(BinaryTimeSeriesValueController.class, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
@@ -67,14 +60,9 @@ public class BinaryTimeSeriesValueController implements Handler {
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                             + "the Binary TimeSeries whose data is to be included in the response."),
-                    @OpenApiParam(name = TIMEZONE,  description = "Specifies "
-                            + "the time zone of the values of the begin and end fields (unless "
-                            + "otherwise specified). If this field is not specified, "
-                            + "the default time zone of UTC shall be used."),
-                    @OpenApiParam(name = DATE, required = true, description = "The date of the binary value to retrieve"),
-                    @OpenApiParam(name = VERSION_DATE, description = "The version date for the value to retrieve."),
                     @OpenApiParam(name = BLOB_ID, description = "Will be removed in a schema update. " +
-                            "This is a placeholder for integration testing with schema 23.3.16", deprecated = true)
+                            "This is a placeholder for integration testing with schema 23.3.16", deprecated = true,
+                            required = true)
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -84,26 +72,41 @@ public class BinaryTimeSeriesValueController implements Handler {
                     )},
             tags = {BinaryTimeSeriesController.TAG}
     )
-    public void handle(Context ctx) {
+    public void handle(@NotNull Context ctx) {
         //Implementation will change with new CWMS schema
         //https://www.hec.usace.army.mil/confluence/display/CWMS/2024-02-29+Task2A+Text-ts+and+Binary-ts+Design
+        logUnusedPathParameter(ctx, NAME, "Handled as " + BLOB_ID + " in query parameter.  May change with schema.");
+
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String binaryId = requiredParam(ctx, BLOB_ID);
             String officeId = requiredParam(ctx, OFFICE);
             DSLContext dsl = getDslContext(ctx);
+
+            ctx.header(Header.ACCEPT_RANGES, "bytes");
+
+            final Long offset;
+            final Long end ;
+            long[] ranges = RangeParser.parseFirstRange(ctx.header(io.javalin.core.util.Header.RANGE));
+            if (ranges != null) {
+                offset = ranges[0];
+                end = ranges[1];
+            } else {
+                offset = null;
+                end = null;
+            }
+
             BlobDao blobDao = new BlobDao(dsl);
-            blobDao.getBlob(binaryId, officeId, (blob, mediaType) -> {
-                if (blob == null) {
+            StreamConsumer streamConsumer = (is, isPosition, mediaType, totalLength) -> {
+                if (is == null) {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                             + "blob based on given parameters"));
                 } else {
-                    long size = blob.length();
-                    requestResultSize.update(size);
-                    try (InputStream is = blob.getBinaryStream()) {
-                        RangeRequestUtil.seekableStream(ctx, is, mediaType, size);
-                    }
+                    updateResultSize(totalLength);
+                    RangeRequestUtil.seekableStream(ctx, is, isPosition, mediaType, totalLength);
                 }
-            });
+            };
+
+            blobDao.getBlob(binaryId, officeId, streamConsumer, offset, end);
         }
     }
 }

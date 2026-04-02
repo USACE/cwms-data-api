@@ -52,12 +52,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class WaterPumpDisassociateController extends WaterSupplyControllerBase implements Handler {
+public final class WaterPumpDisassociateController extends WaterSupplyControllerBase {
     private static final String PUMP_TYPE = "pump-type";
     private static final String DELETE_ACCOUNTING = "delete-accounting";
 
     public WaterPumpDisassociateController(MetricRegistry metrics) {
-        waterMetrics(metrics);
+        super(metrics);
     }
 
     @OpenApi(

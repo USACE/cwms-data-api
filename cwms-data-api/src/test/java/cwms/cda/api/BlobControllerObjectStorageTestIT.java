@@ -1,0 +1,52 @@
+package cwms.cda.api;
+
+import cwms.cda.features.CdaFeatures;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.Extension;
+import org.junit.jupiter.api.extension.ExtensionContext;
+
+import org.togglz.core.context.FeatureContext;
+import org.togglz.core.manager.FeatureManager;
+
+@Tag("integration")
+@ExtendWith(BlobControllerObjectStorageTestIT.FeatureEnableExtension.class)
+public class BlobControllerObjectStorageTestIT extends BlobControllerTestIT {
+
+    static class FeatureEnableExtension implements Extension, BeforeAllCallback {
+
+        @Override
+        public void beforeAll(ExtensionContext context) {
+
+            setObjectStoreProperties();
+        }
+    }
+
+    static boolean wasActive;
+
+    private static void setObjectStoreProperties() {
+        // This test needs the object store feature enabled.
+        //
+        // So we make sure its enabled before the test and then restore the feature to however it was after
+        FeatureManager featureManager = FeatureContext.getFeatureManager();
+
+        wasActive = featureManager.isActive(CdaFeatures.USE_OBJECT_STORAGE_BLOBS);
+        featureManager.enable(CdaFeatures.USE_OBJECT_STORAGE_BLOBS);
+        featureManager.isActive(CdaFeatures.USE_OBJECT_STORAGE_BLOBS);
+    }
+
+    @AfterAll
+    public static void teardown() {
+        // restore the object store feature to however it initially was set.
+        FeatureManager featureManager = FeatureContext.getFeatureManager();
+        if (wasActive) {
+            featureManager.enable(CdaFeatures.USE_OBJECT_STORAGE_BLOBS);
+        } else {
+            featureManager.disable(CdaFeatures.USE_OBJECT_STORAGE_BLOBS);
+        }
+
+    }
+
+}

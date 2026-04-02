@@ -52,13 +52,13 @@ public class ParametersController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
 
     }
 
@@ -67,8 +67,8 @@ public class ParametersController implements CrudHandler {
                     @OpenApiParam(name = FORMAT, deprecated = true, description = "Specifies the"
                             + " encoding format of the response. Valid value for the format field"
                             + " for this URI are:"
-                            + "\n* `tab`"
-                            + "\n* `csv`"
+                            + "\n* `tab` (deprecated)"
+                            + "\n* `csv` (deprecated)"
                             + "\n* `xml`"
                             + "\n* `json` (default)"
                             + "\n\nSee <a href=\"legacy-format/\">this page</a> for more information about accept header usage."),
@@ -131,16 +131,13 @@ public class ParametersController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(Context ctx, String id) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
-            ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
-        }
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String id) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
-
     }
 
 }

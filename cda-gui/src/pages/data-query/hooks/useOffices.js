@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Configuration, OfficesApi } from "cwmsjs";
 
-const CDA_URL = import.meta.env.CDA_URL;
+const CDA_URL = import.meta.env.VITE_CDA_API_ROOT;
 const config = new Configuration({
   basePath: CDA_URL,
 });

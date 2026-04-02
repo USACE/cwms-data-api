@@ -26,6 +26,7 @@ package cwms.cda.helpers;
 
 import cwms.cda.data.dto.CwmsIdTimeExtentsEntry;
 import cwms.cda.data.dto.Entity;
+import cwms.cda.data.dto.ParameterLegacy;
 import cwms.cda.data.dto.TimeExtents;
 import cwms.cda.data.dto.TimeSeriesExtents;
 import cwms.cda.data.dto.catalog.LocationAlias;
@@ -504,6 +505,18 @@ public final class DTOMatch {
                 () -> assertEquals(first.getGageHeight(), second.getGageHeight(), DEFAULT_DELTA,"Gage height does not match"),
                 () -> assertEquals(first.getFlow(), second.getFlow(), DEFAULT_DELTA, "Flow does not match"),
                 () -> assertEquals(first.getQuality(), second.getQuality(), "Quality does not match")
+        );
+    }
+
+    public static void assertMatch(ParameterLegacy first, ParameterLegacy second) {
+        assertAll(
+                () -> assertEquals(first.getAbstractParam(), second.getAbstractParam(), "Abstract parameter does not match"),
+                () -> assertEquals(first.getName(), second.getName(), "Parameter name does not match"),
+                () -> assertEquals(first.getOffice(), second.getOffice(), "Office does not match"),
+                () -> assertEquals(first.getDefaultEnglishUnit(), second.getDefaultEnglishUnit(), "Default English unit does not match"),
+                () -> assertEquals(first.getDefaultSiUnit(), second.getDefaultSiUnit(), "Default SI unit does not match"),
+                () -> assertEquals(first.getLongName(), second.getLongName(), "Long name does not match"),
+                () -> assertEquals(first.getDescription(), second.getDescription(), "Description does not match")
         );
     }
 

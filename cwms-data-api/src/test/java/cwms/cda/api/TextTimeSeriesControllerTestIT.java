@@ -24,12 +24,21 @@
 
 package cwms.cda.api;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CLOB_ID;
+import static cwms.cda.api.Controllers.VERSION_DATE;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.toMap;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
@@ -38,20 +47,16 @@ import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.helpers.DateUtils;
 import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ResponseBody;
-import io.restassured.response.ValidatableResponse;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
@@ -191,6 +196,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .assertThat()
             .body("standard-text-catalog", nullValue())
             .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
             .body("regular-text-values.size()", equalTo(1))
             .body("regular-text-values[0].text-value", equalTo("newly created text value"))
             .statusCode(is(HttpServletResponse.SC_OK));
@@ -209,7 +215,6 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         //     with the old LRTS identifier and verify it fails
 
         // make sure it doesn't exist
-        // this will return 200 but the lists should be empty.
         String startStr = "2005-02-01T08:00:00Z";
         String endStr = "2005-02-01T14:00:00Z";
         String tsIdentifier = "TsTextTestLoc.Flow.Inst.1DayLocal.0.lrts-test";
@@ -262,6 +267,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsIdentifier)
             .queryParam(Controllers.BEGIN,startStr)
@@ -275,6 +281,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         .assertThat()
             .body("standard-text-catalog", nullValue())
             .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
             .body("regular-text-values.size()", equalTo(1))
             .body("regular-text-values[0].text-value", equalTo("newly created text value"))
             .statusCode(is(HttpServletResponse.SC_OK));
@@ -283,6 +290,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .header(AUTHORIZATION, user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsIdentifier)
             .queryParam(Controllers.TEXT_MASK, "*")
@@ -300,6 +308,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsIdentifier)
             .queryParam(Controllers.BEGIN,startStr)
@@ -313,8 +322,10 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         .assertThat()
             .body("standard-text-catalog", nullValue())
             .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
             .body("regular-text-values.size()", equalTo(0))
             .statusCode(is(HttpServletResponse.SC_OK));
+
         assertThat =
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -358,6 +369,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .assertThat()
                 .body("standard-text-catalog", nullValue())
                 .body("standard-text-values", nullValue())
+                .body("regular-text-values", notNullValue())
                 .body("regular-text-values.size()", equalTo(5))
                 .statusCode(is(HttpServletResponse.SC_OK));
 
@@ -389,6 +401,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         .assertThat()
             .body("standard-text-catalog", nullValue())
             .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
             .body("regular-text-values.size()", equalTo(5))
             .statusCode(is(HttpServletResponse.SC_OK));
 
@@ -416,7 +429,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK));
 
         //3)retrieve and verify
-        ValidatableResponse response = given()
+        given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
@@ -432,6 +445,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .assertThat()
             .body("standard-text-catalog", nullValue())
             .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
             .body("regular-text-values.size()", equalTo(5))
             .body("regular-text-values[0].text-value", equalTo("still great"))
             .statusCode(is(HttpServletResponse.SC_OK));
@@ -452,8 +466,6 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         String startStr = "2005-01-01T03:00:00Z";
         String endStr = "2005-01-01T04:00:00Z";
 
-        ZonedDateTime startZdt = DateUtils.parseUserDate(startStr, "UTC");
-        ZonedDateTime endZdt = DateUtils.parseUserDate(endStr, "UTC");
 
         // 1)retrieve and verify
         given()
@@ -472,6 +484,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .assertThat()
             .body("standard-text-catalog", nullValue())
             .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
             .body("regular-text-values.size()", equalTo(2))
             // assert the first regular-text-value item is as expected
             .body("regular-text-values[0].text-value", equalTo(EXPECTED_TEXT_VALUE))
@@ -515,6 +528,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .assertThat()
             .body("standard-text-catalog", nullValue())
             .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
             .body("regular-text-values.size()", equalTo(0))
             .statusCode(is(HttpServletResponse.SC_OK));
     }
@@ -582,6 +596,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
+            .body("regular-text-values", notNullValue())
             .body("regular-text-values.size()", equalTo(1))
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("regular-text-values[0].text-value", is(nullValue()))
@@ -617,7 +632,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .header("Transfer-Encoding", equalTo("chunked"))
+            .header("Accept-Ranges", equalTo("bytes"))
+            .header("Content-Length", not(isEmptyOrNullString()))
             .contentType(equalTo("text/plain"))
             .extract()
             .response()

@@ -75,16 +75,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-public final class TurbineChangesPostController implements Handler {
-    private final MetricRegistry metrics;
+public final class TurbineChangesPostController extends BaseHandler {
 
 
     public TurbineChangesPostController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
@@ -115,6 +110,9 @@ public final class TurbineChangesPostController implements Handler {
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
+        logUnusedPathParameter(ctx, NAME, "Body contains required information.");
+        logUnusedPathParameter(ctx, OFFICE, "Body contains required information.");
+
         try (Timer.Context ignored = markAndTime(CREATE)) {
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, TurbineChange.class);
