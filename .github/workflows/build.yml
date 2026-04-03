@@ -114,8 +114,8 @@ jobs:
   badges:
     needs: build
     runs-on: ubuntu-latest
-    # we are reporing build state so always run
-    if: always()
+    # we are reporing build state so always run, but only on builds on the main branch
+    if: always() && (github.ref_name == 'develop')
     steps:
       - name: Badge Branch
         uses: actions/checkout@v5.0.0
@@ -135,5 +135,5 @@ jobs:
           git config --local user.name "GitHub Action"
           git add build/**/*.svg
           git status
-          git commit --allow-empty -m "Update Badge for build ${{ github.event.ref }}"
+          git commit --allow-empty -m "Update Badge for build of ${{ github.sha }}"
           git push origin badges -f

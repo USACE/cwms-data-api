@@ -20,7 +20,7 @@
   </a>
 </p>
 
-<p align="center">
+<div align="center">
   <h2>Detailed Build Status</h2>
   <table>
     <thead>
@@ -48,7 +48,7 @@
       </tr>
     </tbody>
   </table>
-</p>
+</div>
 
 <p align="center">
   <strong>

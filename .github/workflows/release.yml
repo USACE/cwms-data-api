@@ -71,7 +71,7 @@ jobs:
         env:
           NIGHTLY: ${{inputs.nightly}}
         run:
-          if [[ "${NIGHTLY}" == true]]; then
+          if [[ "${NIGHTLY}" == true ]]; then
             echo "version=${{inputs.branch}}-nightly" >> $GITHUB_OUTPUT
           else
             echo "version=${{inputs.branch}}" >> $GITHUB_OUTPUT
@@ -138,6 +138,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
       - name: Set Output Image
         id: set_image
+        env:
+            REPO: ${{ steps.repo.outputs.name }}
+            VERSION: ${{ steps.version.outputs.version }}
         run: |
           echo "api_image=ghcr.io/${REPO}:$VERSION" >> $GITHUB_OUTPUT
       - name: Setup Database Migration Image
@@ -150,6 +153,7 @@ jobs:
         id: migration-publish
         env:
           REPO: ${{ steps.repo.outputs.name }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           IMAGE=ghcr.io/${REPO}-schema-migration:$VERSION
           docker tag ${{steps.migration.outputs.image}} $IMAGE
