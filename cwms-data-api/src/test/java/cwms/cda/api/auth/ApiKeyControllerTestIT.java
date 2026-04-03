@@ -269,7 +269,9 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()));
+            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()))
+            .body("message", is("Authentication failed. "
+                + "The API Key may be invalid or no longer active."));
         // fail to use no existent key
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -284,7 +286,9 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()));
+            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()))
+            .body("message", is("Authentication failed. "
+                + "The API Key may be invalid or no longer active."));
     }
 
     @Order(6)
