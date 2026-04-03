@@ -62,7 +62,12 @@ jobs:
           label: 'Build'
           status: 'Ok'
           color: 'blue,555,daf'
-          path: '.github/badges/${{ matrix.jdk }}/${{ matrix.schema.env }}.svg'
+          path: 'badges/${{ matrix.jdk }}/${{ matrix.schema.env }}.svg'
+      - name: Upload badge
+        uses: actions/upload-artifact@v4
+        with:
+          name: badges_${{ github.run_id }}_${{ matrix.jdk}}_${{ matrix.schema.env }}
+          path: badges/**/*.svg
   open-api-static-analysis:
     name: OpenApi Static Analysis Tests
     runs-on: ubuntu-latest
@@ -118,11 +123,16 @@ jobs:
           ref: badges
           fetch-depth: 1
           path: badge-workingdir
+      - name: Download badges
+        uses: actions/download-artifact@v4
+        with:
+          pattern: badges_${{ github.run_id }}_*
+          path: ./ # directory to download artifacts into
+          merge-multiple: true  # downloaded artifacts will be in the same directory specified by path
       - name: Apply Badge
         working-directory: badge-workingdir
         run: |
           mkdir build
-          cp ../.github/badges/${{ matrix.jdk }}/${{ matrix.schema.env }}.svg build/${{ matrix.jdk }}/${{ matrix.schema.env }}.svg
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add build/${{ matrix.jdk }}/${{ matrix.schema.env }}.svg
