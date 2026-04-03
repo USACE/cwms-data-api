@@ -67,17 +67,22 @@ jobs:
           java-version: '11'
           cache: 'gradle'
       - name: Set version
-        if: inputs.nightly == true
-        run: echo "VERSION=${{inputs.branch}}-nightly" >> $GITHUB_ENV
-      - name: Set version
-        if: inputs.nightly == false
-        run: echo "VERSION=${{inputs.branch}}" >> $GITHUB_ENV
+        id: version
+        env:
+          NIGHTLY: ${{inputs.nightly}}
+        run:
+          if [[ "${NIGHTLY}" == true ]]; then
+            echo "version=${{inputs.branch}}-nightly" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{inputs.branch}}" >> $GITHUB_OUTPUT
+          fi
       - name: Sanitize repo for container image names
+        id: repo
         run: |
           REPO=`echo "${{github.repository}}" | tr  '[:upper:]' '[:lower:]'`
-          echo "REPO=$REPO" >> $GITHUB_ENV
+          echo "name=$REPO" >> $GITHUB_OUTPUT
       - name: show version
-        run: echo ${VERSION}
+        run: echo ${{ steps.version.outputs.version }}
       - name: build war
         run: ./gradlew build --info --init-script init.gradle -PversionOverride=$VERSION
       - name: Create GitHub Release
@@ -86,8 +91,8 @@ jobs:
         if: github.event_name != 'pull_request' && (github.event.ref == 'refs/heads/develop' || startsWith(github.event.ref, 'refs/tags'))
         uses: softprops/action-gh-release@v2.6.1
         with:
-          files: cwms-data-api/build/libs/cwms-data-api-${{env.VERSION}}.war
-          tag_name: ${{env.VERSION}}
+          files: cwms-data-api/build/libs/cwms-data-api-${{steps.version.outputs.version}}.war
+          tag_name: ${{steps.version.outputs.version}}
           generate_release_notes: true
           token: ${{ secrets.token != null && secrets.token || secrets.GITHUB_TOKEN }}
       - name: Set up Docker Buildx
@@ -101,11 +106,11 @@ jobs:
           context: git
           images: |
             ${{secrets.registry != null && secrets.registry ||secrets.HEC_PUB_REGISTRY}}/cwms/data-api
-            ghcr.io/${{env.REPO}}
+            ghcr.io/${{steps.repo.outputs.name}}
           tags: |
             type=sha
             type=ref,event=tag
-            type=raw,value=${{env.VERSION}}
+            type=raw,value=${{steps.version.outputs.version}}
             type=schedule,pattern=${{inputs.branch}}-{{date 'YYYY.MM.DD'}}
             type=schedule,pattern=${{inputs.branch}}-{{date 'YYYY.MM.DD-hhmmss'}}
       - name: Log in to the Container registry
@@ -133,6 +138,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
       - name: Set Output Image
         id: set_image
+        env:
+            REPO: ${{ steps.repo.outputs.name }}
+            VERSION: ${{ steps.version.outputs.version }}
         run: |
           echo "api_image=ghcr.io/${REPO}:$VERSION" >> $GITHUB_OUTPUT
       - name: Setup Database Migration Image
@@ -143,6 +151,9 @@ jobs:
           tag: latest-dev
       - name: Publish migration container
         id: migration-publish
+        env:
+          REPO: ${{ steps.repo.outputs.name }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           IMAGE=ghcr.io/${REPO}-schema-migration:$VERSION
           docker tag ${{steps.migration.outputs.image}} $IMAGE

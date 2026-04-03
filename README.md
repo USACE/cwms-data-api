@@ -12,9 +12,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/usace/cwms-data-api/actions/workflows/build.yml">
-    <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/usace/cwms-data-api/build.yml?branch=develop&style=for-the-badge&label=Build&logo=githubactions">
-  </a>
   <a href="https://github.com/usace/cwms-data-api/actions/workflows/codeql.yml">
     <img alt="CodeQL Status" src="https://img.shields.io/github/actions/workflow/status/usace/cwms-data-api/codeql.yml?branch=develop&style=for-the-badge&label=CodeQL&logo=githubactions">
   </a>
@@ -22,6 +19,36 @@
     <img alt="GitHub release" src="https://img.shields.io/github/v/release/usace/cwms-data-api?include_prereleases&style=for-the-badge&logo=github">
   </a>
 </p>
+
+<div align="center">
+  <h2>Detailed Build Status</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>CWMS Database Schema target</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Latest</td>
+        <td><img alt="Latest Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/latest.svg">
+      </tr>
+      <tr>
+        <td>Current Release</td>
+        <td><img alt="Current Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release.svg">
+      </tr>
+      <tr>
+        <td>Next Release</td>
+        <td><img alt="Next Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release.svg">
+      </tr>
+      <tr>
+        <td>Previous Release - NOTE: Not applicable yet</td>
+        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous.svg">
+      </tr>
+    </tbody>
+  </table>
+</div>
 
 <p align="center">
   <strong>
