@@ -43,7 +43,6 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -56,6 +55,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     public static final String SCHEMA_TOO_OLD = "The CWMS-Data-API requires schema version "
                                              + "23.03.16 or later to handle authorization operations.";
     public static final String DATA_API_PRINCIPAL = "DataApiPrincipal";
+    public static final String AUTH_ERROR_MSG = "Authentication failed. The API Key may be invalid or no longer active.";
     // At this level we just care that the user has permissions in *any* office
     private static final String RETRIEVE_GROUPS_OF_USER =
             ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql", AuthDao.class);
@@ -204,8 +204,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                         if (rs.next()) {
                             return rs.getString(1);
                         } else {
-                            throw new CwmsAuthException("Authentication failed. "
-                                + "The API Key may be invalid or no longer active.");
+                            throw new CwmsAuthException(AUTH_ERROR_MSG);
                         }
                     }
                 } catch (SQLException ex) {
