@@ -1,20 +1,20 @@
-<svg width="72" height="20" viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Build: Pass">
-  <title>Build: Pass</title>
+<svg width="215.4" height="20" viewBox="0 0 2154 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Build - JDK 11 - Schema latest: Pass">
+  <title>Build - JDK 11 - Schema latest: Pass</title>
   <linearGradient id="a" x2="0" y2="100%">
     <stop offset="0" stop-opacity=".1" stop-color="#EEE"/>
     <stop offset="1" stop-opacity=".1"/>
   </linearGradient>
-  <mask id="m"><rect width="720" height="200" rx="30" fill="#FFF"/></mask>
+  <mask id="m"><rect width="2154" height="200" rx="30" fill="#FFF"/></mask>
   <g mask="url(#m)">
-    <rect width="374" height="200" fill="#555"/>
-    <rect width="346" height="200" fill="#3C1" x="374"/>
-    <rect width="720" height="200" fill="url(#a)"/>
+    <rect width="1808" height="200" fill="#555"/>
+    <rect width="346" height="200" fill="#3C1" x="1808"/>
+    <rect width="2154" height="200" fill="url(#a)"/>
   </g>
   <g aria-hidden="true" fill="#fff" text-anchor="start" font-family="Verdana,DejaVu Sans,sans-serif" font-size="110">
-    <text x="60" y="148" textLength="274" fill="#000" opacity="0.25">Build</text>
-    <text x="50" y="138" textLength="274">Build</text>
-    <text x="429" y="148" textLength="246" fill="#000" opacity="0.25">Pass</text>
-    <text x="419" y="138" textLength="246">Pass</text>
+    <text x="60" y="148" textLength="1708" fill="#000" opacity="0.25">Build - JDK 11 - Schema latest</text>
+    <text x="50" y="138" textLength="1708">Build - JDK 11 - Schema latest</text>
+    <text x="1863" y="148" textLength="246" fill="#000" opacity="0.25">Pass</text>
+    <text x="1853" y="138" textLength="246">Pass</text>
   </g>
   
 </svg>
