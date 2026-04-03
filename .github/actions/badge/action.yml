@@ -1,0 +1,58 @@
+name: 'Create badge'
+description: Create and upload a custom badge
+inputs:
+  label:
+    type: string
+    description: Badge name
+    required: true
+  status:
+    type: string
+    description: Status. Pass/Fail, or numeric, Pass will set color to green, Fail to red, anything else is blue.
+    required: true
+  file:
+    type: string
+    description: Name of file to create, can include folders
+    required: true
+  run_id:
+    type: number
+    description: The value of github.run_id, or another appropriate tracker for downstream use.
+    required: true
+outputs: {}
+runs:
+  using: "composite"
+  steps:
+    - name: Badge directory
+      shell: bash
+      run: mkdir -p "badges/$(dirname '${{inputs.file}}')" || true
+    - name: Prepare variables
+      id: vars
+      shell: bash
+      env:
+        UNSAFE: ${{ inputs.file }}
+      run: |
+        # Act, which we use for testing, doesn't yet support case in expression
+        # However we may keep this to handle some more complex cases anyways.
+        case "${{ inputs.status}}" in
+          "Pass")
+            echo "color=green" >> $GITHUB_OUTPUT
+            ;;
+          "Fail")
+            echo "color=red" >> $GITHUB_OUTPUT
+            ;;
+          *)
+            echo "color=blue" >> $GITHUB_OUTPUT
+        esac
+        echo "safe_file=${UNSAFE//\//_}" >> $GITHUB_OUTPUT
+    - name: Build Badge
+      uses: emibcn/badge-action@v2.0.2
+      with:
+        label: ${{inputs.label}}
+        status: ${{inputs.status}}
+        color: ${{ steps.vars.outputs.color }}
+        path: badges/${{inputs.file}}
+    - name: Upload badge
+      uses: actions/upload-artifact@v4
+      with:
+        name: badges_${{ inputs.run_id }}_${{ steps.vars.outputs.safe_file }}
+        path: badges/**/*.svg
+        overwrite: true

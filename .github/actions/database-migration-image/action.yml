@@ -1,4 +1,5 @@
 name: 'Database Migration Container'
+description: Setup database migration container.
 inputs:
   base-image:
     type: string
