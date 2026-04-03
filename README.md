@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <h2>Build Status</h2>
+  <h2>Detailed Build Status</h2>
   <table>
     <thead>
       <tr>
@@ -36,15 +36,15 @@
       </tr>
       <tr>
         <td>Current Release</td>
-        <td><img alt="Latest Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release.svg">
+        <td><img alt="Current Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release.svg">
       </tr>
       <tr>
         <td>Next Release</td>
-        <td><img alt="Latest Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release.svg">
+        <td><img alt="Next Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release.svg">
       </tr>
       <tr>
         <td>Previous Release - NOTE: Not applicable yet</td>
-        <td><img alt="Latest Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous.svg">
+        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous.svg">
       </tr>
     </tbody>
   </table>
