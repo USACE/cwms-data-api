@@ -26,6 +26,7 @@ import io.javalin.http.HttpCode;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.specification.RequestSpecification;
 
+import static cwms.cda.data.dao.AuthDao.AUTH_ERROR_MSG;
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
@@ -269,7 +270,8 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()));
+            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()))
+            .body("message", is(AUTH_ERROR_MSG));
         // fail to use no existent key
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -284,7 +286,8 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()));
+            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()))
+            .body("message", is(AUTH_ERROR_MSG));
     }
 
     @Order(6)
