@@ -224,22 +224,32 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
 
     public Optional<TimeSeriesIdentifierDescriptor> getTimeSeriesIdentifier(String office, String timeseriesId) {
         AV_CWMS_TS_ID2 view = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
-        return connectionResult(dsl, connection -> {
-            Record5<String, String, Long, String, String>
-                result = dsl.select(view.CWMS_TS_ID, view.DB_OFFICE_ID, view.INTERVAL,
-                                    view.TIME_ZONE_ID, view.TS_ACTIVE_FLAG)
+        Table<?> innerTable = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.as("alias_table");
+            Field<String> tsId = innerTable.field("CWMS_TS_ID", String.class);
+            Field<BigDecimal> innerTsCode = innerTable.field("TS_CODE", BigDecimal.class);
+            Field<String> aliasedItem = innerTable.field("ALIASED_ITEM", String.class);
+        return dsl
+                .select(view.DB_OFFICE_ID,
+                    view.CWMS_TS_ID,
+                    view.INTERVAL_UTC_OFFSET,
+                    view.TS_ACTIVE_FLAG,
+                    view.TIME_ZONE_ID,
+                    DSL.multiset(
+                        dsl.selectDistinct(
+                            tsId
+                        ).from(innerTable)
+                            .where(view.TS_CODE.eq(innerTsCode))
+                            .and(aliasedItem.isNotNull())
+                    ).convertFrom(rs -> rs.map(r -> r.get(tsId, String.class)))
+                )
                 .from(view)
                 .where(view.CWMS_TS_ID.eq(timeseriesId)
                 .and(view.DB_OFFICE_ID.eq(office.toUpperCase())))
-                .and(view.ALIASED_ITEM.isNull())
-                .fetchOne();
-            Optional<TimeSeriesIdentifierDescriptor> retval = Optional.empty();
-            if (result != null) {
-                retval = Optional.of(toDto(result));
-            }
-
-            return retval;
-        });
+                .orderBy(view.DB_OFFICE_ID, view.CWMS_TS_ID,
+                    view.INTERVAL_UTC_OFFSET,
+                    view.TS_ACTIVE_FLAG,
+                    view.TIME_ZONE_ID)     
+                .fetchOptional(this::toDescriptorWithAliases);
     }
 
     public static TimeSeriesIdentifierDescriptor toDto(Record5<String, String, Long, String, String> rec) {
