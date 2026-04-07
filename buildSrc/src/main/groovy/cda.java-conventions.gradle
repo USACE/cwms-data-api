@@ -33,6 +33,10 @@ jacoco {
     toolVersion = "0.8.9"
 }
 
+dependencyCheck {
+    nvd.apiKey = project.findProperty("nvd.apikey")
+}
+
 jacocoTestReport {
     dependsOn test
     reports {
