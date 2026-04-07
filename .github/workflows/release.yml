@@ -70,7 +70,7 @@ jobs:
         id: version
         env:
           NIGHTLY: ${{inputs.nightly}}
-        run:
+        run: |
           if [[ "${NIGHTLY}" == true ]]; then
             echo "version=${{inputs.branch}}-nightly" >> $GITHUB_OUTPUT
           else
