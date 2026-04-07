@@ -23,6 +23,7 @@ import static org.jooq.impl.DSL.selectDistinct;
 
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import static org.jooq.impl.DSL.table;
+import static usace.cwms.db.jooq.codegen.tables.AT_CWMS_TS_SPEC.AT_CWMS_TS_SPEC;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
 
@@ -693,7 +694,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         SelectJoinStep<?> tmpQuery = dsl.with(limiter)
                                         .select(pageEntryFields)
                                         .from(limiter)
-                                        .join(table).on(limiterCode.eq(cwmsTsIdFields.getTsCode()));
+                                        .join(table).on(limiterCode.eq(cwmsTsIdFields.getTsCode()))
+                                        .leftJoin(AT_CWMS_TS_SPEC).on(limiterCode.eq(AT_CWMS_TS_SPEC.TS_CODE));
 
         if (params.isIncludeExtents()) {
 
@@ -721,7 +723,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         .cwmsTsId(row.get(cwmsTsIdFields.getCwmsTsId()))
                         .units(row.get(cwmsTsIdFields.getUnitId()))
                         .interval(row.get(cwmsTsIdFields.getIntervalId()))
-                        .intervalOffset(row.get(cwmsTsIdFields.getIntervalUtcOffset()));
+                        .intervalOffset(row.get(cwmsTsIdFields.getIntervalUtcOffset()))
+                        .versioned(parseBool(row.get(AT_CWMS_TS_SPEC.VERSION_FLAG)));
 
                 builder.timeZone(row.get("TIME_ZONE_ID", String.class));
 
@@ -849,6 +852,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         retVal.add(cwmsTsIdFields.getIntervalId());
         retVal.add(cwmsTsIdFields.getIntervalUtcOffset());
         retVal.add(cwmsTsIdFields.getTimeZoneId());
+        retVal.add(AT_CWMS_TS_SPEC.VERSION_FLAG);
         if(cwmsTsIdFields.includesAliases()) {
             retVal.add(AV_CWMS_TS_ID2.ALIASED_ITEM);
             retVal.add(AV_CWMS_TS_ID2.TS_CODE);
