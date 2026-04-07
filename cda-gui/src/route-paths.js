@@ -11,6 +11,16 @@ export const routePaths = [
     sitemapPath: "swagger-ui",
   },
   {
+    path: "swagger-docs",
+    // yes, this is a bit odd, but the swagger-docs are "rendered" by the api backend, not client side.
+    loader: () => {
+      const h = href(getBasePath() + "/swagger-docs");
+      globalThis.location.replace(h);
+      return null;
+    },
+    component: <div />,
+  },
+  {
     id: "data-query",
     path: "data-query",
     sitemapPath: "data-query",
