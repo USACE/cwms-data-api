@@ -37,7 +37,7 @@ jobs:
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
       - name: checkout code
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6
       - name: setup java
         uses: actions/setup-java@v5.2.0
         with:
@@ -71,7 +71,7 @@ jobs:
       OPEN_API_TEST: "true"
     steps:
       - name: checkout code
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6
       - name: setup java
         uses: actions/setup-java@v5.2.0
         with:
@@ -93,14 +93,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6
       - name: Build docker image
         run: docker build -t cda:build-latest .
   build-schema-migration-image:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6
       # No uploads, we're just verifying that nothing broke the docker image.
       - name: Build Migration image
         uses: ./.github/actions/database-migration-image
@@ -118,7 +118,7 @@ jobs:
     if: always() && (github.ref_name == 'develop')
     steps:
       - name: Badge Branch
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6
         with:
           ref: badges
           fetch-depth: 1
