@@ -1,3 +1,5 @@
+import com.github.gradle.node.npm.task.NpmTask
+import com.github.gradle.node.npm.task.NpxTask
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 import org.openapitools.generator.gradle.plugin.tasks.ValidateTask
 
@@ -8,6 +10,16 @@ plugins {
     id 'com.github.node-gradle.node' version '7.1.0'
     id "org.openapi.generator" version "7.15.0"
     id 'com.gradleup.shadow' version '8.3.10'
+}
+
+def npmCacheDir = layout.buildDirectory.dir("npm-cache")
+
+tasks.withType(NpmTask).configureEach {
+    environment "npm_config_cache", npmCacheDir.get().asFile.absolutePath
+}
+
+tasks.withType(NpxTask).configureEach {
+    environment "npm_config_cache", npmCacheDir.get().asFile.absolutePath
 }
 
 configurations {
@@ -443,7 +455,6 @@ if (JavaVersion.current() >= JavaVersion.VERSION_11) {
         nodeProjectDir = file("$rootDir/cda-client/")
     }
 }
-
 tasks.register('shadeCodegenLegacy', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
     archiveClassifier.set('codegen-legacy')
     configurations = [project.configurations.jooqCodegenLegacy]
@@ -462,5 +473,4 @@ tasks.register('shadeCodegenLatest', com.github.jengelman.gradle.plugins.shadow.
     //We can also shade a 'codegen_latest' in the future if needed.
     relocate 'usace.cwms.db.jooq.codegen', 'usace.cwms.db.jooq.codegen_latest'
 }
-tasks.compileJava.dependsOn(tasks.shadeCodegenLegacy)
 tasks.compileJava.dependsOn(tasks.shadeCodegenLatest)
