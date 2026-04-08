@@ -21,6 +21,7 @@ import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
 
+import org.jooq.SelectOnConditionStep;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AT_CWMS_TS_SPEC.AT_CWMS_TS_SPEC;
@@ -677,6 +678,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .withTsGroupLike(catPage.getTsGroupLike())
                     .withBoundingOfficeLike(catPage.getBoundingOfficeLike())
                     .withIncludeExtents(catPage.isIncludeExtents())
+                    .withIncludeExtents(catPage.isIncludeVersions())
                     .withExcludeEmpty(catPage.isExcludeEmpty())
                     .build();
         }
@@ -691,7 +693,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<Condition> pagingConditions = buildPagingConditions(cwmsTsIdFields, cursorOffice, cursorTsId);
         CommonTableExpression<?> limiter = buildWithClause(cwmsTsIdFields, params, whereConditions, pagingConditions, pageSize, false);
         Field<BigDecimal> limiterCode = limiter.field(cwmsTsIdFields.getTsCode());
-        SelectJoinStep<?> tmpQuery = dsl.with(limiter)
+        SelectOnConditionStep<?> tmpQuery = dsl.with(limiter)
                                         .select(pageEntryFields)
                                         .from(limiter)
                                         .join(table).on(limiterCode.eq(cwmsTsIdFields.getTsCode()))
@@ -703,7 +705,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                        .on(limiterCode
                                          .eq(AV_TS_EXTENTS_UTC.TS_CODE.coerce(limiterCode)));
         }
-        final SelectSeekStep2<?, String, String> overallQuery = tmpQuery
+        Condition versionsCondition = noCondition();
+        if (params.isIncludeExtents() && !params.isIncludeVersions()) {
+            versionsCondition = versionsCondition.and(AV_TS_EXTENTS_UTC.VERSION_TIME.isNull());
+        }
+        final SelectSeekStep2<?, String, String> overallQuery = tmpQuery.where(versionsCondition)
                 .orderBy(cwmsTsIdFields.getDbOfficeId(),
                         cwmsTsIdFields.getCwmsTsId());
         logger.atFine().log("%s", lazy(() -> overallQuery.getSQL(ParamType.INLINED)));
@@ -988,6 +994,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 AV_TS_EXTENTS_UTC.LATEST_TIME.isNotNull(),
                 AV_TS_EXTENTS_UTC.LAST_UPDATE.isNotNull())
             );
+        }
+        //Small optimization to exclude time series that don't have the cwms_util.non_versioned version
+        if (params.isIncludeExtents() && !params.isIncludeVersions()) {
+            retval.add(AV_TS_EXTENTS_UTC.VERSION_TIME.isNull());
         }
 
         return retval;

@@ -76,6 +76,7 @@ public class Catalog extends CwmsDTOPaginated {
         private final String tsGroupLike;
         private final String boundingOfficeLike;
         private final boolean includeExtents;
+        private final boolean includeVersions;
         private final boolean excludeEmpty;
         private int total;
         private int pageSize;
@@ -83,7 +84,7 @@ public class Catalog extends CwmsDTOPaginated {
         public CatalogPage(String page) {
             String[] parts = CwmsDTOPaginated.decodeCursor(page, CwmsDTOPaginated.delimiter);
 
-            if (parts.length != 12) {
+            if (parts.length != 13) {
                 throw new IllegalArgumentException("Invalid Catalog Page Provided, please verify "
                         + "you are using a page variable from the catalog endpoint");
             }
@@ -101,6 +102,7 @@ public class Catalog extends CwmsDTOPaginated {
             excludeEmpty = Boolean.parseBoolean(parts[9]);
             total = Integer.parseInt(parts[10]);
             pageSize = Integer.parseInt(parts[11]);
+            includeVersions = Boolean.parseBoolean(parts[12]);
         }
 
 
@@ -118,6 +120,7 @@ public class Catalog extends CwmsDTOPaginated {
             this.tsGroupLike = params.getTsGroupLike();
             this.boundingOfficeLike = params.getBoundingOfficeLike();
             this.includeExtents = params.isIncludeExtents();
+            this.includeVersions = params.isIncludeVersions();
             this.excludeEmpty = params.isExcludeEmpty();
         }
 
@@ -177,6 +180,10 @@ public class Catalog extends CwmsDTOPaginated {
             return includeExtents;
         }
 
+        public boolean isIncludeVersions() {
+            return includeVersions;
+        }
+
         public boolean isExcludeEmpty() {
             return excludeEmpty;
         }
@@ -193,6 +200,7 @@ public class Catalog extends CwmsDTOPaginated {
                     + CwmsDTOPaginated.delimiter + tsGroupLike
                     + CwmsDTOPaginated.delimiter + boundingOfficeLike
                     + CwmsDTOPaginated.delimiter + includeExtents
+                    + CwmsDTOPaginated.delimiter + includeVersions
                     + CwmsDTOPaginated.delimiter + excludeEmpty
                     ;
         }
