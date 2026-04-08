@@ -153,18 +153,18 @@ public class DataApiTestIT {
     @BeforeAll
     public static void load_queries() throws Exception {
         createLocationQuery = IOUtils.toString(
-                TimeseriesControllerTestIT.class
+                TimeSeriesControllerTestIT.class
                         .getClassLoader()
                         .getResourceAsStream("cwms/cda/data/sql_templates/create_location.sql"), "UTF-8"
         );
         createTimeseriesQuery = IOUtils.toString(
-                TimeseriesControllerTestIT.class
+                TimeSeriesControllerTestIT.class
                         .getClassLoader()
                         .getResourceAsStream("cwms/cda/data/sql_templates/create_timeseries.sql"), "UTF-8"
         );
 
         createTimeseriesOffsetQuery = IOUtils.toString(
-                TimeseriesControllerTestIT.class
+                TimeSeriesControllerTestIT.class
                         .getClassLoader()
                         .getResourceAsStream("cwms/cda/data/sql_templates/create_timeseries_offset.sql"), "UTF-8"
         );

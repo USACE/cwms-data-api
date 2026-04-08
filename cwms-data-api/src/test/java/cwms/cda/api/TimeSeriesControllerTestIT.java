@@ -67,7 +67,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Tag("integration")
-final class TimeseriesControllerTestIT extends DataApiTestIT {
+final class TimeSeriesControllerTestIT extends DataApiTestIT {
     public static final int MINIMUM_SCHEMA = 999999;
 
     @Test

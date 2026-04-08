@@ -75,7 +75,9 @@ dependencies {
     implementation(libs.google.flogger.api)
     implementation(libs.google.findbugs)
     implementation(libs.google.errorProne)
-    runtimeOnly(libs.google.flogger.backend)
+    runtimeOnly(libs.google.flogger.system.backend)
+    runtimeOnly(libs.google.flogger.slf4j.backend)
+    runtimeOnly(libs.ch.qos.logback)
 
     implementation(libs.nucleus.data) {
         exclude group: "org.jdom"
@@ -154,15 +156,15 @@ dependencies {
     tomcatLibs(libs.bundles.tomcat.embedded)
     tomcatLibs(libs.bundles.tomcat.support)
     tomcatLibs(libs.google.flogger.api)
-    tomcatLibs(libs.google.flogger.backend)
+    tomcatLibs(libs.google.flogger.system.backend)
+    tomcatLibs(libs.google.flogger.slf4j.backend)
+    tomcatLibs(libs.ch.qos.logback)
 
     testImplementation(libs.bundles.testcontainers)
 
     testImplementation(libs.apache.commons.csv)
     testImplementation(libs.cwms.tomcat.auth)
-    testImplementation(libs.apache.freemarker)
-
-    testRuntimeOnly("org.slf4j:slf4j-jdk14:2.0.16")    
+    testImplementation(libs.apache.freemarker)   
 
     webjars(project(":cda-gui"))
 
@@ -256,6 +258,7 @@ task run(type: JavaExec) {
     args "$buildDir/tomcat", "$buildDir/libs/${project.name}-${project.version}.war", context
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
+    jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback.xml"
     jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
@@ -285,6 +288,7 @@ task integrationTests(type: Test) {
     jvmArgs += "-DwarContext=/cwms-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
+    jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
     jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"

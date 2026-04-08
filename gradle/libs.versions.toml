@@ -7,7 +7,8 @@ jooq = "3.18.7-jdk11"
 slf4j = "2.0.9"
 hec-monolith = "3.3.20"
 hec-nucleus = "2.0.1"
-flogger = "0.7.4"
+flogger = "0.9"
+logback = "1.4.14"
 google-findbugs = "3.0.2"
 error_prone_annotations = "2.15.0"
 cwms-ratings = "4.2.3"
@@ -55,10 +56,12 @@ jaxb-core = { module = "com.sun.xml.bind:jaxb-core", version.ref = "jaxb-impl" }
 cwms-db-jooq-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version.ref = "jooq-codegen" }
 cwms-db-jooq-codegen-shadow = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version.ref = "jooq-codegen-shadow" }
 jooq = { module = "org.jooq.pro-java-11:jooq", version.ref ="jooq" }
-slf4j = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
+slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 monolith = { module = "mil.army.usace.hec:hec-monolith", version.ref = "hec-monolith" }
 google-flogger-api = { module = "com.google.flogger:flogger", version.ref = "flogger" }
-google-flogger-backend = { module = "com.google.flogger:flogger-system-backend", version.ref = "flogger" }
+google-flogger-system-backend = { module = "com.google.flogger:flogger-system-backend", version.ref = "flogger" }
+google-flogger-slf4j-backend = { module = "com.google.flogger:flogger-slf4j-backend", version.ref = "flogger" }
+ch-qos-logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 google-findbugs = { module = "com.google.code.findbugs:jsr305", version.ref = "google-findbugs" }
 google-errorProne = { module = "com.google.errorprone:error_prone_annotations", version.ref = "error_prone_annotations"}
 nucleus-data = { module = "mil.army.usace.hec:hec-nucleus-data", version.ref = "hec-nucleus" }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration>
+<configuration>
+    <import class="ch.qos.logback.classic.encoder.JsonEncoder"/>
+    <import class="ch.qos.logback.core.ConsoleAppender"/>
+    <import class="ch.qos.logback.core.FileAppender"/>
+    <variable name="LOG_LEVEL" value="${LOG_LEVEL:-FINE}"/>
+    <contextName>CWMS-Data-API</contextName>
+    <appender name="STDERR" class="ConsoleAppender">
+        <encoder class="JsonEncoder"/>
+        <target>System.err</target>
+    </appender>
+
+    <appender name="FILE" class="FileAppender">
+        <encoder class="JsonEncoder"/>
+        <append>false</append>
+        <immediateFlush>true</immediateFlush>
+        <file>build/cda.log</file>
+    </appender>
+
+    <logger name="cwms.cda" level="${LOG_LEVEL}"/>
+    <logger name="fixtures" level="${LOG_LEVEL}"/>
+    <logger name="org.apache" level="ERROR"/>
+
+    <root level="INFO">
+        <appender-ref ref="STDERR"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>
