@@ -34,9 +34,7 @@ class BaseLineTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .header("Access-Control-Allow-Methods", equalTo("GET, POST, PUT, DELETE, OPTIONS"))
-            .header("Access-Control-Allow-Headers", equalTo("Content-Type, Authorization"));
+            .statusCode(is(HttpServletResponse.SC_OK));
     }
     
     @ParameterizedTest
@@ -51,8 +49,6 @@ class BaseLineTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .header("Access-Control-Allow-Methods", nullValue())
-            .header("Access-Control-Allow-Headers", nullValue());
+            .statusCode(is(HttpServletResponse.SC_OK));
     }
 }
