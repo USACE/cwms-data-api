@@ -995,11 +995,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 AV_TS_EXTENTS_UTC.LAST_UPDATE.isNotNull())
             );
         }
-        //Small optimization to exclude time series that don't have the cwms_util.non_versioned version
-        if (params.isIncludeExtents() && !params.isIncludeVersions()) {
-            retval.add(AV_TS_EXTENTS_UTC.VERSION_TIME.isNull());
-        }
-
         return retval;
     }
 
