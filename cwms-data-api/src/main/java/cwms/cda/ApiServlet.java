@@ -410,10 +410,10 @@ public class ApiServlet extends HttpServlet {
                 })
                 .routes(this::configureRoutes)
                 .options("/*", ctx -> {
-                    ctx.header("Access-Control-Allow-Origin", "*"); // Allow requests from any origin
-                    ctx.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"); // Specify allowed methods
-                    ctx.header("Access-Control-Allow-Headers", "Content-Type, Authorization"); // Specify allowed headers
-                    ctx.status(200); // Respond with a 200 OK status
+                    // Respond with a 200 OK status for preflight checks.
+                    // It is expected that the firewall in front of the API
+                    // will handle any CORS headers.
+                    ctx.status(200);
                 })
                 .javalinServlet();
         QueueManager.ensureRssSubscribers(cwms);
