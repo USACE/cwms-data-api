@@ -99,10 +99,10 @@ public class Catalog extends CwmsDTOPaginated {
             tsGroupLike = nullOrVal(parts[6]);
             boundingOfficeLike = nullOrVal(parts[7]);
             includeExtents = Boolean.parseBoolean(parts[8]);
-            excludeEmpty = Boolean.parseBoolean(parts[9]);
-            total = Integer.parseInt(parts[10]);
-            pageSize = Integer.parseInt(parts[11]);
-            includeVersions = Boolean.parseBoolean(parts[12]);
+            includeVersions = Boolean.parseBoolean(parts[9]);
+            excludeEmpty = Boolean.parseBoolean(parts[10]);
+            total = Integer.parseInt(parts[11]);
+            pageSize = Integer.parseInt(parts[12]);
         }
 
 
