@@ -100,7 +100,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         tsData = tsData.replace("{OFFICE}", OFFICE)
             .replace("{TSID}", "Wet Meadows.Depth-SWE.Inst.15Minutes.0.four")
             .replace("{UNITS}", "ft")
-            .replace("{VERSION_DATE", Instant.now().truncatedTo(ChronoUnit.MINUTES).toString());
+            .replace("{VERSION_DATE}", Instant.now().truncatedTo(ChronoUnit.MINUTES).toString());
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
