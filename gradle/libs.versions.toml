@@ -53,7 +53,7 @@ jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-impl" }
 jaxb-core = { module = "com.sun.xml.bind:jaxb-core", version.ref = "jaxb-impl" }
 cwms-db-jooq-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version.ref = "jooq-codegen" }
 cwms-db-jooq-codegen-legacy = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version = "24.12.04-2025.01.21" }
-cwms-db-jooq-codegen-latest = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version = "latest-dev@sha256:78589acbe64eb46358c280acbd94cebe1e54314771e8da1238ba32f22447249d" }
+cwms-db-jooq-codegen-latest = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version = "latest-dev_sha256_f1-oracle19c" }
 jooq = { module = "org.jooq.pro-java-11:jooq", version.ref ="jooq" }
 slf4j = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 monolith = { module = "mil.army.usace.hec:hec-monolith", version.ref = "hec-monolith" }

@@ -46,24 +46,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.jooq.impl.DSL;
-import usace.cwms.db.jooq.codegen_shadow.udt.records.LOCATION_REF_T;
-import usace.cwms.db.jooq.codegen_shadow.udt.records.LOC_REF_TIME_WINDOW_OBJ_T;
-import usace.cwms.db.jooq.codegen_shadow.udt.records.LOC_REF_TIME_WINDOW_TAB_T;
-import usace.cwms.db.jooq.codegen_shadow.udt.records.LOOKUP_TYPE_OBJ_T;
-import usace.cwms.db.jooq.codegen_shadow.udt.records.WATER_USER_CONTRACT_REF_T;
-import usace.cwms.db.jooq.codegen_shadow.udt.records.WATER_USER_OBJ_T;
-import usace.cwms.db.jooq.codegen_shadow.udt.records.WAT_USR_CONTRACT_ACCT_OBJ_T;
-import usace.cwms.db.jooq.codegen_shadow.udt.records.WAT_USR_CONTRACT_ACCT_TAB_T;
+import usace.cwms.db.jooq.codegen_legacy.udt.records.LOCATION_REF_T;
+import usace.cwms.db.jooq.codegen_legacy.udt.records.LOC_REF_TIME_WINDOW_OBJ_T;
+import usace.cwms.db.jooq.codegen_legacy.udt.records.LOC_REF_TIME_WINDOW_TAB_T;
+import usace.cwms.db.jooq.codegen_legacy.udt.records.LOOKUP_TYPE_OBJ_T;
+import usace.cwms.db.jooq.codegen_legacy.udt.records.WATER_USER_CONTRACT_REF_T;
+import usace.cwms.db.jooq.codegen_legacy.udt.records.WATER_USER_OBJ_T;
+import usace.cwms.db.jooq.codegen_legacy.udt.records.WAT_USR_CONTRACT_ACCT_OBJ_T;
+import usace.cwms.db.jooq.codegen_legacy.udt.records.WAT_USR_CONTRACT_ACCT_TAB_T;
 
 /**
  * This class is a stop-gap solution paired with the shaded jOOQ codegen jar for older schema versions
  * that do not support water supply flow units (i.e., 25.07.01 and earlier).
  */
 @Deprecated(forRemoval = true)
-final class WaterSupplyUtilsShadow {
+final class WaterSupplyUtilsLegacy {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-    private WaterSupplyUtilsShadow() {
+    private WaterSupplyUtilsLegacy() {
         throw new AssertionError("Utility class");
     }
 

@@ -104,12 +104,12 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
     }
 
     private static void storeViaManual(Connection c, WaterSupplyAccounting accounting, boolean overrideProtection, String volumeUnitId, String storeRule) {
-        var accountingTab = WaterSupplyUtilsShadow.toManualWaterUserContractAcctTs(accounting);
-        var contractRefT = WaterSupplyUtilsShadow .toContractRef(accounting.getWaterUser(), accounting.getContractName());
-        var pumpTimeWindowTab = WaterSupplyUtilsShadow.toTimeWindowTabT(accounting);
+        var accountingTab = WaterSupplyUtilsLegacy.toManualWaterUserContractAcctTs(accounting);
+        var contractRefT = WaterSupplyUtilsLegacy.toContractRef(accounting.getWaterUser(), accounting.getContractName());
+        var pumpTimeWindowTab = WaterSupplyUtilsLegacy.toTimeWindowTabT(accounting);
         String timeZoneId = "UTC";
         String overrideProt = formatBool(overrideProtection);
-        usace.cwms.db.jooq.codegen_shadow.packages.CWMS_WATER_SUPPLY_PACKAGE.call_STORE_ACCOUNTING_SET(DSL.using(c).configuration(), accountingTab,
+        usace.cwms.db.jooq.codegen_legacy.packages.CWMS_WATER_SUPPLY_PACKAGE.call_STORE_ACCOUNTING_SET(DSL.using(c).configuration(), accountingTab,
                 contractRefT, pumpTimeWindowTab, timeZoneId, volumeUnitId, storeRule, overrideProt);
     }
 
@@ -133,7 +133,7 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
                 return retrieveFromCodegen(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
             } catch (DataAccessException e){
                 if(isInvalidColumn(e)){
-                    var contractRefT = WaterSupplyUtilsShadow.toContractRef(waterUser, contractName);
+                    var contractRefT = WaterSupplyUtilsLegacy.toContractRef(waterUser, contractName);
                     return retrieveViaManual(units, c, contractRefT, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag, endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
                 }
                 throw e;
@@ -141,13 +141,13 @@ public class WaterSupplyAccountingDao extends JooqDao<WaterSupplyAccounting> {
         });
     }
 
-    private @NonNull List<WaterSupplyAccounting> retrieveViaManual(String units, Connection c, usace.cwms.db.jooq.codegen_shadow.udt.records.WATER_USER_CONTRACT_REF_T contractRefT, Timestamp startTimestamp, Timestamp endTimestamp, String timeZoneId, String startInclusiveFlag, String endInclusiveFlag, String ascendingFlagStr, BigInteger rowLimitBigInt, String transferType) {
-        usace.cwms.db.jooq.codegen_shadow.udt.records.WAT_USR_CONTRACT_ACCT_TAB_T watUsrContractAcctObjTs
-                = usace.cwms.db.jooq.codegen_shadow.packages.CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_ACCOUNTING_SET(DSL.using(c).configuration(),
+    private @NonNull List<WaterSupplyAccounting> retrieveViaManual(String units, Connection c, usace.cwms.db.jooq.codegen_legacy.udt.records.WATER_USER_CONTRACT_REF_T contractRefT, Timestamp startTimestamp, Timestamp endTimestamp, String timeZoneId, String startInclusiveFlag, String endInclusiveFlag, String ascendingFlagStr, BigInteger rowLimitBigInt, String transferType) {
+        usace.cwms.db.jooq.codegen_legacy.udt.records.WAT_USR_CONTRACT_ACCT_TAB_T watUsrContractAcctObjTs
+                = usace.cwms.db.jooq.codegen_legacy.packages.CWMS_WATER_SUPPLY_PACKAGE.call_RETRIEVE_ACCOUNTING_SET(DSL.using(c).configuration(),
                 contractRefT, units, startTimestamp, endTimestamp, timeZoneId, startInclusiveFlag,
                 endInclusiveFlag, ascendingFlagStr, rowLimitBigInt, transferType);
         if (!watUsrContractAcctObjTs.isEmpty()) {
-            return WaterSupplyUtilsShadow.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs, units);
+            return WaterSupplyUtilsLegacy.toWaterSupplyAccountingList(c, watUsrContractAcctObjTs, units);
         } else {
             return new ArrayList<>();
         }

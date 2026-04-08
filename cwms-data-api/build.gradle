@@ -73,7 +73,8 @@ dependencies {
         exclude group: "org.jooq.pro-java-8", module: "jooq"
         exclude group: "org.jooq.pro-java-11", module: "jooq"
     }
-    implementation(files("$buildDir/libs/${project.name}-${project.version}-codegen-shadow.jar"))
+    implementation(files("$buildDir/libs/${project.name}-${project.version}-codegen-legacy.jar"))
+    implementation(files("$buildDir/libs/${project.name}-${project.version}-codegen-latest.jar"))
 
     implementation(libs.slf4j)
 
@@ -432,4 +433,5 @@ tasks.register('shadeCodegenLatest', com.github.jengelman.gradle.plugins.shadow.
     //We can also shade a 'codegen_latest' in the future if needed.
     relocate 'usace.cwms.db.jooq.codegen', 'usace.cwms.db.jooq.codegen_latest'
 }
+tasks.compileJava.dependsOn(tasks.shadeCodegenLegacy)
 tasks.compileJava.dependsOn(tasks.shadeCodegenLatest)
