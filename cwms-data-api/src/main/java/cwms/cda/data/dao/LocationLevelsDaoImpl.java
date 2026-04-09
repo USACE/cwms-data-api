@@ -165,29 +165,21 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
 
         Condition whereCondition = ref.LOCATION_LEVEL_ID.isNotNull();
-        Condition standardWhereCondition = ref.LOCATION_LEVEL_ID.isNotNull();
 
         if (office != null && !office.isEmpty()) {
             whereCondition = whereCondition.and(ref.OFFICE_ID.eq(office.toUpperCase()));
-            standardWhereCondition = standardWhereCondition.and(DSL.upper(ref.OFFICE_ID).eq(office.toUpperCase()));
         }
 
         if (levelIdMask != null && !levelIdMask.isEmpty()) {
             whereCondition = whereCondition.and(
                 JooqDao.caseInsensitiveLikeRegex(ref.LOCATION_LEVEL_ID, levelIdMask));
-            standardWhereCondition = standardWhereCondition.and(
-                JooqDao.caseInsensitiveLikeRegex(ref.LOCATION_LEVEL_ID, levelIdMask));
         }
 
         if (beginZdt != null) {
             whereCondition = whereCondition.and(ref.LOCATION_LEVEL_DATE.greaterOrEqual(Timestamp.from(beginZdt.toInstant())));
-            standardWhereCondition = standardWhereCondition.and(
-                ref.LOCATION_LEVEL_DATE.greaterOrEqual(Timestamp.from(beginZdt.toInstant())));
         }
         if (endZdt != null) {
             whereCondition = whereCondition.and(ref.LOCATION_LEVEL_DATE.lessThan(Timestamp.from(endZdt.toInstant())));
-            standardWhereCondition = standardWhereCondition.and(
-                ref.LOCATION_LEVEL_DATE.lessThan(Timestamp.from(endZdt.toInstant())));
         }
 
         Map<LevelLookup, LocationLevel.Builder> builderMap = new LinkedHashMap<>();
@@ -228,7 +220,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .from(ref)
                 .fullOuterJoin(values)
                 .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
-                .where(standardWhereCondition)
+                .where(whereCondition)
             );
         }
 
@@ -394,11 +386,10 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     private void storeVirtualLocationLevel(VirtualLocationLevel locationLevel) {
-        VirtualLocationLevel virtualLocationLevel = locationLevel;
         Timestamp date = Timestamp.from(locationLevel.getLevelDate().toInstant());
-        Timestamp expirationDate = Timestamp.from(virtualLocationLevel.getExpirationDate().toInstant());
+        Timestamp expirationDate = Timestamp.from(locationLevel.getExpirationDate().toInstant());
         STR_TAB_TAB_T constituentTab = new STR_TAB_TAB_T();
-        for (VirtualLocationLevel.RatingConstituent constituent : virtualLocationLevel.getConstituents()) {
+        for (VirtualLocationLevel.RatingConstituent constituent : locationLevel.getConstituents()) {
             constituentTab.add(new STR_TAB_T(constituent.getConstituentList()));
         }
         connection(dsl, c -> {
@@ -406,7 +397,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             setOffice(c, officeId);
             CWMS_LEVEL_PACKAGE.call_STORE_VIRTUAL_LOCATION_LEVEL(DSL.using(c).configuration(),
                     locationLevel.getLocationLevelId(), constituentTab,
-                    virtualLocationLevel.getConstituentConnections(),
+                    locationLevel.getConstituentConnections(),
                     locationLevel.getLevelComment(), locationLevel.getAttributeDurationId(),
                     locationLevel.getAttributeValue(), locationLevel.getAttributeUnitsId(),
                     locationLevel.getAttributeComment(), date, expirationDate,
@@ -445,9 +436,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     @NotNull
     private List<SeasonalValueBean> buildSeasonalValues(LOCATION_LEVEL_T level) {
         List<SeasonalValueBean> seasonalValues = Collections.emptyList();
-        SEASONAL_VALUE_TAB_T values = level.getSEASONAL_VALUES();
-        if (values != null) {
-            seasonalValues = values.stream()
+        SEASONAL_VALUE_TAB_T seasonalValueTabT = level.getSEASONAL_VALUES();
+        if (seasonalValueTabT != null) {
+            seasonalValues = seasonalValueTabT.stream()
                     .filter(Objects::nonNull)
                     .map(LocationLevelsDaoImpl::buildSeasonalValue)
                     .collect(toList());
@@ -676,13 +667,13 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             if (unit.equalsIgnoreCase(UnitSystem.EN.value())) {
                 attrUnit = r.get(values.ATTRIBUTE_UNIT_EN);
                 if (attrUnit != null) {
-                    oattrVal = r.get(values.ATTRIBUTE_VALUE_EN).doubleValue();
+                    oattrVal = r.get(values.ATTRIBUTE_VALUE_EN);
                 }
 
             } else {
                 attrUnit = r.get(values.ATTRIBUTE_UNIT_SI);
                 if (attrUnit != null) {
-                    oattrVal = r.get(values.ATTRIBUTE_VALUE_SI).doubleValue();
+                    oattrVal = r.get(values.ATTRIBUTE_VALUE_SI);
                 }
             }
         }
