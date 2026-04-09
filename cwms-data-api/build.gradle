@@ -21,7 +21,7 @@ configurations {
 }
 
 configurations.implementation {
-    exclude group: 'com.oracle.database.jdbc'
+    exclude group: 'com.oracle.database.jdbc'    
 }
 
 configurations.all {
@@ -29,6 +29,7 @@ configurations.all {
     exclude group: 'org.apache.xmlbeans'
     exclude group: 'org.apache.poi'
     exclude group: 'org.bouncycastle'
+    exclude group: 'org.apache.tomcat', module: 'tomcat-juli'
 }
 
 dependencies {
@@ -64,7 +65,7 @@ dependencies {
     }
     implementation(files("$buildDir/libs/${project.name}-${project.version}-codegen-shadow.jar"))
 
-    implementation(libs.slf4j)
+    compileOnly(libs.slf4j)
 
     implementation(libs.monolith) {
         //exclude group: "org.python", module: "jython-standalone"
@@ -77,8 +78,9 @@ dependencies {
     implementation(libs.google.errorProne)
     implementation(project(":flogger-cda-context"))
     runtimeOnly(libs.google.flogger.system.backend)
-    runtimeOnly(libs.google.flogger.slf4j.backend)
-    runtimeOnly(libs.ch.qos.logback)
+    runtimeOnly(libs.google.flogger.slf4j.backend) {
+        exclude group: "org.slf4j"
+    }
 
     implementation(libs.nucleus.data) {
         exclude group: "org.jdom"
@@ -156,10 +158,16 @@ dependencies {
 
     tomcatLibs(libs.bundles.tomcat.embedded)
     tomcatLibs(libs.bundles.tomcat.support)
+    
+    implementation(libs.slf4j)
+    testImplementation(libs.slf4j.jul)
     tomcatLibs(libs.google.flogger.api)
     tomcatLibs(libs.google.flogger.system.backend)
-    tomcatLibs(libs.google.flogger.slf4j.backend)
-    tomcatLibs(libs.ch.qos.logback)
+    tomcatLibs(libs.google.flogger.slf4j.backend) {
+        exclude group: "org.slf4j"
+    }
+    //./gr  testRuntimeOnly(libs.slf4j)
+    baseLibs(libs.ch.qos.logback)
 
     testImplementation(libs.bundles.testcontainers)
 
@@ -189,7 +197,10 @@ task extractWebJars(type: Copy) {
 war {
     dependsOn extractWebJars
     from "$buildDir/extra"
-    from "src/resources/"
+    from "src/resources/"   
+    // classpath = classpath.filter { file ->
+    //     !file.name.contains("slf4j-api")
+    // }
 
     manifest {
         attributes "build-version": project.version

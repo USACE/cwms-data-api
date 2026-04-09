@@ -30,6 +30,7 @@ public class TomcatServer {
     private Tomcat tomcatInstance = null;
     private Manager sessionManager = null;
     private SingleSignOnWrapper ssoValve = new SingleSignOnWrapper();
+    
     /**
      * Setups the baseline for tomcat to run.
      * @param baseDir set to the CATALINA_BASE directory the build has setup

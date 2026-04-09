@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.LogManager;
 
 import org.apache.catalina.Manager;
 import org.apache.commons.io.IOUtils;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import com.google.common.flogger.FluentLogger;
 
@@ -72,6 +74,12 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     {
         VERSION_STRING = schemaVersion();
         VERSION_INT = versionInt();
+    }
+
+    static {
+        //LogManager.getLogManager().reset();
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
     }
 
     private static String schemaVersion()
