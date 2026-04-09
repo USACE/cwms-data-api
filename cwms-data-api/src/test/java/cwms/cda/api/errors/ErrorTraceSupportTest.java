@@ -8,27 +8,18 @@ import cwms.cda.security.Role;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 class ErrorTraceSupportTest {
 
-    @AfterEach
-    void clearProperties() {
-        System.clearProperty(ErrorTraceSupport.ALWAYS_SHOW_STACK_TRACE_PROPERTY);
-        System.clearProperty(ErrorTraceSupport.PRIMARY_ENVIRONMENT_PROPERTY);
-        System.clearProperty(ErrorTraceSupport.LEGACY_ENVIRONMENT_PROPERTY);
-        System.clearProperty(ErrorTraceSupport.WAR_CONTEXT_PROPERTY);
-    }
-
     @Test
-    void includesStackTraceForDevAdminUser() {
+    void includesStackTraceWhenFeatureEnabledForAdminUser() {
         DataApiPrincipal principal = new DataApiPrincipal("admin-user",
                 Set.of(new Role("CWMS User Admins")));
 
         Map<String, Serializable> details = ErrorTraceSupport.buildDetails(Map.of(),
                 new IllegalStateException("boom"),
-                ErrorTraceSupport.shouldIncludeStackTrace(principal, "CWMS_DEV-West"));
+                ErrorTraceSupport.shouldIncludeStackTrace(principal, true));
 
         assertTrue(details.containsKey(ErrorTraceSupport.STACK_TRACE_KEY));
         assertTrue(details.containsKey(ErrorTraceSupport.STACK_TRACE_LINES_KEY));
@@ -39,21 +30,21 @@ class ErrorTraceSupportTest {
     }
 
     @Test
-    void includesStackTraceForExistingUserAdminsRole() {
+    void featureEnablesStackTraceForUserAdminsRole() {
         DataApiPrincipal principal = new DataApiPrincipal("admin-user",
                 Set.of(new Role("CWMS User Admins")));
 
-        assertTrue(ErrorTraceSupport.shouldIncludeStackTrace(principal, "spk-dev"));
+        assertTrue(ErrorTraceSupport.shouldIncludeStackTrace(principal, true));
     }
 
     @Test
-    void omitsStackTraceOutsideDev() {
+    void omitsStackTraceWhenFeatureDisabled() {
         DataApiPrincipal principal = new DataApiPrincipal("admin-user",
                 Set.of(new Role("CWMS User Admins")));
 
         Map<String, Serializable> details = ErrorTraceSupport.buildDetails(Map.of(),
                 new IllegalStateException("boom"),
-                ErrorTraceSupport.shouldIncludeStackTrace(principal, "production"));
+                ErrorTraceSupport.shouldIncludeStackTrace(principal, false));
 
         assertFalse(details.containsKey(ErrorTraceSupport.STACK_TRACE_KEY));
         assertFalse(details.containsKey(ErrorTraceSupport.STACK_TRACE_LINES_KEY));
@@ -64,32 +55,12 @@ class ErrorTraceSupportTest {
         DataApiPrincipal principal = new DataApiPrincipal("normal-user",
                 Set.of(new Role("CWMS Users")));
 
-        assertFalse(ErrorTraceSupport.shouldIncludeStackTrace(principal, "dev"));
+        assertFalse(ErrorTraceSupport.shouldIncludeStackTrace(principal, true));
     }
 
     @Test
     void omitsStackTraceForGuestUser() {
-        assertFalse(ErrorTraceSupport.shouldIncludeStackTrace(null, "dev"));
-    }
-
-    @Test
-    void normalizesEnvironmentNameBeforeDevCheck() {
-        assertTrue(ErrorTraceSupport.environmentLooksLikeDev("CWMS.Dev-West"));
-        assertTrue(ErrorTraceSupport.environmentLooksLikeDev("cwms_dev_west"));
-        assertFalse(ErrorTraceSupport.environmentLooksLikeDev("production"));
-    }
-
-    @Test
-    void fallsBackToContextPathWhenEnvironmentPropertyMissing() {
-        assertTrue(ErrorTraceSupport.environmentLooksLikeDev("/spk-data-dev"));
-    }
-
-    @Test
-    void environmentPropertyStillResolvesForDevChecks() {
-        System.setProperty(ErrorTraceSupport.PRIMARY_ENVIRONMENT_PROPERTY, "local-dev");
-
-        assertTrue(ErrorTraceSupport.environmentLooksLikeDev(
-                ErrorTraceSupport.resolveEnvironmentName(null)));
+        assertFalse(ErrorTraceSupport.shouldIncludeStackTrace(null, true));
     }
 
     @Test
@@ -97,28 +68,7 @@ class ErrorTraceSupportTest {
         DataApiPrincipal principal = new DataApiPrincipal("admin-user",
                 Set.of(new Role("CWMS Admin")));
 
-        assertFalse(ErrorTraceSupport.shouldIncludeStackTrace(principal, "dev"));
-    }
-
-    @Test
-    void overrideEnablesStackTraceWithoutAdminRole() {
-        DataApiPrincipal principal = new DataApiPrincipal("normal-user",
-                Set.of(new Role("CWMS Users")));
-        System.setProperty(ErrorTraceSupport.ALWAYS_SHOW_STACK_TRACE_PROPERTY, "true");
-
-        assertTrue(ErrorTraceSupport.shouldIncludeStackTrace(principal, "production"));
-    }
-
-    @Test
-    void overrideAddsStackTraceToDetails() {
-        System.setProperty(ErrorTraceSupport.ALWAYS_SHOW_STACK_TRACE_PROPERTY, "true");
-
-        Map<String, Serializable> details = ErrorTraceSupport.buildDetails(Map.of(),
-                new IllegalStateException("boom"),
-                ErrorTraceSupport.shouldIncludeStackTrace(null, "production"));
-
-        assertTrue(details.containsKey(ErrorTraceSupport.STACK_TRACE_KEY));
-        assertTrue(details.containsKey(ErrorTraceSupport.STACK_TRACE_LINES_KEY));
+        assertFalse(ErrorTraceSupport.shouldIncludeStackTrace(principal, true));
     }
 
     @Test

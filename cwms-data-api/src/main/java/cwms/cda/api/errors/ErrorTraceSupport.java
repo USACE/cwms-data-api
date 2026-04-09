@@ -1,6 +1,7 @@
 package cwms.cda.api.errors;
 
 import cwms.cda.data.dao.AuthDao;
+import cwms.cda.features.CdaFeatures;
 import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.Role;
 import cwms.cda.spi.IdentityProvider;
@@ -11,21 +12,14 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.togglz.core.context.FeatureContext;
+import org.togglz.core.manager.FeatureManager;
 
 public final class ErrorTraceSupport {
     public static final String STACK_TRACE_KEY = "stackTrace";
     public static final String STACK_TRACE_LINES_KEY = "stackTraceLines";
-    static final String ALWAYS_SHOW_STACK_TRACE_PROPERTY = "cwms.dataapi.errors.alwaysShowStackTrace";
-    static final String ALWAYS_SHOW_STACK_TRACE_VARIABLE = "CWMS_DATAAPI_ERRORS_ALWAYS_SHOW_STACK_TRACE";
-    static final String PRIMARY_ENVIRONMENT_PROPERTY = "cwms.dataapi.environment.name";
-    static final String PRIMARY_ENVIRONMENT_VARIABLE = "CWMS_DATAAPI_ENVIRONMENT_NAME";
-    static final String HOST_ENVIRONMENT_VARIABLE = "ENVIRONMENT";
-    static final String LEGACY_ENVIRONMENT_PROPERTY = "cda.environment.name";
-    static final String LEGACY_ENVIRONMENT_VARIABLE = "CDA_ENVIRONMENT_NAME";
-    static final String WAR_CONTEXT_PROPERTY = "warContext";
     private static final String DEV_MARKER = "dev";
     private static final Role CWMS_USER_ADMINS_ROLE = new Role("CWMS User Admins");
 
@@ -65,28 +59,14 @@ public final class ErrorTraceSupport {
     }
 
     static boolean shouldIncludeStackTrace(Context ctx) {
-        if (alwaysShowStackTraceOverrideEnabled()) {
-            return true;
-        }
         if (localhostRequestOverrideEnabled(ctx)) {
             return true;
         }
-        return shouldIncludeStackTrace(resolvePrincipal(ctx).orElse(null), resolveEnvironmentName(ctx));
+        return shouldIncludeStackTrace(resolvePrincipal(ctx).orElse(null), stackTraceFeatureEnabled());
     }
 
-    static boolean shouldIncludeStackTrace(DataApiPrincipal principal, String environmentName) {
-        if (alwaysShowStackTraceOverrideEnabled()) {
-            return true;
-        }
-        return hasAdminRole(principal) && environmentLooksLikeDev(environmentName);
-    }
-
-    static boolean alwaysShowStackTraceOverrideEnabled() {
-        return Boolean.parseBoolean(firstNonBlank(
-                System.getProperty(ALWAYS_SHOW_STACK_TRACE_PROPERTY),
-                System.getenv(ALWAYS_SHOW_STACK_TRACE_VARIABLE),
-                "false"
-        ));
+    static boolean shouldIncludeStackTrace(DataApiPrincipal principal, boolean stackTraceFeatureEnabled) {
+        return stackTraceFeatureEnabled && hasAdminRole(principal);
     }
 
     static boolean localhostRequestOverrideEnabled(Context ctx) {
@@ -120,33 +100,13 @@ public final class ErrorTraceSupport {
                 && principal.getRoles().contains(CWMS_USER_ADMINS_ROLE);
     }
 
-    static String resolveEnvironmentName(Context ctx) {
-        String configuredName = firstNonBlank(
-                System.getProperty(PRIMARY_ENVIRONMENT_PROPERTY),
-                System.getenv(PRIMARY_ENVIRONMENT_VARIABLE),
-                System.getenv(HOST_ENVIRONMENT_VARIABLE),
-                System.getProperty(LEGACY_ENVIRONMENT_PROPERTY),
-                System.getenv(LEGACY_ENVIRONMENT_VARIABLE),
-                System.getProperty(WAR_CONTEXT_PROPERTY)
-        );
-        if (configuredName != null) {
-            return configuredName;
+    static boolean stackTraceFeatureEnabled() {
+        try {
+            FeatureManager featureManager = FeatureContext.getFeatureManager();
+            return featureManager.isActive(CdaFeatures.INCLUDE_ERROR_STACK_TRACES);
+        } catch (Throwable ignore) {
+            return false;
         }
-        if (ctx == null) {
-            return "";
-        }
-        return firstNonBlank(ctx.contextPath(), ctx.req != null ? ctx.req.getContextPath() : null, "");
-    }
-
-    static boolean environmentLooksLikeDev(String environmentName) {
-        return normalizeEnvironmentName(environmentName).contains(DEV_MARKER);
-    }
-
-    static String normalizeEnvironmentName(String environmentName) {
-        if (environmentName == null) {
-            return "";
-        }
-        return environmentName.toLowerCase().replaceAll("[^a-z0-9]", "");
     }
 
     private static String stackTraceOf(Throwable cause) {
@@ -161,12 +121,4 @@ public final class ErrorTraceSupport {
         return lines;
     }
 
-    private static String firstNonBlank(String... values) {
-        for (String value : values) {
-            if (value != null && !value.isBlank()) {
-                return value;
-            }
-        }
-        return null;
-    }
 }

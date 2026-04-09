@@ -51,20 +51,14 @@ be changed by setting the APP_PORT variable.
 The API supports conditional stack traces in JSON error responses through
 `cwms.cda.api.errors.ErrorTraceSupport`.
 
-For local Docker Compose or localhost testing, stack traces can be enabled in either of these ways:
+Stack-trace exposure is controlled through the Togglz feature flag
+`INCLUDE_ERROR_STACK_TRACES`.
 
-1. Set the explicit override:
+For shared environments, enable that feature in the active `features.properties` and the API will
+include traces only for authenticated users with the `CWMS User Admins` role.
 
-   `CWMS_DATAAPI_ERRORS_ALWAYS_SHOW_STACK_TRACE=true`
-
-2. Run with an environment name that normalizes to a value containing `dev`, for example:
-
-   `ENVIRONMENT=development`
-
-In addition, localhost requests are treated as local debug requests. When enabled, error responses
-include `details.stackTrace` along with the existing `incidentIdentifier`.
-
-This is intended for local development and shared `development` environments. In shared `dev` (not localhost),
-stack traces are gated by authentication and the `CWMS User Admins` role. 
+For local Docker Compose or other localhost testing, requests to `localhost`, `127.0.0.1`, and
+`::1` are still treated as local debug requests even when the feature is disabled. When enabled,
+error responses include `details.stackTrace` along with the existing `incidentIdentifier`.
 
 Response stack traces should *not* be enabled broadly for production traffic.
