@@ -1,6 +1,7 @@
 package cwms.cda.api.errors;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.Role;
@@ -30,8 +31,11 @@ class ErrorTraceSupportTest {
                 ErrorTraceSupport.shouldIncludeStackTrace(principal, "CWMS_DEV-West"));
 
         assertTrue(details.containsKey(ErrorTraceSupport.STACK_TRACE_KEY));
+        assertTrue(details.containsKey(ErrorTraceSupport.STACK_TRACE_LINES_KEY));
         assertTrue(details.get(ErrorTraceSupport.STACK_TRACE_KEY).toString()
                 .contains("IllegalStateException"));
+        assertTrue(assertInstanceOf(Iterable.class, details.get(ErrorTraceSupport.STACK_TRACE_LINES_KEY))
+                .iterator().next().toString().contains("IllegalStateException"));
     }
 
     @Test
@@ -52,6 +56,7 @@ class ErrorTraceSupportTest {
                 ErrorTraceSupport.shouldIncludeStackTrace(principal, "production"));
 
         assertFalse(details.containsKey(ErrorTraceSupport.STACK_TRACE_KEY));
+        assertFalse(details.containsKey(ErrorTraceSupport.STACK_TRACE_LINES_KEY));
     }
 
     @Test
@@ -113,6 +118,7 @@ class ErrorTraceSupportTest {
                 ErrorTraceSupport.shouldIncludeStackTrace(null, "production"));
 
         assertTrue(details.containsKey(ErrorTraceSupport.STACK_TRACE_KEY));
+        assertTrue(details.containsKey(ErrorTraceSupport.STACK_TRACE_LINES_KEY));
     }
 
     @Test

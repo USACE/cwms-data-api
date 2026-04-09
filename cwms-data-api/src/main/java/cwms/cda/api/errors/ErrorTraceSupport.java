@@ -8,13 +8,16 @@ import io.javalin.http.Context;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public final class ErrorTraceSupport {
     public static final String STACK_TRACE_KEY = "stackTrace";
+    public static final String STACK_TRACE_LINES_KEY = "stackTraceLines";
     static final String ALWAYS_SHOW_STACK_TRACE_PROPERTY = "cwms.dataapi.errors.alwaysShowStackTrace";
     static final String ALWAYS_SHOW_STACK_TRACE_VARIABLE = "CWMS_DATAAPI_ERRORS_ALWAYS_SHOW_STACK_TRACE";
     static final String PRIMARY_ENVIRONMENT_PROPERTY = "cwms.dataapi.environment.name";
@@ -54,7 +57,9 @@ public final class ErrorTraceSupport {
             merged.putAll(details);
         }
         if (cause != null && includeStackTrace) {
-            merged.put(STACK_TRACE_KEY, stackTraceOf(cause));
+            String stackTrace = stackTraceOf(cause);
+            merged.put(STACK_TRACE_KEY, stackTrace);
+            merged.put(STACK_TRACE_LINES_KEY, stackTraceLinesOf(stackTrace));
         }
         return Collections.unmodifiableMap(merged);
     }
@@ -148,6 +153,12 @@ public final class ErrorTraceSupport {
         StringWriter sw = new StringWriter();
         cause.printStackTrace(new PrintWriter(sw));
         return sw.toString();
+    }
+
+    private static ArrayList<String> stackTraceLinesOf(String stackTrace) {
+        ArrayList<String> lines = new ArrayList<>();
+        Collections.addAll(lines, stackTrace.split("\\R"));
+        return lines;
     }
 
     private static String firstNonBlank(String... values) {
