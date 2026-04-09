@@ -39,11 +39,6 @@ public final class LocationVerticalDatumConverter {
         return Optional.ofNullable(location)
                 .map(Location::getVerticalDatum) // unwrap Optional<VerticalDatumInfo>
                 .filter(s -> !s.isBlank())
-                .map(s -> {
-                    if (s.equalsIgnoreCase(VerticalDatum.OTHER.toString())) {
-                        throw new IllegalArgumentException("Vertical Datum of OTHER is not currently supported.");
-                    }
-                    return VerticalDatum.getVerticalDatum(s);
-                });
+                .map(VerticalDatum::getVerticalDatum);
     }
 }
