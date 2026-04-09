@@ -87,7 +87,6 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.SelectLimitPercentAfterOffsetStep;
-import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
@@ -110,9 +109,6 @@ import usace.cwms.db.jooq.codegen_latest.tables.AV_LOCATION_LEVEL_VALUES;
 public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements LocationLevelsDao {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-    private static final String ATTRIBUTE_ID_PARSING_REGEXP = "(.*)\\.(.*)\\.(.*)";
-    public static final Pattern attributeIdParsingPattern =
-            Pattern.compile(ATTRIBUTE_ID_PARSING_REGEXP);
     private static final String LOCATION_LEVEL_ID_PARSING_REGEXP = "\\.";
     public static final Pattern locationLevelIdParsingPattern =
             Pattern.compile(LOCATION_LEVEL_ID_PARSING_REGEXP);
@@ -120,8 +116,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     private static final Collection<Field<?>> LOCATION_LEVEL_FIELDS = new LinkedHashSet<>();
     private static final Collection<Field<?>> LOCATION_ALIAS_FIELDS = new LinkedHashSet<>();
 
-    private static final String TABLE_ALIAS1 = "T1";
-    private static final String TABLE_ALIAS2 = "T2";
+    private static final AV_LOCATION_LEVEL_REF ref = AV_LOCATION_LEVEL_REF.AV_LOCATION_LEVEL_REF;
+    private static final AV_LOCATION_LEVEL_VALUES values = AV_LOCATION_LEVEL_VALUES.AV_LOCATION_LEVEL_VALUES;
+    private static final usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS aliasView = AV_LOC_ALIAS;
 
     static {
         buildLocationLevelSelectFields();
@@ -167,28 +164,17 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             }
         }
 
-        LocationFieldMapping mapping;
-        if (includeAliases) {
-            mapping = new AliasedLocationFieldMapping();
-        } else {
-            mapping = new JooqLocationFieldMapping();
-        }
-
-        usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS aliasView = AV_LOC_ALIAS;
-        AV_LOCATION_LEVEL_REF ref = AV_LOCATION_LEVEL_REF.AV_LOCATION_LEVEL_REF;
-        AV_LOCATION_LEVEL_VALUES values = AV_LOCATION_LEVEL_VALUES.AV_LOCATION_LEVEL_VALUES;
-
-        Condition whereCondition = mapping.getLocationLevelId(null, ref).isNotNull();
+        Condition whereCondition = ref.LOCATION_LEVEL_ID.isNotNull();
         Condition standardWhereCondition = ref.LOCATION_LEVEL_ID.isNotNull();
 
         if (office != null && !office.isEmpty()) {
-            whereCondition = whereCondition.and(mapping.getOfficeId(null, ref).eq(office.toUpperCase()));
+            whereCondition = whereCondition.and(ref.OFFICE_ID.eq(office.toUpperCase()));
             standardWhereCondition = standardWhereCondition.and(DSL.upper(ref.OFFICE_ID).eq(office.toUpperCase()));
         }
 
         if (levelIdMask != null && !levelIdMask.isEmpty()) {
             whereCondition = whereCondition.and(
-                JooqDao.caseInsensitiveLikeRegex(mapping.getLocationLevelId(null, ref), levelIdMask));
+                JooqDao.caseInsensitiveLikeRegex(ref.LOCATION_LEVEL_ID, levelIdMask));
             standardWhereCondition = standardWhereCondition.and(
                 JooqDao.caseInsensitiveLikeRegex(ref.LOCATION_LEVEL_ID, levelIdMask));
         }
@@ -218,7 +204,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     .and(ref.LOCATION_ID.eq(aliasView.LOCATION_ID))
                     .and(ref.LOCATION_CODE.eq(aliasView.LOCATION_CODE.cast(Long.class)))
                 .where(whereCondition))
-                .orderBy(mapping.getOfficeId(null, null), mapping.getLocationLevelId(null, null),
+                .orderBy(field("OFFICE_ID"), field("LOCATION_LEVEL_ID"),
                     field("LOCATION_LEVEL_DATE"), field("CALENDAR_OFFSET"), field("TIME_OFFSET")
                 )
                 .offset(offset)
@@ -288,17 +274,16 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     private void addToAliasMaps(Map<LevelLookup, Set<LocationAlias>> aliasMap, Record row, String unit) {
-        LocationParserFieldMapping map = new AliasedLocationParserFieldMapping();
         boolean siUnits = unit.equalsIgnoreCase("SI");
-        String officeId = row.get(map.getOfficeId(), String.class);
-        String locationLevelId = row.get(map.getLocationLevelId(), String.class);
-        String attributeId = row.get(map.getAttributeId(), String.class);
-        Double attributeValue = row.get(siUnits ? map.getAttributeValueSI() : map.getAttributeValueEN(), Double.class);
-        String attributeUnits = row.get(siUnits ? map.getAttributeUnitSI() : map.getAttributeUnitEN(), String.class);
-        Date effectiveDate = row.get(map.getLevelDate(), Date.class);
-        String aliasId = row.get(DSL.name(TABLE_ALIAS2, "ALIAS_ID"), String.class);
-        String categoryId = row.get(DSL.name(TABLE_ALIAS2, "CATEGORY_ID"), String.class);
-        String groupId = row.get(DSL.name(TABLE_ALIAS2, "GROUP_ID"), String.class);
+        String officeId = row.get(ref.OFFICE_ID, String.class);
+        String locationLevelId = row.get(ref.LOCATION_LEVEL_ID, String.class);
+        String attributeId = row.get(ref.ATTRIBUTE_ID, String.class);
+        Double attributeValue = row.get(siUnits ? values.ATTRIBUTE_VALUE_SI : values.ATTRIBUTE_VALUE_EN, Double.class);
+        String attributeUnits = row.get(siUnits ? values.ATTRIBUTE_UNIT_SI : values.ATTRIBUTE_UNIT_EN, String.class);
+        Date effectiveDate = row.get(ref.LOCATION_LEVEL_DATE, Date.class);
+        String aliasId = row.get(aliasView.ALIAS_ID, String.class);
+        String categoryId = row.get(aliasView.CATEGORY_ID, String.class);
+        String groupId = row.get(aliasView.GROUP_ID, String.class);
 
         LevelLookup key = new LevelLookup(officeId, locationLevelId, attributeId, String.valueOf(attributeValue),
                                              attributeUnits, effectiveDate);
@@ -663,27 +648,20 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     private void parseLevels(Record r, Map<LevelLookup, LocationLevel.Builder> builderMap, String unit,
                              Map<LevelLookup, Set<LocationAlias>> aliasMap, boolean includeAliases) {
-        LocationParserFieldMapping mapping;
-        if (includeAliases) {
-            mapping = new AliasedLocationParserFieldMapping();
-        } else {
-            mapping = new JooqLocationParserFieldMapping();
-        }
-
         boolean siUnits = unit.equalsIgnoreCase("SI");
 
         boolean virtual = false;
-        Timestamp levelDateTimestamp = r.get(mapping.getLevelDate());
-        String attrId = r.get(mapping.getAttributeId());
-        Double oattrVal = r.get(siUnits ? mapping.getAttributeValueSI() : mapping.getAttributeValueEN());
-        String locLevelId = r.get(mapping.getLocationLevelId());
-        String officeId = r.get(mapping.getOfficeId());
-        String levelUnit = r.get(siUnits ? mapping.getLevelUnitSI() : mapping.getLevelUnitEN());
-        String attrUnit = r.get(siUnits ? mapping.getAttributeUnitSI() : mapping.getAttributeUnitEN());
-        Timestamp expirationDate = r.get(mapping.getExpirationDate());
+        Timestamp levelDateTimestamp = r.get(ref.LOCATION_LEVEL_DATE);
+        String attrId = r.get(ref.ATTRIBUTE_ID);
+        Double oattrVal = r.get(siUnits ? values.ATTRIBUTE_VALUE_SI : values.ATTRIBUTE_VALUE_EN);
+        String locLevelId = r.get(ref.LOCATION_LEVEL_ID);
+        String officeId = r.get(ref.OFFICE_ID);
+        String levelUnit = r.get(siUnits ? values.LEVEL_UNIT_SI : values.LEVEL_UNIT_EN);
+        String attrUnit = r.get(siUnits ? values.ATTRIBUTE_UNIT_SI : values.ATTRIBUTE_UNIT_EN);
+        Timestamp expirationDate = r.get(ref.EXPIRATION_DATE);
 
         // Virtual fields
-        String connections = r.get(mapping.getConnections());
+        String connections = r.get(values.CONNECTIONS);
         ZonedDateTime expireDate = null;
 
         Date levelDate = null;
@@ -696,20 +674,20 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             attrStr = oattrVal.toString(); // this is weird. allow it for now but maybe this should be doing some rounding?
         } else {
             if (unit.equalsIgnoreCase(UnitSystem.EN.value())) {
-                attrUnit = r.get(mapping.getAttrUnitEn());
+                attrUnit = r.get(values.ATTRIBUTE_UNIT_EN);
                 if (attrUnit != null) {
-                    oattrVal = r.get(mapping.getAttrValueEn()).doubleValue();
+                    oattrVal = r.get(values.ATTRIBUTE_VALUE_EN).doubleValue();
                 }
 
             } else {
-                attrUnit = r.get(mapping.getAttrUnitSi());
+                attrUnit = r.get(values.ATTRIBUTE_UNIT_SI);
                 if (attrUnit != null) {
-                    oattrVal = r.get(mapping.getAttrValueSi()).doubleValue();
+                    oattrVal = r.get(values.ATTRIBUTE_VALUE_SI).doubleValue();
                 }
             }
         }
 
-        if (mapping.getConnections() != null) {
+        if (r.get(values.CONNECTIONS) != null) {
             virtual = true;
         }
 
@@ -722,7 +700,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         List<LocationAlias> aliases = new ArrayList<>();
 
-        if (aliasMap.containsKey(levelLookup)) {
+        if (aliasMap.containsKey(levelLookup) && includeAliases) {
             aliases.addAll(aliasMap.get(levelLookup));
         }
 
@@ -731,16 +709,16 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             levelZdt = ZonedDateTime.ofInstant(levelDate.toInstant(), ZoneId.of("UTC"));
         }
 
-        Double seasonalLevel = r.get(siUnits ? mapping.getSeasonalLevelSI() : mapping.getSeasonalLevelEN());
-        Double constantLevel = r.get(siUnits ? mapping.getConstantLevelSI() : mapping.getConstantLevelEN());
-        String tsId = r.get(mapping.getTsId());
-        String interp = r.get(mapping.getInterpolate());
-        YearToMonth calOffset = r.get(mapping.getCalendarOffset());
-        DayToSecond timeOffset = r.get(mapping.getTimeOffset());
-        String levelComment = r.get(mapping.getLevelComment());
-        DayToSecond timeInterval = r.get(mapping.getTimeInterval());
-        YearToMonth calendarInterval = r.get(mapping.getCalendarInterval());
-        Timestamp intervalOrigin = r.get(mapping.getIntervalOrigin());
+        Double seasonalLevel = r.get(siUnits ? values.SEASONAL_VALUE_SI : values.SEASONAL_VALUE_EN);
+        Double constantLevel = r.get(siUnits ? values.CONSTANT_LEVEL_SI : values.CONSTANT_LEVEL_EN);
+        String tsId = r.get(values.TSID);
+        String interp = r.get(values.INTERPOLATE);
+        YearToMonth calOffset = r.get(values.CALENDAR_OFFSET);
+        DayToSecond timeOffset = r.get(values.TIME_OFFSET);
+        String levelComment = r.get(ref.LOCATION_LEVEL_COMMENT);
+        DayToSecond timeInterval = r.get(values.TIME_INTERVAL);
+        YearToMonth calendarInterval = r.get(values.CALENDAR_INTERVAL);
+        Timestamp intervalOrigin = r.get(values.INTERVAL_ORIGIN);
 
         if (constantLevel != null) {
             ConstantLocationLevel.Builder constantBuilder = new ConstantLocationLevel.Builder(locLevelId, levelZdt);
@@ -980,401 +958,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         return retVal;
     }
 
-    private interface LocationFieldMapping {
-        Field<String> getOfficeId(String prefix, Table<?> table);
-
-        Field<String> getLocationLevelId(String prefix, Table<?> table);
-
-        Field<Long> getLocationLevelCode();
-    }
-
-    private static final class JooqLocationFieldMapping implements LocationFieldMapping {
-        @Override
-        public Field<String> getOfficeId(String prefix, Table<?> table) {
-            return table.field(DSL.name(prefix, "OFFICE_ID"), String.class);
-        }
-
-        @Override
-        public Field<String> getLocationLevelId(String prefix, Table<?> table) {
-            return table.field(DSL.name(prefix, "LOCATION_LEVEL_ID"), String.class);
-        }
-
-        @Override
-        public Field<Long> getLocationLevelCode() {
-            return null;
-        }
-    }
-
-    private static final class AliasedLocationFieldMapping implements LocationFieldMapping {
-        @Override
-        public Field<String> getOfficeId(String prefix, Table<?> table) {
-            String field = prefix != null ? prefix + ".OFFICE_ID" : "OFFICE_ID";
-            return field(field, String.class);
-        }
-
-        @Override
-        public Field<String> getLocationLevelId(String prefix, Table<?> table) {
-            String field = prefix != null ? prefix + ".LOCATION_LEVEL_ID" : "LOCATION_LEVEL_ID";
-            return field(field, String.class);
-        }
-
-        @Override
-        public Field<Long> getLocationLevelCode() {
-            return field(String.format("%s.%s", TABLE_ALIAS1, "LOCATION_LEVEL_CODE"), Long.class);
-        }
-    }
-
-    private interface LocationParserFieldMapping {
-        Field<Timestamp> getLevelDate();
-
-        Field<String> getAttributeId();
-
-        Field<Double> getAttributeValueEN();
-
-        Field<Double> getAttributeValueSI();
-
-        Field<String> getLocationLevelId();
-
-        Field<String> getOfficeId();
-
-        Field<String> getLevelUnitEN();
-
-        Field<String> getLevelUnitSI();
-
-        Field<String> getAttributeUnitEN();
-
-        Field<String> getAttributeUnitSI();
-
-        Field<String> getConnections();
-
-        Field<Timestamp> getExpirationDate();
-
-        Field<String> getAttrUnitEn();
-
-        Field<Double> getAttrValueEn();
-
-        Field<String> getAttrUnitSi();
-
-        Field<Double> getAttrValueSi();
-
-        Field<Double> getSeasonalLevelEN();
-
-        Field<Double> getSeasonalLevelSI();
-
-        Field<Double> getConstantLevelEN();
-
-        Field<Double> getConstantLevelSI();
-
-        Field<String> getTsId();
-
-        Field<String> getInterpolate();
-
-        Field<YearToMonth> getCalendarOffset();
-
-        Field<DayToSecond> getTimeOffset();
-
-        Field<String> getLevelComment();
-
-        Field<DayToSecond> getTimeInterval();
-
-        Field<YearToMonth> getCalendarInterval();
-
-        Field<Timestamp> getIntervalOrigin();
-    }
-
-    private static final class JooqLocationParserFieldMapping implements LocationParserFieldMapping {
-        AV_LOCATION_LEVEL_REF ref = AV_LOCATION_LEVEL_REF.AV_LOCATION_LEVEL_REF;
-        AV_LOCATION_LEVEL_VALUES values = AV_LOCATION_LEVEL_VALUES.AV_LOCATION_LEVEL_VALUES;
-
-        @Override
-        public Field<Timestamp> getLevelDate() {
-            return ref.LOCATION_LEVEL_DATE;
-        }
-
-        @Override
-        public Field<String> getAttributeId() {
-            return ref.ATTRIBUTE_ID;
-        }
-
-        @Override
-        public Field<Double> getAttributeValueEN() {
-            return values.ATTRIBUTE_VALUE_EN;
-        }
-
-        @Override
-        public Field<Double> getAttributeValueSI() {
-            return values.ATTRIBUTE_VALUE_SI;
-        }
-
-        @Override
-        public Field<String> getLocationLevelId() {
-            return ref.LOCATION_LEVEL_ID;
-        }
-
-        @Override
-        public Field<String> getOfficeId() {
-            return ref.OFFICE_ID;
-        }
-
-        @Override
-        public Field<String> getLevelUnitEN() {
-            return values.LEVEL_UNIT_EN;
-        }
-
-        @Override
-        public Field<String> getLevelUnitSI() {
-            return values.LEVEL_UNIT_SI;
-        }
-
-        @Override
-        public Field<String> getAttributeUnitEN() {
-            return values.ATTRIBUTE_UNIT_EN;
-        }
-
-        @Override
-        public Field<String> getAttributeUnitSI() {
-            return values.ATTRIBUTE_UNIT_SI;
-        }
-
-        @Override
-        public Field<String> getConnections() {
-            return values.CONNECTIONS;
-        }
-
-        @Override
-        public Field<Timestamp> getExpirationDate() {
-            return ref.EXPIRATION_DATE;
-        }
-
-        @Override
-        public Field<String> getAttrUnitEn() {
-            return values.ATTRIBUTE_UNIT_EN;
-        }
-
-        @Override
-        public Field<Double> getAttrValueEn() {
-            return values.ATTRIBUTE_VALUE_EN;
-        }
-
-        @Override
-        public Field<String> getAttrUnitSi() {
-            return values.ATTRIBUTE_UNIT_SI;
-        }
-
-        @Override
-        public Field<Double> getAttrValueSi() {
-            return values.ATTRIBUTE_VALUE_SI;
-        }
-
-        @Override
-        public Field<Double> getSeasonalLevelEN() {
-            return values.SEASONAL_VALUE_EN;
-        }
-
-        @Override
-        public Field<Double> getSeasonalLevelSI() {
-            return values.SEASONAL_VALUE_SI;
-        }
-
-        @Override
-        public Field<Double> getConstantLevelEN() {
-            return values.CONSTANT_LEVEL_EN;
-        }
-
-        @Override
-        public Field<Double> getConstantLevelSI() {
-            return values.CONSTANT_LEVEL_SI;
-        }
-
-        @Override
-        public Field<String> getTsId() {
-            return values.TSID;
-        }
-
-        @Override
-        public Field<String> getInterpolate() {
-            return values.INTERPOLATE;
-        }
-
-        @Override
-        public Field<YearToMonth> getCalendarOffset() {
-            return values.CALENDAR_OFFSET;
-        }
-
-        @Override
-        public Field<DayToSecond> getTimeOffset() {
-            return values.TIME_OFFSET;
-        }
-
-        @Override
-        public Field<String> getLevelComment() {
-            return ref.LOCATION_LEVEL_COMMENT;
-        }
-
-        @Override
-        public Field<DayToSecond> getTimeInterval() {
-            return values.TIME_INTERVAL;
-        }
-
-        @Override
-        public Field<YearToMonth> getCalendarInterval() {
-            return values.CALENDAR_INTERVAL;
-        }
-
-        @Override
-        public Field<Timestamp> getIntervalOrigin() {
-            return values.INTERVAL_ORIGIN;
-        }
-    }
-
-    private static final class AliasedLocationParserFieldMapping implements LocationParserFieldMapping {
-        AV_LOCATION_LEVEL_REF ref = AV_LOCATION_LEVEL_REF.AV_LOCATION_LEVEL_REF;
-        AV_LOCATION_LEVEL_VALUES values = AV_LOCATION_LEVEL_VALUES.AV_LOCATION_LEVEL_VALUES;
-
-        @Override
-        public Field<Timestamp> getLevelDate() {
-            return ref.LOCATION_LEVEL_DATE;
-        }
-
-        @Override
-        public Field<String> getAttributeId() {
-            return ref.ATTRIBUTE_ID;
-        }
-
-        @Override
-        public Field<Double> getAttributeValueEN() {
-            return values.ATTRIBUTE_VALUE_EN;
-        }
-
-        @Override
-        public Field<Double> getAttributeValueSI() {
-            return values.ATTRIBUTE_VALUE_SI;
-        }
-
-        @Override
-        public Field<String> getLocationLevelId() {
-            return ref.LOCATION_LEVEL_ID;
-        }
-
-        @Override
-        public Field<String> getOfficeId() {
-            return ref.OFFICE_ID;
-        }
-
-        @Override
-        public Field<String> getLevelUnitEN() {
-            return values.LEVEL_UNIT_EN;
-        }
-
-        @Override
-        public Field<String> getLevelUnitSI() {
-            return values.LEVEL_UNIT_SI;
-        }
-
-        @Override
-        public Field<String> getAttributeUnitEN() {
-            return values.ATTRIBUTE_UNIT_EN;
-        }
-
-        @Override
-        public Field<String> getAttributeUnitSI() {
-            return values.ATTRIBUTE_UNIT_SI;
-        }
-
-        @Override
-        public Field<String> getConnections() {
-            return values.CONNECTIONS;
-        }
-
-        @Override
-        public Field<Timestamp> getExpirationDate() {
-            return ref.EXPIRATION_DATE;
-        }
-
-        @Override
-        public Field<String> getAttrUnitEn() {
-            return values.ATTRIBUTE_UNIT_EN;
-        }
-
-        @Override
-        public Field<Double> getAttrValueEn() {
-            return values.ATTRIBUTE_VALUE_EN;
-        }
-
-        @Override
-        public Field<String> getAttrUnitSi() {
-            return values.ATTRIBUTE_UNIT_SI;
-        }
-
-        @Override
-        public Field<Double> getAttrValueSi() {
-            return values.ATTRIBUTE_VALUE_SI;
-        }
-
-        @Override
-        public Field<Double> getSeasonalLevelEN() {
-            return values.SEASONAL_VALUE_EN;
-        }
-
-        @Override
-        public Field<Double> getSeasonalLevelSI() {
-            return values.SEASONAL_VALUE_SI;
-        }
-
-        @Override
-        public Field<Double> getConstantLevelEN() {
-            return values.CONSTANT_LEVEL_EN;
-        }
-
-        @Override
-        public Field<Double> getConstantLevelSI() {
-            return values.CONSTANT_LEVEL_SI;
-        }
-
-        @Override
-        public Field<String> getTsId() {
-            return values.TSID;
-        }
-
-        @Override
-        public Field<String> getInterpolate() {
-            return values.INTERPOLATE;
-        }
-
-        @Override
-        public Field<YearToMonth> getCalendarOffset() {
-            return values.CALENDAR_OFFSET;
-        }
-
-        @Override
-        public Field<DayToSecond> getTimeOffset() {
-            return values.TIME_OFFSET;
-        }
-
-        @Override
-        public Field<String> getLevelComment() {
-            return ref.LOCATION_LEVEL_COMMENT;
-        }
-
-        @Override
-        public Field<DayToSecond> getTimeInterval() {
-            return values.TIME_INTERVAL;
-        }
-
-        @Override
-        public Field<YearToMonth> getCalendarInterval() {
-            return values.CALENDAR_INTERVAL;
-        }
-
-        @Override
-        public Field<Timestamp> getIntervalOrigin() {
-            return values.INTERVAL_ORIGIN;
-        }
-    }
-
     private static void buildLocationLevelSelectFields() {
-        AV_LOCATION_LEVEL_REF ref = AV_LOCATION_LEVEL_REF.AV_LOCATION_LEVEL_REF;
-        AV_LOCATION_LEVEL_VALUES values = AV_LOCATION_LEVEL_VALUES.AV_LOCATION_LEVEL_VALUES;
         LOCATION_LEVEL_FIELDS.add(ref.OFFICE_ID);
         LOCATION_LEVEL_FIELDS.add(ref.LOCATION_LEVEL_ID);
         LOCATION_LEVEL_FIELDS.add(ref.ATTRIBUTE_ID);
@@ -1406,10 +990,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     private static void buildAliasedLocationLevelSelectFields() {
-        usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS aliasView = AV_LOC_ALIAS;
-        AV_LOCATION_LEVEL_REF ref = AV_LOCATION_LEVEL_REF.AV_LOCATION_LEVEL_REF;
-        AV_LOCATION_LEVEL_VALUES values = AV_LOCATION_LEVEL_VALUES.AV_LOCATION_LEVEL_VALUES;
-
         LOCATION_ALIAS_FIELDS.add(field(ref.OFFICE_ID.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(ref.LOCATION_LEVEL_ID.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(ref.ATTRIBUTE_ID.getUnqualifiedName()));
