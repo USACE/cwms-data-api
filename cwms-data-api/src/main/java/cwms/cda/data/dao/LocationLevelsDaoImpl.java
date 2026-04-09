@@ -87,9 +87,7 @@ import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
-import org.jooq.Record1;
 import org.jooq.Result;
-import org.jooq.Select;
 import org.jooq.SelectLimitPercentAfterOffsetStep;
 import org.jooq.Table;
 import org.jooq.conf.ParamType;
@@ -174,12 +172,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             }
         }
 
-        usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS aliasView = AV_LOC_ALIAS;
-        AV_LOCATION_LEVEL_REF ref = AV_LOCATION_LEVEL_REF.AV_LOCATION_LEVEL_REF;
-        AV_LOCATION_LEVEL_VALUES values = AV_LOCATION_LEVEL_VALUES.AV_LOCATION_LEVEL_VALUES;
-
-        Condition whereCondition;
-        Condition standardWhereCondition = ref.LOCATION_LEVEL_ID.isNotNull();
         LocationFieldMapping mapping;
         if (includeAliases) {
             mapping = new AliasedLocationFieldMapping();
@@ -187,19 +179,21 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             mapping = new JooqLocationFieldMapping();
         }
 
-        whereCondition = (mapping.getUnitSystem().eq(unit.toUpperCase()))
-            .or(mapping.getLocationLevelId(TABLE_ALIAS1, ref).isNotNull());
+        usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS aliasView = AV_LOC_ALIAS;
+        AV_LOCATION_LEVEL_REF ref = AV_LOCATION_LEVEL_REF.AV_LOCATION_LEVEL_REF;
+        AV_LOCATION_LEVEL_VALUES values = AV_LOCATION_LEVEL_VALUES.AV_LOCATION_LEVEL_VALUES;
+
+        Condition whereCondition = mapping.getLocationLevelId(TABLE_ALIAS1, ref).isNotNull();
+        Condition standardWhereCondition = ref.LOCATION_LEVEL_ID.isNotNull();
 
         if (office != null && !office.isEmpty()) {
-            whereCondition = whereCondition.and(mapping.getOfficeId(TABLE_ALIAS1, ref).eq(office.toUpperCase())
-                .or(DSL.upper(ref.OFFICE_ID).eq(office.toUpperCase())));
+            whereCondition = whereCondition.and(mapping.getOfficeId(TABLE_ALIAS1, ref).eq(office.toUpperCase()));
             standardWhereCondition = standardWhereCondition.and(DSL.upper(ref.OFFICE_ID).eq(office.toUpperCase()));
         }
 
         if (levelIdMask != null && !levelIdMask.isEmpty()) {
             whereCondition = whereCondition.and(
-                JooqDao.caseInsensitiveLikeRegex(mapping.getLocationLevelId(TABLE_ALIAS1, ref), levelIdMask)
-                .or(JooqDao.caseInsensitiveLikeRegex(ref.LOCATION_LEVEL_ID, levelIdMask)));
+                JooqDao.caseInsensitiveLikeRegex(mapping.getLocationLevelId(TABLE_ALIAS1, ref), levelIdMask));
             standardWhereCondition = standardWhereCondition.and(
                 JooqDao.caseInsensitiveLikeRegex(ref.LOCATION_LEVEL_ID, levelIdMask));
         }
@@ -229,12 +223,10 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     .and(ref.LOCATION_ID.eq(aliasView.LOCATION_ID))
                     .and(ref.LOCATION_CODE.eq(aliasView.LOCATION_CODE.cast(Long.class))).asTable(TABLE_ALIAS1))
                 .fullOuterJoin(values)
-                .on(mapping.getLocationLevelCode().eq((Select<? extends Record1<Long>>) values.LOCATION_LEVEL_CODE)
-                    .and(mapping.getLocationLevelId(TABLE_ALIAS1, null).eq(ref.LOCATION_LEVEL_ID)))
+                .on(mapping.getLocationLevelCode().eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
                 .where(whereCondition).asTable(TABLE_ALIAS2))
                 .orderBy(mapping.getOfficeId(null, null), mapping.getLocationLevelId(null, null),
-                    field("LEVEL_DATE"), field("CALENDAR_OFFSET"), field("TIME_OFFSET"),
-                    mapping.getLocationLevelId(TABLE_ALIAS2, null), field("EFFECTIVE_DATE_UTC")
+                    field("LOCATION_LEVEL_DATE"), field("CALENDAR_OFFSET"), field("TIME_OFFSET")
                 )
                 .offset(offset)
                 .limit(pageSize);
@@ -242,7 +234,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             query = dsl.selectDistinct(LOCATION_LEVEL_FIELDS)
                 .from(ref)
                 .fullOuterJoin(values)
-                .on(ref.LOCATION_LEVEL_CODE.eq((Select<? extends Record1<Long>>) values.LOCATION_LEVEL_CODE))
+                .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
                 .where(whereCondition)
                 .orderBy(DSL.upper(ref.OFFICE_ID), DSL.upper(ref.LOCATION_LEVEL_ID),
                     ref.LOCATION_LEVEL_DATE, values.CALENDAR_OFFSET, values.TIME_OFFSET
@@ -256,7 +248,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     values.CALENDAR_OFFSET, values.TIME_OFFSET)
                 .from(ref)
                 .fullOuterJoin(values)
-                .on(ref.LOCATION_LEVEL_CODE.eq((Select<? extends Record1<Long>>) values.LOCATION_LEVEL_CODE))
+                .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
                 .where(standardWhereCondition)
             );
         }
@@ -796,7 +788,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 seasonalBuilder.withLevelComment(levelComment);
                 seasonalBuilder = withLocationLevelRef(seasonalBuilder, locationLevelRef);
                 JDomSeasonalIntervalImpl offset = new JDomSeasonalIntervalImpl();
-                offset.setYearMonthString(calendarInterval.toString());
+                offset.setYearMonthString(calendarInterval != null ? calendarInterval.toString() : null);
                 seasonalBuilder.withIntervalMonths(offset.getTotalMonths());
                 seasonalBuilder.withIntervalOrigin(intervalOrigin, levelZdt);
                 seasonalBuilder.withAliases(aliases);
@@ -1001,8 +993,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         Field<String> getLocationLevelId(String prefix, Table<?> table);
 
         Field<Long> getLocationLevelCode();
-
-        Field<String> getUnitSystem();
     }
 
     private static final class JooqLocationFieldMapping implements LocationFieldMapping {
@@ -1018,11 +1008,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         @Override
         public Field<Long> getLocationLevelCode() {
-            return null;
-        }
-
-        @Override
-        public Field<String> getUnitSystem() {
             return null;
         }
     }
@@ -1043,11 +1028,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         @Override
         public Field<Long> getLocationLevelCode() {
             return field(String.format("%s.%s", TABLE_ALIAS1, "LOCATION_LEVEL_CODE"), Long.class);
-        }
-
-        @Override
-        public Field<String> getUnitSystem() {
-            return field(String.format("%s.%s", TABLE_ALIAS1, "UNIT_SYSTEM"), String.class);
         }
     }
 
@@ -1444,7 +1424,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         LOCATION_ALIAS_FIELDS.add(field(values.ATTRIBUTE_VALUE_EN.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(values.ATTRIBUTE_UNIT_SI.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(values.ATTRIBUTE_VALUE_SI.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.EXPIRATION_DATE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(DSL.name(TABLE_ALIAS1, "EXPIRATION_DATE")));
         LOCATION_ALIAS_FIELDS.add(field(values.TSID.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(values.CONSTANT_LEVEL_EN.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(values.CONSTANT_LEVEL_SI.getUnqualifiedName()));
