@@ -30,7 +30,12 @@ import static mil.army.usace.hec.metadata.IntervalFactory.equalsName;
 import static mil.army.usace.hec.metadata.IntervalFactory.isRegular;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.field;
+import static org.jooq.impl.DSL.table;
+import static usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL.AV_LOCATION_LEVEL;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
+import static usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL.AV_VIRTUAL_LOCATION_LEVEL;
+import static usace.cwms.db.jooq.codegen_latest.tables.AV_LOCATION_LEVEL_REF.AV_LOCATION_LEVEL_REF;
+import static usace.cwms.db.jooq.codegen_latest.tables.AV_LOCATION_LEVEL_VALUES.AV_LOCATION_LEVEL_VALUES;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
@@ -87,6 +92,7 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.SelectLimitPercentAfterOffsetStep;
+import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
@@ -113,14 +119,24 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     public static final Pattern locationLevelIdParsingPattern =
             Pattern.compile(LOCATION_LEVEL_ID_PARSING_REGEXP);
 
+    private static final Collection<Field<?>> LOCATION_LEVEL_FIELDS_NEW_VIEW = new LinkedHashSet<>();
+    private static final Collection<Field<?>> LOCATION_ALIAS_FIELDS_NEW_VIEW = new LinkedHashSet<>();
     private static final Collection<Field<?>> LOCATION_LEVEL_FIELDS = new LinkedHashSet<>();
     private static final Collection<Field<?>> LOCATION_ALIAS_FIELDS = new LinkedHashSet<>();
 
-    private static final AV_LOCATION_LEVEL_REF ref = AV_LOCATION_LEVEL_REF.AV_LOCATION_LEVEL_REF;
-    private static final AV_LOCATION_LEVEL_VALUES values = AV_LOCATION_LEVEL_VALUES.AV_LOCATION_LEVEL_VALUES;
+    private static final AV_LOCATION_LEVEL_REF ref = AV_LOCATION_LEVEL_REF;
+    private static final AV_LOCATION_LEVEL_VALUES values = AV_LOCATION_LEVEL_VALUES;
     private static final usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS aliasView = AV_LOC_ALIAS;
 
+    private static final String TABLE_ALIAS1 = "T1";
+    private static final String TABLE_ALIAS2 = "T2";
+    private static final String ALIASED_ATTRIBUTE_ID = TABLE_ALIAS1 + ".ATTRIBUTE_ID";
+    private static final String ALIASED_LOCATION_LEVEL_ID = TABLE_ALIAS1 + ".LOCATION_LEVEL_ID";
+    private static final String ALIASED_OFFICE_ID = TABLE_ALIAS1 + ".OFFICE_ID";
+
     static {
+        buildLocationLevelSelectFieldsNewView();
+        buildAliasedLocationLevelSelectFieldsNewView();
         buildLocationLevelSelectFields();
         buildAliasedLocationLevelSelectFields();
     }
@@ -164,108 +180,285 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             }
         }
 
-        Condition whereCondition = ref.LOCATION_LEVEL_ID.isNotNull();
+        if (supportsNewView()) {
+            Condition whereCondition = ref.LOCATION_LEVEL_ID.isNotNull();
 
-        if (office != null && !office.isEmpty()) {
-            whereCondition = whereCondition.and(ref.OFFICE_ID.eq(office.toUpperCase()));
-        }
+            if (office != null && !office.isEmpty()) {
+                whereCondition = whereCondition.and(ref.OFFICE_ID.eq(office.toUpperCase()));
+            }
 
-        if (levelIdMask != null && !levelIdMask.isEmpty()) {
-            whereCondition = whereCondition.and(
-                JooqDao.caseInsensitiveLikeRegex(ref.LOCATION_LEVEL_ID, levelIdMask));
-        }
+            if (levelIdMask != null && !levelIdMask.isEmpty()) {
+                whereCondition = whereCondition.and(
+                    JooqDao.caseInsensitiveLikeRegex(ref.LOCATION_LEVEL_ID, levelIdMask));
+            }
 
-        if (beginZdt != null) {
-            whereCondition = whereCondition.and(ref.LOCATION_LEVEL_DATE.greaterOrEqual(Timestamp.from(beginZdt.toInstant())));
-        }
-        if (endZdt != null) {
-            whereCondition = whereCondition.and(ref.LOCATION_LEVEL_DATE.lessThan(Timestamp.from(endZdt.toInstant())));
-        }
+            if (beginZdt != null) {
+                whereCondition =
+                    whereCondition.and(ref.LOCATION_LEVEL_DATE.greaterOrEqual(Timestamp.from(beginZdt.toInstant())));
+            }
+            if (endZdt != null) {
+                whereCondition =
+                    whereCondition.and(ref.LOCATION_LEVEL_DATE.lessThan(Timestamp.from(endZdt.toInstant())));
+            }
 
-        Map<LevelLookup, LocationLevel.Builder> builderMap = new LinkedHashMap<>();
+            Map<LevelLookup, LocationLevel.Builder> builderMap = new LinkedHashMap<>();
 
-        SelectLimitPercentAfterOffsetStep<Record> query;
+            SelectLimitPercentAfterOffsetStep<Record> query;
 
-        if (includeAliases) {
-            query = dsl.select(asterisk()).from(dsl.selectDistinct(LOCATION_ALIAS_FIELDS)
+            if (includeAliases) {
+                query = dsl.select(asterisk()).from(dsl.selectDistinct(LOCATION_ALIAS_FIELDS_NEW_VIEW)
+                        .from(ref)
+                        .join(values)
+                        .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
+                        .leftJoin(aliasView)
+                        .on(ref.OFFICE_ID.eq(aliasView.DB_OFFICE_ID))
+                        .and(ref.LOCATION_ID.eq(aliasView.LOCATION_ID))
+                        .and(ref.LOCATION_CODE.eq(aliasView.LOCATION_CODE.cast(Long.class)))
+                        .where(whereCondition))
+                    .orderBy(field("OFFICE_ID"), field("LOCATION_LEVEL_ID"),
+                        field("LOCATION_LEVEL_DATE"), field("CALENDAR_OFFSET"), field("TIME_OFFSET")
+                    )
+                    .offset(offset)
+                    .limit(pageSize);
+            } else {
+                query = dsl.selectDistinct(LOCATION_LEVEL_FIELDS_NEW_VIEW)
                     .from(ref)
                     .join(values)
                     .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
-                    .leftJoin(aliasView)
-                    .on(ref.OFFICE_ID.eq(aliasView.DB_OFFICE_ID))
-                    .and(ref.LOCATION_ID.eq(aliasView.LOCATION_ID))
-                    .and(ref.LOCATION_CODE.eq(aliasView.LOCATION_CODE.cast(Long.class)))
-                .where(whereCondition))
-                .orderBy(field("OFFICE_ID"), field("LOCATION_LEVEL_ID"),
-                    field("LOCATION_LEVEL_DATE"), field("CALENDAR_OFFSET"), field("TIME_OFFSET")
-                )
-                .offset(offset)
-                .limit(pageSize);
-        } else {
-            query = dsl.selectDistinct(LOCATION_LEVEL_FIELDS)
-                .from(ref)
-                .fullOuterJoin(values)
-                .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
-                .where(whereCondition)
-                .orderBy(DSL.upper(ref.OFFICE_ID), DSL.upper(ref.LOCATION_LEVEL_ID),
-                    ref.LOCATION_LEVEL_DATE, values.CALENDAR_OFFSET, values.TIME_OFFSET
-                )
-                .offset(offset)
-                .limit(pageSize);
-        }
+                    .where(whereCondition)
+                    .orderBy(DSL.upper(ref.OFFICE_ID), DSL.upper(ref.LOCATION_LEVEL_ID),
+                        ref.LOCATION_LEVEL_DATE, values.CALENDAR_OFFSET, values.TIME_OFFSET
+                    )
+                    .offset(offset)
+                    .limit(pageSize);
+            }
 
-        if (!totalSet) {
-            total = dsl.fetchCount(dsl.selectDistinct(ref.OFFICE_ID, ref.LOCATION_LEVEL_ID, ref.LOCATION_LEVEL_DATE,
-                    values.CALENDAR_OFFSET, values.TIME_OFFSET)
-                .from(ref)
-                .fullOuterJoin(values)
-                .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
-                .where(whereCondition)
-            );
-        }
-
-        final SelectLimitPercentAfterOffsetStep<Record> queryFinal = query;
-
-        logger.atFine().log("getLocationLevels query: %s", lazy(() -> queryFinal.getSQL(ParamType.INLINED)));
-
-        if (includeAliases) {
-            Result<?> result = query.fetch();
-            Map<LevelLookup, Set<LocationAlias>> aliasMap = new LinkedHashMap<>();
-            result.forEach(row -> addToAliasMaps(aliasMap, row, unit));
-            result.forEach(row -> parseLevels(row, builderMap, unit, aliasMap, includeAliases));
-        } else {
-            final int[] count = {0};
-            try (Stream<Record> recordStream = query.stream()) {
-                recordStream.forEach(r -> {
-                            parseLevels(r, builderMap, unit, Collections.emptyMap(), false);
-                            count[0]++;
-                        }
+            if (!totalSet) {
+                total = dsl.fetchCount(dsl.selectDistinct(ref.OFFICE_ID, ref.LOCATION_LEVEL_ID, ref.LOCATION_LEVEL_DATE,
+                        values.CALENDAR_OFFSET, values.TIME_OFFSET)
+                    .from(ref)
+                    .fullOuterJoin(values)
+                    .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
+                    .where(whereCondition)
                 );
             }
 
-            logger.atFine().log("Fetched %d levels", count[0]);
-        }
+            final SelectLimitPercentAfterOffsetStep<Record> queryFinal = query;
 
-        List<LocationLevel> levels = new java.util.ArrayList<>();
-        for (LocationLevel.Builder builder : builderMap.values()) {
-            if (builder instanceof TimeSeriesLocationLevel.Builder) {
-                levels.add(((TimeSeriesLocationLevel.Builder) builder).build());
-            } else if (builder instanceof SeasonalLocationLevel.Builder) {
-                levels.add(((SeasonalLocationLevel.Builder) builder).build());
-            } else if (builder instanceof ConstantLocationLevel.Builder) {
-                levels.add(((ConstantLocationLevel.Builder) builder).build());
-            } else if (builder instanceof VirtualLocationLevel.Builder) {
-                levels.add(((VirtualLocationLevel.Builder) builder).build());
+            logger.atFine().log("getLocationLevels query: %s", lazy(() -> queryFinal.getSQL(ParamType.INLINED)));
+
+            if (includeAliases) {
+                Result<?> result = query.fetch();
+                Map<LevelLookup, Set<LocationAlias>> aliasMap = new LinkedHashMap<>();
+                result.forEach(row -> addToAliasMapsNewView(aliasMap, row, unit));
+                result.forEach(row -> parseLevelsNewView(row, builderMap, unit, aliasMap, includeAliases));
             } else {
-                throw new IllegalArgumentException("Unknown builder type: " + builder.getClass().getName());
+                final int[] count = {0};
+                try (Stream<Record> recordStream = query.stream()) {
+                    recordStream.forEach(r -> {
+                            parseLevelsNewView(r, builderMap, unit, Collections.emptyMap(), false);
+                            count[0]++;
+                        }
+                    );
+                }
+
+                logger.atFine().log("Fetched %d levels", count[0]);
             }
+
+            List<LocationLevel> levels = new java.util.ArrayList<>();
+            for (LocationLevel.Builder builder : builderMap.values()) {
+                if (builder instanceof TimeSeriesLocationLevel.Builder) {
+                    levels.add(((TimeSeriesLocationLevel.Builder) builder).build());
+                } else if (builder instanceof SeasonalLocationLevel.Builder) {
+                    levels.add(((SeasonalLocationLevel.Builder) builder).build());
+                } else if (builder instanceof ConstantLocationLevel.Builder) {
+                    levels.add(((ConstantLocationLevel.Builder) builder).build());
+                } else if (builder instanceof VirtualLocationLevel.Builder) {
+                    levels.add(((VirtualLocationLevel.Builder) builder).build());
+                } else {
+                    throw new IllegalArgumentException("Unknown builder type: " + builder.getClass().getName());
+                }
+            }
+            LocationLevels.Builder builder = new LocationLevels.Builder(offset, pageSize, total);
+            builder.addAll(levels);
+            return builder.build();
+        } else {
+            usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
+            usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL virtView = AV_VIRTUAL_LOCATION_LEVEL;
+
+            Condition whereCondition;
+            Condition standardWhereCondition = (DSL.upper(view.UNIT_SYSTEM).eq(unit.toUpperCase()))
+                .or(virtView.LOCATION_LEVEL_ID.isNotNull());
+            LocationFieldMapping mapping;
+            if (includeAliases) {
+                mapping = new AliasedLocationFieldMapping();
+            } else {
+                mapping = new JooqLocationFieldMapping();
+            }
+
+            whereCondition = (mapping.getUnitSystem().eq(unit.toUpperCase()))
+                .or(mapping.getLocationLevelId(TABLE_ALIAS1, virtView).isNotNull());
+
+            if (office != null && !office.isEmpty()) {
+                whereCondition = whereCondition.and((mapping.getOfficeId(TABLE_ALIAS1, view).eq(office.toUpperCase()))
+                    .or(DSL.upper(virtView.OFFICE_ID).eq(office.toUpperCase())));
+                standardWhereCondition = standardWhereCondition.and((DSL.upper(view.OFFICE_ID).eq(office.toUpperCase()))
+                    .or(DSL.upper(virtView.OFFICE_ID).eq(office.toUpperCase())));
+            }
+
+            if (levelIdMask != null && !levelIdMask.isEmpty()) {
+                whereCondition = whereCondition.and(
+                    (JooqDao.caseInsensitiveLikeRegex(mapping.getLocationLevelId(TABLE_ALIAS1, view), levelIdMask))
+                        .or(JooqDao.caseInsensitiveLikeRegex(virtView.LOCATION_LEVEL_ID, levelIdMask)));
+                standardWhereCondition = standardWhereCondition.and(
+                    (JooqDao.caseInsensitiveLikeRegex(view.LOCATION_LEVEL_ID, levelIdMask))
+                        .or(JooqDao.caseInsensitiveLikeRegex(virtView.LOCATION_LEVEL_ID, levelIdMask)));
+            }
+
+            if (beginZdt != null) {
+                whereCondition = whereCondition.and((view.LEVEL_DATE.greaterOrEqual(Timestamp.from(beginZdt.toInstant())))
+                    .or(virtView.EFFECTIVE_DATE_UTC.greaterOrEqual(Timestamp.from(beginZdt.toInstant()))));
+                standardWhereCondition = standardWhereCondition.and(
+                    (view.LEVEL_DATE.greaterOrEqual(Timestamp.from(beginZdt.toInstant())))
+                        .or(virtView.EFFECTIVE_DATE_UTC.greaterOrEqual(Timestamp.from(beginZdt.toInstant()))));
+            }
+            if (endZdt != null) {
+                whereCondition = whereCondition.and((view.LEVEL_DATE.lessThan(Timestamp.from(endZdt.toInstant())))
+                    .or(virtView.EFFECTIVE_DATE_UTC.lessThan(Timestamp.from(endZdt.toInstant()))));
+                standardWhereCondition = standardWhereCondition.and(
+                    (view.LEVEL_DATE.lessThan(Timestamp.from(endZdt.toInstant())))
+                        .or(virtView.EFFECTIVE_DATE_UTC.lessThan(Timestamp.from(endZdt.toInstant()))));
+            }
+
+            Map<LevelLookup, LocationLevel.Builder> builderMap = new LinkedHashMap<>();
+
+            SelectLimitPercentAfterOffsetStep<Record> query;
+
+            if (includeAliases) {
+                query = dsl.select(asterisk()).from(dsl.selectDistinct(LOCATION_ALIAS_FIELDS)
+                        .from(dsl
+                            .select(asterisk())
+                            .from(view)
+                            .leftJoin(aliasView)
+                            .on(view.OFFICE_ID.eq(aliasView.DB_OFFICE_ID))
+                            .and(view.LOCATION_ID.eq(aliasView.LOCATION_ID))
+                            .and(view.LOCATION_CODE.eq(aliasView.LOCATION_CODE.cast(Long.class))).asTable(TABLE_ALIAS1))
+                        .fullOuterJoin(virtView)
+                        .on(mapping.getLocationLevelCode().eq(virtView.LOCATION_LEVEL_CODE)
+                            .and(mapping.getLocationLevelId(TABLE_ALIAS1, null).eq(virtView.LOCATION_LEVEL_ID)))
+                        .where(whereCondition).asTable(TABLE_ALIAS2))
+                    .orderBy(mapping.getOfficeId(null, null), mapping.getLocationLevelId(null, null),
+                        field("LEVEL_DATE"), field("CALENDAR_OFFSET"), field("TIME_OFFSET"),
+                        mapping.getLocationLevelId(TABLE_ALIAS2, null), field("EFFECTIVE_DATE_UTC")
+                    )
+                    .offset(offset)
+                    .limit(pageSize);
+            } else {
+                query = dsl.selectDistinct(LOCATION_LEVEL_FIELDS)
+                    .from(view)
+                    .fullOuterJoin(virtView)
+                    .on(view.LOCATION_LEVEL_CODE.eq(virtView.LOCATION_LEVEL_CODE))
+                    .where(whereCondition)
+                    .orderBy(DSL.upper(view.OFFICE_ID), DSL.upper(view.LOCATION_LEVEL_ID),
+                        view.LEVEL_DATE, view.CALENDAR_OFFSET, DSL.upper(virtView.OFFICE_ID),
+                        DSL.upper(virtView.LOCATION_LEVEL_ID), DSL.upper(view.TIME_OFFSET),
+                        virtView.EFFECTIVE_DATE_UTC
+                    )
+                    .offset(offset)
+                    .limit(pageSize);
+            }
+
+            if (!totalSet) {
+                total = dsl.fetchCount(dsl.selectDistinct(view.OFFICE_ID, view.LOCATION_LEVEL_ID, view.LEVEL_DATE,
+                        view.CALENDAR_OFFSET, view.TIME_OFFSET, virtView.OFFICE_ID, virtView.LOCATION_LEVEL_ID,
+                        virtView.EFFECTIVE_DATE_UTC)
+                    .from(view)
+                    .fullOuterJoin(virtView)
+                    .on(view.LOCATION_LEVEL_CODE.eq(virtView.LOCATION_LEVEL_CODE))
+                    .where(standardWhereCondition)
+                );
+            }
+
+            final SelectLimitPercentAfterOffsetStep<Record> queryFinal = query;
+
+            logger.atFine().log("getLocationLevels query: %s", lazy(() -> queryFinal.getSQL(ParamType.INLINED)));
+
+            if (includeAliases) {
+                Result<?> result = query.fetch();
+                Map<LevelLookup, Set<LocationAlias>> aliasMap = new LinkedHashMap<>();
+                result.forEach(row -> addToAliasMaps(aliasMap, row));
+                result.forEach(row -> parseLevels(row, builderMap, unit, aliasMap, includeAliases));
+            } else {
+                final int[] count = {0};
+                try (Stream<Record> recordStream = query.stream()) {
+                    recordStream.forEach(r -> {
+                            parseLevels(r, builderMap, unit, Collections.emptyMap(), false);
+                            count[0]++;
+                        }
+                    );
+                }
+
+                logger.atFine().log("Fetched %d levels", count[0]);
+            }
+
+            List<LocationLevel> levels = new java.util.ArrayList<>();
+            for (LocationLevel.Builder builder : builderMap.values()) {
+                if (builder instanceof TimeSeriesLocationLevel.Builder) {
+                    levels.add(((TimeSeriesLocationLevel.Builder) builder).build());
+                } else if (builder instanceof SeasonalLocationLevel.Builder) {
+                    levels.add(((SeasonalLocationLevel.Builder) builder).build());
+                } else if (builder instanceof ConstantLocationLevel.Builder) {
+                    levels.add(((ConstantLocationLevel.Builder) builder).build());
+                } else if (builder instanceof VirtualLocationLevel.Builder) {
+                    levels.add(((VirtualLocationLevel.Builder) builder).build());
+                } else {
+                    throw new IllegalArgumentException("Unknown builder type: " + builder.getClass().getName());
+                }
+            }
+            LocationLevels.Builder builder = new LocationLevels.Builder(offset, pageSize, total);
+            builder.addAll(levels);
+            return builder.build();
         }
-        LocationLevels.Builder builder = new LocationLevels.Builder(offset, pageSize, total);
-        builder.addAll(levels);
-        return builder.build();
     }
 
-    private void addToAliasMaps(Map<LevelLookup, Set<LocationAlias>> aliasMap, Record row, String unit) {
+    private boolean supportsNewView() {
+        boolean support = false;
+        Record newViewSupport = dsl.select(asterisk()).from(table("ALL_VIEWS"))
+            .where(field("VIEW_NAME").eq("AV_LOCATION_LEVEL_REF"))
+            .and(field("OWNER").eq("CWMS_20")).fetchOne();
+
+        if (newViewSupport != null) {
+            support = true;
+        }
+        return support;
+    }
+
+    private void addToAliasMaps(Map<LevelLookup, Set<LocationAlias>> aliasMap, Record row) {
+        LocationParserFieldMapping map = new AliasedLocationParserFieldMapping();
+        String officeId = row.get(map.getOfficeId(), String.class);
+        String locationLevelId = row.get(map.getLocationLevelId(), String.class);
+        String attributeId = row.get(map.getAttributeId(), String.class);
+        Double attributeValue = row.get(map.getAttributeValue(), Double.class);
+        String attributeUnits = row.get(map.getAttributeUnit(), String.class);
+        Date effectiveDate = row.get(map.getLevelDate(), Date.class);
+        String aliasId = row.get(DSL.name(TABLE_ALIAS2, "ALIAS_ID"), String.class);
+        String categoryId = row.get(DSL.name(TABLE_ALIAS2, "CATEGORY_ID"), String.class);
+        String groupId = row.get(DSL.name(TABLE_ALIAS2, "GROUP_ID"), String.class);
+
+        LevelLookup key = new LevelLookup(officeId, locationLevelId, attributeId, String.valueOf(attributeValue),
+            attributeUnits, effectiveDate);
+        LocationAlias alias = new LocationAlias(categoryId + "-" + groupId, aliasId);
+
+        if (aliasMap.containsKey(key)) {
+            aliasMap.get(key).add(alias);
+        } else {
+            Set<LocationAlias> aliasSet = new LinkedHashSet<>();
+            aliasSet.add(alias);
+            aliasMap.put(key, aliasSet);
+        }
+    }
+
+    private void addToAliasMapsNewView(Map<LevelLookup, Set<LocationAlias>> aliasMap, Record row, String unit) {
         boolean siUnits = unit.equalsIgnoreCase("SI");
         String officeId = row.get(ref.OFFICE_ID, String.class);
         String locationLevelId = row.get(ref.LOCATION_LEVEL_ID, String.class);
@@ -638,6 +831,183 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     private void parseLevels(Record r, Map<LevelLookup, LocationLevel.Builder> builderMap, String unit,
+        Map<LevelLookup, Set<LocationAlias>> aliasMap, boolean includeAliases) {
+        LocationParserFieldMapping mapping;
+        if (includeAliases) {
+            mapping = new AliasedLocationParserFieldMapping();
+        } else {
+            mapping = new JooqLocationParserFieldMapping();
+        }
+
+        boolean virtual = false;
+        Timestamp levelDateTimestamp = r.get(mapping.getLevelDate());
+        String attrId = r.get(mapping.getAttributeId());
+        Double oattrVal = r.get(mapping.getAttributeValue());
+        String locLevelId = r.get(mapping.getLocationLevelId());
+        String officeId = r.get(mapping.getOfficeId());
+        String levelUnit = r.get(mapping.getLevelUnit());
+        String attrUnit = r.get(mapping.getAttributeUnit());
+        Timestamp expirationDate = r.get(mapping.getExpirationDate());
+
+        // Virtual fields
+        Timestamp virtualLevelDateTimestamp = r.get(mapping.getEffectiveDate());
+        String virtAttrId = r.get(mapping.getVirtAttrId());
+        String virtLocLevelId = r.get(mapping.getVirtLocLevelId());
+        String virtOfficeId = r.get(mapping.getVirtOfficeId());
+        String connections = r.get(mapping.getConnections());
+        ZonedDateTime expireDate = null;
+
+        Date levelDate = null;
+        if (levelDateTimestamp != null) {
+            levelDate = new Date(levelDateTimestamp.getTime());
+        } else if (virtualLevelDateTimestamp != null) {
+            levelDate = new Date(virtualLevelDateTimestamp.getTime());
+        }
+
+        String attrStr = null;
+        if (oattrVal != null) {
+            attrStr = oattrVal.toString(); // this is weird. allow it for now but maybe this should be doing some rounding?
+        } else {
+            if (unit.equalsIgnoreCase(UnitSystem.EN.value())) {
+                attrUnit = r.get(mapping.getAttrUnitEn());
+                if (attrUnit != null) {
+                    oattrVal = r.get(mapping.getAttrValueEn()).doubleValue();
+                }
+
+            } else {
+                attrUnit = r.get(mapping.getAttrUnitSi());
+                if (attrUnit != null) {
+                    oattrVal = r.get(mapping.getAttrValueSi()).doubleValue();
+                }
+            }
+        }
+
+        // handle virtual fields
+        if (officeId == null) {
+            officeId = virtOfficeId;
+        }
+        if (attrId == null) {
+            attrId = virtAttrId;
+        }
+        if (locLevelId == null) {
+            locLevelId = virtLocLevelId;
+            virtual = true;
+        }
+        if (expirationDate != null) {
+            expireDate = ZonedDateTime.ofInstant(expirationDate.toInstant(), ZoneId.of("UTC"));
+        }
+
+        JDomLocationLevelRef locationLevelRef = new JDomLocationLevelRef(officeId, locLevelId, attrId, attrStr, attrUnit);
+        LevelLookup levelLookup = new LevelLookup(locationLevelRef, levelDate);
+
+        List<LocationAlias> aliases = new ArrayList<>();
+
+        if (aliasMap.containsKey(levelLookup)) {
+            aliases.addAll(aliasMap.get(levelLookup));
+        }
+
+        ZonedDateTime levelZdt = null;
+        if (levelDate != null) {
+            levelZdt = ZonedDateTime.ofInstant(levelDate.toInstant(), ZoneId.of("UTC"));
+        }
+
+        Double seasonalLevel = r.get(mapping.getSeasonalLevel());
+        Double constantLevel = r.get(mapping.getConstantLevel());
+        String tsId = r.get(mapping.getTsId());
+        String interp = r.get(mapping.getInterpolate());
+        String calOffset = r.get(mapping.getCalendarOffset());
+        String timeOffset = r.get(mapping.getTimeOffset());
+        String levelComment = r.get(mapping.getLevelComment());
+        String attributeComment = r.get(mapping.getAttributeComment());
+        DayToSecond timeInterval = r.get(mapping.getTimeInterval());
+        String calendarInterval = r.get(mapping.getCalendarInterval());
+        Timestamp intervalOrigin = r.get(mapping.getIntervalOrigin());
+
+        if (constantLevel != null) {
+            ConstantLocationLevel.Builder constantBuilder = new ConstantLocationLevel.Builder(locLevelId, levelZdt);
+            constantBuilder.withConstantValue(constantLevel);
+            constantBuilder = withLocationLevelRef(constantBuilder, locationLevelRef);
+
+            constantBuilder.withAttributeParameterId(attrId);
+            constantBuilder.withAttributeUnitsId(attrUnit);
+            constantBuilder.withLevelUnitsId(levelUnit);
+
+            if (oattrVal != null) {
+                constantBuilder.withAttributeValue(BigDecimal.valueOf(oattrVal));
+            }
+            constantBuilder.withLevelComment(levelComment);
+            constantBuilder.withAttributeComment(attributeComment);
+            constantBuilder.withAliases(aliases);
+            constantBuilder.withExpirationDate(expireDate);
+            builderMap.put(levelLookup, constantBuilder);
+        } else if (seasonalLevel != null) {
+
+            JDomSeasonalIntervalImpl newSeasonalOffset = buildSeasonalOffset(calOffset, timeOffset);
+            SeasonalValueBean seasonalValue = buildSeasonalValueBean(seasonalLevel, newSeasonalOffset);
+            if (builderMap.containsKey(levelLookup)) {
+                SeasonalLocationLevel.Builder existingBuilder = (SeasonalLocationLevel.Builder) builderMap.get(levelLookup);
+                existingBuilder.withSeasonalValue(seasonalValue);
+                builderMap.put(levelLookup, existingBuilder);
+            } else {
+                SeasonalLocationLevel.Builder seasonalBuilder = new SeasonalLocationLevel.Builder(locLevelId, levelZdt);
+                seasonalBuilder.withSeasonalValue(seasonalValue);
+                seasonalBuilder.withInterpolateString(interp);
+                if (timeInterval != null) {
+                    double totalMilli = timeInterval.getTotalMilli();
+                    long minutes = TimeUnit.MILLISECONDS.toMinutes((long) totalMilli);
+                    seasonalBuilder.withIntervalMinutes((int) minutes);
+                }
+                seasonalBuilder.withAttributeParameterId(attrId);
+                seasonalBuilder.withAttributeUnitsId(attrUnit);
+                seasonalBuilder.withLevelUnitsId(levelUnit);
+                seasonalBuilder.withLevelComment(levelComment);
+                seasonalBuilder.withAttributeComment(attributeComment);
+                seasonalBuilder = withLocationLevelRef(seasonalBuilder, locationLevelRef);
+                JDomSeasonalIntervalImpl offset = new JDomSeasonalIntervalImpl();
+                offset.setYearMonthString(calendarInterval);
+                seasonalBuilder.withIntervalMonths(offset.getTotalMonths());
+                seasonalBuilder.withIntervalOrigin(intervalOrigin, levelZdt);
+                seasonalBuilder.withAliases(aliases);
+                seasonalBuilder.withExpirationDate(expireDate);
+                builderMap.put(levelLookup, seasonalBuilder);
+            }
+        } else if (tsId != null) {
+            TimeSeriesLocationLevel.Builder timeSeriesBuilder = new TimeSeriesLocationLevel.Builder(locLevelId, levelZdt, tsId);
+            timeSeriesBuilder.withAttributeParameterId(attrId);
+            timeSeriesBuilder.withAttributeUnitsId(attrUnit);
+            timeSeriesBuilder.withLevelUnitsId(levelUnit);
+            timeSeriesBuilder.withLevelComment(levelComment);
+            timeSeriesBuilder.withAttributeComment(attributeComment);
+            timeSeriesBuilder = withLocationLevelRef(timeSeriesBuilder, locationLevelRef);
+            timeSeriesBuilder.withAliases(aliases);
+            timeSeriesBuilder.withExpirationDate(expireDate);
+            builderMap.put(levelLookup, timeSeriesBuilder);
+        } else if (virtual) {
+            VirtualLocationLevel.Builder builder;
+            if (!builderMap.containsKey(levelLookup)) {
+                if (levelDate != null) {
+                    levelZdt = ZonedDateTime.ofInstant(levelDate.toInstant(), ZoneId.of("UTC"));
+                }
+                builder = new VirtualLocationLevel.Builder(locLevelId, levelZdt);
+                builder = withLocationLevelRef(builder, locationLevelRef);
+                builder.withAttributeParameterId(attrId);
+                builder.withAttributeUnitsId(attrUnit);
+                // Constituents are not currently included in returned VirtualLocationLevels for catalog operations
+                builder.withConstituentConnections(connections);
+                builder.withExpirationDate(expireDate);
+                if (oattrVal != null) {
+                    builder.withAttributeValue(BigDecimal.valueOf(oattrVal));
+                }
+                builder.withAliases(aliases);
+                builderMap.put(levelLookup, builder);
+            }
+        } else {
+            throw new UnsupportedFormatException("Location level record is not of a recognized type: " + locLevelId);
+        }
+    }
+
+
+    private void parseLevelsNewView(Record r, Map<LevelLookup, LocationLevel.Builder> builderMap, String unit,
                              Map<LevelLookup, Set<LocationAlias>> aliasMap, boolean includeAliases) {
         boolean siUnits = unit.equalsIgnoreCase("SI");
 
@@ -834,6 +1204,16 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         return newSeasonalOffset;
     }
 
+    @NotNull
+    private static JDomSeasonalIntervalImpl buildSeasonalOffset(String calOffset,
+        String timeOffset) {
+        JDomSeasonalIntervalImpl newSeasonalOffset = new JDomSeasonalIntervalImpl();
+        newSeasonalOffset.setYearMonthString(calOffset);
+        newSeasonalOffset.setDaysHoursMinutesString(timeOffset);
+        newSeasonalOffset.setDaysHoursMinutesString(timeOffset);
+        return newSeasonalOffset;
+    }
+
     @Override
     public TimeSeries retrieveLocationLevelAsTimeSeries(ILocationLevelRef levelRef,
                                                         Instant start, Instant end,
@@ -949,66 +1329,540 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         return retVal;
     }
 
+    private static void buildLocationLevelSelectFieldsNewView() {
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.OFFICE_ID);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.LOCATION_LEVEL_ID);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.ATTRIBUTE_ID);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.LOCATION_LEVEL_DATE);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.CONNECTIONS);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.DURATION_ID);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.ATTRIBUTE_UNIT_EN);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.ATTRIBUTE_VALUE_EN);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.ATTRIBUTE_UNIT_SI);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.ATTRIBUTE_VALUE_SI);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.OFFICE_ID);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.LOCATION_LEVEL_ID);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.EXPIRATION_DATE);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.TSID);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.CONSTANT_LEVEL_EN);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.CONSTANT_LEVEL_SI);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.INTERVAL_ORIGIN);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.INTERPOLATE);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.ATTRIBUTE_ID);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.LEVEL_UNIT_EN);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.LEVEL_UNIT_SI);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.LOCATION_LEVEL_COMMENT);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.SEASONAL_VALUE_EN);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.SEASONAL_VALUE_SI);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.CALENDAR_INTERVAL);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.TIME_INTERVAL);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.CALENDAR_OFFSET);
+        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.TIME_OFFSET);
+    }
+
+    private static void buildAliasedLocationLevelSelectFieldsNewView() {
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.OFFICE_ID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.LOCATION_LEVEL_ID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.ATTRIBUTE_ID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.LOCATION_LEVEL_DATE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.CONNECTIONS.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.DURATION_ID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.ATTRIBUTE_UNIT_EN.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.ATTRIBUTE_VALUE_EN.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.ATTRIBUTE_UNIT_SI.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.ATTRIBUTE_VALUE_SI.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.EXPIRATION_DATE));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.TSID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.CONSTANT_LEVEL_EN.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.CONSTANT_LEVEL_SI.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.INTERVAL_ORIGIN.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.INTERPOLATE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.LEVEL_UNIT_EN.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.LEVEL_UNIT_SI.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.LOCATION_LEVEL_COMMENT.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.SEASONAL_VALUE_EN.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.SEASONAL_VALUE_SI.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.CALENDAR_INTERVAL.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.TIME_INTERVAL.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.CALENDAR_OFFSET.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.TIME_OFFSET.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(aliasView.LOCATION_ID));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(aliasView.ALIAS_ID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(aliasView.LOCATION_CODE));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(aliasView.DB_OFFICE_ID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(aliasView.CATEGORY_ID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(aliasView.GROUP_ID.getUnqualifiedName()));
+    }
+
+    private interface LocationFieldMapping {
+        Field<String> getOfficeId(String prefix, Table<?> table);
+
+        Field<String> getLocationLevelId(String prefix, Table<?> table);
+
+        Field<Long> getLocationLevelCode();
+
+        Field<String> getUnitSystem();
+    }
+
+    private static final class JooqLocationFieldMapping implements LocationFieldMapping {
+        @Override
+        public Field<String> getOfficeId(String prefix, Table<?> table) {
+            return table.field(DSL.name(prefix, "OFFICE_ID"), String.class);
+        }
+
+        @Override
+        public Field<String> getLocationLevelId(String prefix, Table<?> table) {
+            return table.field(DSL.name(prefix, "LOCATION_LEVEL_ID"), String.class);
+        }
+
+        @Override
+        public Field<Long> getLocationLevelCode() {
+            return null;
+        }
+
+        @Override
+        public Field<String> getUnitSystem() {
+            return AV_LOCATION_LEVEL.field(DSL.name(TABLE_ALIAS1, "UNIT_SYSTEM"), String.class);
+        }
+    }
+
+    private static final class AliasedLocationFieldMapping implements LocationFieldMapping {
+        @Override
+        public Field<String> getOfficeId(String prefix, Table<?> table) {
+            String field = prefix != null ? prefix + ".OFFICE_ID" : "OFFICE_ID";
+            return field(field, String.class);
+        }
+
+        @Override
+        public Field<String> getLocationLevelId(String prefix, Table<?> table) {
+            String field = prefix != null ? prefix + ".LOCATION_LEVEL_ID" : "LOCATION_LEVEL_ID";
+            return field(field, String.class);
+        }
+
+        @Override
+        public Field<Long> getLocationLevelCode() {
+            return field(String.format("%s.%s", TABLE_ALIAS1, "LOCATION_LEVEL_CODE"), Long.class);
+        }
+
+        @Override
+        public Field<String> getUnitSystem() {
+            return field(String.format("%s.%s", TABLE_ALIAS1, "UNIT_SYSTEM"), String.class);
+        }
+    }
+
+    private interface LocationParserFieldMapping {
+        Field<Timestamp> getLevelDate();
+
+        Field<String> getAttributeId();
+
+        Field<Double> getAttributeValue();
+
+        Field<String> getLocationLevelId();
+
+        Field<String> getOfficeId();
+
+        Field<String> getLevelUnit();
+
+        Field<String> getAttributeUnit();
+
+        Field<Timestamp> getEffectiveDate();
+
+        Field<String> getVirtAttrId();
+
+        Field<String> getVirtLocLevelId();
+
+        Field<String> getVirtOfficeId();
+
+        Field<String> getConnections();
+
+        Field<Timestamp> getExpirationDate();
+
+        Field<String> getAttrUnitEn();
+
+        Field<BigDecimal> getAttrValueEn();
+
+        Field<String> getAttrUnitSi();
+
+        Field<BigDecimal> getAttrValueSi();
+
+        Field<Double> getSeasonalLevel();
+
+        Field<Double> getConstantLevel();
+
+        Field<String> getTsId();
+
+        Field<String> getInterpolate();
+
+        Field<String> getCalendarOffset();
+
+        Field<String> getTimeOffset();
+
+        Field<String> getLevelComment();
+
+        Field<String> getAttributeComment();
+
+        Field<DayToSecond> getTimeInterval();
+
+        Field<String> getCalendarInterval();
+
+        Field<Timestamp> getIntervalOrigin();
+    }
+
+    private static final class JooqLocationParserFieldMapping implements LocationParserFieldMapping {
+        @Override
+        public Field<Timestamp> getLevelDate() {
+            return AV_LOCATION_LEVEL.LEVEL_DATE;
+        }
+
+        @Override
+        public Field<String> getAttributeId() {
+            return AV_LOCATION_LEVEL.ATTRIBUTE_ID;
+        }
+
+        @Override
+        public Field<Double> getAttributeValue() {
+            return AV_LOCATION_LEVEL.ATTRIBUTE_VALUE;
+        }
+
+        @Override
+        public Field<String> getLocationLevelId() {
+            return AV_LOCATION_LEVEL.LOCATION_LEVEL_ID;
+        }
+
+        @Override
+        public Field<String> getOfficeId() {
+            return AV_LOCATION_LEVEL.OFFICE_ID;
+        }
+
+        @Override
+        public Field<String> getLevelUnit() {
+            return AV_LOCATION_LEVEL.LEVEL_UNIT;
+        }
+
+        @Override
+        public Field<String> getAttributeUnit() {
+            return AV_LOCATION_LEVEL.ATTRIBUTE_UNIT;
+        }
+
+        @Override
+        public Field<Timestamp> getEffectiveDate() {
+            return AV_VIRTUAL_LOCATION_LEVEL.EFFECTIVE_DATE_UTC;
+        }
+
+        @Override
+        public Field<String> getVirtAttrId() {
+            return AV_VIRTUAL_LOCATION_LEVEL.ATTRIBUTE_ID;
+        }
+
+        @Override
+        public Field<String> getVirtLocLevelId() {
+            return AV_VIRTUAL_LOCATION_LEVEL.LOCATION_LEVEL_ID;
+        }
+
+        @Override
+        public Field<String> getVirtOfficeId() {
+            return AV_VIRTUAL_LOCATION_LEVEL.OFFICE_ID;
+        }
+
+        @Override
+        public Field<String> getConnections() {
+            return AV_VIRTUAL_LOCATION_LEVEL.CONNECTIONS;
+        }
+
+        @Override
+        public Field<Timestamp> getExpirationDate() {
+            return AV_LOCATION_LEVEL.EXPIRATION_DATE;
+        }
+
+        @Override
+        public Field<String> getAttrUnitEn() {
+            return AV_VIRTUAL_LOCATION_LEVEL.ATTR_UNIT_EN;
+        }
+
+        @Override
+        public Field<BigDecimal> getAttrValueEn() {
+            return AV_VIRTUAL_LOCATION_LEVEL.ATTR_VALUE_EN;
+        }
+
+        @Override
+        public Field<String> getAttrUnitSi() {
+            return AV_VIRTUAL_LOCATION_LEVEL.ATTR_UNIT_SI;
+        }
+
+        @Override
+        public Field<BigDecimal> getAttrValueSi() {
+            return AV_VIRTUAL_LOCATION_LEVEL.ATTR_VALUE_SI;
+        }
+
+        @Override
+        public Field<Double> getSeasonalLevel() {
+            return AV_LOCATION_LEVEL.SEASONAL_LEVEL;
+        }
+
+        @Override
+        public Field<Double> getConstantLevel() {
+            return AV_LOCATION_LEVEL.CONSTANT_LEVEL;
+        }
+
+        @Override
+        public Field<String> getTsId() {
+            return AV_LOCATION_LEVEL.TSID;
+        }
+
+        @Override
+        public Field<String> getInterpolate() {
+            return AV_LOCATION_LEVEL.INTERPOLATE;
+        }
+
+        @Override
+        public Field<String> getCalendarOffset() {
+            return AV_LOCATION_LEVEL.CALENDAR_OFFSET;
+        }
+
+        @Override
+        public Field<String> getTimeOffset() {
+            return AV_LOCATION_LEVEL.TIME_OFFSET;
+        }
+
+        @Override
+        public Field<String> getLevelComment() {
+            return AV_LOCATION_LEVEL.LEVEL_COMMENT;
+        }
+
+        @Override
+        public Field<String> getAttributeComment() {
+            return AV_LOCATION_LEVEL.ATTRIBUTE_COMMENT;
+        }
+
+        @Override
+        public Field<DayToSecond> getTimeInterval() {
+            return AV_LOCATION_LEVEL.TIME_INTERVAL;
+        }
+
+        @Override
+        public Field<String> getCalendarInterval() {
+            return AV_LOCATION_LEVEL.CALENDAR_INTERVAL;
+        }
+
+        @Override
+        public Field<Timestamp> getIntervalOrigin() {
+            return AV_LOCATION_LEVEL.INTERVAL_ORIGIN;
+        }
+    }
+
+    private static final class AliasedLocationParserFieldMapping implements LocationParserFieldMapping {
+        @Override
+        public Field<Timestamp> getLevelDate() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "LEVEL_DATE"), Timestamp.class);
+        }
+
+        @Override
+        public Field<String> getAttributeId() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, ALIASED_ATTRIBUTE_ID), String.class);
+        }
+
+        @Override
+        public Field<Double> getAttributeValue() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTRIBUTE_VALUE"), Double.class);
+        }
+
+        @Override
+        public Field<String> getLocationLevelId() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, ALIASED_LOCATION_LEVEL_ID), String.class);
+        }
+
+        @Override
+        public Field<String> getOfficeId() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, ALIASED_OFFICE_ID), String.class);
+        }
+
+        @Override
+        public Field<String> getLevelUnit() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "LEVEL_UNIT"), String.class);
+        }
+
+        @Override
+        public Field<String> getAttributeUnit() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTRIBUTE_UNIT"), String.class);
+        }
+
+        @Override
+        public Field<Timestamp> getEffectiveDate() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "EFFECTIVE_DATE_UTC"), Timestamp.class);
+        }
+
+        @Override
+        public Field<String> getVirtAttrId() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, ALIASED_ATTRIBUTE_ID), String.class);
+        }
+
+        @Override
+        public Field<String> getVirtLocLevelId() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, ALIASED_LOCATION_LEVEL_ID), String.class);
+        }
+
+        @Override
+        public Field<String> getVirtOfficeId() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, ALIASED_OFFICE_ID), String.class);
+        }
+
+        @Override
+        public Field<String> getConnections() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "CONNECTIONS"), String.class);
+        }
+
+        @Override
+        public Field<Timestamp> getExpirationDate() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "EXPIRATION_DATE"), Timestamp.class);
+        }
+
+        @Override
+        public Field<String> getAttrUnitEn() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTR_UNIT_EN"), String.class);
+        }
+
+        @Override
+        public Field<BigDecimal> getAttrValueEn() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTR_VALUE_EN"), BigDecimal.class);
+        }
+
+        @Override
+        public Field<String> getAttrUnitSi() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTR_UNIT_SI"), String.class);
+        }
+
+        @Override
+        public Field<BigDecimal> getAttrValueSi() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTR_VALUE_SI"), BigDecimal.class);
+        }
+
+        @Override
+        public Field<Double> getSeasonalLevel() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "SEASONAL_LEVEL"), Double.class);
+        }
+
+        @Override
+        public Field<Double> getConstantLevel() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "CONSTANT_LEVEL"), Double.class);
+        }
+
+        @Override
+        public Field<String> getTsId() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "TSID"), String.class);
+        }
+
+        @Override
+        public Field<String> getInterpolate() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "INTERPOLATE"), String.class);
+        }
+
+        @Override
+        public Field<String> getCalendarOffset() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "CALENDAR_OFFSET"), String.class);
+        }
+
+        @Override
+        public Field<String> getTimeOffset() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "TIME_OFFSET"), String.class);
+        }
+
+        @Override
+        public Field<String> getLevelComment() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "LEVEL_COMMENT"), String.class);
+        }
+
+        @Override
+        public Field<String> getAttributeComment() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "ATTRIBUTE_COMMENT"), String.class);
+        }
+
+        @Override
+        public Field<DayToSecond> getTimeInterval() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "TIME_INTERVAL"), DayToSecond.class);
+        }
+
+        @Override
+        public Field<String> getCalendarInterval() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "CALENDAR_INTERVAL"), String.class);
+        }
+
+        @Override
+        public Field<Timestamp> getIntervalOrigin() {
+            return DSL.field(DSL.name(TABLE_ALIAS2, "INTERVAL_ORIGIN"), Timestamp.class);
+        }
+    }
+
     private static void buildLocationLevelSelectFields() {
-        LOCATION_LEVEL_FIELDS.add(ref.OFFICE_ID);
-        LOCATION_LEVEL_FIELDS.add(ref.LOCATION_LEVEL_ID);
-        LOCATION_LEVEL_FIELDS.add(ref.ATTRIBUTE_ID);
-        LOCATION_LEVEL_FIELDS.add(ref.LOCATION_LEVEL_DATE);
-        LOCATION_LEVEL_FIELDS.add(values.CONNECTIONS);
-        LOCATION_LEVEL_FIELDS.add(ref.DURATION_ID);
-        LOCATION_LEVEL_FIELDS.add(values.ATTRIBUTE_UNIT_EN);
-        LOCATION_LEVEL_FIELDS.add(values.ATTRIBUTE_VALUE_EN);
-        LOCATION_LEVEL_FIELDS.add(values.ATTRIBUTE_UNIT_SI);
-        LOCATION_LEVEL_FIELDS.add(values.ATTRIBUTE_VALUE_SI);
-        LOCATION_LEVEL_FIELDS.add(ref.OFFICE_ID);
-        LOCATION_LEVEL_FIELDS.add(ref.LOCATION_LEVEL_ID);
-        LOCATION_LEVEL_FIELDS.add(ref.EXPIRATION_DATE);
-        LOCATION_LEVEL_FIELDS.add(values.TSID);
-        LOCATION_LEVEL_FIELDS.add(values.CONSTANT_LEVEL_EN);
-        LOCATION_LEVEL_FIELDS.add(values.CONSTANT_LEVEL_SI);
-        LOCATION_LEVEL_FIELDS.add(values.INTERVAL_ORIGIN);
-        LOCATION_LEVEL_FIELDS.add(values.INTERPOLATE);
-        LOCATION_LEVEL_FIELDS.add(ref.ATTRIBUTE_ID);
-        LOCATION_LEVEL_FIELDS.add(values.LEVEL_UNIT_EN);
-        LOCATION_LEVEL_FIELDS.add(values.LEVEL_UNIT_SI);
-        LOCATION_LEVEL_FIELDS.add(ref.LOCATION_LEVEL_COMMENT);
-        LOCATION_LEVEL_FIELDS.add(values.SEASONAL_VALUE_EN);
-        LOCATION_LEVEL_FIELDS.add(values.SEASONAL_VALUE_SI);
-        LOCATION_LEVEL_FIELDS.add(values.CALENDAR_INTERVAL);
-        LOCATION_LEVEL_FIELDS.add(values.TIME_INTERVAL);
-        LOCATION_LEVEL_FIELDS.add(values.CALENDAR_OFFSET);
-        LOCATION_LEVEL_FIELDS.add(values.TIME_OFFSET);
+        usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL virtView = AV_VIRTUAL_LOCATION_LEVEL;
+        usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
+
+        LOCATION_LEVEL_FIELDS.add(virtView.OFFICE_ID);
+        LOCATION_LEVEL_FIELDS.add(virtView.LOCATION_LEVEL_ID);
+        LOCATION_LEVEL_FIELDS.add(virtView.ATTRIBUTE_ID);
+        LOCATION_LEVEL_FIELDS.add(virtView.DURATION_CODE);
+        LOCATION_LEVEL_FIELDS.add(virtView.EFFECTIVE_DATE_UTC);
+        LOCATION_LEVEL_FIELDS.add(virtView.CONNECTIONS);
+        LOCATION_LEVEL_FIELDS.add(virtView.DURATION_ID);
+        LOCATION_LEVEL_FIELDS.add(virtView.ATTR_UNIT_EN);
+        LOCATION_LEVEL_FIELDS.add(virtView.ATTR_VALUE_EN);
+        LOCATION_LEVEL_FIELDS.add(virtView.ATTR_UNIT_SI);
+        LOCATION_LEVEL_FIELDS.add(virtView.ATTR_VALUE_SI);
+        LOCATION_LEVEL_FIELDS.add(view.OFFICE_ID);
+        LOCATION_LEVEL_FIELDS.add(view.LOCATION_LEVEL_ID);
+        LOCATION_LEVEL_FIELDS.add(view.EXPIRATION_DATE);
+        LOCATION_LEVEL_FIELDS.add(view.LEVEL_DATE);
+        LOCATION_LEVEL_FIELDS.add(view.TSID);
+        LOCATION_LEVEL_FIELDS.add(view.CONSTANT_LEVEL);
+        LOCATION_LEVEL_FIELDS.add(view.INTERVAL_ORIGIN);
+        LOCATION_LEVEL_FIELDS.add(view.INTERPOLATE);
+        LOCATION_LEVEL_FIELDS.add(view.ATTRIBUTE_ID);
+        LOCATION_LEVEL_FIELDS.add(view.ATTRIBUTE_VALUE);
+        LOCATION_LEVEL_FIELDS.add(view.ATTRIBUTE_UNIT);
+        LOCATION_LEVEL_FIELDS.add(view.ATTRIBUTE_COMMENT);
+        LOCATION_LEVEL_FIELDS.add(view.LEVEL_UNIT);
+        LOCATION_LEVEL_FIELDS.add(view.LEVEL_COMMENT);
+        LOCATION_LEVEL_FIELDS.add(view.SEASONAL_LEVEL);
+        LOCATION_LEVEL_FIELDS.add(view.CALENDAR_INTERVAL);
+        LOCATION_LEVEL_FIELDS.add(view.TIME_INTERVAL);
+        LOCATION_LEVEL_FIELDS.add(view.CALENDAR_OFFSET);
+        LOCATION_LEVEL_FIELDS.add(view.TIME_OFFSET);
     }
 
     private static void buildAliasedLocationLevelSelectFields() {
-        LOCATION_ALIAS_FIELDS.add(field(ref.OFFICE_ID.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(ref.LOCATION_LEVEL_ID.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(ref.ATTRIBUTE_ID.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(ref.LOCATION_LEVEL_DATE.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.CONNECTIONS.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(ref.DURATION_ID.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.ATTRIBUTE_UNIT_EN.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.ATTRIBUTE_VALUE_EN.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.ATTRIBUTE_UNIT_SI.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.ATTRIBUTE_VALUE_SI.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(ref.EXPIRATION_DATE));
-        LOCATION_ALIAS_FIELDS.add(field(values.TSID.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.CONSTANT_LEVEL_EN.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.CONSTANT_LEVEL_SI.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.INTERVAL_ORIGIN.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.INTERPOLATE.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.LEVEL_UNIT_EN.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.LEVEL_UNIT_SI.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(ref.LOCATION_LEVEL_COMMENT.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.SEASONAL_VALUE_EN.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.SEASONAL_VALUE_SI.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.CALENDAR_INTERVAL.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.TIME_INTERVAL.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.CALENDAR_OFFSET.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(values.TIME_OFFSET.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(aliasView.LOCATION_ID));
+        usace.cwms.db.jooq.codegen.tables.AV_VIRTUAL_LOCATION_LEVEL virtView = AV_VIRTUAL_LOCATION_LEVEL;
+        usace.cwms.db.jooq.codegen.tables.AV_LOCATION_LEVEL view = AV_LOCATION_LEVEL;
+        usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS aliasView = AV_LOC_ALIAS;
+
+        LOCATION_ALIAS_FIELDS.add(field(ALIASED_OFFICE_ID));
+        LOCATION_ALIAS_FIELDS.add(field(ALIASED_LOCATION_LEVEL_ID));
+        LOCATION_ALIAS_FIELDS.add(field(ALIASED_ATTRIBUTE_ID));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.DURATION_CODE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.EFFECTIVE_DATE_UTC.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.CONNECTIONS.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(DSL.name(TABLE_ALIAS1, "DURATION_ID")));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_UNIT_EN.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_VALUE_EN.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_UNIT_SI.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(virtView.ATTR_VALUE_SI.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.LEVEL_DATE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.EXPIRATION_DATE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.TSID.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.CONSTANT_LEVEL.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.INTERVAL_ORIGIN.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.INTERPOLATE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.ATTRIBUTE_VALUE.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.ATTRIBUTE_COMMENT.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.ATTRIBUTE_UNIT.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.LEVEL_UNIT.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.LEVEL_COMMENT.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.SEASONAL_LEVEL.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.CALENDAR_INTERVAL.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.TIME_INTERVAL.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.CALENDAR_OFFSET.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(view.TIME_OFFSET.getUnqualifiedName()));
+        LOCATION_ALIAS_FIELDS.add(field(aliasView.LOCATION_ID.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(aliasView.ALIAS_ID.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS.add(field(aliasView.LOCATION_CODE));
+        LOCATION_ALIAS_FIELDS.add(field(aliasView.LOCATION_CODE.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(aliasView.DB_OFFICE_ID.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(aliasView.CATEGORY_ID.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(aliasView.GROUP_ID.getUnqualifiedName()));
