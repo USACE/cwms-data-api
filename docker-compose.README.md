@@ -45,3 +45,26 @@ The following users and permissions are available:
 
 Traefik uses port 8081 by default, if this conflicts with existing services on your machine it can
 be changed by setting the APP_PORT variable.
+
+## Local error trace debugging
+
+The API supports conditional stack traces in JSON error responses through
+`cwms.cda.api.errors.ErrorTraceSupport`.
+
+For local Docker Compose or localhost testing, stack traces can be enabled in either of these ways:
+
+1. Set the explicit override:
+
+   `CWMS_DATAAPI_ERRORS_ALWAYS_SHOW_STACK_TRACE=true`
+
+2. Run with an environment name that normalizes to a value containing `dev`, for example:
+
+   `ENVIRONMENT=development`
+
+In addition, localhost requests are treated as local debug requests. When enabled, error responses
+include `details.stackTrace` along with the existing `incidentIdentifier`.
+
+This is intended for local development and shared `development` environments. In shared `dev` (not localhost),
+stack traces are gated by authentication and the `CWMS User Admins` role. 
+
+Response stack traces should *not* be enabled broadly for production traffic.
