@@ -1,0 +1,23 @@
+plugins {
+    id 'cda.java-conventions'
+    id 'cda.deps-conventions'
+    id 'java-library'
+}
+
+
+dependencies {
+    annotationProcessor(libs.com.google.auto.service)
+    compileOnly(libs.com.google.auto.service.annotations)
+    api(libs.google.flogger.api)
+    api(libs.slf4j)
+
+    testImplementation(libs.ch.qos.logback)
+    testImplementation(libs.bundles.junit)
+    testRuntimeOnly(libs.google.flogger.system.backend)
+    testRuntimeOnly(libs.google.flogger.slf4j.backend)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+}
+
+test {
+    useJUnitPlatform()
+}

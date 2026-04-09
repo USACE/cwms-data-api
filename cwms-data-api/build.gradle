@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.google.flogger.api)
     implementation(libs.google.findbugs)
     implementation(libs.google.errorProne)
+    implementation(project(":flogger-cda-context"))
     runtimeOnly(libs.google.flogger.system.backend)
     runtimeOnly(libs.google.flogger.slf4j.backend)
     runtimeOnly(libs.ch.qos.logback)

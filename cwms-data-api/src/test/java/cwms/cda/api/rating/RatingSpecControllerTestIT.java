@@ -39,6 +39,7 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.rating.RatingSpec;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.logging.TraceIdFilter;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.stream.IntStream;
@@ -58,6 +59,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_empty_rating_spec() throws Exception {
+        final String TEST_TRACE_ID = "be4710da-7931-4cb9-a621-1ab46ecc1022";
         String locationId = "RatingSpecTestEmpty";
         String officeId = "SPK";
         createLocation(locationId, true, officeId);
@@ -77,6 +79,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
             .contentType(Formats.XMLV2)
             .body(templateXml)
             .header("Authorization", user.toHeaderValue())
+            .header(TraceIdFilter.HEADER_TRACE_ID, TEST_TRACE_ID)
             .queryParam(OFFICE, officeId)
         .when()
             .redirects().follow(true)
@@ -93,6 +96,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
             .contentType(Formats.XMLV2)
             .body(specXml)
             .header("Authorization", user.toHeaderValue())
+            .header(TraceIdFilter.HEADER_TRACE_ID, TEST_TRACE_ID)
             .queryParam(OFFICE, officeId)
         .when()
             .redirects().follow(true)
@@ -109,6 +113,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
         Response response = given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
+            .header(TraceIdFilter.HEADER_TRACE_ID, TEST_TRACE_ID)
             .queryParam(PAGE_SIZE, 500)
         .when()
             .redirects().follow(true)
@@ -127,6 +132,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
+                .header(TraceIdFilter.HEADER_TRACE_ID, TEST_TRACE_ID)
                 .queryParam(OFFICE, officeId)
                 .queryParam(RATING_ID_MASK, specContainer.specId)
             .when()
@@ -146,6 +152,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
+            .header(TraceIdFilter.HEADER_TRACE_ID, TEST_TRACE_ID)
             .queryParam(OFFICE, officeId)
             .queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
         .when()

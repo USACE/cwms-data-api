@@ -12,10 +12,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 
-import org.slf4j.MDC;
-
 import com.google.common.flogger.MetadataKey;
-import com.google.common.flogger.context.ScopedLoggingContext;
 import com.google.common.flogger.context.ScopedLoggingContexts;
 
 @WebFilter("/*")
@@ -34,23 +31,17 @@ public class TraceIdFilter implements Filter
 
             var xTraceId = httpRequest.getHeader(HEADER_TRACE_ID);
             String traceId = null;
-            if (xTraceId == null || xTraceId.isBlank())
-            {
+            if (xTraceId == null || xTraceId.isBlank()) {
                 traceId = UUID.randomUUID().toString();
-            }
-            else
-            {
+            } else {
                 traceId = validate(xTraceId); //well that needs some validation.
             }
-            try (var idContext = MDC.putCloseable("traceId", traceId)) {
-                chain.doFilter(httpRequest, response);    
-            }
-            // ScopedLoggingContexts.newContext()
-            //                      .withMetadata(MetadataKey.single("traceId", String.class), traceId)
-            //                      .callUnchecked(() -> {
-            //                         chain.doFilter(httpRequest, response);
-            //                         return null;
-            //                      });
+            ScopedLoggingContexts.newContext()
+                                 .withMetadata(MetadataKey.single("traceId", String.class), traceId)
+                                 .callUnchecked(() -> {
+                                    chain.doFilter(httpRequest, response);
+                                    return null;
+                                 });
         } else {
             chain.doFilter(request, response);
         }
@@ -58,12 +49,9 @@ public class TraceIdFilter implements Filter
     
     private static String validate(String id) throws IOException
     {
-        if (UUID_MATCHER.matcher(id).matches())
-        {
+        if (UUID_MATCHER.matcher(id).matches()) {
             return id;
-        }
-        else
-        {
+        } else {
             throw new IOException("Trace id '" + id + "' is not a valid UUIDish value.");
         }
     }

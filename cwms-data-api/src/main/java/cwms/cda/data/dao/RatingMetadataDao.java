@@ -63,6 +63,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.context.ScopedLoggingContexts;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -190,9 +192,12 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
             boolean useParallel = true;
             Stream<Map<RatingSpec, Set<AbstractRatingMetadata>>> mapStream;
             if (useParallel) {
+                // get current context to pass in to Thread. Otherwise any log message would not include the Trace ID.
+                final var loggingContext = ScopedLoggingContexts.newContext();
                 mapStream = ratingIds.stream()
                         .map(ratingId -> CompletableFuture.supplyAsync(() ->
-                                retrieveRatings(office, ratingId, start, end), executor))
+                                loggingContext.callUnchecked(() -> retrieveRatings(office, ratingId, start, end))
+                                , executor))
                         .collect(Collectors.toList())
                         .stream()
                         .map(CompletableFuture::join);
@@ -221,7 +226,6 @@ public class RatingMetadataDao extends JooqDao<RatingSpec> {
     public Map<RatingSpec, Set<AbstractRatingMetadata>> retrieveRatings(
             String office, String templateIdMask, ZonedDateTime start, ZonedDateTime end) {
         Map<RatingSpec,Set<AbstractRatingMetadata>> retVal = new LinkedHashMap<>();
-
         try (final Timer.Context ignored = markAndTime("retrieveRatings")) {
             RatingSpecDao ratingSpecDao = new RatingSpecDao(dsl);
             Optional<RatingSpec> spec = ratingSpecDao.retrieveRatingSpec(office, templateIdMask);

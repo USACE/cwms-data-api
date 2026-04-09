@@ -14,5 +14,6 @@ include ":access-manager-api"
 include ":cwms-data-api"
 include ":cda-gui"
 include ":docs"
+include ":flogger-cda-context"
 project(":docs").projectDir = file("docs")
 include ":cda-client"
