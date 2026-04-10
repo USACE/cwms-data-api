@@ -315,6 +315,7 @@ task prepareDockerBuild(type: Copy, dependsOn: war) {
 
     from(configurations.baseLibs) {
         into "libs"
+        //exclude "**/logback*"
     }
 
     from(sourceSets.test.resources) {
