@@ -2,6 +2,7 @@ package cwms.cda.logging;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.MDC;
 
@@ -68,9 +69,11 @@ public class CdaLoggingContext extends ScopedLoggingContext {
 
             final var tags = this.getTags();
             if (tags != null) {
-                tags.asMap().forEach((key, entry) -> {
-                    MDC.put(key, String.join(",", entry.stream().map(Object::toString).toList()));
-                });
+                tags.asMap().forEach((key, entry) ->
+                    MDC.put(key, String.join(",", entry.stream()
+                                                       .map(Object::toString)
+                                                       .collect(Collectors.toList())))
+                );
             }
 
             // Just reset back the MDC map to whatever it was before we decided to muck with it.

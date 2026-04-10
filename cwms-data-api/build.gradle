@@ -78,9 +78,6 @@ dependencies {
     implementation(libs.google.errorProne)
     implementation(project(":flogger-cda-context"))
     runtimeOnly(libs.google.flogger.system.backend)
-    runtimeOnly(libs.google.flogger.slf4j.backend) {
-        exclude group: "org.slf4j"
-    }
 
     implementation(libs.nucleus.data) {
         exclude group: "org.jdom"
@@ -163,10 +160,10 @@ dependencies {
     testImplementation(libs.slf4j.jul)
     tomcatLibs(libs.google.flogger.api)
     tomcatLibs(libs.google.flogger.system.backend)
-    tomcatLibs(libs.google.flogger.slf4j.backend) {
+    baseLibs(libs.google.flogger.slf4j.backend) {
         exclude group: "org.slf4j"
     }
-    //./gr  testRuntimeOnly(libs.slf4j)
+    
     baseLibs(libs.ch.qos.logback)
 
     testImplementation(libs.bundles.testcontainers)
