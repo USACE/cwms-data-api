@@ -33,7 +33,8 @@ RUN mkdir /download && \
     rm -rf /download && \
     rm -rf /usr/local/tomcat/webapps/* && \
     mkdir /usr/local/tomcat/webapps/ROOT && \
-    echo "<html><body>Nothing to see here</body></html>" > /usr/local/tomcat/webapps/ROOT/index.html
+    echo "<html><body>Nothing to see here</body></html>" > /usr/local/tomcat/webapps/ROOT/index.html && \
+    printf "User-agent: *\nAllow: /cwms-data/\nDisallow: /cwms-data/auth/\nDisallow: /cwms-data/catalog/\nDisallow: /cwms-data/timeseries/\nDisallow: /cwms-data/swagger-docs\nDisallow: /auth/\n" > /usr/local/tomcat/webapps/ROOT/robots.txt
 CMD ["/usr/local/tomcat/bin/catalina.sh","run"]
 
 FROM tomcat_base AS api
