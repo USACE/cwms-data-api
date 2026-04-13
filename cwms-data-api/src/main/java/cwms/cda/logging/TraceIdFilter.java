@@ -30,12 +30,16 @@ public class TraceIdFilter implements Filter
             var httpRequest = (HttpServletRequest)request;
 
             var xTraceId = httpRequest.getHeader(HEADER_TRACE_ID);
+
             String traceId = null;
             if (xTraceId == null || xTraceId.isBlank()) {
                 traceId = UUID.randomUUID().toString();
             } else {
                 traceId = validate(xTraceId); //well that needs some validation.
             }
+
+            request.setAttribute(HEADER_TRACE_ID, traceId);
+
             ScopedLoggingContexts.newContext()
                                  .withMetadata(MetadataKey.single("traceId", String.class), traceId)
                                  .callUnchecked(() -> {

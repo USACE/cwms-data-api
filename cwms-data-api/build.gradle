@@ -21,7 +21,7 @@ configurations {
 }
 
 configurations.implementation {
-    exclude group: 'com.oracle.database.jdbc'    
+    exclude group: 'com.oracle.database.jdbc'
 }
 
 configurations.all {
@@ -38,7 +38,7 @@ dependencies {
     implementation(libs.jaxb.api)
     implementation(libs.jaxb.core)
     implementation(libs.jaxb.impl)
-    implementation(libs.cwms.db.jooq.codegen) { 
+    implementation(libs.cwms.db.jooq.codegen) {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
@@ -84,7 +84,7 @@ dependencies {
     }
     implementation(libs.nucleus.metadata)
     implementation(libs.cwms.ratings.core) {
-        
+
         //exclude group: "mil.army.usace.hec.swingx"
         exclude group: "*"
     }
@@ -155,7 +155,7 @@ dependencies {
 
     tomcatLibs(libs.bundles.tomcat.embedded)
     tomcatLibs(libs.bundles.tomcat.support)
-    
+
     implementation(libs.slf4j)
     testImplementation(libs.slf4j.jul)
     tomcatLibs(libs.google.flogger.api)
@@ -163,14 +163,14 @@ dependencies {
     baseLibs(libs.google.flogger.slf4j.backend) {
         exclude group: "org.slf4j"
     }
-    
+
     baseLibs(libs.ch.qos.logback)
 
     testImplementation(libs.bundles.testcontainers)
 
     testImplementation(libs.apache.commons.csv)
     testImplementation(libs.cwms.tomcat.auth)
-    testImplementation(libs.apache.freemarker)   
+    testImplementation(libs.apache.freemarker)
 
     webjars(project(":cda-gui"))
 
@@ -194,10 +194,7 @@ task extractWebJars(type: Copy) {
 war {
     dependsOn extractWebJars
     from "$buildDir/extra"
-    from "src/resources/"   
-    // classpath = classpath.filter { file ->
-    //     !file.name.contains("slf4j-api")
-    // }
+    from "src/resources/"
 
     manifest {
         attributes "build-version": project.version

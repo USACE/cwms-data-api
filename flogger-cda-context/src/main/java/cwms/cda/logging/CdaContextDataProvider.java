@@ -6,7 +6,8 @@ import com.google.common.flogger.context.ScopedLoggingContext;
 
 /**
  * Incredible simple implementation of Flogger's ContextDataProvider so that
- * we can manipulate the 
+ * we can manipulate the Mapped Diagnostics Context and apply per thread values
+ * so we aren't manually adding the logging context or trace id to every log call.
  */
 @AutoService(ContextDataProvider.class)
 public class CdaContextDataProvider extends ContextDataProvider {

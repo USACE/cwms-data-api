@@ -9,7 +9,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.Response;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,14 +30,24 @@ import static org.junit.jupiter.api.Assertions.assertTimeout;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("integration")
-public class BlobControllerTestIT extends DataApiTestIT {
+class BlobControllerTestIT extends DataApiTestIT {
 
     public static final String SPK = "SPK";
     private static final String EXISTING_BLOB_ID = "TEST_BLOBIT2";
     private static final String EXISTING_BLOB_VALUE = "test value";
 
-    @BeforeAll
-    public static void setup() throws Exception {
+    /**
+     * Create, or attempt create, blob before each test. This way the tests are
+     * isolated from each other as order is intentionally not reliable.
+     *
+     * Without doing this, running only these tests would pass, running all tests
+     * would show failures of these particular tests. This indicates that something
+     * is running out of order and removing the Blob before it can be retrieved.
+     *
+     * @throws Exception
+     */
+    @BeforeEach
+    void setup() throws Exception {
         createExistingBlob();
     }
 

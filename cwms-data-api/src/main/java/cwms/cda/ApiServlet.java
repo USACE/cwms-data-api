@@ -39,6 +39,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 import static java.lang.String.format;
+import static cwms.cda.logging.TraceIdFilter.HEADER_TRACE_ID;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -355,7 +356,8 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-XSS-Protection", "1; mode=block");
                 })
                 .exception(ApplicationException.class, (e, ctx) -> {
-                    CdaError re = new CdaError(e.getCdaErrorMessage(), e.getSource(), e.getDetails());
+                    final String incidentId = ctx.attribute(HEADER_TRACE_ID);
+                    CdaError re = new CdaError(e.getCdaErrorMessage(), e.getSource(), e.getDetails(), incidentId);
                     if (e.getLoggerLevel().isPresent()) {
                         logger.at(e.getLoggerLevel().get()).withCause(e).log(re.toString());
                     }
@@ -368,18 +370,21 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(re);
                 })
                 .exception(BadRequestResponse.class, (e, ctx) -> {
+                    final String incidentId = ctx.attribute(HEADER_TRACE_ID);
                     CdaError re = new CdaError("Bad Request",
-                        "User Input", new HashMap<>(e.getDetails()));
+                        "User Input", new HashMap<>(e.getDetails()), incidentId);
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(e.getStatus()).json(re);
                 })
                 .exception(IllegalArgumentException.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Bad Request");
+                    final String incidentId = ctx.attribute(HEADER_TRACE_ID);
+                    CdaError re = new CdaError("Bad Request", incidentId);
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(DateTimeException.class, (e, ctx) -> {
-                    CdaError re = new CdaError(e.getMessage());
+                    final String incidentId = ctx.attribute(HEADER_TRACE_ID);
+                    CdaError re = new CdaError(e.getMessage(), incidentId);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(DataAccessException.class, (e, ctx) -> {
@@ -393,7 +398,8 @@ public class ApiServlet extends HttpServlet {
                     // CdaError does not include the Oracle exception message b/c this block catches
                     // all unhandled DataAccessExceptions and we don't know what is in the message
                     // it is unknown if the message would be safe/appropriate for users to see.
-                    CdaError errResponse = new CdaError("Database Error");
+                    final String incidentId = ctx.attribute(HEADER_TRACE_ID);
+                    CdaError errResponse = new CdaError("Database Error", incidentId);
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
                                                         errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
                     ctx.status(500);
@@ -401,7 +407,8 @@ public class ApiServlet extends HttpServlet {
                     ctx.json(errResponse);
                 })
                 .exception(Exception.class, (e, ctx) -> {
-                    CdaError errResponse = new CdaError("System Error");
+                    final String incidentId = ctx.attribute(HEADER_TRACE_ID);
+                    CdaError errResponse = new CdaError("System Error", incidentId);
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
                             errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
                     ctx.status(500);

@@ -9,7 +9,6 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.LogManager;
 
 import org.apache.catalina.Manager;
 import org.apache.commons.io.IOUtils;
@@ -77,7 +76,6 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     }
 
     static {
-        //LogManager.getLogManager().reset();
         SLF4JBridgeHandler.removeHandlersForRootLogger();
         SLF4JBridgeHandler.install();
     }

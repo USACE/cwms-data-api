@@ -11,12 +11,13 @@ import com.google.common.flogger.context.ScopeType;
 import com.google.common.flogger.context.ScopedLoggingContext;
 
 /**
- * MAP Flogger Scoped MetaData to SLF4J MDC to apply to the MDC section of the JSON log.
+ * Map Flogger Scoped MetaData to SLF4J MDC to apply to the MDC section of the JSON log.
  * Default implementation against JUL (with SLF4j or Flogger) will not show any MDC values.
  *
  * NOTE: This all assumes SLF4j is somewhere in the mix and used in the logging chain.
  *
  * Metadata keys and Tags are treated the same. Object::toString is used to convert everything to a string.
+ *
  */
 public class CdaLoggingContext extends ScopedLoggingContext {
     public static final MetadataKey<String> TRACE_ID = MetadataKey.single("traceId", String.class);
@@ -48,7 +49,7 @@ public class CdaLoggingContext extends ScopedLoggingContext {
          * on this context.
          *
          * MDC data is ThreadLocal, so the above behavior is required to allow the context to
-         * properly propagate to threads, where are currently used in the {@see RatingMetaDataDao} (though no logging is done there)
+         * properly propagate to threads, which are currently used in the {@see RatingMetaDataDao} (though no logging is done there)
          *
          */
         @Override

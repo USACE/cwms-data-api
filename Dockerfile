@@ -35,10 +35,10 @@ RUN mkdir /download && \
     echo "<html><body>Nothing to see here</body></html>" > /usr/local/tomcat/webapps/ROOT/index.html && \
     mkdir -p /usr/local/tomecat/conf/Catalina/localhost
 # Now replace the Tomcat logging with logback
-# NOTE: I have review this method in jd-gui and do not see anything malicious, packages are isolated to avoid issues
+# NOTE: I have reviewed this jar in jd-gui and do not see anything malicious, packages are isolated to avoid issues
 # with other code.
 # Additionally, when we are not also accounting for some legacy systems, we will likely shift to
-# Jetty to simplify the deployment process, making this subtitution unnecessary.
+# Jetty, or Embedded Tomcat, to simplify the deployment process, making this subtitution unnecessary.
 RUN cd /download && \
     wget https://repo1.maven.org/maven2/com/github/tomcat-slf4j-logback/tomcat9-slf4j-logback/9.0.115/tomcat9-slf4j-logback-9.0.115.jar && \
     echo "cb463fb246fbb326d91b04a7280474f2b722b11cc9d3d7f6c3dbbefcff2c07e055f479d436ab785668d6fa90d0bfd325c86c4fa3a9ad9521159a2a3114916d91 *tomcat9-slf4j-logback-9.0.115.jar" > checksum.logback.txt && \

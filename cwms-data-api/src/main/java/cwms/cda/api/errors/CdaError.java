@@ -51,10 +51,11 @@ public final class CdaError {
      * @param message the error message
      */
     public CdaError(String message) {
-        this.incidentIdentifier = UUID.randomUUID().toString();
-        this.message = message;
-        this.details = Collections.unmodifiableMap(new HashMap<>());
-        this.source = UNKNOWN_SOURCE;
+        this(message, (String)null);
+    }
+
+    public CdaError(String message, String incidentIdentifier) {
+        this(message, UNKNOWN_SOURCE, Collections.unmodifiableMap(new HashMap<>()), incidentIdentifier, false);
     }
 
     /**
@@ -63,11 +64,8 @@ public final class CdaError {
      * @param map additional details about the error
      */
     public CdaError(String message, Map<String, Serializable> map) {
-        Objects.requireNonNull(map);
-        this.incidentIdentifier = UUID.randomUUID().toString();
-        this.message = message;
-        this.details = Collections.unmodifiableMap(map);
-        this.source = UNKNOWN_SOURCE;
+
+        this(message, map, false);
     }
 
     /**
@@ -78,14 +76,7 @@ public final class CdaError {
      */
     public CdaError(String message, Map<String, Serializable> details,
                       boolean suppressIncidentId) {
-        if (suppressIncidentId) {
-            this.incidentIdentifier = "user input error";
-        } else {
-            this.incidentIdentifier = UUID.randomUUID().toString();
-        }
-        this.message = message;
-        this.details = Collections.unmodifiableMap(details);
-        this.source = UNKNOWN_SOURCE;
+        this(message, UNKNOWN_SOURCE, details, null, suppressIncidentId);
     }
 
     /**
@@ -98,16 +89,37 @@ public final class CdaError {
     }
 
     /**
-     * Full constructor.
      * @param message the error message
      * @param source the source of the error
      * @param details additional details about the error
      */
     public CdaError(String message, String source, Map<String, Serializable> details) {
-        this.incidentIdentifier = UUID.randomUUID().toString();
+        this(message, source, details, null, false);
+    }
+
+    /**
+     * @param message the error message
+     * @param source the source of the error
+     * @param details additional details about the error
+     */
+    public CdaError(String message, String source, Map<String, Serializable> details,
+                    String incidentIdentifier) {
+        this(message, source, details, incidentIdentifier, false);
+    }
+
+    /**
+     * Full constructor.
+     * @param message the error message
+     * @param source the source of the error
+     * @param details additional details about the error
+     */
+    public CdaError(String message, String source, Map<String, Serializable> details,
+                    String incidentIdentifier, boolean suppressIncidentIdentfier) {
+        this.details = Collections.unmodifiableMap(Objects.requireNonNull(details));
+        this.incidentIdentifier = suppressIncidentIdentfier ? "user input error" :
+                                 (incidentIdentifier != null ? incidentIdentifier : UUID.randomUUID().toString());
         this.message = message;
         this.source = source;
-        this.details = Collections.unmodifiableMap(details);
     }
 
     @Override
