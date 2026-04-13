@@ -13,6 +13,8 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -43,6 +45,7 @@ import static io.restassured.RestAssured.*;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.Response;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.Matchers.*;
@@ -50,7 +53,9 @@ import static org.hamcrest.Matchers.*;
 @Tag("integration")
 public class CatalogControllerTestIT extends DataApiTestIT {
 
-    public static final String OFFICE = "SPK";
+    public static final String OFFICE1 = "SPK";
+    public static final String OFFICE2 = "MVP";
+    public static final String OFFICE3 = "LRL";
 
     //// These have to match the groups in ts_catalog_setup.sql
     public static final String A_TO_M = "A to M";
@@ -62,24 +67,34 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     @BeforeAll
     static void setup_data() throws Exception {
         // Create some locations and create some ts.
-        createLocation("Alder Springs",true, OFFICE);
-        createLocation("Wet Meadows",true, OFFICE);
-        createLocation("Pine Flat-Outflow",true, OFFICE);
-        createLocation("Flat Lake",true, OFFICE);
+        createLocation("Alder Springs",true, OFFICE1);
+        createLocation("Wet Meadows",true, OFFICE1);
+        createLocation("Pine Flat-Outflow",true, OFFICE1);
+        createLocation("Flat Lake",true, OFFICE1);
 
-        createProject("Flat Project", OFFICE);
-        createTimeseries(OFFICE,"Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda");
-        createTimeseries(OFFICE,"Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-cda");
-        createTimeseries(OFFICE,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda");
-        createTimeseries(OFFICE,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.one");
-        createTimeseries(OFFICE,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.two");
-        createTimeseries(OFFICE,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.three");
-        createTimeseries(OFFICE,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.four");
-        createTimeseries(OFFICE,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-cda");
-        createTimeseries(OFFICE,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.one");
-        createTimeseries(OFFICE,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.two");
-        createTimeseries(OFFICE,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.three");
-        createTimeseries(OFFICE,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.four");
+        createLocation("LockDam_10", true, OFFICE2);
+        createLocation("LockDam_01", true, OFFICE2);
+        for (int i=0; i < 30; i++) {
+            createLocation(String.format("LOckDam_%03d", i*10), true, OFFICE2);
+        }
+
+        createLocation("Barkley", true, OFFICE2);
+        createLocation("Franklin", true, OFFICE2);
+        createLocation("HorseBranch", true, OFFICE2);
+
+        createProject("Flat Project", OFFICE1);
+        createTimeseries(OFFICE1,"Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda");
+        createTimeseries(OFFICE1,"Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-cda");
+        createTimeseries(OFFICE1,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda");
+        createTimeseries(OFFICE1,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.one");
+        createTimeseries(OFFICE1,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.two");
+        createTimeseries(OFFICE1,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.three");
+        createTimeseries(OFFICE1,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.four");
+        createTimeseries(OFFICE1,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.raw-cda");
+        createTimeseries(OFFICE1,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.one");
+        createTimeseries(OFFICE1,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.two");
+        createTimeseries(OFFICE1,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.three");
+        createTimeseries(OFFICE1,"Wet Meadows.Depth-SWE.Inst.15Minutes.0.four");
 
         // Complicated
         loadSqlDataFromResource("cwms/cda/data/sql/ts_catalog_setup.sql");
@@ -89,7 +104,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
     private static void createProject(String id, String office) throws SQLException {
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            DSLContext dsl = dslContext(c, OFFICE);
+            DSLContext dsl = dslContext(c, OFFICE1);
             ProjectDao projectDao = new ProjectDao(dsl);
             Project project = new Project.Builder()
                     .withLocation(new Location.Builder(id,
@@ -107,7 +122,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
     private static void deleteProject(String id, String office) throws SQLException {
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            DSLContext dsl = dslContext(c, OFFICE);
+            DSLContext dsl = dslContext(c, OFFICE1);
             ProjectDao projectDao = new ProjectDao(dsl);
 
             projectDao.delete(office, id, DeleteRule.DELETE_KEY);
@@ -117,7 +132,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     @AfterAll
     static void deload_data() throws Exception {
         loadSqlDataFromResource("cwms/cda/data/sql/ts_catalog_cleanup.sql");
-        deleteProject("Flat Project", OFFICE);
+        deleteProject("Flat Project", OFFICE1);
         cleanupBasins();
         cleanupStreams();
     }
@@ -128,7 +143,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .accept(format)
             .log().ifValidationFails(LogDetail.ALL, true)
-            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE1)
             .queryParam(EXCLUDE_EMPTY,false)
             .queryParam(LIKE,".*-cda$")
         .when()
@@ -148,7 +163,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         Integer numAliases = given()
             .accept(format)
             .log().ifValidationFails(LogDetail.ALL, true)
-            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE1)
             .queryParam(EXCLUDE_EMPTY, false)
         .when()
             .get("/catalog/TIMESERIES")
@@ -167,7 +182,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     void test_aliases_returned(String format) {
         Integer numAliases = given().accept(format)
             .log().ifValidationFails(LogDetail.ALL, true)
-            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE1)
             .queryParam(EXCLUDE_EMPTY,false)
             .queryParam(INCLUDE_ALIASES,true)
         .when()
@@ -187,7 +202,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     void test_alias_is_correct(String format) throws JsonProcessingException {
         Response response = given().accept(format)
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.OFFICE, OFFICE1)
                 .queryParam(EXCLUDE_EMPTY, false)
                 .queryParam(INCLUDE_ALIASES, true)
         .when()
@@ -225,7 +240,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     void test_queries_are_case_insensitive() {
         given()
             .accept("application/json;version=2")
-            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE1)
             .queryParam(EXCLUDE_EMPTY,false)
             .queryParam(LIKE,"alder spRINgs.*-CDA$")
         .when()
@@ -240,18 +255,27 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
-    void test_all_office_pagination_works(String format) {
+    @CsvSource({
+       // Formats.JSONV2 + ",TIMESERIES",
+        //Formats.DEFAULT + ",TIMESERIES",
+        Formats.JSONV2 + ",LOCATIONS" //,
+       // Formats.DEFAULT + ",LOCATIONS"
+    })
+    void test_all_office_pagination_works(String format, String endpoint) {
         assertTimeout(Duration.ofMinutes(5), () -> {
-            final int pageSize = 50;
+            final int pageSize = 10; // artificially low size to force pagination
+            final HashMap<String,Object> queryParams = new HashMap<>();
+            queryParams.put("page-size", pageSize);
+            if (endpoint.equals("TIMESERIES")) {
+                queryParams.put(EXCLUDE_EMPTY,false);
+            }
             Response initialResponse =
                 given()
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .accept(format)
-                    .queryParam("page-size",pageSize)
-                    .queryParam(EXCLUDE_EMPTY,false)
+                    .queryParams(queryParams)
                 .when()
-                    .get("/catalog/TIMESERIES")
+                    .get("/catalog/{data}", endpoint)
                 .then()
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .assertThat()
@@ -268,7 +292,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             int totalRetrieved = initialResponse.path("entries.size()");
 
             String lastRowPreviousPage = initialResponse.path("entries.last().name");
-
+            queryParams.remove("page-size");
             do {
                 Response pageN =
                     given()
@@ -277,7 +301,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                         .queryParam("page",nextPage)
                         .queryParam(EXCLUDE_EMPTY,false)
                     .when()
-                        .get("/catalog/TIMESERIES")
+                        .get("/catalog/{data}", endpoint)
                     .then()
                         .log().ifValidationFails(LogDetail.ALL, true)
                         .assertThat()
@@ -309,7 +333,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // filter by loc group and ts group should find the intersection
         given()
             .accept("application/json;version=2")
-            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE1)
             .queryParam(LOCATION_CATEGORY_LIKE, TEST_CATEGORY)
             .queryParam(LOCATION_GROUP_LIKE, N_TO_Z)
             .queryParam(TIMESERIES_CATEGORY_LIKE, TEST_CATEGORY)
@@ -339,7 +363,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // filter by just loc group
         given()
             .accept("application/json;version=2")
-            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE1)
             .queryParam(LOCATION_CATEGORY_LIKE, TEST_CATEGORY)
             .queryParam(LOCATION_GROUP_LIKE, A_TO_M)
             .queryParam(EXCLUDE_EMPTY,false)
@@ -362,7 +386,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // filter by just loc group
         given()
             .accept("application/json;version=2")
-            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE1)
             .queryParam(LOCATION_CATEGORY_LIKE, TEST_CATEGORY)
             .queryParam(LOCATION_GROUP_LIKE, N_TO_Z)
             .queryParam(EXCLUDE_EMPTY,false)
@@ -397,7 +421,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // we create Wet Meadows with a bounding office of SPK
         given()
             .accept("application/json;version=2")
-            .queryParam(BOUNDING_OFFICE_LIKE, OFFICE)
+            .queryParam(BOUNDING_OFFICE_LIKE, OFFICE1)
             .queryParam(LIKE, "^Wet Meadows.*")
             .queryParam(EXCLUDE_EMPTY,false)
         .when()
@@ -422,7 +446,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // First with just the regex.  This should match Flat Lake and Flat Project
         given()
             .accept("application/json;version=2")
-            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE1)
             .queryParam(LIKE, pattern)
         .when()
             .get("/catalog/LOCATIONS")
@@ -439,7 +463,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // Now add the LOCATION_KIND filter
         given()
             .accept("application/json;version=2")
-            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE1)
             .queryParam(LIKE, pattern)
             .queryParam(LOCATION_KIND_LIKE, "PROJECT")  // just Flat Project
         .when()
@@ -464,7 +488,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // Retrieve without aliases
         given()
             .accept("application/json;version=2")
-            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE1)
             .queryParam(LIKE, pattern)
             .queryParam(INCLUDE_ALIASES, false)
         .when()
@@ -483,7 +507,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // retrieve with aliases
         given()
             .accept("application/json;version=2")
-            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.OFFICE, OFFICE1)
             .queryParam(LIKE, pattern)
             .queryParam(INCLUDE_ALIASES, true)
         .when()
@@ -550,7 +574,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(OFFICE, officeId)
+            .queryParam(OFFICE1, officeId)
             .queryParam(LIKE, String.format("%s*", baseLocationName))
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
         .when()
@@ -571,7 +595,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(OFFICE, officeId)
+            .queryParam(OFFICE1, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
         .when()
@@ -591,7 +615,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(OFFICE, officeId)
+            .queryParam(OFFICE1, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "^(BASIN)$")
             .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
@@ -612,7 +636,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(OFFICE, officeId)
+            .queryParam(OFFICE1, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "^(STREAM)*$")
             .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
@@ -632,7 +656,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(OFFICE, officeId)
+            .queryParam(OFFICE1, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "NOT:^(STREAM)*$")
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
@@ -651,7 +675,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(OFFICE, officeId)
+            .queryParam(OFFICE1, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(LOCATION_KIND_LIKE, "NOT:^(STREAM)*$")
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
@@ -671,7 +695,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSON)
-            .queryParam(OFFICE, officeId)
+            .queryParam(OFFICE1, officeId)
             .queryParam(LIKE, stringToMatch)
             .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
             .queryParam(LOCATION_KIND_LIKE, "^(BASIN|STREAM)*$")
@@ -695,7 +719,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSON)
-                .queryParam(OFFICE, OFFICE)
+                .queryParam(OFFICE1, OFFICE1)
                 .queryParam(INCLUDE_EXTENTS, true)
             .when()
                 .get("/catalog/LOCATIONS")
@@ -720,7 +744,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSON)
-                .queryParam(OFFICE, OFFICE)
+                .queryParam(OFFICE1, OFFICE1)
                 .queryParam(INCLUDE_EXTENTS, true)
                 .queryParam(EXCLUDE_EMPTY, true)
             .when()
