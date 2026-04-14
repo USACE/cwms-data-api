@@ -32,7 +32,8 @@ RUN mkdir /download && \
     cd / && \
     rm -rf /usr/local/tomcat/webapps/* && \
     mkdir /usr/local/tomcat/webapps/ROOT && \
-    echo "<html><body>Nothing to see here</body></html>" > /usr/local/tomcat/webapps/ROOT/index.html && \
+    printf "<%% response.sendRedirect(\"/cwms-data/\"); %%>\n" > /usr/local/tomcat/webapps/ROOT/index.jsp && \
+    printf "User-agent: *\nAllow: /cwms-data/\nDisallow: /cwms-data/auth/\nDisallow: /cwms-data/catalog/\nDisallow: /cwms-data/timeseries/\nDisallow: /cwms-data/swagger-docs\nDisallow: /auth/\nSitemap: https://cwms-data.usace.army.mil/sitemap.xml\n" > /usr/local/tomcat/webapps/ROOT/robots.txt && \
     mkdir -p /usr/local/tomcat/conf/Catalina/localhost
 # Now replace the Tomcat logging with logback
 # NOTE: I have reviewed this jar in jd-gui and do not see anything malicious, packages are isolated to avoid issues
@@ -49,10 +50,12 @@ RUN cd /download && \
     rm -rf /download
 
 
+
 CMD ["/usr/local/tomcat/bin/catalina.sh","run"]
 
 FROM tomcat_base AS api
 
+COPY --from=builder /builddir/cda-gui/dist/sitemap.xml /usr/local/tomcat/webapps/ROOT/sitemap.xml
 COPY --from=builder /builddir/cwms-data-api/build/docker/cda/ /usr/local/tomcat
 COPY --from=builder /builddir/cwms-data-api/build/docker/context.xml /usr/local/tomcat/conf
 COPY --from=builder /builddir/cwms-data-api/build/docker/server.xml /usr/local/tomcat/conf
