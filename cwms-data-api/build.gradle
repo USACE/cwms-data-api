@@ -304,6 +304,35 @@ task integrationTests(type: Test) {
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
 }
 
+task timeseriesReadBenchmark(type: JavaExec) {
+    group "verification"
+    description = "Run the local time-series read benchmark harness"
+    dependsOn generateConfig
+    dependsOn war
+    dependsOn testClasses
+
+    workingDir = projectDir
+    classpath = sourceSets.test.runtimeClasspath
+    classpath += configurations.baseLibs
+    classpath += configurations.tomcatLibs
+
+    mainClass = "helpers.TimeSeriesReadBenchmark"
+
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("benchmark.") }
+
+    jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
+    jvmArgs += "-DwarContext=/cwms-data"
+    jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
+    jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
+    jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
+    jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
+    jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
+}
+
 task prepareDockerBuild(type: Copy, dependsOn: war) {
     doFirst {
         project.mkdir("$buildDir/docker")

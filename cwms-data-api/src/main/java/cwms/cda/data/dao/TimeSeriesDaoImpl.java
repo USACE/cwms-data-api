@@ -64,6 +64,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -920,6 +921,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 : Timestamp.from(requestParameters.getEndTime().toInstant());
 
         long offsetMinutes = resolveIntervalOffset(metadata, rawRows);
+        if (canGenerateExpectedTimesInJava(metadata)) {
+            return buildExpectedRegularTimesUtc(rangeStart, rangeEnd, metadata.getIntervalMinutes(), offsetMinutes);
+        }
+
         String intervalTimeZone = metadata.isLrts() ? metadata.getTimeZoneId() : UTC;
         DATE_RANGE_T dateRange = new DATE_RANGE_T(rangeStart, rangeEnd, UTC, "T", "T", null);
         DATE_TABLE_TYPE expectedTimeTable = CWMS_TS_PACKAGE.call_GET_REG_TS_TIMES_UTC_F(
@@ -949,6 +954,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
         if (rawRows.isEmpty()) {
             return 0L;
+        }
+
+        if (canGenerateExpectedTimesInJava(metadata)) {
+            long intervalMillis = TimeUnit.MINUTES.toMillis(metadata.getIntervalMinutes());
+            return TimeUnit.MILLISECONDS.toMinutes(Math.floorMod(rawRows.get(0).getDateTime().getTime(), intervalMillis));
         }
 
         String intervalTimeZone = metadata.isLrts() ? metadata.getTimeZoneId() : UTC;
@@ -1070,6 +1080,52 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private Timestamp normalizeOracleUtcTimestamp(Timestamp timestamp) {
         LocalDateTime utcWallTime = timestamp.toLocalDateTime();
         return Timestamp.from(utcWallTime.toInstant(ZoneOffset.UTC));
+    }
+
+    private boolean canGenerateExpectedTimesInJava(RequestedTimeSeriesMetadata metadata) {
+        if (metadata.isLrts() || metadata.getIntervalMinutes() <= 0L) {
+            return false;
+        }
+
+        String intervalPart = metadata.getIntervalPart();
+        if (intervalPart == null) {
+            return false;
+        }
+
+        String normalizedInterval = intervalPart.toLowerCase(Locale.ENGLISH);
+        return normalizedInterval.endsWith("minute")
+                || normalizedInterval.endsWith("minutes")
+                || normalizedInterval.endsWith("hour")
+                || normalizedInterval.endsWith("hours")
+                || normalizedInterval.endsWith("day")
+                || normalizedInterval.endsWith("days")
+                || normalizedInterval.endsWith("week")
+                || normalizedInterval.endsWith("weeks");
+    }
+
+    private List<Timestamp> buildExpectedRegularTimesUtc(Timestamp rangeStart,
+                                                         Timestamp rangeEnd,
+                                                         long intervalMinutes,
+                                                         long offsetMinutes) {
+        long intervalMillis = TimeUnit.MINUTES.toMillis(intervalMinutes);
+        long offsetMillis = TimeUnit.MINUTES.toMillis(Math.floorMod(offsetMinutes, intervalMinutes));
+        long startMillis = rangeStart.getTime();
+        long endMillis = rangeEnd.getTime();
+        long firstMillis = alignToInterval(startMillis, intervalMillis, offsetMillis);
+
+        List<Timestamp> expectedTimes = new ArrayList<>();
+        for (long millis = firstMillis; millis <= endMillis; millis += intervalMillis) {
+            expectedTimes.add(new Timestamp(millis));
+        }
+        return expectedTimes;
+    }
+
+    private long alignToInterval(long timestampMillis, long intervalMillis, long offsetMillis) {
+        long remainder = Math.floorMod(timestampMillis - offsetMillis, intervalMillis);
+        if (remainder == 0L) {
+            return timestampMillis;
+        }
+        return timestampMillis + (intervalMillis - remainder);
     }
 
     private void validateRequestedUnits(String sourceUnit, String requestedUnit) {

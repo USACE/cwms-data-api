@@ -17,6 +17,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -29,6 +30,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.IntStream;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.impl.DSL;
@@ -129,6 +131,9 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             row("2024-01-05T12:33:10Z", 40.0, 0, "2024-01-06T00:03:00Z", null)
         );
 
+        Instant dstStart = Instant.parse("2024-03-09T00:00:00Z");
+        List<SeedRow> dstRows = regularRows(dstStart, 5000, 1.0, Duration.ofDays(1));
+
         return Stream.of(
             new Scenario("dense-regular",
                 "ITPARREG",
@@ -207,6 +212,19 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
                 "UNVERSIONED",
                 "PT0S",
                 Integer.MIN_VALUE,
+                null),
+            new Scenario("dense-regular-dst-window",
+                "ITPARDST",
+                "ITPARDST.Stage.Inst.1Minute.0.BENCH",
+                "ft",
+                dstStart,
+                dstStart.plus(Duration.ofMinutes(4999)),
+                dstRows,
+                false,
+                false,
+                "UNVERSIONED",
+                "PT1M",
+                0L,
                 null)
         );
     }
@@ -219,6 +237,18 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             Instant.parse(dataEntryDate),
             versionDate
         );
+    }
+
+    private static List<SeedRow> regularRows(Instant start, int count, double firstValue, Duration entryDateOffset) {
+        return IntStream.range(0, count)
+            .mapToObj(index -> new SeedRow(
+                start.plusSeconds(index * 60L),
+                firstValue + index,
+                0,
+                start.plus(entryDateOffset).plusSeconds(index * 60L),
+                null
+            ))
+            .collect(Collectors.toList());
     }
 
     private static void assertRowsEqual(RetrievedRow expected, RetrievedRow actual, int index) {
@@ -405,6 +435,7 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
     }
 
     private static TimeSeriesResponse fetchCdaRows(Scenario scenario) throws Exception {
+        int pageSize = Math.max(1000, scenario.rows.size() * 2);
         RequestSpecification request = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -413,7 +444,7 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             .queryParam(Controllers.UNIT, scenario.units)
             .queryParam(Controllers.BEGIN, scenario.beginTime.toString())
             .queryParam(Controllers.END, scenario.endTime.toString())
-            .queryParam("page-size", 1000)
+            .queryParam("page-size", pageSize)
             .queryParam(Controllers.INCLUDE_ENTRY_DATE, scenario.includeEntryDate);
         if (scenario.versionDate != null) {
             request = request.queryParam(Controllers.VERSION_DATE, scenario.versionDate.toString());
