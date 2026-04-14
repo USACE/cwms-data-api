@@ -51,7 +51,9 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -786,6 +788,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                 valid.field("tsid", String.class).as("tsid"),
                                 valid.field("office_id", String.class).as("office_id"),
                                 valid.field("units", String.class).as("units"),
+                                AV_CWMS_TS_ID2.UNIT_ID.as("source_unit"),
                                 valid.field("interval", BigDecimal.class).as("interval"),
                                 valid.field("loc_part", String.class).as("loc_part"),
                                 valid.field("parm_part", String.class).as("parm_part"),
@@ -805,12 +808,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             Number offsetValue = tsMetadata.getValue(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET);
             BigDecimal tsCodeValue = tsMetadata.getValue("tscode", BigDecimal.class);
             long tsCodeLong = tsCodeValue.longValue();
+            String requestedUnit = tsMetadata.getValue("units", String.class);
+            String sourceUnit = tsMetadata.getValue("source_unit", String.class);
+            validateRequestedUnits(sourceUnit, requestedUnit);
             boolean isLrts = parseBool(CWMS_TS_PACKAGE.call_IS_LRTS__2(dsl.configuration(), tsCodeLong));
             return new RequestedTimeSeriesMetadata(
                     tsCodeLong,
                     tsMetadata.getValue("tsid", String.class),
                     tsMetadata.getValue("office_id", String.class),
-                    tsMetadata.getValue("units", String.class),
+                    requestedUnit,
                     intervalValue == null ? 0L : intervalValue.longValue(),
                     offsetValue == null ? UTC_OFFSET_IRREGULAR : offsetValue.longValue(),
                     tsMetadata.getValue(AV_CWMS_TS_ID2.TIME_ZONE_ID) == null
@@ -843,7 +849,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Condition baseCondition = view.ALIASED_ITEM.isNull()
                 .and(view.TS_CODE.eq(metadata.getTsCode()))
                 .and(view.OFFICE_ID.eq(metadata.getOfficeId()))
-                .and(view.UNIT_ID.eq(metadata.getUnits()))
+                .and(view.UNIT_ID.equalIgnoreCase(metadata.getUnits()))
                 .and(view.DATE_TIME.ge(beginTimestamp))
                 .and(view.DATE_TIME.le(endTimestamp))
                 .and(view.START_DATE.le(endTimestamp))
@@ -851,13 +857,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         SelectConditionStep<Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
         if (versionDate != null) {
+            Field<Timestamp> versionTimestamp = CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                    DSL.val(versionDate.toInstant().toEpochMilli()));
             query = dsl.select(
                             view.DATE_TIME,
                             view.VALUE,
                             normalizedQuality,
                             view.DATA_ENTRY_DATE)
                     .from(view)
-                    .where(baseCondition.and(view.VERSION_DATE.eq(Timestamp.from(versionDate.toInstant()))));
+                    .where(baseCondition.and(view.VERSION_DATE.eq(versionTimestamp)));
         } else {
             Table<?> rankedRows = dsl.select(
                             view.DATE_TIME.as(DATE_TIME),
@@ -926,7 +934,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (expectedTimeTable != null) {
             expectedTimeTable.forEach(timestamp -> {
                 if (timestamp != null) {
-                    retVal.add(timestamp);
+                    retVal.add(normalizeOracleUtcTimestamp(timestamp));
                 }
             });
         }
@@ -944,13 +952,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         String intervalTimeZone = metadata.isLrts() ? metadata.getTimeZoneId() : UTC;
-        Timestamp topOfInterval = CWMS_TS_PACKAGE.call_TOP_OF_INTERVAL_UTC(
+        Timestamp topOfInterval = normalizeOracleUtcTimestamp(CWMS_TS_PACKAGE.call_TOP_OF_INTERVAL_UTC(
                 dsl.configuration(),
                 rawRows.get(0).getDateTime(),
                 metadata.getIntervalPart(),
                 intervalTimeZone,
                 "F"
-        );
+        ));
         return (rawRows.get(0).getDateTime().getTime() - topOfInterval.getTime()) / TimeUnit.MINUTES.toMillis(1);
     }
 
@@ -975,7 +983,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             } else if (expectedTime == null) {
                 rawIndex++;
             } else {
-                int compare = expectedTime.compareTo(rawTime);
+                int compare = compareTimestampOrder(expectedTime, rawTime);
                 if (compare < 0) {
                     expectedIndex++;
                 } else if (compare > 0) {
@@ -1017,7 +1025,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 candidateRow = rawRow;
                 rawIndex++;
             } else {
-                int compare = expectedTime.compareTo(rawRow.getDateTime());
+                int compare = compareTimestampOrder(expectedTime, rawRow.getDateTime());
                 if (compare < 0) {
                     candidateTime = expectedTime;
                     syntheticRow = true;
@@ -1034,7 +1042,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 }
             }
 
-            if (tsCursor != null && candidateTime.before(tsCursor)) {
+            if (tsCursor != null && compareTimestampOrder(candidateTime, tsCursor) < 0) {
                 continue;
             }
 
@@ -1053,6 +1061,26 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
             collected++;
         }
+    }
+
+    private int compareTimestampOrder(Timestamp left, Timestamp right) {
+        return Long.compare(left.getTime(), right.getTime());
+    }
+
+    private Timestamp normalizeOracleUtcTimestamp(Timestamp timestamp) {
+        LocalDateTime utcWallTime = timestamp.toLocalDateTime();
+        return Timestamp.from(utcWallTime.toInstant(ZoneOffset.UTC));
+    }
+
+    private void validateRequestedUnits(String sourceUnit, String requestedUnit) {
+        if (sourceUnit == null || requestedUnit == null || sourceUnit.equalsIgnoreCase(requestedUnit)) {
+            return;
+        }
+        dsl.select(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(
+                        DSL.val(0.0d),
+                        DSL.val(sourceUnit),
+                        DSL.val(requestedUnit)))
+                .fetchOne(0, Double.class);
     }
 
     private static final class RequestedTimeSeriesMetadata {
