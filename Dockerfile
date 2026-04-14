@@ -33,7 +33,7 @@ RUN mkdir /download && \
     rm -rf /usr/local/tomcat/webapps/* && \
     mkdir /usr/local/tomcat/webapps/ROOT && \
     echo "<html><body>Nothing to see here</body></html>" > /usr/local/tomcat/webapps/ROOT/index.html && \
-    mkdir -p /usr/local/tomecat/conf/Catalina/localhost
+    mkdir -p /usr/local/tomcat/conf/Catalina/localhost
 # Now replace the Tomcat logging with logback
 # NOTE: I have reviewed this jar in jd-gui and do not see anything malicious, packages are isolated to avoid issues
 # with other code.
