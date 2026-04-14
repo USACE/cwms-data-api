@@ -15,7 +15,17 @@
         <encoder class="JsonEncoder"/>
         <append>false</append>
         <immediateFlush>true</immediateFlush>
-        <file>build/cda.log</file>
+        <file>build/cda.jsonl</file>
+    </appender>
+
+    <appender name="FILE-PLAIN" class="FileAppender">
+        <encoder>
+        <!-- Format includes date, level, MDC userId, and message -->
+        <pattern>%d [%thread] %-5level - %X{traceId:-none} - %logger - %msg %ex %n</pattern>
+    </encoder>
+        <append>false</append>
+        <immediateFlush>true</immediateFlush>
+        <file>build/cda-plain.log</file>
     </appender>
 
     <logger name="cwms.cda" level="${LOG_LEVEL}"/>
@@ -25,5 +35,6 @@
     <root level="INFO">
         <appender-ref ref="STDERR"/>
         <appender-ref ref="FILE"/>
+        <appender-ref ref="FILE-PLAIN"/>
     </root>
 </configuration>
