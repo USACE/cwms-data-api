@@ -1040,9 +1040,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             if (syntheticRow) {
                 if (includeEntryDate) {
-                    timeseries.addValue(candidateTime, null, 5, null);
+                    timeseries.addValue(candidateTime, null, 0, null);
                 } else {
-                    timeseries.addValue(candidateTime, null, 5);
+                    timeseries.addValue(candidateTime, null, 0);
                 }
             } else if (includeEntryDate) {
                 timeseries.addValue(candidateRow.getDateTime(), candidateRow.getValue(),
