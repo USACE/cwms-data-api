@@ -7,8 +7,10 @@ task buildGui(type:NpxTask) {
     dependsOn npmInstall
     command = "npm"
     args = ["run", "build", "--prod"]
-    inputs.files('package.json', 'package-lock.json', 'vite.config.js')
+    inputs.files('package.json', 'package-lock.json', 'vite.config.js', 'index.html')
     inputs.dir('src')
+    inputs.dir('public')
+    inputs.dir('scripts')
     inputs.dir(fileTree("node_modules").exclude(".cache"))
     outputs.dir('dist')
 }
