@@ -93,7 +93,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
 
         loadSqlDataFromResource("cwms/cda/data/sql/location_catalog_setup.sql");
 
-        InputStream resource = CatalogController.class.getResourceAsStream("cwms/cda/api/template_num_ts_create.json");
+        InputStream resource = DataApiTestIT.class.getClassLoader().getResourceAsStream("cwms/cda/api/template_num_ts_create.json");
         assertNotNull(resource);
         String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
         assertNotNull(tsData);
