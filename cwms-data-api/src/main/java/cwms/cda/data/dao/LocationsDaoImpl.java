@@ -241,7 +241,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
             Location retVal;
             if (includeAliases) {
-                List<Record> locs = dslContext.select(asterisk())
+                List<Record> locs = dslContext.select(AV_LOC2.AV_LOC2.asterisk(),
+                                AV_LOC_ALIAS.CATEGORY_ID, AV_LOC_ALIAS.GROUP_ID, AV_LOC_ALIAS.ALIAS_ID)
                         .from(AV_LOC2.AV_LOC2)
                         .leftJoin(AV_LOC_ALIAS)
                         .on(AV_LOC2.AV_LOC2.BASE_LOCATION_ID.eq(AV_LOC_ALIAS.BASE_LOCATION_ID).and(
