@@ -199,7 +199,6 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .accept(format)
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(EXCLUDE_EMPTY, true)
             .queryParam(INCLUDE_VERSIONS, false)
         .when()
             .get("/catalog/TIMESERIES")
