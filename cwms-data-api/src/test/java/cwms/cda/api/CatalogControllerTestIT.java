@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import static cwms.cda.api.Controllers.*;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.basin.Basin;
 import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
@@ -13,6 +14,10 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -30,6 +35,7 @@ import java.time.Duration;
 
 import java.time.ZoneId;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -51,6 +57,7 @@ import static org.hamcrest.Matchers.*;
 public class CatalogControllerTestIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
+    private static final TestAccounts.KeyUser USER = TestAccounts.KeyUser.SPK_NORMAL;
 
     //// These have to match the groups in ts_catalog_setup.sql
     public static final String A_TO_M = "A to M";
@@ -85,6 +92,29 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         loadSqlDataFromResource("cwms/cda/data/sql/ts_catalog_setup.sql");
 
         loadSqlDataFromResource("cwms/cda/data/sql/location_catalog_setup.sql");
+
+        InputStream resource = DataApiTestIT.class.getClassLoader().getResourceAsStream("cwms/cda/api/template_num_ts_create.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+        tsData = tsData.replace("{OFFICE}", OFFICE)
+            .replace("{TSID}", "Wet Meadows.Depth-SWE.Inst.15Minutes.0.four")
+            .replace("{UNITS}", "ft")
+            .replace("{VERSION_DATE}", Instant.now().truncatedTo(ChronoUnit.MINUTES).toString());
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", USER.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
     }
 
     private static void createProject(String id, String office) throws SQLException {
@@ -160,6 +190,25 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .jsonPath()
             .getObject("entries.aliases.aliases.size()", Integer.class);
         assertEquals(0, (int) numAliases, "Expected no aliases, but found some.");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_no_versions_returned(String format) {
+        given()
+            .accept(format)
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(INCLUDE_VERSIONS, false)
+        .when()
+            .get("/catalog/TIMESERIES")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .body("entries.findAll { it.versioned == true }.size()", greaterThanOrEqualTo(1))
+            .body("entries.extents.flatten()", everyItem(not(hasKey("version-time"))))
+            ;
     }
 
     @ParameterizedTest
