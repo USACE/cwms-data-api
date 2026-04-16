@@ -57,7 +57,7 @@ import static org.hamcrest.Matchers.*;
 public class CatalogControllerTestIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
-    private static TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+    private static final TestAccounts.KeyUser USER = TestAccounts.KeyUser.SPK_NORMAL;
 
     //// These have to match the groups in ts_catalog_setup.sql
     public static final String A_TO_M = "A to M";
@@ -106,7 +106,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .contentType(Formats.JSONV2)
             .body(tsData)
-            .header("Authorization", user.toHeaderValue())
+            .header("Authorization", USER.toHeaderValue())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
