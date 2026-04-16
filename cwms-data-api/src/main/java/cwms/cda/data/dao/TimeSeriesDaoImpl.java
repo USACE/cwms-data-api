@@ -24,7 +24,6 @@ import static org.jooq.impl.DSL.selectDistinct;
 import org.jooq.SelectOnConditionStep;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import static org.jooq.impl.DSL.table;
-import static usace.cwms.db.jooq.codegen.tables.AT_CWMS_TS_SPEC.AT_CWMS_TS_SPEC;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
 
@@ -696,21 +695,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         SelectOnConditionStep<?> tmpQuery = dsl.with(limiter)
                                         .select(pageEntryFields)
                                         .from(limiter)
-                                        .join(table).on(limiterCode.eq(cwmsTsIdFields.getTsCode()))
-                                        .leftJoin(AT_CWMS_TS_SPEC).on(limiterCode.eq(AT_CWMS_TS_SPEC.TS_CODE));
+                                        .join(table).on(limiterCode.eq(cwmsTsIdFields.getTsCode()));
 
         if (params.isIncludeExtents()) {
 
             tmpQuery = tmpQuery.leftOuterJoin(AV_TS_EXTENTS_UTC)
                                        .on(limiterCode
                                          .eq(AV_TS_EXTENTS_UTC.TS_CODE.coerce(limiterCode)));
+            if(!params.isIncludeVersions()) {
+                tmpQuery = tmpQuery.and(AV_TS_EXTENTS_UTC.VERSION_TIME.isNull());
+            }
         }
-        Condition versionsCondition = noCondition();
-        if (params.isIncludeExtents() && !params.isIncludeVersions()) {
-            versionsCondition = versionsCondition.and(AV_TS_EXTENTS_UTC.VERSION_TIME.isNull());
-        }
-        final SelectSeekStep2<?, String, String> overallQuery = tmpQuery.where(versionsCondition)
-                .orderBy(cwmsTsIdFields.getDbOfficeId(),
+        final SelectSeekStep2<?, String, String> overallQuery = tmpQuery.orderBy(cwmsTsIdFields.getDbOfficeId(),
                         cwmsTsIdFields.getCwmsTsId());
         logger.atFine().log("%s", lazy(() -> overallQuery.getSQL(ParamType.INLINED)));
         Result<?> result = overallQuery.fetch();
@@ -730,7 +726,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         .units(row.get(cwmsTsIdFields.getUnitId()))
                         .interval(row.get(cwmsTsIdFields.getIntervalId()))
                         .intervalOffset(row.get(cwmsTsIdFields.getIntervalUtcOffset()))
-                        .versioned(parseBool(row.get(AT_CWMS_TS_SPEC.VERSION_FLAG)));
+                        .versioned(parseBool(row.get(cwmsTsIdFields.getVerionFlag())));
 
                 builder.timeZone(row.get("TIME_ZONE_ID", String.class));
 
@@ -858,7 +854,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         retVal.add(cwmsTsIdFields.getIntervalId());
         retVal.add(cwmsTsIdFields.getIntervalUtcOffset());
         retVal.add(cwmsTsIdFields.getTimeZoneId());
-        retVal.add(AT_CWMS_TS_SPEC.VERSION_FLAG);
+        retVal.add(cwmsTsIdFields.getVerionFlag());
         if(cwmsTsIdFields.includesAliases()) {
             retVal.add(AV_CWMS_TS_ID2.ALIASED_ITEM);
             retVal.add(AV_CWMS_TS_ID2.TS_CODE);
@@ -1736,6 +1732,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Field<String> getIntervalId();
         Field<BigDecimal> getIntervalUtcOffset();
         Field<String> getTimeZoneId();
+        Field<String> getVerionFlag();
         boolean includesAliases();
     }
 
@@ -1784,6 +1781,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         public boolean includesAliases() {
             return false;
         }
+
+        @Override
+        public Field<String> getVerionFlag() {
+            return AV_CWMS_TS_ID.AV_CWMS_TS_ID.VERSION_FLAG;
+        }
     }
 
     private static class CwmsTsId2FieldMapping implements FieldMapping {
@@ -1830,6 +1832,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         @Override
         public boolean includesAliases() {
             return true;
+        }
+
+        @Override
+        public Field<String> getVerionFlag() {
+            return AV_CWMS_TS_ID2.VERSION_FLAG;
         }
     }
 
