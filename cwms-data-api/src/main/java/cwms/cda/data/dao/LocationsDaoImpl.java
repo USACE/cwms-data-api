@@ -241,19 +241,56 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
             Location retVal;
             if (includeAliases) {
-                List<Record> locs = dslContext.select(asterisk())
-                        .from(AV_LOC2.AV_LOC2)
-                        .leftJoin(AV_LOC_ALIAS)
-                        .on(AV_LOC2.AV_LOC2.BASE_LOCATION_ID.eq(AV_LOC_ALIAS.BASE_LOCATION_ID).and(
-                                AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_LOC_ALIAS.LOCATION_CODE.cast(Long.class))))
-                        .where(AV_LOC2.AV_LOC2.DB_OFFICE_ID.eq(officeId.toUpperCase())
-                                .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
-                                        .and(AV_LOC2.AV_LOC2.LOCATION_ID.equalIgnoreCase(locationName))))
-                        .fetch();
-                if (locs.isEmpty()) {
-                    throw new NotFoundException("Location not found for office:" + officeId + " and unit "
-                            + "system:" + unitSystem + " and id:" + locationName);
-                }
+                List<Record> locs = dslContext.select(
+                                    AV_LOC2.AV_LOC2.LOCATION_CODE,
+                                    AV_LOC2.AV_LOC2.BASE_LOCATION_CODE,
+                                    AV_LOC2.AV_LOC2.DB_OFFICE_ID,
+                                    AV_LOC2.AV_LOC2.BASE_LOCATION_ID,
+                                    AV_LOC2.AV_LOC2.SUB_LOCATION_ID,
+                                    AV_LOC2.AV_LOC2.LOCATION_ID,
+                                    AV_LOC2.AV_LOC2.LOCATION_TYPE,
+                                    AV_LOC2.AV_LOC2.UNIT_SYSTEM,
+                                    AV_LOC2.AV_LOC2.ELEVATION,
+                                    AV_LOC2.AV_LOC2.UNIT_ID,
+                                    AV_LOC2.AV_LOC2.VERTICAL_DATUM,
+                                    AV_LOC2.AV_LOC2.LONGITUDE,
+                                    AV_LOC2.AV_LOC2.LATITUDE,
+                                    AV_LOC2.AV_LOC2.HORIZONTAL_DATUM,
+                                    AV_LOC2.AV_LOC2.TIME_ZONE_NAME,
+                                    AV_LOC2.AV_LOC2.COUNTY_NAME,
+                                    AV_LOC2.AV_LOC2.STATE_INITIAL,
+                                    AV_LOC2.AV_LOC2.PUBLIC_NAME,
+                                    AV_LOC2.AV_LOC2.LONG_NAME,
+                                    AV_LOC2.AV_LOC2.DESCRIPTION,
+                                    AV_LOC2.AV_LOC2.BASE_LOC_ACTIVE_FLAG,
+                                    AV_LOC2.AV_LOC2.LOC_ACTIVE_FLAG,
+                                    AV_LOC2.AV_LOC2.LOCATION_KIND_ID,
+                                    AV_LOC2.AV_LOC2.MAP_LABEL,
+                                    AV_LOC2.AV_LOC2.PUBLISHED_LATITUDE,
+                                    AV_LOC2.AV_LOC2.PUBLISHED_LONGITUDE,
+                                    AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID,
+                                    AV_LOC2.AV_LOC2.NATION_ID,
+                                    AV_LOC2.AV_LOC2.NEAREST_CITY,
+                                    AV_LOC2.AV_LOC2.ACTIVE_FLAG,
+                                    AV_LOC2.AV_LOC2.ALIASED_ITEM,
+                                    AV_LOC2.AV_LOC2.LOC_ALIAS_CATEGORY,
+                                    AV_LOC2.AV_LOC2.LOC_ALIAS_GROUP,
+                                    AV_LOC2.AV_LOC2.DB_OFFICE_CODE,
+                                    AV_LOC_ALIAS.CATEGORY_ID,
+                                    AV_LOC_ALIAS.GROUP_ID,
+                                    AV_LOC_ALIAS.ALIAS_ID)
+                            .from(AV_LOC2.AV_LOC2)
+                            .leftJoin(AV_LOC_ALIAS)
+                            .on(AV_LOC2.AV_LOC2.BASE_LOCATION_ID.eq(AV_LOC_ALIAS.BASE_LOCATION_ID).and(
+                                    AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_LOC_ALIAS.LOCATION_CODE.cast(Long.class))))
+                            .where(AV_LOC2.AV_LOC2.DB_OFFICE_ID.eq(officeId.toUpperCase())
+                                    .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
+                                            .and(AV_LOC2.AV_LOC2.LOCATION_ID.equalIgnoreCase(locationName))))
+                            .fetch();
+                    if (locs.isEmpty()) {
+                        throw new NotFoundException("Location not found for office:" + officeId + " and unit "
+                                + "system:" + unitSystem + " and id:" + locationName);
+                    }
                 retVal = buildLocation(null, locs, true);
             } else {
                 Record loc = dslContext.select(AV_LOC.asterisk())

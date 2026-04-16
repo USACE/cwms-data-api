@@ -34,6 +34,8 @@ public class TimeseriesCatalogEntry extends CatalogEntry {
     @JacksonXmlProperty(localName = "alias")
     private Collection<TimeSeriesAlias> aliases;
 
+    private boolean versioned = false;
+
     public String getName() {
         return this.name;
     }
@@ -60,6 +62,10 @@ public class TimeseriesCatalogEntry extends CatalogEntry {
         return aliases;
     }
 
+    public boolean isVersioned() {
+        return versioned;
+    }
+
     private TimeseriesCatalogEntry() {
         super(null);
     }
@@ -73,6 +79,7 @@ public class TimeseriesCatalogEntry extends CatalogEntry {
         this.timeZone = builder.timeZone;
         this.extents = builder.extents;
         this.aliases = builder.aliases;
+        this.versioned = builder.versioned;
     }
 
     public String getUnits() {
@@ -100,6 +107,7 @@ public class TimeseriesCatalogEntry extends CatalogEntry {
         private ZonedDateTime latestTime;
         private List<TimeSeriesExtents> extents = null;
         private Collection<TimeSeriesAlias> aliases = null;
+        private boolean versioned = false;
 
         public Builder officeId(final String office) {
             this.office = office;
@@ -159,6 +167,11 @@ public class TimeseriesCatalogEntry extends CatalogEntry {
             } else {
                 this.aliases = new ArrayList<>(aliases);
             }
+            return this;
+        }
+
+        public Builder versioned(boolean versioned) {
+            this.versioned = versioned;
             return this;
         }
 

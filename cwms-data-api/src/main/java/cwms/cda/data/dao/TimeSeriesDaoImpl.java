@@ -21,6 +21,7 @@ import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
 
+import org.jooq.SelectOnConditionStep;
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
@@ -676,6 +677,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .withTsGroupLike(catPage.getTsGroupLike())
                     .withBoundingOfficeLike(catPage.getBoundingOfficeLike())
                     .withIncludeExtents(catPage.isIncludeExtents())
+                    .withIncludeExtents(catPage.isIncludeVersions())
                     .withExcludeEmpty(catPage.isExcludeEmpty())
                     .build();
         }
@@ -690,7 +692,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<Condition> pagingConditions = buildPagingConditions(cwmsTsIdFields, cursorOffice, cursorTsId);
         CommonTableExpression<?> limiter = buildWithClause(cwmsTsIdFields, params, whereConditions, pagingConditions, pageSize, false);
         Field<BigDecimal> limiterCode = limiter.field(cwmsTsIdFields.getTsCode());
-        SelectJoinStep<?> tmpQuery = dsl.with(limiter)
+        SelectOnConditionStep<?> tmpQuery = dsl.with(limiter)
                                         .select(pageEntryFields)
                                         .from(limiter)
                                         .join(table).on(limiterCode.eq(cwmsTsIdFields.getTsCode()));
@@ -700,9 +702,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             tmpQuery = tmpQuery.leftOuterJoin(AV_TS_EXTENTS_UTC)
                                        .on(limiterCode
                                          .eq(AV_TS_EXTENTS_UTC.TS_CODE.coerce(limiterCode)));
+            if(!params.isIncludeVersions()) {
+                tmpQuery = tmpQuery.and(AV_TS_EXTENTS_UTC.VERSION_TIME.isNull());
+            }
         }
-        final SelectSeekStep2<?, String, String> overallQuery = tmpQuery
-                .orderBy(cwmsTsIdFields.getDbOfficeId(),
+        final SelectSeekStep2<?, String, String> overallQuery = tmpQuery.orderBy(cwmsTsIdFields.getDbOfficeId(),
                         cwmsTsIdFields.getCwmsTsId());
         logger.atFine().log("%s", lazy(() -> overallQuery.getSQL(ParamType.INLINED)));
         Result<?> result = overallQuery.fetch();
@@ -721,7 +725,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         .cwmsTsId(row.get(cwmsTsIdFields.getCwmsTsId()))
                         .units(row.get(cwmsTsIdFields.getUnitId()))
                         .interval(row.get(cwmsTsIdFields.getIntervalId()))
-                        .intervalOffset(row.get(cwmsTsIdFields.getIntervalUtcOffset()));
+                        .intervalOffset(row.get(cwmsTsIdFields.getIntervalUtcOffset()))
+                        .versioned(parseBool(row.get(cwmsTsIdFields.getVerionFlag())));
 
                 builder.timeZone(row.get("TIME_ZONE_ID", String.class));
 
@@ -849,6 +854,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         retVal.add(cwmsTsIdFields.getIntervalId());
         retVal.add(cwmsTsIdFields.getIntervalUtcOffset());
         retVal.add(cwmsTsIdFields.getTimeZoneId());
+        retVal.add(cwmsTsIdFields.getVerionFlag());
         if(cwmsTsIdFields.includesAliases()) {
             retVal.add(AV_CWMS_TS_ID2.ALIASED_ITEM);
             retVal.add(AV_CWMS_TS_ID2.TS_CODE);
@@ -985,7 +991,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 AV_TS_EXTENTS_UTC.LAST_UPDATE.isNotNull())
             );
         }
-
         return retval;
     }
 
@@ -1727,6 +1732,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Field<String> getIntervalId();
         Field<BigDecimal> getIntervalUtcOffset();
         Field<String> getTimeZoneId();
+        Field<String> getVerionFlag();
         boolean includesAliases();
     }
 
@@ -1775,6 +1781,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         public boolean includesAliases() {
             return false;
         }
+
+        @Override
+        public Field<String> getVerionFlag() {
+            return AV_CWMS_TS_ID.AV_CWMS_TS_ID.VERSION_FLAG;
+        }
     }
 
     private static class CwmsTsId2FieldMapping implements FieldMapping {
@@ -1821,6 +1832,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         @Override
         public boolean includesAliases() {
             return true;
+        }
+
+        @Override
+        public Field<String> getVerionFlag() {
+            return AV_CWMS_TS_ID2.VERSION_FLAG;
         }
     }
 
