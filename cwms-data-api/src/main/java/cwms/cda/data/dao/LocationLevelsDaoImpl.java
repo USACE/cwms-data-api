@@ -181,34 +181,42 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
 
         if (supportsNewView()) {
-            Condition whereCondition = ref.LOCATION_LEVEL_ID.isNotNull();
+            Condition whereCondition = field("LOCATION_LEVEL_ID", String.class).isNotNull();
 
             if (office != null && !office.isEmpty()) {
-                whereCondition = whereCondition.and(ref.OFFICE_ID.eq(office.toUpperCase()));
+                whereCondition = whereCondition.and(field("OFFICE_ID", String.class).eq(office.toUpperCase()));
             }
 
             if (levelIdMask != null && !levelIdMask.isEmpty()) {
                 whereCondition = whereCondition.and(
-                    JooqDao.caseInsensitiveLikeRegex(ref.LOCATION_LEVEL_ID, levelIdMask));
+                    JooqDao.caseInsensitiveLikeRegex(field("LOCATION_LEVEL_ID", String.class), levelIdMask));
             }
 
             if (beginZdt != null) {
                 whereCondition =
-                    whereCondition.and(ref.LOCATION_LEVEL_DATE.greaterOrEqual(Timestamp.from(beginZdt.toInstant())));
+                    whereCondition.and(field("LOCATION_LEVEL_DATE", Timestamp.class).greaterOrEqual(Timestamp.from(beginZdt.toInstant())));
             }
             if (endZdt != null) {
                 whereCondition =
-                    whereCondition.and(ref.LOCATION_LEVEL_DATE.lessThan(Timestamp.from(endZdt.toInstant())));
+                    whereCondition.and(field("LOCATION_LEVEL_DATE", Timestamp.class).lessThan(Timestamp.from(endZdt.toInstant())));
             }
 
             Map<LevelLookup, LocationLevel.Builder> builderMap = new LinkedHashMap<>();
 
             SelectLimitPercentAfterOffsetStep<Record> query;
 
+            var pagedRef = dsl.select(ref.LOCATION_LEVEL_CODE,
+                    ref.LOCATION_LEVEL_ID, ref.ATTRIBUTE_ID, ref.OFFICE_ID, ref.LOCATION_LEVEL_DATE, ref.LOCATION_ID,
+                    ref.PARAMETER_ID, ref.PARAMETER_TYPE_ID, ref.DURATION_ID, ref.SPECIFIED_LEVEL_ID, ref.EXPIRATION_DATE,
+                    ref.LOCATION_LEVEL_COMMENT)
+                .from(ref)
+                .where(ref.OFFICE_ID.eq(office))
+                .orderBy(ref.LOCATION_ID, ref.PARAMETER_ID, ref.PARAMETER_TYPE_ID, ref.DURATION_ID, ref.SPECIFIED_LEVEL_ID, ref.LOCATION_LEVEL_DATE);
+
             if (includeAliases) {
                 query = dsl.select(asterisk()).from(dsl.select(LOCATION_ALIAS_FIELDS_NEW_VIEW)
-                        .from(ref)
-                        .join(values)
+                        .from(pagedRef)
+                        .leftJoin(values)
                         .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
                         .leftJoin(aliasView)
                         .on(ref.OFFICE_ID.eq(aliasView.DB_OFFICE_ID))
@@ -221,21 +229,24 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     .offset(offset)
                     .limit(pageSize);
             } else {
-                query = dsl.select(LOCATION_LEVEL_FIELDS_NEW_VIEW)
-                    .from(ref)
-                    .join(values)
-                    .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
+                List<Field<?>> selectFields = new ArrayList<>();
+                selectFields.addAll(LOCATION_LEVEL_FIELDS_NEW_VIEW);
+                selectFields.addAll(List.of(pagedRef.fields()));
+                query = dsl.select(selectFields)
+                    .from(pagedRef)
+                    .leftJoin(values)
+                    .on(pagedRef.field("LOCATION_LEVEL_CODE", Long.class).eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
                     .where(whereCondition)
-                    .orderBy(DSL.upper(ref.OFFICE_ID), DSL.upper(ref.LOCATION_LEVEL_ID),
-                        ref.LOCATION_LEVEL_DATE, values.CALENDAR_OFFSET, values.TIME_OFFSET
+                    .orderBy(DSL.upper(pagedRef.field("OFFICE_ID", String.class)),
+                        DSL.upper(pagedRef.field("LOCATION_LEVEL_ID", String.class)),
+                        pagedRef.field("LOCATION_LEVEL_DATE"), values.CALENDAR_OFFSET, values.TIME_OFFSET
                     )
                     .offset(offset)
                     .limit(pageSize);
             }
 
             if (!totalSet) {
-                total = dsl.fetchCount(dsl.select(ref.OFFICE_ID, ref.LOCATION_LEVEL_ID, ref.LOCATION_LEVEL_DATE,
-                        values.CALENDAR_OFFSET, values.TIME_OFFSET)
+                total = dsl.fetchCount(dsl.select(ref.OFFICE_ID, ref.LOCATION_LEVEL_ID, ref.LOCATION_LEVEL_DATE)
                     .from(ref)
                     .where(whereCondition)
                 );
@@ -1328,28 +1339,18 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     private static void buildLocationLevelSelectFieldsNewView() {
-        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.OFFICE_ID);
-        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.LOCATION_LEVEL_ID);
-        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.ATTRIBUTE_ID);
-        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.LOCATION_LEVEL_DATE);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.CONNECTIONS);
-        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.DURATION_ID);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.ATTRIBUTE_UNIT_EN);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.ATTRIBUTE_VALUE_EN);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.ATTRIBUTE_UNIT_SI);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.ATTRIBUTE_VALUE_SI);
-        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.OFFICE_ID);
-        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.LOCATION_LEVEL_ID);
-        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.EXPIRATION_DATE);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.TSID);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.CONSTANT_LEVEL_EN);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.CONSTANT_LEVEL_SI);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.INTERVAL_ORIGIN);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.INTERPOLATE);
-        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.ATTRIBUTE_ID);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.LEVEL_UNIT_EN);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.LEVEL_UNIT_SI);
-        LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.LOCATION_LEVEL_COMMENT);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.SEASONAL_VALUE_EN);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.SEASONAL_VALUE_SI);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.CALENDAR_INTERVAL);
