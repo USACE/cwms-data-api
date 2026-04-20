@@ -2,7 +2,6 @@
 jaxb-api = "2.3.1"
 jaxb-impl = "3.0.2"
 jooq-codegen = "26.02.17-RC01-oracle19c"
-jooq-codegen-shadow = "24.12.04-2025.01.21"
 jooq = "3.18.7-jdk11"
 slf4j = "2.0.9"
 hec-monolith = "3.3.20"
@@ -53,7 +52,8 @@ jaxb-api = { module = "javax.xml.bind:jaxb-api", version.ref = "jaxb-api" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-impl" }
 jaxb-core = { module = "com.sun.xml.bind:jaxb-core", version.ref = "jaxb-impl" }
 cwms-db-jooq-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version.ref = "jooq-codegen" }
-cwms-db-jooq-codegen-shadow = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version.ref = "jooq-codegen-shadow" }
+cwms-db-jooq-codegen-legacy = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version = "24.12.04-2025.01.21" }
+cwms-db-jooq-codegen-latest = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version = "latest-dev_sha256_f1-oracle19c" }
 jooq = { module = "org.jooq.pro-java-11:jooq", version.ref ="jooq" }
 slf4j = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
 monolith = { module = "mil.army.usace.hec:hec-monolith", version.ref = "hec-monolith" }
