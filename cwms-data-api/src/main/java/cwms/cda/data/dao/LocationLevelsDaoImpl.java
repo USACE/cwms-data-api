@@ -206,7 +206,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             SelectLimitPercentAfterOffsetStep<Record> query;
 
             if (includeAliases) {
-                query = dsl.select(asterisk()).from(dsl.selectDistinct(LOCATION_ALIAS_FIELDS_NEW_VIEW)
+                query = dsl.select(asterisk()).from(dsl.select(LOCATION_ALIAS_FIELDS_NEW_VIEW)
                         .from(ref)
                         .join(values)
                         .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
@@ -221,7 +221,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     .offset(offset)
                     .limit(pageSize);
             } else {
-                query = dsl.selectDistinct(LOCATION_LEVEL_FIELDS_NEW_VIEW)
+                query = dsl.select(LOCATION_LEVEL_FIELDS_NEW_VIEW)
                     .from(ref)
                     .join(values)
                     .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
@@ -234,11 +234,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             }
 
             if (!totalSet) {
-                total = dsl.fetchCount(dsl.selectDistinct(ref.OFFICE_ID, ref.LOCATION_LEVEL_ID, ref.LOCATION_LEVEL_DATE,
+                total = dsl.fetchCount(dsl.select(ref.OFFICE_ID, ref.LOCATION_LEVEL_ID, ref.LOCATION_LEVEL_DATE,
                         values.CALENDAR_OFFSET, values.TIME_OFFSET)
                     .from(ref)
-                    .fullOuterJoin(values)
-                    .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
                     .where(whereCondition)
                 );
             }

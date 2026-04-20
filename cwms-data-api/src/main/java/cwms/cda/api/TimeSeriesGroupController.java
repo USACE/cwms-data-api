@@ -288,6 +288,15 @@ public class TimeSeriesGroupController implements CrudHandler {
                 timeSeriesGroupDao.unassignForOffice(group.getTimeSeriesCategory().getId(), group.getId(), group.getOfficeId(), office);
             }
             timeSeriesGroupDao.assignTs(group, office);
+            TimeSeriesGroup retrievedGroup = timeSeriesGroupDao.getTimeSeriesGroup(null, group.getOfficeId(),
+                null, null, oldGroupId);
+            if (!retrievedGroup.getDescription().equals(group.getDescription())) {
+                TimeSeriesGroup groupToStore =
+                    new TimeSeriesGroup(retrievedGroup.getTimeSeriesCategory(), retrievedGroup.getOfficeId(),
+                        retrievedGroup.getId(), group.getDescription(), retrievedGroup.getSharedAliasId(),
+                        retrievedGroup.getSharedRefTsId());
+                timeSeriesGroupDao.create(groupToStore, false, true);
+            }
             ctx.status(HttpServletResponse.SC_OK);
         }
     }
