@@ -92,6 +92,7 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.SelectLimitPercentAfterOffsetStep;
+import org.jooq.SelectSeekStep5;
 import org.jooq.Table;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
@@ -203,7 +204,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
             Map<LevelLookup, LocationLevel.Builder> builderMap = new LinkedHashMap<>();
 
-            SelectLimitPercentAfterOffsetStep<Record> query;
+            SelectSeekStep5 query;
 
             var pagedRef = dsl.select(ref.LOCATION_LEVEL_CODE,
                     ref.LOCATION_LEVEL_ID, ref.ATTRIBUTE_ID, ref.OFFICE_ID, ref.LOCATION_LEVEL_DATE, ref.LOCATION_ID,
@@ -211,7 +212,9 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     ref.LOCATION_LEVEL_COMMENT)
                 .from(ref)
                 .where(ref.OFFICE_ID.eq(office))
-                .orderBy(ref.LOCATION_ID, ref.PARAMETER_ID, ref.PARAMETER_TYPE_ID, ref.DURATION_ID, ref.SPECIFIED_LEVEL_ID, ref.LOCATION_LEVEL_DATE);
+                .orderBy(ref.LOCATION_ID, ref.PARAMETER_ID, ref.PARAMETER_TYPE_ID, ref.DURATION_ID, ref.SPECIFIED_LEVEL_ID, ref.LOCATION_LEVEL_DATE)
+                .offset(offset)
+                .limit(pageSize);
 
             if (includeAliases) {
                 query = dsl.select(asterisk()).from(dsl.select(LOCATION_ALIAS_FIELDS_NEW_VIEW)
@@ -225,9 +228,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                         .where(whereCondition))
                     .orderBy(field("OFFICE_ID"), field("LOCATION_LEVEL_ID"),
                         field("LOCATION_LEVEL_DATE"), field("CALENDAR_OFFSET"), field("TIME_OFFSET")
-                    )
-                    .offset(offset)
-                    .limit(pageSize);
+                    );
             } else {
                 List<Field<?>> selectFields = new ArrayList<>();
                 selectFields.addAll(LOCATION_LEVEL_FIELDS_NEW_VIEW);
@@ -240,9 +241,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     .orderBy(DSL.upper(pagedRef.field("OFFICE_ID", String.class)),
                         DSL.upper(pagedRef.field("LOCATION_LEVEL_ID", String.class)),
                         pagedRef.field("LOCATION_LEVEL_DATE"), values.CALENDAR_OFFSET, values.TIME_OFFSET
-                    )
-                    .offset(offset)
-                    .limit(pageSize);
+                    );
             }
 
             if (!totalSet) {
@@ -252,7 +251,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 );
             }
 
-            final SelectLimitPercentAfterOffsetStep<Record> queryFinal = query;
+            final SelectSeekStep5 queryFinal = query;
 
             logger.atFine().log("getLocationLevels query: %s", lazy(() -> queryFinal.getSQL(ParamType.INLINED)));
 
