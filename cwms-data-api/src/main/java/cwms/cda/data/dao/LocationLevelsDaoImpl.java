@@ -251,7 +251,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 );
             }
 
-            final SelectSeekStep5 queryFinal = query;
+            final var queryFinal = query;
 
             logger.atFine().log("getLocationLevels query: %s", lazy(() -> queryFinal.getSQL(ParamType.INLINED)));
 
