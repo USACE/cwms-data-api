@@ -66,7 +66,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -113,6 +119,17 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public static final String MAX_DATE_TIME = "max_date_time";
     public static final String DEFAULT_UNITS = "def_units";
     public static final String PROP_BASE = "cwms.cda.data.dao.ts";
+    private static final long TOTAL_QUERY_TIMEOUT_SECONDS = 30L;
+    private static final ExecutorService TOTAL_QUERY_EXECUTOR = Executors.newCachedThreadPool(
+            new ThreadFactory() {
+                @Override
+                public Thread newThread(@NotNull Runnable r) {
+                    Thread thread = new Thread(r, "timeseries-total-query");
+                    thread.setDaemon(true);
+                    return thread;
+                }
+            }
+    );
 
     public static final String VERSIONED_NAME = "isVersioned";
 
@@ -148,6 +165,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     @Nullable
     private final Meter getRequestedTimeSeriesTotalQueryMeter;
     @Nullable
+    private final Meter getRequestedTimeSeriesTotalQueryTimeoutMeter;
+    @Nullable
+    private final Meter getRequestedTimeSeriesTotalQueryErrorMeter;
+    @Nullable
     private final Histogram getRequestedTimeSeriesResultsReturnedHistogram;
     @Nullable
     private final Histogram getRequestedTimeSeriesRequestWindowMillisHistogram;
@@ -179,6 +200,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     "getRequestedTimeSeries", "totalQuery", "time"));
             getRequestedTimeSeriesTotalQueryMeter = metrics.meter(MetricRegistry.name(className,
                     "getRequestedTimeSeries", "totalQuery", "count"));
+            getRequestedTimeSeriesTotalQueryTimeoutMeter = metrics.meter(MetricRegistry.name(className,
+                    "getRequestedTimeSeries", "totalQuery", "timeout"));
+            getRequestedTimeSeriesTotalQueryErrorMeter = metrics.meter(MetricRegistry.name(className,
+                    "getRequestedTimeSeries", "totalQuery", "error"));
             getRequestedTimeSeriesResultsReturnedHistogram = metrics.histogram(MetricRegistry.name(className,
                     "getRequestedTimeSeries", "results", "returned"));
             getRequestedTimeSeriesRequestWindowMillisHistogram = metrics.histogram(MetricRegistry.name(className,
@@ -186,6 +211,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         } else {
             getRequestedTimeSeriesTotalQueryTimer = null;
             getRequestedTimeSeriesTotalQueryMeter = null;
+            getRequestedTimeSeriesTotalQueryTimeoutMeter = null;
+            getRequestedTimeSeriesTotalQueryErrorMeter = null;
             getRequestedTimeSeriesResultsReturnedHistogram = null;
             getRequestedTimeSeriesRequestWindowMillisHistogram = null;
         }
@@ -414,8 +441,41 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 getRequestedTimeSeriesTotalQueryMeter.mark();
             }
 
-            total = time(getRequestedTimeSeriesTotalQueryTimer, () ->
-                    dsl.selectCount().from(table(retrieveSelectCount)).fetchOne(0, Integer.class));
+            Future<Integer> totalQueryFuture = TOTAL_QUERY_EXECUTOR.submit(() ->
+                    time(getRequestedTimeSeriesTotalQueryTimer, () ->
+                            dsl.selectCount().from(table(retrieveSelectCount)).fetchOne(0, Integer.class))
+            );
+
+            try {
+                total = totalQueryFuture.get(TOTAL_QUERY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                totalQueryFuture.cancel(true);
+                if (getRequestedTimeSeriesTotalQueryTimeoutMeter != null) {
+                    getRequestedTimeSeriesTotalQueryTimeoutMeter.mark();
+                }
+                logger.atWarning().withCause(e).log("Timed out retrieving total count for timeseries %s at office %s "
+                                + "for window %s to %s after %d seconds; continuing with unknown total.",
+                        names, office, beginTime, endTime, TOTAL_QUERY_TIMEOUT_SECONDS);
+                total = null;
+            } catch (InterruptedException e) {
+                totalQueryFuture.cancel(true);
+                Thread.currentThread().interrupt();
+                if (getRequestedTimeSeriesTotalQueryErrorMeter != null) {
+                    getRequestedTimeSeriesTotalQueryErrorMeter.mark();
+                }
+                logger.atWarning().withCause(e).log("Interrupted retrieving total count for timeseries %s at office %s "
+                                + "for window %s to %s; continuing with unknown total.",
+                        names, office, beginTime, endTime);
+                total = null;
+            } catch (ExecutionException e) {
+                if (getRequestedTimeSeriesTotalQueryErrorMeter != null) {
+                    getRequestedTimeSeriesTotalQueryErrorMeter.mark();
+                }
+                logger.atWarning().withCause(e.getCause()).log("Failed retrieving total count for timeseries %s at office %s "
+                                + "for window %s to %s; continuing with unknown total.",
+                        names, office, beginTime, endTime);
+                total = null;
+            }
         }
 
         final Integer resolvedTotal = total;
