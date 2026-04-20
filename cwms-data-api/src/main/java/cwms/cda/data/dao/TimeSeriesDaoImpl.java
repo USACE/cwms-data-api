@@ -430,12 +430,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,"
                             + "cwms_20.cwms_util.to_timestamp(?),cwms_20.cwms_util.to_timestamp(?),"
                             + "'UTC',?,?,?,?,?," + getVersionPart(versionDate) + ",?,?) ) retrieveTsTotal",
-                    valid.field("tsid", String.class),
-                    valid.field("units", String.class),
+                    tsId,
+                    unit,
                     beginTimeMilli,
                     endTimeMilli,
                     trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,
-                    valid.field("office_id", String.class)
+                    officeId
             ))
                     .where(filterConditions)
                     ;
