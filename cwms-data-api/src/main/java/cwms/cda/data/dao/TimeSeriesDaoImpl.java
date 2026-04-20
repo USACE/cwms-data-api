@@ -16,7 +16,10 @@ import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
 
 import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheStats;
@@ -62,6 +65,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
@@ -137,6 +141,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             .build();
     private static final FieldMapping AV_CWMS_TS_ID2_FIELD_MAP = new CwmsTsId2FieldMapping();
     private static final FieldMapping AV_CWMS_TS_ID_FIELD_MAP = new CwmsTsIdFieldMapping();
+    @Nullable
+    private final MetricRegistry metrics;
+    @Nullable
+    private final Timer getRequestedTimeSeriesTotalQueryTimer;
+    @Nullable
+    private final Meter getRequestedTimeSeriesTotalQueryMeter;
+    @Nullable
+    private final Histogram getRequestedTimeSeriesResultsReturnedHistogram;
+    @Nullable
+    private final Histogram getRequestedTimeSeriesRequestWindowMillisHistogram;
 
     public TimeSeriesDaoImpl(DSLContext dsl) {
         this(dsl, null);
@@ -145,20 +159,38 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public TimeSeriesDaoImpl(DSLContext dsl, @Nullable MetricRegistry metrics) {
         super(dsl);
 
+        this.metrics = metrics;
+
         if (metrics != null) {
+            String className = this.getClass().getName();
             CacheStats stats = isVersionedCache.stats();
-            String hrName = MetricRegistry.name(this.getClass().getName(), VERSIONED_NAME, "hit-rate");
+            String hrName = MetricRegistry.name(className, VERSIONED_NAME, "hit-rate");
             if (metrics.getGauges().get(hrName) == null) {
                 MetricRegistry.MetricSupplier<? extends Gauge> hr = () -> (Gauge<Double>) stats::hitRate;
                 metrics.gauge(hrName, hr);
             }
-            String mrName = MetricRegistry.name(this.getClass().getName(),VERSIONED_NAME, "miss-rate");
+            String mrName = MetricRegistry.name(className,VERSIONED_NAME, "miss-rate");
             if (metrics.getGauges().get(mrName) == null) {
                 MetricRegistry.MetricSupplier<? extends Gauge> mr = () -> (Gauge<Double>) stats::missRate;
                 metrics.gauge(mrName, mr);
             }
+
+            getRequestedTimeSeriesTotalQueryTimer = metrics.timer(MetricRegistry.name(className,
+                    "getRequestedTimeSeries", "totalQuery", "time"));
+            getRequestedTimeSeriesTotalQueryMeter = metrics.meter(MetricRegistry.name(className,
+                    "getRequestedTimeSeries", "totalQuery", "count"));
+            getRequestedTimeSeriesResultsReturnedHistogram = metrics.histogram(MetricRegistry.name(className,
+                    "getRequestedTimeSeries", "results", "returned"));
+            getRequestedTimeSeriesRequestWindowMillisHistogram = metrics.histogram(MetricRegistry.name(className,
+                    "getRequestedTimeSeries", "request", "windowMillis"));
+        } else {
+            getRequestedTimeSeriesTotalQueryTimer = null;
+            getRequestedTimeSeriesTotalQueryMeter = null;
+            getRequestedTimeSeriesResultsReturnedHistogram = null;
+            getRequestedTimeSeriesRequestWindowMillisHistogram = null;
         }
     }
+
 
     public String getTimeseries(String format, String names, String office, String units,
                                 String datum,
@@ -325,6 +357,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
+
+        if (getRequestedTimeSeriesRequestWindowMillisHistogram != null) {
+            getRequestedTimeSeriesRequestWindowMillisHistogram.update(Math.max(0L, endTimeMilli - beginTimeMilli));
+        }
+
         String trim = formatBool(shouldTrim);
         final String startInclusive = "T";
         final String endInclusive = "T";
@@ -373,7 +410,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .where(filterConditions)
                     ;
 
-            total = dsl.selectCount().from(table(retrieveSelectCount)).fetchOne(0, Integer.class);
+            if (getRequestedTimeSeriesTotalQueryMeter != null) {
+                getRequestedTimeSeriesTotalQueryMeter.mark();
+            }
+
+            total = time(getRequestedTimeSeriesTotalQueryTimer, () ->
+                    dsl.selectCount().from(table(retrieveSelectCount)).fetchOne(0, Integer.class));
         }
 
         final Integer resolvedTotal = total;
@@ -509,9 +551,40 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 }
             }
             retVal = timeseries;
+
+            if (getRequestedTimeSeriesResultsReturnedHistogram != null) {
+                getRequestedTimeSeriesResultsReturnedHistogram.update(timeseries.getValues().size());
+            }
         }
 
         return retVal;
+    }
+
+    private void time(Timer timer, Runnable r ){
+        if (timer != null) {
+            try (Timer.Context ignored = timer.time()) {
+                r.run();
+            }
+        } else {
+            r.run();
+        }
+
+    }
+
+    private static <R> R time(Timer timer, Callable<R> var1) {
+        if (timer != null) {
+            try (Timer.Context ignored = timer.time()) {
+                return var1.call();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            try {
+                return var1.call();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private boolean shouldFetchVerticalDatum(String parmPart) {
