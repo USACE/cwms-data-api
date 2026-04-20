@@ -66,6 +66,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -416,6 +417,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             filterConditions = getFilterCondition(fp, resolver);
         }
 
+        Future<Integer> totalQueryFuture = CompletableFuture.completedFuture(total);
+        long totalQueryDeadlineNanos = Long.MAX_VALUE;
         if (total == null) {
             // If we don't know the total, fetch it from the database (only for first fetch).
             // Total is only an estimate, as it can change if fetching current data,
@@ -441,44 +444,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 getRequestedTimeSeriesTotalQueryMeter.mark();
             }
 
-            Future<Integer> totalQueryFuture = TOTAL_QUERY_EXECUTOR.submit(() ->
+            totalQueryFuture = TOTAL_QUERY_EXECUTOR.submit(() ->
                     time(getRequestedTimeSeriesTotalQueryTimer, () ->
                             dsl.selectCount().from(table(retrieveSelectCount)).fetchOne(0, Integer.class))
             );
-
-            try {
-                total = totalQueryFuture.get(TOTAL_QUERY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            } catch (TimeoutException e) {
-                totalQueryFuture.cancel(true);
-                if (getRequestedTimeSeriesTotalQueryTimeoutMeter != null) {
-                    getRequestedTimeSeriesTotalQueryTimeoutMeter.mark();
-                }
-                logger.atWarning().withCause(e).log("Timed out retrieving total count for timeseries %s at office %s "
-                                + "for window %s to %s after %d seconds; continuing with unknown total.",
-                        names, office, beginTime, endTime, TOTAL_QUERY_TIMEOUT_SECONDS);
-                total = null;
-            } catch (InterruptedException e) {
-                totalQueryFuture.cancel(true);
-                Thread.currentThread().interrupt();
-                if (getRequestedTimeSeriesTotalQueryErrorMeter != null) {
-                    getRequestedTimeSeriesTotalQueryErrorMeter.mark();
-                }
-                logger.atWarning().withCause(e).log("Interrupted retrieving total count for timeseries %s at office %s "
-                                + "for window %s to %s; continuing with unknown total.",
-                        names, office, beginTime, endTime);
-                total = null;
-            } catch (ExecutionException e) {
-                if (getRequestedTimeSeriesTotalQueryErrorMeter != null) {
-                    getRequestedTimeSeriesTotalQueryErrorMeter.mark();
-                }
-                logger.atWarning().withCause(e.getCause()).log("Failed retrieving total count for timeseries %s at office %s "
-                                + "for window %s to %s; continuing with unknown total.",
-                        names, office, beginTime, endTime);
-                total = null;
-            }
+            totalQueryDeadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(TOTAL_QUERY_TIMEOUT_SECONDS);
         }
-
-        final Integer resolvedTotal = total;
 
         SelectJoinStep<?> metadataQuery =
                 dsl.with(valid)
@@ -505,30 +476,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         logger.atFine().log("%s", lazy(() -> metadataQuery.getSQL(ParamType.INLINED)));
 
 
-        TimeSeries timeseries = metadataQuery.fetchOne(tsMetadata -> {
-            String parmPart = tsMetadata.getValue("parm_part", String.class);
-            String locPart = tsMetadata.getValue("loc_part", String.class);
-
-            // Fetch vertical datum info separately only when needed
-            VerticalDatumInfo verticalDatumInfo = null;
-            if (shouldFetchVerticalDatum(parmPart)) {
-                    verticalDatumInfo = fetchVerticalDatumInfoSeparately(locPart, units, office);
-            }
-
-            VersionType finalDateVersionType = getVersionType(dsl, names, office, versionDate != null);
-                return new TimeSeries(recordCursor, recordPageSize, resolvedTotal,
-                        tsMetadata.getValue("NAME", String.class),
-                        tsMetadata.getValue("office_id", String.class),
-                        beginTime, endTime, tsMetadata.getValue("units", String.class),
-                        Duration.ofMinutes(tsMetadata.get("interval") == null ? 0 :
-                                tsMetadata.getValue("interval", Long.class)),
-                        verticalDatumInfo,
-                        tsMetadata.getValue(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET).longValue(),
-                        tsMetadata.getValue(tzName),
-                        versionDate, finalDateVersionType
-                );
-            }
-        );
+        Record tsMetadata = metadataQuery.fetchOne();
 
         String retrievalMethod;
         if (includeEntryDate) {
@@ -588,28 +536,44 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 }
             }
 
+            // Retrieve all the points.
+            List<TimeSeries.Record> retrievedPoints = new ArrayList<>();
             if (requestParameters.isIncludeEntryDate()) {
                 logger.atFine().log("%s", lazy(() -> query2.getSQL(ParamType.INLINED)));
                 try (Cursor<Record4<Timestamp, Double, BigDecimal, Timestamp>> recCursor = query2.fetchLazy()) {
                     for (Record tsRecord: recCursor) {
-                        timeseries.addValue(
+                        retrievedPoints.add(new TimeSeries.Record(
                                 tsRecord.getValue(dateTimeCol),
                                 tsRecord.getValue(valueCol),
                                 tsRecord.getValue(qualityNormCol).intValue(),
-                                tsRecord.getValue(dataEntryDate));
+                                tsRecord.getValue(dataEntryDate)));
                     }
                 }
             } else {
                 logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
                 try (Cursor<Record3<Timestamp, Double, BigDecimal>> recCursor = query.fetchLazy()) {
                     for (Record tsRecord: recCursor) {
-                        timeseries.addValue(
+                        retrievedPoints.add(new TimeSeries.Record(
                                 tsRecord.getValue(dateTimeCol),
                                 tsRecord.getValue(valueCol),
-                                tsRecord.getValue(qualityNormCol).intValue());
+                                tsRecord.getValue(qualityNormCol).intValue(),
+                                null));
                     }
                 }
             }
+
+            // Wait to resolve the total future until right before we need it.
+            // This allows the data retrieval query to run in parallel with the total count query (if pool>1),
+            // and allows maximum time for the total query to complete before we time it out.
+            final Integer resolvedTotal = resolveTotalQueryFuture(totalQueryFuture, totalQueryDeadlineNanos,
+                    names, office, beginTime, endTime);
+            TimeSeries timeseries = buildTimeSeriesFromMetadata(tsMetadata, resolvedTotal, names, office,
+                    beginTime, endTime, units, versionDate, recordCursor, recordPageSize, tzName);
+
+            for (TimeSeries.Record point : retrievedPoints) {
+                timeseries.addValue(point);
+            }
+
             retVal = timeseries;
 
             if (getRequestedTimeSeriesResultsReturnedHistogram != null) {
@@ -619,6 +583,87 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         return retVal;
     }
+
+    @Nullable
+    private Integer resolveTotalQueryFuture(Future<Integer> totalQueryFuture, long totalQueryDeadlineNanos,
+                                            String names, String office,
+                                            ZonedDateTime beginTime, ZonedDateTime endTime) {
+        try {
+            if (totalQueryDeadlineNanos == Long.MAX_VALUE) {
+                return totalQueryFuture.get();
+            }
+
+            long remainingNanos = totalQueryDeadlineNanos - System.nanoTime();
+            if (remainingNanos <= 0) {
+                throw new TimeoutException("Total query deadline elapsed before resolution");
+            }
+
+            return totalQueryFuture.get(remainingNanos, TimeUnit.NANOSECONDS);
+        } catch (TimeoutException e) {
+            totalQueryFuture.cancel(true);
+            if (getRequestedTimeSeriesTotalQueryTimeoutMeter != null) {
+                getRequestedTimeSeriesTotalQueryTimeoutMeter.mark();
+            }
+            logger.atWarning().withCause(e).log("Timed out retrieving total count for timeseries %s at office %s "
+                            + "for window %s to %s after %d seconds; continuing with unknown total.",
+                    names, office, beginTime, endTime, TOTAL_QUERY_TIMEOUT_SECONDS);
+            return null;
+        } catch (InterruptedException e) {
+            totalQueryFuture.cancel(true);
+            Thread.currentThread().interrupt();
+            if (getRequestedTimeSeriesTotalQueryErrorMeter != null) {
+                getRequestedTimeSeriesTotalQueryErrorMeter.mark();
+            }
+            logger.atWarning().withCause(e).log("Interrupted retrieving total count for timeseries %s at office %s "
+                            + "for window %s to %s; continuing with unknown total.",
+                    names, office, beginTime, endTime);
+            return null;
+        } catch (ExecutionException e) {
+            if (getRequestedTimeSeriesTotalQueryErrorMeter != null) {
+                getRequestedTimeSeriesTotalQueryErrorMeter.mark();
+            }
+            logger.atWarning().withCause(e.getCause()).log("Failed retrieving total count for timeseries %s at office %s "
+                            + "for window %s to %s; continuing with unknown total.",
+                    names, office, beginTime, endTime);
+            return null;
+        }
+    }
+
+    @NotNull
+    private TimeSeries buildTimeSeriesFromMetadata(Record tsMetadata, @Nullable Integer resolvedTotal,
+                                                   String names, String office,
+                                                   ZonedDateTime beginTime, ZonedDateTime endTime,
+                                                   String units, ZonedDateTime versionDate,
+                                                   String recordCursor, int recordPageSize,
+                                                   Field<String> tzName) {
+        if (tsMetadata == null) {
+            throw new DataAccessException("No metadata returned for requested timeseries.");
+        }
+
+        String parmPart = tsMetadata.getValue("parm_part", String.class);
+        String locPart = tsMetadata.getValue("loc_part", String.class);
+
+        // Fetch vertical datum info separately only when needed
+        VerticalDatumInfo verticalDatumInfo = null;
+        if (shouldFetchVerticalDatum(parmPart)) {
+            verticalDatumInfo = fetchVerticalDatumInfoSeparately(locPart, units, office);
+        }
+
+        VersionType finalDateVersionType = getVersionType(dsl, names, office, versionDate != null);
+        return new TimeSeries(recordCursor, recordPageSize, resolvedTotal,
+                tsMetadata.getValue("NAME", String.class),
+                tsMetadata.getValue("office_id", String.class),
+                beginTime, endTime, tsMetadata.getValue("units", String.class),
+                Duration.ofMinutes(tsMetadata.get("interval") == null ? 0 :
+                        tsMetadata.getValue("interval", Long.class)),
+                verticalDatumInfo,
+                tsMetadata.getValue(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET).longValue(),
+                tsMetadata.getValue(tzName),
+                versionDate, finalDateVersionType
+        );
+    }
+
+
 
     private void time(Timer timer, Runnable r ){
         if (timer != null) {
