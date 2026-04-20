@@ -593,6 +593,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 return totalQueryFuture.get();
             }
 
+            if (totalQueryFuture.isDone()) {
+                return totalQueryFuture.get();
+            }
+
             long remainingNanos = totalQueryDeadlineNanos - System.nanoTime();
             if (remainingNanos <= 0) {
                 throw new TimeoutException("Total query deadline elapsed before resolution");
