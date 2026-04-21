@@ -686,13 +686,31 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         }
 
-        RequestedTimeSeriesMetadata metadata = fetchRequestedTimeSeriesMetadata(requestParameters);
+        Record metadata = fetchRequestedTimeSeriesMetadataRecord(requestParameters);
         if (metadata == null) {
             throw new DataAccessException("Unable to resolve time series metadata for " + names);
         }
 
-        String parmPart = metadata.getParmPart();
-        String locPart = metadata.getLocPart();
+        BigDecimal intervalValue = metadata.getValue("interval", BigDecimal.class);
+        Number offsetValue = metadata.getValue(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET);
+        BigDecimal tsCodeValue = metadata.getValue("tscode", BigDecimal.class);
+        long tsCode = tsCodeValue.longValue();
+        String tsId = metadata.getValue("tsid", String.class);
+        String metadataOfficeId = metadata.getValue("office_id", String.class);
+        String metadataUnits = metadata.getValue("units", String.class);
+        String sourceUnit = metadata.getValue("source_unit", String.class);
+        String locPart = metadata.getValue("loc_part", String.class);
+        String parmPart = metadata.getValue("parm_part", String.class);
+        String intervalPart = metadata.getValue("interval_part", String.class);
+        long intervalMinutes = intervalValue == null ? 0L : intervalValue.longValue();
+        long intervalOffset = offsetValue == null ? UTC_OFFSET_IRREGULAR : offsetValue.longValue();
+        String timeZoneId = metadata.getValue(AV_CWMS_TS_ID2.TIME_ZONE_ID) == null
+                ? UTC
+                : metadata.getValue(AV_CWMS_TS_ID2.TIME_ZONE_ID);
+        boolean isLrts = parseBool(CWMS_TS_PACKAGE.call_IS_LRTS__2(dsl.configuration(), tsCode));
+
+        validateRequestedUnits(sourceUnit, metadataUnits);
+
         VerticalDatumInfo verticalDatumInfo = null;
         if (shouldFetchVerticalDatum(parmPart)) {
             verticalDatumInfo = fetchVerticalDatumInfoSeparately(locPart, requestedUnits, office);
@@ -703,23 +721,25 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             return null;
         }
 
-        List<RetrievedTimeSeriesValue> rawRows = fetchRequestedTimeSeriesRows(metadata, requestParameters);
-        List<Timestamp> expectedTimes = fetchExpectedRegularTimes(metadata, requestParameters, rawRows);
+        List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId, metadataUnits,
+                requestParameters);
+        List<Timestamp> expectedTimes = fetchExpectedRegularTimes(intervalMinutes, intervalOffset, timeZoneId,
+                intervalPart, isLrts, requestParameters, rawRows);
         int total = countMergedRows(rawRows, expectedTimes);
 
         TimeSeries timeseries = new TimeSeries(
                 cursor,
                 pageSize,
                 total,
-                metadata.getTsId(),
-                metadata.getOfficeId(),
+                tsId,
+                metadataOfficeId,
                 beginTime,
                 endTime,
-                metadata.getUnits(),
-                Duration.ofMinutes(metadata.getIntervalMinutes()),
+                metadataUnits,
+                Duration.ofMinutes(intervalMinutes),
                 verticalDatumInfo,
-                metadata.getIntervalOffset(),
-                metadata.getTimeZoneId(),
+                intervalOffset,
+                timeZoneId,
                 versionDate,
                 finalDateVersionType
         );
@@ -728,7 +748,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return timeseries;
     }
 
-    private RequestedTimeSeriesMetadata fetchRequestedTimeSeriesMetadata(
+    private Record fetchRequestedTimeSeriesMetadataRecord(
             TimeSeriesRequestParameters requestParameters) {
         String names = requestParameters.getNames();
         String office = requestParameters.getOffice();
@@ -804,35 +824,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         logger.atFine().log("%s", lazy(() -> metadataQuery.getSQL(ParamType.INLINED)));
 
-        return metadataQuery.fetchOne(tsMetadata -> {
-            BigDecimal intervalValue = tsMetadata.getValue("interval", BigDecimal.class);
-            Number offsetValue = tsMetadata.getValue(AV_CWMS_TS_ID2.INTERVAL_UTC_OFFSET);
-            BigDecimal tsCodeValue = tsMetadata.getValue("tscode", BigDecimal.class);
-            long tsCodeLong = tsCodeValue.longValue();
-            String requestedUnit = tsMetadata.getValue("units", String.class);
-            String sourceUnit = tsMetadata.getValue("source_unit", String.class);
-            validateRequestedUnits(sourceUnit, requestedUnit);
-            boolean isLrts = parseBool(CWMS_TS_PACKAGE.call_IS_LRTS__2(dsl.configuration(), tsCodeLong));
-            return new RequestedTimeSeriesMetadata(
-                    tsCodeLong,
-                    tsMetadata.getValue("tsid", String.class),
-                    tsMetadata.getValue("office_id", String.class),
-                    requestedUnit,
-                    intervalValue == null ? 0L : intervalValue.longValue(),
-                    offsetValue == null ? UTC_OFFSET_IRREGULAR : offsetValue.longValue(),
-                    tsMetadata.getValue(AV_CWMS_TS_ID2.TIME_ZONE_ID) == null
-                            ? UTC
-                            : tsMetadata.getValue(AV_CWMS_TS_ID2.TIME_ZONE_ID),
-                    tsMetadata.getValue("loc_part", String.class),
-                    tsMetadata.getValue("parm_part", String.class),
-                    tsMetadata.getValue("interval_part", String.class),
-                    isLrts
-            );
-        });
+        return metadataQuery.fetchOne();
     }
 
-    private List<RetrievedTimeSeriesValue> fetchRequestedTimeSeriesRows(RequestedTimeSeriesMetadata metadata,
-                                                                        TimeSeriesRequestParameters requestParameters) {
+    private List<TimeSeries.Record> fetchRequestedTimeSeriesRows(long tsCode, String officeId, String units,
+                                                                 TimeSeriesRequestParameters requestParameters) {
         ZonedDateTime beginTime = requestParameters.getBeginTime();
         ZonedDateTime endTime = requestParameters.getEndTime();
         ZonedDateTime versionDate = requestParameters.getVersionDate();
@@ -848,9 +844,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 qualityForNormalization).as("quality_norm");
 
         Condition baseCondition = view.ALIASED_ITEM.isNull()
-                .and(view.TS_CODE.eq(metadata.getTsCode()))
-                .and(view.OFFICE_ID.eq(metadata.getOfficeId()))
-                .and(view.UNIT_ID.equalIgnoreCase(metadata.getUnits()))
+                .and(view.TS_CODE.eq(tsCode))
+                .and(view.OFFICE_ID.eq(officeId))
+                .and(view.UNIT_ID.equalIgnoreCase(units))
                 .and(view.DATE_TIME.ge(beginTimestamp))
                 .and(view.DATE_TIME.le(endTimestamp))
                 .and(view.START_DATE.le(endTimestamp))
@@ -895,18 +891,23 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         query.orderBy(field(DATE_TIME, Timestamp.class).asc());
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
-        return query.fetch(record -> new RetrievedTimeSeriesValue(
-                record.getValue(0, Timestamp.class),
-                record.getValue(1, Double.class),
-                record.getValue(2, BigDecimal.class).intValue(),
-                record.getValue(3, Timestamp.class)
-        ));
+        return query.fetch(record -> {
+            Timestamp dateTime = record.getValue(0, Timestamp.class);
+            Double value = record.getValue(1, Double.class);
+            int qualityCode = record.getValue(2, BigDecimal.class).intValue();
+            Timestamp dataEntryDate = record.getValue(3, Timestamp.class);
+            if (dataEntryDate != null) {
+                return new TimeSeries.Record(dateTime, value, qualityCode, dataEntryDate);
+            }
+            return new TimeSeries.Record(dateTime, value, qualityCode);
+        });
     }
 
-    private List<Timestamp> fetchExpectedRegularTimes(RequestedTimeSeriesMetadata metadata,
+    private List<Timestamp> fetchExpectedRegularTimes(long intervalMinutes, long intervalOffset, String timeZoneId,
+                                                      String intervalPart, boolean isLrts,
                                                       TimeSeriesRequestParameters requestParameters,
-                                                      List<RetrievedTimeSeriesValue> rawRows) {
-        if (!isRegularSeries(metadata)) {
+                                                      List<TimeSeries.Record> rawRows) {
+        if (!isRegularSeries(intervalMinutes, intervalOffset)) {
             return Collections.emptyList();
         }
         if (rawRows.isEmpty() && requestParameters.isShouldTrim()) {
@@ -920,17 +921,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 ? rawRows.get(rawRows.size() - 1).getDateTime()
                 : Timestamp.from(requestParameters.getEndTime().toInstant());
 
-        long offsetMinutes = resolveIntervalOffset(metadata, rawRows);
-        if (canGenerateExpectedTimesInJava(metadata)) {
-            return buildExpectedRegularTimesUtc(rangeStart, rangeEnd, metadata.getIntervalMinutes(), offsetMinutes);
+        long offsetMinutes = resolveIntervalOffset(intervalMinutes, intervalOffset, timeZoneId, intervalPart, isLrts,
+                rawRows);
+        if (canGenerateExpectedTimesInJava(intervalMinutes, intervalPart, isLrts)) {
+            return buildExpectedRegularTimesUtc(rangeStart, rangeEnd, intervalMinutes, offsetMinutes);
         }
 
-        String intervalTimeZone = metadata.isLrts() ? metadata.getTimeZoneId() : UTC;
+        String intervalTimeZone = isLrts ? timeZoneId : UTC;
         DATE_RANGE_T dateRange = new DATE_RANGE_T(rangeStart, rangeEnd, UTC, "T", "T", null);
         DATE_TABLE_TYPE expectedTimeTable = CWMS_TS_PACKAGE.call_GET_REG_TS_TIMES_UTC_F(
                 dsl.configuration(),
                 dateRange,
-                metadata.getIntervalPart(),
+                intervalPart,
                 String.valueOf(offsetMinutes),
                 intervalTimeZone
         );
@@ -946,9 +948,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return retVal;
     }
 
-    private long resolveIntervalOffset(RequestedTimeSeriesMetadata metadata,
-                                       List<RetrievedTimeSeriesValue> rawRows) {
-        long intervalOffset = metadata.getIntervalOffset();
+    private long resolveIntervalOffset(long intervalMinutes, long intervalOffset, String timeZoneId,
+                                       String intervalPart, boolean isLrts, List<TimeSeries.Record> rawRows) {
         if (intervalOffset != UTC_OFFSET_UNDEFINED) {
             return intervalOffset;
         }
@@ -956,27 +957,27 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             return 0L;
         }
 
-        if (canGenerateExpectedTimesInJava(metadata)) {
-            long intervalMillis = TimeUnit.MINUTES.toMillis(metadata.getIntervalMinutes());
+        if (canGenerateExpectedTimesInJava(intervalMinutes, intervalPart, isLrts)) {
+            long intervalMillis = TimeUnit.MINUTES.toMillis(intervalMinutes);
             return TimeUnit.MILLISECONDS.toMinutes(Math.floorMod(rawRows.get(0).getDateTime().getTime(), intervalMillis));
         }
 
-        String intervalTimeZone = metadata.isLrts() ? metadata.getTimeZoneId() : UTC;
+        String intervalTimeZone = isLrts ? timeZoneId : UTC;
         Timestamp topOfInterval = normalizeOracleUtcTimestamp(CWMS_TS_PACKAGE.call_TOP_OF_INTERVAL_UTC(
                 dsl.configuration(),
                 rawRows.get(0).getDateTime(),
-                metadata.getIntervalPart(),
+                intervalPart,
                 intervalTimeZone,
                 "F"
         ));
         return (rawRows.get(0).getDateTime().getTime() - topOfInterval.getTime()) / TimeUnit.MINUTES.toMillis(1);
     }
 
-    private boolean isRegularSeries(RequestedTimeSeriesMetadata metadata) {
-        return metadata.getIntervalMinutes() != 0L || metadata.getIntervalOffset() != UTC_OFFSET_IRREGULAR;
+    private boolean isRegularSeries(long intervalMinutes, long intervalOffset) {
+        return intervalMinutes != 0L || intervalOffset != UTC_OFFSET_IRREGULAR;
     }
 
-    private int countMergedRows(List<RetrievedTimeSeriesValue> rawRows, List<Timestamp> expectedTimes) {
+    private int countMergedRows(List<TimeSeries.Record> rawRows, List<Timestamp> expectedTimes) {
         if (expectedTimes.isEmpty()) {
             return rawRows.size();
         }
@@ -1009,7 +1010,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     private void populateTimeSeriesValues(TimeSeries timeseries,
-                                          List<RetrievedTimeSeriesValue> rawRows,
+                                          List<TimeSeries.Record> rawRows,
                                           List<Timestamp> expectedTimes,
                                           Timestamp tsCursor,
                                           boolean includeEntryDate) {
@@ -1019,11 +1020,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         int maxRecords = timeseries.getPageSize() > 0 ? timeseries.getPageSize() + 1 : Integer.MAX_VALUE;
 
         while ((rawIndex < rawRows.size() || expectedIndex < expectedTimes.size()) && collected < maxRecords) {
-            RetrievedTimeSeriesValue rawRow = rawIndex < rawRows.size() ? rawRows.get(rawIndex) : null;
+            TimeSeries.Record rawRow = rawIndex < rawRows.size() ? rawRows.get(rawIndex) : null;
             Timestamp expectedTime = expectedIndex < expectedTimes.size() ? expectedTimes.get(expectedIndex) : null;
 
             Timestamp candidateTime;
-            RetrievedTimeSeriesValue candidateRow = null;
+            TimeSeries.Record candidateRow = null;
             boolean syntheticRow = false;
 
             if (rawRow == null) {
@@ -1082,12 +1083,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return Timestamp.from(utcWallTime.toInstant(ZoneOffset.UTC));
     }
 
-    private boolean canGenerateExpectedTimesInJava(RequestedTimeSeriesMetadata metadata) {
-        if (metadata.isLrts() || metadata.getIntervalMinutes() <= 0L) {
+    private boolean canGenerateExpectedTimesInJava(long intervalMinutes, String intervalPart, boolean isLrts) {
+        if (isLrts || intervalMinutes <= 0L) {
             return false;
         }
 
-        String intervalPart = metadata.getIntervalPart();
         if (intervalPart == null) {
             return false;
         }
@@ -1137,111 +1137,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         DSL.val(sourceUnit),
                         DSL.val(requestedUnit)))
                 .fetchOne(0, Double.class);
-    }
-
-    private static final class RequestedTimeSeriesMetadata {
-        private final long tsCode;
-        private final String tsId;
-        private final String officeId;
-        private final String units;
-        private final long intervalMinutes;
-        private final long intervalOffset;
-        private final String timeZoneId;
-        private final String locPart;
-        private final String parmPart;
-        private final String intervalPart;
-        private final boolean isLrts;
-
-        private RequestedTimeSeriesMetadata(long tsCode, String tsId, String officeId, String units,
-                                            long intervalMinutes, long intervalOffset, String timeZoneId,
-                                            String locPart, String parmPart, String intervalPart,
-                                            boolean isLrts) {
-            this.tsCode = tsCode;
-            this.tsId = tsId;
-            this.officeId = officeId;
-            this.units = units;
-            this.intervalMinutes = intervalMinutes;
-            this.intervalOffset = intervalOffset;
-            this.timeZoneId = timeZoneId;
-            this.locPart = locPart;
-            this.parmPart = parmPart;
-            this.intervalPart = intervalPart;
-            this.isLrts = isLrts;
-        }
-
-        private long getTsCode() {
-            return tsCode;
-        }
-
-        private String getTsId() {
-            return tsId;
-        }
-
-        private String getOfficeId() {
-            return officeId;
-        }
-
-        private String getUnits() {
-            return units;
-        }
-
-        private long getIntervalMinutes() {
-            return intervalMinutes;
-        }
-
-        private long getIntervalOffset() {
-            return intervalOffset;
-        }
-
-        private String getTimeZoneId() {
-            return timeZoneId;
-        }
-
-        private String getLocPart() {
-            return locPart;
-        }
-
-        private String getParmPart() {
-            return parmPart;
-        }
-
-        private String getIntervalPart() {
-            return intervalPart;
-        }
-
-        private boolean isLrts() {
-            return isLrts;
-        }
-    }
-
-    private static final class RetrievedTimeSeriesValue {
-        private final Timestamp dateTime;
-        private final Double value;
-        private final int qualityCode;
-        private final Timestamp dataEntryDate;
-
-        private RetrievedTimeSeriesValue(Timestamp dateTime, Double value, int qualityCode, Timestamp dataEntryDate) {
-            this.dateTime = dateTime;
-            this.value = value;
-            this.qualityCode = qualityCode;
-            this.dataEntryDate = dataEntryDate;
-        }
-
-        private Timestamp getDateTime() {
-            return dateTime;
-        }
-
-        private Double getValue() {
-            return value;
-        }
-
-        private int getQualityCode() {
-            return qualityCode;
-        }
-
-        private Timestamp getDataEntryDate() {
-            return dataEntryDate;
-        }
     }
 
     private boolean shouldFetchVerticalDatum(String parmPart) {
