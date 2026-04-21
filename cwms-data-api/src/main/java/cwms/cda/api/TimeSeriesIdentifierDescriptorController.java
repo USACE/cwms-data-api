@@ -31,7 +31,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.ErrorTraceSupport;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.TimeSeriesIdentifierDescriptorDao;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
@@ -344,7 +344,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_OK);
 
         } catch (DataAccessException ex) {
-            CdaError re = ErrorTraceSupport.buildError(ctx, "Internal Error", ex);
+            CdaError re = ExceptionTraceSupport.buildError(ctx, "Internal Error", ex);
             logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }

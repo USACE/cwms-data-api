@@ -9,6 +9,7 @@ begin
    cwms_sec.update_edipi('l2hectest', 1234567890);
    cwms_sec.add_user_to_group('l2hectest', 'All Users', 'SPK');
    cwms_sec.add_user_to_group('l2hectest', 'CWMS Users', 'SPK');
+   cwms_sec.add_user_to_group('l2hectest', 'SHOW STACK TRACE', 'SPK');
    cwms_sec.add_user_to_group('l2hectest', 'TS ID Creator', 'SPK');
    cwms_sec.add_cwms_user('l1hectest', null, 'SPL');
     -- intentionally no extra permissions.
@@ -47,6 +48,7 @@ begin
     cwms_sec.add_user_to_group('m5testadmin','All Users', 'LRL');
     cwms_sec.add_user_to_group('m5testadmin','CWMS Users', 'LRL');
     cwms_sec.add_user_to_group('m5testadmin','CWMS User Admins', 'LRL');
+    cwms_sec.add_user_to_group('m5testadmin','SHOW STACK TRACE', 'LRL');
 
 end;
 /

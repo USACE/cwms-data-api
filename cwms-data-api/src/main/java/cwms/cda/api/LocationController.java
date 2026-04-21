@@ -63,7 +63,7 @@ import cwms.cda.api.enums.Nation;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.DeleteConflictException;
-import cwms.cda.api.errors.ErrorTraceSupport;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.LocationsDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.Location;
@@ -275,7 +275,7 @@ public class LocationController implements CrudHandler {
             addDeprecatedContentTypeWarning(ctx, contentType);
         } catch (IOException ex) {
             String errorMsg = "Error retrieving " + locationId;
-            CdaError re = ErrorTraceSupport.buildError(ctx, errorMsg, ex);
+            CdaError re = ExceptionTraceSupport.buildError(ctx, errorMsg, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
             logger.atSevere().withCause(ex).log("%s", errorMsg);
         }
@@ -317,7 +317,7 @@ public class LocationController implements CrudHandler {
                 "Created Location", locationFromBody.getName());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
-            CdaError re = ErrorTraceSupport.buildError(ctx, "failed to process request", ex);
+            CdaError re = ExceptionTraceSupport.buildError(ctx, "failed to process request", ex);
             logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
@@ -371,7 +371,7 @@ public class LocationController implements CrudHandler {
                         "Updated Location", updatedLocation.getName()));
             }
         } catch (IOException ex) {
-            CdaError re = ErrorTraceSupport.buildError(ctx,
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
                     "Failed to process request: " + ex.getLocalizedMessage(), ex);
             logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);

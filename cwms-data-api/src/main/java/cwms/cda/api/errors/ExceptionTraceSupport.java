@@ -17,13 +17,12 @@ import java.util.Optional;
 import org.togglz.core.context.FeatureContext;
 import org.togglz.core.manager.FeatureManager;
 
-public final class ErrorTraceSupport {
-    public static final String STACK_TRACE_KEY = "stackTrace";
+public final class ExceptionTraceSupport {
     public static final String STACK_TRACE_LINES_KEY = "stackTraceLines";
-    private static final String DEV_MARKER = "dev";
-    private static final Role CWMS_USER_ADMINS_ROLE = new Role("CWMS User Admins");
+    static final String SHOW_STACK_TRACE_ROLE_NAME = "SHOW STACK TRACE";
+    private static final Role SHOW_STACK_TRACE_ROLE = new Role(SHOW_STACK_TRACE_ROLE_NAME);
 
-    private ErrorTraceSupport() {
+    private ExceptionTraceSupport() {
     }
 
     public static CdaError buildError(Context ctx, String message, Throwable cause) {
@@ -51,36 +50,18 @@ public final class ErrorTraceSupport {
             merged.putAll(details);
         }
         if (cause != null && includeStackTrace) {
-            String stackTrace = stackTraceOf(cause);
-            merged.put(STACK_TRACE_KEY, stackTrace);
-            merged.put(STACK_TRACE_LINES_KEY, stackTraceLinesOf(stackTrace));
+            merged.put(STACK_TRACE_LINES_KEY, stackTraceLinesOf(cause));
         }
         return Collections.unmodifiableMap(merged);
     }
 
     static boolean shouldIncludeStackTrace(Context ctx) {
-        if (localhostRequestOverrideEnabled(ctx)) {
-            return true;
-        }
-        return shouldIncludeStackTrace(resolvePrincipal(ctx).orElse(null), stackTraceFeatureEnabled());
+        return stackTraceFeatureEnabled()
+                && resolvePrincipal(ctx).map(ExceptionTraceSupport::hasStackTraceRole).orElse(false);
     }
 
     static boolean shouldIncludeStackTrace(DataApiPrincipal principal, boolean stackTraceFeatureEnabled) {
-        return stackTraceFeatureEnabled && hasAdminRole(principal);
-    }
-
-    static boolean localhostRequestOverrideEnabled(Context ctx) {
-        if (ctx == null || ctx.req == null) {
-            return false;
-        }
-        return localhostRequestOverrideEnabled(ctx.req.getServerName());
-    }
-
-    static boolean localhostRequestOverrideEnabled(String serverName) {
-        return serverName != null
-                && ("localhost".equalsIgnoreCase(serverName)
-                || "127.0.0.1".equals(serverName)
-                || "::1".equals(serverName));
+        return stackTraceFeatureEnabled && hasStackTraceRole(principal);
     }
 
     static Optional<DataApiPrincipal> resolvePrincipal(Context ctx) {
@@ -95,29 +76,25 @@ public final class ErrorTraceSupport {
         return Optional.ofNullable(sessionPrincipal);
     }
 
-    static boolean hasAdminRole(DataApiPrincipal principal) {
+    static boolean hasStackTraceRole(DataApiPrincipal principal) {
         return principal != null
-                && principal.getRoles().contains(CWMS_USER_ADMINS_ROLE);
+                && principal.getRoles().contains(SHOW_STACK_TRACE_ROLE);
     }
 
     static boolean stackTraceFeatureEnabled() {
         try {
             FeatureManager featureManager = FeatureContext.getFeatureManager();
             return featureManager.isActive(CdaFeatures.INCLUDE_ERROR_STACK_TRACES);
-        } catch (Throwable ignore) {
+        } catch (Exception ignore) {
             return false;
         }
     }
 
-    private static String stackTraceOf(Throwable cause) {
+    private static ArrayList<String> stackTraceLinesOf(Throwable cause) {
         StringWriter sw = new StringWriter();
         cause.printStackTrace(new PrintWriter(sw));
-        return sw.toString();
-    }
-
-    private static ArrayList<String> stackTraceLinesOf(String stackTrace) {
         ArrayList<String> lines = new ArrayList<>();
-        Collections.addAll(lines, stackTrace.split("\\R"));
+        Collections.addAll(lines, sw.toString().split("\\R"));
         return lines;
     }
 

@@ -30,7 +30,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.ErrorTraceSupport;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
@@ -145,7 +145,7 @@ public class TextTimeSeriesController extends BaseCrudHandler {
 
             ctx.status(HttpServletResponse.SC_OK);
         } catch (URISyntaxException | UnsupportedEncodingException ex) {
-            CdaError re = ErrorTraceSupport.buildError(ctx,
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
                     "Failed to process request: " + ex.getLocalizedMessage(), ex);
             logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);

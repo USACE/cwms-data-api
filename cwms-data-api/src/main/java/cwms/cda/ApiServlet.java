@@ -108,7 +108,7 @@ import cwms.cda.api.auth.users.roles.GetRolesController;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.ApplicationException;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.ErrorTraceSupport;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.GateChangeDeleteController;
 import cwms.cda.api.location.kind.GateChangeGetAllController;
@@ -362,7 +362,7 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-XSS-Protection", "1; mode=block");
                 })
                 .exception(ApplicationException.class, (e, ctx) -> {
-                    CdaError re = ErrorTraceSupport.buildError(ctx, e.getCdaErrorMessage(),
+                    CdaError re = ExceptionTraceSupport.buildError(ctx, e.getCdaErrorMessage(),
                             e.getSource(), e.getDetails(), e);
                     if (e.getLoggerLevel().isPresent()) {
                         logger.at(e.getLoggerLevel().get()).withCause(e).log(re.toString());
@@ -370,24 +370,24 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(e.getCdaHttpErrorCode()).json(re);
                 })
                 .exception(UnsupportedOperationException.class, (e, ctx) -> {
-                    final CdaError re = ErrorTraceSupport.buildError(ctx, "Not Implemented", e);
+                    final CdaError re = ExceptionTraceSupport.buildError(ctx, "Not Implemented", e);
                     logger.atWarning().withCause(e)
                             .log("%s for request: %s", re, ctx.fullUrl());
                     ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(re);
                 })
                 .exception(BadRequestResponse.class, (e, ctx) -> {
-                    CdaError re = ErrorTraceSupport.buildError(ctx, "Bad Request",
+                    CdaError re = ExceptionTraceSupport.buildError(ctx, "Bad Request",
                         "User Input", new HashMap<>(e.getDetails()), e);
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(e.getStatus()).json(re);
                 })
                 .exception(IllegalArgumentException.class, (e, ctx) -> {
-                    CdaError re = ErrorTraceSupport.buildError(ctx, "Bad Request", e);
+                    CdaError re = ExceptionTraceSupport.buildError(ctx, "Bad Request", e);
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(DateTimeException.class, (e, ctx) -> {
-                    CdaError re = ErrorTraceSupport.buildError(ctx, e.getMessage(), e);
+                    CdaError re = ExceptionTraceSupport.buildError(ctx, e.getMessage(), e);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(DataAccessException.class, (e, ctx) -> {
@@ -401,7 +401,7 @@ public class ApiServlet extends HttpServlet {
                     // CdaError does not include the Oracle exception message b/c this block catches
                     // all unhandled DataAccessExceptions and we don't know what is in the message
                     // it is unknown if the message would be safe/appropriate for users to see.
-                    CdaError errResponse = ErrorTraceSupport.buildError(ctx, "Database Error", e);
+                    CdaError errResponse = ExceptionTraceSupport.buildError(ctx, "Database Error", e);
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
                                                         errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
                     ctx.status(500);
@@ -409,7 +409,7 @@ public class ApiServlet extends HttpServlet {
                     ctx.json(errResponse);
                 })
                 .exception(Exception.class, (e, ctx) -> {
-                    CdaError errResponse = ErrorTraceSupport.buildError(ctx, "System Error", e);
+                    CdaError errResponse = ExceptionTraceSupport.buildError(ctx, "System Error", e);
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
                             errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
                     ctx.status(500);
