@@ -840,8 +840,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("size()", is(1),
-                    "Issue #1675: getLocations should return results when datum is null")
+            .body("size()", is(1))
             .body("[0].name", equalTo(locationName))
         ;
     }
