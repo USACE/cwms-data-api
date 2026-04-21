@@ -472,12 +472,18 @@ public class TimeSeriesController implements CrudHandler {
                 TimeSeries ts;
                 try {
                     ts = daoFuture.get(apiTimeoutMs, TimeUnit.MILLISECONDS);
-                } catch (java.util.concurrent.TimeoutException | InterruptedException | java.util.concurrent.ExecutionException ex) {
+                } catch (java.util.concurrent.TimeoutException ex) {
                     daoFuture.cancel(true);
                     cwms.cda.api.errors.CdaError re = new cwms.cda.api.errors.CdaError("Request is taking too long; try narrowing the date range.");
                     ctx.status(HttpServletResponse.SC_GATEWAY_TIMEOUT);
                     ctx.json(re);
                     return;
+                } catch (InterruptedException ex) {
+                    daoFuture.cancel(true);
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(ex);
+                } catch (java.util.concurrent.ExecutionException ex) {
+                    throw unwrapExecutionException(ex);
                 }
 
                 if(datum != null) { //this will be null for non-elevation ts
@@ -526,6 +532,18 @@ public class TimeSeriesController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.json(re);
         }
+    }
+
+    static RuntimeException unwrapExecutionException(java.util.concurrent.ExecutionException ex) {
+        Throwable cause = ex.getCause();
+        if (cause instanceof RuntimeException) {
+            // CDA ApplicationException extends RuntimeException.
+            throw (RuntimeException) cause;
+        }
+        if (cause instanceof Error) {
+            throw (Error) cause;
+        }
+        return new RuntimeException(cause);
     }
 
     private void addLinkHeader(@NotNull Context ctx, TimeSeries ts, ContentType contentType) {
