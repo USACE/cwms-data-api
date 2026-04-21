@@ -30,6 +30,7 @@ import static cwms.cda.api.Controllers.*;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.TimeSeriesIdentifierDescriptorDao;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
