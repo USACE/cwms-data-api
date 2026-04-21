@@ -825,11 +825,12 @@ class LocationControllerTestIT extends DataApiTestIT {
         KeyUser user = KeyUser.SPK_NORMAL;
         String officeId = user.getOperatingOffice();
 
-        createLocation(locationName, true, officeId);
+        createLocation(locationName, true, officeId, 38.5757, -121.4789, "WGS84", "UTC", "SITE");
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
             .queryParam(NAMES, locationName)
         .when()
             .redirects().follow(true)
