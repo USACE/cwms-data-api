@@ -1105,7 +1105,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
             constantBuilder.withAliases(aliases);
             constantBuilder.withExpirationDate(expireDate);
             builderMap.put(levelLookup, constantBuilder);
-        } else if (seasonalLevel != null) {
+        } else if (intervalOrigin != null) {
 
             JDomSeasonalIntervalImpl newSeasonalOffset = buildSeasonalOffset(calOffset, timeOffset);
             SeasonalValueBean seasonalValue = buildSeasonalValueBean(seasonalLevel, newSeasonalOffset);
