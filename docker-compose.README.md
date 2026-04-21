@@ -49,16 +49,19 @@ be changed by setting the APP_PORT variable.
 ## Local error trace debugging
 
 The API supports conditional stack traces in JSON error responses through
-`cwms.cda.api.errors.ErrorTraceSupport`.
+`cwms.cda.api.errors.ExceptionTraceSupport`.
 
 Stack-trace exposure is controlled through the Togglz feature flag
 `INCLUDE_ERROR_STACK_TRACES`.
 
 For shared environments, enable that feature in the active `features.properties` and the API will
-include traces only for authenticated users with the `CWMS User Admins` role.
+include traces only for authenticated users with the `SHOW STACK TRACE` role.
 
-For local Docker Compose or other localhost testing, requests to `localhost`, `127.0.0.1`, and
-`::1` are still treated as local debug requests even when the feature is disabled. When enabled,
-error responses include `details.stackTrace` along with the existing `incidentIdentifier`.
+The local Docker Compose setup enables that feature by default by mounting
+`./compose_files/togglz/features.properties` into the API container and passing its path through
+`JAVA_OPTS`.
+
+In that compose environment, `l2hectest` has the `SHOW STACK TRACE` role. When enabled, error
+responses include `details.stackTraceLines` along with the existing `incidentIdentifier`.
 
 Response stack traces should *not* be enabled broadly for production traffic.
