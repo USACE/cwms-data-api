@@ -143,6 +143,11 @@ When submitting a bug report, please be sure to include accurate and thorough in
 
 Please [fork](https://help.github.com/en/articles/fork-a-repo) the repository on github and create a [branch in Git](https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging) if you are making changes to existing code.
 
+If you use AI assistance while preparing a contribution, read
+[AI_USAGE.md](AI_USAGE.md) before opening your pull request. AI-assisted
+pull requests should include `AI tools used` in the pull request
+description.
+
 
 Once you have made your changes submit a [pull request](https://help.github.com/en/articles/creating-a-pull-request-from-a-fork).
 Please submit all PRs to the develop branch.
