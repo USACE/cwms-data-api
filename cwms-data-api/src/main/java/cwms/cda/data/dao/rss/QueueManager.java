@@ -40,7 +40,7 @@ public final class QueueManager {
         "      FROM ALL_QUEUES " +
         "      WHERE OWNER = 'CWMS_20' " +
         "        AND QUEUE_TYPE = 'NORMAL_QUEUE' " +
-        "        AND REGEXP_LIKE(NAME, 'STATUS|TS_UPDATES|REALTIME_OPS') " +
+        "        AND REGEXP_LIKE(NAME, 'STATUS|TS_STORED|REALTIME_OPS') " +
         "   ) LOOP " +
         "      BEGIN " +
         "         DBMS_AQADM.ADD_SUBSCRIBER( " +
