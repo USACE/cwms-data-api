@@ -1864,7 +1864,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .body("levels.size()", is(1))
             .body("levels[0].expiration-date", equalTo(levelDate.plusYears(50).toInstant().toString()))
             .body("levels[0].seasonal-values.size()", is(numValues))
-            .body("total", is(numValues));
+            .body("total", is(1));
     }
 
     @Test

@@ -206,8 +206,8 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
             SelectSeekStep5 query;
 
-            var pagedRef = dsl.select(ref.LOCATION_LEVEL_CODE,
-                    ref.LOCATION_LEVEL_ID, ref.ATTRIBUTE_ID, ref.OFFICE_ID, ref.LOCATION_LEVEL_DATE, ref.LOCATION_ID,
+            var pagedRef = dsl.select(ref.LOCATION_LEVEL_CODE, ref.LOCATION_ID,
+                    ref.LOCATION_LEVEL_ID, ref.ATTRIBUTE_ID, ref.OFFICE_ID, ref.LOCATION_LEVEL_DATE, ref.LOCATION_CODE,
                     ref.PARAMETER_ID, ref.PARAMETER_TYPE_ID, ref.DURATION_ID, ref.SPECIFIED_LEVEL_ID, ref.EXPIRATION_DATE,
                     ref.LOCATION_LEVEL_COMMENT)
                 .from(ref)
@@ -217,14 +217,18 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .limit(pageSize);
 
             if (includeAliases) {
-                query = dsl.select(asterisk()).from(dsl.select(LOCATION_ALIAS_FIELDS_NEW_VIEW)
+                List<Field<?>> selectFields = new ArrayList<>();
+                selectFields.addAll(LOCATION_ALIAS_FIELDS_NEW_VIEW);
+                selectFields.addAll(List.of(pagedRef.fields()));
+                selectFields.remove(pagedRef.field("LOCATION_ID", String.class));
+                query = dsl.select(asterisk()).from(dsl.select(selectFields)
                         .from(pagedRef)
                         .leftJoin(values)
-                        .on(ref.LOCATION_LEVEL_CODE.eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
+                        .on(pagedRef.field("LOCATION_LEVEL_CODE", Long.class).eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
                         .leftJoin(aliasView)
-                        .on(ref.OFFICE_ID.eq(aliasView.DB_OFFICE_ID))
-                        .and(ref.LOCATION_ID.eq(aliasView.LOCATION_ID))
-                        .and(ref.LOCATION_CODE.eq(aliasView.LOCATION_CODE.cast(Long.class)))
+                        .on(aliasView.DB_OFFICE_ID.eq(pagedRef.field("OFFICE_ID", String.class)))
+                        .and(aliasView.LOCATION_ID.eq(pagedRef.field("LOCATION_ID", String.class)))
+                        .and(aliasView.LOCATION_CODE.eq(pagedRef.field("LOCATION_CODE", BigDecimal.class)))
                         .where(whereCondition))
                     .orderBy(field("OFFICE_ID"), field("LOCATION_LEVEL_ID"),
                         field("LOCATION_LEVEL_DATE"), field("CALENDAR_OFFSET"), field("TIME_OFFSET")
@@ -1359,17 +1363,11 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     }
 
     private static void buildAliasedLocationLevelSelectFieldsNewView() {
-        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.OFFICE_ID.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.LOCATION_LEVEL_ID.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.ATTRIBUTE_ID.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.LOCATION_LEVEL_DATE.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.CONNECTIONS.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.DURATION_ID.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.ATTRIBUTE_UNIT_EN.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.ATTRIBUTE_VALUE_EN.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.ATTRIBUTE_UNIT_SI.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.ATTRIBUTE_VALUE_SI.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.EXPIRATION_DATE));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.TSID.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.CONSTANT_LEVEL_EN.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.CONSTANT_LEVEL_SI.getUnqualifiedName()));
@@ -1377,7 +1375,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.INTERPOLATE.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.LEVEL_UNIT_EN.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.LEVEL_UNIT_SI.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(ref.LOCATION_LEVEL_COMMENT.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.SEASONAL_VALUE_EN.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.SEASONAL_VALUE_SI.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.CALENDAR_INTERVAL.getUnqualifiedName()));
@@ -1386,7 +1383,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(values.TIME_OFFSET.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(aliasView.LOCATION_ID));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(aliasView.ALIAS_ID.getUnqualifiedName()));
-        LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(aliasView.LOCATION_CODE));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(aliasView.DB_OFFICE_ID.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(aliasView.CATEGORY_ID.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS_NEW_VIEW.add(field(aliasView.GROUP_ID.getUnqualifiedName()));
