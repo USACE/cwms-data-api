@@ -275,11 +275,11 @@ LRL,Mississinewa.Temp-Air.Max.1Day.1Day.lrldlb-raw,T,Mississinewa,null,null,m,nu
 LRL,Mississinewa.Temp-Air.Max.1Day.1Day.lrldlb-raw,T,Mississinewa,Corps Reservoir,712.0,ft,NGVD29,40.7166667,-85.9580556,NAD27,MississinewaLake,MississinewaLake,null,US/Eastern,Miami,IN
 LRL,Mississinewa.Temp-Air.Max.1Day.1Day.lrldlb-raw,T,Mississinewa,Corps Reservoir,217.01760000000002,m,NGVD29,40.7166667,-85.9580556,NAD27,MississinewaLake,MississinewaLake,null,US/Eastern,Miami,IN
 LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,m,null,39.007222222222,-86.513333333333,null,MONROE LAKE NEAR HARRODSBURG,MONROE LAKE NEAR HARRODSBURG,MONROE LAKE NEAR HARRODSBURG,UTC,Monroe,IN
-LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,m,null,null,null,null,Monroe,null,null,null,Unknown County or County N/A,00
+LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,m,null,null,null,null,Monroe,null,null,null,Unknown County or County N/A,IN
 LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,Corps Reservoir,538.0,ft,NGVD29,39.0075,-86.5125,NAD27,Monroe Lake,MonroeLake,null,US/Eastern,Monroe,IN
 LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,ft,null,41.94,-83.44,null,Monroe Weather Station,null,null,US/Eastern,Monroe,MI
 LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,ft,null,39.007222222222,-86.513333333333,null,MONROE LAKE NEAR HARRODSBURG,MONROE LAKE NEAR HARRODSBURG,MONROE LAKE NEAR HARRODSBURG,UTC,Monroe,IN
-LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,ft,null,null,null,null,Monroe,null,null,null,Unknown County or County N/A,00
+LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,ft,null,null,null,null,Monroe,null,null,null,Unknown County or County N/A,IN
 LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,Corps Reservoir,163.9824,m,NGVD29,39.0075,-86.5125,NAD27,Monroe Lake,MonroeLake,null,US/Eastern,Monroe,IN
 LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,m,null,41.94,-83.44,null,Monroe Weather Station,null,null,US/Eastern,Monroe,MI
 LRL,MtCarmel.Precip.Inst.1Hour.0.LRGS-raw,T,MtCarmel,null,112.46510400000001,m,NAVD88,38.3983333,-87.75638889,NAD83,"WABASH RIVER AT MT. CARMEL, IL","WABASH RIVER AT MT. CARMEL, IL",null,US/Central,Wabash,IL
