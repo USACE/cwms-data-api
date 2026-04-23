@@ -833,61 +833,20 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Condition baseCondition = view.ALIASED_ITEM.isNull()
                 .and(view.TS_CODE.eq(tsCode))
                 .and(view.OFFICE_ID.eq(officeId))
+                // Invalid unit requests surface as a database error rather than an empty result set.
                 .and(view.UNIT_ID.equalIgnoreCase(units))
                 .and(view.DATE_TIME.ge(beginTimestamp))
                 .and(view.DATE_TIME.le(endTimestamp))
                 .and(view.START_DATE.le(endTimestamp))
                 .and(view.END_DATE.gt(beginTimestamp));
 
-        SelectConditionStep<Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
+        ResultQuery<? extends Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
         if (versionDate != null) {
-            Field<Timestamp> versionTimestamp = CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
-                    DSL.val(versionDate.toInstant().toEpochMilli()));
-            if (includeEntryDate) {
-                query = dsl.select(
-                                view.DATE_TIME,
-                                view.VALUE,
-                                normalizedQuality,
-                                view.DATA_ENTRY_DATE)
-                        .from(view)
-                        .where(baseCondition.and(view.VERSION_DATE.eq(versionTimestamp)));
-            } else {
-                query = dsl.select(
-                                view.DATE_TIME,
-                                view.VALUE,
-                                normalizedQuality,
-                                DSL.castNull(Timestamp.class).as(DATA_ENTRY_DATE))
-                        .from(view)
-                        .where(baseCondition.and(view.VERSION_DATE.eq(versionTimestamp)));
-            }
+            query = buildVersionedRowsQuery(view, normalizedQuality, baseCondition, versionDate, includeEntryDate);
         } else {
-            var rankedRows = dsl.select(
-                            view.DATE_TIME.as(DATE_TIME),
-                            view.VALUE.as(VALUE),
-                            normalizedQuality,
-                            includeEntryDate
-                                    ? view.DATA_ENTRY_DATE.as(DATA_ENTRY_DATE)
-                                    : DSL.castNull(Timestamp.class).as(DATA_ENTRY_DATE),
-                            DSL.rowNumber()
-                                    .over(partitionBy(view.DATE_TIME)
-                                            .orderBy(view.VERSION_DATE.desc(), view.DATA_ENTRY_DATE.desc()))
-                                    .as("version_rank"))
-                    .from(view)
-                    .where(baseCondition)
-                    .asTable("ranked_rows");
-
-            Field<Timestamp> dateTimeCol = rankedRows.field(DATE_TIME, Timestamp.class);
-            Field<Double> valueCol = rankedRows.field(VALUE, Double.class);
-            Field<BigDecimal> qualityCol = rankedRows.field("quality_norm", BigDecimal.class);
-            Field<Timestamp> dataEntryDateCol = rankedRows.field(DATA_ENTRY_DATE, Timestamp.class);
-            Field<Integer> versionRankCol = rankedRows.field("version_rank", Integer.class);
-
-            query = dsl.select(dateTimeCol, valueCol, qualityCol, dataEntryDateCol)
-                    .from(rankedRows)
-                    .where(versionRankCol.eq(1));
+            query = buildMaxVersionRowsQuery(view, normalizedQuality, baseCondition, includeEntryDate);
         }
 
-        query.orderBy(field(DATE_TIME, Timestamp.class).asc());
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         return query.fetch(record -> {
@@ -900,6 +859,60 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
             return new TimeSeries.Record(dateTime, value, qualityCode);
         });
+    }
+
+    private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildVersionedRowsQuery(
+            AV_TSV_DQU view,
+            Field<BigDecimal> normalizedQuality,
+            Condition baseCondition,
+            ZonedDateTime versionDate,
+            boolean includeEntryDate) {
+        Field<Timestamp> versionTimestamp = CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                DSL.val(versionDate.toInstant().toEpochMilli()));
+        Field<Timestamp> dataEntryDateField = includeEntryDate
+                ? view.DATA_ENTRY_DATE
+                : DSL.castNull(Timestamp.class).as(DATA_ENTRY_DATE);
+
+        return dsl.select(
+                        view.DATE_TIME,
+                        view.VALUE,
+                        normalizedQuality,
+                        dataEntryDateField)
+                .from(view)
+                .where(baseCondition.and(view.VERSION_DATE.eq(versionTimestamp)))
+                .orderBy(view.DATE_TIME.asc());
+    }
+
+    private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildMaxVersionRowsQuery(
+            AV_TSV_DQU view,
+            Field<BigDecimal> normalizedQuality,
+            Condition baseCondition,
+            boolean includeEntryDate) {
+        var rankedRows = dsl.select(
+                        view.DATE_TIME.as(DATE_TIME),
+                        view.VALUE.as(VALUE),
+                        normalizedQuality,
+                        includeEntryDate
+                                ? view.DATA_ENTRY_DATE.as(DATA_ENTRY_DATE)
+                                : DSL.castNull(Timestamp.class).as(DATA_ENTRY_DATE),
+                        DSL.rowNumber()
+                                .over(partitionBy(view.DATE_TIME)
+                                        .orderBy(view.VERSION_DATE.desc(), view.DATA_ENTRY_DATE.desc()))
+                                .as("version_rank"))
+                .from(view)
+                .where(baseCondition)
+                .asTable("ranked_rows");
+
+        Field<Timestamp> dateTimeCol = rankedRows.field(DATE_TIME, Timestamp.class);
+        Field<Double> valueCol = rankedRows.field(VALUE, Double.class);
+        Field<BigDecimal> qualityCol = rankedRows.field("quality_norm", BigDecimal.class);
+        Field<Timestamp> dataEntryDateCol = rankedRows.field(DATA_ENTRY_DATE, Timestamp.class);
+        Field<Integer> versionRankCol = rankedRows.field("version_rank", Integer.class);
+
+        return dsl.select(dateTimeCol, valueCol, qualityCol, dataEntryDateCol)
+                .from(rankedRows)
+                .where(versionRankCol.eq(1))
+                .orderBy(dateTimeCol.asc());
     }
 
     private List<Timestamp> fetchExpectedRegularTimes(long intervalMinutes, long intervalOffset, String timeZoneId,
