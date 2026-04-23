@@ -142,12 +142,14 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                     .fetchSize(DEFAULT_SMALL_FETCH_SIZE)
                     .fetch(this::buildLocation);
 
+            if (datum == null || datum.isBlank()) {
+                return results;
+            }
+
             List<Location> finalizedResults = new ArrayList<>();
-            if (datum != null && !datum.isBlank()) {
-                for(Location loc : results) {
-                    loc = convertLocationToVerticalDatum(dslContext, loc, datum, officeId);
-                    finalizedResults.add(loc);
-                }
+            for(Location loc : results) {
+                loc = convertLocationToVerticalDatum(dslContext, loc, datum, officeId);
+                finalizedResults.add(loc);
             }
             return finalizedResults;
         });
