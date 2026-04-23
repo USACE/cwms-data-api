@@ -67,7 +67,7 @@ public final class TimeSeriesReadBenchmark {
             System.out.println();
             System.out.println("Benchmark report written to " + resultFile);
 
-            for (BenchmarkRun run : report.runs) {
+            for (BenchmarkRun run: report.runs) {
                 if (run.httpCode != 200) {
                     throw new IllegalStateException(
                             "Benchmark completed with HTTP failures. Results saved to " + resultFile);

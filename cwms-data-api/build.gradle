@@ -318,7 +318,6 @@ task timeseriesReadBenchmark(type: JavaExec) {
 
     mainClass = "helpers.TimeSeriesReadBenchmark"
 
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("benchmark.") }
