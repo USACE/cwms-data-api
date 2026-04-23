@@ -129,6 +129,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     private static final AV_LOCATION_LEVEL_VALUES values = AV_LOCATION_LEVEL_VALUES;
     private static final usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS aliasView = AV_LOC_ALIAS;
 
+    private static final String LOCATION_LEVEL_CODE = "LOCATION_LEVEL_CODE";
+    private static final String LOCATION_LEVEL_ID = "LOCATION_LEVEL_ID";
+    private static final String LOCATION_LEVEL_DATE = "LOCATION_LEVEL_DATE";
+    private static final String OFFICE_ID = "OFFICE_ID";
+    private static final String TIME_OFFSET = "TIME_OFFSET";
+    private static final String CALENDAR_OFFSET = "CALENDAR_OFFSET";
     private static final String TABLE_ALIAS1 = "T1";
     private static final String TABLE_ALIAS2 = "T2";
     private static final String ALIASED_ATTRIBUTE_ID = TABLE_ALIAS1 + ".ATTRIBUTE_ID";
@@ -182,24 +188,24 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
 
         if (supportsNewView()) {
-            Condition whereCondition = field("LOCATION_LEVEL_ID", String.class).isNotNull();
+            Condition whereCondition = field(LOCATION_LEVEL_ID, String.class).isNotNull();
 
             if (office != null && !office.isEmpty()) {
-                whereCondition = whereCondition.and(field("OFFICE_ID", String.class).eq(office.toUpperCase()));
+                whereCondition = whereCondition.and(field(OFFICE_ID, String.class).eq(office.toUpperCase()));
             }
 
             if (levelIdMask != null && !levelIdMask.isEmpty()) {
                 whereCondition = whereCondition.and(
-                    JooqDao.caseInsensitiveLikeRegex(field("LOCATION_LEVEL_ID", String.class), levelIdMask));
+                    JooqDao.caseInsensitiveLikeRegex(field(LOCATION_LEVEL_ID, String.class), levelIdMask));
             }
 
             if (beginZdt != null) {
                 whereCondition =
-                    whereCondition.and(field("LOCATION_LEVEL_DATE", Timestamp.class).greaterOrEqual(Timestamp.from(beginZdt.toInstant())));
+                    whereCondition.and(field(LOCATION_LEVEL_DATE, Timestamp.class).greaterOrEqual(Timestamp.from(beginZdt.toInstant())));
             }
             if (endZdt != null) {
                 whereCondition =
-                    whereCondition.and(field("LOCATION_LEVEL_DATE", Timestamp.class).lessThan(Timestamp.from(endZdt.toInstant())));
+                    whereCondition.and(field(LOCATION_LEVEL_DATE, Timestamp.class).lessThan(Timestamp.from(endZdt.toInstant())));
             }
 
             Map<LevelLookup, LocationLevel.Builder> builderMap = new LinkedHashMap<>();
@@ -211,7 +217,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     ref.PARAMETER_ID, ref.PARAMETER_TYPE_ID, ref.DURATION_ID, ref.SPECIFIED_LEVEL_ID, ref.EXPIRATION_DATE,
                     ref.LOCATION_LEVEL_COMMENT)
                 .from(ref)
-                .where(ref.OFFICE_ID.eq(office))
+                .where(whereCondition)
                 .orderBy(ref.LOCATION_ID, ref.PARAMETER_ID, ref.PARAMETER_TYPE_ID, ref.DURATION_ID, ref.SPECIFIED_LEVEL_ID, ref.LOCATION_LEVEL_DATE)
                 .offset(offset)
                 .limit(pageSize);
@@ -224,14 +230,14 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 query = dsl.select(asterisk()).from(dsl.select(selectFields)
                         .from(pagedRef)
                         .leftJoin(values)
-                        .on(pagedRef.field("LOCATION_LEVEL_CODE", Long.class).eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
+                        .on(pagedRef.field(LOCATION_LEVEL_CODE, Long.class).eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
                         .leftJoin(aliasView)
-                        .on(aliasView.DB_OFFICE_ID.eq(pagedRef.field("OFFICE_ID", String.class)))
+                        .on(aliasView.DB_OFFICE_ID.eq(pagedRef.field(OFFICE_ID, String.class)))
                         .and(aliasView.LOCATION_ID.eq(pagedRef.field("LOCATION_ID", String.class)))
                         .and(aliasView.LOCATION_CODE.eq(pagedRef.field("LOCATION_CODE", BigDecimal.class)))
                         .where(whereCondition))
-                    .orderBy(field("OFFICE_ID"), field("LOCATION_LEVEL_ID"),
-                        field("LOCATION_LEVEL_DATE"), field("CALENDAR_OFFSET"), field("TIME_OFFSET")
+                    .orderBy(field(OFFICE_ID), field(LOCATION_LEVEL_ID),
+                        field(LOCATION_LEVEL_DATE), field(CALENDAR_OFFSET), field(TIME_OFFSET)
                     );
             } else {
                 List<Field<?>> selectFields = new ArrayList<>();
@@ -240,11 +246,11 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 query = dsl.select(selectFields)
                     .from(pagedRef)
                     .leftJoin(values)
-                    .on(pagedRef.field("LOCATION_LEVEL_CODE", Long.class).eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
+                    .on(pagedRef.field(LOCATION_LEVEL_CODE, Long.class).eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
                     .where(whereCondition)
-                    .orderBy(DSL.upper(pagedRef.field("OFFICE_ID", String.class)),
-                        DSL.upper(pagedRef.field("LOCATION_LEVEL_ID", String.class)),
-                        pagedRef.field("LOCATION_LEVEL_DATE"), values.CALENDAR_OFFSET, values.TIME_OFFSET
+                    .orderBy(DSL.upper(pagedRef.field(OFFICE_ID, String.class)),
+                        DSL.upper(pagedRef.field(LOCATION_LEVEL_ID, String.class)),
+                        pagedRef.field(LOCATION_LEVEL_DATE), values.CALENDAR_OFFSET, values.TIME_OFFSET
                     );
             }
 
@@ -360,7 +366,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                             .and(mapping.getLocationLevelId(TABLE_ALIAS1, null).eq(virtView.LOCATION_LEVEL_ID)))
                         .where(whereCondition).asTable(TABLE_ALIAS2))
                     .orderBy(mapping.getOfficeId(null, null), mapping.getLocationLevelId(null, null),
-                        field("LEVEL_DATE"), field("CALENDAR_OFFSET"), field("TIME_OFFSET"),
+                        field("LEVEL_DATE"), field(CALENDAR_OFFSET), field(TIME_OFFSET),
                         mapping.getLocationLevelId(TABLE_ALIAS2, null), field("EFFECTIVE_DATE_UTC")
                     )
                     .offset(offset)
@@ -1401,12 +1407,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     private static final class JooqLocationFieldMapping implements LocationFieldMapping {
         @Override
         public Field<String> getOfficeId(String prefix, Table<?> table) {
-            return table.field(DSL.name(prefix, "OFFICE_ID"), String.class);
+            return table.field(DSL.name(prefix, OFFICE_ID), String.class);
         }
 
         @Override
         public Field<String> getLocationLevelId(String prefix, Table<?> table) {
-            return table.field(DSL.name(prefix, "LOCATION_LEVEL_ID"), String.class);
+            return table.field(DSL.name(prefix, LOCATION_LEVEL_ID), String.class);
         }
 
         @Override
@@ -1423,19 +1429,19 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
     private static final class AliasedLocationFieldMapping implements LocationFieldMapping {
         @Override
         public Field<String> getOfficeId(String prefix, Table<?> table) {
-            String field = prefix != null ? prefix + ".OFFICE_ID" : "OFFICE_ID";
+            String field = prefix != null ? prefix + ".OFFICE_ID" : OFFICE_ID;
             return field(field, String.class);
         }
 
         @Override
         public Field<String> getLocationLevelId(String prefix, Table<?> table) {
-            String field = prefix != null ? prefix + ".LOCATION_LEVEL_ID" : "LOCATION_LEVEL_ID";
+            String field = prefix != null ? prefix + ".LOCATION_LEVEL_ID" : LOCATION_LEVEL_ID;
             return field(field, String.class);
         }
 
         @Override
         public Field<Long> getLocationLevelCode() {
-            return field(String.format("%s.%s", TABLE_ALIAS1, "LOCATION_LEVEL_CODE"), Long.class);
+            return field(String.format("%s.%s", TABLE_ALIAS1, LOCATION_LEVEL_CODE), Long.class);
         }
 
         @Override
@@ -1752,12 +1758,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
         @Override
         public Field<String> getCalendarOffset() {
-            return DSL.field(DSL.name(TABLE_ALIAS2, "CALENDAR_OFFSET"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, CALENDAR_OFFSET), String.class);
         }
 
         @Override
         public Field<String> getTimeOffset() {
-            return DSL.field(DSL.name(TABLE_ALIAS2, "TIME_OFFSET"), String.class);
+            return DSL.field(DSL.name(TABLE_ALIAS2, TIME_OFFSET), String.class);
         }
 
         @Override
