@@ -281,6 +281,12 @@ public class TimeSeriesGroupController implements CrudHandler {
             boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_TS, Boolean.class)
                 .getOrDefault(false);
             TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
+            TimeSeriesGroup existingGroup = timeSeriesGroupDao.getTimeSeriesGroup(office, null,
+                null, group.getTimeSeriesCategory().getId(), oldGroupId);
+            if (!existingGroup.getDescription().equalsIgnoreCase(group.getDescription())) {
+                existingGroup = updateClearedFields(group, existingGroup);
+                timeSeriesGroupDao.create(existingGroup, false, false);
+            }
             if (!office.equalsIgnoreCase(CWMS_OFFICE) && !oldGroupId.equals(group.getId())) {
                 timeSeriesGroupDao.renameTimeSeriesGroup(oldGroupId, group);
             }
@@ -290,6 +296,13 @@ public class TimeSeriesGroupController implements CrudHandler {
             timeSeriesGroupDao.assignTs(group, office);
             ctx.status(HttpServletResponse.SC_OK);
         }
+    }
+
+    private TimeSeriesGroup updateClearedFields(TimeSeriesGroup groupBody, TimeSeriesGroup existingTimeSeriesGroup) {
+        return new TimeSeriesGroup(new TimeSeriesGroup(existingTimeSeriesGroup.getTimeSeriesCategory(),
+            existingTimeSeriesGroup.getOfficeId(), existingTimeSeriesGroup.getId(), groupBody.getDescription(),
+            existingTimeSeriesGroup.getSharedAliasId(), existingTimeSeriesGroup.getSharedRefTsId()),
+            existingTimeSeriesGroup.getAssignedTimeSeries());
     }
 
     @OpenApi(

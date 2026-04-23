@@ -1009,7 +1009,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
-        TimeSeriesGroup newGroup = new TimeSeriesGroup(cat, officeId, "test_rename_group_new", "IntegrationTesting",
+        TimeSeriesGroup newGroup = new TimeSeriesGroup(cat, officeId, "test_rename_group_new", "Test group rename",
             "sharedTsAliasId2", timeSeriesId);
         String newGroupXml = Formats.format(contentType, newGroup);
         //Rename Group
@@ -1050,7 +1050,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("office-id", equalTo(newGroup.getOfficeId()))
             .body("id", equalTo(newGroup.getId()))
-            .body("description", equalTo(newGroup.getDescription()))
+            .body("description", equalTo("Test group rename"))
             .body("assigned-time-series[0].timeseries-id", equalTo(timeSeriesId))
             .body("assigned-time-series[0].alias-id", equalTo("AliasId"))
             .body("assigned-time-series[0].ref-ts-id", equalTo(timeSeriesId));
