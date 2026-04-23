@@ -739,6 +739,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             return null;
         }
 
+        // Pagination happens after regular-interval gap rows are merged
+        //  fetch the full raw window first
         List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId, metadataUnits,
                 requestParameters, includeEntryDate);
         long effectiveIntervalOffset = intervalOffset;
@@ -951,17 +953,20 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                                       String intervalPart, boolean isLrts,
                                                       TimeSeriesRequestParameters requestParameters,
                                                       List<TimeSeries.Record> rawRows) {
+        boolean shouldTrim = requestParameters.isShouldTrim();
         if (!isRegularSeries(intervalMinutes, intervalPart)) {
             return Collections.emptyList();
         }
-        if (rawRows.isEmpty() && requestParameters.isShouldTrim()) {
+        // Trimmed requests collapse to the observed data window
+        //  there is nothing to expand if no rows matched
+        if (rawRows.isEmpty() && shouldTrim) {
             return Collections.emptyList();
         }
 
-        Timestamp rangeStart = requestParameters.isShouldTrim()
+        Timestamp rangeStart = shouldTrim
                 ? rawRows.get(0).getDateTime()
                 : Timestamp.from(requestParameters.getBeginTime().toInstant());
-        Timestamp rangeEnd = requestParameters.isShouldTrim()
+        Timestamp rangeEnd = shouldTrim
                 ? rawRows.get(rawRows.size() - 1).getDateTime()
                 : Timestamp.from(requestParameters.getEndTime().toInstant());
 
