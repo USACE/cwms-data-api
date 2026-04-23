@@ -354,7 +354,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "offset and timezone."),
                 @OpenApiParam(name = Controllers.TRIM, type = Boolean.class, description = "Specifies "
                         + "whether to trim missing values from the beginning and end of the "
-                        + "retrieved values. "
+                        + "retrieved values. When true and values are returned, the response "
+                        + BEGIN + " and " + END + " fields reflect the returned data window. "
                         + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2 + ". "
                         + "Default is true."),
                 @OpenApiParam(name = FORMAT,  description = "Specifies the"
@@ -383,7 +384,9 @@ public class TimeSeriesController implements CrudHandler {
                 @OpenApiParam(name = PAGE_SIZE,
                         type = Integer.class,
                         description = "How many entries per page returned. "
-                                + "Default " + DEFAULT_PAGE_SIZE + ".")
+                                + "Default " + DEFAULT_PAGE_SIZE + ". Use 0 to return an empty values array, "
+                                + "or -1 to return the entire window in one response without a next-page cursor. "
+                                + "Values less than -1 are invalid.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -438,6 +441,8 @@ public class TimeSeriesController implements CrudHandler {
             int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE  },
                     Integer.class, DEFAULT_PAGE_SIZE, metrics,
                     name(TimeSeriesController.class.getName(), GET_ALL));
+            pageSize = Controllers.validateTimeSeriesPageSize(pageSize);
+            final int validatedPageSize = pageSize;
 
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format, TimeSeries.class);
@@ -468,7 +473,8 @@ public class TimeSeriesController implements CrudHandler {
                         .build();
                 // Execute DAO call with a timeout so we can return a clearer message instead of a generic 500
                 int apiTimeoutMs = Integer.getInteger("cwms.cda.api.apiTimeoutMs", 45000);
-                CompletableFuture<TimeSeries> daoFuture = CompletableFuture.supplyAsync(() -> dao.getTimeseries(cursor, pageSize, requestParameters));
+                CompletableFuture<TimeSeries> daoFuture = CompletableFuture.supplyAsync(
+                        () -> dao.getTimeseries(cursor, validatedPageSize, requestParameters));
                 TimeSeries ts;
                 try {
                     ts = daoFuture.get(apiTimeoutMs, TimeUnit.MILLISECONDS);

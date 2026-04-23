@@ -199,6 +199,79 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
         );
     }
 
+    @Test
+    void pageSizeZeroReturnsEmptyValuesArray() throws Exception {
+        List<SeedRow> rows = denseRows();
+        Instant beginTime = Instant.parse("2024-01-01T00:00:00Z");
+        Instant endTime = Instant.parse("2024-01-01T00:05:00Z");
+        seedTimeSeries("ITPARPZ0", "ITPARPZ0.Stage.Inst.1Minute.0.BENCH", rows, false);
+
+        TimeSeries response = fetchCdaRowsWithPageSize(
+            "ITPARPZ0.Stage.Inst.1Minute.0.BENCH",
+            "ft",
+            beginTime,
+            endTime,
+            0,
+            false,
+            null,
+            true
+        );
+
+        assertEquals(0, response.getPageSize(), "page-size");
+        assertNotNull(response.getValues(), "values");
+        assertEquals(0, response.getValues().size(), "values size");
+        assertEquals(rows.size(), response.getTotal(), "total");
+        assertNull(response.getPage(), "page");
+        assertNull(response.getNextPage(), "next-page");
+    }
+
+    @Test
+    void pageSizeNegativeOneReturnsWholeWindowWithoutPagination() throws Exception {
+        List<SeedRow> rows = denseRows();
+        Instant beginTime = Instant.parse("2024-01-01T00:00:00Z");
+        Instant endTime = Instant.parse("2024-01-01T00:05:00Z");
+        seedTimeSeries("ITPARALL", "ITPARALL.Stage.Inst.1Minute.0.BENCH", rows, false);
+
+        TimeSeries response = fetchCdaRowsWithPageSize(
+            "ITPARALL.Stage.Inst.1Minute.0.BENCH",
+            "ft",
+            beginTime,
+            endTime,
+            -1,
+            false,
+            null,
+            true
+        );
+
+        assertEquals(-1, response.getPageSize(), "page-size");
+        assertEquals(rows.size(), response.getValues().size(), "values size");
+        assertEquals(rows.size(), response.getTotal(), "total");
+        assertNull(response.getPage(), "page");
+        assertNull(response.getNextPage(), "next-page");
+    }
+
+    @Test
+    void trimmedResponseWindowMatchesReturnedValues() throws Exception {
+        List<SeedRow> rows = gapRows();
+        seedTimeSeries("ITPARTRM", "ITPARTRM.Stage.Inst.1Minute.0.BENCH", rows, false);
+
+        TimeSeries response = fetchCdaRowsWithPageSize(
+            "ITPARTRM.Stage.Inst.1Minute.0.BENCH",
+            "ft",
+            Instant.parse("2023-12-31T23:59:00Z"),
+            Instant.parse("2024-01-01T00:10:00Z"),
+            1000,
+            false,
+            null,
+            true
+        );
+
+        assertNotNull(response.getBegin(), "begin");
+        assertNotNull(response.getEnd(), "end");
+        assertEquals(Instant.parse("2024-01-01T00:00:00Z"), response.getBegin().toInstant(), "begin");
+        assertEquals(Instant.parse("2024-01-01T00:09:00Z"), response.getEnd().toInstant(), "end");
+    }
+
     private static void assertDirectReadMatchesOracle(String locationId, String seriesId, String units,
                                                       Instant beginTime, Instant endTime, List<SeedRow> rows,
                                                       boolean versioned, boolean includeEntryDate,
@@ -530,6 +603,14 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
                                            int seedRowCount, boolean includeEntryDate, Instant versionDate)
         throws Exception {
         int pageSize = Math.max(1000, seedRowCount * 2);
+        return fetchCdaRowsWithPageSize(seriesId, units, beginTime, endTime, pageSize, includeEntryDate,
+            versionDate, true);
+    }
+
+    private static TimeSeries fetchCdaRowsWithPageSize(String seriesId, String units, Instant beginTime,
+                                                       Instant endTime, int pageSize, boolean includeEntryDate,
+                                                       Instant versionDate, boolean trim)
+        throws Exception {
         RequestSpecification request = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -538,7 +619,8 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             .queryParam(Controllers.UNIT, units)
             .queryParam(Controllers.BEGIN, beginTime.toString())
             .queryParam(Controllers.END, endTime.toString())
-            .queryParam("page-size", pageSize)
+            .queryParam(Controllers.PAGE_SIZE, pageSize)
+            .queryParam(Controllers.TRIM, trim)
             .queryParam(Controllers.INCLUDE_ENTRY_DATE, includeEntryDate);
         if (versionDate != null) {
             request = request.queryParam(Controllers.VERSION_DATE, versionDate.toString());

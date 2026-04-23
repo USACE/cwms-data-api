@@ -498,6 +498,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Record tsMetadata = metadataQuery.fetchOne();
 
+        if (pageSize == 0) {
+            Integer resolvedTotal = resolveTotalQueryFuture(totalQueryFuture, totalQueryDeadlineNanos,
+                    names, office, beginTime, endTime);
+            return buildTimeSeriesFromMetadata(tsMetadata, resolvedTotal, names, office,
+                    beginTime, endTime, units, versionDate, recordCursor, recordPageSize, tzName);
+        }
+
         String retrievalMethod;
         if (includeEntryDate) {
             retrievalMethod = "cwms_20.cwms_ts.retrieve_ts_entry_out_tab";  // New method that supports entry date
@@ -597,6 +604,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             retVal = timeseries;
 
             getRequestedTimeSeriesResultsReturnedHistogram.update(timeseries.getValues().size());
+        }
+
+        if (retVal != null) {
+            retVal.alignWindowToReturnedValues(shouldTrim);
         }
 
         return retVal;
@@ -735,9 +746,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         VersionType finalDateVersionType = getDirectReadVersionType(
                 metadata.versionFlag, versionDate != null);
-        if (pageSize == 0) {
-            return null;
-        }
 
         // Pagination happens after regular-interval gap rows are merged
         //  fetch the full raw window first
@@ -769,8 +777,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 finalDateVersionType
         );
 
+        if (pageSize == 0) {
+            return timeseries;
+        }
+
         populateTimeSeriesValues(timeseries, rawRows, expectedTimes, tsCursor, includeEntryDate);
-        return timeseries;
+        return timeseries.alignWindowToReturnedValues(requestParameters.isShouldTrim());
     }
 
     private DirectReadMetadata fetchRequestedTimeSeriesMetadataRecord(
