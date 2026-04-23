@@ -43,6 +43,7 @@ import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
 import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.formatters.xml.XMLv1;
 import cwms.cda.helpers.DateUtils;
+import cwms.cda.helpers.ZoneIdHelper;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
@@ -64,7 +65,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -75,6 +75,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import mil.army.usace.hec.metadata.Interval;
+import mil.army.usace.hec.metadata.IntervalFactory;
+import mil.army.usace.hec.metadata.IntervalOffset;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.*;
@@ -720,7 +723,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId, metadataUnits,
                 requestParameters, includeEntryDate);
-        List<Timestamp> expectedTimes = fetchExpectedRegularTimes(intervalMinutes, intervalOffset, timeZoneId,
+        long effectiveIntervalOffset = intervalOffset;
+        if (isRegularSeries(intervalMinutes, intervalPart)) {
+            effectiveIntervalOffset = resolveIntervalOffset(intervalOffset, timeZoneId, intervalPart, isLrts, rawRows);
+        }
+
+        List<Timestamp> expectedTimes = fetchExpectedRegularTimes(intervalMinutes, effectiveIntervalOffset, timeZoneId,
                 intervalPart, isLrts, requestParameters, rawRows);
         int total = countMergedRows(rawRows, expectedTimes);
 
@@ -733,9 +741,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 beginTime,
                 endTime,
                 metadataUnits,
-                Duration.ofMinutes(intervalMinutes),
+                resolveIntervalDuration(intervalMinutes, intervalPart),
                 verticalDatumInfo,
-                intervalOffset,
+                effectiveIntervalOffset,
                 timeZoneId,
                 versionDate,
                 finalDateVersionType
@@ -898,7 +906,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                                       String intervalPart, boolean isLrts,
                                                       TimeSeriesRequestParameters requestParameters,
                                                       List<TimeSeries.Record> rawRows) {
-        if (!isRegularSeries(intervalMinutes, intervalOffset)) {
+        if (!isRegularSeries(intervalMinutes, intervalPart)) {
             return Collections.emptyList();
         }
         if (rawRows.isEmpty() && requestParameters.isShouldTrim()) {
@@ -912,10 +920,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 ? rawRows.get(rawRows.size() - 1).getDateTime()
                 : Timestamp.from(requestParameters.getEndTime().toInstant());
 
-        long offsetMinutes = resolveIntervalOffset(intervalMinutes, intervalOffset, timeZoneId, intervalPart, isLrts,
-                rawRows);
-        if (canGenerateExpectedTimesInJava(intervalMinutes, intervalPart, isLrts)) {
-            return buildExpectedRegularTimesUtc(rangeStart, rangeEnd, intervalMinutes, offsetMinutes);
+        Interval expectedInterval = resolveExpectedInterval(intervalPart);
+        if (expectedInterval != null) {
+            return buildExpectedRegularTimes(rangeStart, rangeEnd, intervalOffset, expectedInterval,
+                    getExpectedTimeZone(timeZoneId, isLrts));
         }
 
         String intervalTimeZone = isLrts ? timeZoneId : UTC;
@@ -924,7 +932,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 dsl.configuration(),
                 dateRange,
                 intervalPart,
-                String.valueOf(offsetMinutes),
+                String.valueOf(intervalOffset),
                 intervalTimeZone
         );
 
@@ -939,18 +947,28 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return retVal;
     }
 
-    private long resolveIntervalOffset(long intervalMinutes, long intervalOffset, String timeZoneId,
+    private long resolveIntervalOffset(long intervalOffset, String timeZoneId,
                                        String intervalPart, boolean isLrts, List<TimeSeries.Record> rawRows) {
-        if (intervalOffset != UTC_OFFSET_UNDEFINED) {
+        if (intervalOffset != UTC_OFFSET_UNDEFINED && intervalOffset != UTC_OFFSET_IRREGULAR) {
             return intervalOffset;
         }
         if (rawRows.isEmpty()) {
             return 0L;
         }
 
-        if (canGenerateExpectedTimesInJava(intervalMinutes, intervalPart, isLrts)) {
-            long intervalMillis = TimeUnit.MINUTES.toMillis(intervalMinutes);
-            return TimeUnit.MILLISECONDS.toMinutes(Math.floorMod(rawRows.get(0).getDateTime().getTime(), intervalMillis));
+        Interval expectedInterval = resolveExpectedInterval(intervalPart);
+        if (expectedInterval != null) {
+            try {
+                Instant firstTime = rawRows.get(0).getDateTime().toInstant();
+                Instant topOfInterval = expectedInterval.getTimeOnPreviousOrCurrentInterval(
+                        firstTime,
+                        IntervalOffset.zeroOffset(),
+                        getExpectedTimeZone(timeZoneId, isLrts)
+                );
+                return TimeUnit.MILLISECONDS.toMinutes(firstTime.toEpochMilli() - topOfInterval.toEpochMilli());
+            } catch (mil.army.usace.hec.metadata.DataSetIllegalArgumentException ex) {
+                throw new IllegalArgumentException("Unable to resolve interval offset for " + intervalPart, ex);
+            }
         }
 
         String intervalTimeZone = isLrts ? timeZoneId : UTC;
@@ -964,8 +982,21 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return (rawRows.get(0).getDateTime().getTime() - topOfInterval.getTime()) / TimeUnit.MINUTES.toMillis(1);
     }
 
-    private boolean isRegularSeries(long intervalMinutes, long intervalOffset) {
-        return intervalMinutes != 0L;
+    private boolean isRegularSeries(long intervalMinutes, String intervalPart) {
+        return intervalMinutes != 0L || isLocalRegularInterval(intervalPart);
+    }
+
+    private Duration resolveIntervalDuration(long intervalMinutes, String intervalPart) {
+        if (intervalMinutes != 0L) {
+            return Duration.ofMinutes(intervalMinutes);
+        }
+
+        Interval interval = resolveExpectedInterval(intervalPart);
+        if (interval != null) {
+            return Duration.ofSeconds(interval.getSeconds());
+        }
+
+        return Duration.ZERO;
     }
 
     private int countMergedRows(List<TimeSeries.Record> rawRows, List<Timestamp> expectedTimes) {
@@ -1074,49 +1105,62 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return Timestamp.from(utcWallTime.toInstant(ZoneOffset.UTC));
     }
 
-    private boolean canGenerateExpectedTimesInJava(long intervalMinutes, String intervalPart, boolean isLrts) {
-        if (isLrts || intervalMinutes <= 0L) {
-            return false;
-        }
-
+    @Nullable
+    private Interval resolveExpectedInterval(String intervalPart) {
         if (intervalPart == null) {
-            return false;
+            return null;
         }
 
-        String normalizedInterval = intervalPart.toLowerCase(Locale.ENGLISH);
-        return normalizedInterval.endsWith("minute")
-                || normalizedInterval.endsWith("minutes")
-                || normalizedInterval.endsWith("hour")
-                || normalizedInterval.endsWith("hours")
-                || normalizedInterval.endsWith("day")
-                || normalizedInterval.endsWith("days")
-                || normalizedInterval.endsWith("week")
-                || normalizedInterval.endsWith("weeks");
+        return IntervalFactory.findAny(IntervalFactory.equalsName(normalizeIntervalNameForNucleus(intervalPart)))
+                .orElse(null);
     }
 
-    private List<Timestamp> buildExpectedRegularTimesUtc(Timestamp rangeStart,
-                                                         Timestamp rangeEnd,
-                                                         long intervalMinutes,
-                                                         long offsetMinutes) {
-        long intervalMillis = TimeUnit.MINUTES.toMillis(intervalMinutes);
-        long offsetMillis = TimeUnit.MINUTES.toMillis(Math.floorMod(offsetMinutes, intervalMinutes));
-        long startMillis = rangeStart.getTime();
-        long endMillis = rangeEnd.getTime();
-        long firstMillis = alignToInterval(startMillis, intervalMillis, offsetMillis);
-
+    private List<Timestamp> buildExpectedRegularTimes(Timestamp rangeStart,
+                                                      Timestamp rangeEnd,
+                                                      long offsetMinutes,
+                                                      Interval interval,
+                                                      ZoneId intervalTimeZone) {
         List<Timestamp> expectedTimes = new ArrayList<>();
-        for (long millis = firstMillis; millis <= endMillis; millis += intervalMillis) {
-            expectedTimes.add(new Timestamp(millis));
+        IntervalOffset intervalOffset = IntervalOffset.fromSeconds(Math.toIntExact(
+                TimeUnit.MINUTES.toSeconds(offsetMinutes)));
+        Instant endTime = rangeEnd.toInstant();
+
+        try {
+            Instant nextTime = interval.getTimeOnNextOrCurrentInterval(rangeStart.toInstant(), intervalOffset,
+                    intervalTimeZone);
+            while (!nextTime.isAfter(endTime)) {
+                expectedTimes.add(Timestamp.from(nextTime));
+                nextTime = interval.getNextIntervalTime(nextTime, intervalTimeZone);
+            }
+        } catch (mil.army.usace.hec.metadata.DataSetIllegalArgumentException ex) {
+            throw new IllegalArgumentException("Unable to build expected times for " + interval.getInterval(), ex);
         }
         return expectedTimes;
     }
 
-    private long alignToInterval(long timestampMillis, long intervalMillis, long offsetMillis) {
-        long remainder = Math.floorMod(timestampMillis - offsetMillis, intervalMillis);
-        if (remainder == 0L) {
-            return timestampMillis;
+    private ZoneId getExpectedTimeZone(String timeZoneId, boolean isLrts) {
+        if (!isLrts) {
+            return ZoneOffset.UTC;
         }
-        return timestampMillis + (intervalMillis - remainder);
+        return ZoneIdHelper.parseZoneIdWithAliases(timeZoneId);
+    }
+
+    private String normalizeIntervalNameForNucleus(String intervalPart) {
+        if (intervalPart.startsWith("~")) {
+            return intervalPart;
+        }
+        if (intervalPart.length() > 5
+                && intervalPart.regionMatches(true, intervalPart.length() - 5, "Local", 0, 5)) {
+            return "~" + intervalPart.substring(0, intervalPart.length() - 5);
+        }
+        return intervalPart;
+    }
+
+    private boolean isLocalRegularInterval(String intervalPart) {
+        if (intervalPart == null) {
+            return false;
+        }
+        return normalizeIntervalNameForNucleus(intervalPart).startsWith("~");
     }
 
     private boolean shouldFetchVerticalDatum(String parmPart) {

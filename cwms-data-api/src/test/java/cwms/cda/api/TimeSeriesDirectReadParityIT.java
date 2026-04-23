@@ -176,6 +176,29 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
         );
     }
 
+    @Test
+    void localRegularGapReadMatchesRetrieveTs() throws Exception {
+        assertDirectReadMatchesOracle(
+            "ITPARLCL",
+            "ITPARLCL.Flow.Inst.~1Day.0.BENCH",
+            "cfs",
+            Instant.parse("2024-01-01T00:00:00Z"),
+            Instant.parse("2024-01-05T00:00:00Z"),
+            List.of(
+                row("2024-01-01T00:00:00Z", 1.0, 0, "2024-01-06T00:00:00Z", null),
+                row("2024-01-02T00:00:00Z", 2.0, 0, "2024-01-06T00:00:00Z", null),
+                row("2024-01-04T00:00:00Z", 4.0, 0, "2024-01-06T00:00:00Z", null),
+                row("2024-01-05T00:00:00Z", 5.0, 0, "2024-01-06T00:00:00Z", null)
+            ),
+            false,
+            false,
+            VersionType.UNVERSIONED,
+            Duration.ofDays(1),
+            0L,
+            null
+        );
+    }
+
     private static void assertDirectReadMatchesOracle(String locationId, String seriesId, String units,
                                                       Instant beginTime, Instant endTime, List<SeedRow> rows,
                                                       boolean versioned, boolean includeEntryDate,
@@ -328,10 +351,12 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> database = CwmsDataApiSetupCallback.getDatabaseLink();
         database.connection(connection -> {
             try {
-                CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(DSL.using(connection).configuration(),
-                    seriesId,
-                    versioned ? "T" : "F",
-                    OFFICE);
+                if (versioned) {
+                    CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(DSL.using(connection).configuration(),
+                        seriesId,
+                        "T",
+                        OFFICE);
+                }
 
                 long tsCode = findTsCode(connection, seriesId);
                 List<Integer> years = rows.stream()
