@@ -164,6 +164,29 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private static final FieldMapping AV_CWMS_TS_ID2_FIELD_MAP = new CwmsTsId2FieldMapping();
     private static final FieldMapping AV_CWMS_TS_ID_FIELD_MAP = new CwmsTsIdFieldMapping();
 
+    private static final class DirectReadMetadata {
+        private final long tsCode;
+        private final String tsId;
+        private final String officeId;
+        private final String units;
+        private final long intervalMinutes;
+        private final long intervalUtcOffset;
+        private final String timeZoneId;
+        private final String versionFlag;
+
+        private DirectReadMetadata(long tsCode, String tsId, String officeId, String units,
+                                   long intervalMinutes, long intervalUtcOffset,
+                                   String timeZoneId, String versionFlag) {
+            this.tsCode = tsCode;
+            this.tsId = tsId;
+            this.officeId = officeId;
+            this.units = units;
+            this.intervalMinutes = intervalMinutes;
+            this.intervalUtcOffset = intervalUtcOffset;
+            this.timeZoneId = timeZoneId;
+            this.versionFlag = versionFlag;
+        }
+    }
 
     @NotNull
     private final Timer getRequestedTimeSeriesTotalQueryTimer;
@@ -687,27 +710,22 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         }
 
-        Record metadata = fetchRequestedTimeSeriesMetadataRecord(requestParameters);
+        DirectReadMetadata metadata = fetchRequestedTimeSeriesMetadataRecord(requestParameters);
         if (metadata == null) {
             throw new DataAccessException("Unable to resolve time series metadata for " + names);
         }
 
-        BigDecimal intervalValue = metadata.getValue("interval", BigDecimal.class);
-        Number offsetValue = metadata.getValue("interval_utc_offset", Number.class);
-        BigDecimal tsCodeValue = metadata.getValue("tscode", BigDecimal.class);
-        long tsCode = tsCodeValue.longValue();
-        String tsId = metadata.getValue("tsid", String.class);
+        long tsCode = metadata.tsCode;
+        String tsId = metadata.tsId;
         String[] tsIdParts = splitTimeSeriesId(tsId);
-        String metadataOfficeId = metadata.getValue("office_id", String.class);
-        String metadataUnits = metadata.getValue("units", String.class);
+        String metadataOfficeId = metadata.officeId;
+        String metadataUnits = metadata.units;
         String locPart = getTimeSeriesIdPart(tsIdParts, 0);
         String parmPart = getTimeSeriesIdPart(tsIdParts, 1);
         String intervalPart = getTimeSeriesIdPart(tsIdParts, 3);
-        long intervalMinutes = intervalValue == null ? 0L : intervalValue.longValue();
-        long intervalOffset = offsetValue == null ? UTC_OFFSET_IRREGULAR : offsetValue.longValue();
-        String timeZoneId = metadata.getValue("time_zone_id", String.class) == null
-                ? UTC
-                : metadata.getValue("time_zone_id", String.class);
+        long intervalMinutes = metadata.intervalMinutes;
+        long intervalOffset = metadata.intervalUtcOffset;
+        String timeZoneId = metadata.timeZoneId;
         boolean isLrts = parseBool(CWMS_TS_PACKAGE.call_IS_LRTS__2(dsl.configuration(), tsCode));
 
         VerticalDatumInfo verticalDatumInfo = null;
@@ -716,7 +734,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         VersionType finalDateVersionType = getDirectReadVersionType(
-                metadata.getValue("version_flag", String.class), versionDate != null);
+                metadata.versionFlag, versionDate != null);
         if (pageSize == 0) {
             return null;
         }
@@ -753,7 +771,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return timeseries;
     }
 
-    private Record fetchRequestedTimeSeriesMetadataRecord(
+    private DirectReadMetadata fetchRequestedTimeSeriesMetadataRecord(
             TimeSeriesRequestParameters requestParameters) {
         String names = requestParameters.getNames();
         String office = requestParameters.getOffice();
@@ -810,7 +828,21 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         logger.atFine().log("%s", lazy(() -> metadataQuery.getSQL(ParamType.INLINED)));
 
-        return metadataQuery.fetchOne();
+        return metadataQuery.fetchOne(record -> new DirectReadMetadata(
+                record.getValue("tscode", BigDecimal.class).longValue(),
+                record.getValue("tsid", String.class),
+                record.getValue("office_id", String.class),
+                record.getValue("units", String.class),
+                record.getValue("interval", BigDecimal.class) == null
+                        ? 0L
+                        : record.getValue("interval", BigDecimal.class).longValue(),
+                record.getValue("interval_utc_offset", Number.class) == null
+                        ? UTC_OFFSET_IRREGULAR
+                        : record.getValue("interval_utc_offset", Number.class).longValue(),
+                record.getValue("time_zone_id", String.class) == null
+                        ? UTC
+                        : record.getValue("time_zone_id", String.class),
+                record.getValue("version_flag", String.class)));
     }
 
     private List<TimeSeries.Record> fetchRequestedTimeSeriesRows(long tsCode, String officeId, String units,
